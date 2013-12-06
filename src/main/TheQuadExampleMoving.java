@@ -1,7 +1,4 @@
 package main;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -23,12 +20,13 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class TheQuadExampleMoving {
+	public static final int WIDTH = 800;
+	public static final int HEIGHT = 600;
 	// Entry point for the application
 	public static void main(String[] args) {
 		new TheQuadExampleMoving();
@@ -36,9 +34,6 @@ public class TheQuadExampleMoving {
 	
 	// Setup variables
 	private final String WINDOW_TITLE = "The Quad: Moving";
-	private final int WIDTH = 800;
-	private final int HEIGHT = 600;
-	private final double PI = 3.14159265358979323846;
 	// Quad variables
 	private int vaoId = 0;
 	private int vboId = 0;
@@ -52,17 +47,9 @@ public class TheQuadExampleMoving {
 	private int[] texIds = new int[] {0, 0};
 	private int textureSelector = 0;
 	// Moving variables
-	private int projectionMatrixLocation = 0;
-	private int viewMatrixLocation = 0;
-	private int modelMatrixLocation = 0;
-	private Matrix4f projectionMatrix = null;
-	private Matrix4f viewMatrix = null;
-	private Matrix4f modelMatrix = null;
-	private Vector3f modelPos = null;
-	private Vector3f modelAngle = null;
-	private Vector3f modelScale = null;
-	private Vector3f cameraPos = null;
+	private Camera camera = new Camera();
 	private FloatBuffer matrix44Buffer = null;
+	private Entity entity = new Entity();
 	
 	public TheQuadExampleMoving() {
 		// Initialize OpenGL (Display)
@@ -83,36 +70,11 @@ public class TheQuadExampleMoving {
 			Display.update();
 		}
 		
-		// Destroy OpenGL (Display)
 		this.destroyOpenGL();
 	}
 
 	private void setupMatrices() {
-		// Setup projection matrix
-		projectionMatrix = new Matrix4f();
-		float fieldOfView = 60f;
-		float aspectRatio = (float)WIDTH / (float)HEIGHT;
-		float near_plane = 0.1f;
-		float far_plane = 100f;
 		
-		float y_scale = this.coTangent(this.degreesToRadians(fieldOfView / 2f));
-		float x_scale = y_scale / aspectRatio;
-		float frustum_length = far_plane - near_plane;
-		
-		projectionMatrix.m00 = x_scale;
-		projectionMatrix.m11 = y_scale;
-		projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
-		projectionMatrix.m23 = -1;
-		projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
-                projectionMatrix.m33 = 0;
-		
-		// Setup view matrix
-		viewMatrix = new Matrix4f();
-		
-		// Setup model matrix
-		modelMatrix = new Matrix4f();
-		
-		// Create a FloatBuffer with the proper size to store our matrices later
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	}
 
@@ -215,16 +177,11 @@ public class TheQuadExampleMoving {
 				GL15.GL_STATIC_DRAW);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		
-		// Set the default quad rotation, scale and position values
-		modelPos = new Vector3f(0, 0, 0);
-		modelAngle = new Vector3f(0, 0, 0);
-		modelScale = new Vector3f(1, 1, 1);
-		cameraPos = new Vector3f(0, 0, -1);
 		
 		this.exitOnGLError("setupQuad");
 	}
 	
-	private void setupShaders() {		
+	private void setupShaders() {
 		// Load the vertex shader
 		int vsId = this.loadShader("/assets/shaders/vertex.glsl", GL20.GL_VERTEX_SHADER);
 		// Load the fragment shader
@@ -246,28 +203,22 @@ public class TheQuadExampleMoving {
 		GL20.glValidateProgram(pId);
 
 		// Get matrices uniform locations
-		projectionMatrixLocation = GL20.glGetUniformLocation(pId,"projectionMatrix");
-		viewMatrixLocation = GL20.glGetUniformLocation(pId, "viewMatrix");
-		modelMatrixLocation = GL20.glGetUniformLocation(pId, "modelMatrix");
+		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(pId,"projectionMatrix"));
+		camera.setViewMatrixLocation(GL20.glGetUniformLocation(pId, "viewMatrix"));
+		entity.setModelMatrixLocation(GL20.glGetUniformLocation(pId, "modelMatrix"));
 
 		this.exitOnGLError("setupShaders");
 	}
 	
-	private void logicCycle() {
-		//-- Input processing
-		float rotationDelta = 15f;
-		float scaleDelta = 0.1f;
-		float posDelta = 0.1f;
-		Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
-		Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, 
-				-scaleDelta);
+	private void update() {
 		
-		while(Keyboard.next()) {			
+		while(Keyboard.next()) {
 			// Only listen to events where the key was pressed (down event)
 			if (!Keyboard.getEventKeyState()) continue;
 			
 			// Switch textures depending on the key released
-			switch (Keyboard.getEventKey()) {
+			int eventKey = Keyboard.getEventKey();
+			switch (eventKey) {
 			case Keyboard.KEY_1:
 				textureSelector = 0;
 				break;
@@ -276,59 +227,21 @@ public class TheQuadExampleMoving {
 				break;
 			}
 			
-			// Change model scale, rotation and translation values
-			switch (Keyboard.getEventKey()) {
-			// Move
-			case Keyboard.KEY_UP:
-				modelPos.y += posDelta;
-				break;
-			case Keyboard.KEY_DOWN:
-				modelPos.y -= posDelta;
-				break;
-			// Scale
-			case Keyboard.KEY_P:
-				Vector3f.add(modelScale, scaleAddResolution, modelScale);
-				break;
-			case Keyboard.KEY_M:
-				Vector3f.add(modelScale, scaleMinusResolution, modelScale);
-				break;
-			// Rotation
-			case Keyboard.KEY_LEFT:
-				modelAngle.z += rotationDelta;
-				break;
-			case Keyboard.KEY_RIGHT:
-				modelAngle.z -= rotationDelta;
-				break;
-			}
+			camera.updateControls(eventKey);
 		}
 		
 		//-- Update matrices
 		// Reset view and model matrices
-		viewMatrix = new Matrix4f();
-		modelMatrix = new Matrix4f();
+		camera.setViewMatrix(new Matrix4f());
+		entity.setModelMatrix(new Matrix4f());
 		
-		// Translate camera
-		Matrix4f.translate(cameraPos, viewMatrix, viewMatrix);
-		
-		// Scale, translate and rotate model
-		Matrix4f.scale(modelScale, modelMatrix, modelMatrix);
-		Matrix4f.translate(modelPos, modelMatrix, modelMatrix);
-		Matrix4f.rotate(this.degreesToRadians(modelAngle.z), new Vector3f(0, 0, 1), 
-				modelMatrix, modelMatrix);
-		Matrix4f.rotate(this.degreesToRadians(modelAngle.y), new Vector3f(0, 1, 0), 
-				modelMatrix, modelMatrix);
-		Matrix4f.rotate(this.degreesToRadians(modelAngle.x), new Vector3f(1, 0, 0), 
-				modelMatrix, modelMatrix);
+		camera.transform(camera.getViewMatrix());
 		
 		// Upload matrices to the uniform variables
 		GL20.glUseProgram(pId);
 		
-		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(projectionMatrixLocation, false, matrix44Buffer);
-		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(viewMatrixLocation, false, matrix44Buffer);
-		modelMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
+		camera.flipBuffers(matrix44Buffer);
+		entity.flipBuffers(matrix44Buffer);
 		
 		GL20.glUseProgram(0);
 		
@@ -370,7 +283,7 @@ public class TheQuadExampleMoving {
 	
 	private void loopCycle() {
 		// Update logic
-		this.logicCycle();
+		this.update();
 		// Update rendered frame
 		this.renderCycle();
 		
@@ -488,13 +401,6 @@ public class TheQuadExampleMoving {
 		return texId;
 	}
 	
-	private float coTangent(float angle) {
-		return (float)(1f / Math.tan(angle));
-	}
-	
-	private float degreesToRadians(float degrees) {
-		return degrees * (float)(PI / 180d);
-	}
 	
 	private void exitOnGLError(String errorMessage) {
 		int errorValue = GL11.glGetError();

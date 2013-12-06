@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class Util {
+	private static final double PI = 3.14159265358979323846;
 	
 	public static String loadAsTextFile(String path) {
 		//InputStream in = Util.class.getClass().getResourceAsStream("/de/hanno/render/shader/vs.vs");
@@ -19,9 +20,17 @@ public class Util {
 		return result;
 	}
 
-	static String convertStreamToString(java.io.InputStream is) {
+	private static String convertStreamToString(java.io.InputStream is) {
 	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
 	    return s.hasNext() ? s.next() : "";
+	}
+
+	public static float coTangent(float angle) {
+		return (float)(1f / Math.tan(angle));
+	}
+	
+	public static float degreesToRadians(float degrees) {
+		return degrees * (float)(PI / 180d);
 	}
 	
 }
