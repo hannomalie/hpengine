@@ -59,11 +59,17 @@ public class Camera {
 		// Change model scale, rotation and translation values
 		switch (eventKey) {
 		// Move
-		case Keyboard.KEY_UP:
+		case Keyboard.KEY_W:
+			position.y -= posDelta;
+			break;
+		case Keyboard.KEY_S:
 			position.y += posDelta;
 			break;
-		case Keyboard.KEY_DOWN:
-			position.y -= posDelta;
+		case Keyboard.KEY_A:
+			position.x += posDelta;
+			break;
+		case Keyboard.KEY_D:
+			position.x -= posDelta;
 			break;
 		// Rotation
 		case Keyboard.KEY_LEFT:
@@ -71,6 +77,12 @@ public class Camera {
 			break;
 		case Keyboard.KEY_RIGHT:
 			angle.z -= rotationDelta;
+			break;
+		case Keyboard.KEY_E:
+			position.z += posDelta;
+			break;
+		case Keyboard.KEY_Q:
+			position.z -= posDelta;
 			break;
 		}
 	}

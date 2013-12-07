@@ -1,19 +1,34 @@
 package main;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import main.util.Util;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
 public class Entity {
-	private Matrix4f modelMatrix = null;
-	private int modelMatrixLocation = 0;
-	private Vector3f position = null;
-	private Vector3f angle = null;
-	private Vector3f scale = null;
+	protected int vaoId = 0;
+	protected int vboId = 0;
+	protected int vboiId = 0;
+
+	protected VertexData[] vertices = null;
+	protected ByteBuffer verticesByteBuffer = null;
+	protected int indicesCount = 0;
+	
+	protected Matrix4f modelMatrix = null;
+	protected int modelMatrixLocation = 0;
+	protected Vector3f position = null;
+	protected Vector3f angle = null;
+	protected Vector3f scale = null;
 	
 	public Entity() {
 		modelMatrix = new Matrix4f();
@@ -21,6 +36,59 @@ public class Entity {
 		position = new Vector3f(0, 0, 0);
 		angle = new Vector3f(0, 0, 0);
 		scale = new Vector3f(1, 1, 1);
+	}
+	
+	public Entity(Model model) {
+		List<Vector3f> verticesTemp = model.getVertices();
+		List<VertexData> verticesConverted = new ArrayList<>();
+		
+		for (Vector3f vertex : verticesTemp) {
+			VertexData vd = new VertexData();
+			vd.setXYZ(vertex.x, vertex.y, vertex.z);
+			vd.setRGB(1, 0, 0);
+			
+			verticesConverted.add(vd);
+		}
+		
+		vertices = new VertexData[verticesConverted.size()];
+		verticesConverted.toArray(vertices);
+		
+		GL20.glEnableVertexAttribArray(0);GL20.glEnableVertexAttribArray(0);GL20.glEnableVertexAttribArray(0);ByteBuffer
+		
+		verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * VertexData.stride);				
+		FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
+		for (int i = 0; i < vertices.length; i++) {
+			// Add position, color and texture floats to the buffer
+			verticesFloatBuffer.put(vertices[i].getElements());
+		}
+		verticesFloatBuffer.flip();
+		
+		vaoId = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(vaoId);
+		
+		// Create a new Vertex Buffer Object in memory and select it (bind)
+		vboId = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STREAM_DRAW);
+		
+		// Put the position coordinates in attribute list 0
+		GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.positionByteOffset);
+		// Put the color components in attribute list 1
+		GL20.glVertexAttribPointer(1, VertexData.colorElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.colorByteOffset);
+		// Put the texture coordinates in attribute list 2
+		GL20.glVertexAttribPointer(2, VertexData.textureElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.textureByteOffset);
+		
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		
+		// Deselect (bind to 0) the VAO
+		GL30.glBindVertexArray(0);
+		
+		// Create a new VBO for the indices and select it (bind) - INDICES
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		
 	}
 
 	public void transform(Matrix4f viewMatrix) {
@@ -37,6 +105,29 @@ public class Entity {
 	public void flipBuffers(FloatBuffer matrix44Buffer) {
 		modelMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 		GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
+	}
+	
+
+	public void draw() {
+		// Bind to the VAO that has all the information about the vertices
+		GL30.glBindVertexArray(vaoId);
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		
+		// Bind to the index VBO that has all the information about the order of the vertices
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		
+		// Draw the vertices
+//		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertices.length);
+		
+		// Put everything back to default (deselect)
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
+		GL30.glBindVertexArray(0);
 	}
 	
 	public Matrix4f getModelMatrix() {
@@ -78,6 +169,28 @@ public class Entity {
 
 	public void setModelMatrixLocation(int modelMatrixLocation) {
 		this.modelMatrixLocation = modelMatrixLocation;
+	}
+
+	public void destroy() {
+
+		// Select the VAO
+		GL30.glBindVertexArray(vaoId);
+		
+		// Disable the VBO index from the VAO attributes list
+		GL20.glDisableVertexAttribArray(0);
+		GL20.glDisableVertexAttribArray(1);
+		
+		// Delete the vertex VBO
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		GL15.glDeleteBuffers(vboId);
+		
+		// Delete the index VBO
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL15.glDeleteBuffers(vboiId);
+		
+		// Delete the VAO
+		GL30.glBindVertexArray(0);
+		GL30.glDeleteVertexArrays(vaoId);
 	}
 
 }
