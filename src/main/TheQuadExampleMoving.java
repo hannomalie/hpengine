@@ -104,6 +104,8 @@ public class TheQuadExampleMoving {
 		
 		// Setup an XNA like background color
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
@@ -119,10 +121,10 @@ public class TheQuadExampleMoving {
 		
 		
 		try {
-			Model suzanne = OBJLoader.loadTexturedModel(new File("C:\\suzanne.obj"));
+			Model suzanne = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 			entity = new Entity(suzanne);
 			entity.setScale(new Vector3f(0.1f, 0.1f, 0.1f));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -197,7 +199,7 @@ public class TheQuadExampleMoving {
 	}
 	
 	private void render() {
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		
 		GL20.glUseProgram(pId);
 		

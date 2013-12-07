@@ -184,7 +184,7 @@ public class OBJLoader {
                 Model.Material parseMaterial = new Model.Material();
                 String parseMaterialName = "";
                 while ((materialLine = materialFileReader.readLine()) != null) {
-                    if (materialLine.startsWith("#")) {
+                    if (materialLine.startsWith("#") || materialLine.startsWith("")) {
                         continue;
                     }
                     if (materialLine.startsWith("newmtl ")) {

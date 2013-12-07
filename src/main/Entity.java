@@ -5,6 +5,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import main.Model.Face;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
@@ -13,6 +14,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
 public class Entity {
@@ -40,14 +42,30 @@ public class Entity {
 	
 	public Entity(Model model) {
 		List<Vector3f> verticesTemp = model.getVertices();
+		List<Vector3f> normalsTemp = model.getNormals();
+		List<Vector2f> texcoordsTemp = model.getTextureCoordinates();
+		List<Face> facesTemp = model.getFaces();
+		
 		List<VertexData> verticesConverted = new ArrayList<>();
 		
-		for (Vector3f vertex : verticesTemp) {
-			VertexData vd = new VertexData();
-			vd.setXYZ(vertex.x, vertex.y, vertex.z);
-			vd.setRGB(1, 0, 0);
+		for (int i = 0; i < facesTemp.size(); i++) {
+			Face face = facesTemp.get(i);
+
+			int[] referencedVertices = face.getVertexIndices();
+			int[] referencedNormals = face.getNormalIndices();
+			int[] referencedTexcoords = face.getTextureCoordinateIndices();
 			
-			verticesConverted.add(vd);
+			for (int j = 0; j < 3; j++) {
+				VertexData vd = new VertexData();
+				Vector3f referencedVertex = verticesTemp.get(Math.abs(referencedVertices[j])-1);
+				Vector3f referencedNormal = normalsTemp.get(Math.abs(referencedNormals[j])-1);
+				Vector2f referencedTexcoord = texcoordsTemp.get(Math.abs(referencedTexcoords[j])-1);
+				
+				vd.setXYZ(referencedVertex.x, referencedVertex.y, referencedVertex.z);
+				vd.setN(referencedNormal.x, referencedNormal.y, referencedNormal.z);
+				vd.setST(referencedTexcoord.x, referencedTexcoord.y);
+				verticesConverted.add(vd);
+			}
 		}
 		
 		vertices = new VertexData[verticesConverted.size()];
