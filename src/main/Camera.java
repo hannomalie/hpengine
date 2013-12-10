@@ -1,10 +1,15 @@
 package main;
 
+import java.awt.RenderingHints.Key;
 import java.nio.FloatBuffer;
 
 import main.util.Util;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Cursor;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -15,7 +20,7 @@ public class Camera {
 	
 	private float rotationDelta = 15f;
 	private float scaleDelta = 0.1f;
-	private float posDelta = 0.1f;
+	private float posDelta = 0.01f;
 	
 	Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
 	Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
@@ -25,6 +30,7 @@ public class Camera {
 	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
+	private float rotationSpeed = 0.12f;
 	
 	public Camera() {
 		projectionMatrix = new Matrix4f();
@@ -54,49 +60,59 @@ public class Camera {
 		
 	}
 	
-	public void updateControls(int eventKey) {
+	public void updateControls() {
+
+		if (Mouse.isButtonDown(0)) {
+			angle.y += Mouse.getDX() * rotationSpeed;
+			angle.x += -Mouse.getDY() * rotationSpeed;
+		}
+		Vector3f right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
+		Vector3f up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
+		Vector3f back = new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22);
 		
-		// Change model scale, rotation and translation values
-		switch (eventKey) {
-		// Move
-		case Keyboard.KEY_W:
-			position.y -= posDelta;
-			break;
-		case Keyboard.KEY_S:
-			position.y += posDelta;
-			break;
-		case Keyboard.KEY_A:
-			position.x += posDelta;
-			break;
-		case Keyboard.KEY_D:
-			position.x -= posDelta;
-			break;
-		// Rotation
-		case Keyboard.KEY_LEFT:
-			angle.z += rotationDelta;
-			break;
-		case Keyboard.KEY_RIGHT:
-			angle.z -= rotationDelta;
-			break;
-		case Keyboard.KEY_E:
-			position.z += posDelta;
-			break;
-		case Keyboard.KEY_Q:
-			position.z -= posDelta;
-			break;
+		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+			position.x -= posDelta * back.x;
+			position.y -= posDelta * back.y;
+			position.z -= posDelta * -back.z;
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+			position.x += posDelta * right.x;
+			position.y += posDelta * right.y;
+			position.z += posDelta * -right.z;
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+			position.x += posDelta * back.x;
+			position.y += posDelta * back.y;
+			position.z += posDelta * -back.z;
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+			position.x -= posDelta * right.x;
+			position.y -= posDelta * right.y;
+			position.z -= posDelta * -right.z;
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+			position.x += posDelta * up.x;
+			position.y += posDelta * up.y;
+			position.z += posDelta * -up.z;
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+			position.x -= posDelta * up.x;
+			position.y -= posDelta * up.y;
+			position.z -= posDelta * -up.z;
 		}
 	}
 	
 
-	public void transform(Matrix4f viewMatrix) {
-
-		Matrix4f.translate(position, viewMatrix, viewMatrix);
+	public void transform() {
+		setViewMatrix(new Matrix4f());
 		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
 				viewMatrix, viewMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
 				viewMatrix, viewMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.x), new Vector3f(1, 0, 0), 
 				viewMatrix, viewMatrix);
+
+		Matrix4f.translate(position, viewMatrix, viewMatrix);
 	}
 	
 	public void flipBuffers(FloatBuffer matrix44Buffer) {

@@ -21,10 +21,13 @@ public class Entity {
 	protected int vaoId = 0;
 	protected int vboId = 0;
 	protected int vboiId = 0;
+	
+	FloatBuffer matrix44Buffer;
 
 	protected VertexData[] vertices = null;
 	protected ByteBuffer verticesByteBuffer = null;
 	protected int indicesCount = 0;
+	ByteBuffer indicesBuffer = null;
 	
 	protected Matrix4f modelMatrix = null;
 	protected int modelMatrixLocation = 0;
@@ -32,15 +35,28 @@ public class Entity {
 	protected Vector3f angle = null;
 	protected Vector3f scale = null;
 	
-	public Entity() {
-		modelMatrix = new Matrix4f();
-
-		position = new Vector3f(0, 0, 0);
-		angle = new Vector3f(0, 0, 0);
-		scale = new Vector3f(1, 1, 1);
-	}
+//	public Entity(Vector3f position) {
+//		modelMatrix = new Matrix4f();
+//		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+//
+//		this.position = position;
+//		angle = new Vector3f(0, 0, 0);
+//		scale = new Vector3f(1, 1, 1);
+//	}
 	
 	public Entity(Model model) {
+		this(model, new Vector3f(0, 0, 0));
+	}
+	
+	public Entity(Model model, Vector3f position) {
+		modelMatrix = new Matrix4f();
+		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+
+		this.position = position;
+		angle = new Vector3f(0, 0, 0);
+		scale = new Vector3f(1, 1, 1);
+		
+		
 		List<Vector3f> verticesTemp = model.getVertices();
 		List<Vector3f> normalsTemp = model.getNormals();
 		List<Vector2f> texcoordsTemp = model.getTextureCoordinates();
@@ -71,9 +87,15 @@ public class Entity {
 		vertices = new VertexData[verticesConverted.size()];
 		verticesConverted.toArray(vertices);
 		
-		GL20.glEnableVertexAttribArray(0);GL20.glEnableVertexAttribArray(0);GL20.glEnableVertexAttribArray(0);ByteBuffer
+		verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * 
+				VertexData.stride);	
 		
-		verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * VertexData.stride);				
+		GL20.glEnableVertexAttribArray(0);
+		GL20.glEnableVertexAttribArray(1);
+		GL20.glEnableVertexAttribArray(2);
+		GL20.glEnableVertexAttribArray(3);
+		
+		ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * VertexData.stride);				
 		FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
 		for (int i = 0; i < vertices.length; i++) {
 			// Add position, color and texture floats to the buffer
@@ -89,15 +111,14 @@ public class Entity {
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STREAM_DRAW);
 		
-		// Put the position coordinates in attribute list 0
 		GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, 
 				false, VertexData.stride, VertexData.positionByteOffset);
-		// Put the color components in attribute list 1
 		GL20.glVertexAttribPointer(1, VertexData.colorElementCount, GL11.GL_FLOAT, 
 				false, VertexData.stride, VertexData.colorByteOffset);
-		// Put the texture coordinates in attribute list 2
 		GL20.glVertexAttribPointer(2, VertexData.textureElementCount, GL11.GL_FLOAT, 
 				false, VertexData.stride, VertexData.textureByteOffset);
+		GL20.glVertexAttribPointer(3, VertexData.normalElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.normalByteOffset);
 		
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		
@@ -109,20 +130,22 @@ public class Entity {
 		
 	}
 
-	public void transform(Matrix4f viewMatrix) {
+	public void transform() {
+		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
-				viewMatrix, viewMatrix);
+				modelMatrix, modelMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
-				viewMatrix, viewMatrix);
+				modelMatrix, modelMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.x), new Vector3f(1, 0, 0), 
-				viewMatrix, viewMatrix);
+				modelMatrix, modelMatrix);
 	}
 
-	public void flipBuffers(FloatBuffer matrix44Buffer) {
-		modelMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
+	public void flipBuffers() {
+		modelMatrix.store(matrix44Buffer);
+		matrix44Buffer.flip();
+		GL20.glUniformMatrix4(TheQuadExampleMoving.modelMatrixLocation, false, matrix44Buffer);
 	}
 	
 
@@ -132,19 +155,21 @@ public class Entity {
 		GL20.glEnableVertexAttribArray(0);
 		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
-		
-		// Bind to the index VBO that has all the information about the order of the vertices
+		GL20.glEnableVertexAttribArray(3);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+		TheQuadExampleMoving.exitOnGLError("bindbuffer in entity");
 		
-		// Draw the vertices
-//		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
+		flipBuffers();
+		TheQuadExampleMoving.exitOnGLError("flipbuffers in entity");
+		//		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertices.length);
-		
-		// Put everything back to default (deselect)
+
+		TheQuadExampleMoving.exitOnGLError("drawArrays in entity");
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
 		GL20.glDisableVertexAttribArray(2);
+		GL20.glDisableVertexAttribArray(3);
 		GL30.glBindVertexArray(0);
 	}
 	
