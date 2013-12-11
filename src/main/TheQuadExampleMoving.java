@@ -164,8 +164,8 @@ public class TheQuadExampleMoving {
 		GL20.glBindAttribLocation(pId, 1, "in_Color");
 		GL20.glBindAttribLocation(pId, 2, "in_TextureCoord");
 		GL20.glBindAttribLocation(pId, 3, "in_Normal");
-		GL20.glBindAttribLocation(pId, 3, "in_Binormal");
-		GL20.glBindAttribLocation(pId, 3, "in_Tangent");
+		GL20.glBindAttribLocation(pId, 4, "in_Binormal");
+		GL20.glBindAttribLocation(pId, 5, "in_Tangent");
 
 		GL20.glLinkProgram(pId);
 		GL20.glValidateProgram(pId);

@@ -36,7 +36,7 @@ public class Camera {
 		projectionMatrix = new Matrix4f();
 		float fieldOfView = 60f;
 		float aspectRatio = (float)TheQuadExampleMoving.WIDTH / (float)TheQuadExampleMoving.HEIGHT;
-		float near_plane = 0.1f;
+		float near_plane = 0.001f;
 		float far_plane = 100f;
 		
 		float y_scale = Util.coTangent(Util.degreesToRadians(fieldOfView / 2f));
