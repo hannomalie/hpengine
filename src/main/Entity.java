@@ -70,18 +70,55 @@ public class Entity {
 			int[] referencedVertices = face.getVertexIndices();
 			int[] referencedNormals = face.getNormalIndices();
 			int[] referencedTexcoords = face.getTextureCoordinateIndices();
+
+			// for normalmapping
+			Vector3f[] nm_vertives= new Vector3f[3];
+			Vector2f[] nm_tcoords= new Vector2f[3];
+			VertexData[] vds = new VertexData[3];
 			
 			for (int j = 0; j < 3; j++) {
 				VertexData vd = new VertexData();
 				Vector3f referencedVertex = verticesTemp.get(Math.abs(referencedVertices[j])-1);
 				Vector3f referencedNormal = normalsTemp.get(Math.abs(referencedNormals[j])-1);
 				Vector2f referencedTexcoord = texcoordsTemp.get(Math.abs(referencedTexcoords[j])-1);
-				
+				vd.setST(referencedTexcoord.x, referencedTexcoord.y);
 				vd.setXYZ(referencedVertex.x, referencedVertex.y, referencedVertex.z);
 				vd.setN(referencedNormal.x, referencedNormal.y, referencedNormal.z);
-				vd.setST(referencedTexcoord.x, referencedTexcoord.y);
 				verticesConverted.add(vd);
+
+				nm_vertives[j] = referencedVertex;
+				nm_tcoords[j] = referencedTexcoord;
+				vds[j] = vd;
 			}
+
+
+			Vector3f D = null;
+			Vector3f E = null;
+			D = Vector3f.sub(nm_vertives[1], nm_vertives[0], D);
+			E = Vector3f.sub(nm_vertives[2], nm_vertives[0], E);
+			
+			Vector2f F = null;
+			Vector2f G = null;
+			F = Vector2f.sub(nm_tcoords[1], nm_tcoords[0], F);
+			G = Vector2f.sub(nm_tcoords[2], nm_tcoords[0], G);
+			
+			float coef = 1/(F.x * G.y - F.y * G.x);
+			
+			Vector3f tangent = new Vector3f();
+
+			tangent.x = (G.y * D.x - F.y * E.x) * coef;
+			tangent.y = (G.y * D.y - F.y * E.y) * coef;
+			tangent.z = (G.y * D.z - F.y * E.z) * coef;
+			tangent.normalise();
+			vds[0].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
+			vds[1].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
+			vds[2].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
+			
+			Vector3f biNormal = null;
+			biNormal = Vector3f.cross(tangent, new Vector3f(vds[0].getN()[0],vds[0].getN()[1],vds[0].getN()[1] ), biNormal);
+			vds[0].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
+			vds[1].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
+			vds[2].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
 		}
 		
 		vertices = new VertexData[verticesConverted.size()];
@@ -94,8 +131,11 @@ public class Entity {
 		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
 		GL20.glEnableVertexAttribArray(3);
+		GL20.glEnableVertexAttribArray(4);
+		GL20.glEnableVertexAttribArray(5);
 		
-		ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * VertexData.stride);				
+		//ByteBuffer 
+		verticesByteBuffer = BufferUtils.createByteBuffer(vertices.length * VertexData.stride);				
 		FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
 		for (int i = 0; i < vertices.length; i++) {
 			// Add position, color and texture floats to the buffer
@@ -119,6 +159,10 @@ public class Entity {
 				false, VertexData.stride, VertexData.textureByteOffset);
 		GL20.glVertexAttribPointer(3, VertexData.normalElementCount, GL11.GL_FLOAT, 
 				false, VertexData.stride, VertexData.normalByteOffset);
+		GL20.glVertexAttribPointer(4, VertexData.binormalElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.binormalByteOffset);
+		GL20.glVertexAttribPointer(5, VertexData.tangentElementCount, GL11.GL_FLOAT, 
+				false, VertexData.stride, VertexData.tangentByteOffset);
 		
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		
@@ -156,6 +200,8 @@ public class Entity {
 		GL20.glEnableVertexAttribArray(1);
 		GL20.glEnableVertexAttribArray(2);
 		GL20.glEnableVertexAttribArray(3);
+		GL20.glEnableVertexAttribArray(4);
+		GL20.glEnableVertexAttribArray(5);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
 		TheQuadExampleMoving.exitOnGLError("bindbuffer in entity");
 		
@@ -170,6 +216,8 @@ public class Entity {
 		GL20.glDisableVertexAttribArray(1);
 		GL20.glDisableVertexAttribArray(2);
 		GL20.glDisableVertexAttribArray(3);
+		GL20.glDisableVertexAttribArray(4);
+		GL20.glDisableVertexAttribArray(5);
 		GL30.glBindVertexArray(0);
 	}
 	

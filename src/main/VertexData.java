@@ -1,11 +1,16 @@
 package main;
+
+import org.lwjgl.util.vector.Vector3f;
+
 public class VertexData {
 	// Vertex data
 	private float[] xyzw = new float[] {0f, 0f, 0f, 1f};
 	private float[] rgba = new float[] {1f, 1f, 1f, 1f};
 	private float[] n = new float[] {0f, 0f, 0f};
 	private float[] st = new float[] {0f, 0f};
-	
+	private float[] bn = new float[] {0f, 0f, 0f};
+	private float[] ta = new float[] {0f, 0f, 0f};
+
 	// The amount of bytes an element has
 	public static final int elementBytes = 4;
 	
@@ -14,25 +19,31 @@ public class VertexData {
 	public static final int colorElementCount = 4;
 	public static final int normalElementCount = 3;
 	public static final int textureElementCount = 2;
+	public static final int binormalElementCount = 3;
+	public static final int tangentElementCount = 3;
 	
 	// Bytes per parameter
 	public static final int positionBytesCount = positionElementCount * elementBytes;
 	public static final int colorByteCount = colorElementCount * elementBytes;
 	public static final int normalByteCount = normalElementCount * elementBytes;
 	public static final int textureByteCount = textureElementCount * elementBytes;
+	public static final int binormalByteCount = binormalElementCount * elementBytes;
+	public static final int tangentByteCount = tangentElementCount * elementBytes;
 	
 	// Byte offsets per parameter
 	public static final int positionByteOffset = 0;
 	public static final int colorByteOffset = positionByteOffset + positionBytesCount;
-	public static final int normalByteOffset = colorByteOffset + positionBytesCount;
-	public static final int textureByteOffset = normalByteOffset + colorByteCount;
+	public static final int normalByteOffset = colorByteOffset + colorByteCount;
+	public static final int textureByteOffset = normalByteOffset + normalByteCount;
+	public static final int binormalByteOffset = textureByteOffset + textureByteCount;
+	public static final int tangentByteOffset = binormalByteOffset + binormalByteCount;
 	
 	// The amount of elements that a vertex has
 	public static final int elementCount = positionElementCount + 
-			colorElementCount + normalElementCount + textureElementCount;
+			colorElementCount + normalElementCount + textureElementCount + binormalElementCount + tangentElementCount;
 	// The size of a vertex in bytes, like in C/C++: sizeof(Vertex)
 	public static final int stride = positionBytesCount + colorByteCount + 
-			normalByteCount + textureByteCount;
+			normalByteCount + textureByteCount + binormalByteCount + tangentByteCount;
 	
 	// Setters
 	public void setXYZ(float x, float y, float z) {
@@ -81,6 +92,14 @@ public class VertexData {
 		// Insert ST elements
 		out[i++] = this.st[0];
 		out[i++] = this.st[1];
+		// insert binormal elements
+		out[i++] = this.bn[0];
+		out[i++] = this.bn[1];
+		out[i++] = this.bn[2];
+		// insert tangent elements
+		out[i++] = this.ta[0];
+		out[i++] = this.ta[1];
+		out[i++] = this.ta[2];
 		
 		return out;
 	}
@@ -106,5 +125,21 @@ public class VertexData {
 	
 	public float[] getST() {
 		return new float[] {this.st[0], this.st[1]};
+	}
+
+	public void setTangent(float[] tangent) {
+		this.ta = tangent;
+	}
+
+	public float[] getTangent() {
+		return ta;
+	}
+
+	public void setBinormal(float[] biNormal) {
+		this.bn = biNormal;
+	}
+
+	public float[] getBinormal() {
+		return bn;
 	}
 }

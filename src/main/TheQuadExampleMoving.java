@@ -43,7 +43,9 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 public class TheQuadExampleMoving {
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 600;
-	static int modelMatrixLocation;
+	public static int modelMatrixLocation;
+	public static int lightDirectionLocation;
+	public static Vector3f lightDirectionVector3f = new Vector3f(1,1,1);
 	// Entry point for the application
 	public static void main(String[] args) {
 		new TheQuadExampleMoving();
@@ -95,8 +97,8 @@ public class TheQuadExampleMoving {
 	}
 
 	private void setupTextures() {
-		texIds[0] = this.loadTextureToGL("/assets/textures/techtrends.png", pId, "diffuseMap", 0);
-		texIds[1] = this.loadTextureToGL("/assets/textures/brickwork_normal-map.png", pId, "normalMap", 1);
+		texIds[0] = this.loadTextureToGL("/assets/textures/stone_diffuse.png", pId, "diffuseMap", 0);
+		texIds[1] = this.loadTextureToGL("/assets/textures/stone_bump.png", pId, "normalMap", 1);
 		
 		this.exitOnGLError("setupTexture");
 	}
@@ -162,6 +164,8 @@ public class TheQuadExampleMoving {
 		GL20.glBindAttribLocation(pId, 1, "in_Color");
 		GL20.glBindAttribLocation(pId, 2, "in_TextureCoord");
 		GL20.glBindAttribLocation(pId, 3, "in_Normal");
+		GL20.glBindAttribLocation(pId, 3, "in_Binormal");
+		GL20.glBindAttribLocation(pId, 3, "in_Tangent");
 
 		GL20.glLinkProgram(pId);
 		GL20.glValidateProgram(pId);
@@ -169,6 +173,7 @@ public class TheQuadExampleMoving {
 		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(pId,"projectionMatrix"));
 		camera.setViewMatrixLocation(GL20.glGetUniformLocation(pId, "viewMatrix"));
 		TheQuadExampleMoving.modelMatrixLocation = GL20.glGetUniformLocation(pId, "modelMatrix");
+		TheQuadExampleMoving.lightDirectionLocation = GL20.glGetUniformLocation(pId, "ld");
 
 		GL20.glUseProgram(pId);
 		
@@ -176,6 +181,14 @@ public class TheQuadExampleMoving {
 	}
 	
 	private void update() {
+
+		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+			lightDirectionVector3f.x -= 0.05;
+			if (lightDirectionVector3f.x <= -1) {
+				lightDirectionVector3f.x = 1;
+			}
+		}
+		GL20.glUniform3f(TheQuadExampleMoving.lightDirectionLocation, lightDirectionVector3f.x, lightDirectionVector3f.y, lightDirectionVector3f.z );
 		
 		camera.updateControls();
 		

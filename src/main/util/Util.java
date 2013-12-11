@@ -6,11 +6,8 @@ import java.nio.ByteBuffer;
 
 import main.TextureBuffer;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
@@ -77,5 +74,4 @@ public class Util {
 	public static float degreesToRadians(float degrees) {
 		return degrees * (float)(PI / 180d);
 	}
-	
 }
