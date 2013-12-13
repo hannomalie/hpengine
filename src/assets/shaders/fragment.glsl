@@ -2,6 +2,9 @@
 
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
+layout(binding=2) uniform sampler2D specularMap;
+layout(binding=3) uniform sampler2D occlusionMap;
+layout(binding=4) uniform sampler2D heightMap;
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -21,23 +24,35 @@ in vec3 pass_eyeVec;
 out vec4 out_Color;
 
 void main(void) {
-	vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
-	vec4 specularMaterial = vec4(1.0);
-	vec4 diffuseLight = vec4(1,1,1,1);
-	vec4 specularLight = vec4(1,1,1,1);
 
-	vec3 normal = pass_Normal;
-	normal = 2.0 * texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
-	normal = (vec4(normal, 1) * viewMatrix * modelMatrix).xyz;
-	normal = normalize (normal);
+	bool parallax = false;
+	if (parallax) {
+		float height = texture2D(heightMap, pass_TextureCoord).r;
+		float v = height * 0.04 - 0.012;
+		vec2 newCoords = pass_TextureCoord + (pass_eyeVec.xy * v);
+		out_Color = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
 	
-	float shininess;
+	} else {
+		vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
+		
+		vec4 specularMaterial = texture2D(specularMap, pass_TextureCoord);
+		vec4 occlusionMaterial = texture2D(occlusionMap, pass_TextureCoord);
+		vec4 diffuseLight = vec4(1,1,1,1);
+		vec4 specularLight = vec4(1,1,1,1);
+		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 	
-	float lamberFactor = max(dot(pass_LightDirection, normal), 0.0);
-	if (lamberFactor > 0.0)
-	{
-		shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
-		out_Color = diffuseMaterial * diffuseLight * lamberFactor;
-		out_Color += specularMaterial * specularLight * shininess;
+		vec3 normal = texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
+		normal = normalize (normal);
+		
+		float shininess;
+		
+		float lamberFactor = max(dot(pass_LightVec, normal), 0.0);
+		if (lamberFactor > 0.0)
+		{
+			shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
+			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
+			out_Color += 0.5*specularMaterial * specularLight * shininess;
+		}
+		out_Color +=ambientLight*occlusionMaterial;
 	}
 }

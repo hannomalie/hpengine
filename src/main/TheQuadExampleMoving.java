@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.DebugGraphics;
 
@@ -43,9 +45,13 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 public class TheQuadExampleMoving {
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 600;
+	int fps;
+	long lastFPS;
+	long lastFrame;
+	
 	public static int modelMatrixLocation;
-	public static int lightDirectionLocation;
-	public static Vector3f lightDirectionVector3f = new Vector3f(1,1,1);
+	public static int lightPositionLocation;
+	public static Vector3f lightPosition = new Vector3f(-3,-3,-3);
 	// Entry point for the application
 	public static void main(String[] args) {
 		new TheQuadExampleMoving();
@@ -57,18 +63,21 @@ public class TheQuadExampleMoving {
 	// Shader variables
 	private int pId = 0;
 	// Texture variables
-	private int[] texIds = new int[] {0, 1};
+	private int[] texIds = new int[] {0, 1, 2, 3, 4};
 	private int textureSelector = 0;
 	// Moving variables
 	private Camera camera = new Camera();
 	private FloatBuffer matrix44Buffer = null;
-	private Entity entity = null;
-	private Entity entity2 = null;
+	private List<Entity> entities = new ArrayList<>();
+	private int entityCount = 5;
+//	private Entity entity = null;
+//	private Entity entity2 = null;
 //	private Entity quad;
 	
 	public TheQuadExampleMoving() {
-		// Initialize OpenGL (Display)
 		this.setupOpenGL();
+		getDelta();
+		lastFPS = Util.getTime();
 		
 		this.setupQuad();
 		this.setupShaders();
@@ -98,7 +107,10 @@ public class TheQuadExampleMoving {
 
 	private void setupTextures() {
 		texIds[0] = this.loadTextureToGL("/assets/textures/stone_diffuse.png", pId, "diffuseMap", 0);
-		texIds[1] = this.loadTextureToGL("/assets/textures/stone_bump.png", pId, "normalMap", 1);
+		texIds[1] = this.loadTextureToGL("/assets/textures/stone_normal.png", pId, "normalMap", 1);
+		texIds[2] = this.loadTextureToGL("/assets/textures/stone_specular.png", pId, "specularMap", 2);
+		texIds[3] = this.loadTextureToGL("/assets/textures/stone_occlusion.png", pId, "occlusionMap", 3);
+		texIds[4] = this.loadTextureToGL("/assets/textures/stone_height.png", pId, "heightMap", 4);
 		
 		this.exitOnGLError("setupTexture");
 	}
@@ -139,12 +151,15 @@ public class TheQuadExampleMoving {
 		
 		
 		try {
-			Model suzanne = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
-			entity = new Entity(suzanne, new Vector3f(0,2,0));
-			Model suzanne2 = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
-			entity2 = new Entity(suzanne2);
-			entity.setScale(new Vector3f(0.1f, 0.1f, 0.1f));
-			entity2.setScale(new Vector3f(0.1f, 0.1f, 0.1f));
+			Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
+			for (int i = 0; i < entityCount; i++) {
+				for (int j = 0; j < entityCount; j++) {
+					Entity entity = new Entity(box, new Vector3f(i*2,0,j*2));
+					entity.setScale(new Vector3f(0.1f, 0.1f, 0.1f));
+					entities.add(entity);
+				}
+			}
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -173,7 +188,7 @@ public class TheQuadExampleMoving {
 		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(pId,"projectionMatrix"));
 		camera.setViewMatrixLocation(GL20.glGetUniformLocation(pId, "viewMatrix"));
 		TheQuadExampleMoving.modelMatrixLocation = GL20.glGetUniformLocation(pId, "modelMatrix");
-		TheQuadExampleMoving.lightDirectionLocation = GL20.glGetUniformLocation(pId, "ld");
+		TheQuadExampleMoving.lightPositionLocation = GL20.glGetUniformLocation(pId, "lightPosition");
 
 		GL20.glUseProgram(pId);
 		
@@ -183,25 +198,57 @@ public class TheQuadExampleMoving {
 	private void update() {
 
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			lightDirectionVector3f.x -= 0.05;
-			if (lightDirectionVector3f.x <= -1) {
-				lightDirectionVector3f.x = 1;
+			lightPosition.x -= 0.25;
+			if (lightPosition.x <= -10) {
+				lightPosition.x = 10;
 			}
 		}
-		GL20.glUniform3f(TheQuadExampleMoving.lightDirectionLocation, lightDirectionVector3f.x, lightDirectionVector3f.y, lightDirectionVector3f.z );
+		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+			lightPosition.x += 0.25;
+			if (lightPosition.x >= 10) {
+				lightPosition.x = -10;
+			}
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+			lightPosition.z -= 0.25;
+			if (lightPosition.z <= -10) {
+				lightPosition.z = 10;
+			}
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+			lightPosition.z += 0.25;
+			if (lightPosition.z >= 10) {
+				lightPosition.z = -10;
+			}
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_ADD)) {
+			lightPosition.y += 0.25;
+			if (lightPosition.y >= 10) {
+				lightPosition.y = -10;
+			}
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_MINUS)) {
+			lightPosition.y -= 0.25;
+			if (lightPosition.y <= -10) {
+				lightPosition.y = 10;
+			}
+		}
+//		System.out.println("LightPosition: " + lightPosition);
+		GL20.glUniform3f(TheQuadExampleMoving.lightPositionLocation, lightPosition.x, lightPosition.y, lightPosition.z );
 		
 		camera.updateControls();
 		
 		camera.transform();
 //		quad.transform();
-		entity.transform();
-		entity2.transform();
-		
+		for (Entity entity: entities) {
+			entity.transform();
+		}
 		GL20.glUseProgram(pId);
 		
 		camera.flipBuffers(matrix44Buffer);
 		
 		this.exitOnGLError("update");
+		updateFPS();
 	}
 	
 	private void render() {
@@ -211,8 +258,9 @@ public class TheQuadExampleMoving {
 		this.exitOnGLError("useProgram in render");
 		
 //		quad.draw();
-		entity.draw();
-		entity2.draw();
+		for (Entity entity: entities) {
+			entity.draw();
+		}
 		
 		
 		this.exitOnGLError("draw in render");
@@ -234,8 +282,10 @@ public class TheQuadExampleMoving {
 		GL20.glUseProgram(0);
 		GL20.glDeleteProgram(pId);
 
-		entity.destroy();
-		entity2.destroy();
+		for (Entity entity: entities) {
+			entity.destroy();
+		}
+		
 //		quad.destroy();
 		this.exitOnGLError("destroyOpenGL");
 		
@@ -285,6 +335,22 @@ public class TheQuadExampleMoving {
 		this.exitOnGLError("loadPNGTexture");
 
 		return texId;
+	}
+	public void updateFPS() {
+		if (Util.getTime() - lastFPS > 1000) {
+			Display.setTitle("FPS: " + fps);
+			fps = 0;
+			lastFPS += 1000;
+		}
+		fps++;
+	}
+
+	public int getDelta() {
+		long time = Util.getTime();
+		int delta = (int) (time - lastFrame);
+		lastFrame = time;
+		 
+		return delta;
 	}
 	
 	

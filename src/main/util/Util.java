@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 
 import main.TextureBuffer;
 
+import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -73,5 +74,9 @@ public class Util {
 	
 	public static float degreesToRadians(float degrees) {
 		return degrees * (float)(PI / 180d);
+	}
+	
+	public static long getTime() {
+		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
 	}
 }
