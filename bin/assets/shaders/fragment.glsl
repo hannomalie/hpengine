@@ -6,6 +6,8 @@ layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 
+uniform bool useParallax;
+
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
@@ -25,8 +27,7 @@ out vec4 out_Color;
 
 void main(void) {
 
-	bool parallax = false;
-	if (parallax) {
+	if (useParallax) {
 		float height = texture2D(heightMap, pass_TextureCoord).r;
 		float v = height * 0.04 - 0.012;
 		vec2 newCoords = pass_TextureCoord + (pass_eyeVec.xy * v);

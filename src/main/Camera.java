@@ -65,6 +65,7 @@ public class Camera {
 		if (Mouse.isButtonDown(0)) {
 			angle.y += Mouse.getDX() * rotationSpeed;
 			angle.x += -Mouse.getDY() * rotationSpeed;
+			angle.z += -Mouse.getDY() * rotationSpeed;
 		}
 		Vector3f right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
 		Vector3f up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);

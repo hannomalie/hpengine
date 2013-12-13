@@ -52,6 +52,8 @@ public class TheQuadExampleMoving {
 	public static int modelMatrixLocation;
 	public static int lightPositionLocation;
 	public static Vector3f lightPosition = new Vector3f(-3,-3,-3);
+	public static int useParallaxLocation;
+	public static int useParallax = 0;
 	// Entry point for the application
 	public static void main(String[] args) {
 		new TheQuadExampleMoving();
@@ -189,6 +191,7 @@ public class TheQuadExampleMoving {
 		camera.setViewMatrixLocation(GL20.glGetUniformLocation(pId, "viewMatrix"));
 		TheQuadExampleMoving.modelMatrixLocation = GL20.glGetUniformLocation(pId, "modelMatrix");
 		TheQuadExampleMoving.lightPositionLocation = GL20.glGetUniformLocation(pId, "lightPosition");
+		TheQuadExampleMoving.useParallaxLocation = GL20.glGetUniformLocation(pId, "useParallax");
 
 		GL20.glUseProgram(pId);
 		
@@ -233,8 +236,14 @@ public class TheQuadExampleMoving {
 				lightPosition.y = 10;
 			}
 		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_1)) {
+			if(useParallax == 0) {
+				useParallax = 1;
+			} else useParallax = 0;
+		}
 //		System.out.println("LightPosition: " + lightPosition);
 		GL20.glUniform3f(TheQuadExampleMoving.lightPositionLocation, lightPosition.x, lightPosition.y, lightPosition.z );
+		GL20.glUniform1i(TheQuadExampleMoving.useParallaxLocation, useParallax);
 		
 		camera.updateControls();
 		
