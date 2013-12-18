@@ -29,10 +29,26 @@ void main(void) {
 
 	if (useParallax) {
 		float height = texture2D(heightMap, pass_TextureCoord).r;
-		float v = height * 0.04 - 0.012;
+		float v = height * 0.106 - 0.012;
 		vec2 newCoords = pass_TextureCoord + (pass_eyeVec.xy * v);
 		out_Color = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
-	
+		
+		vec4 diffuseLight = vec4(1,1,1,1);
+		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
+		vec3 normal = texture2D(normalMap, newCoords).rgb - 1.0;
+		normal = normalize (normal);
+		float lamberFactor = max(dot(pass_LightVec, pass_Normal), 0.0);
+		if (lamberFactor > 0.0)
+		{
+			out_Color *= diffuseLight * lamberFactor;
+			vec4 specularLight = vec4(1,1,1,1);
+			vec3 normal = texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
+			float shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
+			vec4 specularMaterial = texture2D(specularMap, newCoords);
+			out_Color += 0.5*specularMaterial * specularLight * shininess;
+		}
+		out_Color +=ambientLight;
+		
 	} else {
 		vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
 		
@@ -54,6 +70,6 @@ void main(void) {
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
 			out_Color += 0.5*specularMaterial * specularLight * shininess;
 		}
-		out_Color +=ambientLight*occlusionMaterial;
+		out_Color +=ambientLight;//*occlusionMaterial;
 	}
 }

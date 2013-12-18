@@ -38,6 +38,7 @@ import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.newdawn.slick.tests.TestUtils;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
@@ -108,11 +109,13 @@ public class TheQuadExampleMoving {
 	}
 
 	private void setupTextures() {
-		texIds[0] = this.loadTextureToGL("/assets/textures/stone_diffuse.png", pId, "diffuseMap", 0);
-		texIds[1] = this.loadTextureToGL("/assets/textures/stone_normal.png", pId, "normalMap", 1);
-		texIds[2] = this.loadTextureToGL("/assets/textures/stone_specular.png", pId, "specularMap", 2);
-		texIds[3] = this.loadTextureToGL("/assets/textures/stone_occlusion.png", pId, "occlusionMap", 3);
-		texIds[4] = this.loadTextureToGL("/assets/textures/stone_height.png", pId, "heightMap", 4);
+		String texture = "wood";
+		texture = "stone";
+		texIds[0] = this.loadTextureToGL("/assets/textures/" + texture + "_diffuse.png", pId, "diffuseMap", 0);
+		texIds[1] = this.loadTextureToGL("/assets/textures/" + texture + "_normal.png", pId, "normalMap", 1);
+		texIds[2] = this.loadTextureToGL("/assets/textures/" + texture + "_specular.png", pId, "specularMap", 2);
+		texIds[3] = this.loadTextureToGL("/assets/textures/" + texture + "_occlusion.png", pId, "occlusionMap", 3);
+		texIds[4] = this.loadTextureToGL("/assets/textures/" + texture + "_height.png", pId, "heightMap", 4);
 		
 		this.exitOnGLError("setupTexture");
 	}
