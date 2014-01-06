@@ -35,7 +35,7 @@ public class Camera {
 	public Camera() {
 		projectionMatrix = new Matrix4f();
 		float fieldOfView = 60f;
-		float aspectRatio = (float)TheQuadExampleMoving.WIDTH / (float)TheQuadExampleMoving.HEIGHT;
+		float aspectRatio = (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT;
 		float near_plane = 0.001f;
 		float far_plane = 100f;
 		

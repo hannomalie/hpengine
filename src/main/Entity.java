@@ -17,10 +17,11 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Entity {
+public class Entity implements IEntity {
 	protected int vaoId = 0;
 	protected int vboId = 0;
 	protected int vboiId = 0;
+
 	
 	FloatBuffer matrix44Buffer;
 
@@ -34,6 +35,7 @@ public class Entity {
 	protected Vector3f position = null;
 	protected Vector3f angle = null;
 	protected Vector3f scale = null;
+	private Material material;
 	
 //	public Entity(Vector3f position) {
 //		modelMatrix = new Matrix4f();
@@ -45,10 +47,10 @@ public class Entity {
 //	}
 	
 	public Entity(Model model) {
-		this(model, new Vector3f(0, 0, 0));
+		this(model, new Vector3f(0, 0, 0), new Material());
 	}
 	
-	public Entity(Model model, Vector3f position) {
+	public Entity(Model model, Vector3f position, Material material) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 
@@ -172,9 +174,12 @@ public class Entity {
 		// Create a new VBO for the indices and select it (bind) - INDICES
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		
+		this.material = material;
+		
 	}
 
-	public void transform() {
+
+	public void update() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
@@ -189,11 +194,12 @@ public class Entity {
 	public void flipBuffers() {
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(TheQuadExampleMoving.modelMatrixLocation, false, matrix44Buffer);
+		GL20.glUniformMatrix4(ForwardRenderer.getModelMatrixLocation(), false, matrix44Buffer);
 	}
 	
 
 	public void draw() {
+		material.setTexturesActive();
 		// Bind to the VAO that has all the information about the vertices
 		GL30.glBindVertexArray(vaoId);
 		GL20.glEnableVertexAttribArray(0);
@@ -203,14 +209,14 @@ public class Entity {
 		GL20.glEnableVertexAttribArray(4);
 		GL20.glEnableVertexAttribArray(5);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		TheQuadExampleMoving.exitOnGLError("bindbuffer in entity");
+		ForwardRenderer.exitOnGLError("bindbuffer in entity");
 		
 		flipBuffers();
-		TheQuadExampleMoving.exitOnGLError("flipbuffers in entity");
+		ForwardRenderer.exitOnGLError("flipbuffers in entity");
 		//		GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertices.length);
 
-		TheQuadExampleMoving.exitOnGLError("drawArrays in entity");
+		ForwardRenderer.exitOnGLError("drawArrays in entity");
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
@@ -282,6 +288,8 @@ public class Entity {
 		// Delete the VAO
 		GL30.glBindVertexArray(0);
 		GL30.glDeleteVertexArrays(vaoId);
+		
+		material.destroy();
 	}
 
 }
