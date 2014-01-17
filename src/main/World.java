@@ -8,6 +8,7 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.DebugGraphics;
 
@@ -32,6 +33,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
@@ -46,9 +48,10 @@ import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class World {
-	
-	public static int framebufferLocation;
-	public static int colorTexture;
+
+//	public static int framebufferLocation;
+//	public static int depthbufferLocation;
+//	public static int colorTexture;
 	
 	public static int lightPositionLocation;
 	public static Vector3f lightPosition = new Vector3f(-3,-3,-3);
@@ -70,7 +73,6 @@ public class World {
 //		try {
 //			Mouse.setNativeCursor(new Cursor(1, 1, 0, 0, 1, BufferUtils.createIntBuffer(1), null));
 //		} catch (LWJGLException e) {
-//			// TODO Auto-generated catch block
 //			e.printStackTrace();
 //		}
 		
@@ -108,7 +110,9 @@ public class World {
 						mat = wood;
 					}
 					Entity entity = new Entity(box, new Vector3f(i*2,0,j*2), mat);
-					entity.setScale(new Vector3f(0.1f, 0.1f, 0.1f));
+					Vector3f scale = new Vector3f(0.1f, 0.1f, 0.1f);
+					scale.scale(new Random().nextFloat());
+					entity.setScale(scale);
 					entities.add(entity);
 				}
 			}
@@ -163,55 +167,19 @@ public class World {
 			} else useParallax = 0;
 		}
 //		System.out.println("LightPosition: " + lightPosition);
-		GL20.glUniform3f(World.lightPositionLocation, lightPosition.x, lightPosition.y, lightPosition.z );
-		GL20.glUniform1i(World.useParallaxLocation, useParallax);
 		
 		renderer.update();
 		for (IEntity entity: entities) {
 			entity.update();
 		}
-		
+
+		GL20.glUniform3f(World.lightPositionLocation, lightPosition.x, lightPosition.y, lightPosition.z );
+		GL20.glUniform1i(World.useParallaxLocation, useParallax);
 		ForwardRenderer.exitOnGLError("update");
 	}
 	
 	private void draw() {
 		renderer.draw(entities);
-		
-//		TODO: For DeferredRenderer
-//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-//		int quadVertexArray = GL30.glGenVertexArrays();
-//		GL30.glBindVertexArray(quadVertexArray);
-//		float g_quad_vertex_buffer_data[] = {
-//		    -1.0f, -1.0f, 0.0f,
-//		    1.0f, -1.0f, 0.0f,
-//		    -1.0f,  1.0f, 0.0f,
-//		    -1.0f,  1.0f, 0.0f,
-//		    1.0f, -1.0f, 0.0f,
-//		    1.0f,  1.0f, 0.0f,
-//		};
-//		int quadVertexBuffer = GL15.glGenBuffers();
-//		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBuffer);
-//		FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(18);
-//		for (int i = 0; i < g_quad_vertex_buffer_data.length; i++) {
-//			verticesFloatBuffer.put(g_quad_vertex_buffer_data[i]);
-//		}
-//		verticesFloatBuffer.flip();
-//		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STREAM_DRAW);
-//		int vertexShaderId = loadShader("/assets/shaders/passthrough_vertex.glsl", GL20.GL_VERTEX_SHADER);
-//		int fragmentShaderId = loadShader("/assets/shaders/simpletexture_fragment.glsl", GL20.GL_VERTEX_SHADER);
-//		
-//		int program = GL20.glCreateProgram();
-//		GL20.glAttachShader(program, vertexShaderId);
-//		GL20.glAttachShader(program, fragmentShaderId);
-//
-//		GL20.glLinkProgram(program);
-//		GL20.glValidateProgram(program);
-//		//GL20.glUseProgram(program);
-//		System.out.println(GL20.glGetProgramInfoLog(program, 10000));
-//		this.exitOnGLError("useprogram in render");
-//
-//
-//		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 18);
 
 		ForwardRenderer.exitOnGLError("draw in render");
 		

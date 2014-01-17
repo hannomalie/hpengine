@@ -23,7 +23,7 @@ in vec3 pass_LightVec;
 in vec3 pass_HalfVec;
 in vec3 pass_eyeVec;
 
-out vec4 out_Color;
+layout(location = 0)out vec4 out_Color;
 
 void main(void) {
 
@@ -53,8 +53,9 @@ void main(void) {
 		{
 			shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
-			out_Color += 0.5*specularMaterial * specularLight * shininess;
+			//out_Color += 0.5*specularMaterial * specularLight * shininess;
 		}
-		out_Color +=ambientLight*occlusionMaterial;
+		out_Color +=ambientLight;
+		//out_Color = vec4(pass_LightVec, 1);
 	}
 }

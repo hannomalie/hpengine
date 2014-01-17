@@ -11,8 +11,17 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 
@@ -21,6 +30,15 @@ import main.util.Util;
 public class ForwardRenderer {
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 600;
+	static float G_QUAD_VERTEX_BUFFER_DATA[] = {
+		    -1.0f, -1.0f, 0.0f,
+		    1.0f, -1.0f, 0.0f,
+		    -1.0f,  1.0f, 0.0f,
+		    -1.0f,  1.0f, 0.0f,
+		    1.0f, -1.0f, 0.0f,
+		    1.0f,  1.0f, 0.0f,
+		};
+	FloatBuffer quadVerticesFloatBuffer = BufferUtils.createFloatBuffer(18*4);
 	
 	private int fps;
 	private long lastFPS;
@@ -31,6 +49,16 @@ public class ForwardRenderer {
 	private int textureSelector = 0;
 	private Camera camera = new Camera();
 	private FloatBuffer matrix44Buffer = null;
+	private int framebufferLocation;
+	private int renderTextureLocation;
+	private int depthbufferLocation;
+	private int quadVertexArray;
+	private int quadVertexBuffer;
+	private int quadVertexShaderId;
+	private int quadFragmentShaderId;
+	private int passthroughProgram;
+	private int renderedTexture;
+	
 	
 	public ForwardRenderer() {
 		setupOpenGL();
@@ -64,24 +92,43 @@ public class ForwardRenderer {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
-		
-
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
+
+		// create a frame and color buffer
+		framebufferLocation = GL30.glGenFramebuffers();
+		depthbufferLocation = GL30.glGenRenderbuffers();
+		renderedTexture = GL11.glGenTextures();
 		
-//		TODO: For DeferredRenderer
-//
-//		framebufferLocation = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(WIDTH * HEIGHT * 4));
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+
+		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
+		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL30.GL_DEPTH_COMPONENT32F, HEIGHT, WIDTH);
+		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
+		
+		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+		GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-//		
-//		colorTexture = GL11.glGenTextures();
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, colorTexture);
-//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, WIDTH, HEIGHT, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, BufferUtils.createByteBuffer(1440000));
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, colorTexture, 0);
-//		this.exitOnGLError("setupOpenGL");
-//		
-		//int frameBufferStatus = GL30.glCheckFramebufferStatus(framebufferLocation);
+
+		// Buffers, shaders etc. for rendertoquad
+		quadVertexArray = GL30.glGenVertexArrays();
+		quadVertexBuffer = GL15.glGenBuffers();
+		quadVertexShaderId = loadShader("/assets/shaders/passthrough_vertex.glsl", GL20.GL_VERTEX_SHADER);
+		quadFragmentShaderId = loadShader("/assets/shaders/simpletexture_fragment.glsl", GL20.GL_FRAGMENT_SHADER);
+
+		passthroughProgram = GL20.glCreateProgram();
+		GL20.glAttachShader(passthroughProgram, quadVertexShaderId);
+		GL20.glAttachShader(passthroughProgram, quadFragmentShaderId);
+		GL20.glLinkProgram(passthroughProgram);
+		GL20.glValidateProgram(passthroughProgram);
+		renderTextureLocation = GL20.glGetUniformLocation(passthroughProgram, "renderedTexture");
+		
+		for (int i = 0; i < G_QUAD_VERTEX_BUFFER_DATA.length; i++) {
+			quadVerticesFloatBuffer.put(G_QUAD_VERTEX_BUFFER_DATA[i]);
+		}
 		
 		this.exitOnGLError("setupOpenGL");
 	}
@@ -170,6 +217,8 @@ public class ForwardRenderer {
 	}
 	
 	public void draw(List<IEntity> entities) {
+
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
 		GL20.glUseProgram(materialProgramId);
@@ -179,8 +228,36 @@ public class ForwardRenderer {
 		for (IEntity entity: entities) {
 			entity.draw();
 		}
+		
+		drawToQuad();
 	}
 	
+	private void drawToQuad() {
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0); 
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		
+		GL20.glUseProgram(passthroughProgram);
+
+//		System.out.println("tex in quadshader is " + renderedTexture);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
+		GL20.glUniform1i(renderTextureLocation, 0);
+		
+		GL30.glBindVertexArray(quadVertexArray);
+		
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBuffer);
+		
+		quadVerticesFloatBuffer.flip();
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_DYNAMIC_DRAW);
+
+//		System.out.println(GL20.glGetProgramInfoLog(passthroughProgram, 10000));
+		exitOnGLError("useprogram in drawToQuad");
+
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+		exitOnGLError("glDrawArrays in drawToQuad");
+	}
+
 	public void destroy() {
 		destroyOpenGL();
 	}
@@ -195,7 +272,7 @@ public class ForwardRenderer {
 		Display.destroy();
 	}
 
-	private int loadShader(String filename, int type) {
+	public int loadShader(String filename, int type) {
 		String shaderSource;
 		int shaderID = 0;
 		
@@ -221,7 +298,7 @@ public class ForwardRenderer {
 		TextureBuffer texture = Util.loadPNGTexture(filename, program);
 
 		int texId = GL11.glGenTextures();
-		System.out.println("Have " + name + " " + texId);
+		//System.out.println("Have " + name + " " + texId);
 		//GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + Material.textureIndex);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);

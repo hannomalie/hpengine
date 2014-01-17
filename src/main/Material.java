@@ -47,7 +47,7 @@ public class Material implements IEntity {
 			int index = texIds[i];
 			
 			int bindingForTextureInShader = GL20.glGetUniformLocation(ForwardRenderer.getMaterialProgramId(), name);
-			System.out.println("Setting " + bindingForTextureInShader + " for " + name + " to " + index);
+			//System.out.println("Setting " + bindingForTextureInShader + " for " + name + " to " + index);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, index);
 		}
