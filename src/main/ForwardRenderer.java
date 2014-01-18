@@ -40,7 +40,7 @@ public class ForwardRenderer {
 	private static int materialProgramId = 0;
 	private Camera camera = new Camera();
 	private FloatBuffer matrix44Buffer = null;
-	private int renderTextureLocation;
+	private int renderedTextureShaderLocation;
 	private int quadVertexArray;
 	private int quadVertexBuffer;
 	private int quadVertexShaderId;
@@ -96,7 +96,7 @@ public class ForwardRenderer {
 		GL20.glAttachShader(passthroughProgram, quadFragmentShaderId);
 		GL20.glLinkProgram(passthroughProgram);
 		GL20.glValidateProgram(passthroughProgram);
-		renderTextureLocation = GL20.glGetUniformLocation(passthroughProgram, "renderedTexture");
+		renderedTextureShaderLocation = GL20.glGetUniformLocation(passthroughProgram, "renderedTexture");
 		
 		for (int i = 0; i < G_QUAD_VERTEX_BUFFER_DATA.length; i++) {
 			quadVerticesFloatBuffer.put(G_QUAD_VERTEX_BUFFER_DATA[i]);
@@ -193,8 +193,8 @@ public class ForwardRenderer {
 		}
 		
 		//TODO: Remove this
-		firstTarget.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
-		System.exit(0);
+//		firstTarget.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
+//		System.exit(0);
 		
 		firstTarget.unuse();
 		
@@ -209,7 +209,7 @@ public class ForwardRenderer {
 //		System.out.println("tex in quadshader is " + renderedTexture);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstTarget.getRenderedTexture());
-		GL20.glUniform1i(renderTextureLocation, 0);
+		GL20.glUniform1i(renderedTextureShaderLocation, 0);
 		
 		GL30.glBindVertexArray(quadVertexArray);
 		
