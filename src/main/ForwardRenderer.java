@@ -3,6 +3,8 @@ package main;
 import java.nio.FloatBuffer;
 import java.util.List;
 
+import main.util.Util;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
@@ -11,21 +13,11 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
-
-import main.util.Util;
 
 public class ForwardRenderer {
 	public static final int WIDTH = 800;
@@ -46,18 +38,15 @@ public class ForwardRenderer {
 	
 	private static int modelMatrixLocation;
 	private static int materialProgramId = 0;
-	private int textureSelector = 0;
 	private Camera camera = new Camera();
 	private FloatBuffer matrix44Buffer = null;
-	private int framebufferLocation;
 	private int renderTextureLocation;
-	private int depthbufferLocation;
 	private int quadVertexArray;
 	private int quadVertexBuffer;
 	private int quadVertexShaderId;
 	private int quadFragmentShaderId;
 	private int passthroughProgram;
-	private int renderedTexture;
+	private RenderTarget firstTarget;
 	
 	
 	public ForwardRenderer() {
@@ -94,25 +83,8 @@ public class ForwardRenderer {
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		// create a frame and color buffer
-		framebufferLocation = GL30.glGenFramebuffers();
-		depthbufferLocation = GL30.glGenRenderbuffers();
-		renderedTexture = GL11.glGenTextures();
+		firstTarget = new RenderTarget(WIDTH, HEIGHT);
 		
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(WIDTH * HEIGHT * 4));
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-
-		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL30.GL_DEPTH_COMPONENT32F, HEIGHT, WIDTH);
-		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
-		
-		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-		GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
-//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-
 		// Buffers, shaders etc. for rendertoquad
 		quadVertexArray = GL30.glGenVertexArrays();
 		quadVertexBuffer = GL15.glGenBuffers();
@@ -191,14 +163,6 @@ public class ForwardRenderer {
 		this.materialProgramId = pId;
 	}
 
-	public int getTextureSelector() {
-		return textureSelector;
-	}
-
-	public void setTextureSelector(int textureSelector) {
-		this.textureSelector = textureSelector;
-	}
-
 	public Camera getCamera() {
 		return camera;
 	}
@@ -218,9 +182,8 @@ public class ForwardRenderer {
 	
 	public void draw(List<IEntity> entities) {
 
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-
+		firstTarget.use();
+		
 		GL20.glUseProgram(materialProgramId);
 		ForwardRenderer.exitOnGLError("useProgram in render");
 		
@@ -229,19 +192,23 @@ public class ForwardRenderer {
 			entity.draw();
 		}
 		
+		//TODO: Remove this
+		firstTarget.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
+		System.exit(0);
+		
+		firstTarget.unuse();
+		
 		drawToQuad();
 	}
 	
 	private void drawToQuad() {
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0); 
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-		
+
+		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL20.glUseProgram(passthroughProgram);
 
 //		System.out.println("tex in quadshader is " + renderedTexture);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstTarget.getRenderedTexture());
 		GL20.glUniform1i(renderTextureLocation, 0);
 		
 		GL30.glBindVertexArray(quadVertexArray);
@@ -255,6 +222,7 @@ public class ForwardRenderer {
 		exitOnGLError("useprogram in drawToQuad");
 
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+
 		exitOnGLError("glDrawArrays in drawToQuad");
 	}
 

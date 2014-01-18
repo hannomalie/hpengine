@@ -1,11 +1,18 @@
 package main.util;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
+import javax.imageio.ImageIO;
 
 import main.TextureBuffer;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -62,7 +69,40 @@ public class Util {
 		return new TextureBuffer(tWidth, tHeight, buf);
 		
 	}
+	
+	public static BufferedImage toImage(ByteBuffer byteBuffer, int width, int height) {
 
+		int[] pixels = new int[width*height];
+		int index;
+		
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		for (int i=0; i < pixels.length; i++) {
+            index = i * 3;
+            pixels[i] =
+                ((byteBuffer.get(index) << 16))  +
+                ((byteBuffer.get(index+1) << 8))  +
+                ((byteBuffer.get(index+2) << 0));
+        }
+        //Allocate colored pixel to buffered Image
+        image.setRGB(0, 0, width, height, pixels, 0 , width);
+		
+//		try {
+//			image = ImageIO.read(in);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+		return image;
+	}
+	
+	public static void saveImage(BufferedImage image, String path) {
+		if (image == null) return;
+		try {
+			ImageIO.write(image, "png", new File(path));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	private static String convertStreamToString(java.io.InputStream is) {
 	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
 	    return s.hasNext() ? s.next() : "";
