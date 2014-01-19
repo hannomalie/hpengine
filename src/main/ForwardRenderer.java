@@ -42,7 +42,7 @@ public class ForwardRenderer {
 	private FloatBuffer matrix44Buffer = null;
 	private int renderedTextureShaderLocation;
 	private int quadVertexArray;
-	private int quadVertexBuffer;
+	private int quadVertexBufferLocation;
 	private int quadVertexShaderId;
 	private int quadFragmentShaderId;
 	private int passthroughProgram;
@@ -79,15 +79,16 @@ public class ForwardRenderer {
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		firstTarget = new RenderTarget(WIDTH, HEIGHT);
+		firstTarget = new RenderTarget(800, 600);
 		
 		// Buffers, shaders etc. for rendertoquad
 		quadVertexArray = GL30.glGenVertexArrays();
-		quadVertexBuffer = GL15.glGenBuffers();
+		quadVertexBufferLocation = GL15.glGenBuffers();
 		quadVertexShaderId = loadShader("/assets/shaders/passthrough_vertex.glsl", GL20.GL_VERTEX_SHADER);
 		quadFragmentShaderId = loadShader("/assets/shaders/simpletexture_fragment.glsl", GL20.GL_FRAGMENT_SHADER);
 
@@ -97,10 +98,23 @@ public class ForwardRenderer {
 		GL20.glLinkProgram(passthroughProgram);
 		GL20.glValidateProgram(passthroughProgram);
 		renderedTextureShaderLocation = GL20.glGetUniformLocation(passthroughProgram, "renderedTexture");
+		GL20.glBindAttribLocation(passthroughProgram, 0, "in_position");
 		
 		for (int i = 0; i < G_QUAD_VERTEX_BUFFER_DATA.length; i++) {
 			quadVerticesFloatBuffer.put(G_QUAD_VERTEX_BUFFER_DATA[i]);
 		}
+		
+		quadVerticesFloatBuffer.flip();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation); this.exitOnGLError("4");
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_STATIC_DRAW);
+		//GL15.glBufferData(GL15.GL_ARRAY_BUFFER, 4 * 3 * 100, GL15.GL_STATIC_DRAW); this.exitOnGLError("5");
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0); this.exitOnGLError("6");
+		
+		GL30.glBindVertexArray(quadVertexArray); this.exitOnGLError("7");
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation);  this.exitOnGLError("8");
+		GL20.glEnableVertexAttribArray(0); this.exitOnGLError("9");
+		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 4 * 3, 0); this.exitOnGLError("10");
+		GL30.glBindVertexArray(0);
 		
 		this.exitOnGLError("setupOpenGL");
 	}
@@ -203,6 +217,7 @@ public class ForwardRenderer {
 	
 	private void drawToQuad() {
 
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL20.glUseProgram(passthroughProgram);
 
@@ -211,16 +226,22 @@ public class ForwardRenderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstTarget.getRenderedTexture());
 		GL20.glUniform1i(renderedTextureShaderLocation, 0);
 		
-		GL30.glBindVertexArray(quadVertexArray);
 		
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBuffer);
 		
-		quadVerticesFloatBuffer.flip();
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_DYNAMIC_DRAW);
+		//GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, quadVertexBufferLocation);
+		
+		//quadVerticesFloatBuffer.flip();
+		
 
 //		System.out.println(GL20.glGetProgramInfoLog(passthroughProgram, 10000));
 		exitOnGLError("useprogram in drawToQuad");
 
+		//GL20.glEnableVertexAttribArray(0);  exitOnGLError("2");
+		//GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_DYNAMIC_DRAW);
+		//GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 4 * 3, 0);  exitOnGLError("3");
+		GL30.glBindVertexArray(quadVertexArray); exitOnGLError("2");
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation); exitOnGLError("1");
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
 
 		exitOnGLError("glDrawArrays in drawToQuad");

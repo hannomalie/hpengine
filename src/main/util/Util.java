@@ -107,6 +107,7 @@ public class Util {
 	    java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
 	    return s.hasNext() ? s.next() : "";
 	}
+	
 
 	public static float coTangent(float angle) {
 		return (float)(1f / Math.tan(angle));

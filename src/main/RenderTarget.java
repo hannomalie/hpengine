@@ -35,7 +35,7 @@ public class RenderTarget {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 
 		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, height, width);
+		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
 		
 		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, renderedTexture, 0);
@@ -52,14 +52,16 @@ public class RenderTarget {
 	public void use() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		GL11.glViewport(0, 0, width, height);
+		//TODO: pushattrib viewport bit bla
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 	}
 	
 	public void unuse() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		//TODO: gl pop attrib
 //		GL11.glClearColor(0.0f, 0.0f, 0.9f, 0f);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+//		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 	}
 
 	public int getRenderedTexture() {

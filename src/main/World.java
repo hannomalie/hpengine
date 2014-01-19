@@ -103,6 +103,7 @@ public class World {
 		Material wood = new WoodMaterial();
 		try {
 			Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
+//			Model box = OBJLoader.loadTexturedModel(new File("/cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = stone;
