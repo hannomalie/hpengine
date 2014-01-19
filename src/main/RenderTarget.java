@@ -31,8 +31,8 @@ public class RenderTarget {
 		
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(width * height * 4));
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 
 		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
@@ -52,16 +52,12 @@ public class RenderTarget {
 	public void use() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		GL11.glViewport(0, 0, width, height);
-		//TODO: pushattrib viewport bit bla
-		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+//		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 	}
 	
 	public void unuse() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-		//TODO: gl pop attrib
-//		GL11.glClearColor(0.0f, 0.0f, 0.9f, 0f);
-//		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 	}
 
 	public int getRenderedTexture() {
@@ -71,18 +67,30 @@ public class RenderTarget {
 	public void setRenderedTexture(int renderedTexture) {
 		this.renderedTexture = renderedTexture;
 	}
-	
+
 	public void saveBuffer(String path) {
 		Util.saveImage(getBuffer(), path);
 	}
-	
+	public void saveDepthBuffer(String path) {
+		Util.saveImage(getDepthBuffer(), path);
+	}
+
 	public BufferedImage getBuffer() {
 		return Util.toImage(getTargetTexturedata(), width, height);
+	}
+	public BufferedImage getDepthBuffer() {
+		return Util.toImage(getDepthTexturedata(), width, height);
 	}
 
 	public ByteBuffer getTargetTexturedata() {
 		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
 		GL11.glReadPixels(0, 0, width, height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, pixels);
+
+		return pixels;
+	}
+	public ByteBuffer getDepthTexturedata() {
+		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
+		GL11.glReadPixels(0, 0, width, height, GL11.GL_DEPTH_COMPONENT, GL11.GL_UNSIGNED_BYTE, pixels);
 
 		return pixels;
 	}
