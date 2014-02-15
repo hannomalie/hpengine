@@ -64,11 +64,11 @@ void main(void) {
 		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 	
 		vec3 normal = 2*texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
-		if (false) {
-			normal = perturb_normal( pass_Normal, pass_eyeVec, pass_TextureCoord );
+		if (true) {
+			normal = perturb_normal( normalize(pass_Normal), pass_eyeVec, pass_TextureCoord );
 		}
 		normal.y = -normal.y;
-		normal = normalize (normal);
+		//normal = normalize (normal);
 		
 		float shininess;
 		
@@ -77,9 +77,10 @@ void main(void) {
 		{
 			shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
-			out_Color += 0.5*specularMaterial * specularLight * shininess;
+			out_Color += specularMaterial * specularLight * shininess;
 		}
 		out_Color +=ambientLight*diffuseMaterial;
+
 		//out_Color = vec4(gl_FragDepth,gl_FragDepth,gl_FragDepth,gl_FragDepth);
 	}
 }

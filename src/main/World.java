@@ -96,16 +96,16 @@ public class World {
 	private void update() {
 
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.getDirection().x += 0.10f;
+			light.getDirection().x += 1f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.getDirection().x -= 0.10f;
+			light.getDirection().x -= 1f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.getDirection().z += 0.10f;
+			light.getDirection().z += 1f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.getDirection().z -= 0.10f;
+			light.getDirection().z -= 1f;
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 		

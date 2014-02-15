@@ -43,6 +43,8 @@ public class ForwardRenderer implements Renderer {
 	private int renderedTextureShaderLocation;
 	private static Program renderToQuadProgram;
 	private static Program shadowMapProgram;
+
+	private static int eyePosition;
 	private RenderTarget firstTarget;
 	private RenderTarget secondTarget;
 	private int projectionMatrixLocation;
@@ -105,6 +107,7 @@ public class ForwardRenderer implements Renderer {
 		projectionMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(),"projectionMatrix");
 		viewMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(), "viewMatrix");
 		ForwardRenderer.modelMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(), "modelMatrix");
+		ForwardRenderer.eyePosition = GL20.glGetUniformLocation(materialProgram.getId(), "eyePosition");
 		//World.lightPositionLocation = GL20.glGetUniformLocation(materialProgramId, "lightPosition");
 		World.light.setLightDirectionLocation(materialProgram.getId());
 		World.useParallaxLocation = GL20.glGetUniformLocation(materialProgram.getId(), "useParallax");
@@ -347,5 +350,9 @@ public class ForwardRenderer implements Renderer {
 
 	public static Program getMaterialProgram() {
 		return materialProgram;
+	}
+
+	public int getEyePositionLocation() {
+		return eyePosition;
 	}
 }

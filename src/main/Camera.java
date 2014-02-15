@@ -35,6 +35,8 @@ public class Camera implements IEntity {
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
 	private float rotationSpeed = 0.12f;
+
+	private ForwardRenderer renderer;
 	
 	public Camera(ForwardRenderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
@@ -46,6 +48,7 @@ public class Camera implements IEntity {
 	}
 	
 	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+		this.renderer = renderer;
 		this.projectionMatrix = projectionMatrix;
 
 		this.viewMatrix = viewMatrix;
@@ -61,6 +64,7 @@ public class Camera implements IEntity {
 	public void update() {
 		transform();
 		updateControls();
+		GL20.glUniform3f(renderer.getEyePositionLocation(), position.x, position.y, position.z);
 		flipBuffers();
 	}
 	
