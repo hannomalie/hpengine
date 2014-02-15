@@ -3,17 +3,17 @@ package main;
 
 public class WoodMaterial extends Material {
 
-	public WoodMaterial() {
-		setup();
+	public WoodMaterial(ForwardRenderer renderer) {
+		super(renderer);
 	}
 	
-	public void setup() {
+	public void setup(ForwardRenderer renderer) {
 		String texture = "wood";
-		texIds[0] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_diffuse.png", ForwardRenderer.getMaterialProgramId(), "diffuseMap", 0);
-		texIds[1] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_normal.png", ForwardRenderer.getMaterialProgramId(), "normalMap", 1);
-		texIds[2] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_specular.png", ForwardRenderer.getMaterialProgramId(), "specularMap", 2);
-		texIds[3] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_occlusion.png", ForwardRenderer.getMaterialProgramId(), "occlusionMap", 3);
-		texIds[4] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_height.png", ForwardRenderer.getMaterialProgramId(), "heightMap", 4);
+		texIds[0] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_diffuse.png");
+		texIds[1] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_normal.png");
+		texIds[2] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_specular.png");
+		texIds[3] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_occlusion.png");
+		texIds[4] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_height.png");
 		
 		ForwardRenderer.exitOnGLError("setupTexture");
 	}

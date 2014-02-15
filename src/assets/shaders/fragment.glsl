@@ -23,8 +23,29 @@ in vec3 pass_LightVec;
 in vec3 pass_HalfVec;
 in vec3 pass_eyeVec;
 
-layout(location = 0)out vec4 out_Color;
+out vec4 out_Color;
 
+mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
+{
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+	
+	vec3 dp2perp = cross( dp2, N );
+	vec3 dp1perp = cross( N, dp1 );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+	
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
+{
+	vec3 map = texture2D( normalMap, texcoord ).xyz;
+	mat3 TBN = cotangent_frame( N, -V, texcoord );
+	return normalize( TBN * map );
+}
 void main(void) {
 
 	if (useParallax) {
@@ -32,8 +53,7 @@ void main(void) {
 		float v = height * 0.106 - 0.012;
 		vec2 newCoords = pass_TextureCoord + (pass_eyeVec.xy * v);
 		out_Color = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
-		
-		
+
 	} else {
 		vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
 		
@@ -44,6 +64,10 @@ void main(void) {
 		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 	
 		vec3 normal = 2*texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
+		if (false) {
+			normal = perturb_normal( pass_Normal, pass_eyeVec, pass_TextureCoord );
+		}
+		normal.y = -normal.y;
 		normal = normalize (normal);
 		
 		float shininess;
@@ -53,9 +77,9 @@ void main(void) {
 		{
 			shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
-			//out_Color += 0.5*specularMaterial * specularLight * shininess;
+			out_Color += 0.5*specularMaterial * specularLight * shininess;
 		}
-		out_Color +=ambientLight;
-		//out_Color = vec4(pass_LightVec, 1);
+		out_Color +=ambientLight*diffuseMaterial;
+		//out_Color = vec4(gl_FragDepth,gl_FragDepth,gl_FragDepth,gl_FragDepth);
 	}
 }

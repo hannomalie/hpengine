@@ -1,20 +1,24 @@
 package main;
 
-import java.awt.RenderingHints.Key;
+import static main.log.ConsoleLogger.getLogger;
+
 import java.nio.FloatBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Cursor;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Camera {
+public class Camera implements IEntity {
+	private static Logger LOGGER = getLogger();
+	
+	FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private int projectionMatrixLocation = 0;
 	private int viewMatrixLocation = 0;
 	
@@ -32,32 +36,32 @@ public class Camera {
 	private Matrix4f viewMatrix = null;
 	private float rotationSpeed = 0.12f;
 	
-	public Camera() {
-		projectionMatrix = new Matrix4f();
-		float fieldOfView = 60f;
-		float aspectRatio = (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT;
-		float near_plane = 0.001f;
-		float far_plane = 100f;
-		
-		float y_scale = Util.coTangent(Util.degreesToRadians(fieldOfView / 2f));
-		float x_scale = y_scale / aspectRatio;
-		float frustum_length = far_plane - near_plane;
-		
-		projectionMatrix.m00 = x_scale;
-		projectionMatrix.m11 = y_scale;
-		projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
-		projectionMatrix.m23 = -1;
-		projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
-        projectionMatrix.m33 = 0;
-        
-		viewMatrix = new Matrix4f();
+	public Camera(ForwardRenderer renderer) {
+		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
+		//this(Util.createOrthogonal(-1, 1, -1, 1, -1, 2), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
+	}
+	
+	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix) {
+		this(renderer, projectionMatrix, new Matrix4f());
+	}
+	
+	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+		this.projectionMatrix = projectionMatrix;
+
+		this.viewMatrix = viewMatrix;
+
+		this.projectionMatrixLocation = renderer.getProjectionMatrixLocation();
+		this.viewMatrixLocation = renderer.getViewMatrixLocation();
 		
 		position = new Vector3f(0, 0, -1);
 		angle = new Vector3f(0, 0, 0);
+		
 	}
 	
 	public void update() {
-		
+		transform();
+		updateControls();
+		flipBuffers();
 	}
 	
 	public void updateControls() {
@@ -66,6 +70,7 @@ public class Camera {
 			angle.y += Mouse.getDX() * rotationSpeed;
 			angle.x += -Mouse.getDY() * rotationSpeed;
 			angle.z += -Mouse.getDY() * rotationSpeed;
+			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f", angle.x, angle.y, angle.z));
 		}
 		Vector3f right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
 		Vector3f up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
@@ -75,36 +80,42 @@ public class Camera {
 			position.x -= posDelta * back.x;
 			position.y -= posDelta * back.y;
 			position.z -= posDelta * -back.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
 			position.x += posDelta * right.x;
 			position.y += posDelta * right.y;
 			position.z += posDelta * -right.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
 			position.x += posDelta * back.x;
 			position.y += posDelta * back.y;
 			position.z += posDelta * -back.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
 			position.x -= posDelta * right.x;
 			position.y -= posDelta * right.y;
 			position.z -= posDelta * -right.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
 			position.x += posDelta * up.x;
 			position.y += posDelta * up.y;
 			position.z += posDelta * -up.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
 			position.x -= posDelta * up.x;
 			position.y -= posDelta * up.y;
 			position.z -= posDelta * -up.z;
+			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 	}
 	
 
-	public void transform() {
+	private void transform() {
 		setViewMatrix(new Matrix4f());
 		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
 				viewMatrix, viewMatrix);
@@ -115,13 +126,19 @@ public class Camera {
 
 		Matrix4f.translate(position, viewMatrix, viewMatrix);
 	}
-	
-	public void flipBuffers(FloatBuffer matrix44Buffer) {
+
+	private void flipBuffers() {
 		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 		GL20.glUniformMatrix4(projectionMatrixLocation, false, matrix44Buffer);
 		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 		GL20.glUniformMatrix4(viewMatrixLocation, false, matrix44Buffer);
 	}
+//	public void flipBuffersShadow() {
+//		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
+//		GL20.glUniformMatrix4(projectionMatrixShadowLocation, false, matrix44Buffer);
+//		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
+//		GL20.glUniformMatrix4(viewMatrixShadowLocation, false, matrix44Buffer);
+//	}
 
 	public Matrix4f getProjectionMatrix() {
 		return projectionMatrix;
@@ -159,7 +176,7 @@ public class Camera {
 		return projectionMatrixLocation;
 	}
 
-	public void setProjectionMatrixLocation(int projectionMatrixLocation) {
+	private void setProjectionMatrixLocation(int projectionMatrixLocation) {
 		this.projectionMatrixLocation = projectionMatrixLocation;
 	}
 
@@ -167,8 +184,21 @@ public class Camera {
 		return viewMatrixLocation;
 	}
 
-	public void setViewMatrixLocation(int viewMatrixLocation) {
+	private void setViewMatrixLocation(int viewMatrixLocation) {
 		this.viewMatrixLocation = viewMatrixLocation;
+	}
+
+	@Override
+	public void draw() {
+	}
+
+	@Override
+	public void destroy() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void drawShadow() {
 	}
 
 }

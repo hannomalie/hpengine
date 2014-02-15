@@ -4,7 +4,7 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-uniform vec3 lightPosition;
+uniform vec3 lightDirection;
 
 in vec4 in_Position;
 in vec4 in_Color;
@@ -40,7 +40,8 @@ void main(void) {
 	pass_Up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
 	pass_Back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
 	
-	vec3 lightDir = normalize(lightPosition - gl_Position.xyz);
+	//vec3 lightDir = normalize(lightPosition - gl_Position.xyz);
+	vec3 lightDir = normalize(lightDirection);
 	pass_LightDirection = lightDir;
 	vec3 v;
 	v.x = dot(lightDir, in_Tangent);

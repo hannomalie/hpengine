@@ -1,51 +1,15 @@
 package main;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.DebugGraphics;
-
 import main.util.OBJLoader;
-import main.util.Quad;
-import main.util.Util;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Cursor;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL44;
-import org.lwjgl.opengl.PixelFormat;
-import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import org.newdawn.slick.tests.TestUtils;
-
-import de.matthiasmann.twl.utils.PNGDecoder;
-import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class World {
 
@@ -53,9 +17,8 @@ public class World {
 //	public static int depthbufferLocation;
 //	public static int colorTexture;
 	
-	public static int lightPositionLocation;
-	public static Vector3f lightPosition = new Vector3f(-3,-3,-3);
-	public static int useParallaxLocation;
+	public static DirectionalLight light= new DirectionalLight(true);
+	public static int useParallaxLocation = 0;
 	public static int useParallax = 0;
 	
 	public static void main(String[] args) {
@@ -63,11 +26,14 @@ public class World {
 	}
 	
 	private List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 5;
+	private int entityCount = 1;
 	private ForwardRenderer renderer;
+	private Camera camera;
 	
 	public World() {
-		renderer = new ForwardRenderer();
+		renderer = new ForwardRenderer(light);
+		camera = new Camera(renderer);
+		light.init(renderer);
 		this.setupQuad();
 		
 //		try {
@@ -99,22 +65,25 @@ public class World {
 		
 		ForwardRenderer.exitOnGLError("setupQuad");
 
-		Material stone = new Material();
-		Material wood = new WoodMaterial();
+		Material stone = new Material(renderer);
+		Material wood = new WoodMaterial(renderer);
 		try {
-			Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
-//			Model box = OBJLoader.loadTexturedModel(new File("/cube.obj"));
+			Model box = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = stone;
 					if (i%2 == 0 || j%2 == 0) {
 						mat = wood;
 					}
-					Entity entity = new Entity(box, new Vector3f(i*2,0,j*2), mat);
-					Vector3f scale = new Vector3f(0.1f, 0.1f, 0.1f);
-					scale.scale(new Random().nextFloat());
-					entity.setScale(scale);
-					entities.add(entity);
+					try {
+						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0,j*2), mat);
+						Vector3f scale = new Vector3f(0.1f, 0.1f, 0.1f);
+						scale.scale(new Random().nextFloat());
+						entity.setScale(scale);
+						entities.add(entity);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}
 			
@@ -127,60 +96,33 @@ public class World {
 	private void update() {
 
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			lightPosition.x -= 0.25;
-			if (lightPosition.x <= -10) {
-				lightPosition.x = 10;
-			}
+			light.getDirection().x += 0.10f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			lightPosition.x += 0.25;
-			if (lightPosition.x >= 10) {
-				lightPosition.x = -10;
-			}
+			light.getDirection().x -= 0.10f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			lightPosition.z -= 0.25;
-			if (lightPosition.z <= -10) {
-				lightPosition.z = 10;
-			}
+			light.getDirection().z += 0.10f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			lightPosition.z += 0.25;
-			if (lightPosition.z >= 10) {
-				lightPosition.z = -10;
-			}
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_ADD)) {
-			lightPosition.y += 0.25;
-			if (lightPosition.y >= 10) {
-				lightPosition.y = -10;
-			}
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_MINUS)) {
-			lightPosition.y -= 0.25;
-			if (lightPosition.y <= -10) {
-				lightPosition.y = 10;
-			}
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_1)) {
-			if(useParallax == 0) {
-				useParallax = 1;
-			} else useParallax = 0;
+			light.getDirection().z -= 0.10f;
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 		
 		renderer.update();
+		camera.update();
+//		light.update();
 		for (IEntity entity: entities) {
 			entity.update();
 		}
 
-		GL20.glUniform3f(World.lightPositionLocation, lightPosition.x, lightPosition.y, lightPosition.z );
+		GL20.glUniform3f(light.lightDirectionLocation, light.getDirection().x, light.getDirection().y, light.getDirection().z );
 		GL20.glUniform1i(World.useParallaxLocation, useParallax);
 		ForwardRenderer.exitOnGLError("update");
 	}
 	
 	private void draw() {
-		renderer.draw(entities);
+		renderer.draw(camera, entities, light);
 
 		ForwardRenderer.exitOnGLError("draw in render");
 		

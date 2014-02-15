@@ -1,11 +1,15 @@
 package main;
 
+import static main.log.ConsoleLogger.getLogger;
+
 import java.nio.FloatBuffer;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import main.util.Util;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ContextAttribs;
@@ -13,49 +17,47 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 
-public class ForwardRenderer {
+public class ForwardRenderer implements Renderer {
+	private static Logger LOGGER = getLogger();
+
+	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
+			DataChannels.POSITION3);
+	
+	public int testTexture = -1;
 	public static final int WIDTH = 800;
 	public static final int HEIGHT = 600;
-	static float G_QUAD_VERTEX_BUFFER_DATA[] = {
-		    -1.0f, -1.0f, 0.0f,
-		    1.0f, -1.0f, 0.0f,
-		    -1.0f,  1.0f, 0.0f,
-		    -1.0f,  1.0f, 0.0f,
-		    1.0f, -1.0f, 0.0f,
-		    1.0f,  1.0f, 0.0f,
-		};
-	FloatBuffer quadVerticesFloatBuffer = BufferUtils.createFloatBuffer(18*4);
-	
+
 	private int fps;
 	private long lastFPS;
 	private long lastFrame;
-	
+
 	private static int modelMatrixLocation;
-	private static int materialProgramId = 0;
-	private Camera camera = new Camera();
+	private static int modelMatrixShadowLocation;
+	private static Program materialProgram;
 	private FloatBuffer matrix44Buffer = null;
 	private int renderedTextureShaderLocation;
-	private int quadVertexArray;
-	private int quadVertexBufferLocation;
-	private int quadVertexShaderId;
-	private int quadFragmentShaderId;
-	private int passthroughProgram;
+	private static Program renderToQuadProgram;
+	private static Program shadowMapProgram;
 	private RenderTarget firstTarget;
+	private RenderTarget secondTarget;
+	private int projectionMatrixLocation;
+	private int viewMatrixLocation;
+
+	private VertexBuffer fullscreenBuffer;
+	private VertexBuffer debugBuffer;
 	
-	
-	public ForwardRenderer() {
+	public ForwardRenderer(DirectionalLight light) {
 		setupOpenGL();
 		setupShaders();
-		setupMatrices();
 		getDelta();
 		lastFPS = Util.getTime();
 		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
+		secondTarget = light.getRenderTarget();
 	}
 
 	private void setupOpenGL() {
@@ -79,78 +81,55 @@ public class ForwardRenderer {
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		GL11.glDisable(GL11.GL_CULL_FACE);
+//		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		firstTarget = new RenderTarget(800, 600);
-		
-		// Buffers, shaders etc. for rendertoquad
-		quadVertexArray = GL30.glGenVertexArrays();
-		quadVertexBufferLocation = GL15.glGenBuffers();
-		quadVertexShaderId = loadShader("/assets/shaders/passthrough_vertex.glsl", GL20.GL_VERTEX_SHADER);
-		quadFragmentShaderId = loadShader("/assets/shaders/simpletexture_fragment.glsl", GL20.GL_FRAGMENT_SHADER);
+		firstTarget = new RenderTarget(WIDTH, HEIGHT);
 
-		passthroughProgram = GL20.glCreateProgram();
-		GL20.glAttachShader(passthroughProgram, quadVertexShaderId);
-		GL20.glAttachShader(passthroughProgram, quadFragmentShaderId);
-		GL20.glLinkProgram(passthroughProgram);
-		GL20.glValidateProgram(passthroughProgram);
-		renderedTextureShaderLocation = GL20.glGetUniformLocation(passthroughProgram, "renderedTexture");
-		GL20.glBindAttribLocation(passthroughProgram, 0, "in_position");
+		fullscreenBuffer = new QuadVertexBuffer( true).upload();
+		debugBuffer = new QuadVertexBuffer( false).upload();
 		
-		for (int i = 0; i < G_QUAD_VERTEX_BUFFER_DATA.length; i++) {
-			quadVerticesFloatBuffer.put(G_QUAD_VERTEX_BUFFER_DATA[i]);
-		}
-		
-		quadVerticesFloatBuffer.flip();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation); this.exitOnGLError("4");
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_STATIC_DRAW);
-		//GL15.glBufferData(GL15.GL_ARRAY_BUFFER, 4 * 3 * 100, GL15.GL_STATIC_DRAW); this.exitOnGLError("5");
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0); this.exitOnGLError("6");
-		
-		GL30.glBindVertexArray(quadVertexArray); this.exitOnGLError("7");
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation);  this.exitOnGLError("8");
-		GL20.glEnableVertexAttribArray(0); this.exitOnGLError("9");
-		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 4 * 3, 0); this.exitOnGLError("10");
-		GL30.glBindVertexArray(0);
-		
-		this.exitOnGLError("setupOpenGL");
-	}
-
-
-	private void setupMatrices() {
-		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+		ForwardRenderer.exitOnGLError("setupOpenGL");
 	}
 	
+
+
 	private void setupShaders() {
-		int vsId = this.loadShader("/assets/shaders/vertex.glsl", GL20.GL_VERTEX_SHADER);
-		int fsId = this.loadShader("/assets/shaders/fragment.glsl", GL20.GL_FRAGMENT_SHADER);
 		
-		materialProgramId = GL20.glCreateProgram();
-		GL20.glAttachShader(materialProgramId, vsId);
-		GL20.glAttachShader(materialProgramId, fsId);
-
-		GL20.glBindAttribLocation(materialProgramId, 0, "in_Position");
-		GL20.glBindAttribLocation(materialProgramId, 1, "in_Color");
-		GL20.glBindAttribLocation(materialProgramId, 2, "in_TextureCoord");
-		GL20.glBindAttribLocation(materialProgramId, 3, "in_Normal");
-		GL20.glBindAttribLocation(materialProgramId, 4, "in_Binormal");
-		GL20.glBindAttribLocation(materialProgramId, 5, "in_Tangent");
-
-		GL20.glLinkProgram(materialProgramId);
-		GL20.glValidateProgram(materialProgramId);
-
-		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(materialProgramId,"projectionMatrix"));
-		camera.setViewMatrixLocation(GL20.glGetUniformLocation(materialProgramId, "viewMatrix"));
-		ForwardRenderer.modelMatrixLocation = GL20.glGetUniformLocation(materialProgramId, "modelMatrix");
-		World.lightPositionLocation = GL20.glGetUniformLocation(materialProgramId, "lightPosition");
-		World.useParallaxLocation = GL20.glGetUniformLocation(materialProgramId, "useParallax");
-
-		GL20.glUseProgram(materialProgramId);
+		materialProgram = new Program("/assets/shaders/vertex.glsl", "/assets/shaders/fragment.glsl", Entity.DEFAULTCHANNELS);
+		materialProgram.use();
+		setUpMaterialProgramTextureLocations(materialProgram);
 		
-		this.exitOnGLError("setupShaders");
+		projectionMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(),"projectionMatrix");
+		viewMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(), "viewMatrix");
+		ForwardRenderer.modelMatrixLocation = GL20.glGetUniformLocation(materialProgram.getId(), "modelMatrix");
+		//World.lightPositionLocation = GL20.glGetUniformLocation(materialProgramId, "lightPosition");
+		World.light.setLightDirectionLocation(materialProgram.getId());
+		World.useParallaxLocation = GL20.glGetUniformLocation(materialProgram.getId(), "useParallax");
+
+		shadowMapProgram = new Program("/assets/shaders/shadowmap_vertex.glsl", "/assets/shaders/shadowmap_fragment.glsl", Entity.SHADOWCHANNELS);
+		shadowMapProgram.use();
+		ForwardRenderer.setModelMatrixShadowLocation(GL20.glGetUniformLocation(shadowMapProgram.getId(), "modelMatrix"));
+
+		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
+		renderToQuadProgram.use();
+		renderedTextureShaderLocation = GL20.glGetUniformLocation(renderToQuadProgram.getId(), "renderedTexture");
+
+		
+		ForwardRenderer.exitOnGLError("setupShaders");
+	}
+
+	private void setUpMaterialProgramTextureLocations(Program program) {
+		
+		for(int i = 0; i < Material.mapNames.length; i++) {
+			String name = Material.mapNames[i];
+			LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", name, i));
+			GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), name), i);
+
+			LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", name, GL20.glGetUniformLocation(program.getId(), name)));
+		}
 	}
 
 	public int getDelta() {
@@ -166,85 +145,81 @@ public class ForwardRenderer {
 	}
 
 	public void setModelMatrixLocation(int modelMatrixLocation) {
-		this.modelMatrixLocation = modelMatrixLocation;
+		ForwardRenderer.modelMatrixLocation = modelMatrixLocation;
 	}
 
-	public int getpId() {
-		return materialProgramId;
+	public static int getModelMatrixShadowLocation() {
+		return modelMatrixShadowLocation;
 	}
 
-	public void setpId(int pId) {
-		this.materialProgramId = pId;
-	}
-
-	public Camera getCamera() {
-		return camera;
-	}
-
-	public void setCamera(Camera camera) {
-		this.camera = camera;
+	public static void setModelMatrixShadowLocation(int modelMatrixShadowLocation) {
+		ForwardRenderer.modelMatrixShadowLocation = modelMatrixShadowLocation;
 	}
 
 	public void update() {
-		camera.updateControls();
-		camera.transform();
 		updateFPS();
-		GL20.glUseProgram(materialProgramId);
-		
-		camera.flipBuffers(matrix44Buffer);
+		materialProgram.use();
 	}
 	
-	public void draw(List<IEntity> entities) {
+	public void draw(Camera camera, List<IEntity> entities, DirectionalLight light) {
+		draw(firstTarget, camera, entities, light);
+	}
+	
+	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, DirectionalLight light) {
+		target.use(true);
 
-		firstTarget.use();
+		materialProgram.use();
 		
-		GL20.glUseProgram(materialProgramId);
-		ForwardRenderer.exitOnGLError("useProgram in render");
-		
-//		quad.draw();
 		for (IEntity entity: entities) {
 			entity.draw();
 		}
 		
-		//TODO: Remove this
-//		firstTarget.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
+		target.unuse();
+
+		drawShadowMap(light, entities);
+		if (testTexture < 0) {
+			testTexture = loadTextureToGL("/assets/textures/wood_diffuse.png");
+		}
+
+//		target.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
 //		System.exit(0);
-		
-		firstTarget.unuse();
-		
-		drawToQuad();
+		drawToQuad(target.getRenderedTexture(), fullscreenBuffer, true, true);
+//		drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer, false, true);
 	}
 	
-	private void drawToQuad() {
+	public void drawShadowMap(DirectionalLight light, List<IEntity> entities) {
+		
+		light.getRenderTarget().use(false);
+		
+		shadowMapProgram.use();
 
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		 for (IEntity entity: entities) {
+			 entity.drawShadow();
+		 }
+		
+		light.getRenderTarget().unuse();
+	}
+	
+	private void drawToQuad(int texture, VertexBuffer buffer, boolean clearColorBuffer, boolean clearDepthBuffer) {
+
+		if (clearColorBuffer) {
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		}
+		if (clearDepthBuffer) {
+			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+		}
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
-		GL20.glUseProgram(passthroughProgram);
+		renderToQuadProgram.use();
 
-//		System.out.println("tex in quadshader is " + renderedTexture);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstTarget.getRenderedTexture());
-		GL20.glUniform1i(renderedTextureShaderLocation, 0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+		buffer.draw();
 		
-		
-		
-		//GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, quadVertexBufferLocation);
-		
-		//quadVerticesFloatBuffer.flip();
-		
-
-//		System.out.println(GL20.glGetProgramInfoLog(passthroughProgram, 10000));
-		exitOnGLError("useprogram in drawToQuad");
-
-		//GL20.glEnableVertexAttribArray(0);  exitOnGLError("2");
-		//GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quadVerticesFloatBuffer, GL15.GL_DYNAMIC_DRAW);
-		//GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 4 * 3, 0);  exitOnGLError("3");
-		GL30.glBindVertexArray(quadVertexArray); exitOnGLError("2");
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, quadVertexBufferLocation); exitOnGLError("1");
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
-
 		exitOnGLError("glDrawArrays in drawToQuad");
+	}
+
+	public void drawToQuad(RenderTarget target, int x, int y, int width, int height) {
+		
 	}
 
 	public void destroy() {
@@ -253,8 +228,7 @@ public class ForwardRenderer {
 
 	private void destroyOpenGL() {
 		// Delete the shaders
-		GL20.glUseProgram(0);
-		GL20.glDeleteProgram(materialProgramId);
+		materialProgram.delete();
 
 		ForwardRenderer.exitOnGLError("destroyOpenGL");
 		
@@ -282,14 +256,13 @@ public class ForwardRenderer {
 	}
 
 	
-	public static int loadTextureToGL(String filename, int program, String name, int index) {
+	public static int loadTextureToGL(String filename) {
 
-		TextureBuffer texture = Util.loadPNGTexture(filename, program);
+		
+		TextureBuffer texture = Util.loadPNGTexture(filename);
 
 		int texId = GL11.glGenTextures();
-		//System.out.println("Have " + name + " " + texId);
-		//GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + Material.textureIndex);
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + Material.textureIndex);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
 		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 		
@@ -301,12 +274,32 @@ public class ForwardRenderer {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 
-		GL20.glUniform1i(GL20.glGetUniformLocation(program, name), index);
+		
 		ForwardRenderer.exitOnGLError("loadPNGTexture");
 		Material.textureIndex++;
 
 		return texId;
 	}
+	
+//	public static int loadTextureToGL(String filename) {
+//		TextureBuffer texture = Util.loadPNGTexture(filename);
+//
+//		int texId = GL11.glGenTextures();
+//		//System.out.println("Have " + name + " " + texId);
+//		//GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + Material.textureIndex);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+//		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+//		
+//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, texture.getWidth(), texture.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, texture.getBuffer());
+//		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+//		
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+//		return texId;
+//	}
 	
 	public void updateFPS() {
 		if (Util.getTime() - lastFPS > 1000) {
@@ -330,10 +323,29 @@ public class ForwardRenderer {
 	}
 
 	public static int getMaterialProgramId() {
-		return materialProgramId;
+		return ForwardRenderer.materialProgram.getId();
 	}
 
 	public static void setMaterialProgramId(int materialProgramId) {
-		ForwardRenderer.materialProgramId = materialProgramId;
+		ForwardRenderer.setMaterialProgramId(materialProgramId);
+	}
+
+	public static int getShadowProgramId() {
+		return shadowMapProgram.getId();
+	}
+
+	public RenderTarget getFirstTarget() {
+		return firstTarget;
+	}
+
+	public int getProjectionMatrixLocation() {
+		return projectionMatrixLocation;
+	}
+	public int getViewMatrixLocation() {
+		return viewMatrixLocation;
+	}
+
+	public static Program getMaterialProgram() {
+		return materialProgram;
 	}
 }

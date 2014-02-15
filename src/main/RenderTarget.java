@@ -19,6 +19,10 @@ public class RenderTarget {
 	private int height;
 	
 	public RenderTarget(int width, int height) {
+		this(width, height, GL11.GL_RGB);
+	}
+	
+	public RenderTarget(int width, int height, int internalFormat) {
 		this.width = width;
 		this.height = height;
 		
@@ -49,11 +53,12 @@ public class RenderTarget {
 		}
 	}
 	
-	public void use() {
+	public void use(boolean clear) {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		GL11.glViewport(0, 0, width, height);
-//		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		if (clear) {
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		}
 	}
 	
 	public void unuse() {
@@ -62,6 +67,9 @@ public class RenderTarget {
 
 	public int getRenderedTexture() {
 		return renderedTexture;
+	}
+	public int getDepthBufferTexture() {
+		return depthbufferLocation;
 	}
 
 	public void setRenderedTexture(int renderedTexture) {
