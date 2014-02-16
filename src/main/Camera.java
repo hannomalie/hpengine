@@ -40,7 +40,7 @@ public class Camera implements IEntity {
 	
 	public Camera(ForwardRenderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
-		//this(Util.createOrthogonal(-1, 1, -1, 1, -1, 2), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
+		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	
 	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix) {
@@ -60,12 +60,16 @@ public class Camera implements IEntity {
 		angle = new Vector3f(0, 0, 0);
 		
 	}
-	
+
 	public void update() {
 		transform();
 		updateControls();
-		GL20.glUniform3f(renderer.getEyePositionLocation(), position.x, position.y, position.z);
 		flipBuffers();
+	}
+	public void updateShadow() {
+		transform();
+//		updateControls();
+		flipBuffersShadow();
 	}
 	
 	public void updateControls() {
@@ -137,12 +141,12 @@ public class Camera implements IEntity {
 		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 		GL20.glUniformMatrix4(viewMatrixLocation, false, matrix44Buffer);
 	}
-//	public void flipBuffersShadow() {
-//		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-//		GL20.glUniformMatrix4(projectionMatrixShadowLocation, false, matrix44Buffer);
-//		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-//		GL20.glUniformMatrix4(viewMatrixShadowLocation, false, matrix44Buffer);
-//	}
+	public void flipBuffersShadow() {
+		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"), false, matrix44Buffer);
+		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"viewMatrix"), false, matrix44Buffer);
+	}
 
 	public Matrix4f getProjectionMatrix() {
 		return projectionMatrix;
@@ -180,7 +184,7 @@ public class Camera implements IEntity {
 		return projectionMatrixLocation;
 	}
 
-	private void setProjectionMatrixLocation(int projectionMatrixLocation) {
+	public void setProjectionMatrixLocation(int projectionMatrixLocation) {
 		this.projectionMatrixLocation = projectionMatrixLocation;
 	}
 
@@ -188,7 +192,7 @@ public class Camera implements IEntity {
 		return viewMatrixLocation;
 	}
 
-	private void setViewMatrixLocation(int viewMatrixLocation) {
+	public void setViewMatrixLocation(int viewMatrixLocation) {
 		this.viewMatrixLocation = viewMatrixLocation;
 	}
 

@@ -5,6 +5,7 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
+layout(binding=5) uniform sampler2D shadowMap;
 
 uniform bool useParallax;
 
@@ -15,6 +16,7 @@ in vec4 pass_Color;
 in vec2 pass_TextureCoord;
 in vec3 pass_Normal;
 in vec3 pass_Position;
+in vec4 pass_PositionShadow;
 in vec3 pass_Up;
 in vec3 pass_Back;
 
@@ -56,7 +58,6 @@ void main(void) {
 
 	} else {
 		vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
-		
 		vec4 specularMaterial = texture2D(specularMap, pass_TextureCoord);
 		vec4 occlusionMaterial = texture2D(occlusionMap, pass_TextureCoord);
 		vec4 diffuseLight = vec4(1,1,1,1);
@@ -79,8 +80,15 @@ void main(void) {
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
 			out_Color += specularMaterial * specularLight * shininess;
 		}
+		
+		float bias = 0.005;
+		float visibility = 1.0;
+		float shadowMapDepth = texture2D(shadowMap, pass_PositionShadow.xy).z;
+		if (shadowMapDepth < pass_PositionShadow.z - bias) {
+			visibility = 0.1;
+		}
+		out_Color *= visibility;
+		
 		out_Color +=ambientLight*diffuseMaterial;
-
-		//out_Color = vec4(gl_FragDepth,gl_FragDepth,gl_FragDepth,gl_FragDepth);
 	}
 }

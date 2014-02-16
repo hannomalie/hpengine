@@ -150,7 +150,7 @@ public class Entity implements IEntity {
 		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
-		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, SHADOWCHANNELS).upload();
+		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 		
 		this.material = material;
 	}
@@ -186,7 +186,6 @@ public class Entity implements IEntity {
 	}
 	
 
-	@Override
 	public void drawShadow() {
 		flipBuffersShadow();
 		vertexBufferShadow.draw();

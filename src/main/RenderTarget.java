@@ -17,14 +17,29 @@ public class RenderTarget {
 	private int renderedTexture;
 	private int width;
 	private int height;
-	
+	private float clearR;
+	private float clearG;
+	private float clearB;
+	private float clearA;
+
 	public RenderTarget(int width, int height) {
-		this(width, height, GL11.GL_RGB);
+		this(width, height, GL11.GL_RGB, 0.4f, 0.4f, 0.4f, 0f);
+	}
+	public RenderTarget(int width, int height, int internalFormat) {
+		this(width, height, internalFormat, 0.4f, 0.4f, 0.4f, 0f);
+	}
+
+	public RenderTarget(int width, int height, float clearR, float clearG, float clearB, float clearA) {
+		this(width, height, GL11.GL_RGB, clearR, clearG, clearB, clearA);
 	}
 	
-	public RenderTarget(int width, int height, int internalFormat) {
+	public RenderTarget(int width, int height, int internalFormat, float clearR, float clearG, float clearB, float clearA) {
 		this.width = width;
 		this.height = height;
+		this.clearR = clearR;
+		this.clearG = clearG;
+		this.clearB = clearB;
+		this.clearA = clearA;
 		
 		// create a frame and color buffer
 		framebufferLocation = GL30.glGenFramebuffers();
@@ -57,6 +72,7 @@ public class RenderTarget {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		GL11.glViewport(0, 0, width, height);
 		if (clear) {
+			GL11.glClearColor(clearR,clearG,clearB,clearA);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		}
 	}
@@ -98,7 +114,7 @@ public class RenderTarget {
 	}
 	public ByteBuffer getDepthTexturedata() {
 		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
-		GL11.glReadPixels(0, 0, width, height, GL11.GL_DEPTH_COMPONENT, GL11.GL_UNSIGNED_BYTE, pixels);
+		GL11.glReadPixels(0, 0, width, height, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, pixels);
 
 		return pixels;
 	}

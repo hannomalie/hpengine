@@ -12,10 +12,6 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
 
 public class World {
-
-//	public static int framebufferLocation;
-//	public static int depthbufferLocation;
-//	public static int colorTexture;
 	
 	public static DirectionalLight light= new DirectionalLight(true);
 	public static int useParallaxLocation = 0;
@@ -26,7 +22,7 @@ public class World {
 	}
 	
 	private List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 1;
+	private int entityCount = 21;
 	private ForwardRenderer renderer;
 	private Camera camera;
 	
@@ -34,7 +30,7 @@ public class World {
 		renderer = new ForwardRenderer(light);
 		camera = new Camera(renderer);
 		light.init(renderer);
-		this.setupQuad();
+		this.loadDummies();
 		
 //		try {
 //			Mouse.setNativeCursor(new Cursor(1, 1, 0, 0, 1, BufferUtils.createIntBuffer(1), null));
@@ -44,7 +40,7 @@ public class World {
 		
 		while (!Display.isCloseRequested()) {
 			this.loopCycle();
-			Display.sync(60);
+//			Display.sync(60);
 			Display.update();
 		}
 		
@@ -59,16 +55,14 @@ public class World {
 		renderer.destroy();
 	}
 
-	private void setupQuad() {
+	private void loadDummies() {
 		
-//		quad = new Quad();
-		
-		ForwardRenderer.exitOnGLError("setupQuad");
+		ForwardRenderer.exitOnGLError("loadDummies");
 
 		Material stone = new Material(renderer);
 		Material wood = new WoodMaterial(renderer);
 		try {
-			Model box = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
+			Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = stone;
@@ -76,9 +70,10 @@ public class World {
 						mat = wood;
 					}
 					try {
-						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0,j*2), mat);
-						Vector3f scale = new Vector3f(0.1f, 0.1f, 0.1f);
-						scale.scale(new Random().nextFloat());
+						float random = (float) (Math.random() * ( 1f - (-1f) ));
+						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0-random*i+j,j*2), mat);
+						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
+						scale.scale(new Random().nextFloat()*2);
 						entity.setScale(scale);
 						entities.add(entity);
 					} catch (Exception e) {
@@ -86,6 +81,12 @@ public class World {
 					}
 				}
 			}
+			
+			Model sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
+			Entity entity = new Entity(renderer, sponza, new Vector3f(), stone);
+			Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+			entity.setScale(scale);
+			entities.add(entity);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -108,10 +109,15 @@ public class World {
 			light.getDirection().z -= 1f;
 		}
 //		System.out.println("LightPosition: " + lightPosition);
+		for (IEntity entity : entities) {
+			float random = (float) (Math.random() -1f );
+			entity.getPosition().x += 0.01 * random;
+		}
 		
 		renderer.update();
 		camera.update();
-//		light.update();
+		GL20.glUniform3f(renderer.getEyePositionLocation(), camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+		light.update();
 		for (IEntity entity: entities) {
 			entity.update();
 		}

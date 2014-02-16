@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import main.util.Util;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ContextAttribs;
@@ -26,11 +27,12 @@ public class ForwardRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
 
 	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
-			DataChannels.POSITION3);
+			DataChannels.POSITION3,
+			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
-	public static final int WIDTH = 800;
-	public static final int HEIGHT = 600;
+	public static final int WIDTH = 1800;
+	public static final int HEIGHT = 1600;
 
 	private int fps;
 	private long lastFPS;
@@ -39,7 +41,7 @@ public class ForwardRenderer implements Renderer {
 	private static int modelMatrixLocation;
 	private static int modelMatrixShadowLocation;
 	private static Program materialProgram;
-	private FloatBuffer matrix44Buffer = null;
+	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private int renderedTextureShaderLocation;
 	private static Program renderToQuadProgram;
 	private static Program shadowMapProgram;
@@ -115,7 +117,7 @@ public class ForwardRenderer implements Renderer {
 		shadowMapProgram = new Program("/assets/shaders/shadowmap_vertex.glsl", "/assets/shaders/shadowmap_fragment.glsl", Entity.SHADOWCHANNELS);
 		shadowMapProgram.use();
 		ForwardRenderer.setModelMatrixShadowLocation(GL20.glGetUniformLocation(shadowMapProgram.getId(), "modelMatrix"));
-
+		
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 		renderToQuadProgram.use();
 		renderedTextureShaderLocation = GL20.glGetUniformLocation(renderToQuadProgram.getId(), "renderedTexture");
@@ -133,6 +135,11 @@ public class ForwardRenderer implements Renderer {
 
 			LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", name, GL20.glGetUniformLocation(program.getId(), name)));
 		}
+		
+		LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", "shadowMap", 5));
+		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "shadowMap"), 5);
+
+		LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", "shadowMap", GL20.glGetUniformLocation(program.getId(), "shadowMap")));
 	}
 
 	public int getDelta() {
@@ -169,9 +176,21 @@ public class ForwardRenderer implements Renderer {
 	}
 	
 	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, DirectionalLight light) {
+
+		drawShadowMap(light, entities);
+		
 		target.use(true);
 
 		materialProgram.use();
+		
+		// USE SHADOWMAP AND SHADOW MATRICES
+		light.getCamera().getProjectionMatrix().store(matrix44Buffer); matrix44Buffer.flip();
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"projectionMatrixShadow"), false, matrix44Buffer);
+		light.getCamera().getViewMatrix().store(matrix44Buffer); matrix44Buffer.flip();
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"viewMatrixShadow"), false, matrix44Buffer);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getRenderTarget().getRenderedTexture());
+		///////////
 		
 		for (IEntity entity: entities) {
 			entity.draw();
@@ -179,20 +198,25 @@ public class ForwardRenderer implements Renderer {
 		
 		target.unuse();
 
-		drawShadowMap(light, entities);
 		if (testTexture < 0) {
 			testTexture = loadTextureToGL("/assets/textures/wood_diffuse.png");
 		}
-
-//		target.saveBuffer("c:/buffer_" + Util.getTime() + ".png");
+		
+//		light.getRenderTarget().saveBuffer("c:/buffer_" + Util.getTime() + ".png");
 //		System.exit(0);
-		drawToQuad(target.getRenderedTexture(), fullscreenBuffer, true, true);
-//		drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer, false, true);
+		GL11.glViewport(0, 0, WIDTH, HEIGHT);
+		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		drawToQuad(target.getRenderedTexture(), fullscreenBuffer);
+		drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	
 	public void drawShadowMap(DirectionalLight light, List<IEntity> entities) {
 		
-		light.getRenderTarget().use(false);
+		light.getRenderTarget().use(true);
 		
 		shadowMapProgram.use();
 
@@ -203,15 +227,7 @@ public class ForwardRenderer implements Renderer {
 		light.getRenderTarget().unuse();
 	}
 	
-	private void drawToQuad(int texture, VertexBuffer buffer, boolean clearColorBuffer, boolean clearDepthBuffer) {
-
-		if (clearColorBuffer) {
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-		}
-		if (clearDepthBuffer) {
-			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-		}
-		GL11.glViewport(0, 0, WIDTH, HEIGHT);
+	private void drawToQuad(int texture, VertexBuffer buffer) {
 		renderToQuadProgram.use();
 
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -219,10 +235,6 @@ public class ForwardRenderer implements Renderer {
 		buffer.draw();
 		
 		exitOnGLError("glDrawArrays in drawToQuad");
-	}
-
-	public void drawToQuad(RenderTarget target, int x, int y, int width, int height) {
-		
 	}
 
 	public void destroy() {
@@ -284,26 +296,6 @@ public class ForwardRenderer implements Renderer {
 		return texId;
 	}
 	
-//	public static int loadTextureToGL(String filename) {
-//		TextureBuffer texture = Util.loadPNGTexture(filename);
-//
-//		int texId = GL11.glGenTextures();
-//		//System.out.println("Have " + name + " " + texId);
-//		//GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + Material.textureIndex);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
-//		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-//		
-//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, texture.getWidth(), texture.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, texture.getBuffer());
-//		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-//		
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-//		return texId;
-//	}
-	
 	public void updateFPS() {
 		if (Util.getTime() - lastFPS > 1000) {
 			Display.setTitle("FPS: " + fps);
@@ -354,5 +346,9 @@ public class ForwardRenderer implements Renderer {
 
 	public int getEyePositionLocation() {
 		return eyePosition;
+	}
+
+	public static Program getShadowProgram() {
+		return shadowMapProgram;
 	}
 }

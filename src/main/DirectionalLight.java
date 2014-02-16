@@ -50,19 +50,22 @@ public class DirectionalLight {
 	}
 	
 	public void init(ForwardRenderer renderer, Camera camera) {
-		renderTarget = new RenderTarget(256, 256);
-//		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"));
-//		camera.setViewMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(), "viewMatrix"));
+		renderTarget = new RenderTarget(2048, 2048, 1, 1, 1, 0);
+		this.camera = camera;
+		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"));
+		camera.setViewMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(), "viewMatrix"));
 	}
 
 	public void init(ForwardRenderer renderer) {
-		camera =  new Camera(renderer, Util.createOrthogonal(-100, 100, -100, 100, -100, 200), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
-		//camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
+//		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
+		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.001f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, -0.5f, 0)));
 		init(renderer, camera);
 	}
 
 	public void update() {
-		camera.update();
+		ForwardRenderer.getShadowProgram().use();
+		camera.updateShadow();
+		ForwardRenderer.getMaterialProgram().use();
 	}
 
 	public Camera getCamera() {

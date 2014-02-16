@@ -14,20 +14,20 @@ public class QuadVertexBuffer extends VertexBuffer{
 		if (fullscreen) {
 			return new float[] {
 				    -1.0f, -1.0f, 0.0f,   0f, 0f,
-				    1.0f, -1.0f, 0.0f,    0f, 0f,
+				    1.0f, -1.0f, 0.0f,    1f, 0f,
 				    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
-				    -1.0f,  1.0f, 0.0f,   0f,  0f,
+				    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
 				    1.0f, -1.0f, 0.0f,    1.0f, 0f,
 				    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 				};
 		} else {
 			return new float[] {
 				    -1.0f, -1.0f, 0.0f,   0f, 0f,
-				    1.0f, -1.0f, 0.0f,    0f, 0f,
-				    -1.0f,  1.0f, 0.0f,   0f, 1.0f,
-				    -1.0f,  1.0f, 0.0f,   0f, 0f,
-				    1.0f, -1.0f, 0.0f,    1.0f, 0f,
-				    1.0f,  1.0f, 0.0f,    1.0f, 1.0f
+				    0f, -1.0f, 0.0f,    1f, 0f,
+				    -1.0f,  0f, 0.0f,   0f, 1.0f,
+				    -1.0f,  0f, 0.0f,   0f, 1.0f,
+				    0f, -1.0f, 0.0f,    1.0f, 0f,
+				    0f,  0f, 0.0f,    1.0f, 1.0f
 				};
 		}
 		

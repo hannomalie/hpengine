@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Vector3f;
 
 public class Material implements IEntity {
 	
@@ -74,5 +75,10 @@ public class Material implements IEntity {
 	@Override
 	public void drawShadow() {
 
+	}
+
+	@Override
+	public Vector3f getPosition() {
+		return null;
 	}
 }
