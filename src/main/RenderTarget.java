@@ -70,6 +70,7 @@ public class RenderTarget {
 	
 	public void use(boolean clear) {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
 		GL11.glViewport(0, 0, width, height);
 		if (clear) {
 			GL11.glClearColor(clearR,clearG,clearB,clearA);

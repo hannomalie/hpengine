@@ -71,7 +71,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
-						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0-random*i+j,j*2), mat);
+						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0-random*i+j,j*2), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*2);
 						entity.setScale(scale);
@@ -83,7 +83,7 @@ public class World {
 			}
 			
 			Model sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
-			Entity entity = new Entity(renderer, sponza, new Vector3f(), stone);
+			Entity entity = new Entity(renderer, sponza, new Vector3f(0,-1.5f,0), stone, true);
 			Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 			entity.setScale(scale);
 			entities.add(entity);
@@ -103,16 +103,16 @@ public class World {
 			light.getDirection().x -= 1f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.getDirection().z += 1f;
+			light.getDirection().y += 1f;
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.getDirection().z -= 1f;
+			light.getDirection().y -= 1f;
 		}
 //		System.out.println("LightPosition: " + lightPosition);
-		for (IEntity entity : entities) {
-			float random = (float) (Math.random() -1f );
-			entity.getPosition().x += 0.01 * random;
-		}
+//		for (IEntity entity : entities) {
+//			float random = (float) (Math.random() -1f );
+//			entity.getPosition().x += 0.01 * random;
+//		}
 		
 		renderer.update();
 		camera.update();

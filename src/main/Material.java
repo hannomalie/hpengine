@@ -81,4 +81,13 @@ public class Material implements IEntity {
 	public Vector3f getPosition() {
 		return null;
 	}
+
+	@Override
+	public boolean castsShadows() {
+		return false;
+	}
+
+	@Override
+	public void move(Vector3f amount) {
+	}
 }

@@ -10,7 +10,7 @@ uniform mat4 viewMatrixShadow;
 uniform vec3 eyePosition;
 uniform vec3 lightDirection;
 
-in vec4 in_Position;
+in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
@@ -20,7 +20,8 @@ in vec3 in_Tangent;
 out vec4 pass_Color;
 out vec2 pass_TextureCoord;
 out vec3 pass_Normal;
-out vec3 pass_Position;
+out vec4 pass_Position;
+out vec4 pass_PositionWorld;
 out vec4 pass_PositionShadow;
 out vec3 pass_Binormal;
 out vec3 pass_Tangent;
@@ -42,13 +43,18 @@ mat4 biasMatrix = mat4(
 
 void main(void) {
 
-	gl_Position = projectionMatrix * viewMatrix * modelMatrix * in_Position;
-	pass_PositionShadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * biasMatrix * in_Position;
+	pass_PositionWorld = viewMatrix * modelMatrix * vec4(in_Position.xyz,1);
+	pass_Position = (projectionMatrix * pass_PositionWorld);
+	gl_Position = pass_Position;
+	pass_PositionShadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * vec4(in_Position.xyz,1);
+	pass_PositionShadow.xyz /= pass_PositionShadow.w;
+	pass_PositionShadow.xyz += 1.0;
+	pass_PositionShadow.xyz *= 0.5;
+	//gl_Position = pass_PositionShadow;
 	
 	pass_Color = in_Color;
 	pass_TextureCoord = in_TextureCoord;
-	pass_Normal = in_Normal;
-	pass_Position = in_Position.xyz;
+	pass_Normal = (viewMatrixShadow * modelMatrix * vec4(in_Normal,1)).xyz;
 	
 	pass_Up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
 	pass_Back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
@@ -58,8 +64,8 @@ void main(void) {
 	pass_LightDirection = lightDir;
 	pass_LightVec = lightDir;
 	
-	pass_eyeVec = eyePosition - pass_Position;
+	pass_eyeVec = (viewMatrix * modelMatrix * vec4(eyePosition,1)).xyz - pass_PositionWorld.xyz;
 	
-	vec3 halfVector = normalize(in_Position.xyz + lightDir);
+	vec3 halfVector = normalize(pass_PositionWorld.xyz + lightDir);
 	pass_HalfVec = halfVector; 
 }

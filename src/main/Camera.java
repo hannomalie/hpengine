@@ -34,12 +34,16 @@ public class Camera implements IEntity {
 	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
-	private float rotationSpeed = 0.12f;
+	private float rotationSpeed = 0.2f;
 
 	private ForwardRenderer renderer;
+
+	private Vector3f right = new Vector3f(1, 0, 0);
+	private Vector3f up = new Vector3f(0, 1, 0);
+	private Vector3f back = new Vector3f(0, 0, 1);
 	
 	public Camera(ForwardRenderer renderer) {
-		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.001f, 100f));
+		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 100f));
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	
@@ -77,12 +81,11 @@ public class Camera implements IEntity {
 		if (Mouse.isButtonDown(0)) {
 			angle.y += Mouse.getDX() * rotationSpeed;
 			angle.x += -Mouse.getDY() * rotationSpeed;
-			angle.z += -Mouse.getDY() * rotationSpeed;
 			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f", angle.x, angle.y, angle.z));
 		}
-		Vector3f right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
-		Vector3f up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
-		Vector3f back = new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22);
+		right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
+		up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
+		back = new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22);
 		
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
 			position.x -= posDelta * back.x;
@@ -125,11 +128,15 @@ public class Camera implements IEntity {
 
 	private void transform() {
 		setViewMatrix(new Matrix4f());
-		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
-				viewMatrix, viewMatrix);
+		
+		Vector3f upNormalised = new Vector3f(); 
+
+
 		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
 				viewMatrix, viewMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.x), new Vector3f(1, 0, 0), 
+				viewMatrix, viewMatrix);
+		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
 				viewMatrix, viewMatrix);
 
 		Matrix4f.translate(position, viewMatrix, viewMatrix);
@@ -207,6 +214,16 @@ public class Camera implements IEntity {
 
 	@Override
 	public void drawShadow() {
+	}
+
+	@Override
+	public boolean castsShadows() {
+		return false;
+	}
+
+	@Override
+	public void move(Vector3f amount) {
+		Vector3f.add(getPosition(), amount, getPosition());
 	}
 
 }

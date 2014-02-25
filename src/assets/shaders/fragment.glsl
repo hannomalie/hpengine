@@ -15,8 +15,9 @@ uniform mat4 modelMatrix;
 in vec4 pass_Color;
 in vec2 pass_TextureCoord;
 in vec3 pass_Normal;
-in vec3 pass_Position;
+in vec4 pass_Position;
 in vec4 pass_PositionShadow;
+in vec4 pass_PositionWorld;
 in vec3 pass_Up;
 in vec3 pass_Back;
 
@@ -26,6 +27,18 @@ in vec3 pass_HalfVec;
 in vec3 pass_eyeVec;
 
 out vec4 out_Color;
+
+vec2 poissonDisk[4] = vec2[](
+  vec2( -0.94201624, -0.39906216 ),
+  vec2( 0.94558609, -0.76890725 ),
+  vec2( -0.094184101, -0.92938870 ),
+  vec2( 0.34495938, 0.29387760 )
+);
+
+float random(vec4 seed4) {
+	float dot_product = dot(seed4, vec4(12.9898,78.233,45.164,94.673));
+    return fract(sin(dot_product) * 43758.5453);
+}
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -48,6 +61,14 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
 }
+const float epsilon = 0.005;
+float eval_shadow (vec2 texcoods) {
+	float shadow = texture (shadowMap, texcoods).r;
+	if (shadow + epsilon < pass_PositionShadow.z) {
+		return 0.2; // shadowed
+	}
+	return 1.0; // not shadowed
+}
 void main(void) {
 
 	if (useParallax) {
@@ -61,7 +82,7 @@ void main(void) {
 		vec4 specularMaterial = texture2D(specularMap, pass_TextureCoord);
 		vec4 occlusionMaterial = texture2D(occlusionMap, pass_TextureCoord);
 		vec4 diffuseLight = vec4(1,1,1,1);
-		vec4 specularLight = vec4(0.2, 0.2, 0.2, 0.2);
+		vec4 specularLight = vec4(1, 1, 1, 1);
 		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 	
 		vec3 normal = 2*texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
@@ -69,26 +90,26 @@ void main(void) {
 			normal = perturb_normal( normalize(pass_Normal), pass_eyeVec, pass_TextureCoord );
 		}
 		normal.y = -normal.y;
-		//normal = normalize (normal);
+		normal = normalize (normal);
 		
 		float shininess;
 		
 		float lamberFactor = max(dot(pass_LightVec, normal), 0.0);
 		if (lamberFactor > 0.0)
 		{
-			shininess = pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
+			shininess = 0.3*pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
 			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
 			out_Color += specularMaterial * specularLight * shininess;
 		}
 		
-		float bias = 0.005;
-		float visibility = 1.0;
-		float shadowMapDepth = texture2D(shadowMap, pass_PositionShadow.xy).z;
-		if (shadowMapDepth < pass_PositionShadow.z - bias) {
-			visibility = 0.1;
-		}
-		out_Color *= visibility;
+		float visibility = eval_shadow (pass_PositionShadow.xy);
 		
-		out_Color +=ambientLight*diffuseMaterial;
+		out_Color += diffuseMaterial*ambientLight;
+		
+		out_Color *= visibility;
+		//out_Color *= 0.000000001;
+		//out_Color += vec4(visibility,visibility,visibility,1);
+		
+		
 	}
 }

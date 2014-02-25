@@ -9,4 +9,6 @@ public interface IEntity {
 	public void destroy();
 	public void drawShadow();
 	public Vector3f getPosition();
+	public void move(Vector3f amount);
+	public boolean castsShadows();
 }

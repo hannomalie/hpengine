@@ -31,8 +31,8 @@ public class ForwardRenderer implements Renderer {
 			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
-	public static final int WIDTH = 1800;
-	public static final int HEIGHT = 1600;
+	public static final int WIDTH = 1280;
+	public static final int HEIGHT = 720;
 
 	private int fps;
 	private long lastFPS;
@@ -221,7 +221,9 @@ public class ForwardRenderer implements Renderer {
 		shadowMapProgram.use();
 
 		 for (IEntity entity: entities) {
-			 entity.drawShadow();
+			 if (true) {
+				 entity.drawShadow();
+			 }
 		 }
 		
 		light.getRenderTarget().unuse();

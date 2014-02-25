@@ -15,6 +15,7 @@ import main.TextureBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -185,5 +186,32 @@ public class Util {
         Matrix4f.translate(new Vector3f(-eye.x, -eye.y, -eye.z), mat, temp);
 
         return mat;
+    }
+	
+	public static Matrix4f toMatrix(Quaternion q) {
+        Matrix4f ret = new Matrix4f();
+        
+
+        ret.m00 = 1 - 2 * q.y * q.y - 2 * q.z * q.z;
+        ret.m01 = 2 * q.x * q.y - 2 * q.w * q.z;
+        ret.m02 = 2 * q.x * q.z + 2 * q.w + q.y;
+        ret.m03 = 0;
+
+        ret.m10 = 2 * q.x * q.y + 2 * q.w * q.z;
+        ret.m11 = 1 - 2 * q.x * q.x - 2 * q.z * q.z;
+        ret.m12 = 2 * q.y * q.z + 2 * q.w * q.x;
+        ret.m13 = 0;
+
+        ret.m20 = 2 * q.x * q.z - 2 * q.w * q.z;
+        ret.m21 = 2 * q.y * q.z - 2 * q.w * q.x;
+        ret.m22 = 1 - 2 * q.x * q.x - 2 * q.y * q.y;
+        ret.m23 = 0;
+
+        ret.m30 = 0;
+        ret.m31 = 0;
+        ret.m32 = 0;
+        ret.m33 = 1;
+
+        return ret;
     }
 }

@@ -14,6 +14,7 @@ import main.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -37,13 +38,16 @@ public class Entity implements IEntity {
 	protected Matrix4f modelMatrix = null;
 	protected int modelMatrixLocation = 0;
 	protected Vector3f position = null;
-	protected Vector3f angle = null;
+	//protected Vector3f angle = null;
+	protected Quaternion angle = null;
 	protected Vector3f scale = null;
 	private Material material;
 
 	private VertexBuffer vertexBuffer;
 
 	private VertexBuffer vertexBufferShadow;
+	
+	public boolean castsShadows = false;
 	
 //	public Entity(Vector3f position) {
 //		modelMatrix = new Matrix4f();
@@ -55,15 +59,22 @@ public class Entity implements IEntity {
 //	}
 	
 	public Entity(ForwardRenderer renderer, Model model) {
-		this(renderer, model, new Vector3f(0, 0, 0), new Material(renderer));
+		this(renderer, model, new Vector3f(0, 0, 0), new Material(renderer), false);
+	}
+
+	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, Material stone) {
+		this(renderer, model, new Vector3f(0, 0, 0), new Material(renderer), false);
 	}
 	
-	public Entity(ForwardRenderer renderer, Model model, Vector3f position, Material material) {
+	public Entity(ForwardRenderer renderer, Model model, Vector3f position, Material material, boolean castsShadows) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+		
+		this.castsShadows = castsShadows;
 
 		this.position = position;
-		angle = new Vector3f(0, 0, 0);
+		//angle = new Vector3f(0, 0, 0);
+		angle = new Quaternion();
 		scale = new Vector3f(1, 1, 1);
 		
 		
@@ -159,6 +170,8 @@ public class Entity implements IEntity {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
+//		Matrix4f.mul(Util.toMatrix(angle), modelMatrix, modelMatrix);
+		
 		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
 				modelMatrix, modelMatrix);
 		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
@@ -207,14 +220,22 @@ public class Entity implements IEntity {
 		this.position = position;
 	}
 
-	public Vector3f getAngle() {
+//	public Vector3f getAngle() {
+//		return angle;
+//	}
+//
+//	public void setAngle(Vector3f angle) {
+//		this.angle = angle;
+//	}
+
+	public Quaternion getAngle() {
 		return angle;
 	}
 
-	public void setAngle(Vector3f angle) {
+	public void setAngle(Quaternion angle) {
 		this.angle = angle;
 	}
-
+	
 	public Vector3f getScale() {
 		return scale;
 	}
@@ -258,6 +279,16 @@ public class Entity implements IEntity {
 
 	public VertexBuffer getVertexBuffer() {
 		return vertexBuffer;
+	}
+
+	@Override
+	public boolean castsShadows() {
+		return castsShadows;
+	}
+
+	@Override
+	public void move(Vector3f amount) {
+		Vector3f.add(getPosition(), amount, getPosition());
 	}
 
 }
