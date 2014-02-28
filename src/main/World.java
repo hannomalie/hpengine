@@ -1,8 +1,12 @@
 package main;
+import static main.log.ConsoleLogger.getLogger;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import main.util.OBJLoader;
 
@@ -12,7 +16,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
 
 public class World {
-	
+	private static Logger LOGGER = getLogger();
+
 	public static DirectionalLight light= new DirectionalLight(true);
 	public static int useParallaxLocation = 0;
 	public static int useParallax = 0;
@@ -41,7 +46,11 @@ public class World {
 		while (!Display.isCloseRequested()) {
 			this.loopCycle();
 //			Display.sync(60);
+
+			long millisecondsStart = System.currentTimeMillis();
 			Display.update();
+			long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//			LOGGER.log(Level.INFO, String.format("%d ms for display update", timeSpentInMilliseconds));
 		}
 		
 		destroy();
@@ -59,10 +68,14 @@ public class World {
 		
 		ForwardRenderer.exitOnGLError("loadDummies");
 
-		Material stone = new Material(renderer);
-		Material wood = new WoodMaterial(renderer);
+		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
+												"stone_specular.png", "stone_occlusion.png",
+												"stone_height.png");
+		Material wood = new Material(renderer, "", "wood_diffuse.png", "wood_normal.png",
+												"wood_specular.png", "wood_occlusion.png",
+												"wood_height.png");
 		try {
-			Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
+			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = stone;
@@ -71,7 +84,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
-						Entity entity = new Entity(renderer, box, new Vector3f(i*2,0-random*i+j,j*2), mat, true);
+						Entity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*2);
 						entity.setScale(scale);
@@ -82,11 +95,13 @@ public class World {
 				}
 			}
 			
-			Model sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
-			Entity entity = new Entity(renderer, sponza, new Vector3f(0,-1.5f,0), stone, true);
-			Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-			entity.setScale(scale);
-			entities.add(entity);
+			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
+			for (Model model : sponza) {
+				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), stone, true);
+				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+				entity.setScale(scale);
+				entities.add(entity);	
+			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -128,14 +143,21 @@ public class World {
 	}
 	
 	private void draw() {
+		long millisecondsStart = System.currentTimeMillis();
 		renderer.draw(camera, entities, light);
+		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));
 
 		ForwardRenderer.exitOnGLError("draw in render");
 		
 	}
 	
 	private void loopCycle() {
+
+		long millisecondsStart = System.currentTimeMillis();
 		update();
+		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 		
 		ForwardRenderer.exitOnGLError("loopCycle");

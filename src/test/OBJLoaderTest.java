@@ -2,13 +2,33 @@ package test;
 
 import main.Face;
 import main.util.OBJLoader;
+import main.util.Util;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.ContextAttribs;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.newdawn.slick.opengl.Texture;
 
 public class OBJLoaderTest {
+	@BeforeClass
+	public static void setupOpenGLContext() throws LWJGLException {
+		PixelFormat pixelFormat = new PixelFormat();
+		ContextAttribs contextAtrributes = new ContextAttribs(4, 2)
+			.withForwardCompatible(true);
+//			.withProfileCore(true);
+		
+		Display.setDisplayMode(new DisplayMode(10, 10));
+		Display.setTitle("ForwardRenderer");
+		Display.create(pixelFormat, contextAtrributes);
+	}
 
 	@Test
 	public void parseVertex() {
@@ -35,6 +55,24 @@ public class OBJLoaderTest {
 		Assert.assertArrayEquals(expected.getVertexIndices(), face.getVertexIndices());
 		Assert.assertArrayEquals(expected.getTextureCoordinateIndices(), face.getTextureCoordinateIndices());
 		Assert.assertArrayEquals(expected.getNormalIndices(), face.getNormalIndices());
+	}
+	
+	@Test
+	public void extractFileExtension() {
+		String extension = Util.getFileExtension("/assets/textures/stone_diffuse.png");
+		Assert.assertEquals("png", extension);
+	}
+
+	@Test
+	public void loadTextureFromJar() {
+		Texture texture = Util.loadTexture("src/assets/textures/stone_diffuse.png");
+		Assert.assertEquals(512, texture.getImageHeight());
+	}
+	
+	@Test
+	public void loadTextureFromDirecotry() {
+		Texture texture = Util.loadTexture("C://default.png");
+		Assert.assertEquals(128, texture.getImageHeight());
 	}
 
 }

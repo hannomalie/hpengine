@@ -69,9 +69,10 @@ public class OBJLoader {
         return face;
 	}
 
-    public static Model loadTexturedModel(File f) throws IOException {
+    public static List<Model> loadTexturedModel(File f) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(f));
-        Model model = new Model();
+        List<Model> models = new ArrayList<>();
+        Model model = null;// = new Model();
         Model.Material currentMaterial = new Model.Material();
 
         ArrayList<Vector3f> vertices = new ArrayList<>();
@@ -87,6 +88,11 @@ public class OBJLoader {
             if (line.startsWith("mtllib ")) {
             	// TODO
             } else if (line.startsWith("o ")) {
+            	model = new Model();
+                model.setVertices(vertices);
+                model.setTexCoords(texCoords);
+                model.setNormals(normals);
+            	models.add(model);
             	parseName(line, model);
             } else if (line.startsWith("v ")) {
             	vertices.add(parseVertex(line));
@@ -199,11 +205,8 @@ public class OBJLoader {
         }
         reader.close();
 
-        model.setVertices(vertices);
-        model.setTexCoords(texCoords);
-        model.setNormals(normals);
         
-        return model;
+        return models;
     }
 
 

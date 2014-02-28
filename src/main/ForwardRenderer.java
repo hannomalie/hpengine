@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.Material.MAP;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
@@ -95,6 +96,7 @@ public class ForwardRenderer implements Renderer {
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
+		
 		ForwardRenderer.exitOnGLError("setupOpenGL");
 	}
 	
@@ -128,12 +130,10 @@ public class ForwardRenderer implements Renderer {
 
 	private void setUpMaterialProgramTextureLocations(Program program) {
 		
-		for(int i = 0; i < Material.mapNames.length; i++) {
-			String name = Material.mapNames[i];
-			LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", name, i));
-			GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), name), i);
-
-			LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", name, GL20.glGetUniformLocation(program.getId(), name)));
+		for (MAP map : MAP.values()) {
+			String name = map.shaderVariableName;
+			LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", name, map.textureSlot));
+			GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), name), map.textureSlot);
 		}
 		
 		LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", "shadowMap", 5));
@@ -141,6 +141,21 @@ public class ForwardRenderer implements Renderer {
 
 		LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", "shadowMap", GL20.glGetUniformLocation(program.getId(), "shadowMap")));
 	}
+//	private void setUpMaterialProgramTextureLocations(Program program) {
+//		
+//		for(int i = 0; i < Material.mapNames.length; i++) {
+//			String name = Material.mapNames[i];
+//			LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", name, i));
+//			GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), name), i);
+//
+//			LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", name, GL20.glGetUniformLocation(program.getId(), name)));
+//		}
+//		
+//		LOGGER.log(Level.INFO, String.format("Shader location for %s is set to %d", "shadowMap", 5));
+//		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "shadowMap"), 5);
+//
+//		LOGGER.log(Level.INFO, String.format("Shader location for %s is %d", "shadowMap", GL20.glGetUniformLocation(program.getId(), "shadowMap")));
+//	}
 
 	public int getDelta() {
 		long time = Util.getTime();

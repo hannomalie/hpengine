@@ -10,14 +10,20 @@ import java.nio.IntBuffer;
 
 import javax.imageio.ImageIO;
 
+import main.Material;
 import main.TextureBuffer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.Sys;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.newdawn.slick.opengl.Texture;
+import org.newdawn.slick.opengl.TextureLoader;
+import org.newdawn.slick.util.ResourceLoader;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
@@ -71,6 +77,40 @@ public class Util {
 		
 		return new TextureBuffer(tWidth, tHeight, buf);
 		
+	}
+
+	public static Texture loadTexture(String filename) {
+		return loadTexture(filename, Material.MIPMAPDEFAULTFORTEXTURE);
+	}
+
+	public static Texture loadTexture(String filename, boolean mipmap) {
+		Texture texture = null;
+		String extension = getFileExtension(filename).toUpperCase();
+		try {
+			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
+		} catch (IOException e) {
+			try {
+				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		if (mipmap) {
+			texture.bind();
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		}
+		return texture;
+	}
+	
+	public static String getFileExtension(String in) {
+		String extension = "";
+		int i = in.lastIndexOf('.');
+		if (i > 0) {
+		    extension = in.substring(i+1);
+		}
+		return extension;
 	}
 	
 	public static BufferedImage toImage(ByteBuffer byteBuffer, int width, int height) {

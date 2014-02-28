@@ -155,12 +155,16 @@ public class VertexBuffer {
 		
 		return this;
 	}
-	
+
 	public void draw() {
 //		LOGGER.log(Level.INFO, String.format("Binding VertexArray", vertexArray));
 		GL30.glBindVertexArray(vertexArray);
 //		LOGGER.log(Level.INFO, String.format("Drawing %d vertices => %d triangles", verticesCount, verticesCount/3));
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+	}
+	public void drawDebug() {
+		GL30.glBindVertexArray(vertexArray);
+		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
 	}
 	
 	private void setUpAttributes() {

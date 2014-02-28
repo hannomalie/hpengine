@@ -2,6 +2,7 @@ package test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import main.DirectionalLight;
 import main.Entity;
@@ -18,8 +19,8 @@ public class ModelTest {
 	@Test
 	public void loadsCorrectly() throws IOException {
 		ForwardRenderer renderer = new ForwardRenderer(new DirectionalLight(false));
-		Model box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
-		Entity entity = new Entity(renderer, box);
+		List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
+		Entity entity = new Entity(renderer, box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();
 		int verticesCount = buffer.getVerticesCount();
 		// Korrekter Vertices count

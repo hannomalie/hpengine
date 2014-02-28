@@ -60,8 +60,8 @@ public class DirectionalLight {
 	}
 
 	public void init(ForwardRenderer renderer) {
-//		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 40f));
-		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
+		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 80f));
+//		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
 		camera.setPosition(new Vector3f(2f,-2f,2f));
 		camera.setAngle(new Vector3f(46f,-3f,0f));
 		init(renderer, camera);

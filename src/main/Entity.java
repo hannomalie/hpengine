@@ -48,22 +48,20 @@ public class Entity implements IEntity {
 	private VertexBuffer vertexBufferShadow;
 	
 	public boolean castsShadows = false;
-	
-//	public Entity(Vector3f position) {
-//		modelMatrix = new Matrix4f();
-//		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-//
-//		this.position = position;
-//		angle = new Vector3f(0, 0, 0);
-//		scale = new Vector3f(1, 1, 1);
-//	}
-	
+
 	public Entity(ForwardRenderer renderer, Model model) {
-		this(renderer, model, new Vector3f(0, 0, 0), new Material(renderer), false);
+		this(renderer, model, new Vector3f(0, 0, 0), 
+				new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
+						"stone_specular.png", "stone_occlusion.png",
+						"stone_height.png")
+				, false);
+	}
+	public Entity(ForwardRenderer renderer, Model model, Material material) {
+		this(renderer, model, new Vector3f(0, 0, 0), material, false);
 	}
 
-	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, Material stone) {
-		this(renderer, model, new Vector3f(0, 0, 0), new Material(renderer), false);
+	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, Material material) {
+		this(renderer, model, new Vector3f(0, 0, 0), material, false);
 	}
 	
 	public Entity(ForwardRenderer renderer, Model model, Vector3f position, Material material, boolean castsShadows) {

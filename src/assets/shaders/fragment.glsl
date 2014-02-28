@@ -61,13 +61,24 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
 }
-const float epsilon = 0.005;
+const float epsilon = 0.0025;
 float eval_shadow (vec2 texcoods) {
 	float shadow = texture (shadowMap, texcoods).r;
 	if (shadow + epsilon < pass_PositionShadow.z) {
 		return 0.2; // shadowed
 	}
 	return 1.0; // not shadowed
+}
+
+float eval_shadow_poisson (vec2 texcoods) {
+	float shadow = 1.0;
+	for (int i=0;i<4;i++){
+		float mapSample = texture(shadowMap, texcoods + poissonDisk[i]/700).r;
+		if (mapSample + epsilon < pass_PositionShadow.z) {
+			shadow -= 0.2;
+		}
+	}
+	return shadow; // not shadowed
 }
 void main(void) {
 
@@ -89,7 +100,7 @@ void main(void) {
 		if (true) {
 			normal = perturb_normal( normalize(pass_Normal), pass_eyeVec, pass_TextureCoord );
 		}
-		normal.y = -normal.y;
+		//normal.y = -normal.y;
 		normal = normalize (normal);
 		
 		float shininess;
@@ -102,7 +113,7 @@ void main(void) {
 			out_Color += specularMaterial * specularLight * shininess;
 		}
 		
-		float visibility = eval_shadow (pass_PositionShadow.xy);
+		float visibility = eval_shadow_poisson(pass_PositionShadow.xy);
 		
 		out_Color += diffuseMaterial*ambientLight;
 		
