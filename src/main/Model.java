@@ -18,8 +18,9 @@ public class Model {
     private HashMap<String, Material> materials = new HashMap<String, Material>();
     private boolean enableSmoothShading = true;
 	private String name = "";
+	private Material material;
 
-    public void enableStates() {
+	public void enableStates() {
         if (hasTextureCoordinates()) {
             glEnable(GL_TEXTURE_2D);
         }
@@ -62,30 +63,6 @@ public class Model {
         this.enableSmoothShading = smoothShadingEnabled;
     }
 
-    public HashMap<String, Material> getMaterials() {
-        return materials;
-    }
-
-    public static class Material {
-
-        @Override
-        public String toString() {
-            return "Material{" +
-                    "specularCoefficient=" + specularCoefficient +
-                    ", ambientColour=" + ambientColour +
-                    ", diffuseColour=" + diffuseColour +
-                    ", specularColour=" + specularColour +
-                    '}';
-        }
-
-        /** Between 0 and 1000. */
-        public float specularCoefficient = 100;
-        public float[] ambientColour = {0.2f, 0.2f, 0.2f};
-        public float[] diffuseColour = {0.3f, 1, 1};
-        public float[] specularColour = {1, 1, 1};
-        public org.newdawn.slick.opengl.Texture texture;
-    }
-
 	public void setName(String name) {
 		this.name  = name;
 	}
@@ -100,5 +77,13 @@ public class Model {
 
 	public void setTexCoords(ArrayList<Vector2f> texCoords) {
 		this.texCoords = texCoords;
+	}
+
+	public void setMaterial(Material material) {
+		this.material = material;
+	}
+
+    public Material getMaterial() {
+		return material;
 	}
 }

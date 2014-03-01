@@ -1,7 +1,5 @@
 package main;
 
-import main.Model.Material;
-
 public class Face {
 	private final int[] vertexIndices = {-1, -1, -1};
     private final int[] normalIndices = {-1, -1, -1};

@@ -27,7 +27,7 @@ public class World {
 	}
 	
 	private List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 21;
+	private int entityCount = 20;
 	private ForwardRenderer renderer;
 	private Camera camera;
 	
@@ -95,9 +95,9 @@ public class World {
 				}
 			}
 			
-			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza.obj"));
+			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
 			for (Model model : sponza) {
-				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), stone, true);
+				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), true);
 				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 				entity.setScale(scale);
 				entities.add(entity);	

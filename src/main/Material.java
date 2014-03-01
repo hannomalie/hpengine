@@ -53,33 +53,38 @@ public class Material implements IEntity {
 	public static int textureIndex = 0;
 
 	public Material(ForwardRenderer renderer, String path, String diffuse, String... maps) {
-		setup(renderer, path, diffuse, maps);
+		setup(path, diffuse, maps);
+	}
+	public Material(String path, String diffuse, String... maps) {
+		setup(path, diffuse, maps);
 	}
 
-	public void setup(ForwardRenderer renderer, String path, String diffuse, String... maps) {
+	public Material() {
+	}
+	
+	public void setup(String path, String diffuse, String... maps) {
 		if (path == null || path == "") {
 			path = TEXTUREASSETSPATH;
 		}
 		MAP[] allMaps = MAP.values();
 		
 		String finalPath = path + diffuse;
-		addToTextures(finalPath, Util.loadTexture(finalPath));
-		textures.put(allMaps[0], finalPath);
+		addTexture(allMaps[0], finalPath, Util.loadTexture(finalPath));
 		
 		for (int i = 0; i < maps.length; i++) {
 			String map = maps[i];
 			finalPath = path + map;
-			addToTextures(finalPath, Util.loadTexture(finalPath));
-			textures.put(allMaps[i+1], finalPath);
+			addTexture(allMaps[i+1], finalPath, Util.loadTexture(finalPath));
 		}
 	}
 	
-	public void addToTextures(String path, Texture texture) {
+	public void addTexture(MAP map, String path, Texture texture) {
 		if (TEXTURES.containsKey(path)) {
 			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 			return;
 		}
 		TEXTURES.put(path, texture);
+		textures.put(map, path);
 		LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 	}
 	

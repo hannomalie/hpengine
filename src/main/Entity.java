@@ -164,6 +164,9 @@ public class Entity implements IEntity {
 		this.material = material;
 	}
 
+	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, boolean b) {
+		this(renderer, model, vector3f, model.getMaterial(), b);
+	}
 	public void update() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
