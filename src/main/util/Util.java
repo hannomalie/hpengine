@@ -80,7 +80,7 @@ public class Util {
 	}
 
 	public static Texture loadTexture(String filename) {
-		return loadTexture(filename, Material.MIPMAPDEFAULTFORTEXTURE);
+		return loadTexture(filename, Material.MIPMAP_DEFAULT);
 	}
 
 	public static Texture loadTexture(String filename, boolean mipmap) {
@@ -97,10 +97,14 @@ public class Util {
 		}
 		if (mipmap) {
 			texture.bind();
+			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 		}
+		
 		return texture;
 	}
 	
@@ -229,29 +233,37 @@ public class Util {
     }
 	
 	public static Matrix4f toMatrix(Quaternion q) {
-        Matrix4f ret = new Matrix4f();
-        
+		Matrix4f m = new Matrix4f();
 
-        ret.m00 = 1 - 2 * q.y * q.y - 2 * q.z * q.z;
-        ret.m01 = 2 * q.x * q.y - 2 * q.w * q.z;
-        ret.m02 = 2 * q.x * q.z + 2 * q.w + q.y;
-        ret.m03 = 0;
+		float qx = q.getX();
+        float qy = q.getY();
+        float qz = q.getZ();
+        float qw = q.getW();
 
-        ret.m10 = 2 * q.x * q.y + 2 * q.w * q.z;
-        ret.m11 = 1 - 2 * q.x * q.x - 2 * q.z * q.z;
-        ret.m12 = 2 * q.y * q.z + 2 * q.w * q.x;
-        ret.m13 = 0;
+        // just pretend these are superscripts.
+        float qx2 = qx * qx;
+        float qy2 = qy * qy;
+        float qz2 = qz * qz;
 
-        ret.m20 = 2 * q.x * q.z - 2 * q.w * q.z;
-        ret.m21 = 2 * q.y * q.z - 2 * q.w * q.x;
-        ret.m22 = 1 - 2 * q.x * q.x - 2 * q.y * q.y;
-        ret.m23 = 0;
+        m.m00 = 1 - 2 * qy2 - 2 * qz2;
+        m.m01 = 2 * qx * qy + 2 * qz * qw;
+        m.m02 = 2 * qx * qz - 2 * qy * qw;
+        m.m03 = 0;
 
-        ret.m30 = 0;
-        ret.m31 = 0;
-        ret.m32 = 0;
-        ret.m33 = 1;
+        m.m10 = 2 * qx * qy - 2 * qz * qw;
+        m.m11 = 1 - 2 * qx2 - 2 * qz2;
+        m.m12 = 2 * qy * qz + 2 * qx * qw;
+        m.m13 = 0;
 
-        return ret;
+        m.m20 = 2 * qx * qz + 2 * qy * qw;
+        m.m21 = 2 * qy * qz - 2 * qx * qw;
+        m.m22 = 1 - 2 * qx2 - 2 * qy2;
+        m.m23 = 0;
+
+        m.m30 = 0;
+        m.m31 = 0;
+        m.m32 = 0;
+
+        return m;
     }
 }

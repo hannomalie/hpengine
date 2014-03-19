@@ -17,6 +17,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class Entity implements IEntity {
 	private static Logger LOGGER = getLogger();
@@ -35,11 +36,9 @@ public class Entity implements IEntity {
 	
 	FloatBuffer matrix44Buffer;
 
-	protected Matrix4f modelMatrix = null;
+	public Matrix4f modelMatrix = null;
 	protected int modelMatrixLocation = 0;
 	protected Vector3f position = null;
-	//protected Vector3f angle = null;
-	protected Quaternion angle = null;
 	protected Vector3f scale = null;
 	private Material material;
 
@@ -48,6 +47,10 @@ public class Entity implements IEntity {
 	private VertexBuffer vertexBufferShadow;
 	
 	public boolean castsShadows = false;
+
+	private String name;
+
+	private Quaternion orientation = new Quaternion();
 
 	public Entity(ForwardRenderer renderer, Model model) {
 		this(renderer, model, new Vector3f(0, 0, 0), 
@@ -72,7 +75,6 @@ public class Entity implements IEntity {
 
 		this.position = position;
 		//angle = new Vector3f(0, 0, 0);
-		angle = new Quaternion();
 		scale = new Vector3f(1, 1, 1);
 		
 		
@@ -162,6 +164,7 @@ public class Entity implements IEntity {
 		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 		
 		this.material = material;
+		this.name = model.getName();
 	}
 
 	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, boolean b) {
@@ -171,14 +174,8 @@ public class Entity implements IEntity {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
-//		Matrix4f.mul(Util.toMatrix(angle), modelMatrix, modelMatrix);
 		
-		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
-				modelMatrix, modelMatrix);
-		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
-				modelMatrix, modelMatrix);
-		Matrix4f.rotate(Util.degreesToRadians(angle.x), new Vector3f(1, 0, 0), 
-				modelMatrix, modelMatrix);
+		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
 	}
 
 	public void flipBuffers() {
@@ -194,9 +191,20 @@ public class Entity implements IEntity {
 	
 
 	public void draw() {
+
 		material.setTexturesActive();
 		flipBuffers();
 		vertexBuffer.draw();
+
+//		material.setTexturesInactive();
+	}
+	public void drawDebug() {
+
+		material.setTexturesActive();
+		flipBuffers();
+		vertexBuffer.drawDebug();
+
+//		material.setTexturesInactive();
 	}
 	
 
@@ -228,14 +236,6 @@ public class Entity implements IEntity {
 //	public void setAngle(Vector3f angle) {
 //		this.angle = angle;
 //	}
-
-	public Quaternion getAngle() {
-		return angle;
-	}
-
-	public void setAngle(Quaternion angle) {
-		this.angle = angle;
-	}
 	
 	public Vector3f getScale() {
 		return scale;
@@ -291,5 +291,35 @@ public class Entity implements IEntity {
 	public void move(Vector3f amount) {
 		Vector3f.add(getPosition(), amount, getPosition());
 	}
+	@Override
+	public String getName() {
+		return name;
+	}
+	@Override
+	public Material getMaterial() {
+		return material;
+	}
+	@Override
+	public Quaternion getOrientation() {
+		return orientation;
+	}
+	@Override
+	public void rotate(Vector3f axis, float degree) {
+		rotate(new Vector4f(axis.x, axis.y, axis.z, degree));
+	}
+	@Override
+	public void rotate(Vector4f axisAngle) {
+		Quaternion rot = new Quaternion();
+		rot.setFromAxisAngle(axisAngle);
+		orientation = Quaternion.mul(orientation, rot, orientation);
+	}
+	@Override
+	public void setOrientation(Quaternion orientation) {
+		this.orientation = orientation;
+	}
 
+	@Override
+	public void setScale(float scale) {
+		setScale(new Vector3f(scale,scale,scale));
+	}
 }

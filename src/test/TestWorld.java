@@ -1,6 +1,6 @@
 package test;
 
-import main.DirectionalLight;
+import main.Spotlight;
 import main.ForwardRenderer;
 import main.QuadVertexBuffer;
 import main.VertexBuffer;

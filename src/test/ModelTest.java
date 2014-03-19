@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import main.DirectionalLight;
+import main.Spotlight;
 import main.Entity;
 import main.ForwardRenderer;
 import main.Model;
@@ -18,7 +18,7 @@ public class ModelTest {
 	
 	@Test
 	public void loadsCorrectly() throws IOException {
-		ForwardRenderer renderer = new ForwardRenderer(new DirectionalLight(false));
+		ForwardRenderer renderer = new ForwardRenderer(new Spotlight(false));
 		List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 		Entity entity = new Entity(renderer, box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();

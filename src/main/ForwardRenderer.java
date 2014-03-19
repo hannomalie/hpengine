@@ -56,7 +56,7 @@ public class ForwardRenderer implements Renderer {
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
 	
-	public ForwardRenderer(DirectionalLight light) {
+	public ForwardRenderer(Spotlight light) {
 		setupOpenGL();
 		setupShaders();
 		getDelta();
@@ -68,8 +68,8 @@ public class ForwardRenderer implements Renderer {
 	private void setupOpenGL() {
 		try {
 			PixelFormat pixelFormat = new PixelFormat();
-			ContextAttribs contextAtrributes = new ContextAttribs(4, 2)
-				.withForwardCompatible(true);
+			ContextAttribs contextAtrributes = new ContextAttribs(4, 2);
+//				.withForwardCompatible(true);
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
@@ -114,6 +114,7 @@ public class ForwardRenderer implements Renderer {
 		ForwardRenderer.eyePosition = GL20.glGetUniformLocation(materialProgram.getId(), "eyePosition");
 		//World.lightPositionLocation = GL20.glGetUniformLocation(materialProgramId, "lightPosition");
 		World.light.setLightDirectionLocation(materialProgram.getId());
+		World.light.setLightMatrixLocation(materialProgram.getId());
 		World.useParallaxLocation = GL20.glGetUniformLocation(materialProgram.getId(), "useParallax");
 
 		shadowMapProgram = new Program("/assets/shaders/shadowmap_vertex.glsl", "/assets/shaders/shadowmap_fragment.glsl", Entity.SHADOWCHANNELS);
@@ -186,11 +187,11 @@ public class ForwardRenderer implements Renderer {
 		materialProgram.use();
 	}
 	
-	public void draw(Camera camera, List<IEntity> entities, DirectionalLight light) {
+	public void draw(Camera camera, List<IEntity> entities, Spotlight light) {
 		draw(firstTarget, camera, entities, light);
 	}
 	
-	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, DirectionalLight light) {
+	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, Spotlight light) {
 
 		drawShadowMap(light, entities);
 		
@@ -210,6 +211,7 @@ public class ForwardRenderer implements Renderer {
 		for (IEntity entity: entities) {
 			entity.draw();
 		}
+		light.drawDebug();
 		
 		target.unuse();
 
@@ -229,7 +231,7 @@ public class ForwardRenderer implements Renderer {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	
-	public void drawShadowMap(DirectionalLight light, List<IEntity> entities) {
+	public void drawShadowMap(Spotlight light, List<IEntity> entities) {
 		
 		light.getRenderTarget().use(true);
 		

@@ -15,7 +15,6 @@ public class Model {
     private List<Vector2f> texCoords = new ArrayList<Vector2f>();
     private List<Vector3f> normals = new ArrayList<Vector3f>();
     private List<Face> faces = new ArrayList<Face>();
-    private HashMap<String, Material> materials = new HashMap<String, Material>();
     private boolean enableSmoothShading = true;
 	private String name = "";
 	private Material material;
@@ -85,5 +84,9 @@ public class Model {
 
     public Material getMaterial() {
 		return material;
+	}
+
+	public String getName() {
+		return name;
 	}
 }

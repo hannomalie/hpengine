@@ -13,7 +13,10 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.ReadableVector4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class Camera implements IEntity {
 	private static Logger LOGGER = getLogger();
@@ -30,11 +33,11 @@ public class Camera implements IEntity {
 	Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
 	
 	private Vector3f position = null;
-	private Vector3f angle = null;
+	private Quaternion orientation = new Quaternion();
 	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
-	private float rotationSpeed = 0.2f;
+	private float rotationSpeed = 0.02f;
 
 	private ForwardRenderer renderer;
 
@@ -61,7 +64,6 @@ public class Camera implements IEntity {
 		this.viewMatrixLocation = renderer.getViewMatrixLocation();
 		
 		position = new Vector3f(0, 0, -1);
-		angle = new Vector3f(0, 0, 0);
 		
 	}
 
@@ -79,9 +81,9 @@ public class Camera implements IEntity {
 	public void updateControls() {
 
 		if (Mouse.isButtonDown(0)) {
-			angle.y += Mouse.getDX() * rotationSpeed;
-			angle.x += -Mouse.getDY() * rotationSpeed;
-			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f", angle.x, angle.y, angle.z));
+			rotate(new Vector4f(up.x, up.y, up.z, Mouse.getDX() * rotationSpeed));
+			rotate(new Vector4f(right.x, right.y, right.z, Mouse.getDY() * rotationSpeed));
+			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
 		}
 		right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
 		up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
@@ -129,16 +131,8 @@ public class Camera implements IEntity {
 	private void transform() {
 		setViewMatrix(new Matrix4f());
 		
-		Vector3f upNormalised = new Vector3f(); 
-
-
-		Matrix4f.rotate(Util.degreesToRadians(angle.y), new Vector3f(0, 1, 0), 
-				viewMatrix, viewMatrix);
-		Matrix4f.rotate(Util.degreesToRadians(angle.x), new Vector3f(1, 0, 0), 
-				viewMatrix, viewMatrix);
-		Matrix4f.rotate(Util.degreesToRadians(angle.z), new Vector3f(0, 0, 1), 
-				viewMatrix, viewMatrix);
-
+		Matrix4f rotation = Util.toMatrix(orientation);
+		Matrix4f.mul(viewMatrix, rotation, viewMatrix);
 		Matrix4f.translate(position, viewMatrix, viewMatrix);
 	}
 
@@ -171,20 +165,13 @@ public class Camera implements IEntity {
 		this.viewMatrix = viewMatrix;
 	}
 
+	@Override
 	public Vector3f getPosition() {
 		return position;
 	}
 
 	public void setPosition(Vector3f position) {
 		this.position = position;
-	}
-
-	public Vector3f getAngle() {
-		return angle;
-	}
-
-	public void setAngle(Vector3f angle) {
-		this.angle = angle;
 	}
 	
 	public int getProjectionMatrixLocation() {
@@ -224,6 +211,74 @@ public class Camera implements IEntity {
 	@Override
 	public void move(Vector3f amount) {
 		Vector3f.add(getPosition(), amount, getPosition());
+	}
+
+	@Override
+	public String getName() {
+		return "Camera";
+	}
+
+	@Override
+	public Material getMaterial() {
+		return null;
+	}
+
+	@Override
+	public Quaternion getOrientation() {
+		return orientation;
+	}
+
+	@Override
+	public void rotate(Vector4f axisAngle) {
+		Quaternion rot = new Quaternion();
+		rot.setFromAxisAngle(axisAngle);
+		orientation = Quaternion.mul(orientation, rot, orientation);
+	}
+
+	public float getRotationSpeed() {
+		return rotationSpeed;
+	}
+
+	public Vector3f getRight() {
+		return right;
+	}
+	public Vector3f getUp() {
+		return up;
+	}
+	public Vector3f getBack() {
+		return back;
+	}
+
+	@Override
+	public void rotate(Vector3f axis, float degree) {
+		rotate(new Vector4f(axis.x, axis.y, axis.z, degree));
+	}
+
+	public void setOrientation(Quaternion orientation) {
+		this.orientation = orientation;
+	}
+
+	@Override
+	public void drawDebug() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setScale(Vector3f scale) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setScale(float scale) {
+		setScale(new Vector3f(scale,scale,scale));
+	}
+
+	@Override
+	public Matrix4f getModelMatrix() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

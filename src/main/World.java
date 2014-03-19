@@ -8,26 +8,33 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JFrame;
+
+import main.util.DebugFrame;
 import main.util.OBJLoader;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class World {
 	private static Logger LOGGER = getLogger();
 
-	public static DirectionalLight light= new DirectionalLight(true);
+	public static Spotlight light= new Spotlight(true);
 	public static int useParallaxLocation = 0;
 	public static int useParallax = 0;
 	
 	public static void main(String[] args) {
-		new World();
+
+		final World world = new World();
+		new DebugFrame(world);
+		world.simulate();
 	}
 	
-	private List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 20;
+	public List<IEntity> entities = new ArrayList<>();
+	private int entityCount = 10;
 	private ForwardRenderer renderer;
 	private Camera camera;
 	
@@ -43,6 +50,10 @@ public class World {
 //			e.printStackTrace();
 //		}
 		
+	}
+	
+	public void simulate() {
+
 		while (!Display.isCloseRequested()) {
 			this.loopCycle();
 //			Display.sync(60);
@@ -54,6 +65,7 @@ public class World {
 		}
 		
 		destroy();
+		
 	}
 	
 	private void destroy() {
@@ -84,7 +96,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
-						Entity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
+						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*2);
 						entity.setScale(scale);
@@ -97,10 +109,11 @@ public class World {
 			
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
 			for (Model model : sponza) {
+//				model.setMaterial(stone);
 				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), true);
 				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 				entity.setScale(scale);
-				entities.add(entity);	
+				entities.add(entity);
 			}
 			
 		} catch (Exception e) {
@@ -110,18 +123,19 @@ public class World {
 	
 	
 	private void update() {
+		
 
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.getDirection().x += 1f;
+			light.rotate(camera.getRight(), camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.getDirection().x -= 1f;
+			light.rotate(camera.getRight(), -camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.getDirection().y += 1f;
+			light.rotate(camera.getUp(), camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.getDirection().y -= 1f;
+			light.rotate(camera.getUp(), -camera.getRotationSpeed());
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (IEntity entity : entities) {
@@ -137,7 +151,8 @@ public class World {
 			entity.update();
 		}
 
-		GL20.glUniform3f(light.lightDirectionLocation, light.getDirection().x, light.getDirection().y, light.getDirection().z );
+		GL20.glUniform3f(light.lightPositionLocation, light.getOrientation().x, light.getOrientation().y, light.getOrientation().z );
+		GL20.glUniformMatrix4(light.lightMatrixLocation, false, light.getLightMatrix());
 		GL20.glUniform1i(World.useParallaxLocation, useParallax);
 		ForwardRenderer.exitOnGLError("update");
 	}

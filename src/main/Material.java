@@ -18,17 +18,20 @@ import main.util.Util;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import org.newdawn.slick.opengl.Texture;
 
 public class Material implements IEntity {
 	
 	public static final String TEXTUREASSETSPATH = "src/assets/textures/";
 	
-	public static boolean MIPMAPDEFAULTFORTEXTURE = true;
+	public static boolean MIPMAP_DEFAULT = true;
 	
 	public static Map<String, Material> LIBRARY = new HashMap<>();
-	public Map<String, Texture> TEXTURES = new HashMap();
+	public static Map<String, Texture> TEXTURES = new HashMap();
 	
 	private static Logger LOGGER = getLogger();
 	
@@ -49,6 +52,8 @@ public class Material implements IEntity {
 	}
 
 	public Map<MAP, String> textures = new HashMap<>();
+
+	private String name;
 	
 	public static int textureIndex = 0;
 
@@ -76,16 +81,18 @@ public class Material implements IEntity {
 			finalPath = path + map;
 			addTexture(allMaps[i+1], finalPath, Util.loadTexture(finalPath));
 		}
+		
+		LIBRARY.put(path, this);
 	}
 	
 	public void addTexture(MAP map, String path, Texture texture) {
 		if (TEXTURES.containsKey(path)) {
 			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
-			return;
+		} else {
+			TEXTURES.put(path, texture);
+			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 		}
-		TEXTURES.put(path, texture);
 		textures.put(map, path);
-		LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 	}
 	
 //	public void setup(ForwardRenderer renderer, String path) {
@@ -100,6 +107,16 @@ public class Material implements IEntity {
 //		ForwardRenderer.exitOnGLError("setupTexture");
 //	}
 
+	public boolean hasSpecularMap() {
+		return textures.containsKey(MAP.SPECULAR);
+	}
+	public boolean hasNormalMap() {
+		return textures.containsKey(MAP.NORMAL);
+	}
+	public boolean hasDiffuseMap() {
+		return textures.containsKey(MAP.DIFFUSE);
+	}
+	
 	@Override
 	public void update() {
 		
@@ -123,23 +140,25 @@ public class Material implements IEntity {
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
+
+		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasDiffuseMap"), hasDiffuseMap()? 1: 0);
+		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasNormalMap"), hasNormalMap()? 1: 0);
+		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasSpecularMap"), hasSpecularMap()? 1: 0);
 		
 	}
-//	public void setTexturesActive() {
-//		Program materialProgram = ForwardRenderer.getMaterialProgram();
-//		materialProgram.use();
-//
-//		for (int i = 0; i < mapNames.length; i++) {
-//			String name = mapNames[i];
-//			int texture = texIds[i];
-//			int binding = 1;
-//			
-////			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", name, texture, materialProgram.getId(), i));
-//
-//			GL13.glActiveTexture(GL13.GL_TEXTURE0 + i);
-//			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-//		}
-//	}
+	public void setTexturesInactive() {
+		Program materialProgram = ForwardRenderer.getMaterialProgram();
+		materialProgram.use();
+				
+		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
+			MAP map = entry.getKey();
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
+//			texture.bind();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+//			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
+		}
+		
+	}
 
 	@Override
 	public void destroy() {
@@ -167,5 +186,66 @@ public class Material implements IEntity {
 
 	@Override
 	public void move(Vector3f amount) {
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	@Override
+	public Material getMaterial() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String toString() {
+		return name;
+	}
+	@Override
+	public Quaternion getOrientation() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public void rotate(Vector4f axisDegree) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void rotate(Vector3f axis, float degree) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void drawDebug() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void setScale(Vector3f scale) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void setPosition(Vector3f position) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void setOrientation(Quaternion orientation) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void setScale(float scale) {
+		setScale(new Vector3f(scale,scale,scale));
+	}
+	@Override
+	public Matrix4f getModelMatrix() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

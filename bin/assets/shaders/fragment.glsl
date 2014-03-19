@@ -9,24 +9,28 @@ layout(binding=5) uniform sampler2D shadowMap;
 
 uniform bool useParallax;
 
+uniform bool hasDiffuseMap;
+uniform bool hasNormalMap;
+uniform bool hasSpecularMap;
+
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-in vec4 pass_Color;
-in vec2 pass_TextureCoord;
-in vec3 pass_Normal;
-in vec4 pass_Position;
-in vec4 pass_PositionShadow;
-in vec4 pass_PositionWorld;
-in vec3 pass_Up;
-in vec3 pass_Back;
+in vec4 color;
+in vec2 texCoord;
+in vec3 normalVec;
+in vec3 normal_model;
+in vec4 position_clip;
+in vec4 position_clip_shadow;
+in vec4 position_world;
+in vec3 view_up;
+in vec3 view_back;
 
-in vec3 pass_LightDirection;
-in vec3 pass_LightVec;
-in vec3 pass_HalfVec;
-in vec3 pass_eyeVec;
+in vec3 lightVec;
+in vec3 halfVec;
+in vec3 eyeVec;
 
-out vec4 out_Color;
+out vec4 outColor;
 
 vec2 poissonDisk[4] = vec2[](
   vec2( -0.94201624, -0.39906216 ),
@@ -57,14 +61,14 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 }
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
-	vec3 map = texture2D( normalMap, texcoord ).xyz;
+	vec3 map = (texture2D( normalMap, texcoord )).xyz;
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
 }
 const float epsilon = 0.0025;
 float eval_shadow (vec2 texcoods) {
 	float shadow = texture (shadowMap, texcoods).r;
-	if (shadow + epsilon < pass_PositionShadow.z) {
+	if (shadow + epsilon < position_clip_shadow.z) {
 		return 0.2; // shadowed
 	}
 	return 1.0; // not shadowed
@@ -74,7 +78,7 @@ float eval_shadow_poisson (vec2 texcoods) {
 	float shadow = 1.0;
 	for (int i=0;i<4;i++){
 		float mapSample = texture(shadowMap, texcoods + poissonDisk[i]/700).r;
-		if (mapSample + epsilon < pass_PositionShadow.z) {
+		if (mapSample + epsilon < position_clip_shadow.z) {
 			shadow -= 0.2;
 		}
 	}
@@ -83,44 +87,46 @@ float eval_shadow_poisson (vec2 texcoods) {
 void main(void) {
 
 	if (useParallax) {
-		float height = texture2D(heightMap, pass_TextureCoord).r;
+		float height = texture2D(heightMap, texCoord).r;
 		float v = height * 0.106 - 0.012;
-		vec2 newCoords = pass_TextureCoord + (pass_eyeVec.xy * v);
-		out_Color = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
+		vec2 newCoords = texCoord + (eyeVec.xy * v);
+		outColor = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
 
 	} else {
-		vec4 diffuseMaterial = texture2D(diffuseMap, pass_TextureCoord);
-		vec4 specularMaterial = texture2D(specularMap, pass_TextureCoord);
-		vec4 occlusionMaterial = texture2D(occlusionMap, pass_TextureCoord);
-		vec4 diffuseLight = vec4(1,1,1,1);
-		vec4 specularLight = vec4(1, 1, 1, 1);
-		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 	
-		vec3 normal = 2*texture2D(normalMap, pass_TextureCoord).rgb - 1.0;
+		vec4 diffuseMaterial = vec4(0.5,0.5,0.5,1);
+		if (hasDiffuseMap) {
+			diffuseMaterial = texture2D(diffuseMap, texCoord);
+		}
+		
+		vec4 diffuseLight = vec4(1,1,1,1);
+		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
+		
+		vec3 normal = normalize(normal_model);
+		if (hasNormalMap) {
+			normal = perturb_normal( normalize(normalVec), eyeVec, texCoord );
+		}
+		
+		float specularStrength = 0;
+		if (hasSpecularMap) {
+			specularStrength = texture2D(specularMap, texCoord).r;
+		}
+		
+		float NdotL = clamp(dot(normal,normalize(lightVec)),0.0,1.0);
+		vec3 reflection = normalize( ( ( 2.0 * normalize(normal) ) * NdotL ) - normalize(lightVec) );
+		float RdotV = max( 0.0, dot(reflection, normalize(eyeVec)));
+		float specular = pow(RdotV, specularStrength) * specularStrength * NdotL;
+		
+		float visibility = 1;
 		if (true) {
-			normal = perturb_normal( normalize(pass_Normal), pass_eyeVec, pass_TextureCoord );
-		}
-		//normal.y = -normal.y;
-		normal = normalize (normal);
-		
-		float shininess;
-		
-		float lamberFactor = max(dot(pass_LightVec, normal), 0.0);
-		if (lamberFactor > 0.0)
-		{
-			shininess = 0.3*pow(max(dot(pass_HalfVec, normal), 0.0), 2.0);
-			out_Color = diffuseMaterial * diffuseLight * lamberFactor;
-			out_Color += specularMaterial * specularLight * shininess;
+			visibility = eval_shadow_poisson(position_clip_shadow.xy);
 		}
 		
-		float visibility = eval_shadow_poisson(pass_PositionShadow.xy);
+		outColor = diffuseMaterial * NdotL * diffuseLight + diffuseLight * specular;
+		outColor *= visibility;
+		outColor += diffuseMaterial*ambientLight;
 		
-		out_Color += diffuseMaterial*ambientLight;
-		
-		out_Color *= visibility;
-		//out_Color *= 0.000000001;
-		//out_Color += vec4(visibility,visibility,visibility,1);
-		
-		
+		//outColor *= 0.01;
+		//outColor += vec4(normal,1);
 	}
 }

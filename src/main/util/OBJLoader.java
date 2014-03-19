@@ -10,6 +10,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
+import org.newdawn.slick.util.Log;
 
 import java.io.*;
 import java.nio.FloatBuffer;
@@ -19,11 +20,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import static main.log.ConsoleLogger.getLogger;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 
 public class OBJLoader {
+	private static Logger LOGGER = getLogger();
 
     private static float[] asFloats(Vector3f v) {
         return new float[]{v.x, v.y, v.z};
@@ -107,9 +112,14 @@ public class OBJLoader {
             } else if (line.startsWith("usemtl ")) {
 		    	  String materialName = line.replaceAll("usemtl ", "");
 		    	  Material material = materials.get(materialName);
+		    	  if(material == null) {
+		    		  LOGGER.log(Level.INFO, "No material found!!!");
+		    	  }
 		    	  model.setMaterial(material);
+	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
 		    } else if (line.startsWith("o ") || line.startsWith("# object ")) {
             	model = new Model();
+            	model.setName(line);
                 model.setVertices(vertices);
                 model.setTexCoords(texCoords);
                 model.setNormals(normals);
@@ -158,11 +168,15 @@ public class OBJLoader {
 			    } else if (materialLine.startsWith("newmtl ")) {
 			    	  String name = materialLine.replaceAll("newmtl ", "");
 			    	  currentMaterial = new Material();
+			    	  currentMaterial.setName(name);
 			    	  materials.put(name, currentMaterial);
 			    	  
 			    } else if (materialLine.startsWith("map_Kd ")) {
 			    	  String map = materialLine.replaceAll("map_Kd ", "");
 			    	  addHelper(currentMaterial, path, map, MAP.DIFFUSE );
+			    	  if(currentMaterial.textures.size() == 0) {
+			    		  String test = "";
+			    	  }
 			    	  
 			    } else if (materialLine.startsWith("map_Ka ")) {
 			    	  String map = materialLine.replaceAll("map_Ka ", "");
@@ -180,6 +194,10 @@ public class OBJLoader {
 			    	  String map = materialLine.replaceAll("bump ", "");
 			    	  addHelper(currentMaterial, path, map, MAP.NORMAL );
 			    	  
+			    } else if (materialLine.startsWith("map_d ")) {
+			    	  String map = materialLine.replaceAll("map_d ", "");
+			    	  addHelper(currentMaterial, path, map, MAP.NORMAL );
+			    	  
 			    }
 			}
 		} catch (IOException e) {
@@ -192,6 +210,7 @@ public class OBJLoader {
 	private static void addHelper(Material currentMaterial, String path, String name, MAP map) {
   	  Texture texture = Util.loadTexture(path + name);
   	  currentMaterial.addTexture(MAP.DIFFUSE, path+name, texture);
+  	  LOGGER.log(Level.INFO, String.format("%s to %s as %s",path+name, currentMaterial.getName(), map ));
 	}
 
 	private static Material parseMaterial(File f, String line) {
