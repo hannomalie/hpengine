@@ -44,6 +44,8 @@ public class Camera implements IEntity {
 	private Vector3f right = new Vector3f(1, 0, 0);
 	private Vector3f up = new Vector3f(0, 1, 0);
 	private Vector3f back = new Vector3f(0, 0, 1);
+
+	private Frustum frustum;
 	
 	public Camera(ForwardRenderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 100f));
@@ -64,6 +66,7 @@ public class Camera implements IEntity {
 		this.viewMatrixLocation = renderer.getViewMatrixLocation();
 		
 		position = new Vector3f(0, 0, -1);
+		frustum = new Frustum(this);
 		
 	}
 
@@ -71,6 +74,7 @@ public class Camera implements IEntity {
 		transform();
 		updateControls();
 		flipBuffers();
+		frustum.calculate(this);
 	}
 	public void updateShadow() {
 		transform();
@@ -280,5 +284,16 @@ public class Camera implements IEntity {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	public Frustum getFrustum() {
+		return frustum;
+	}
+
+	@Override
+	public boolean isInFrustum(Camera camera) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 
 }

@@ -209,4 +209,11 @@ public class Spotlight implements IEntity {
 	public Matrix4f getModelMatrix() {
 		return null;
 	}
+
+	@Override
+	public boolean isInFrustum(Camera camera) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

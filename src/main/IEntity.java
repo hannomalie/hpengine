@@ -27,4 +27,5 @@ public interface IEntity {
 	public void setPosition(Vector3f position);
 	public void setOrientation(Quaternion orientation);
 	public Matrix4f getModelMatrix();
+	public boolean isInFrustum(Camera camera);
 }

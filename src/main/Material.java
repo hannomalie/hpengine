@@ -248,4 +248,9 @@ public class Material implements IEntity {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	@Override
+	public boolean isInFrustum(Camera camera) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

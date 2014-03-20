@@ -208,9 +208,18 @@ public class ForwardRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getRenderTarget().getRenderedTexture());
 		///////////
 		
+		int notInfrustum = 0;
 		for (IEntity entity: entities) {
-			entity.draw();
+			if (entity.isInFrustum(camera)) {
+				entity.draw();
+			} else {
+				entity.drawDebug();
+				notInfrustum++;
+			}
 		}
+		
+		LOGGER.log(Level.WARNING, String.format("%d not in frustum", notInfrustum));
+		
 		light.drawDebug();
 		
 		target.unuse();

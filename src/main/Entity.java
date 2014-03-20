@@ -322,4 +322,32 @@ public class Entity implements IEntity {
 	public void setScale(float scale) {
 		setScale(new Vector3f(scale,scale,scale));
 	}
+	@Override
+	public boolean isInFrustum(Camera camera) {
+		
+		Vector4f[] minMax = vertexBuffer.getMinMax();
+
+		Vector4f minView = new Vector4f();
+		Vector4f maxView = new Vector4f();
+
+		Matrix4f.transform(modelMatrix, minMax[0], minView);
+		Matrix4f.transform(camera.getViewMatrix(), minView, minView);
+		//trix4f.transform(camera.getProjectionMatrix(), minView, minView);
+		
+		Matrix4f.transform(modelMatrix, minMax[1], maxView);
+		Matrix4f.transform(camera.getViewMatrix(), maxView, maxView);
+		//Matrix4f.transform(camera.getProjectionMatrix(), maxView, maxView);
+
+		float cubeCenterX = (maxView.x + minView.x)/2;
+		float cubeCenterY = (maxView.y + minView.y)/2;
+		float cubeCenterZ = (maxView.z + minView.z)/2;
+		float size = (minMax[1].x - minMax[0].x)/2;
+		
+		if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
+		//if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
+		//		|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
+			return true;
+		}
+		return false;
+	}
 }

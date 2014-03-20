@@ -4,6 +4,8 @@ import java.util.EnumSet;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import main.DataChannels;
 import main.VertexBuffer;
@@ -36,5 +38,41 @@ public class VertexBufferTest {
 	public void correctBytesPerVertex() {
 		Assert.assertEquals(20, VertexBuffer.bytesPerVertex(EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)));
 	}
+	
+	@Test
+	public void getValues() {
+		float[] vertexData = new float[] {
+		    -1.0f, -1.0f, 0.0f,   0f, 0f,
+		    1.0f, -1.0f, 0.0f,    0f, 0f,
+		    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
+		    -1.0f,  1.0f, 0.0f,   0f,  0f,
+		    1.0f, -1.0f, 0.0f,    1.0f, 0f,
+		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+		};
+		
+		VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		float[] result = buffer.getValues(DataChannels.TEXCOORD);
+		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
+	}
+	
+	@Test
+	public void minMax() {
+		float[] vertexData = new float[] {
+		    -1.0f, -1.0f, 0.0f,   0f, 0f,
+		    1.0f, -1.0f, 0.0f,    0f, 0f,
+		    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
+		    -1.0f,  1.0f, 0.0f,   0f,  0f,
+		    1.0f, -1.0f, 0.0f,    1.0f, 0f,
+		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+		};
+		
+		VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		
+		Vector4f[] minMax = buffer.getMinMax();
+
+		Assert.assertEquals(new Vector4f(-1, -1, 0, 0), minMax[0]);
+		Assert.assertEquals(new Vector4f(1, 1, 0, 0), minMax[1]);
+	}
+
 
 }

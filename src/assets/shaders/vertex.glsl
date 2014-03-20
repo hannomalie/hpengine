@@ -51,7 +51,7 @@ void main(void) {
 	color = in_Color;
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
-	normal_model = (modelMatrix * vec4(in_Normal,1)).xyz;
+	normal_model = (vec4(in_Normal,1)).xyz;
 	
 	view_up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
 	view_back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);

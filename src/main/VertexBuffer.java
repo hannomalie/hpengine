@@ -4,7 +4,11 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.nio.Buffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,6 +17,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class VertexBuffer {
 	private static Logger LOGGER = getLogger();
@@ -40,6 +46,9 @@ public class VertexBuffer {
 	public EnumSet<DataChannels> channels;
 	private Usage usage;
 	private float[] vertices;
+
+	private Vector4f min;
+	private Vector4f max;
 
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
 		this.buffer = buffer;
@@ -196,6 +205,60 @@ public class VertexBuffer {
 		buffer.rewind();
 		buffer.get(result);
 		return result;
+	}
+	
+	public Vector4f[] getMinMax() {
+		
+		if (min == null || max == null) {
+			float[] positions = getValues(DataChannels.POSITION3);
+			min = new Vector4f(positions[0],positions[1],positions[2],0);
+			max = new Vector4f(positions[0],positions[1],positions[2],0);
+			
+			for (int i = 0; i < positions.length; i+=3) {
+				
+				Vector3f position = new Vector3f(positions[i],positions[i+1],positions[i+2]);
+
+				min.x = position.x < min.x ? position.x : min.x;
+				min.y = position.y < min.y ? position.y : min.y;
+				min.z = position.z < min.z ? position.x : min.z;
+				
+				max.x = position.x > max.x ? position.x : max.x;
+				max.y = position.y > max.y ? position.y : max.y;
+				max.z = position.z > max.z ? position.x : max.z;
+			}
+			
+		}
+		
+		return new Vector4f[] {min, max};
+	}
+	
+	public float[] getValues(DataChannels forChannel) {
+		int stride = 0;
+
+		for (DataChannels channel : channels) {
+			if (channel.equals(forChannel)) {
+				break;
+			} else {
+				stride += channel.getSize();
+			}
+		}
+		
+		int elementCountAfterPositions = totalElementsPerVertex() - (stride + forChannel.getSize());
+		
+		float[] result = new float[verticesCount * forChannel.getSize()];
+		int resultIndex = 0;
+		
+		int elementsPerChannel = forChannel.getSize();
+		for (int i = stride; i < vertices.length; i += stride + elementsPerChannel + elementCountAfterPositions) {
+			for (int x = 0; x < forChannel.getSize(); x++) {
+				
+				result[resultIndex] = vertices[i+x];
+				resultIndex++;
+			}
+		}
+		
+		return result;
+		
 	}
 
 }
