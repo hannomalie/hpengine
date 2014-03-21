@@ -98,6 +98,7 @@ void main(void) {
 		if (hasDiffuseMap) {
 			diffuseMaterial = texture2D(diffuseMap, texCoord);
 		}
+		outColor = diffuseMaterial;
 		
 		vec4 diffuseLight = vec4(1,1,1,1);
 		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
@@ -112,19 +113,23 @@ void main(void) {
 			specularStrength = texture2D(specularMap, texCoord).r;
 		}
 		
-		float NdotL = clamp(dot(normal,normalize(lightVec)),0.0,1.0);
-		vec3 reflection = normalize( ( ( 2.0 * normalize(normal) ) * NdotL ) - normalize(lightVec) );
-		float RdotV = max( 0.0, dot(reflection, normalize(eyeVec)));
-		float specular = pow(RdotV, specularStrength) * specularStrength * NdotL;
+		float NdotL = dot(normal,normalize(lightVec));
+		if(NdotL > 0.0) {
+			float shininess = 1;
+			vec3 reflection = normalize( ( ( 2.0 * normalize(normal) ) * NdotL ) - normalize(lightVec) );
+			float RdotV = max( 0.0, dot(reflection, normalize(eyeVec)));
+			float specular = pow(RdotV, shininess) * NdotL;
+			outColor = NdotL * diffuseMaterial * diffuseLight + diffuseLight * specularStrength * specular;
+		}
 		
 		float visibility = 1;
 		if (true) {
 			visibility = eval_shadow_poisson(position_clip_shadow.xy);
 		}
 		
-		outColor = diffuseMaterial * NdotL * diffuseLight + diffuseLight * specular;
 		outColor *= visibility;
 		outColor += diffuseMaterial*ambientLight;
+		outColor.a = 1;
 		
 		//outColor *= 0.01;
 		//outColor += vec4(normal,1);

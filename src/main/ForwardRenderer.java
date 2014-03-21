@@ -35,6 +35,8 @@ public class ForwardRenderer implements Renderer {
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
 
+	public static final boolean FRUSTUMCULLING = false;
+
 	private int fps;
 	private long lastFPS;
 	private long lastFrame;
@@ -210,7 +212,7 @@ public class ForwardRenderer implements Renderer {
 		
 		int notInfrustum = 0;
 		for (IEntity entity: entities) {
-			if (entity.isInFrustum(camera)) {
+			if (!FRUSTUMCULLING || entity.isInFrustum(camera)) {
 				entity.draw();
 			} else {
 				entity.drawDebug();
@@ -236,7 +238,7 @@ public class ForwardRenderer implements Renderer {
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(target.getRenderedTexture(), fullscreenBuffer);
-		drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer);
+//		drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	

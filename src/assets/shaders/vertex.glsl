@@ -51,16 +51,16 @@ void main(void) {
 	color = in_Color;
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
-	normal_model = (vec4(in_Normal,1)).xyz;
+	normal_model = (modelMatrix * vec4(in_Normal,1)).xyz;
 	
 	view_up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
 	view_back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
 	
 	vec3 lightVec_world = (lightMatrix * vec4(lightPosition,1)).xyz;
-	lightVec = normalize(position_world.xyz - lightVec_world);
+	lightVec = (position_world.xyz - lightVec_world);
 	
 	vec3 eyePos_world = (vec4(eyePosition,1)).xyz;
-	eyeVec = normalize(eyePos_world - position_world.xyz);
+	eyeVec = (eyePos_world - position_world.xyz);
 	
-	halfVec = normalize(position_world.xyz + lightVec_world);
+	halfVec = (position_world.xyz + lightVec_world);
 }
