@@ -20,6 +20,7 @@ out vec4 color;
 out vec2 texCoord;
 out vec3 normalVec;
 out vec3 normal_model;
+out vec3 normal_world;
 out vec4 position_clip;
 out vec4 position_world;
 out vec4 position_clip_shadow;
@@ -52,15 +53,17 @@ void main(void) {
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
 	normal_model = (modelMatrix * vec4(in_Normal,1)).xyz;
+	normal_world = (viewMatrix * vec4(in_Normal,1)).xyz;
+	
 	
 	view_up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
 	view_back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
 	
-	vec3 lightVec_world = (lightMatrix * vec4(lightPosition,1)).xyz;
-	lightVec = (position_world.xyz - lightVec_world);
+	vec3 lightVec_world = (viewMatrix * lightMatrix * vec4(lightPosition,1)).xyz;
+	lightVec = normalize(position_world.xyz - lightVec_world);
 	
-	vec3 eyePos_world = (vec4(eyePosition,1)).xyz;
-	eyeVec = (eyePos_world - position_world.xyz);
+	vec3 eyePos_world = (viewMatrix * vec4(eyePosition,1)).xyz;
+	eyeVec = (eyePos_world-position_world.xyz);
 	
 	halfVec = (position_world.xyz + lightVec_world);
 }

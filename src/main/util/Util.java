@@ -95,7 +95,7 @@ public class Util {
 				e1.printStackTrace();
 			}
 		}
-		if (mipmap) {
+		if (true) {
 			texture.bind();
 			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 

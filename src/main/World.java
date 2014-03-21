@@ -81,11 +81,9 @@ public class World {
 		ForwardRenderer.exitOnGLError("loadDummies");
 
 		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
-												"stone_specular.png", "stone_occlusion.png",
-												"stone_height.png");
+												"stone_specular.png");
 		Material wood = new Material(renderer, "", "wood_diffuse.png", "wood_normal.png",
-												"wood_specular.png", "wood_occlusion.png",
-												"wood_height.png");
+												"wood_specular.png");
 		try {
 			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 			for (int i = 0; i < entityCount; i++) {

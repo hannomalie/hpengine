@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.Material.MAP;
 import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
@@ -85,7 +86,7 @@ public class Material implements IEntity {
 		LIBRARY.put(path, this);
 	}
 	
-	public void addTexture(MAP map, String path, Texture texture) {
+	private void addTexture(MAP map, String path, Texture texture) {
 		if (TEXTURES.containsKey(path)) {
 			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 		} else {
@@ -93,6 +94,17 @@ public class Material implements IEntity {
 			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 		}
 		textures.put(map, path);
+	}
+	public void loadAndAddTexture(MAP map, String path) {
+		if (TEXTURES.containsKey(path)) {
+			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
+		} else {
+			Texture texture = Util.loadTexture(path);
+			TEXTURES.put(path, texture);
+			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
+		}
+		textures.put(map, path);
+		
 	}
 	
 //	public void setup(ForwardRenderer renderer, String path) {
@@ -138,6 +150,8 @@ public class Material implements IEntity {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
+			GL20.glUniform1f(GL20.glGetUniformLocation(materialProgram.getId(), map.shaderVariableName + "Width"), texture.getWidth());
+			GL20.glUniform1f(GL20.glGetUniformLocation(materialProgram.getId(), map.shaderVariableName + "Height"), texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 

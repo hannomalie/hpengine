@@ -14,7 +14,7 @@ public class Frustum {
 	public static final int RIGHT   = 0;            // The RIGHT side of the frustum
     public static final int LEFT    = 1;            // The LEFT      side of the frustum
     public static final int BOTTOM  = 2;            // The BOTTOM side of the frustum
-    public static final int TOP         = 3;                // The TOP side of the frustum
+    public static final int TOP     = 3;            // The TOP side of the frustum
     public static final int BACK    = 4;            // The BACK     side of the frustum
     public static final int FRONT   = 5;            // The FRONT side of the frustum
     

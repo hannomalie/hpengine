@@ -12,6 +12,12 @@ uniform bool useParallax;
 uniform bool hasDiffuseMap;
 uniform bool hasNormalMap;
 uniform bool hasSpecularMap;
+uniform float diffuseMapWidth = 1;
+uniform float diffuseMapHeight = 1;
+uniform float specularMapWidth = 1;
+uniform float specularMapHeight = 1;
+uniform float normalMapWidth = 1;
+uniform float normalMapHeight = 1;
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -20,6 +26,7 @@ in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
 in vec3 normal_model;
+in vec3 normal_world;
 in vec4 position_clip;
 in vec4 position_clip_shadow;
 in vec4 position_world;
@@ -94,32 +101,46 @@ void main(void) {
 
 	} else {
 	
+		const vec4 diffuseLight = vec4(1,1,1,1);
+		const vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
 		vec4 diffuseMaterial = vec4(0.5,0.5,0.5,1);
+		vec3 L = normalize(lightVec);
+		vec3 V = normalize(eyeVec);
+		
+		vec2 UV;
+		UV.x = texCoord.x * diffuseMapWidth;
+		UV.y = texCoord.y * diffuseMapWidth;
+		
+		// DIFFUSE
 		if (hasDiffuseMap) {
-			diffuseMaterial = texture2D(diffuseMap, texCoord);
+			diffuseMaterial = texture2D(diffuseMap, UV);
 		}
-		outColor = diffuseMaterial;
+		outColor = ambientLight * diffuseMaterial;
 		
-		vec4 diffuseLight = vec4(1,1,1,1);
-		vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
-		
-		vec3 normal = normalize(normal_model);
+		// NORMAL
+		vec3 N = normalize(normal_model);
+		vec3 PN = N;
 		if (hasNormalMap) {
-			normal = perturb_normal( normalize(normalVec), eyeVec, texCoord );
+			PN = perturb_normal(N, V, UV);
 		}
 		
-		float specularStrength = 0;
+		// SPECULAR
+		float specularStrength = 0.5;
 		if (hasSpecularMap) {
-			specularStrength = texture2D(specularMap, texCoord).r;
+			specularStrength = texture2D(specularMap, UV).r;
 		}
+		//normal.y = -normal.y;
 		
-		float NdotL = dot(normal,normalize(lightVec));
-		if(NdotL > 0.0) {
+		// LIGHTING
+		float lambertTerm = dot(PN, L);
+		if (lambertTerm > 0.0)
+		{
 			float shininess = 1;
-			vec3 reflection = normalize( ( ( 2.0 * normalize(normal) ) * NdotL ) - normalize(lightVec) );
-			float RdotV = max( 0.0, dot(reflection, normalize(eyeVec)));
-			float specular = pow(RdotV, shininess) * NdotL;
-			outColor = NdotL * diffuseMaterial * diffuseLight + diffuseLight * specularStrength * specular;
+			vec3 E = V;
+			vec3 R = reflect(-L, PN);
+			float specular = pow( max(dot(R, E), 0.0), shininess);
+			outColor += diffuseMaterial * diffuseLight * lambertTerm;
+			outColor += specularStrength * ambientLight * shininess;
 		}
 		
 		float visibility = 1;
@@ -131,7 +152,7 @@ void main(void) {
 		outColor += diffuseMaterial*ambientLight;
 		outColor.a = 1;
 		
-		//outColor *= 0.01;
-		//outColor += vec4(normal,1);
+		//outColor *= 0.00001;
+		//outColor += vec4(V,1);
 	}
 }

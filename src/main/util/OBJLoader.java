@@ -208,8 +208,8 @@ public class OBJLoader {
 	}
 	
 	private static void addHelper(Material currentMaterial, String path, String name, MAP map) {
-  	  Texture texture = Util.loadTexture(path + name);
-  	  currentMaterial.addTexture(MAP.DIFFUSE, path+name, texture);
+  	  
+  	  currentMaterial.loadAndAddTexture(map, path+name);
   	  LOGGER.log(Level.INFO, String.format("%s to %s as %s",path+name, currentMaterial.getName(), map ));
 	}
 
