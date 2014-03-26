@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -13,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -20,8 +23,10 @@ import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.text.StyledEditorKit.ForegroundAction;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import main.ForwardRenderer;
 import main.IEntity;
 import main.Material;
 import main.World;
@@ -34,6 +39,10 @@ public class DebugFrame {
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
+
+	private JButton toggleParallax = new JButton("Parallax");
+	private JButton toggleSteepParallax = new JButton("Steep Parallax");
+	private JButton toggleDebugFrame = new JButton("Debug Frame");
 	
 	private JTree scene = new JTree();
 	
@@ -118,6 +127,35 @@ public class DebugFrame {
 //		mainFrame.add(materialPane);
 		mainFrame.add(texturePane);
 		mainFrame.add(scenePane);
+
+		toggleParallax.addActionListener( e -> {
+			if (World.useParallax == 0) {
+				World.useParallax = 1;
+				World.useSteepParallax = 0;
+			} else {
+				World.useParallax = 0;
+			}
+			toggleParallax.setText("Parallax " + World.useParallax);
+		});
+		
+		toggleSteepParallax.addActionListener(e -> {
+			if (World.useSteepParallax == 0) {
+				World.useSteepParallax = 1;
+				World.useParallax = 0;
+			} else {
+				World.useSteepParallax = 0;
+			}
+			toggleSteepParallax.setText("Steep Parallax " + World.useSteepParallax);
+		});
+		
+		toggleDebugFrame.addActionListener(e -> {
+			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
+		});
+		
+		
+		mainFrame.add(toggleParallax);
+		mainFrame.add(toggleSteepParallax);
+		mainFrame.add(toggleDebugFrame);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 300));

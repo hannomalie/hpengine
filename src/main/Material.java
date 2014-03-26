@@ -129,19 +129,7 @@ public class Material implements IEntity {
 		return textures.containsKey(MAP.DIFFUSE);
 	}
 	
-	@Override
-	public void update() {
-		
-	}
-
-	@Override
-	public void draw() {
-
-	}
-
-	public void setTexturesActive() {
-		Program materialProgram = ForwardRenderer.getMaterialProgram();
-		materialProgram.use();
+	public void setTexturesActive(Program program) {
 				
 		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
@@ -150,19 +138,17 @@ public class Material implements IEntity {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
-			GL20.glUniform1f(GL20.glGetUniformLocation(materialProgram.getId(), map.shaderVariableName + "Width"), texture.getWidth());
-			GL20.glUniform1f(GL20.glGetUniformLocation(materialProgram.getId(), map.shaderVariableName + "Height"), texture.getHeight());
+			GL20.glUniform1f(GL20.glGetUniformLocation(program.getId(), map.shaderVariableName + "Width"), texture.getWidth());
+			GL20.glUniform1f(GL20.glGetUniformLocation(program.getId(), map.shaderVariableName + "Height"), texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
-		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasDiffuseMap"), hasDiffuseMap()? 1: 0);
-		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasNormalMap"), hasNormalMap()? 1: 0);
-		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(), "hasSpecularMap"), hasSpecularMap()? 1: 0);
+		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasDiffuseMap"), hasDiffuseMap()? 1: 0);
+		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasNormalMap"), hasNormalMap()? 1: 0);
+		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasSpecularMap"), hasSpecularMap()? 1: 0);
 		
 	}
 	public void setTexturesInactive() {
-		Program materialProgram = ForwardRenderer.getMaterialProgram();
-		materialProgram.use();
 				
 		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
@@ -184,18 +170,8 @@ public class Material implements IEntity {
 	}
 
 	@Override
-	public void drawShadow() {
-
-	}
-
-	@Override
 	public Vector3f getPosition() {
 		return null;
-	}
-
-	@Override
-	public boolean castsShadows() {
-		return false;
 	}
 
 	@Override
@@ -207,64 +183,13 @@ public class Material implements IEntity {
 	public void setName(String name) {
 		this.name = name;
 	}
-	@Override
-	public Material getMaterial() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 	
 	@Override
 	public String toString() {
 		return name;
 	}
 	@Override
-	public Quaternion getOrientation() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public void rotate(Vector4f axisDegree) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void rotate(Vector3f axis, float degree) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void drawDebug() {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void setScale(Vector3f scale) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void setPosition(Vector3f position) {
-		// TODO Auto-generated method stub
-		
-	}
-	@Override
-	public void setOrientation(Quaternion orientation) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void setScale(float scale) {
-		setScale(new Vector3f(scale,scale,scale));
-	}
-	@Override
-	public Matrix4f getModelMatrix() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	@Override
-	public boolean isInFrustum(Camera camera) {
-		// TODO Auto-generated method stub
-		return false;
+	public Material getMaterial() {
+		return this;
 	}
 }

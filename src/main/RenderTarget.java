@@ -25,17 +25,17 @@ public class RenderTarget {
 	private float clearA;
 
 	public RenderTarget(int width, int height) {
-		this(width, height, GL11.GL_RGB, 0.4f, 0.4f, 0.4f, 0f);
+		this(width, height, GL11.GL_RGB, 0.4f, 0.4f, 0.4f, 0f, GL11.GL_LINEAR);
 	}
 	public RenderTarget(int width, int height, int internalFormat) {
-		this(width, height, internalFormat, 0.4f, 0.4f, 0.4f, 0f);
+		this(width, height, internalFormat, 0.4f, 0.4f, 0.4f, 0f, GL11.GL_LINEAR);
 	}
 
 	public RenderTarget(int width, int height, float clearR, float clearG, float clearB, float clearA) {
-		this(width, height, GL11.GL_RGB, clearR, clearG, clearB, clearA);
+		this(width, height, GL11.GL_RGB, clearR, clearG, clearB, clearA, GL11.GL_LINEAR);
 	}
 	
-	public RenderTarget(int width, int height, int internalFormat, float clearR, float clearG, float clearB, float clearA) {
+	public RenderTarget(int width, int height, int internalFormat, float clearR, float clearG, float clearB, float clearA, int textureFilter) {
 		this.width = width;
 		this.height = height;
 		this.clearR = clearR;
@@ -51,13 +51,20 @@ public class RenderTarget {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTexture);
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(width * height * 4));
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, internalFormat, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(width * height * 4));
 
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+		if (textureFilter ==  GL11.GL_NEAREST_MIPMAP_LINEAR ||
+			textureFilter ==  GL11.GL_NEAREST_MIPMAP_NEAREST ||
+			textureFilter ==  GL11.GL_LINEAR_MIPMAP_LINEAR ||
+			textureFilter ==  GL11.GL_LINEAR_MIPMAP_NEAREST	) {
+			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		}
+		
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureFilter);
+
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL13.GL_CLAMP_TO_BORDER);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL13.GL_CLAMP_TO_BORDER);
 
 		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);

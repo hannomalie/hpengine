@@ -73,14 +73,14 @@ public class Spotlight implements IEntity {
 		}
 		
 		
-		renderTarget = new RenderTarget(4096, 4096, 1, 1, 1, 0);
+		renderTarget = new RenderTarget(256, 256, 1, 1, 1, 1);
 		this.camera = camera;
 		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"));
 		camera.setViewMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(), "viewMatrix"));
 	}
 
 	public void init(ForwardRenderer renderer) {
-		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 80f));
+		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 100f));
 //		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
 		camera.setPosition(new Vector3f(12f,2f,2f));
 		camera.rotate(new Vector4f(0, -1, 0, 0.5f));
@@ -101,9 +101,7 @@ public class Spotlight implements IEntity {
 			camera.move(new Vector3f(0.02f,0,0));
 		}
 		
-		ForwardRenderer.getShadowProgram().use();
 		camera.updateShadow();
-		ForwardRenderer.getMaterialProgram().use();
 
 		box.setPosition(camera.getPosition());
 		box.setOrientation(camera.getOrientation());
@@ -120,16 +118,7 @@ public class Spotlight implements IEntity {
 	}
 
 	@Override
-	public void draw() {
-	}
-
-	@Override
 	public void destroy() {
-		
-	}
-
-	@Override
-	public void drawShadow() {
 		
 	}
 
@@ -147,11 +136,6 @@ public class Spotlight implements IEntity {
 	@Override
 	public void move(Vector3f amount) {
 		Vector3f.add(getPosition(), amount, getPosition());
-	}
-
-	@Override
-	public boolean castsShadows() {
-		return false;
 	}
 
 	@Override
@@ -175,8 +159,8 @@ public class Spotlight implements IEntity {
 	}
 
 	@Override
-	public void drawDebug() {
-//		box.drawDebug();
+	public void drawDebug(Program program) {
+		box.drawDebug(program);
 	}
 
 	@Override
@@ -200,7 +184,8 @@ public class Spotlight implements IEntity {
 	}
 
 	public FloatBuffer getLightMatrix() {
-		box.getModelMatrix().store(buffer);
+//		box.getModelMatrix().store(buffer);
+		camera.getViewMatrix().store(buffer);
 		buffer.flip();
 		return buffer;
 	}

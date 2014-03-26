@@ -24,12 +24,9 @@ public class Entity implements IEntity {
 
 	public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
 		DataChannels.POSITION3,
-//		DataChannels.COLOR,
 		DataChannels.TEXCOORD,
 		DataChannels.NORMAL
-//		DataChannels.BINORMAL,
-//		DataChannels.TANGENT
-		);
+	);
 	
 	public static EnumSet<DataChannels> SHADOWCHANNELS = EnumSet.of(
 			DataChannels.POSITION3);
@@ -44,8 +41,6 @@ public class Entity implements IEntity {
 
 	private VertexBuffer vertexBuffer;
 
-	private VertexBuffer vertexBufferShadow;
-	
 	public boolean castsShadows = false;
 
 	private String name;
@@ -161,7 +156,7 @@ public class Entity implements IEntity {
 		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
-		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
+//		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 		
 		this.material = material;
 		this.name = model.getName();
@@ -173,44 +168,28 @@ public class Entity implements IEntity {
 	public void update() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
-		Matrix4f.translate(position, modelMatrix, modelMatrix);
-		
 		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
-	}
+		Matrix4f.translate(position, modelMatrix, modelMatrix);
 
-	public void flipBuffers() {
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(ForwardRenderer.getModelMatrixLocation(), false, matrix44Buffer);
 	}
-	public void flipBuffersShadow() {
-		modelMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
-		GL20.glUniformMatrix4(ForwardRenderer.getModelMatrixShadowLocation(), false, matrix44Buffer);
-	}
-	
 
-	public void draw() {
-
-		material.setTexturesActive();
-		flipBuffers();
+	public void draw(Program program) {
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
+		material.setTexturesActive(program);
 		vertexBuffer.draw();
 
 //		material.setTexturesInactive();
 	}
-	public void drawDebug() {
+	
+	public void drawDebug(Program program) {
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 
-		material.setTexturesActive();
-		flipBuffers();
+		material.setTexturesActive(program);
 		vertexBuffer.drawDebug();
 
 //		material.setTexturesInactive();
-	}
-	
-
-	public void drawShadow() {
-		flipBuffersShadow();
-		vertexBufferShadow.draw();
 	}
 	
 	public Matrix4f getModelMatrix() {
@@ -229,14 +208,6 @@ public class Entity implements IEntity {
 		this.position = position;
 	}
 
-//	public Vector3f getAngle() {
-//		return angle;
-//	}
-//
-//	public void setAngle(Vector3f angle) {
-//		this.angle = angle;
-//	}
-	
 	public Vector3f getScale() {
 		return scale;
 	}
@@ -280,11 +251,6 @@ public class Entity implements IEntity {
 
 	public VertexBuffer getVertexBuffer() {
 		return vertexBuffer;
-	}
-
-	@Override
-	public boolean castsShadows() {
-		return castsShadows;
 	}
 
 	@Override

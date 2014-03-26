@@ -6,11 +6,12 @@ import main.util.Util;
 import org.junit.Test;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class MathTest {
 	float delta = 0.1f;
-	
+
 	@Test
 	public void QuaternionFromAxisAngle() {
 		Quaternion rot = new Quaternion();

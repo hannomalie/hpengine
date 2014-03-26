@@ -8,6 +8,7 @@ layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5) uniform sampler2D shadowMap;
 
 uniform bool useParallax;
+uniform bool useSteepParallax;
 
 uniform bool hasDiffuseMap;
 uniform bool hasNormalMap;
@@ -72,6 +73,9 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
 }
+float linstep(float low, float high, float v){
+    return clamp((v-low)/(high-low), 0.0, 1.0);
+}
 const float epsilon = 0.0025;
 float eval_shadow (vec2 texcoods) {
 	float shadow = texture (shadowMap, texcoods).r;
@@ -91,45 +95,88 @@ float eval_shadow_poisson (vec2 texcoods) {
 	}
 	return shadow; // not shadowed
 }
+float chebyshevUpperBound( float distance, vec2 ShadowCoordPostW) {
+	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
+	
+	// Surface is fully lit. as the current fragment is before the light occluder
+	if (distance <= moments.x) {
+		return 1.0 ;
+	}
+
+	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
+	// How likely this pixel is to be lit (p_max)
+	float variance = moments.y - (moments.x*moments.x);
+	variance = max(variance,0.00002);
+	
+	float d = distance - moments.x;
+	float p_max = variance / (variance + d*d);
+
+	return p_max;
+}
+float VSM(vec2 uv, float compare){
+    vec2 moments = texture2D(shadowMap, uv).xy;
+    float p = smoothstep(compare-0.02, compare, moments.x);
+    float variance = max(moments.y - moments.x*moments.x, -0.001);
+    float d = compare - moments.x;
+    float p_max = linstep(0.2, 1.0, variance / (variance + d*d));
+    return clamp(max(p, p_max), 0.0, 1.0);
+}
 void main(void) {
 
-	if (useParallax) {
-		float height = texture2D(heightMap, texCoord).r;
-		float v = height * 0.106 - 0.012;
-		vec2 newCoords = texCoord + (eyeVec.xy * v);
-		outColor = vec4(texture2D(diffuseMap, newCoords).rgb, 1);
-
-	} else {
+	vec2 UV;
+	UV.x = texCoord.x * diffuseMapWidth;
+	UV.y = texCoord.y * diffuseMapHeight;
 	
-		const vec4 diffuseLight = vec4(1,1,1,1);
-		const vec4 ambientLight = vec4(0.2, 0.2, 0.2, 0.2);
-		vec4 diffuseMaterial = vec4(0.5,0.5,0.5,1);
-		vec3 L = normalize(lightVec);
-		vec3 V = normalize(eyeVec);
+	const vec4 diffuseLight = vec4(1,1,1,1);
+	const vec4 ambientLight = vec4(0.11, 0.1, 0.1, 0);
+	const vec4 specularLight = vec4(0.1, 0.1, 0.1, 0);
+	
+	vec4 diffuseMaterial = vec4(0.5,0.5,0.5,1);
+	vec3 L = normalize(lightVec);
+	vec3 V = normalize(eyeVec);
+	
+	if (useParallax) {
+		float height = texture2D(heightMap, UV).r;
+		float v = height * 0.106 - 0.012;
+		UV = UV + (normalize(eyeVec).xy * v);
+	} else if (useSteepParallax) {
+		float n = 30;
+		float bumpScale = 15;
+		float step = 1/n;
+		vec2 dt = V.xy * bumpScale / (n * V.z);
 		
-		vec2 UV;
-		UV.x = texCoord.x * diffuseMapWidth;
-		UV.y = texCoord.y * diffuseMapWidth;
-		
-		// DIFFUSE
-		if (hasDiffuseMap) {
-			diffuseMaterial = texture2D(diffuseMap, UV);
+		float height = 1;
+		vec2 t = UV;
+		vec4 nb = texture2D(heightMap, t);
+		while (nb.a < height) { 
+			height -= step;
+			t += dt; 
+			nb = texture2D(heightMap, t); 
 		}
+		UV = t;
+	}
+	
+	// DIFFUSE
+	if (hasDiffuseMap) {
+		diffuseMaterial = texture2D(diffuseMap, UV);
+	}
+	
+	// NORMAL
+	vec3 N = normalize(normal_model);
+	vec3 PN = N;
+	if (hasNormalMap) {
+		PN = perturb_normal(N, V, UV);
+	}
+	//normal.y = -normal.y;
+	
+	// SPECULAR
+	float specularStrength = 0.5;
+	if (hasSpecularMap) {
+		specularStrength = texture2D(specularMap, UV).r;
+	}
+	
+	{
 		outColor = ambientLight * diffuseMaterial;
-		
-		// NORMAL
-		vec3 N = normalize(normal_model);
-		vec3 PN = N;
-		if (hasNormalMap) {
-			PN = perturb_normal(N, V, UV);
-		}
-		
-		// SPECULAR
-		float specularStrength = 0.5;
-		if (hasSpecularMap) {
-			specularStrength = texture2D(specularMap, UV).r;
-		}
-		//normal.y = -normal.y;
 		
 		// LIGHTING
 		float lambertTerm = dot(PN, L);
@@ -140,19 +187,22 @@ void main(void) {
 			vec3 R = reflect(-L, PN);
 			float specular = pow( max(dot(R, E), 0.0), shininess);
 			outColor += diffuseMaterial * diffuseLight * lambertTerm;
-			outColor += specularStrength * ambientLight * shininess;
+			outColor += specularStrength * specularLight * shininess;
 		}
 		
 		float visibility = 1;
 		if (true) {
-			visibility = eval_shadow_poisson(position_clip_shadow.xy);
+			//visibility = eval_shadow_poisson(position_clip_shadow.xy);
+			visibility = eval_shadow(position_clip_shadow.xy);
+			//visibility = chebyshevUpperBound((position_clip_shadow.z), position_clip_shadow.xy);
+			//visibility = VSM(position_clip_shadow.xy, position_clip_shadow.z);
 		}
 		
-		outColor *= visibility;
 		outColor += diffuseMaterial*ambientLight;
+		outColor *= visibility;
 		outColor.a = 1;
 		
 		//outColor *= 0.00001;
-		//outColor += vec4(V,1);
+		//outColor += vec4(visibility,visibility,visibility,1);
 	}
 }

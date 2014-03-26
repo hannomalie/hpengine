@@ -20,8 +20,9 @@ import org.lwjgl.util.vector.Vector4f;
 
 public class Camera implements IEntity {
 	private static Logger LOGGER = getLogger();
-	
-	FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
+
+	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	FloatBuffer viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	private int projectionMatrixLocation = 0;
 	private int viewMatrixLocation = 0;
 	
@@ -62,37 +63,33 @@ public class Camera implements IEntity {
 
 		this.viewMatrix = viewMatrix;
 
-		this.projectionMatrixLocation = renderer.getProjectionMatrixLocation();
-		this.viewMatrixLocation = renderer.getViewMatrixLocation();
-		
 		position = new Vector3f(0, 0, -1);
 		frustum = new Frustum(this);
-		
 	}
 
 	public void update() {
 		transform();
 		updateControls();
-		flipBuffers();
-		frustum.calculate(this);
+		storeMatrices();
 	}
 	public void updateShadow() {
 		transform();
-//		updateControls();
-		flipBuffersShadow();
+
+		storeMatrices();
+	}
+	
+	private void storeMatrices() {
+		projectionMatrix.store(projectionMatrixBuffer); projectionMatrixBuffer.flip();
+		viewMatrix.store(viewMatrixBuffer); viewMatrixBuffer.flip();
 	}
 	
 	public void updateControls() {
 
 		if (Mouse.isButtonDown(0)) {
-			rotate(new Vector4f(up.x, up.y, up.z, Mouse.getDX() * rotationSpeed));
-			rotate(new Vector4f(right.x, right.y, right.z, Mouse.getDY() * rotationSpeed));
+			rotate(up, Mouse.getDX() * rotationSpeed);
+//			rotate(right, Mouse.getDY() * rotationSpeed/2);
 			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
 		}
-		right = new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02);
-		up = new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12);
-		back = new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22);
-		
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
 			position.x -= posDelta * back.x;
 			position.y -= posDelta * back.y;
@@ -136,22 +133,20 @@ public class Camera implements IEntity {
 		setViewMatrix(new Matrix4f());
 		
 		Matrix4f rotation = Util.toMatrix(orientation);
-		Matrix4f.mul(viewMatrix, rotation, viewMatrix);
+		Matrix4f.mul(rotation, viewMatrix, viewMatrix);
 		Matrix4f.translate(position, viewMatrix, viewMatrix);
+
+		right = (Vector3f) new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02).normalise();
+		up = (Vector3f) new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12).normalise();
+		back = (Vector3f) new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22).normalise();
+
+//		right = (Vector3f) new Vector3f(viewMatrix.m00, viewMatrix.m10, viewMatrix.m20).normalise();
+//		up = (Vector3f) new Vector3f(viewMatrix.m01, viewMatrix.m11, viewMatrix.m22).normalise();
+//		back = (Vector3f) new Vector3f(viewMatrix.m01, viewMatrix.m11, viewMatrix.m22).normalise();
+
+		frustum.calculate(this);
 	}
 
-	private void flipBuffers() {
-		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(projectionMatrixLocation, false, matrix44Buffer);
-		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(viewMatrixLocation, false, matrix44Buffer);
-	}
-	public void flipBuffersShadow() {
-		projectionMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"), false, matrix44Buffer);
-		viewMatrix.store(matrix44Buffer); matrix44Buffer.flip();
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"viewMatrix"), false, matrix44Buffer);
-	}
 
 	public Matrix4f getProjectionMatrix() {
 		return projectionMatrix;
@@ -176,6 +171,7 @@ public class Camera implements IEntity {
 
 	public void setPosition(Vector3f position) {
 		this.position = position;
+		transform();
 	}
 	
 	public int getProjectionMatrixLocation() {
@@ -195,26 +191,14 @@ public class Camera implements IEntity {
 	}
 
 	@Override
-	public void draw() {
-	}
-
-	@Override
 	public void destroy() {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-	public void drawShadow() {
-	}
-
-	@Override
-	public boolean castsShadows() {
-		return false;
-	}
-
-	@Override
 	public void move(Vector3f amount) {
 		Vector3f.add(getPosition(), amount, getPosition());
+		transform();
 	}
 
 	@Override
@@ -237,6 +221,7 @@ public class Camera implements IEntity {
 		Quaternion rot = new Quaternion();
 		rot.setFromAxisAngle(axisAngle);
 		orientation = Quaternion.mul(orientation, rot, orientation);
+		transform();
 	}
 
 	public float getRotationSpeed() {
@@ -254,18 +239,28 @@ public class Camera implements IEntity {
 	}
 
 	@Override
-	public void rotate(Vector3f axis, float degree) {
-		rotate(new Vector4f(axis.x, axis.y, axis.z, degree));
+	public void rotate(Vector3f axis, float radians) {
+		rotate(new Vector4f(axis.x, axis.y, axis.z, radians));
+	}
+	@Override
+	public void rotate(Vector3f axis, float degree, boolean isDegree) {
+		float radians = (float) Math.toRadians(degree);
+		axis = (Vector3f) axis.normalise();
+		rotate(new Vector4f(axis.x, axis.y, axis.z, radians));
 	}
 
 	public void setOrientation(Quaternion orientation) {
 		this.orientation = orientation;
+		transform();
 	}
 
 	@Override
-	public void drawDebug() {
-		// TODO Auto-generated method stub
-		
+	public void setScale(float scale) {
+		setScale(new Vector3f(scale,scale,scale));
+	}
+
+	public Frustum getFrustum() {
+		return frustum;
 	}
 
 	@Override
@@ -275,25 +270,15 @@ public class Camera implements IEntity {
 	}
 
 	@Override
-	public void setScale(float scale) {
-		setScale(new Vector3f(scale,scale,scale));
-	}
-
-	@Override
 	public Matrix4f getModelMatrix() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	public Frustum getFrustum() {
-		return frustum;
+		return new Matrix4f();
 	}
 
-	@Override
-	public boolean isInFrustum(Camera camera) {
-		// TODO Auto-generated method stub
-		return false;
+	public FloatBuffer getProjectionMatrixAsBuffer() {
+		return projectionMatrixBuffer.asReadOnlyBuffer();
 	}
-
+	public FloatBuffer getViewMatrixAsBuffer() {
+		return viewMatrixBuffer.asReadOnlyBuffer();
+	}
 
 }
