@@ -27,6 +27,10 @@ public class Entity implements IEntity {
 		DataChannels.TEXCOORD,
 		DataChannels.NORMAL
 	);
+	public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
+			DataChannels.POSITION3,
+			DataChannels.NORMAL
+		);
 	
 	public static EnumSet<DataChannels> SHADOWCHANNELS = EnumSet.of(
 			DataChannels.POSITION3);

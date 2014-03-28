@@ -22,6 +22,7 @@ out vec3 normalVec;
 out vec3 normal_model;
 out vec3 normal_world;
 out vec4 position_clip;
+out vec4 position_clip_uv;
 out vec4 position_world;
 out vec4 position_clip_shadow;
 
@@ -48,6 +49,9 @@ void main(void) {
 	position_clip_shadow.xyz /= position_clip_shadow.w;
 	position_clip_shadow.xyz += 1.0;
 	position_clip_shadow.xyz *= 0.5;
+	
+	position_clip_uv.xyz = position_clip.xyz /= position_clip.w;
+	position_clip_uv = (position_clip + 1) * 0.5;
 	
 	color = in_Color;
 	texCoord = in_TextureCoord;

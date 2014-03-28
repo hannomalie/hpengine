@@ -6,6 +6,7 @@ layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5) uniform sampler2D shadowMap;
+layout(binding=6) uniform sampler2D depthMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
@@ -29,6 +30,7 @@ in vec3 normalVec;
 in vec3 normal_model;
 in vec3 normal_world;
 in vec4 position_clip;
+in vec4 position_clip_uv;
 in vec4 position_clip_shadow;
 in vec4 position_world;
 in vec3 view_up;
@@ -39,6 +41,12 @@ in vec3 halfVec;
 in vec3 eyeVec;
 
 out vec4 outColor;
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 
 vec2 poissonDisk[4] = vec2[](
   vec2( -0.94201624, -0.39906216 ),
@@ -175,6 +183,9 @@ void main(void) {
 		specularStrength = texture2D(specularMap, UV).r;
 	}
 	
+	// DEPTH
+	float depth = texture2D(depthMap, position_clip_uv.xy).r;
+	
 	{
 		outColor = ambientLight * diffuseMaterial;
 		
@@ -198,11 +209,44 @@ void main(void) {
 			//visibility = VSM(position_clip_shadow.xy, position_clip_shadow.z);
 		}
 		
-		outColor += diffuseMaterial*ambientLight;
+		// AMBIENT OCCLUSION
+		float ao = 1;
+		if (false) {
+			vec3 fres = normalize(rand(diffuseMaterial.rg)*2) - vec3(1.0, 1.0, 1.0);
+			vec3 ep = vec3(position_clip_uv.xy, depth);
+			float rad = 0.006;
+			float radD = rad/depth;
+			float bl = 0.0f;
+			float occluderDepth, depthDifference, normDiff;
+			float falloff = 0.000002;
+			float totStrength = 1.38;
+			float strength = 0.07;
+			float samples = 9;
+			float invSamples = 1/samples;
+			
+			for(int i=0; i<samples;++i) {
+			  vec3 ray = radD*reflect(pSphere[i],fres);
+			  vec3 se = ep + sign(dot(ray,N) )*ray;
+			  vec4 occluderFragment = texture2D(depthMap,se.xy).xyzw;
+			  vec3 occNorm = occluderFragment.yzw;
+			
+			  // Wenn die Diff der beiden Punkte negativ ist, ist der Verdecker hinter dem aktuellen Bildpunkt
+			  depthDifference = depth-occluderFragment.r;
+			
+			  // Berechne die Differenz der beiden Normalen als ein Gewicht
+			  normDiff = (1.0-dot(occNorm,N));
+			
+			  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
+			  bl += step(falloff,depthDifference)*normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
+		    }
+			ao = 1.0-totStrength*bl*invSamples;
+		}
+		
+		outColor += (diffuseMaterial*ambientLight) - (1-ao);
 		outColor *= visibility;
 		outColor.a = 1;
 		
 		//outColor *= 0.00001;
-		//outColor += vec4(visibility,visibility,visibility,1);
+		//outColor += vec4(ao,ao,ao,1);
 	}
 }

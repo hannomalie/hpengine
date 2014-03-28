@@ -91,7 +91,7 @@ public class ForwardRenderer implements Renderer {
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
 		firstTarget = new RenderTarget(WIDTH, HEIGHT);
-		depthTarget = new RenderTarget(WIDTH, HEIGHT);
+		depthTarget = new RenderTarget(1024, 1024, GL11.GL_RGB, 1, 1f, 1f, 1f, GL11.GL_LINEAR);//new RenderTarget(WIDTH, HEIGHT);
 		shadowMapTarget = new RenderTarget(1024, 1024, GL11.GL_RGB, 1, 1f, 1f, 1f, GL11.GL_LINEAR);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
@@ -112,13 +112,13 @@ public class ForwardRenderer implements Renderer {
 		World.useParallaxLocation = GL20.glGetUniformLocation(materialProgram.getId(), "useParallax");
 		World.useSteepParallaxLocation = GL20.glGetUniformLocation(materialProgram.getId(), "useSteepParallax");
 
-		shadowMapProgram = new Program("/assets/shaders/shadowmap_vertex.glsl", "/assets/shaders/shadowmap_fragment.glsl", Entity.SHADOWCHANNELS);
-
+		shadowMapProgram = new Program("/assets/shaders/mvp_vertex.glsl", "/assets/shaders/shadowmap_fragment.glsl", Entity.SHADOWCHANNELS);
+		depthMapProgram = new Program("/assets/shaders/mvp_vertex.glsl", "/assets/shaders/depthmap_fragment.glsl", Entity.DEPTHCHANNELS);
+		
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 
 		blurProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/blur_fragment.glsl", RENDERTOQUAD);
 
-		depthMapProgram = new Program("/assets/shaders/vertex.glsl", "/assets/shaders/depthmap_fragment.glsl", Entity.SHADOWCHANNELS);
 		
 		ForwardRenderer.exitOnGLError("setupShaders");
 	}
@@ -212,7 +212,7 @@ public class ForwardRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(target.getRenderedTexture(), fullscreenBuffer);
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getRenderTarget().getRenderedTexture(), debugBuffer);
+			drawToQuad(depthTarget.getRenderedTexture(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -221,12 +221,15 @@ public class ForwardRenderer implements Renderer {
 		target.use(true);
 		
 		depthMapProgram.use();
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(shadowMapProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
+		GL20.glUniformMatrix4(GL20.glGetUniformLocation(shadowMapProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
 
 		for (IEntity entity: entities) {
 			entity.draw(depthMapProgram);
 		}
 		
 		target.unuse();
+
 	}
 
 	public void drawShadowMap(Spotlight light, List<IEntity> entities, RenderTarget target) {
@@ -250,7 +253,6 @@ public class ForwardRenderer implements Renderer {
 	
 	private void blur(int texture, RenderTarget target) {
 		target.use(true);
-		blurProgram.use();
 		drawToQuad(texture, debugBuffer, blurProgram);
 		target.unuse();
 	}
