@@ -14,5 +14,5 @@ void main()
 {
 	pass_Position = projectionMatrix * viewMatrix * modelMatrix * in_position;
     gl_Position = pass_Position;
-	normal_world = (viewMatrix * vec4(in_Normal,1)).xyz;
+	normal_world = (modelMatrix * viewMatrix * vec4(in_Normal,1)).xyz;
 }

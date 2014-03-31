@@ -1,5 +1,7 @@
 package main.util;
 
+import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -15,6 +17,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractButton;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -39,16 +43,19 @@ public class DebugFrame {
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
-
+	private JPanel buttonPanel = new JPanel(new FlowLayout());
+	
 	private JButton toggleParallax = new JButton("Parallax");
 	private JButton toggleSteepParallax = new JButton("Steep Parallax");
+	private JButton toggleAmbientOcclusion = new JButton("Ambient Occlusion");
+	private JButton toggleFrustumCulling = new JButton("Frustum Culling");
 	private JButton toggleDebugFrame = new JButton("Debug Frame");
 	
 	private JTree scene = new JTree();
 	
 	public DebugFrame(World world) {
 		
-		mainFrame.setLayout(new FlowLayout());
+		mainFrame.setLayout(new BorderLayout(5,5));
 
 		TableModel materialDataModel = new AbstractTableModel() {
 
@@ -123,10 +130,6 @@ public class DebugFrame {
 		
 		addSceneObjects(world);
 		scenePane = new JScrollPane(scene);
-		
-//		mainFrame.add(materialPane);
-		mainFrame.add(texturePane);
-		mainFrame.add(scenePane);
 
 		toggleParallax.addActionListener( e -> {
 			if (World.useParallax == 0) {
@@ -147,16 +150,40 @@ public class DebugFrame {
 			}
 			toggleSteepParallax.setText("Steep Parallax " + World.useSteepParallax);
 		});
+
+		toggleAmbientOcclusion.addActionListener(e -> {
+			if (World.useAmbientOcclusion == 0) {
+				World.useAmbientOcclusion = 1;
+			} else {
+				World.useAmbientOcclusion = 0;
+			}
+			toggleAmbientOcclusion.setText("Ambient Occlusion " + World.useAmbientOcclusion);
+		});
+		
+		toggleFrustumCulling.addActionListener(e -> {
+			if (World.useFrustumCulling == 0) {
+				World.useFrustumCulling = 1;
+			} else {
+				World.useFrustumCulling = 0;
+			}
+			toggleFrustumCulling.setText("Frustum Culling " + World.useFrustumCulling);
+		});
 		
 		toggleDebugFrame.addActionListener(e -> {
 			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
 		});
 		
-		
-		mainFrame.add(toggleParallax);
-		mainFrame.add(toggleSteepParallax);
-		mainFrame.add(toggleDebugFrame);
-		
+		buttonPanel.add(toggleDebugFrame);
+		buttonPanel.add(toggleParallax);
+		buttonPanel.add(toggleSteepParallax);
+		buttonPanel.add(toggleAmbientOcclusion);
+		buttonPanel.add(toggleFrustumCulling);
+		buttonPanel.setSize(200, 200);
+
+//		mainFrame.add(materialPane);
+		mainFrame.add(buttonPanel, BorderLayout.PAGE_START);
+		mainFrame.add(texturePane, BorderLayout.LINE_START);
+		mainFrame.add(scenePane, BorderLayout.CENTER);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 300));
 		mainFrame.setVisible(true);

@@ -71,7 +71,7 @@ vec2(-0.178564, -0.596057)
 );
 void main()
 {
-	const bool poisson = true;
+	const bool poisson = false;
 	if (poisson) {
 	
 		const float dist = 0.0000002;

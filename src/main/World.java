@@ -20,6 +20,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class World {
+
 	private static Logger LOGGER = getLogger();
 
 	public static Spotlight light= new Spotlight(true);
@@ -27,6 +28,8 @@ public class World {
 	public static volatile int useParallax = 0;
 	public static volatile int useSteepParallaxLocation = 0;
 	public static volatile int useSteepParallax = 0;
+	public static volatile int useAmbientOcclusion = 0;
+	public static int useFrustumCulling = 0;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	
 	public static void main(String[] args) {
@@ -38,11 +41,11 @@ public class World {
 	
 	public List<IEntity> entities = new ArrayList<>();
 	private int entityCount = 10;
-	private ForwardRenderer renderer;
+	public Renderer renderer;
 	private Camera camera;
 	
 	public World() {
-		renderer = new ForwardRenderer(light);
+		renderer = new DeferredRenderer(light);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		this.loadDummies();
@@ -81,7 +84,7 @@ public class World {
 
 	private void loadDummies() {
 		
-		ForwardRenderer.exitOnGLError("loadDummies");
+		Renderer.exitOnGLError("loadDummies");
 
 		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
 												"stone_specular.png", "stone_occlusion.png",
@@ -113,7 +116,7 @@ public class World {
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(stone);
-				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), true);
+				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), model.getMaterial(),  true);
 				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 				entity.setScale(scale);
 				entities.add(entity);
@@ -153,7 +156,7 @@ public class World {
 			entity.update();
 		}
 
-		ForwardRenderer.exitOnGLError("update");
+		Renderer.exitOnGLError("update");
 	}
 	
 	private void draw() {
@@ -162,7 +165,7 @@ public class World {
 		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));
 
-		ForwardRenderer.exitOnGLError("draw in render");
+		Renderer.exitOnGLError("draw in render");
 		
 	}
 	
@@ -174,7 +177,7 @@ public class World {
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 		
-		ForwardRenderer.exitOnGLError("loopCycle");
+		Renderer.exitOnGLError("loopCycle");
 	}
 	
 }

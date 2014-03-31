@@ -23,9 +23,11 @@ public class Frustum {
     public static final int C = 2;                          // The Z value of the plane's normal
     public static final int D = 3;                          // The distance the plane is from the origin
     
-    float[][] m_Frustum = new float[6][4];
+    public float[][] values = new float[6][4];
 	
 	Vector3f fc = new Vector3f(); // far plane center
+	
+	private FloatBuffer buffer = BufferUtils.createFloatBuffer(4*6);
 
 	public Frustum(Camera camera) {
 		calculate(camera);
@@ -36,13 +38,13 @@ public class Frustum {
 		FloatBuffer buf = BufferUtils.createFloatBuffer(16);
 		camera.getProjectionMatrix().store(buf);
 		float[] proj = new float[16];
-		buf.flip();
+		buf.rewind();
 		buf.get(proj);
 
-		buf.flip();
+		buf.rewind();
 		camera.getViewMatrix().store(buf);
 		float[] modl = new float[16];
-		buf.flip();
+		buf.rewind();
 		buf.get(modl);
 		
 		float[] clip = new float[16];
@@ -69,61 +71,61 @@ public class Frustum {
         
 
         // This will extract the RIGHT side of the frustum
-        m_Frustum[RIGHT][A] = clip[ 3] - clip[ 0];
-        m_Frustum[RIGHT][B] = clip[ 7] - clip[ 4];
-        m_Frustum[RIGHT][C] = clip[11] - clip[ 8];
-        m_Frustum[RIGHT][D] = clip[15] - clip[12];
+        values[RIGHT][A] = clip[ 3] - clip[ 0];
+        values[RIGHT][B] = clip[ 7] - clip[ 4];
+        values[RIGHT][C] = clip[11] - clip[ 8];
+        values[RIGHT][D] = clip[15] - clip[12];
 
         // Now that we have a normal (A,B,C) and a distance (D) to the plane,
         // we want to normalize that normal and distance.
 
         // Normalize the RIGHT side
-        normalizePlane(m_Frustum, RIGHT);
+        normalizePlane(values, RIGHT);
 
         // This will extract the LEFT side of the frustum
-        m_Frustum[LEFT][A] = clip[ 3] + clip[ 0];
-        m_Frustum[LEFT][B] = clip[ 7] + clip[ 4];
-        m_Frustum[LEFT][C] = clip[11] + clip[ 8];
-        m_Frustum[LEFT][D] = clip[15] + clip[12];
+        values[LEFT][A] = clip[ 3] + clip[ 0];
+        values[LEFT][B] = clip[ 7] + clip[ 4];
+        values[LEFT][C] = clip[11] + clip[ 8];
+        values[LEFT][D] = clip[15] + clip[12];
 
         // Normalize the LEFT side
-        normalizePlane(m_Frustum, LEFT);
+        normalizePlane(values, LEFT);
 
         // This will extract the BOTTOM side of the frustum
-        m_Frustum[BOTTOM][A] = clip[ 3] + clip[ 1];
-        m_Frustum[BOTTOM][B] = clip[ 7] + clip[ 5];
-        m_Frustum[BOTTOM][C] = clip[11] + clip[ 9];
-        m_Frustum[BOTTOM][D] = clip[15] + clip[13];
+        values[BOTTOM][A] = clip[ 3] + clip[ 1];
+        values[BOTTOM][B] = clip[ 7] + clip[ 5];
+        values[BOTTOM][C] = clip[11] + clip[ 9];
+        values[BOTTOM][D] = clip[15] + clip[13];
 
         // Normalize the BOTTOM side
-        normalizePlane(m_Frustum, BOTTOM);
+        normalizePlane(values, BOTTOM);
 
         // This will extract the TOP side of the frustum
-        m_Frustum[TOP][A] = clip[ 3] - clip[ 1];
-        m_Frustum[TOP][B] = clip[ 7] - clip[ 5];
-        m_Frustum[TOP][C] = clip[11] - clip[ 9];
-        m_Frustum[TOP][D] = clip[15] - clip[13];
+        values[TOP][A] = clip[ 3] - clip[ 1];
+        values[TOP][B] = clip[ 7] - clip[ 5];
+        values[TOP][C] = clip[11] - clip[ 9];
+        values[TOP][D] = clip[15] - clip[13];
 
         // Normalize the TOP side
-        normalizePlane(m_Frustum, TOP);
+        normalizePlane(values, TOP);
 
         // This will extract the BACK side of the frustum
-        m_Frustum[BACK][A] = clip[ 3] - clip[ 2];
-        m_Frustum[BACK][B] = clip[ 7] - clip[ 6];
-        m_Frustum[BACK][C] = clip[11] - clip[10];
-        m_Frustum[BACK][D] = clip[15] - clip[14];
+        values[BACK][A] = clip[ 3] - clip[ 2];
+        values[BACK][B] = clip[ 7] - clip[ 6];
+        values[BACK][C] = clip[11] - clip[10];
+        values[BACK][D] = clip[15] - clip[14];
 
         // Normalize the BACK side
-        normalizePlane(m_Frustum, BACK);
+        normalizePlane(values, BACK);
 
         // This will extract the FRONT side of the frustum
-        m_Frustum[FRONT][A] = clip[ 3] + clip[ 2];
-        m_Frustum[FRONT][B] = clip[ 7] + clip[ 6];
-        m_Frustum[FRONT][C] = clip[11] + clip[10];
-        m_Frustum[FRONT][D] = clip[15] + clip[14];
+        values[FRONT][A] = clip[ 3] + clip[ 2];
+        values[FRONT][B] = clip[ 7] + clip[ 6];
+        values[FRONT][C] = clip[11] + clip[10];
+        values[FRONT][D] = clip[15] + clip[14];
 
         // Normalize the FRONT side
-        normalizePlane(m_Frustum, FRONT);
+        normalizePlane(values, FRONT);
 	}
 
 	public void normalizePlane(float[][] frustum, int side) {
@@ -158,7 +160,7 @@ public class Frustum {
             for(int i = 0; i < 6; i++ )
             {
                     // Calculate the plane equation and check if the point is behind a side of the frustum
-                    if(m_Frustum[i][A] * x + m_Frustum[i][B] * y + m_Frustum[i][C] * z + m_Frustum[i][D] <= 0)
+                    if(values[i][A] * x + values[i][B] * y + values[i][C] * z + values[i][D] <= 0)
                     {
                             // The point was behind a side, so it ISN'T in the frustum
                             return false;
@@ -179,7 +181,7 @@ public class Frustum {
             // Go through all the sides of the frustum
             for(int i = 0; i < 6; i++ ) {
                     // If the center of the sphere is farther away from the plane than the radius
-                    if( m_Frustum[i][A] * x + m_Frustum[i][B] * y + m_Frustum[i][C] * z + m_Frustum[i][D] <= -radius ) {
+                    if( values[i][A] * x + values[i][B] * y + values[i][C] * z + values[i][D] <= -radius ) {
                             // The distance was greater than the radius so the sphere is outside of the frustum
                             return false;
                     }
@@ -212,21 +214,21 @@ public class Frustum {
 	
 	for(int i = 0; i < 6; i++ )
 	{
-		if(m_Frustum[i][A] * (x - size) + m_Frustum[i][B] * (y - size) + m_Frustum[i][C] * (z - size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x - size) + values[i][B] * (y - size) + values[i][C] * (z - size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x + size) + m_Frustum[i][B] * (y - size) + m_Frustum[i][C] * (z - size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x + size) + values[i][B] * (y - size) + values[i][C] * (z - size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x - size) + m_Frustum[i][B] * (y + size) + m_Frustum[i][C] * (z - size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x - size) + values[i][B] * (y + size) + values[i][C] * (z - size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x + size) + m_Frustum[i][B] * (y + size) + m_Frustum[i][C] * (z - size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x + size) + values[i][B] * (y + size) + values[i][C] * (z - size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x - size) + m_Frustum[i][B] * (y - size) + m_Frustum[i][C] * (z + size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x - size) + values[i][B] * (y - size) + values[i][C] * (z + size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x + size) + m_Frustum[i][B] * (y - size) + m_Frustum[i][C] * (z + size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x + size) + values[i][B] * (y - size) + values[i][C] * (z + size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x - size) + m_Frustum[i][B] * (y + size) + m_Frustum[i][C] * (z + size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x - size) + values[i][B] * (y + size) + values[i][C] * (z + size) + values[i][D] > 0)
 		continue;
-		if(m_Frustum[i][A] * (x + size) + m_Frustum[i][B] * (y + size) + m_Frustum[i][C] * (z + size) + m_Frustum[i][D] > 0)
+		if(values[i][A] * (x + size) + values[i][B] * (y + size) + values[i][C] * (z + size) + values[i][D] > 0)
 		continue;
 		
 		// If we get here, it isn't in the frustum
@@ -234,5 +236,16 @@ public class Frustum {
 	}
 	
 	return true;
+	}
+	
+	FloatBuffer toFloatBuffer() {
+		for (int i = 0; i < 6; i++) {
+			for (int z = 0; z < 4; z++) {
+				buffer.put(values[i][z]);
+			}
+		}
+		
+		buffer.rewind();
+		return buffer;
 	}
 }

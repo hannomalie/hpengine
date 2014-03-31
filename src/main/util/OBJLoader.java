@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.Integer.parseInt;
 import static main.log.ConsoleLogger.getLogger;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
@@ -72,7 +73,7 @@ public class OBJLoader {
 		String[] faceIndices = line.split(" ");
 
 		int[] vertexIndices = {
-			Integer.parseInt((faceIndices[1].split("/"))[0]),
+			parseInt((faceIndices[1].split("/"))[0]),
 			Integer.parseInt((faceIndices[2].split("/"))[0]),
 			Integer.parseInt((faceIndices[3].split("/"))[0]),
 		};
@@ -203,7 +204,6 @@ public class OBJLoader {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 		return materials;
 	}
 	

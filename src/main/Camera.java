@@ -40,7 +40,7 @@ public class Camera implements IEntity {
 	private Matrix4f viewMatrix = null;
 	private float rotationSpeed = 0.02f;
 
-	private ForwardRenderer renderer;
+	private Renderer renderer;
 
 	private Vector3f right = new Vector3f(1, 0, 0);
 	private Vector3f up = new Vector3f(0, 1, 0);
@@ -48,16 +48,16 @@ public class Camera implements IEntity {
 
 	private Frustum frustum;
 	
-	public Camera(ForwardRenderer renderer) {
-		this(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 100f));
+	public Camera(Renderer renderer) {
+		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	
-	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix) {
+	public Camera(Renderer renderer, Matrix4f projectionMatrix) {
 		this(renderer, projectionMatrix, new Matrix4f());
 	}
 	
-	public Camera(ForwardRenderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+	public Camera(Renderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
 		this.renderer = renderer;
 		this.projectionMatrix = projectionMatrix;
 
@@ -197,6 +197,7 @@ public class Camera implements IEntity {
 
 	@Override
 	public void move(Vector3f amount) {
+		amount.z = -amount.z;
 		Vector3f.add(getPosition(), amount, getPosition());
 		transform();
 	}

@@ -20,7 +20,10 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 
@@ -35,8 +38,6 @@ public class ForwardRenderer implements Renderer {
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
 
-	public static final boolean FRUSTUMCULLING = false;
-
 	private int fps;
 	private long lastFPS;
 	private long lastFrame;
@@ -50,6 +51,7 @@ public class ForwardRenderer implements Renderer {
 
 	private RenderTarget firstTarget;
 	private RenderTarget depthTarget;
+	private RenderTarget depthBlurTarget;
 	private RenderTarget shadowMapTarget;
 
 	private VertexBuffer fullscreenBuffer;
@@ -90,15 +92,16 @@ public class ForwardRenderer implements Renderer {
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		firstTarget = new RenderTarget(WIDTH, HEIGHT);
-		depthTarget = new RenderTarget(1024, 1024, GL11.GL_RGB, 1, 1f, 1f, 1f, GL11.GL_LINEAR);//new RenderTarget(WIDTH, HEIGHT);
-		shadowMapTarget = new RenderTarget(1024, 1024, GL11.GL_RGB, 1, 1f, 1f, 1f, GL11.GL_LINEAR);
+		firstTarget = new RenderTarget(WIDTH, HEIGHT, 1);
+		depthTarget = new RenderTarget(1024, 1024, GL30.GL_RGB32F, 1, 1f, 1f, 1f, GL11.GL_LINEAR, 1);
+		depthBlurTarget = new RenderTarget(1024, 1024, GL30.GL_RGB32F, 1, 1f, 1f, 1f, GL11.GL_LINEAR, 1);
+		shadowMapTarget = new RenderTarget(1024, 1024, GL30.GL_RGB32F, 1, 1f, 1f, 1f, GL11.GL_LINEAR, 1);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
 		
-		ForwardRenderer.exitOnGLError("setupOpenGL");
+		Renderer.exitOnGLError("setupOpenGL");
 	}
 	
 
@@ -120,7 +123,7 @@ public class ForwardRenderer implements Renderer {
 		blurProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/blur_fragment.glsl", RENDERTOQUAD);
 
 		
-		ForwardRenderer.exitOnGLError("setupShaders");
+		Renderer.exitOnGLError("setupShaders");
 	}
 
 	private void setUpMaterialProgramTextureLocations(Program program) {
@@ -161,37 +164,47 @@ public class ForwardRenderer implements Renderer {
 	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, Spotlight light) {
 
 		drawShadowMap(light, entities, shadowMapTarget);
-		drawDepthMap(camera, entities, depthTarget);
-		
+		if (World.useAmbientOcclusion == 1) {
+			drawDepthMap(camera, entities, depthTarget);
+		}
 		target.use(true);
 
 		materialProgram.use();
+
+		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(),"frustumCulling"), World.useFrustumCulling);
+		GL20.glUniform4(GL20.glGetUniformLocation(materialProgram.getId(),"FrustumPlanes"), camera.getFrustum().toFloatBuffer());
 
 		// USE LIGHT AND CAMERA
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
 		GL20.glUniform3f(GL20.glGetUniformLocation(materialProgram.getId(),"eyePosition"), camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
-		GL20.glUniform3f(GL20.glGetUniformLocation(materialProgram.getId(),"lightPosition"), light.getOrientation().x, light.getOrientation().y, light.getOrientation().z );
+		GL20.glUniform3f(GL20.glGetUniformLocation(materialProgram.getId(),"lightPosition"), light.getPosition().x, light.getPosition().y, light.getPosition().z );
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"lightMatrix"), false, light.getLightMatrix());
 		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(),"useParallax"), World.useParallax);
 		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(),"useSteepParallax"), World.useSteepParallax);
+		GL20.glUniform1i(GL20.glGetUniformLocation(materialProgram.getId(),"useAmbientOcclusion"), World.useAmbientOcclusion);
 		
 		// USE SHADOWMAP AND SHADOW MATRICES, DEPTHMAP
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"projectionMatrixShadow"), false, light.getCamera().getProjectionMatrixAsBuffer());
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(materialProgram.getId(),"viewMatrixShadow"), false, light.getCamera().getViewMatrixAsBuffer());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, shadowMapTarget.getRenderedTexture());
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTarget.getRenderedTexture());
+		if (World.useAmbientOcclusion == 1) {
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthBlurTarget.getRenderedTexture());
+		}
 		
 		int notInfrustum = 0;
+		materialProgram.use();
 		for (IEntity entity: entities) {
-			if (!FRUSTUMCULLING || entity.isInFrustum(camera)) {
-
-				materialProgram.use();
-				entity.draw(materialProgram);
+			if (World.useFrustumCulling == 1) {
+				if(entity.isInFrustum(camera)) {
+					entity.draw(materialProgram);
+				} else {
+//					entity.drawDebug();
+				}
 			} else {
-//				entity.drawDebug();
+				entity.draw(materialProgram);
 				notInfrustum++;
 			}
 		}
@@ -212,7 +225,7 @@ public class ForwardRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(target.getRenderedTexture(), fullscreenBuffer);
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(depthTarget.getRenderedTexture(), debugBuffer);
+			drawToQuad(shadowMapTarget.getRenderedTexture(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -230,11 +243,13 @@ public class ForwardRenderer implements Renderer {
 		
 		target.unuse();
 
+		blur(target.getRenderedTexture(), depthBlurTarget);
 	}
 
 	public void drawShadowMap(Spotlight light, List<IEntity> entities, RenderTarget target) {
 		
 		light.getRenderTarget().use(true);
+		//target.use(true);
 
 		shadowMapProgram.use();
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(shadowMapProgram.getId(),"viewMatrix"), false, light.getCamera().getViewMatrixAsBuffer());
@@ -247,13 +262,14 @@ public class ForwardRenderer implements Renderer {
 		 }
 		
 		light.getRenderTarget().unuse();
+		//target.unuse();
 
 		blur(light.getRenderTarget().getRenderedTexture(), target);
 	}
 	
 	private void blur(int texture, RenderTarget target) {
 		target.use(true);
-		drawToQuad(texture, debugBuffer, blurProgram);
+		drawToQuad(texture, fullscreenBuffer, blurProgram);
 		target.unuse();
 	}
 	
@@ -265,7 +281,7 @@ public class ForwardRenderer implements Renderer {
 
 		buffer.draw();
 		
-		exitOnGLError("glDrawArrays in drawToQuad");
+		Renderer.exitOnGLError("glDrawArrays in drawToQuad");
 	}
 
 	private void drawToQuad(int texture, VertexBuffer buffer) {
@@ -280,7 +296,7 @@ public class ForwardRenderer implements Renderer {
 		// Delete the shaders
 		materialProgram.delete();
 
-		ForwardRenderer.exitOnGLError("destroyOpenGL");
+		Renderer.exitOnGLError("destroyOpenGL");
 		
 		Display.destroy();
 	}
@@ -292,37 +308,5 @@ public class ForwardRenderer implements Renderer {
 			lastFPS += 1000;
 		}
 		fps++;
-	}
-
-	public static void exitOnGLError(String errorMessage) {
-		int errorValue = GL11.glGetError();
-		
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR - " + errorMessage + ": " + errorString);
-			
-			if (Display.isCreated()) Display.destroy();
-			System.exit(-1);
-		}
-	}
-
-	public static int getMaterialProgramId() {
-		return ForwardRenderer.materialProgram.getId();
-	}
-
-	public static void setMaterialProgramId(int materialProgramId) {
-		ForwardRenderer.setMaterialProgramId(materialProgramId);
-	}
-
-	public static int getShadowProgramId() {
-		return shadowMapProgram.getId();
-	}
-
-	public RenderTarget getFirstTarget() {
-		return firstTarget;
-	}
-
-	public static Program getShadowProgram() {
-		return shadowMapProgram;
 	}
 }

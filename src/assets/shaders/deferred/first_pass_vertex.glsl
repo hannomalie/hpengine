@@ -57,7 +57,7 @@ void main(void) {
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
 	normal_model = (modelMatrix * vec4(in_Normal,1)).xyz;
-	normal_world = (viewMatrix * vec4(normal_model,1)).xyz;
+	normal_world = (viewMatrix * vec4(normal_model,0)).xyz;
 	
 	
 	view_up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);

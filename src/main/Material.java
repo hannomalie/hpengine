@@ -58,7 +58,7 @@ public class Material implements IEntity {
 	
 	public static int textureIndex = 0;
 
-	public Material(ForwardRenderer renderer, String path, String diffuse, String... maps) {
+	public Material(Renderer renderer, String path, String diffuse, String... maps) {
 		setup(path, diffuse, maps);
 	}
 	public Material(String path, String diffuse, String... maps) {
@@ -130,6 +130,9 @@ public class Material implements IEntity {
 	}
 	
 	public void setTexturesActive(Program program) {
+		if (!program.needsTextures()) {
+			return;
+		}
 				
 		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
 			MAP map = entry.getKey();

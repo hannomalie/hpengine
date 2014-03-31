@@ -10,6 +10,7 @@ layout(binding=6) uniform sampler2D depthMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
+uniform bool useAmbientOcclusion;
 
 uniform bool hasDiffuseMap;
 uniform bool hasNormalMap;
@@ -48,11 +49,71 @@ float rand(vec2 co){
 
 vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 
-vec2 poissonDisk[4] = vec2[](
-  vec2( -0.94201624, -0.39906216 ),
-  vec2( 0.94558609, -0.76890725 ),
-  vec2( -0.094184101, -0.92938870 ),
-  vec2( 0.34495938, 0.29387760 )
+vec2 poissonDisk[64] = vec2[](
+vec2(-0.613392, 0.617481),
+vec2(0.170019, -0.040254),
+vec2(-0.299417, 0.791925),
+vec2(0.645680, 0.493210),
+vec2(-0.651784, 0.717887),
+vec2(0.421003, 0.027070),
+vec2(-0.817194, -0.271096),
+vec2(-0.705374, -0.668203),
+vec2(0.977050, -0.108615),
+vec2(0.063326, 0.142369),
+vec2(0.203528, 0.214331),
+vec2(-0.667531, 0.326090),
+vec2(-0.098422, -0.295755),
+vec2(-0.885922, 0.215369),
+vec2(0.566637, 0.605213),
+vec2(0.039766, -0.396100),
+vec2(0.751946, 0.453352),
+vec2(0.078707, -0.715323),
+vec2(-0.075838, -0.529344),
+vec2(0.724479, -0.580798),
+vec2(0.222999, -0.215125),
+vec2(-0.467574, -0.405438),
+vec2(-0.248268, -0.814753),
+vec2(0.354411, -0.887570),
+vec2(0.175817, 0.382366),
+vec2(0.487472, -0.063082),
+vec2(-0.084078, 0.898312),
+vec2(0.488876, -0.783441),
+vec2(0.470016, 0.217933),
+vec2(-0.696890, -0.549791),
+vec2(-0.149693, 0.605762),
+vec2(0.034211, 0.979980),
+vec2(0.503098, -0.308878),
+vec2(-0.016205, -0.872921),
+vec2(0.385784, -0.393902),
+vec2(-0.146886, -0.859249),
+vec2(0.643361, 0.164098),
+vec2(0.634388, -0.049471),
+vec2(-0.688894, 0.007843),
+vec2(0.464034, -0.188818),
+vec2(-0.440840, 0.137486),
+vec2(0.364483, 0.511704),
+vec2(0.034028, 0.325968),
+vec2(0.099094, -0.308023),
+vec2(0.693960, -0.366253),
+vec2(0.678884, -0.204688),
+vec2(0.001801, 0.780328),
+vec2(0.145177, -0.898984),
+vec2(0.062655, -0.611866),
+vec2(0.315226, -0.604297),
+vec2(-0.780145, 0.486251),
+vec2(-0.371868, 0.882138),
+vec2(0.200476, 0.494430),
+vec2(-0.494552, -0.711051),
+vec2(0.612476, 0.705252),
+vec2(-0.578845, -0.768792),
+vec2(-0.772454, -0.090976),
+vec2(0.504440, 0.372295),
+vec2(0.155736, 0.065157),
+vec2(0.391522, 0.849605),
+vec2(-0.620106, -0.328104),
+vec2(0.789239, -0.419965),
+vec2(-0.545396, 0.538133),
+vec2(-0.178564, -0.596057)
 );
 
 float random(vec4 seed4) {
@@ -95,13 +156,18 @@ float eval_shadow (vec2 texcoods) {
 
 float eval_shadow_poisson (vec2 texcoods) {
 	float shadow = 1.0;
-	for (int i=0;i<4;i++){
-		float mapSample = texture(shadowMap, texcoods + poissonDisk[i]/700).r;
+	int samples = 16;
+	int count = 0;
+	for (int i=0;i<samples;i++){
+		float mapSample = texture(shadowMap, texcoods + poissonDisk[i]/600).r;
 		if (mapSample + epsilon < position_clip_shadow.z) {
-			shadow -= 0.2;
+			count++;
 		}
 	}
-	return shadow; // not shadowed
+
+	float hitCount = count/samples;
+	shadow = 1-hitCount;
+	return max(shadow, 0);
 }
 float chebyshevUpperBound( float distance, vec2 ShadowCoordPostW) {
 	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
@@ -170,7 +236,7 @@ void main(void) {
 	}
 	
 	// NORMAL
-	vec3 N = normalize(normal_model);
+	vec3 N = normalize(normal_world);
 	vec3 PN = N;
 	if (hasNormalMap) {
 		PN = perturb_normal(N, V, UV);
@@ -182,9 +248,6 @@ void main(void) {
 	if (hasSpecularMap) {
 		specularStrength = texture2D(specularMap, UV).r;
 	}
-	
-	// DEPTH
-	float depth = texture2D(depthMap, position_clip_uv.xy).r;
 	
 	{
 		outColor = ambientLight * diffuseMaterial;
@@ -202,7 +265,7 @@ void main(void) {
 		}
 		
 		float visibility = 1;
-		if (true) {
+		{
 			//visibility = eval_shadow_poisson(position_clip_shadow.xy);
 			visibility = eval_shadow(position_clip_shadow.xy);
 			//visibility = chebyshevUpperBound((position_clip_shadow.z), position_clip_shadow.xy);
@@ -211,9 +274,10 @@ void main(void) {
 		
 		// AMBIENT OCCLUSION
 		float ao = 1;
+		float depth = texture2D(depthMap, position_clip_uv.xy).r;
 		if (false) {
 			vec3 fres = normalize(rand(diffuseMaterial.rg)*2) - vec3(1.0, 1.0, 1.0);
-			vec3 ep = vec3(position_clip_uv.xy, depth);
+			vec3 ep = vec3(0,0, depth);
 			float rad = 0.006;
 			float radD = rad/depth;
 			float bl = 0.0f;

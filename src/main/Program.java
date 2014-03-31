@@ -10,29 +10,48 @@ import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL32;
 
 public class Program {
 	private static Logger LOGGER = getLogger();
 	
 	private int id;
 	private int vertexShaderId = 0;
+	private int geometryShaderId = 0;
 	private int fragmentShaderId = 0;
 	
 	private EnumSet<DataChannels> channels;
-	
-	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
+
+	private boolean needsTextures = true;
+
+	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
+		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, true);
+	}
+	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
 		this.channels = channels;
+		this.needsTextures = needsTextures;
 		vertexShaderId = Program.loadShader(vertexShaderLocation, GL20.GL_VERTEX_SHADER);
 		fragmentShaderId = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER);
 		id = GL20.glCreateProgram();
 		GL20.glAttachShader(id, vertexShaderId);
 		GL20.glAttachShader(id, fragmentShaderId);
+		if (geometryShaderLocation != null) {
+			geometryShaderId = Program.loadShader(geometryShaderLocation, GL32.GL_GEOMETRY_SHADER);
+			GL20.glAttachShader(id, geometryShaderId);
+		}
 		bindShaderAttributeChannels();
 		
 		GL20.glLinkProgram(id);
 		GL20.glValidateProgram(id);
 		
 		use();
+	}
+
+	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
+		this(null, vertexShaderLocation, fragmentShaderLocation, channels, true);
+	}
+	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
+		this(null, vertexShaderLocation, fragmentShaderLocation, channels, needsTextures);
 	}
 	
 	public void use() {
@@ -88,8 +107,12 @@ public class Program {
 			System.exit(-1);
 		}
 		
-		ForwardRenderer.exitOnGLError("loadShader");
+		Renderer.exitOnGLError("loadShader");
 		
 		return shaderID;
+	}
+
+	public boolean needsTextures() {
+		return needsTextures;
 	}
 }

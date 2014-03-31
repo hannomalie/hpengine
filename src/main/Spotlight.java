@@ -23,9 +23,6 @@ public class Spotlight implements IEntity {
 	
 	private boolean castsShadows = false;
 
-	public int lightPositionLocation = 0;
-	int lightMatrixLocation = 0;
-
 	private Camera camera;
 
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
@@ -37,13 +34,6 @@ public class Spotlight implements IEntity {
 		this.castsShadows = castsShadows;
 	}
 
-	public void setLightDirectionLocation(int programId) {
-		lightPositionLocation = GL20.glGetUniformLocation(programId, "lightPosition");
-	}
-	public void setLightMatrixLocation(int programId) {
-		lightMatrixLocation = GL20.glGetUniformLocation(programId, "lightMatrix");
-	}
-	
 	public boolean isCastsShadows() {
 		return castsShadows;
 	}
@@ -59,7 +49,7 @@ public class Spotlight implements IEntity {
 		this.renderTarget = renderTarget;
 	}
 	
-	public void init(ForwardRenderer renderer, Camera camera) {
+	public void init(Renderer renderer, Camera camera) {
 		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
 				"stone_specular.png", "stone_occlusion.png",
 				"stone_height.png");
@@ -75,15 +65,13 @@ public class Spotlight implements IEntity {
 		
 		renderTarget = new RenderTarget(256, 256, 1, 1, 1, 1);
 		this.camera = camera;
-		camera.setProjectionMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(),"projectionMatrix"));
-		camera.setViewMatrixLocation(GL20.glGetUniformLocation(ForwardRenderer.getShadowProgramId(), "viewMatrix"));
 	}
 
-	public void init(ForwardRenderer renderer) {
-		camera =  new Camera(renderer, Util.createPerpective(60f, (float)ForwardRenderer.WIDTH / (float)ForwardRenderer.HEIGHT, 0.1f, 100f));
+	public void init(Renderer renderer) {
+		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 //		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
 		camera.setPosition(new Vector3f(12f,2f,2f));
-		camera.rotate(new Vector4f(0, -1, 0, 0.5f));
+		camera.rotate(new Vector4f(0.3f, -1, 0.1f, 0.5f));
 		init(renderer, camera);
 	}
 

@@ -35,6 +35,9 @@ public class Entity implements IEntity {
 	public static EnumSet<DataChannels> SHADOWCHANNELS = EnumSet.of(
 			DataChannels.POSITION3);
 	
+	public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
+			DataChannels.POSITION3);
+	
 	FloatBuffer matrix44Buffer;
 
 	public Matrix4f modelMatrix = null;
@@ -51,22 +54,19 @@ public class Entity implements IEntity {
 
 	private Quaternion orientation = new Quaternion();
 
-	public Entity(ForwardRenderer renderer, Model model) {
-		this(renderer, model, new Vector3f(0, 0, 0), 
+	public Entity(Renderer renderer, Model model) {
+		this(renderer, model, new Vector3f(0, 0, 0),
 				new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
-						"stone_specular.png", "stone_occlusion.png",
-						"stone_height.png")
-				, false);
-	}
-	public Entity(ForwardRenderer renderer, Model model, Material material) {
-		this(renderer, model, new Vector3f(0, 0, 0), material, false);
+				"stone_specular.png", "stone_occlusion.png",
+				"stone_height.png"),
+				false);
 	}
 
-	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, Material material) {
-		this(renderer, model, new Vector3f(0, 0, 0), material, false);
+	public Entity(Renderer renderer, Model model, Material material, boolean castsShadows) {
+		this(renderer, model, new Vector3f(0, 0, 0), material, castsShadows);
 	}
-	
-	public Entity(ForwardRenderer renderer, Model model, Vector3f position, Material material, boolean castsShadows) {
+
+	public Entity(Renderer renderer, Model model, Vector3f position, Material material, boolean castsShadows) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
@@ -166,9 +166,6 @@ public class Entity implements IEntity {
 		this.name = model.getName();
 	}
 
-	public Entity(ForwardRenderer renderer, Model model, Vector3f vector3f, boolean b) {
-		this(renderer, model, vector3f, model.getMaterial(), b);
-	}
 	public void update() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
@@ -294,26 +291,25 @@ public class Entity implements IEntity {
 	}
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		
 		Vector4f[] minMax = vertexBuffer.getMinMax();
 
 		Vector4f minView = new Vector4f();
 		Vector4f maxView = new Vector4f();
+		Vector4f minMaxCenterView = new Vector4f();
 
 		Matrix4f.transform(modelMatrix, minMax[0], minView);
 		Matrix4f.transform(camera.getViewMatrix(), minView, minView);
 		//trix4f.transform(camera.getProjectionMatrix(), minView, minView);
-		
+
 		Matrix4f.transform(modelMatrix, minMax[1], maxView);
 		Matrix4f.transform(camera.getViewMatrix(), maxView, maxView);
 		//Matrix4f.transform(camera.getProjectionMatrix(), maxView, maxView);
 
-		float cubeCenterX = (maxView.x + minView.x)/2;
-		float cubeCenterY = (maxView.y + minView.y)/2;
-		float cubeCenterZ = (maxView.z + minView.z)/2;
-		float size = (minMax[1].x - minMax[0].x)/2;
-		
-		if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
+		Vector4f.add(minView, maxView, minMaxCenterView);
+		minMaxCenterView.scale(0.5f);
+
+		if (camera.getFrustum().pointInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z)) {
+		//if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
 		//if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
 		//		|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
 			return true;
