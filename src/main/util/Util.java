@@ -18,6 +18,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
 import org.newdawn.slick.util.ResourceLoader;
@@ -27,6 +28,7 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class Util {
 	private static final double PI = 3.14159265358979323846;
+	private static final String VECTOR_DELIMITER = "_";
 	
 	public static String loadAsTextFile(String path) {
 		//InputStream in = Util.class.getClass().getResourceAsStream("/de/hanno/render/shader/vs.vs");
@@ -92,7 +94,7 @@ public class Util {
 				e1.printStackTrace();
 			}
 		}
-		if (true) {
+		if (mipmap) {
 			texture.bind();
 			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 
@@ -263,5 +265,29 @@ public class Util {
 
         return m;
     }
+
+	public static String vectorToString(Vector3f in) {
+		StringBuilder b = new StringBuilder();
+		b.append(in.x);
+		b.append(VECTOR_DELIMITER);
+		b.append(in.y);
+		b.append(VECTOR_DELIMITER);
+		b.append(in.z);
+		
+		return b.toString();
+	}
+	public static String vectorToString(Vector4f in) {
+		StringBuilder b = new StringBuilder();
+		b.append(in.x);
+		b.append(VECTOR_DELIMITER);
+		b.append(in.y);
+		b.append(VECTOR_DELIMITER);
+		b.append(in.z);
+		b.append(VECTOR_DELIMITER);
+		b.append(in.w);
+		
+		return b.toString();
+	}
+	
 
 }

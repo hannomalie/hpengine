@@ -96,14 +96,17 @@ void main(void) {
 	vec3 N = normal_world;
 	vec3 PN = N;
 	if (hasNormalMap) {
-		PN = perturb_normal(PN, V, UV);
+		PN = perturb_normal(PN, eyeVec, UV);
 	}
 	
 	out_position = position_world;
-	out_normal = vec4(PN,1);
+	out_normal = vec4(PN,position_clip.z/position_clip.w);
 	
 	vec4 color = vec4(1,1,1,1);
 	if (hasDiffuseMap) {
+		UV = texCoord;
+		UV.x = texCoord.x * diffuseMapWidth;
+		UV.y = texCoord.y * diffuseMapHeight;
 		color = texture2D(diffuseMap, UV);
 	}
 	out_albedo = color;

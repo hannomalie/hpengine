@@ -4,7 +4,7 @@ layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 
-const vec3 kd = vec3 (1.0, 1.0, 1.0);
+const vec3 kd = vec3 (1.0, 1.0, 1.0) * 0.2;
 const vec3 ks = vec3 (1.0, 1.0, 1.0);
 const float specular_exponent = 100.0;
 
@@ -20,9 +20,7 @@ in vec2 pass_TextureCoord;
 out vec4 out_Color;
 
 vec3 phong (in vec3 p_eye, in vec3 n_eye) {
-  vec3 light_position_eye = lightDirection;//vec3 (V * vec4 (lp, 1.0));
-  vec3 dist_to_light_eye = normalize(lightDirection);
-  vec3 direction_to_light_eye = normalize (dist_to_light_eye);
+  vec3 direction_to_light_eye = normalize (lightDirection);
   
   // standard diffuse light
   float dot_prod = max (dot (direction_to_light_eye,  n_eye), 0.0);
@@ -37,10 +35,12 @@ vec3 phong (in vec3 p_eye, in vec3 n_eye) {
   vec3 Is = lightSpecular * ks * specular_factor; // final specular intensity
   
   // attenuation (fade out to sphere edges)
-  float dist_2d = distance (light_position_eye, p_eye);
+  float dist_2d = 1;//distance (light_position_eye, p_eye);
   float atten_factor = -log (min (1.0, dist_2d / 5.0));
   
-  return (Id + Is) * atten_factor;
+  return vec3(dot_prod,dot_prod,dot_prod);
+  //return (Id + Is);// * atten_factor;
+  //return vec3(dot_prod,dot_prod,dot_prod);
 }
 void main(void) {
 	

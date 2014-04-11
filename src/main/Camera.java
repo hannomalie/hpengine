@@ -88,6 +88,7 @@ public class Camera implements IEntity {
 		if (Mouse.isButtonDown(0)) {
 			rotate(up, Mouse.getDX() * rotationSpeed);
 //			rotate(right, Mouse.getDY() * rotationSpeed/2);
+			
 			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {

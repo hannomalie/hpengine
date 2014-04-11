@@ -6,13 +6,14 @@ layout(binding=2) uniform sampler2D diffuseMap;
 
 const vec3 kd = vec3 (1.0, 1.0, 1.0);
 const vec3 ks = vec3 (1.0, 1.0, 1.0);
-const float specular_exponent = 100.0;
+const float specular_exponent = 10;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
 uniform vec3 lightPosition;
+uniform float lightRadius;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
 
@@ -21,7 +22,7 @@ in vec4 position_clip;
 out vec4 out_Color;
 
 vec3 phong (in vec3 p_eye, in vec3 n_eye) {
-  vec3 light_position_eye = lightPosition;//vec3 (V * vec4 (lp, 1.0));
+  vec3 light_position_eye = (vec4(lightPosition,1)).xyz;//vec3 (V * vec4 (lp, 1.0));
   vec3 dist_to_light_eye = light_position_eye - p_eye;
   vec3 direction_to_light_eye = normalize (dist_to_light_eye);
   
@@ -39,8 +40,11 @@ vec3 phong (in vec3 p_eye, in vec3 n_eye) {
   
   // attenuation (fade out to sphere edges)
   float dist_2d = distance (light_position_eye, p_eye);
-  float atten_factor = -log (min (1.0, dist_2d / 5.0));
-  
+  float distDivRadius = (dist_2d / lightRadius);
+  if (distDivRadius > 1) {return vec3(0,0,0);}
+  //float atten_factor = -log (min (1.0, dist_2d / lightRadius));
+  //float atten_factor = 1.0 / ((1+0.22*distDivRadius)*(1+0.20*distDivRadius*distDivRadius));
+  float atten_factor = clamp(1.0f - dist_2d/lightRadius, 0.0, 1.0);
   return (Id + Is) * atten_factor;
 }
 void main(void) {

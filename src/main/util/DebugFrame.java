@@ -1,24 +1,13 @@
 package main.util;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.imageio.ImageIO;
-import javax.swing.AbstractButton;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -27,21 +16,24 @@ import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
-import javax.swing.text.StyledEditorKit.ForegroundAction;
 import javax.swing.tree.DefaultMutableTreeNode;
 
-import main.ForwardRenderer;
+import main.DeferredRenderer;
 import main.IEntity;
 import main.Material;
+import main.PointLight;
 import main.World;
 
 import org.newdawn.slick.opengl.Texture;
+
+import static main.util.Util.*;
 
 public class DebugFrame {
 
 	private JFrame mainFrame = new JFrame();
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
+	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
 	
@@ -88,7 +80,7 @@ public class DebugFrame {
 				return "Null";
 			}
 		};
-		
+
 		TableModel textureDataModel = new AbstractTableModel() {
 
 			List<Object> paths = Arrays.asList(Material.TEXTURES.keySet()
@@ -121,12 +113,53 @@ public class DebugFrame {
 				return "Null";
 			}
 		};
+		
+		TableModel lightsTableModel = new AbstractTableModel() {
+
+			List<PointLight> lights = DeferredRenderer.pointLights;
+
+			public int getColumnCount() {
+				return 3;
+			}
+
+			public int getRowCount() {
+				return lights.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					PointLight light = lights.get(row);
+					return String.format("%s (Range %f)", light.getName(), light.getRange());
+					
+				} else if (col == 1) {
+					return vectorToString(lights.get(row).getPosition());
+					
+				} else if (col == 2) {
+					return vectorToString(lights.get(row).getColor());
+					
+				}
+				return "";
+			}
+
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Name";
+				} else if (column == 1) {
+					return "Position";
+				} else if (column == 2) {
+					return "Color";
+				}
+				return "Null";
+			}
+		};
 
 		JTable materialTable = new JTable(materialDataModel);
 		JTable textureTable = new JTable(textureDataModel);
+		JTable lightsTable = new JTable(lightsTableModel);
 
 		materialPane =  new JScrollPane(materialTable);
 		texturePane  =  new JScrollPane(textureTable);
+		lightsPane  =  new JScrollPane(lightsTable);
 		
 		addSceneObjects(world);
 		scenePane = new JScrollPane(scene);
@@ -183,6 +216,7 @@ public class DebugFrame {
 //		mainFrame.add(materialPane);
 		mainFrame.add(buttonPanel, BorderLayout.PAGE_START);
 		mainFrame.add(texturePane, BorderLayout.LINE_START);
+		mainFrame.add(lightsPane, BorderLayout.PAGE_END);
 		mainFrame.add(scenePane, BorderLayout.CENTER);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 300));

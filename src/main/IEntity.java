@@ -13,18 +13,23 @@ public interface IEntity {
 	default public void draw(Program program) {};
 	default public void drawDebug(Program program) {};
 	public void destroy();
-	default public Vector3f getPosition() { return new Vector3f(); };
+	public Vector3f getPosition();
 	default public Quaternion getOrientation() { return new Quaternion(); };
 	default public void rotate(Vector4f axisDegree) {};
 	default public void rotate(Vector3f axis, float radians) {};
 	default public void rotate(Vector3f axis, float degree, boolean isDegree) {};
-	default public void move(Vector3f amount) {};
+	default public void move(Vector3f amount) {
+		Vector3f temp = new Vector3f();
+		Vector3f.add(getPosition(), amount, temp);
+		setPosition(temp);
+	};
 	public String getName();
 	public Material getMaterial();
 	default public void setScale(Vector3f scale) {};
 	default public void setScale(float scale) {};
+	public default Vector3f getScale() { return new Vector3f(); };
 	default public void setPosition(Vector3f position) {};
 	default public void setOrientation(Quaternion orientation) {};
 	default public Matrix4f getModelMatrix() { return new Matrix4f(); };
-	default public boolean isInFrustum(Camera camera) { return true; };
+	default public boolean isInFrustum(Camera camera) { return true; }
 }

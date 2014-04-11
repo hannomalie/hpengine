@@ -40,8 +40,8 @@ mat4 biasMatrix = mat4(
 
 void main(void) {
 
-	position_world = viewMatrix * modelMatrix * vec4(in_Position.xyz,1);
-	position_clip = (projectionMatrix * position_world);
+	position_world = modelMatrix * vec4(in_Position.xyz,1);
+	position_clip = (projectionMatrix * viewMatrix * position_world);
 	gl_Position = position_clip;
 	position_clip_shadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * vec4(in_Position.xyz,1);
 	position_clip_shadow.xyz /= position_clip_shadow.w;
@@ -56,18 +56,10 @@ void main(void) {
 	color = in_Color;
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
-	normal_model = (modelMatrix * vec4(in_Normal,1)).xyz;
-	normal_world = (viewMatrix * vec4(normal_model,0)).xyz;
-	
-	
-	view_up = vec3(viewMatrix[1][0], viewMatrix[1][1], viewMatrix[1][2]);
-	view_back = vec3(viewMatrix[2][0], viewMatrix[2][1], viewMatrix[2][2]);
-	
-	vec3 lightVec_world = (viewMatrix * lightMatrix * vec4(lightPosition,1)).xyz;
-	lightVec = normalize(position_world.xyz - lightVec_world);
+	normal_model = (vec4(in_Normal,0)).xyz;
+	normal_world = (modelMatrix * vec4(normal_model,0)).xyz;
 	
 	vec3 eyePos_world = (vec4(eyePosition,1)).xyz;
 	eyeVec = (eyePos_world-position_world.xyz);
 	
-	halfVec = (position_world.xyz + lightVec_world);
 }

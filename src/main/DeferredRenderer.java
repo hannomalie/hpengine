@@ -8,6 +8,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
@@ -47,6 +49,7 @@ public class DeferredRenderer implements Renderer {
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
 	private Program secondPassPointProgram;
+	private ComputeShaderProgram secondPassPointComputeShaderProgram;
 	private Program secondPassDirectionalProgram;
 	private Program combineProgram;
 	private static Program renderToQuadProgram;
@@ -60,9 +63,9 @@ public class DeferredRenderer implements Renderer {
 
 	private static int MAXLIGHTS = 64;
 	private static int MAXLIGHTHALF = MAXLIGHTS/2;
-	private List<Vector3f> pointLights = new ArrayList<>();
+	public static List<PointLight> pointLights = new ArrayList<>();
 	
-	private Entity sphere;
+	private IEntity sphere;
 	
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
@@ -70,24 +73,24 @@ public class DeferredRenderer implements Renderer {
 		getDelta();
 		lastFPS = Util.getTime();
 		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
-		for (int i = 0; i < MAXLIGHTHALF; i++) {
+		Random random = new Random();
+		for (int i = 0; i < MAXLIGHTS; i++) {
+			float randomFloatX = random.nextFloat() * 20f;
+			float randomFloatY = random.nextFloat();
+			float randomFloatZ = random.nextFloat() * 20f;
 			Vector3f position = new Vector3f();
-			position.x += (i) / 3f;
-			position.z += (i);
-			position.y = 3;
-			pointLights.add(position);
-		}
-		for (int i = 0; i < MAXLIGHTHALF; i++) {
-			Vector3f position = new Vector3f();
-			position.x += (i) / 3;
-			position.z += (i);
-			pointLights.add(position);
+			position.x += randomFloatX;
+			position.y += randomFloatY;
+			position.z += randomFloatZ;
+			pointLights.add(new PointLight(position, new Vector4f(random.nextFloat(),random.nextFloat(),random.nextFloat(),random.nextFloat()), 2 + 5* random.nextFloat()));
 		}
 		Model sphereModel;
 		try {
 			sphereModel = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
 			sphere = new Entity(this, sphereModel);
-			sphere.setScale(new Vector3f(50,50,50));
+			Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
+			scale.scale(new Random().nextFloat()*20);
+			sphere.setScale(scale);
 			sphere.update();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -99,7 +102,7 @@ public class DeferredRenderer implements Renderer {
 		try {
 			PixelFormat pixelFormat = new PixelFormat();
 			ContextAttribs contextAtrributes = new ContextAttribs(4, 2);
-//				.withForwardCompatible(true);
+//				.withForwardCompatible(true)
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
@@ -111,7 +114,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 			System.exit(-1);
 		}
-		
+
 		// Setup an XNA like background color
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -122,8 +125,8 @@ public class DeferredRenderer implements Renderer {
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
 		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGB, 1);
-		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 3);
-		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 1);
+		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 4);
+		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
@@ -136,8 +139,9 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() {
 		
 		firstPassProgram = new Program("/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, true);
-		
+
 		secondPassPointProgram = new Program("/assets/shaders/deferred/second_pass_point_vertex.glsl", "/assets/shaders/deferred/second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
+//		secondPassPointComputeShaderProgram = new ComputeShaderProgram("/assets/shaders/deferred/second_pass_point_compute.glsl");
 		secondPassDirectionalProgram = new Program("/assets/shaders/deferred/second_pass_directional_vertex.glsl", "/assets/shaders/deferred/second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 
 		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
@@ -156,8 +160,17 @@ public class DeferredRenderer implements Renderer {
 
 	public void update() {
 		updateFPS();
+		updateLights();
 	}
 	
+	private void updateLights() {
+		for (PointLight light : pointLights) {
+			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
+			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
+			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
+		}
+	}
+
 	public void draw(Camera camera, List<IEntity> entities, Spotlight light) {
 		draw(finalTarget, camera, entities, light);
 	}
@@ -175,36 +188,40 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(secondPassTarget.getRenderedTexture(0), debugBuffer);
+			drawToQuad(secondPassTarget.getRenderedTexture(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 
 	private void drawFirstPass(Camera camera, List<IEntity> entities) {
+		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
 		GL11.glDepthMask(true);
 		firstPassTarget.use(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
+		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useParallax"), World.useParallax);
+		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useSteepParallax"), World.useSteepParallax);
+		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useAmbientOcclusion"), World.useAmbientOcclusion);
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(firstPassProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(firstPassProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
 		GL20.glUniform3f(GL20.glGetUniformLocation(firstPassProgram.getId(),"eyePosition"), camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 		for (IEntity entity : entities) {
 			entity.draw(firstPassProgram);
 		}
-//		firstPassTarget.unuse();
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 	}
 
-	private void drawSecondPass(Camera camera, Spotlight directionalLight, List<Vector3f> pointLights) {
+	private void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights) {
 
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
 		secondPassTarget.use(false);
-//		GL11.glClearColor (0.2f, 0.2f, 0.2f, 0.0f);
+		//GL11.glClearColor(0.15f,0.15f,0.15f,0.15f); // ambient light
+		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		secondPassDirectionalProgram.use();
@@ -227,11 +244,19 @@ public class DeferredRenderer implements Renderer {
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
 		
-		for (Vector3f lightPosition : pointLights) {
-
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z );
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightDiffuse"), 1,1,1 );
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightSpecular"), 1,1,1 );
+		for (PointLight light : pointLights) {
+			Vector3f distance = new Vector3f();
+			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
+			if (distance.length() > sphere.getScale().x) {
+				GL11.glDisable(GL11.GL_CULL_FACE);
+			} else {
+				GL11.glEnable(GL11.GL_CULL_FACE);
+				GL11.glCullFace(GL11.GL_BACK);
+			}
+			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightPosition"), light.getPosition().x, light.getPosition().y, light.getPosition().z );
+			GL20.glUniform1f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightRadius"), light.getRange());
+			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightDiffuse"), light.getColor().x, light.getColor().y, light.getColor().z );
+			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightSpecular"), light.getColor().x, light.getColor().y, light.getColor().z );
 			sphere.draw(secondPassPointProgram);
 		}
 		secondPassTarget.unuse();
@@ -245,9 +270,11 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal
 		
 		fullscreenBuffer.draw();
 

@@ -166,6 +166,7 @@ public class Entity implements IEntity {
 		this.name = model.getName();
 	}
 
+	@Override
 	public void update() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
@@ -176,6 +177,7 @@ public class Entity implements IEntity {
 		matrix44Buffer.flip();
 	}
 
+	@Override
 	public void draw(Program program) {
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 		material.setTexturesActive(program);
@@ -183,7 +185,8 @@ public class Entity implements IEntity {
 
 //		material.setTexturesInactive();
 	}
-	
+
+	@Override
 	public void drawDebug(Program program) {
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 
@@ -192,7 +195,8 @@ public class Entity implements IEntity {
 
 //		material.setTexturesInactive();
 	}
-	
+
+	@Override
 	public Matrix4f getModelMatrix() {
 		return modelMatrix;
 	}
@@ -201,6 +205,7 @@ public class Entity implements IEntity {
 		this.modelMatrix = modelMatrix;
 	}
 
+	@Override
 	public Vector3f getPosition() {
 		return position;
 	}
@@ -208,11 +213,12 @@ public class Entity implements IEntity {
 	public void setPosition(Vector3f position) {
 		this.position = position;
 	}
-
+	
 	public Vector3f getScale() {
 		return scale;
 	}
 
+	@Override
 	public void setScale(Vector3f scale) {
 		this.scale = scale;
 	}

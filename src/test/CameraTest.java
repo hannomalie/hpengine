@@ -2,6 +2,7 @@ package test;
 
 import junit.framework.Assert;
 import main.Camera;
+import main.DeferredRenderer;
 import main.ForwardRenderer;
 import main.Frustum;
 import main.Renderer;
@@ -19,7 +20,7 @@ public class CameraTest {
 	
 	@Before
 	public void init() {
-		renderer = new ForwardRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new Spotlight(true));
 	}
 	
 	@Test
@@ -51,8 +52,8 @@ public class CameraTest {
 		
 		Frustum frustum = camera.getFrustum();
 
-//		Assert.assertEquals(0.1f, frustum.values[Frustum.FRONT][Frustum.D], 0.0001f);
-//		Assert.assertEquals(100f, frustum.values[Frustum.BACK][Frustum.D], 0.0001f);
+		Assert.assertEquals(0.1f, frustum.values[Frustum.FRONT][Frustum.D], 0.0001f);
+		Assert.assertEquals(100f, frustum.values[Frustum.BACK][Frustum.D], 0.0001f);
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, -1));
 		

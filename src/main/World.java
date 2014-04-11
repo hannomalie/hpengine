@@ -104,7 +104,7 @@ public class World {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
 						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-						scale.scale(new Random().nextFloat()*2);
+						scale.scale(new Random().nextFloat()*4);
 						entity.setScale(scale);
 						entities.add(entity);
 					} catch (Exception e) {
@@ -118,7 +118,7 @@ public class World {
 //				model.setMaterial(stone);
 				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), model.getMaterial(),  true);
 				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-				entity.setScale(scale);
+//				entity.setScale(scale);
 				entities.add(entity);
 			}
 			
