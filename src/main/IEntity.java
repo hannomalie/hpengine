@@ -2,6 +2,8 @@ package main;
 
 import java.nio.FloatBuffer;
 
+import main.shader.Program;
+
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;

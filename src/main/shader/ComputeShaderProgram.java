@@ -1,4 +1,4 @@
-package main;
+package main.shader;
 
 import static main.log.ConsoleLogger.getLogger;
 

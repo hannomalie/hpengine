@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.Material.MAP;
+import main.shader.Program;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;

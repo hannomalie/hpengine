@@ -13,6 +13,8 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.shader.ComputeShaderProgram;
+import main.shader.Program;
 import main.util.CLUtil;
 import main.util.OBJLoader;
 import main.util.Util;
@@ -300,12 +302,12 @@ public class DeferredRenderer implements Renderer {
 		firstPassTarget.use(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useParallax"), World.useParallax);
-		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useSteepParallax"), World.useSteepParallax);
-		GL20.glUniform1i(GL20.glGetUniformLocation(firstPassProgram.getId(),"useAmbientOcclusion"), World.useAmbientOcclusion);
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(firstPassProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(firstPassProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
-		GL20.glUniform3f(GL20.glGetUniformLocation(firstPassProgram.getId(),"eyePosition"), camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+		firstPassProgram.setUniform("useParallax", World.useParallax);
+		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		firstPassProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		for (IEntity entity : entities) {
 			entity.draw(firstPassProgram);
 		}
@@ -339,16 +341,17 @@ public class DeferredRenderer implements Renderer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
 
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassDirectionalProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassDirectionalProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
-		GL20.glUniform3f(GL20.glGetUniformLocation(secondPassDirectionalProgram.getId(),"lightDirection"), directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z );
+		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		fullscreenBuffer.draw();
 
 		secondPassPointProgram.use();
 		
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"viewMatrix"), false, camera.getViewMatrixAsBuffer());
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
+
+		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
 		for (PointLight light : pointLights) {
 			Vector3f distance = new Vector3f();
@@ -363,10 +366,11 @@ public class DeferredRenderer implements Renderer {
 				GL11.glEnable(GL11.GL_CULL_FACE);
 				GL11.glCullFace(GL11.GL_BACK);
 			}
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightPosition"), light.getPosition().x, light.getPosition().y, light.getPosition().z );
-			GL20.glUniform1f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightRadius"), lightRadius);
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightDiffuse"), light.getColor().x, light.getColor().y, light.getColor().z );
-			GL20.glUniform3f(GL20.glGetUniformLocation(secondPassPointProgram.getId(),"lightSpecular"), light.getColor().x, light.getColor().y, light.getColor().z );
+
+			secondPassPointProgram.setUniform("lightPosition", light.getPosition());
+			secondPassPointProgram.setUniform("lightRadius", lightRadius);
+			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
+			secondPassPointProgram.setUniform("lightSpecular", light.getColor().x, light.getColor().y, light.getColor().z);
 			light.draw(secondPassPointProgram);
 		}
 		secondPassTarget.unuse();

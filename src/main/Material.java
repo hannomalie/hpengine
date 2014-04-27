@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.Material.MAP;
+import main.shader.Program;
 import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
@@ -142,14 +143,14 @@ public class Material implements IEntity {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
-			GL20.glUniform1f(GL20.glGetUniformLocation(program.getId(), map.shaderVariableName + "Width"), texture.getWidth());
-			GL20.glUniform1f(GL20.glGetUniformLocation(program.getId(), map.shaderVariableName + "Height"), texture.getHeight());
+			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
+			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
-		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasDiffuseMap"), hasDiffuseMap()? 1: 0);
-		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasNormalMap"), hasNormalMap()? 1: 0);
-		GL20.glUniform1i(GL20.glGetUniformLocation(program.getId(), "hasSpecularMap"), hasSpecularMap()? 1: 0);
+		program.setUniform("hasDiffuseMap", hasDiffuseMap()? 1: 0);
+		program.setUniform("hasNormalMap", hasNormalMap()? 1: 0);
+		program.setUniform("hasSpecularMap", hasSpecularMap()? 1: 0);
 		
 	}
 	public void setTexturesInactive() {

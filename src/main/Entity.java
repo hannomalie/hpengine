@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.shader.Program;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
@@ -186,7 +187,8 @@ public class Entity implements IEntity {
 
 	@Override
 	public void draw(Program program) {
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
+		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+//		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 		material.setTexturesActive(program);
 		vertexBuffer.draw();
 
@@ -195,7 +197,8 @@ public class Entity implements IEntity {
 
 	@Override
 	public void drawDebug(Program program) {
-		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
+		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+//		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 
 		material.setTexturesActive(program);
 		vertexBuffer.drawDebug();
