@@ -1,4 +1,4 @@
-#version 430 core
+#version 430
 
 #define MAX_LIGHTS 1024
 #define MAX_LIGHTS_PER_TILE 40
@@ -14,15 +14,18 @@ struct PointLight
 };
 
 layout (binding = 0, rgba32f) uniform writeonly image2D outTexture;
-layout (binding = 1, rgba32f) uniform readonly image2D normalDepth;
-layout (binding = 2, rgba32f) uniform readonly image2D diffuse;
-layout (binding = 3, rgba32f) uniform readonly image2D specular;
-layout (binding = 4, rgba32f) uniform readonly image2D glowMatID;
+layout (binding = 1, rgba32f) uniform readonly image2D positionMap;
+layout (binding = 2, rgba32f) uniform readonly image2D normalMap;
+layout (binding = 3, rgba32f) uniform readonly image2D diffuseMap;
 
 layout (std430, binding = 5) buffer BufferObject
 {
     PointLight pointLights[];
 };
+
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
 
 uniform mat4 view;
 uniform mat4 proj;
@@ -105,9 +108,10 @@ void main()
         ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
         vec2 tilePos = vec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy) / vec2(1280, 720);
 
-        vec4 normalColor = imageLoad(normalDepth, pixelPos);
+        vec4 position = imageLoad(positionMap, pixelPos);
+        vec4 normal = imageLoad(normalMap, pixelPos);
 
-        float d = normalColor.w;
+        float d = position.z;
 
         uint depth = uint(d * 0xFFFFFFFF);
 
@@ -141,10 +145,10 @@ void main()
 
         int threadsPerTile = WORK_GROUP_SIZE * WORK_GROUP_SIZE;
 
-        for (uint i = 0; i < MAX_LIGHTS; i+= threadsPerTile)
+        //for (uint i = 0; i < MAX_LIGHTS; i+= threadsPerTile)
+        for (uint i = 0; i < 0; i+= threadsPerTile)
         {
             uint il = gl_LocalInvocationIndex + i;
-
             if (il < MAX_LIGHTS)
             {
                 PointLight p = pointLights[il];
@@ -171,18 +175,20 @@ void main()
 
         barrier();
 
-        vec4 diffuseColor = imageLoad(diffuse, pixelPos);
-        vec4 specularColor = imageLoad(specular, pixelPos);
-        vec4 glowColor = imageLoad(glowMatID, pixelPos);
+        vec4 diffuseColor = imageLoad(diffuseMap, pixelPos);
+        vec4 specularColor = imageLoad(diffuseMap, pixelPos);
+        vec4 glowColor = imageLoad(diffuseMap, pixelPos);
 
         vec2 uv = vec2(pixelPos.x / 1280.0f, pixelPos.y / 720.0f);
 
         vec3 wp = ReconstructWP(d, uv);
-        vec4 color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        //vec4 color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        vec4 color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-        for (int i = 0; i < pointLightCount; i++)
+        //for (int i = 0; i < pointLightCount; i++)
+        for (int i = 0; i < 0; i++)
         {
-            color += CalculateLighting( pointLights[pointLightIndex[i]], wp, normalColor.xyz, specularColor, glowColor);
+            //color += CalculateLighting( pointLights[pointLightIndex[i]], wp, normalMap.xyz, specularColor, glowColor);
         }
 
         barrier();
@@ -191,9 +197,9 @@ void main()
             imageStore(outTexture, pixelPos, vec4(.2f, .2f, .2f, 1.0f));
         else
         {
-            imageStore(outTexture, pixelPos, color);
+            //imageStore(outTexture, pixelPos, color);
             //imageStore(outTexture, pixelPos, vec4(maxDepthZ));
             //imageStore(outTexture, pixelPos, vec4(pointLightCount / 128.0f));
-            //imageStore(outTexture, pixelPos, vec4(vec2(tilePos.xy), 0.0f, 1.0f));
+            imageStore(outTexture, pixelPos, vec4(vec2(tilePos.xy), 0.0f, 1.0f));
         }
 }

@@ -31,6 +31,7 @@ public class World {
 	public static volatile int useAmbientOcclusion = 0;
 	public static int useFrustumCulling = 0;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
+	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	
 	public static void main(String[] args) {
 
@@ -40,7 +41,7 @@ public class World {
 	}
 	
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 10;
+	private int entityCount = 2;
 	public Renderer renderer;
 	private Camera camera;
 	

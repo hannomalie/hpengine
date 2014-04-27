@@ -20,7 +20,7 @@ in vec2 pass_TextureCoord;
 out vec4 out_Color;
 
 vec3 phong (in vec3 p_eye, in vec3 n_eye) {
-  vec3 direction_to_light_eye = normalize (lightDirection);
+  vec3 direction_to_light_eye = normalize((viewMatrix * vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
   float dot_prod = max (dot (direction_to_light_eye,  n_eye), 0.0);
@@ -53,7 +53,7 @@ void main(void) {
 	
 	// skip background
 	if (position.z > -0.0001) {
-	  //discard;
+	  discard;
 	}
 	vec3 normal = texture2D(normalMap, st).xyz;
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));

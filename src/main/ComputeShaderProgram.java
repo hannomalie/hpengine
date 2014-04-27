@@ -22,4 +22,16 @@ public class ComputeShaderProgram {
 		GL20.glValidateProgram(id);
 	}
 
+	public void use() {
+		GL20.glUseProgram(id);
+	}
+	
+	public void dispatchCompute(int num_groups_x, int num_groups_y, int num_groups_z) {
+		GL43.glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
+	}
+
+	public int getId() {
+		return id;
+	}
+
 }

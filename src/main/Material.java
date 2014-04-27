@@ -53,6 +53,7 @@ public class Material implements IEntity {
 	}
 
 	public Map<MAP, String> textures = new HashMap<>();
+	private boolean textureLess = false;
 
 	private String name;
 	
@@ -126,7 +127,7 @@ public class Material implements IEntity {
 		return textures.containsKey(MAP.NORMAL);
 	}
 	public boolean hasDiffuseMap() {
-		return textures.containsKey(MAP.DIFFUSE);
+		return !isTextureLess() && textures.containsKey(MAP.DIFFUSE);
 	}
 	
 	public void setTexturesActive(Program program) {
@@ -194,5 +195,11 @@ public class Material implements IEntity {
 	@Override
 	public Material getMaterial() {
 		return this;
+	}
+	public boolean isTextureLess() {
+		return textureLess;
+	}
+	public void setTextureLess(boolean textureLess) {
+		this.textureLess = textureLess;
 	}
 }

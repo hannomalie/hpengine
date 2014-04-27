@@ -71,7 +71,7 @@ public class Spotlight implements IEntity {
 		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 //		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
 		camera.setPosition(new Vector3f(12f,2f,2f));
-		camera.rotate(new Vector4f(0.3f, -1, 0.1f, 0.5f));
+		camera.rotate(new Vector4f(0.3f, 1, 0.1f, 0.5f));
 		init(renderer, camera);
 	}
 

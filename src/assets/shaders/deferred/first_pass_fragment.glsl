@@ -96,13 +96,14 @@ void main(void) {
 	vec3 N = normal_world;
 	vec3 PN = N;
 	if (hasNormalMap) {
-		PN = perturb_normal(PN, eyeVec, UV);
+		PN = normalize((vec4(perturb_normal(PN, eyeVec, UV), 0)).xyz);
 	}
 	
-	out_position = position_world;
-	out_normal = vec4(PN,position_clip.z/position_clip.w);
+	vec3 PN_view = (viewMatrix *vec4(PN, 0)).xyz;
+	out_position = viewMatrix * position_world;
+	out_normal = vec4(PN_view,0);
 	
-	vec4 color = vec4(1,1,1,1);
+	vec4 color = color;
 	if (hasDiffuseMap) {
 		UV = texCoord;
 		UV.x = texCoord.x * diffuseMapWidth;

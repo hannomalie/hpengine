@@ -43,17 +43,19 @@ public class Entity implements IEntity {
 	public Matrix4f modelMatrix = null;
 	protected int modelMatrixLocation = 0;
 	protected Vector3f position = null;
-	protected Vector3f scale = null;
+	protected Vector3f scale = new Vector3f(1,1,1);
 	private Material material;
 
-	private VertexBuffer vertexBuffer;
+	protected VertexBuffer vertexBuffer;
 
 	public boolean castsShadows = false;
 
-	private String name;
+	protected String name;
 
 	private Quaternion orientation = new Quaternion();
 
+	public Entity() {}
+	
 	public Entity(Renderer renderer, Model model) {
 		this(renderer, model, new Vector3f(0, 0, 0),
 				new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
@@ -76,7 +78,14 @@ public class Entity implements IEntity {
 		//angle = new Vector3f(0, 0, 0);
 		scale = new Vector3f(1, 1, 1);
 		
+		createVertexBuffer(model);
 		
+		this.material = material;
+		this.name = model.getName();
+	}
+	
+	public void createVertexBuffer(Model model) {
+
 		List<Vector3f> verticesTemp = model.getVertices();
 		List<Vector2f> texcoordsTemp = model.getTexCoords();
 		List<Vector3f> normalsTemp = model.getNormals();
@@ -162,8 +171,6 @@ public class Entity implements IEntity {
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 		
-		this.material = material;
-		this.name = model.getName();
 	}
 
 	@Override

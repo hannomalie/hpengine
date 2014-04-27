@@ -13,5 +13,5 @@ in vec4 in_Position;
 out vec4 position_clip;
 
 void main(void) {
-	gl_Position = projectionMatrix * viewMatrix * (in_Position + vec4(lightPosition,1));
+	gl_Position = projectionMatrix * viewMatrix * modelMatrix * (in_Position );
 }

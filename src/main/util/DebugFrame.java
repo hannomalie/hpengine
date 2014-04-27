@@ -42,6 +42,7 @@ public class DebugFrame {
 	private JButton toggleAmbientOcclusion = new JButton("Ambient Occlusion");
 	private JButton toggleFrustumCulling = new JButton("Frustum Culling");
 	private JButton toggleDebugFrame = new JButton("Debug Frame");
+	private JButton toggleDrawLights = new JButton("Draw Lights");
 	
 	private JTree scene = new JTree();
 	
@@ -129,7 +130,7 @@ public class DebugFrame {
 			public Object getValueAt(int row, int col) {
 				if (col == 0) {
 					PointLight light = lights.get(row);
-					return String.format("%s (Range %f)", light.getName(), light.getRange());
+					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 					
 				} else if (col == 1) {
 					return vectorToString(lights.get(row).getPosition());
@@ -201,12 +202,17 @@ public class DebugFrame {
 			}
 			toggleFrustumCulling.setText("Frustum Culling " + World.useFrustumCulling);
 		});
-		
+
 		toggleDebugFrame.addActionListener(e -> {
 			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
 		});
 		
+		toggleDrawLights.addActionListener(e -> {
+			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
+		});
+
 		buttonPanel.add(toggleDebugFrame);
+		buttonPanel.add(toggleDrawLights);
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);
