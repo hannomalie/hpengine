@@ -58,7 +58,7 @@ public class VertexBuffer {
 			this.verticesCount = calculateVerticesCount(buffer, channels);
 			LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s",verticesCount, buffer.remaining() * 4, channels.toString()));	
 		} else {
-			LOGGER.log(Level.INFO, String.format("Created VertexBuffer"));	
+			LOGGER.log(Level.INFO, String.format("Created VertexBuffer"));
 		}
 	}
 	
@@ -73,10 +73,9 @@ public class VertexBuffer {
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
 		this( null, channels, Usage.DYNAMIC);
-		this.verticesCount = calculateVerticesCount(values, channels);
-		FloatBuffer buffer = buffer(values, channels);
-		LOGGER.log(Level.INFO, String.format("Added Buffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
-		this.buffer = buffer;
+//		this.verticesCount = calculateVerticesCount(values, channels);
+		buffer = buffer(values, channels);
+//		LOGGER.log(Level.INFO, String.format("Added Buffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
 		LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
 	}
 	

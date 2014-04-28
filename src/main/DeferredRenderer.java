@@ -61,8 +61,6 @@ public class DeferredRenderer implements Renderer {
 			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
-	public static final int WIDTH = 1280;
-	public static final int HEIGHT = 720;
 
 	private int fps;
 	private long lastFPS;
@@ -85,10 +83,9 @@ public class DeferredRenderer implements Renderer {
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
 
-	private static float MINLIGHTRADIUS = 0.05f;
+	private static float MINLIGHTRADIUS = 0.5f;
 	private static float LIGHTRADIUSSCALE = 1f;
 	private static int MAXLIGHTS = 256;
-	private static int MAXLIGHTHALF = MAXLIGHTS/2;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -118,11 +115,11 @@ public class DeferredRenderer implements Renderer {
 		Random random = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
 			float randomFloatX = (random.nextFloat() -0.5f) * 20f;
-			float randomFloatY = (random.nextFloat() -0.5f);
+			float randomFloatY = (random.nextFloat() -0.5f) * 2;
 			float randomFloatZ = (random.nextFloat() -0.5f) * 20f;
 			Vector3f position = new Vector3f();
 			position.x += randomFloatX;
-			position.y += randomFloatY;
+			position.y -= randomFloatY;
 			position.z += randomFloatZ;
 			PointLight pointLight = new PointLight(this, sphereModel, position);
 			pointLight.setScale(MINLIGHTRADIUS + LIGHTRADIUSSCALE* random.nextFloat());
@@ -191,10 +188,10 @@ public class DeferredRenderer implements Renderer {
 		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 
-		String kernelString = Util.loadAsTextFile("/assets/shaders/deferred/second_pass_point.cls");
-		CLProgram sumProgram = CL10.clCreateProgramWithSource(CLUtil.context, kernelString, null);
-		
-		kernel = CLUtil.build(sumProgram, "main");
+//		String kernelString = Util.loadAsTextFile("/assets/shaders/deferred/second_pass_point.cls");
+//		CLProgram sumProgram = CL10.clCreateProgramWithSource(CLUtil.context, kernelString, null);
+//		
+//		kernel = CLUtil.build(sumProgram, "main");
 		
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
@@ -302,6 +299,8 @@ public class DeferredRenderer implements Renderer {
 		firstPassTarget.use(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
+		firstPassProgram.setUniform("screenWidth", (float) WIDTH);
+		firstPassProgram.setUniform("screenHeight", (float) HEIGHT);
 		firstPassProgram.setUniform("useParallax", World.useParallax);
 		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
 		firstPassProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
@@ -309,7 +308,9 @@ public class DeferredRenderer implements Renderer {
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		for (IEntity entity : entities) {
-			entity.draw(firstPassProgram);
+			if ((World.useFrustumCulling == 1 && entity.isInFrustum(camera)) || World.useFrustumCulling == 0) {
+				entity.draw(firstPassProgram);	
+			}
 		}
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (IEntity entity : pointLights) {
@@ -341,6 +342,8 @@ public class DeferredRenderer implements Renderer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
 
+		secondPassDirectionalProgram.setUniform("screenWidth", (float) WIDTH);
+		secondPassDirectionalProgram.setUniform("screenHeight", (float) HEIGHT);
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
@@ -350,6 +353,8 @@ public class DeferredRenderer implements Renderer {
 		secondPassPointProgram.use();
 		
 
+		secondPassPointProgram.setUniform("screenWidth", (float) WIDTH);
+		secondPassPointProgram.setUniform("screenHeight", (float) HEIGHT);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
@@ -358,6 +363,7 @@ public class DeferredRenderer implements Renderer {
 			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
 			float lightRadius = light.getScale().x;
 			
+			//TODO: Check this....
 			// camera is inside light range
 			if (distance.length() < lightRadius) {
 				GL11.glDisable(GL11.GL_CULL_FACE);
@@ -380,6 +386,8 @@ public class DeferredRenderer implements Renderer {
 
 	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
 		combineProgram.use();
+		combineProgram.setUniform("screenWidth", (float) WIDTH);
+		combineProgram.setUniform("screenHeight", (float) HEIGHT);
 		target.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		

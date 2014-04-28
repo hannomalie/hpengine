@@ -11,7 +11,11 @@ uniform vec3 lightSpecular;
 in vec4 in_Position;
 
 out vec4 position_clip;
+out vec4 position_view;
+out vec4 position_world;
 
 void main(void) {
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * (in_Position );
+	position_world = modelMatrix * (in_Position );
+	position_view = viewMatrix * position_world;
 }

@@ -8,6 +8,9 @@ const vec3 kd = vec3 (1.0, 1.0, 1.0) * 0.2;
 const vec3 ks = vec3 (1.0, 1.0, 1.0);
 const float specular_exponent = 100.0;
 
+uniform float screenWidth = 1280;
+uniform float screenHeight = 720;
+
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -45,8 +48,8 @@ vec3 phong (in vec3 p_eye, in vec3 n_eye) {
 void main(void) {
 	
 	vec2 st;
-	st.s = gl_FragCoord.x / 1280.0;
-  	st.t = gl_FragCoord.y / 720.0;
+	st.s = gl_FragCoord.x / screenWidth;
+  	st.t = gl_FragCoord.y / screenHeight;
   
 	vec3 position = texture2D(positionMap, st).xyz;
 	vec3 albedo = texture2D(diffuseMap, st).xyz;

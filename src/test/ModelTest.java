@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import main.DeferredRenderer;
 import main.Entity;
 import main.ForwardRenderer;
 import main.Model;
@@ -19,7 +20,7 @@ public class ModelTest {
 	
 	@Test
 	public void loadsCorrectly() throws IOException {
-		Renderer renderer = new ForwardRenderer(new Spotlight(false));
+		Renderer renderer = new DeferredRenderer(new Spotlight(false));
 		List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 		Entity entity = new Entity(renderer, box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();
