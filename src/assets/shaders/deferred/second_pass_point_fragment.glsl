@@ -23,9 +23,28 @@ uniform vec3 lightSpecular;
 in vec4 position_clip;
 in vec4 position_view;
 
+//struct Pointlight {
+	//vec3 _position;
+	//float _radius;
+	//vec3 _diffuse;
+	//vec3 _specular;
+//};
+//uniform int lightCount;
+//uniform int currentLightIndex;
+//layout(std140) uniform pointlights {
+	//Pointlight lights[1000];
+//};
+
 out vec4 out_Color;
 
 vec3 phong (in vec3 p_eye, in vec3 n_eye) {
+//////////////////////
+  //Pointlight currentLight = lights[currentLightIndex];
+  //vec3 lightPosition = currentLight._position;
+  //vec3 lightDiffuse = currentLight._diffuse;
+  //vec3 lightSpecular = currentLight._specular;
+  //float lightRadius = currentLight._specular;
+//////////////////////
   vec3 light_position_eye = position_view.xyz;//(viewMatrix * vec4(lightPosition,1)).xyz;//vec3 (V * vec4 (lp, 1.0));
   vec3 dist_to_light_eye = light_position_eye - p_eye;
   vec3 direction_to_light_eye = normalize (dist_to_light_eye);

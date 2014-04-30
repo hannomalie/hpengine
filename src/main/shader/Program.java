@@ -149,13 +149,27 @@ public class Program {
 		uniforms.get(name).set(vec.x, vec.y, vec.z);
 	}
 	
-	
-	
+	public void setUniformAsBlock(String name, float[] fs) {
+		putBlockInMapIfAbsent(name);
+		try {
+			((UniformBlock) uniforms.get(name)).set(fs);
+		} catch (ClassCastException e) {
+			System.err.println("You can't set a non block uniform as block!");
+			e.printStackTrace();
+		}
+	}
+
 	private void putInMapIfAbsent(String name) {
 		if (!uniforms.containsKey(name)) {
 			uniforms.put(name, new Uniform(this, name));
 		}
 	}
+	private void putBlockInMapIfAbsent(String name) {
+		if (!uniforms.containsKey(name)) {
+			uniforms.put(name, new UniformBlock(this, name));
+		}
+	}
+	
 	public int getUniformLocation(String name) {
 		return GL20.glGetUniformLocation(getId(), name);
 	}

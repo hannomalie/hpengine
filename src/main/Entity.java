@@ -324,10 +324,10 @@ public class Entity implements IEntity {
 		Vector4f.add(minView, maxView, minMaxCenterView);
 		minMaxCenterView.scale(0.5f);
 
-		if (camera.getFrustum().pointInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z)) {
+		//if (camera.getFrustum().pointInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z)) {
 		//if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
-		//if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
-		//		|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
+		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
+				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
 			return true;
 		}
 		return false;

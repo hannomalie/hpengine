@@ -352,13 +352,15 @@ public class DeferredRenderer implements Renderer {
 
 		secondPassPointProgram.use();
 		
-
+//		secondPassPointProgram.setUniform("lightCount", pointLights.size());
+//		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
 		secondPassPointProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassPointProgram.setUniform("screenHeight", (float) HEIGHT);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
-		for (PointLight light : pointLights) {
+		for (int i = 0 ; i < pointLights.size(); i++) {
+			PointLight light = pointLights.get(i);
 			Vector3f distance = new Vector3f();
 			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
 			float lightRadius = light.getScale().x;
@@ -373,6 +375,7 @@ public class DeferredRenderer implements Renderer {
 				GL11.glCullFace(GL11.GL_BACK);
 			}
 
+//			secondPassPointProgram.setUniform("currentLightIndex", i);
 			secondPassPointProgram.setUniform("lightPosition", light.getPosition());
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);

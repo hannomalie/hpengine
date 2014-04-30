@@ -1,5 +1,7 @@
 package main;
 
+import java.util.List;
+
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -64,6 +66,30 @@ public class PointLight extends Entity {
 	@Override
 	public void setPosition(Vector3f position) {
 		this.position = position;
+	}
+	
+	public static float[] convert(List<PointLight> list) {
+		final int elementsPerLight = 10;
+		int elementCount = list.size() * elementsPerLight;
+		float[] result = new float[elementCount];
+		
+		for(int i = 0; i < list.size(); i++) {
+			PointLight light = list.get(i);
+			result[i] = light.getPosition().x;
+			result[i+1] = light.getPosition().y;
+			result[i+2] = light.getPosition().z;
+			
+			result[i+3] = light.getScale().x;
+			
+			result[i+4] = light.getColor().x;
+			result[i+5] = light.getColor().y;
+			result[i+6] = light.getColor().z;
+			
+			result[i+7] = light.getColor().x;
+			result[i+8] = light.getColor().y;
+			result[i+9] = light.getColor().z;
+		}
+		return result;
 	}
 
 }
