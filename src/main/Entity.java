@@ -188,7 +188,6 @@ public class Entity implements IEntity {
 	@Override
 	public void draw(Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-//		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 		material.setTexturesActive(program);
 		vertexBuffer.draw();
 
@@ -198,7 +197,6 @@ public class Entity implements IEntity {
 	@Override
 	public void drawDebug(Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-//		GL20.glUniformMatrix4(GL20.glGetUniformLocation(program.getId(),"modelMatrix"), false, matrix44Buffer);
 
 		material.setTexturesActive(program);
 		vertexBuffer.drawDebug();

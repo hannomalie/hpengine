@@ -28,7 +28,7 @@ import org.newdawn.slick.opengl.Texture;
 
 public class Material implements IEntity {
 	
-	public static final String TEXTUREASSETSPATH = "src/assets/textures/";
+	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	
 	public static boolean MIPMAP_DEFAULT = true;
 	

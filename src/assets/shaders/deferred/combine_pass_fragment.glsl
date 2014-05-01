@@ -58,6 +58,6 @@ void main(void) {
 		ao = 1.0-totStrength*bl*invSamples;
 	}
 	
-	out_color = vec4(color*(light) , 1);
+	out_color = vec4(color*(light), 1);
   	//out_color = vec4(depth,depth,depth,1);
 }

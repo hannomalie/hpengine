@@ -5,6 +5,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,9 +67,9 @@ public class World {
 			this.loopCycle();
 //			Display.sync(60);
 
-			long millisecondsStart = System.currentTimeMillis();
+//			long millisecondsStart = System.currentTimeMillis();
 			Display.update();
-			long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//			long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //			LOGGER.log(Level.INFO, String.format("%d ms for display update", timeSpentInMilliseconds));
 		}
 		
@@ -128,10 +130,11 @@ public class World {
 		}
 	}
 	
-	
-	private void update() {
-		
 
+	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
+	private void update() {
+
+//		long start = System.currentTimeMillis();
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
 			light.rotate(camera.getRight(), camera.getRotationSpeed());
 		}
@@ -149,21 +152,64 @@ public class World {
 //			float random = (float) (Math.random() -1f );
 //			entity.getPosition().x += 0.01 * random;
 //		}
-		
+//		System.out.println("Controls update: " + (System.currentTimeMillis() - start) + " ms");
+//		start = System.currentTimeMillis();
 		renderer.update();
+//		System.out.println("Renderer update: " + (System.currentTimeMillis() - start) + " ms");
+//		start = System.currentTimeMillis();
 		camera.update();
+//		System.out.println("camera update: " + (System.currentTimeMillis() - start) + " ms");
+//		start = System.currentTimeMillis();
 		light.update();
-		for (IEntity entity: entities) {
-			entity.update();
-		}
+//		System.out.println("light update: " + (System.currentTimeMillis() - start) + " ms");
+
+//		long start = System.currentTimeMillis();
+		// for (IEntity entity: entities) {
+		// entity.update();
+		// }
+		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size());
+		fjpool.invoke(task);
+//		System.out.println("Parallel processing time: " + (System.currentTimeMillis() - start) + " ms");
 
 		Renderer.exitOnGLError("update");
 	}
+
+	
+	private class RecursiveEntityUpdate extends RecursiveAction {
+		final int LIMIT = 3;
+		int result;
+		int start, end;
+		List<IEntity> entities;
+
+		RecursiveEntityUpdate(List<IEntity> entities, int start, int end) {
+			this.start = start;
+			this.end = end;
+			this.entities = entities;
+		}
+		
+		@Override
+		protected void compute() {
+			if ((end - start) < LIMIT) {
+				for (int i = start; i < end; i++) {
+					entities.get(i).update();
+				}
+			} else {
+				int mid = (start + end) / 2;
+				RecursiveEntityUpdate left = new RecursiveEntityUpdate(entities, start, mid);
+				RecursiveEntityUpdate right = new RecursiveEntityUpdate(entities, mid, end);
+				left.fork();
+				right.fork();
+				left.join();
+				right.join();
+			}
+		}
+		
+	}
 	
 	private void draw() {
-		long millisecondsStart = System.currentTimeMillis();
+//		long millisecondsStart = System.currentTimeMillis();
 		renderer.draw(camera, entities, light);
-		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));
 
 		Renderer.exitOnGLError("draw in render");
@@ -172,9 +218,10 @@ public class World {
 	
 	private void loopCycle() {
 
-		long millisecondsStart = System.currentTimeMillis();
+//		long millisecondsStart = System.currentTimeMillis();
 		update();
-		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
+//		System.out.println("update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
+//		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 		

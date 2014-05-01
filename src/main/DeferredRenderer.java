@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.shader.ComputeShaderProgram;
@@ -25,10 +26,8 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opencl.CL10;
 import org.lwjgl.opencl.CL10GL;
-import org.lwjgl.opencl.CL12GL;
 import org.lwjgl.opencl.CLKernel;
 import org.lwjgl.opencl.CLMem;
-import org.lwjgl.opencl.CLProgram;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
@@ -37,17 +36,8 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
 import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GL44;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
@@ -136,6 +126,7 @@ public class DeferredRenderer implements Renderer {
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
+			Display.setVSyncEnabled(false);
 			Display.setTitle("ForwardRenderer");
 			Display.create(pixelFormat, contextAtrributes);
 			
@@ -209,13 +200,52 @@ public class DeferredRenderer implements Renderer {
 		updateLights();
 	}
 	
+	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 	private void updateLights() {
-		for (PointLight light : pointLights) {
-			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
-			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
-			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
-			light.update();
+//		for (PointLight light : pointLights) {
+//			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
+//			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
+//			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
+//			light.update();
+//		}
+		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size());
+//         long start = System.currentTimeMillis();
+         fjpool.invoke(task);
+//         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
+	}
+	
+	private class RecursiveUpdate extends RecursiveAction {
+		final int LIMIT = 3;
+		int result;
+		int start, end;
+		List<PointLight> lights;
+
+		RecursiveUpdate(List<PointLight> lights, int start, int end) {
+			this.start = start;
+			this.end = end;
+			this.lights = lights;
 		}
+		
+		@Override
+		protected void compute() {
+			if ((end - start) < LIMIT) {
+				for (int i = start; i < end; i++) {
+					double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
+					double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
+					lights.get(i).move(new Vector3f((float)sinusX,(float)sinusY, 0f));
+					lights.get(i).update();
+				}
+			} else {
+				int mid = (start + end) / 2;
+				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid);
+				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end);
+				left.fork();
+				right.fork();
+				left.join();
+				right.join();
+			}
+		}
+		
 	}
 
 	public void draw(Camera camera, List<IEntity> entities, Spotlight light) {

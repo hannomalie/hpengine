@@ -7,10 +7,13 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 public interface Renderer {
+	static final boolean CHECKERRORS = false;
 
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
 	public static void exitOnGLError(String errorMessage) { 
+		if (!CHECKERRORS) {return;}
+		
 		int errorValue = GL11.glGetError();
 		
 		if (errorValue != GL11.GL_NO_ERROR) {
