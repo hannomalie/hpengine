@@ -101,7 +101,7 @@ void main(void) {
 	
 	vec3 PN_view = (viewMatrix *vec4(PN, 0)).xyz;
 	out_position = viewMatrix * position_world;
-	out_normal = vec4(PN_view,0);
+	out_normal = vec4(PN_view, position_clip.z / position_clip.w);
 	
 	vec4 color = color;
 	if (hasDiffuseMap) {

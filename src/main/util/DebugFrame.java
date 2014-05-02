@@ -14,6 +14,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -22,9 +24,12 @@ import main.DeferredRenderer;
 import main.IEntity;
 import main.Material;
 import main.PointLight;
+import main.Renderer;
 import main.World;
 
 import org.newdawn.slick.opengl.Texture;
+
+import com.alee.laf.slider.WebSlider;
 
 import static main.util.Util.*;
 
@@ -43,7 +48,10 @@ public class DebugFrame {
 	private JButton toggleFrustumCulling = new JButton("Frustum Culling");
 	private JButton toggleDebugFrame = new JButton("Debug Frame");
 	private JButton toggleDrawLights = new JButton("Draw Lights");
-	
+	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
+	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
+	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
+
 	private JTree scene = new JTree();
 	
 	public DebugFrame(World world) {
@@ -211,12 +219,69 @@ public class DebugFrame {
 			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
 		});
 
+	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
+	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
+	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
+	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
+	    ambientOcclusionRadiusSlider.setValue(100);
+	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
+	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
+	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 100;
+				World.AMBIENTOCCLUSION_RADIUS = World.AMBIENTOCCLUSION_FACTOR * valueAsFactor;
+			}
+		});
+
+	    ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
+	    ambientOcclusionTotalStrengthSlider.setMaximum ( 100 );
+	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
+	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
+	    ambientOcclusionTotalStrengthSlider.setValue(38);
+	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
+	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
+	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 100;
+				World.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
+			}
+		});
+	    
+	    ambientOcclusionStrengthSlider.setMinimum ( 0 );
+	    ambientOcclusionStrengthSlider.setMaximum ( 100 );
+	    ambientOcclusionStrengthSlider.setMinorTickSpacing ( 10 );
+	    ambientOcclusionStrengthSlider.setMajorTickSpacing ( 20 );
+	    ambientOcclusionStrengthSlider.setValue(7);
+	    ambientOcclusionStrengthSlider.setPaintTicks ( true );
+	    ambientOcclusionStrengthSlider.setPaintLabels ( true );
+	    ambientOcclusionStrengthSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 1000;
+				World.AMBIENTOCCLUSION_STRENGTH = valueAsFactor;
+			}
+		});
+		
 		buttonPanel.add(toggleDebugFrame);
 		buttonPanel.add(toggleDrawLights);
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);
 		buttonPanel.add(toggleFrustumCulling);
+		buttonPanel.add(ambientOcclusionRadiusSlider);
+		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
+		buttonPanel.add(ambientOcclusionStrengthSlider);
 		buttonPanel.setSize(200, 200);
 
 //		mainFrame.add(materialPane);

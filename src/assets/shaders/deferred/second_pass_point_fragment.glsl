@@ -86,6 +86,7 @@ void main(void) {
 	}
 	
 	vec3 normal = texture2D(normalMap, st).xyz;
+	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	vec4 finalColor = vec4(phong(position.xyz, (normal).xyz), 1);
 	out_Color = finalColor;

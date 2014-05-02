@@ -6,6 +6,10 @@ layout(binding=2) uniform sampler2D normalMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
+uniform bool useAmbientOcclusion = false;
+uniform float ambientOcclusionRadius = 0.006;
+uniform float ambientOcclusionTotalStrength = 0.38;
+uniform float ambientOcclusionStrength = 0.07;
 
 out vec4 out_color;
 
@@ -27,19 +31,23 @@ void main(void) {
 	float ao = 1;
 	float depth = normalAndDepth.w;
 	vec3 N = normal;
-	if (false) {
+	vec3 resultRadiosity = vec3(0,0,0);
+	const float falloff = 0.000002;
+	const float samples = 15;
+	
+	if (useAmbientOcclusion && ambientOcclusionTotalStrength > 0) {
 		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
-		vec3 ep = vec3(0,0, depth);
-		float rad = 0.006;
+		vec3 ep = vec3(st, depth);
+		float rad = ambientOcclusionRadius;
 		float radD = rad/depth;
 		float bl = 0.0f;
 		float occluderDepth, depthDifference, normDiff;
 		float falloff = 0.000002;
-		float totStrength = 0.38;
-		float strength = 0.07;
-		float samples = 9;
+		float totStrength = ambientOcclusionTotalStrength;
+		float strength = ambientOcclusionStrength;
+
 		float invSamples = 1/samples;
-		
+
 		for(int i=0; i<samples;++i) {
 		  vec3 ray = radD*reflect(pSphere[i],fres);
 		  vec3 se = ep + sign(dot(ray,N) )*ray;
@@ -54,10 +62,22 @@ void main(void) {
 		
 		  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
 		  bl += step(falloff,depthDifference)*normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
+
+		  vec3 occluderLight = texture2D(lightAccumulationMap,se.xy).rgb;
+		  vec3 occluderAlbedo = texture2D(diffuseMap,se.xy).rgb;
+		  float intensity = dot(occluderAlbedo,vec3(1,1,1));
+		  resultRadiosity += step(falloff,depthDifference)*normDiff*(smoothstep(color,occluderAlbedo,vec3(intensity,intensity,intensity))) + occluderLight + dot(occluderLight,vec3(1,1,1));
 	    }
+	    
 		ao = 1.0-totStrength*bl*invSamples;
+		
 	}
-	
-	out_color = vec4(color*(light), 1);
-  	//out_color = vec4(depth,depth,depth,1);
+	resultRadiosity /= samples;
+	if (useAmbientOcclusion && ambientOcclusionTotalStrength > 0) {
+		const float brightnessCorrectionFactor = 0.70;
+		out_color = vec4(brightnessCorrectionFactor * 0.5 * (light + resultRadiosity) * color * ao , 1);
+	} else {
+		out_color = vec4(color * light , 1);
+	}
+  	//out_color = vec4(resultRadiosity,1);
 }

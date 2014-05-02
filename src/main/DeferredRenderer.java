@@ -146,18 +146,18 @@ public class DeferredRenderer implements Renderer {
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
 		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGB, 1);
-		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 4);
+		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
 		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
 
-		deferredOutput = GL11.glGenTextures();
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGB32F, WIDTH, HEIGHT, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(WIDTH * HEIGHT));
-		
+//		deferredOutput = GL11.glGenTextures();
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+//
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGB32F, WIDTH, HEIGHT, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(WIDTH * HEIGHT));
+//		
 		
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
@@ -267,7 +267,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(1), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(2), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -419,6 +419,10 @@ public class DeferredRenderer implements Renderer {
 
 	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
 		combineProgram.use();
+		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
+		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
 		combineProgram.setUniform("screenWidth", (float) WIDTH);
 		combineProgram.setUniform("screenHeight", (float) HEIGHT);
 		target.use(true);

@@ -21,7 +21,10 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import com.alee.laf.WebLookAndFeel;
+
 public class World {
+
 
 	private static Logger LOGGER = getLogger();
 
@@ -30,10 +33,15 @@ public class World {
 	public static volatile int useParallax = 0;
 	public static volatile int useSteepParallaxLocation = 0;
 	public static volatile int useSteepParallax = 0;
-	public static volatile int useAmbientOcclusion = 0;
+	public static volatile int useAmbientOcclusion = 1;
 	public static int useFrustumCulling = 0;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
+
+	public static float AMBIENTOCCLUSION_STRENGTH = 0.07f;
+	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.38f;
+	public static float AMBIENTOCCLUSION_FACTOR = 0.006f;
+	public static float AMBIENTOCCLUSION_RADIUS = 0.006f;
 	
 	public static void main(String[] args) {
 
@@ -43,11 +51,12 @@ public class World {
 	}
 	
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 2;
+	private int entityCount = 20;
 	public Renderer renderer;
 	private Camera camera;
 	
 	public World() {
+		WebLookAndFeel.install();
 		renderer = new DeferredRenderer(light);
 		camera = new Camera(renderer);
 		light.init(renderer);

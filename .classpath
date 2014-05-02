@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/PNGDecoder.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/slick-util.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/junit-4.10.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/weblaf-1.15.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
