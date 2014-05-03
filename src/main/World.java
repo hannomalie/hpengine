@@ -29,12 +29,13 @@ public class World {
 	private static Logger LOGGER = getLogger();
 
 	public static Spotlight light= new Spotlight(true);
-	public static volatile int useParallaxLocation = 0;
-	public static volatile int useParallax = 0;
-	public static volatile int useSteepParallaxLocation = 0;
-	public static volatile int useSteepParallax = 0;
-	public static volatile int useAmbientOcclusion = 1;
-	public static int useFrustumCulling = 0;
+	public static volatile boolean useParallaxLocation = false;
+	public static volatile boolean useParallax = false;
+	public static volatile boolean useSteepParallaxLocation = false;
+	public static volatile boolean useSteepParallax = false;
+	public static volatile boolean useAmbientOcclusion = true;
+	public static volatile boolean useSSIL = true;
+	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 

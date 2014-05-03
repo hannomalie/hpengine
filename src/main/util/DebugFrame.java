@@ -1,5 +1,7 @@
 package main.util;
 
+import static main.util.Util.vectorToString;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -8,7 +10,6 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -24,14 +25,12 @@ import main.DeferredRenderer;
 import main.IEntity;
 import main.Material;
 import main.PointLight;
-import main.Renderer;
 import main.World;
 
 import org.newdawn.slick.opengl.Texture;
 
+import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.slider.WebSlider;
-
-import static main.util.Util.*;
 
 public class DebugFrame {
 
@@ -42,12 +41,14 @@ public class DebugFrame {
 	private JScrollPane scenePane = new JScrollPane();
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
 	
-	private JButton toggleParallax = new JButton("Parallax");
-	private JButton toggleSteepParallax = new JButton("Steep Parallax");
-	private JButton toggleAmbientOcclusion = new JButton("Ambient Occlusion");
-	private JButton toggleFrustumCulling = new JButton("Frustum Culling");
-	private JButton toggleDebugFrame = new JButton("Debug Frame");
-	private JButton toggleDrawLights = new JButton("Draw Lights");
+	private WebToggleButton toggleParallax = new WebToggleButton("Parallax");
+	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax");
+	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion");
+	private WebToggleButton toggleSSIL = new WebToggleButton("SSIL");
+	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling");
+	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame");
+	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights");
+	
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
@@ -174,41 +175,30 @@ public class DebugFrame {
 		scenePane = new JScrollPane(scene);
 
 		toggleParallax.addActionListener( e -> {
-			if (World.useParallax == 0) {
-				World.useParallax = 1;
-				World.useSteepParallax = 0;
-			} else {
-				World.useParallax = 0;
-			}
-			toggleParallax.setText("Parallax " + World.useParallax);
+			World.useParallax = !World.useParallax;
+			World.useSteepParallax = false;
+			toggleParallax.setSelected(World.useParallax);
 		});
 		
 		toggleSteepParallax.addActionListener(e -> {
-			if (World.useSteepParallax == 0) {
-				World.useSteepParallax = 1;
-				World.useParallax = 0;
-			} else {
-				World.useSteepParallax = 0;
-			}
-			toggleSteepParallax.setText("Steep Parallax " + World.useSteepParallax);
+			World.useSteepParallax = !World.useSteepParallax;
+			World.useParallax = false;
+			toggleSteepParallax.setSelected(World.useSteepParallax);
 		});
 
 		toggleAmbientOcclusion.addActionListener(e -> {
-			if (World.useAmbientOcclusion == 0) {
-				World.useAmbientOcclusion = 1;
-			} else {
-				World.useAmbientOcclusion = 0;
-			}
-			toggleAmbientOcclusion.setText("Ambient Occlusion " + World.useAmbientOcclusion);
+			World.useAmbientOcclusion = !World.useAmbientOcclusion;
+			toggleAmbientOcclusion.setSelected(World.useAmbientOcclusion);
+		});
+		
+		toggleSSIL.addActionListener(e -> {
+			World.useSSIL = !World.useSSIL;
+			toggleSSIL.setSelected(World.useSSIL);
 		});
 		
 		toggleFrustumCulling.addActionListener(e -> {
-			if (World.useFrustumCulling == 0) {
-				World.useFrustumCulling = 1;
-			} else {
-				World.useFrustumCulling = 0;
-			}
-			toggleFrustumCulling.setText("Frustum Culling " + World.useFrustumCulling);
+			World.useFrustumCulling = !World.useFrustumCulling;
+			toggleFrustumCulling.setSelected(World.useFrustumCulling);
 		});
 
 		toggleDebugFrame.addActionListener(e -> {
@@ -238,7 +228,7 @@ public class DebugFrame {
 		});
 
 	    ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
-	    ambientOcclusionTotalStrengthSlider.setMaximum ( 100 );
+	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
 	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
 	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
 	    ambientOcclusionTotalStrengthSlider.setValue(38);
@@ -278,6 +268,7 @@ public class DebugFrame {
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);
+		buttonPanel.add(toggleSSIL);
 		buttonPanel.add(toggleFrustumCulling);
 		buttonPanel.add(ambientOcclusionRadiusSlider);
 		buttonPanel.add(ambientOcclusionTotalStrengthSlider);

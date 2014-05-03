@@ -7,6 +7,7 @@ layout(binding=2) uniform sampler2D normalMap;
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform bool useAmbientOcclusion = false;
+uniform bool useSSIL = true;
 uniform float ambientOcclusionRadius = 0.006;
 uniform float ambientOcclusionTotalStrength = 0.38;
 uniform float ambientOcclusionStrength = 0.07;
@@ -34,6 +35,7 @@ void main(void) {
 	vec3 resultRadiosity = vec3(0,0,0);
 	const float falloff = 0.000002;
 	const float samples = 15;
+	float invSamples = 1/samples;
 	
 	if (useAmbientOcclusion && ambientOcclusionTotalStrength > 0) {
 		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
@@ -46,7 +48,6 @@ void main(void) {
 		float totStrength = ambientOcclusionTotalStrength;
 		float strength = ambientOcclusionStrength;
 
-		float invSamples = 1/samples;
 
 		for(int i=0; i<samples;++i) {
 		  vec3 ray = radD*reflect(pSphere[i],fres);
@@ -72,10 +73,16 @@ void main(void) {
 		ao = 1.0-totStrength*bl*invSamples;
 		
 	}
-	resultRadiosity /= samples;
+	resultRadiosity *= invSamples;
+	
 	if (useAmbientOcclusion && ambientOcclusionTotalStrength > 0) {
-		const float brightnessCorrectionFactor = 0.70;
-		out_color = vec4(brightnessCorrectionFactor * 0.5 * (light + resultRadiosity) * color * ao , 1);
+		if (useSSIL) {
+			const float brightnessCorrectionFactor = 0.70;
+			out_color = vec4(brightnessCorrectionFactor * 0.5 * (light + resultRadiosity) * color * ao , 1);
+		} else {
+			out_color = vec4(light * color * ao , 1);
+		}
+		
 	} else {
 		out_color = vec4(color * light , 1);
 	}

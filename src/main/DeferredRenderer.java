@@ -333,13 +333,12 @@ public class DeferredRenderer implements Renderer {
 		firstPassProgram.setUniform("screenHeight", (float) HEIGHT);
 		firstPassProgram.setUniform("useParallax", World.useParallax);
 		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		firstPassProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		for (IEntity entity : entities) {
-			if ((World.useFrustumCulling == 1 && entity.isInFrustum(camera)) || World.useFrustumCulling == 0) {
-				entity.draw(firstPassProgram);	
+			if ((World.useFrustumCulling && entity.isInFrustum(camera)) || !World.useFrustumCulling) {
+				entity.draw(firstPassProgram);
 			}
 		}
 		if (World.DRAWLIGHTS_ENABLED) {
@@ -420,6 +419,7 @@ public class DeferredRenderer implements Renderer {
 	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
 		combineProgram.use();
 		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		combineProgram.setUniform("useSSIL", World.useSSIL);
 		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);

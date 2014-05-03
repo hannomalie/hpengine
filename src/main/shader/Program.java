@@ -128,6 +128,11 @@ public class Program {
 		putInMapIfAbsent(name);
 		uniforms.get(name).set(value);
 	}
+	public void setUniform(String name, boolean value) {
+		int valueAsInd = value == true ? 1 : 0;
+		putInMapIfAbsent(name);
+		uniforms.get(name).set(valueAsInd);
+	}
 	public void setUniform(String name, float value) {
 		putInMapIfAbsent(name);
 		uniforms.get(name).set(value);
@@ -136,6 +141,7 @@ public class Program {
 		putInMapIfAbsent(name);
 		uniforms.get(name).set(value);
 	}
+	
 	public void setUniformAsMatrix4(String name, FloatBuffer matrixBuffer) {
 		putInMapIfAbsent(name);
 		uniforms.get(name).setAsMatrix4(matrixBuffer);
