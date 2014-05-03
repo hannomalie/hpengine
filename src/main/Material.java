@@ -36,6 +36,12 @@ public class Material implements IEntity {
 	public static Map<String, Texture> TEXTURES = new HashMap();
 	
 	private static Logger LOGGER = getLogger();
+
+	Vector3f ambient = new Vector3f(0.5f,0.5f,0.5f);
+	Vector3f diffuse = new Vector3f(0.5f,0.5f,0.5f);
+	Vector3f specular = new Vector3f(0.5f,0.5f,0.5f);
+	float specularCoefficient = 1;
+	float transparency = 1;
 	
 	public enum MAP {
 		DIFFUSE("diffuseMap", 0),
@@ -151,6 +157,11 @@ public class Material implements IEntity {
 		program.setUniform("hasDiffuseMap", hasDiffuseMap()? 1: 0);
 		program.setUniform("hasNormalMap", hasNormalMap()? 1: 0);
 		program.setUniform("hasSpecularMap", hasSpecularMap()? 1: 0);
+		program.setUniform("materialDiffuseColor", diffuse);
+		program.setUniform("materialSpecularColor", specular);
+		program.setUniform("materialSpecularCoefficient", specularCoefficient);
+		//program.setUniform("materialAmbientColor", ambient);
+		//program.setUniform("materialTransparency", transparency);
 		
 	}
 	public void setTexturesInactive() {
@@ -202,5 +213,17 @@ public class Material implements IEntity {
 	}
 	public void setTextureLess(boolean textureLess) {
 		this.textureLess = textureLess;
+	}
+	public void setAmbient(Vector3f ambient) {
+		this.ambient = ambient;
+	}
+	public void setDiffuse(Vector3f diffuse) {
+		this.diffuse = diffuse;
+	}
+	public void setSpecular(Vector3f specular) {
+		this.specular = specular;
+	}
+	public void setSpecularCoefficient(float specularCoefficient) {
+		this.specularCoefficient = specularCoefficient;
 	}
 }

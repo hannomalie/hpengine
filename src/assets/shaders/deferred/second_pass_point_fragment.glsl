@@ -3,10 +3,7 @@
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
-
-const vec3 kd = vec3 (1.0, 1.0, 1.0);
-const vec3 ks = vec3 (1.0, 1.0, 1.0);
-const float specular_exponent = 10;
+layout(binding=3) uniform sampler2D specularMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -35,9 +32,9 @@ in vec4 position_view;
 	//Pointlight lights[1000];
 //};
 
-out vec4 out_Color;
+out vec4 out_DiffuseSpecular;
 
-vec3 phong (in vec3 p_eye, in vec3 n_eye) {
+vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
 //////////////////////
   //Pointlight currentLight = lights[currentLightIndex];
   //vec3 lightPosition = currentLight._position;
@@ -51,15 +48,13 @@ vec3 phong (in vec3 p_eye, in vec3 n_eye) {
   
   // standard diffuse light
   float dot_prod = max (dot (direction_to_light_eye,  n_eye), 0.0);
-  vec3 Id = lightDiffuse * kd * dot_prod; // final diffuse intensity
   
   // standard specular light
   vec3 reflection_eye = reflect (-direction_to_light_eye, n_eye);
   vec3 surface_to_viewer_eye = normalize (-p_eye);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
-  float specular_factor = pow (dot_prod_specular, specular_exponent);
-  vec3 Is = lightSpecular * ks * specular_factor; // final specular intensity
+  float specular_factor = pow (dot_prod_specular, specular.w);
   
   // attenuation (fade out to sphere edges)
   float dist_2d = length ((viewMatrix * vec4(lightPosition,1)).xyz - p_eye);
@@ -69,7 +64,8 @@ vec3 phong (in vec3 p_eye, in vec3 n_eye) {
   float atten_factor = clamp(1.0f - dist_2d/lightRadius, 0.0, 1.0);
   //float atten_factor = -log (min (1.0, dist_2d / lightRadius));
   //return vec3(atten_factor,atten_factor,atten_factor);
-  return (Id/* + Is*/) * atten_factor;
+  //return (Id/* + Is*/) * atten_factor;
+  return vec4(lightDiffuse*dot_prod*atten_factor, specular_factor*atten_factor);
 }
 void main(void) {
 	
@@ -86,8 +82,9 @@ void main(void) {
 	}
 	
 	vec3 normal = texture2D(normalMap, st).xyz;
+	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
-	vec4 finalColor = vec4(phong(position.xyz, (normal).xyz), 1);
-	out_Color = finalColor;
+	vec4 finalColor = phong(position.xyz, (normal).xyz, specular);
+	out_DiffuseSpecular = finalColor;
 }

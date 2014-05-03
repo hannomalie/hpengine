@@ -10,6 +10,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.Icon;
 import javax.swing.JFrame;
 
 import main.util.DebugFrame;
@@ -35,6 +36,7 @@ public class World {
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = false;
 	public static volatile boolean useFrustumCulling = false;
+	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
@@ -52,7 +54,7 @@ public class World {
 	}
 	
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 20;
+	private int entityCount = 5;
 	public Renderer renderer;
 	private Camera camera;
 	
@@ -74,7 +76,7 @@ public class World {
 	public void simulate() {
 
 		while (!Display.isCloseRequested()) {
-			this.loopCycle();
+			this.loopCycle(renderer.getElapsedSeconds());
 //			Display.sync(60);
 
 //			long millisecondsStart = System.currentTimeMillis();
@@ -126,6 +128,7 @@ public class World {
 				}
 			}
 			
+			//List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(stone);
@@ -142,20 +145,20 @@ public class World {
 	
 
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
-	private void update() {
+	private void update(float seconds) {
 
 //		long start = System.currentTimeMillis();
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.rotate(camera.getRight(), camera.getRotationSpeed());
+			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.rotate(camera.getRight(), -camera.getRotationSpeed());
+			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.rotate(camera.getUp(), camera.getRotationSpeed());
+			light.rotate(new Vector3f(0,1,0), camera.getRotationSpeed());
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.rotate(camera.getUp(), -camera.getRotationSpeed());
+			light.rotate(new Vector3f(0,1,0), -camera.getRotationSpeed());
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (IEntity entity : entities) {
@@ -164,20 +167,20 @@ public class World {
 //		}
 //		System.out.println("Controls update: " + (System.currentTimeMillis() - start) + " ms");
 //		start = System.currentTimeMillis();
-		renderer.update();
+		renderer.update(seconds);
 //		System.out.println("Renderer update: " + (System.currentTimeMillis() - start) + " ms");
 //		start = System.currentTimeMillis();
-		camera.update();
+		camera.update(seconds);
 //		System.out.println("camera update: " + (System.currentTimeMillis() - start) + " ms");
 //		start = System.currentTimeMillis();
-		light.update();
+		light.update(seconds);
 //		System.out.println("light update: " + (System.currentTimeMillis() - start) + " ms");
 
 //		long start = System.currentTimeMillis();
 		// for (IEntity entity: entities) {
 		// entity.update();
 		// }
-		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size());
+		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
 		fjpool.invoke(task);
 //		System.out.println("Parallel processing time: " + (System.currentTimeMillis() - start) + " ms");
 
@@ -190,23 +193,25 @@ public class World {
 		int result;
 		int start, end;
 		List<IEntity> entities;
+		float seconds;
 
-		RecursiveEntityUpdate(List<IEntity> entities, int start, int end) {
+		RecursiveEntityUpdate(List<IEntity> entities, int start, int end, float seconds) {
 			this.start = start;
 			this.end = end;
 			this.entities = entities;
+			this.seconds = seconds;
 		}
 		
 		@Override
 		protected void compute() {
 			if ((end - start) < LIMIT) {
 				for (int i = start; i < end; i++) {
-					entities.get(i).update();
+					entities.get(i).update(seconds);
 				}
 			} else {
 				int mid = (start + end) / 2;
-				RecursiveEntityUpdate left = new RecursiveEntityUpdate(entities, start, mid);
-				RecursiveEntityUpdate right = new RecursiveEntityUpdate(entities, mid, end);
+				RecursiveEntityUpdate left = new RecursiveEntityUpdate(entities, start, mid, seconds);
+				RecursiveEntityUpdate right = new RecursiveEntityUpdate(entities, mid, end, seconds);
 				left.fork();
 				right.fork();
 				left.join();
@@ -218,7 +223,11 @@ public class World {
 	
 	private void draw() {
 //		long millisecondsStart = System.currentTimeMillis();
-		renderer.draw(camera, entities, light);
+		if (DRAWLINES_ENABLED) {
+			renderer.drawDebug(camera, entities, light);
+		} else {
+			renderer.draw(camera, entities, light);	
+		}
 //		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));
 
@@ -226,10 +235,10 @@ public class World {
 		
 	}
 	
-	private void loopCycle() {
+	private void loopCycle(float seconds) {
 
 //		long millisecondsStart = System.currentTimeMillis();
-		update();
+		update(seconds);
 //		System.out.println("update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 //		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));

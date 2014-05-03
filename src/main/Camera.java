@@ -28,7 +28,7 @@ public class Camera implements IEntity {
 	
 	private float rotationDelta = 15f;
 	private float scaleDelta = 0.1f;
-	private float posDelta = 0.01f;
+	private float posDelta = 4f;
 	
 	Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
 	Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
@@ -67,9 +67,9 @@ public class Camera implements IEntity {
 		frustum = new Frustum(this);
 	}
 
-	public void update() {
+	public void update(float seconds) {
 		transform();
-		updateControls();
+		updateControls(seconds);
 		storeMatrices();
 	}
 	public void updateShadow() {
@@ -83,7 +83,7 @@ public class Camera implements IEntity {
 		viewMatrix.store(viewMatrixBuffer); viewMatrixBuffer.flip();
 	}
 	
-	public void updateControls() {
+	public void updateControls(float seconds) {
 
 		if (Mouse.isButtonDown(0)) {
 			rotate(up, Mouse.getDX() * rotationSpeed);
@@ -92,39 +92,39 @@ public class Camera implements IEntity {
 			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			position.x -= posDelta * back.x;
-			position.y -= posDelta * back.y;
-			position.z -= posDelta * -back.z;
+			position.x -= posDelta * seconds * back.x;
+			position.y -= posDelta * seconds * back.y;
+			position.z -= posDelta * seconds * -back.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-			position.x += posDelta * right.x;
-			position.y += posDelta * right.y;
-			position.z += posDelta * -right.z;
+			position.x += posDelta * seconds * right.x;
+			position.y += posDelta * seconds * right.y;
+			position.z += posDelta * seconds * -right.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-			position.x += posDelta * back.x;
-			position.y += posDelta * back.y;
-			position.z += posDelta * -back.z;
+			position.x += posDelta * seconds * back.x;
+			position.y += posDelta * seconds * back.y;
+			position.z += posDelta * seconds * -back.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-			position.x -= posDelta * right.x;
-			position.y -= posDelta * right.y;
-			position.z -= posDelta * -right.z;
+			position.x -= posDelta * seconds * right.x;
+			position.y -= posDelta * seconds * right.y;
+			position.z -= posDelta * seconds * -right.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			position.x += posDelta * up.x;
-			position.y += posDelta * up.y;
-			position.z += posDelta * -up.z;
+			position.x += posDelta * seconds * up.x;
+			position.y += posDelta * seconds * up.y;
+			position.z += posDelta * seconds * -up.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			position.x -= posDelta * up.x;
-			position.y -= posDelta * up.y;
-			position.z -= posDelta * -up.z;
+			position.x -= posDelta * seconds * up.x;
+			position.y -= posDelta * seconds * up.y;
+			position.z -= posDelta * seconds * -up.z;
 			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
 		}
 	}

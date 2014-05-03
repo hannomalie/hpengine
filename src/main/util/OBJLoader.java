@@ -46,6 +46,10 @@ public class OBJLoader {
     	return inList.toArray(in);
     }
 
+	public static float parseFloat(String line) {
+		return Float.valueOf(line);
+	}
+	
     public static Vector3f parseVertex(String line) {
         String[] xyz = removeEmpties(line.split(" "));
         float x = Float.valueOf(xyz[1]);
@@ -72,20 +76,23 @@ public class OBJLoader {
 	public static Face parseFace(String line) {
 		String[] faceIndices = line.split(" ");
 
+		String[] firstTriple = (faceIndices[1].split("/"));
+		String[] secondTriple = (faceIndices[2].split("/"));
+		String[] thirdTriple = (faceIndices[3].split("/"));
 		int[] vertexIndices = {
-			parseInt((faceIndices[1].split("/"))[0]),
-			Integer.parseInt((faceIndices[2].split("/"))[0]),
-			Integer.parseInt((faceIndices[3].split("/"))[0]),
+			parseInt(firstTriple[0]),
+			parseInt(secondTriple[0]),
+			parseInt(thirdTriple[0]),
 		};
 		int[] texCoordsIndices = {
-				Integer.parseInt((faceIndices[1].split("/"))[1]),
-				Integer.parseInt((faceIndices[2].split("/"))[1]),
-				Integer.parseInt((faceIndices[3].split("/"))[1]),
+			parseInt(firstTriple[1]),
+			parseInt(secondTriple[1]),
+			parseInt(thirdTriple[1]),
 			};
 		int[] normalIndices = {
-			Integer.parseInt((faceIndices[1].split("/"))[2]),
-			Integer.parseInt((faceIndices[2].split("/"))[2]),
-			Integer.parseInt((faceIndices[3].split("/"))[2]),
+			parseInt(firstTriple[2]),
+			parseInt(secondTriple[2]),
+			parseInt(thirdTriple[2]),
 		};
 		
 		Face face = new Face(vertexIndices, texCoordsIndices, normalIndices);
@@ -199,14 +206,27 @@ public class OBJLoader {
 			    	  String map = materialLine.replaceAll("map_d ", "");
 			    	  addHelper(currentMaterial, path, map, MAP.NORMAL );
 			    	  
+			    } else if (materialLine.startsWith("Ka ")) {
+			    	  String ambient = materialLine;
+			    	  currentMaterial.setAmbient(parseVertex(ambient));
+			    } else if (materialLine.startsWith("Kd ")) {
+			    	  String diffuse = materialLine;
+			    	  currentMaterial.setDiffuse(parseVertex(diffuse));
+			    } else if (materialLine.startsWith("Ks ")) {
+			    	  String specular = materialLine;
+			    	  currentMaterial.setSpecular(parseVertex(specular));
+			    } else if (materialLine.startsWith("Ns ")) {
+			    	  String specularCoefficient = materialLine.replaceAll("Ns ", "");
+			    	  currentMaterial.setSpecularCoefficient(parseFloat(specularCoefficient));
 			    }
+			    // TODO: TRANSPARENCY with "d" and "Tr"
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return materials;
 	}
-	
+
 	private static void addHelper(Material currentMaterial, String path, String name, MAP map) {
   	  
   	  currentMaterial.loadAndAddTexture(map, path+name);

@@ -175,7 +175,7 @@ public class Entity implements IEntity {
 	}
 
 	@Override
-	public void update() {
+	public void update(float seconds) {
 		modelMatrix = new Matrix4f();
 		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);

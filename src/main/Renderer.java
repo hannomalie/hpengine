@@ -27,6 +27,8 @@ public interface Renderer {
 	}
 	public void destroy();
 	public void draw(Camera camera, List<IEntity> entities, Spotlight light);
-	public void update();
+	public void update(float seconds);
+	public float getElapsedSeconds();
+	public void drawDebug(Camera camera, List<IEntity> entities, Spotlight light);
 
 }

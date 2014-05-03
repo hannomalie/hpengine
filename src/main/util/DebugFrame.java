@@ -28,9 +28,12 @@ import main.Material;
 import main.PointLight;
 import main.World;
 
+import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.opengl.Texture;
 
 import com.alee.laf.button.WebToggleButton;
+import com.alee.laf.label.WebLabel;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.spinner.WebSpinner;
 
@@ -47,6 +50,7 @@ public class DebugFrame {
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
+	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
 	WebSlider ambientOcclusionFalloff = new WebSlider ( WebSlider.HORIZONTAL );
@@ -198,6 +202,10 @@ public class DebugFrame {
 			toggleFrustumCulling.setSelected(World.useFrustumCulling);
 		});
 
+		toggleDrawLines.addActionListener(e -> {
+			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
+		});
+
 		toggleDebugFrame.addActionListener(e -> {
 			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
 		});
@@ -276,9 +284,26 @@ public class DebugFrame {
 				World.AMBIENTOCCLUSION_FALLOFF = valueAsFactor;
 			}
 		});
-		
+	    
+		buttonPanel.add(toggleDrawLines);
 		buttonPanel.add(toggleDebugFrame);
 		buttonPanel.add(toggleDrawLights);
+		buttonPanel.add(new WebLabel("Direcitonal Light Dir:"));
+		new Vector3fInput(buttonPanel) {
+			
+			@Override
+			void onChange(Vector3f value) {
+				World.light.rotate(value, 0.7f);
+			}
+		};
+		buttonPanel.add(new WebLabel("Direcitonal Light Col:"));
+		new Vector3fInput(buttonPanel) {
+			
+			@Override
+			void onChange(Vector3f value) {
+				World.light.setColor(value);
+			}
+		};
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);

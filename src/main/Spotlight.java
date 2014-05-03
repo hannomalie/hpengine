@@ -30,6 +30,8 @@ public class Spotlight implements IEntity {
 	
 	private RenderTarget renderTarget;
 	private IEntity box;
+
+	private Vector3f color = new Vector3f(1,1,1);
 	
 	public Spotlight(boolean castsShadows) {
 		this.castsShadows = castsShadows;
@@ -76,7 +78,7 @@ public class Spotlight implements IEntity {
 		init(renderer, camera);
 	}
 
-	public void update() {
+	public void update(float seconds) {
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
 			camera.move(new Vector3f(0,-0.02f,0));
 		}
@@ -94,7 +96,7 @@ public class Spotlight implements IEntity {
 
 		box.setPosition(camera.getPosition());
 		box.setOrientation(camera.getOrientation());
-		box.update();
+		box.update(seconds);
 		
 	}
 
@@ -186,8 +188,15 @@ public class Spotlight implements IEntity {
 
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public Vector3f getColor() {
+		return color ;
+	}
+
+	public void setColor(Vector3f color) {
+		this.color = color;
 	}
 
 }

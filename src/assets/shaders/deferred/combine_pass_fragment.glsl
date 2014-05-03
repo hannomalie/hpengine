@@ -1,8 +1,9 @@
 #version 420
 
 layout(binding=0) uniform sampler2D diffuseMap;
-layout(binding=1) uniform sampler2D lightAccumulationMap;
+layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
 layout(binding=2) uniform sampler2D normalMap;
+layout(binding=3) uniform sampler2D specularMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -26,7 +27,8 @@ void main(void) {
   	st.t = gl_FragCoord.y / screenHeight;
   	
   	vec3 color = texture2D(diffuseMap, st).xyz;
-	vec3 light = texture2D(lightAccumulationMap, st).xyz;
+  	vec3 specularColor = texture2D(specularMap, st).xyz;
+	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
 	vec4 normalAndDepth = texture2D(normalMap, st);
 	vec3 normal = normalAndDepth.xyz;
 	float depth = normalAndDepth.w;
@@ -67,6 +69,7 @@ void main(void) {
 	    
 		ao = 1.0-totStrength*bl*invSamples;
 	}
-	out_color = vec4(color * (light - (1- ao)) , 1);
-  	//out_color = vec4(ao,ao,ao,1);
+	//ao = 1-ao;
+	out_color = vec4((color * lightDiffuseSpecular.xyz + lightDiffuseSpecular.xyz*specularColor * lightDiffuseSpecular.w) * ao, 1);
+  	//out_color = vec4(lightDiffuseSpecular.xyz*specularColor * lightDiffuseSpecular.w, 1);
 }

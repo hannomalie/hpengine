@@ -19,6 +19,16 @@ uniform bool hasDiffuseMap;
 uniform float diffuseMapWidth = 1;
 uniform float diffuseMapHeight = 1;
 
+uniform bool hasSpecularMap;
+uniform float specularMapWidth = 1;
+uniform float specularMapHeight = 1;
+
+uniform vec3 materialDiffuseColor = vec3(0,0,0);
+uniform vec3 materialSpecularColor = vec3(0,0,0);
+uniform float materialSpecularCoefficient = 0;
+//uniform vec3 materialAmbientColor = vec3(0,0,0);
+//uniform float materialTransparency = 1;
+
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
@@ -39,6 +49,7 @@ in vec3 eyeVec;
 layout(location=0)out vec4 out_position;
 layout(location=1)out vec4 out_normal;
 layout(location=2)out vec4 out_albedo;
+layout(location=3)out vec4 out_specular;
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -104,7 +115,7 @@ void main(void) {
 	float depth = position_clip.z / position_clip.w;
 	out_normal = vec4(PN_view, depth);
 	
-	vec4 color = color;
+	vec4 color = vec4(materialDiffuseColor, 1);
 	if (hasDiffuseMap) {
 		UV = texCoord;
 		UV.x = texCoord.x * diffuseMapWidth;
@@ -112,4 +123,14 @@ void main(void) {
 		color = texture2D(diffuseMap, UV);
 	}
 	out_albedo = color;
+	
+	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
+	if (hasSpecularMap) {
+		UV = texCoord;
+		UV.x = texCoord.x * specularMapWidth;
+		UV.y = texCoord.y * specularMapHeight;
+		vec3 specularSample = texture2D(specularMap, UV).xyz;
+		specularColor = vec4(specularSample, materialSpecularCoefficient);
+	}
+	out_specular = specularColor;
 }

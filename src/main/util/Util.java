@@ -1,10 +1,14 @@
 package main.util;
 
+import static main.log.ConsoleLogger.getLogger;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -27,6 +31,7 @@ import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class Util {
+	private static Logger LOGGER = getLogger();
 	private static final double PI = 3.14159265358979323846;
 	private static final String VECTOR_DELIMITER = "_";
 	
@@ -81,6 +86,10 @@ public class Util {
 	public static Texture loadTexture(String filename) {
 		return loadTexture(filename, Material.MIPMAP_DEFAULT);
 	}
+	
+	private static Texture loadDefaultTexture() {
+		return Util.loadTexture("assets/textures/stone_diffuse.png");
+	}
 
 	public static Texture loadTexture(String filename, boolean mipmap) {
 		Texture texture = null;
@@ -91,7 +100,11 @@ public class Util {
 			try {
 				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
+				texture = loadDefaultTexture();
+			} catch (NullPointerException np) {
+				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
+				texture = loadDefaultTexture();
 			}
 		}
 

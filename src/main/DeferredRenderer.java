@@ -23,6 +23,7 @@ import main.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opencl.CL10;
 import org.lwjgl.opencl.CL10GL;
@@ -52,10 +53,6 @@ public class DeferredRenderer implements Renderer {
 	
 	public int testTexture = -1;
 
-	private int fps;
-	private long lastFPS;
-	private long lastFrame;
-
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
 	private Program secondPassPointProgram;
@@ -75,7 +72,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 0.5f;
 	private static float LIGHTRADIUSSCALE = 1f;
-	private static int MAXLIGHTS = 256;
+	private static int MAXLIGHTS = 128;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -85,8 +82,6 @@ public class DeferredRenderer implements Renderer {
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
 		setupShaders();
-		getDelta();
-		lastFPS = Util.getTime();
 		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
 		
 		Model sphereModel = null;
@@ -96,7 +91,7 @@ public class DeferredRenderer implements Renderer {
 			Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 			scale.scale(new Random().nextFloat()*10);
 			sphere.setScale(scale);
-			sphere.update();
+			sphere.update(0);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -147,7 +142,7 @@ public class DeferredRenderer implements Renderer {
 
 		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGB, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
-		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGB32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
+		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
 
 //		deferredOutput = GL11.glGenTextures();
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput);
@@ -187,28 +182,20 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
-	public int getDelta() {
-		long time = Util.getTime();
-		int delta = (int) (time - lastFrame);
-		lastFrame = time;
-		 
-		return delta;
-	}
-
-	public void update() {
-		updateFPS();
-		updateLights();
+	public void update(float seconds) {
+		updateLights(seconds);
+		setLastFrameTime();
 	}
 	
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
-	private void updateLights() {
+	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {
 //			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
 //			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
 //			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
 //			light.update();
 //		}
-		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size());
+		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size(), seconds);
 //         long start = System.currentTimeMillis();
          fjpool.invoke(task);
 //         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
@@ -219,11 +206,13 @@ public class DeferredRenderer implements Renderer {
 		int result;
 		int start, end;
 		List<PointLight> lights;
+		private float seconds;
 
-		RecursiveUpdate(List<PointLight> lights, int start, int end) {
+		RecursiveUpdate(List<PointLight> lights, int start, int end, float seconds) {
 			this.start = start;
 			this.end = end;
 			this.lights = lights;
+			this.seconds = seconds;
 		}
 		
 		@Override
@@ -233,12 +222,12 @@ public class DeferredRenderer implements Renderer {
 					double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
 					double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
 					lights.get(i).move(new Vector3f((float)sinusX,(float)sinusY, 0f));
-					lights.get(i).update();
+					lights.get(i).update(0);
 				}
 			} else {
 				int mid = (start + end) / 2;
-				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid);
-				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end);
+				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid, seconds);
+				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end, seconds);
 				left.fork();
 				right.fork();
 				left.join();
@@ -267,7 +256,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(2), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -376,6 +365,7 @@ public class DeferredRenderer implements Renderer {
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
+		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		fullscreenBuffer.draw();
 
@@ -434,6 +424,8 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
 		
 		fullscreenBuffer.draw();
 
@@ -469,13 +461,21 @@ public class DeferredRenderer implements Renderer {
 		Display.destroy();
 	}
 
-	public void updateFPS() {
-		if (Util.getTime() - lastFPS > 1000) {
-			Display.setTitle("FPS: " + fps);
-			fps = 0;
-			lastFPS += 1000;
-		}
-		fps++;
+	private static long lastFrameTime = 0l;
+	private static void setLastFrameTime() {
+		Display.setTitle("FPS: " + (int)(1000/getDeltainMS()));
+		lastFrameTime = getTime();
+	}
+	private static long getTime() {
+		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+	}
+	public static double getDeltainMS() {
+		long currentTime = getTime();
+		double delta = (double) currentTime - (double) lastFrameTime;
+		return delta;
+	}
+	public static double getDeltainS() {
+		return (getDeltainMS() / 1000d);
 	}
 
 	public static void exitOnGLError(String errorMessage) {
@@ -488,5 +488,53 @@ public class DeferredRenderer implements Renderer {
 			if (Display.isCreated()) Display.destroy();
 			System.exit(-1);
 		}
+	}
+
+	@Override
+	public float getElapsedSeconds() {
+		return (float)getDeltainS();
+	}
+
+	@Override
+	public void drawDebug(Camera camera, List<IEntity> entities, Spotlight light) {
+		///////////// firstpass
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		firstPassProgram.use();
+		GL11.glDepthMask(true);
+		firstPassTarget.use(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_BLEND);
+		firstPassProgram.setUniform("screenWidth", (float) WIDTH);
+		firstPassProgram.setUniform("screenHeight", (float) HEIGHT);
+		firstPassProgram.setUniform("useParallax", World.useParallax);
+		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+		for (IEntity entity : entities) {
+			if ((World.useFrustumCulling && entity.isInFrustum(camera)) || !World.useFrustumCulling) {
+				entity.drawDebug(firstPassProgram);
+			}
+		}
+		if (World.DRAWLIGHTS_ENABLED) {
+			for (IEntity entity : pointLights) {
+				entity.drawDebug(firstPassProgram);
+			}	
+		}
+		
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		////////////////////
+		
+		drawSecondPass(camera, light, pointLights);
+		
+		GL11.glViewport(0, 0, WIDTH, HEIGHT);
+		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		drawToQuad(firstPassTarget.getRenderedTexture(2), fullscreenBuffer);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
 	}
 }
