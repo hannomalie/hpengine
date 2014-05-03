@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
+import javax.swing.SpinnerModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
@@ -31,6 +32,7 @@ import org.newdawn.slick.opengl.Texture;
 
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.slider.WebSlider;
+import com.alee.laf.spinner.WebSpinner;
 
 public class DebugFrame {
 
@@ -41,18 +43,18 @@ public class DebugFrame {
 	private JScrollPane scenePane = new JScrollPane();
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
 	
-	private WebToggleButton toggleParallax = new WebToggleButton("Parallax");
-	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax");
-	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion");
-	private WebToggleButton toggleSSIL = new WebToggleButton("SSIL");
-	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling");
-	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame");
-	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights");
-	
+	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
+	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
+	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
+	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
+	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
+	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
+	WebSlider ambientOcclusionFalloff = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
-
+	
+	
 	private JTree scene = new JTree();
 	
 	public DebugFrame(World world) {
@@ -191,11 +193,6 @@ public class DebugFrame {
 			toggleAmbientOcclusion.setSelected(World.useAmbientOcclusion);
 		});
 		
-		toggleSSIL.addActionListener(e -> {
-			World.useSSIL = !World.useSSIL;
-			toggleSSIL.setSelected(World.useSSIL);
-		});
-		
 		toggleFrustumCulling.addActionListener(e -> {
 			World.useFrustumCulling = !World.useFrustumCulling;
 			toggleFrustumCulling.setSelected(World.useFrustumCulling);
@@ -208,7 +205,6 @@ public class DebugFrame {
 		toggleDrawLights.addActionListener(e -> {
 			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
 		});
-
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
 	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
 	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
@@ -244,7 +240,7 @@ public class DebugFrame {
 				World.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
 			}
 		});
-	    
+
 	    ambientOcclusionStrengthSlider.setMinimum ( 0 );
 	    ambientOcclusionStrengthSlider.setMaximum ( 100 );
 	    ambientOcclusionStrengthSlider.setMinorTickSpacing ( 10 );
@@ -262,17 +258,35 @@ public class DebugFrame {
 				World.AMBIENTOCCLUSION_STRENGTH = valueAsFactor;
 			}
 		});
+	    
+	    ambientOcclusionFalloff.setMinimum ( 0 );
+	    ambientOcclusionFalloff.setMaximum ( 100 );
+	    ambientOcclusionFalloff.setMinorTickSpacing ( 10 );
+	    ambientOcclusionFalloff.setMajorTickSpacing ( 20 );
+	    ambientOcclusionFalloff.setValue(7);
+	    ambientOcclusionFalloff.setPaintTicks ( true );
+	    ambientOcclusionFalloff.setPaintLabels ( true );
+	    ambientOcclusionFalloff.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 10000000;
+				World.AMBIENTOCCLUSION_FALLOFF = valueAsFactor;
+			}
+		});
 		
 		buttonPanel.add(toggleDebugFrame);
 		buttonPanel.add(toggleDrawLights);
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);
-		buttonPanel.add(toggleSSIL);
 		buttonPanel.add(toggleFrustumCulling);
 		buttonPanel.add(ambientOcclusionRadiusSlider);
 		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
-		buttonPanel.add(ambientOcclusionStrengthSlider);
+//		buttonPanel.add(ambientOcclusionStrengthSlider);
+//		buttonPanel.add(ambientOcclusionFalloff);
 		buttonPanel.setSize(200, 200);
 
 //		mainFrame.add(materialPane);

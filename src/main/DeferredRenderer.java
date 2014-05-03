@@ -418,13 +418,13 @@ public class DeferredRenderer implements Renderer {
 
 	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
 		combineProgram.use();
+		combineProgram.setUniform("screenWidth", (float) WIDTH);
+		combineProgram.setUniform("screenHeight", (float) HEIGHT);
 		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
-		combineProgram.setUniform("useSSIL", World.useSSIL);
 		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
-		combineProgram.setUniform("screenWidth", (float) WIDTH);
-		combineProgram.setUniform("screenHeight", (float) HEIGHT);
+		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
 		target.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		

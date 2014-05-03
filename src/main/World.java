@@ -33,8 +33,7 @@ public class World {
 	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallaxLocation = false;
 	public static volatile boolean useSteepParallax = false;
-	public static volatile boolean useAmbientOcclusion = true;
-	public static volatile boolean useSSIL = true;
+	public static volatile boolean useAmbientOcclusion = false;
 	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
@@ -43,6 +42,7 @@ public class World {
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.38f;
 	public static float AMBIENTOCCLUSION_FACTOR = 0.006f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.006f;
+	public static float AMBIENTOCCLUSION_FALLOFF = 0.000002f;
 	
 	public static void main(String[] args) {
 
