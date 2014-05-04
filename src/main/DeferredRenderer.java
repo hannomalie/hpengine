@@ -116,8 +116,8 @@ public class DeferredRenderer implements Renderer {
 	private void setupOpenGL() {
 		try {
 			PixelFormat pixelFormat = new PixelFormat();
-			ContextAttribs contextAtrributes = new ContextAttribs(4, 3);
-//				.withForwardCompatible(true)
+			ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
+				.withProfileCompatibility(true);
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
@@ -255,11 +255,14 @@ public class DeferredRenderer implements Renderer {
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
+
+		
 		if (World.DEBUGFRAME_ENABLED) {
 			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
 	}
 
 	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {

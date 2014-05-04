@@ -317,15 +317,20 @@ public class Entity implements IEntity {
 
 		Matrix4f.transform(modelMatrix, minMax[1], maxView);
 		Matrix4f.transform(camera.getViewMatrix(), maxView, maxView);
-		//Matrix4f.transform(camera.getProjectionMatrix(), maxView, maxView);
 
 		Vector4f.add(minView, maxView, minMaxCenterView);
 		minMaxCenterView.scale(0.5f);
 
+		Vector4f distance = new Vector4f();
+		Vector4f.sub(maxView, minView, distance);
+		distance.scale(0.5f);
+		Vector3f distanceVec3 = new Vector3f(distance.x, distance.y, distance.z);
+		float distanceFloat = distanceVec3.length();
 		//if (camera.getFrustum().pointInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z)) {
 		//if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
-		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
-				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
+//		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
+//				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
+		if (camera.getFrustum().sphereInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z, distanceFloat)) {
 			return true;
 		}
 		return false;
