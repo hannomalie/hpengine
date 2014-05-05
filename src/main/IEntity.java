@@ -34,4 +34,5 @@ public interface IEntity {
 	default public void setOrientation(Quaternion orientation) {};
 	default public Matrix4f getModelMatrix() { return new Matrix4f(); };
 	default public boolean isInFrustum(Camera camera) { return true; }
+	public default Vector4f[] getMinMaxWorld() { return new Vector4f[] {new Vector4f(), new Vector4f()};};
 }

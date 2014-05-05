@@ -313,7 +313,6 @@ public class Entity implements IEntity {
 
 		Matrix4f.transform(modelMatrix, minMax[0], minView);
 		Matrix4f.transform(camera.getViewMatrix(), minView, minView);
-		//trix4f.transform(camera.getProjectionMatrix(), minView, minView);
 
 		Matrix4f.transform(modelMatrix, minMax[1], maxView);
 		Matrix4f.transform(camera.getViewMatrix(), maxView, maxView);
@@ -334,5 +333,18 @@ public class Entity implements IEntity {
 			return true;
 		}
 		return false;
+	}
+	
+	@Override
+	public Vector4f[] getMinMaxWorld() {
+		Vector4f[] minMax = vertexBuffer.getMinMax();
+
+		Vector4f minView = new Vector4f();
+		Vector4f maxView = new Vector4f();
+		
+		Matrix4f.transform(modelMatrix, minMax[0], minView);
+		Matrix4f.transform(modelMatrix, minMax[1], maxView);
+		
+		return minMax;
 	}
 }
