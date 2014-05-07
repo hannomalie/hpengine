@@ -56,9 +56,9 @@ public class VertexBuffer {
 		this.usage = usage;
 		if(buffer != null) {
 			this.verticesCount = calculateVerticesCount(buffer, channels);
-			LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s",verticesCount, buffer.remaining() * 4, channels.toString()));	
+//			LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s",verticesCount, buffer.remaining() * 4, channels.toString()));	
 		} else {
-			LOGGER.log(Level.INFO, String.format("Created VertexBuffer"));
+//			LOGGER.log(Level.INFO, String.format("Created VertexBuffer"));
 		}
 	}
 	
@@ -76,7 +76,7 @@ public class VertexBuffer {
 //		this.verticesCount = calculateVerticesCount(values, channels);
 		buffer = buffer(values, channels);
 //		LOGGER.log(Level.INFO, String.format("Added Buffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
-		LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
+//		LOGGER.log(Level.INFO, String.format("Created VertexBuffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));
 	}
 	
 	
@@ -152,7 +152,7 @@ public class VertexBuffer {
 		vertexBuffer = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
 		buffer.rewind();
-		LOGGER.log(Level.INFO, String.format("Buffering %d bytes to GPU", buffer.remaining() * 4));
+//		LOGGER.log(Level.INFO, String.format("Buffering %d bytes to GPU", buffer.remaining() * 4));
 		
 		// VAO, yea
 		vertexArray = GL30.glGenVertexArrays();
@@ -182,7 +182,7 @@ public class VertexBuffer {
 			GL20.glEnableVertexAttribArray(channel.getLocation());
 			GL20.glVertexAttribPointer(channel.getLocation(),channel.getSize(), GL11.GL_FLOAT, false, bytesPerVertex(channels), currentOffset);
 			
-			LOGGER.log(Level.INFO, "Enabled " + channel.getBinding() + " on " + channel.getLocation() + " (" + channel.getSize() + " elements) with current offset " + currentOffset);
+//			LOGGER.log(Level.INFO, "Enabled " + channel.getBinding() + " on " + channel.getLocation() + " (" + channel.getSize() + " elements) with current offset " + currentOffset);
 			
 			currentOffset += channel.getSize() * 4;
 		}

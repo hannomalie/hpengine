@@ -18,11 +18,26 @@ public class Frustum {
     public static final int BACK    = 4;            // The BACK     side of the frustum
     public static final int FRONT   = 5;            // The FRONT side of the frustum
     
-    public static final int A = 0;                          // The X value of the plane's normal
-    public static final int B = 1;                          // The Y value of the plane's normal
-    public static final int C = 2;                          // The Z value of the plane's normal
-    public static final int D = 3;                          // The distance the plane is from the origin
+    /**
+     * The X value of the plane's normal
+     */
+    public static final int A = 0;
+    /**
+     * The Y value of the plane's normal
+     */
+    public static final int B = 1;
+    /**
+     * The Z value of the plane's normal
+     */
+    public static final int C = 2;
+    /**
+     * The distance the plane is from the origin
+     */
+    public static final int D = 3;
     
+    /**
+     * Pass side of the frustum and x,y,z,w selector to get value
+     */
     public float[][] values = new float[6][4];
 	
 	Vector3f fc = new Vector3f(); // far plane center

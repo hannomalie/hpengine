@@ -5,6 +5,7 @@ import static main.log.ConsoleLogger.getLogger;
 import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -76,7 +77,20 @@ public class Octree {
 		}
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		
-		rootNode.drawDebug(renderer, program);
+		// List of 24*3 = 72 floats per floatarray
+		List<float[]> arrays = rootNode.getPointsForLineDrawing();
+		float[] points = new float[arrays.size() * 72];
+		for (int i = 0; i < arrays.size(); i++) {
+			float[] array = arrays.get(i);
+			for (int z = 0; z < 72; z++) {
+				points[24*3*i + z] = array[z];
+			}
+			
+		};
+		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+		buffer.drawDebug();
+		
+		//rootNode.drawDebug(renderer, program);
 	}
 
 	public static class Node {
@@ -101,6 +115,17 @@ public class Octree {
 			this.aabb = new Box(center, size);
 
 //			LOGGER.log(Level.INFO, "Created " + this.toString() + " with " + this.aabb.toString());
+		}
+
+		public List<float[]> getPointsForLineDrawing() {
+			List<float[]> arrays = new ArrayList<float[]>();
+			arrays.add(getPoints());
+			if (hasChildren()) {
+				for (int i = 0; i < 8; i++) {
+					arrays.addAll(children[i].getPointsForLineDrawing());
+				}
+			}
+			return arrays;
 		}
 
 		public Node(Octree octree, Vector3f center, float size) {
@@ -278,7 +303,6 @@ public class Octree {
 		}
 
 		public void drawDebug(Renderer renderer, Program program) {
-			// TODO: Extract this to drawtobox with batch drawing
 			VertexBuffer buffer = new VertexBuffer(getPoints(), EnumSet.of(DataChannels.POSITION3)).upload();
 			buffer.drawDebug();
 			if (hasChildren()) {
