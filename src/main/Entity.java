@@ -176,11 +176,7 @@ public class Entity implements IEntity {
 
 	@Override
 	public void update(float seconds) {
-		modelMatrix = new Matrix4f();
-		Matrix4f.scale(scale, modelMatrix, modelMatrix);
-		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
-		Matrix4f.translate(position, modelMatrix, modelMatrix);
-
+		modelMatrix = calculateCurrentModelMatrix();
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
 	}
@@ -204,9 +200,18 @@ public class Entity implements IEntity {
 //		material.setTexturesInactive();
 	}
 
+	private Matrix4f calculateCurrentModelMatrix() {
+		modelMatrix = new Matrix4f();
+		Matrix4f.scale(scale, modelMatrix, modelMatrix);
+		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
+		Matrix4f.translate(position, modelMatrix, modelMatrix);
+		
+		return modelMatrix;
+	}
+	
 	@Override
 	public Matrix4f getModelMatrix() {
-		return modelMatrix;
+		return calculateCurrentModelMatrix();
 	}
 
 	public void setModelMatrix(Matrix4f modelMatrix) {
@@ -338,12 +343,16 @@ public class Entity implements IEntity {
 	@Override
 	public Vector4f[] getMinMaxWorld() {
 		Vector4f[] minMax = vertexBuffer.getMinMax();
-
-		Vector4f minView = new Vector4f();
-		Vector4f maxView = new Vector4f();
 		
-		Matrix4f.transform(modelMatrix, minMax[0], minView);
-		Matrix4f.transform(modelMatrix, minMax[1], maxView);
+		Vector4f minView = new Vector4f(0,0,0,1);
+		Vector4f maxView = new Vector4f(0,0,0,1);
+		
+		Matrix4f.transform(getModelMatrix(), minMax[0], minView);
+		Matrix4f.transform(getModelMatrix(), minMax[1], maxView);
+
+		minView.w = 0;
+		maxView.w = 0;
+		minMax = new Vector4f[] {minView, maxView};
 		
 		return minMax;
 	}

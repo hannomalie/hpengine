@@ -71,5 +71,5 @@ void main(void) {
 	}
 	//ao = 1-ao;
 	out_color = vec4((color * lightDiffuseSpecular.xyz + lightDiffuseSpecular.xyz*specularColor * lightDiffuseSpecular.w) * ao, 1);
-  	//out_color = vec4(lightDiffuseSpecular.xyz*specularColor * lightDiffuseSpecular.w, 1);
+  	//out_color = vec4(lightDiffuseSpecular.w,lightDiffuseSpecular.w,lightDiffuseSpecular.w, 1);
 }

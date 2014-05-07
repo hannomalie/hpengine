@@ -14,11 +14,11 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
+import main.octree.Octree;
 import main.shader.ComputeShaderProgram;
 import main.shader.Program;
 import main.util.CLUtil;
 import main.util.OBJLoader;
-import main.util.Util;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -33,7 +33,6 @@ import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
@@ -52,6 +51,7 @@ public class DeferredRenderer implements Renderer {
 			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
+	private Octree octree = null;
 
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
@@ -82,6 +82,7 @@ public class DeferredRenderer implements Renderer {
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
 		setupShaders();
+		
 		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
 		
 		Model sphereModel = null;
@@ -362,6 +363,8 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3));
 
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) HEIGHT);
@@ -524,6 +527,14 @@ public class DeferredRenderer implements Renderer {
 				entity.drawDebug(firstPassProgram);
 			}	
 		}
+
+		if(octree == null) {
+			octree = new Octree(new Vector3f(), 400f, 20);
+			for (IEntity entity : entities) {
+				octree.insert(entity);
+			}	
+		}
+		octree.drawDebug(this, firstPassProgram);
 		
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);

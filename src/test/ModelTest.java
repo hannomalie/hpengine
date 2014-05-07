@@ -15,6 +15,8 @@ import main.util.OBJLoader;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class ModelTest {
 	
@@ -47,6 +49,17 @@ public class ModelTest {
 		};
 		// Korrekte Werte eingelesen
 		Assert.assertArrayEquals(expecteds, actuals, 0);
+		
+		entity.move(new Vector3f(10,10,10));
+		entity.update(1);
+		
+		Assert.assertTrue(new Vector3f(10,10,10).equals(entity.getPosition()));
+		Vector4f[] minMaxWorld = entity.getMinMaxWorld();
+		Vector4f min = minMaxWorld[0];
+		Vector4f max = minMaxWorld[1];
+
+		Assert.assertEquals(new Vector4f(9.5f, 9.5f, 9.5f, 0), min);
+		Assert.assertEquals(new Vector4f(10.5f, 10.5f, 10.5f, 0), max);
 	}
 
 }

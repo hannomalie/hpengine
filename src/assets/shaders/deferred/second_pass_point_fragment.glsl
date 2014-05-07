@@ -65,7 +65,7 @@ vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
   //float atten_factor = -log (min (1.0, dist_2d / lightRadius));
   //return vec3(atten_factor,atten_factor,atten_factor);
   //return (Id/* + Is*/) * atten_factor;
-  return vec4(lightDiffuse*dot_prod*atten_factor, specular_factor*atten_factor);
+  return vec4(lightDiffuse*dot_prod*atten_factor, specular_factor * specular.x*atten_factor);
 }
 void main(void) {
 	

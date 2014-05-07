@@ -2,20 +2,37 @@ package main.octree;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.io.File;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.DataChannels;
+import main.DeferredRenderer;
+import main.Entity;
 import main.IEntity;
+import main.Material;
+import main.Model;
+import main.Renderer;
+import main.VertexBuffer;
+import main.shader.Program;
+import main.util.OBJLoader;
+import main.util.Util;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class Octree {
 	private static Logger LOGGER = getLogger();
 
+	private static FloatBuffer matrix44Buffer = null;
+	private static Matrix4f modelMatrix = new Matrix4f();
+	
 	public static final float defaultSize = 1000;
 	public int maxDeepness;
 
@@ -48,6 +65,18 @@ public class Octree {
 	public void insert(IEntity entity) {
 		Vector4f[] minMaxWorld = entity.getMinMaxWorld();
 		rootNode.insert(entity);
+	}
+	
+	public void drawDebug(Renderer renderer, Program program) {
+		if (matrix44Buffer == null) {
+			 matrix44Buffer = BufferUtils.createFloatBuffer(16);
+			 matrix44Buffer.rewind();
+			 modelMatrix.store(matrix44Buffer);
+			 matrix44Buffer.rewind();
+		}
+		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		
+		rootNode.drawDebug(renderer, program);
 	}
 
 	public static class Node {
@@ -228,7 +257,7 @@ public class Octree {
 			return String.format("Node(%.2f) @ (%.2f, %.2f, %.2f)", size, center.x, center.y, center.z);
 		}
 
-		public Object getCenter() {
+		public Vector3f getCenter() {
 			return new Vector3f(center);
 		}
 
@@ -247,6 +276,55 @@ public class Octree {
 				return deepness;
 			}
 		}
+
+		public void drawDebug(Renderer renderer, Program program) {
+			// TODO: Extract this to drawtobox with batch drawing
+			VertexBuffer buffer = new VertexBuffer(getPoints(), EnumSet.of(DataChannels.POSITION3)).upload();
+			buffer.drawDebug();
+			if (hasChildren()) {
+				for (int i = 0; i < 8; i++) {
+					children[i].drawDebug(renderer, program);
+				}
+			}
+		}
+
+		private float[] getPoints() {
+			List<Vector3f> points = aabb.getPoints();
+			List<Vector3f> pointsForLineDrawing = new ArrayList<>();
+			pointsForLineDrawing.add(points.get(0));
+			pointsForLineDrawing.add(points.get(1));
+			pointsForLineDrawing.add(points.get(1));
+			pointsForLineDrawing.add(points.get(2));
+			pointsForLineDrawing.add(points.get(2));
+			pointsForLineDrawing.add(points.get(3));
+			pointsForLineDrawing.add(points.get(3));
+			pointsForLineDrawing.add(points.get(0));
+			
+			pointsForLineDrawing.add(points.get(4));
+			pointsForLineDrawing.add(points.get(5));
+			pointsForLineDrawing.add(points.get(5));
+			pointsForLineDrawing.add(points.get(6));
+			pointsForLineDrawing.add(points.get(6));
+			pointsForLineDrawing.add(points.get(7));
+			pointsForLineDrawing.add(points.get(7));
+			pointsForLineDrawing.add(points.get(4));
+
+			pointsForLineDrawing.add(points.get(0));
+			pointsForLineDrawing.add(points.get(6));
+			pointsForLineDrawing.add(points.get(1));
+			pointsForLineDrawing.add(points.get(7));
+			pointsForLineDrawing.add(points.get(2));
+			pointsForLineDrawing.add(points.get(4));
+			pointsForLineDrawing.add(points.get(3));
+			pointsForLineDrawing.add(points.get(5));
+			
+			float[] dest = new float[3* pointsForLineDrawing.size()];
+			for (int i = 0; i < pointsForLineDrawing.size(); i++) {
+				dest[3*i] = pointsForLineDrawing.get(i).x;
+				dest[3*i+1] = pointsForLineDrawing.get(i).y;
+				dest[3*i+2] = pointsForLineDrawing.get(i).z;
+			}
+			return dest;
+		}
 	}
-	
 }

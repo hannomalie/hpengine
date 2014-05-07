@@ -33,7 +33,7 @@ vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = pow (dot_prod_specular, specular.w);
   
-  return vec4(lightDiffuse * dot_prod,0.1);
+  return vec4(lightDiffuse * dot_prod, specular_factor * specular.x);
 }
 void main(void) {
 	
