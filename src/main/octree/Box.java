@@ -76,4 +76,47 @@ public class Box {
 		Box otherBox = (Box) other;
 		return (otherBox.center == center && otherBox.size == size);
 	}
+
+	public Vector3f getTopRightForeCorner() {
+		return topRightForeCorner;
+	}
+
+	public Vector3f getBottomLeftBackCorner() {
+		return bottomLeftBackCorner;
+	}
+
+	// TODO: Fix
+	public boolean containsOrIntersectsSphere(Vector3f position, float radius) {
+		boolean result = false;
+		if (this.contains(new Vector4f(position.x, position.y, position.z, 0))) {
+			result = true;
+			return result;
+		}
+		List<Vector3f> points = getPoints();
+		float smallestDistance = smallestDistance(points, position);
+		float largestDistance = largestDistance(points, position);
+		if (largestDistance <= radius) {
+			result = true;
+		}
+		return result;
+	}
+
+	private float smallestDistance(List<Vector3f> points, Vector3f pivot) {
+		float length = Float.MAX_VALUE;
+		for (Vector3f point : points) {
+			float tempLength = Vector3f.sub(point, pivot, null).length();
+			length = tempLength <= length? tempLength : length;
+		}
+		
+		return length;
+	}
+	private float largestDistance(List<Vector3f> points, Vector3f pivot) {
+		float length = Float.MAX_VALUE;
+		for (Vector3f point : points) {
+			float tempLength = Vector3f.sub(point, pivot, null).length();
+			length = tempLength >= length? tempLength : length;
+		}
+		
+		return length;
+	}
 }

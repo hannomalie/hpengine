@@ -2,6 +2,8 @@ package main;
 
 import java.util.List;
 
+import main.octree.Octree;
+
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
@@ -26,9 +28,9 @@ public interface Renderer {
 		}
 	}
 	public void destroy();
-	public void draw(Camera camera, List<IEntity> entities, Spotlight light);
+	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
 	public void update(float seconds);
 	public float getElapsedSeconds();
-	public void drawDebug(Camera camera, List<IEntity> entities, Spotlight light);
+	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
 
 }

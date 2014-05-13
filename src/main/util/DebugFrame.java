@@ -27,6 +27,8 @@ import main.IEntity;
 import main.Material;
 import main.PointLight;
 import main.World;
+import main.octree.Octree;
+import main.octree.Octree.Node;
 
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
@@ -58,8 +60,9 @@ public class DebugFrame {
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	
-	
+
 	private JTree scene = new JTree();
+	private JTree sceneOctree = new JTree();
 	
 	public DebugFrame(World world) {
 		
@@ -176,9 +179,10 @@ public class DebugFrame {
 		materialPane =  new JScrollPane(materialTable);
 		texturePane  =  new JScrollPane(textureTable);
 		lightsPane  =  new JScrollPane(lightsTable);
-		
+
 		addSceneObjects(world);
-		scenePane = new JScrollPane(scene);
+		addOctreeSceneObjects(world);
+		scenePane = new JScrollPane(sceneOctree);
 
 		toggleParallax.addActionListener( e -> {
 			World.useParallax = !World.useParallax;
@@ -320,7 +324,7 @@ public class DebugFrame {
 		mainFrame.add(lightsPane, BorderLayout.PAGE_END);
 		mainFrame.add(scenePane, BorderLayout.CENTER);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		mainFrame.setSize(new Dimension(1200, 300));
+		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
 	}
 
@@ -347,6 +351,32 @@ public class DebugFrame {
 		}
 		
 		scene = new JTree(top);
+	}
+	
+	private void addOctreeSceneObjects(World world) {
+		DefaultMutableTreeNode top =
+		        new DefaultMutableTreeNode("Scene");
+		
+		addOctreeChildren(top, world.octree.rootNode);
+		sceneOctree = new JTree(top);
+	}
+	
+	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {
+		DefaultMutableTreeNode current = new DefaultMutableTreeNode("Node @ " + node.getCenter() + " " + node.getSize());
+		parent.add(current);
+		if(node.hasChildren()) {
+			for(int i = 0; i < 8; i++) {
+				addOctreeChildren(current, node.children[i]);
+			}
+		}
+		
+		for (IEntity entitiy : node.entities) {
+			current.add(new DefaultMutableTreeNode(entitiy.getName() + " @ " + entitiy.getPosition() + " scale " + entitiy.getScale()));
+		}
+		
+		if (node.hasChildren() && node.entities.size() > 0) {
+			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
+		}
 	}
 	
 	private class ImagePanel extends JPanel{

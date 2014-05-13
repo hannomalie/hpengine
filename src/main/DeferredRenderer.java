@@ -51,7 +51,6 @@ public class DeferredRenderer implements Renderer {
 			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
-	private Octree octree = null;
 
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
@@ -238,13 +237,13 @@ public class DeferredRenderer implements Renderer {
 		
 	}
 
-	public void draw(Camera camera, List<IEntity> entities, Spotlight light) {
-		draw(finalTarget, camera, entities, light);
+	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
+		draw(finalTarget, octree, camera, entities, light);
 	}
 	
-	private void draw(RenderTarget target, Camera camera, List<IEntity> entities, Spotlight light) {
+	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
 
-		drawFirstPass(camera, entities);
+		drawFirstPass(camera, octree);
 		drawSecondPass(camera, light, pointLights);
 		combinePass(finalTarget, firstPassTarget, secondPassTarget);
 //		openClTest(finalTarget);
@@ -315,7 +314,7 @@ public class DeferredRenderer implements Renderer {
 		CL10.clFinish(CLUtil.queue);
 	}
 
-	private void drawFirstPass(Camera camera, List<IEntity> entities) {
+	private void drawFirstPass(Camera camera, Octree octree) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
 		GL11.glDepthMask(true);
@@ -329,13 +328,28 @@ public class DeferredRenderer implements Renderer {
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
-		for (IEntity entity : entities) {
-			if ((World.useFrustumCulling && entity.isInFrustum(camera)) || !World.useFrustumCulling) {
-				entity.draw(firstPassProgram);
+		
+		List<IEntity> entities = new ArrayList<>();
+		if (World.useFrustumCulling) {
+			// TODO: Use octree for culling
+			entities = octree.getVisible(camera);
+//			entities.addAll(octree.getEntities());
+			for (int i = 0; i < entities.size(); i++) {
+				if (!entities.get(i).isInFrustum(camera)) {
+					entities.remove(i);
+				}
 			}
+		} else {
+			entities.addAll(octree.getEntities());
 		}
+
+		for (IEntity entity : entities) {
+			entity.draw(firstPassProgram);
+		}
+		
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (IEntity entity : pointLights) {
+				if (!entity.isInFrustum(camera)) { continue;}
 				entity.draw(firstPassProgram);
 			}	
 		}
@@ -502,7 +516,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void drawDebug(Camera camera, List<IEntity> entities, Spotlight light) {
+	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
 		///////////// firstpass
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
@@ -517,10 +531,22 @@ public class DeferredRenderer implements Renderer {
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
-		for (IEntity entity : entities) {
-			if ((World.useFrustumCulling && entity.isInFrustum(camera)) || !World.useFrustumCulling) {
-				entity.drawDebug(firstPassProgram);
+		
+		List<IEntity> visibleEntities = new ArrayList<>();
+		if (World.useFrustumCulling) {
+			visibleEntities = octree.getVisible(camera);
+//			entities.addAll(octree.getEntities());
+			for (int i = 0; i < visibleEntities.size(); i++) {
+				if (!visibleEntities.get(i).isInFrustum(camera)) {
+					visibleEntities.remove(i);
+				}
 			}
+		} else {
+			visibleEntities.addAll(octree.getEntities());
+		}
+		
+		for (IEntity entity : visibleEntities) {
+			entity.drawDebug(firstPassProgram);
 		}
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (IEntity entity : pointLights) {
@@ -528,12 +554,6 @@ public class DeferredRenderer implements Renderer {
 			}	
 		}
 
-		if(octree == null) {
-			octree = new Octree(new Vector3f(), 400f, 20);
-			for (IEntity entity : entities) {
-				octree.insert(entity);
-			}	
-		}
 		octree.drawDebug(this, firstPassProgram);
 		
 		GL11.glDepthMask(false);

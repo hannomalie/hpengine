@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import javax.swing.Icon;
 import javax.swing.JFrame;
 
+import main.octree.Octree;
 import main.util.DebugFrame;
 import main.util.OBJLoader;
 
@@ -52,7 +53,8 @@ public class World {
 		new DebugFrame(world);
 		world.simulate();
 	}
-	
+
+	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
 	private int entityCount = 15;
 	public Renderer renderer;
@@ -61,9 +63,11 @@ public class World {
 	public World() {
 		WebLookAndFeel.install();
 		renderer = new DeferredRenderer(light);
+		octree = new Octree(new Vector3f(), 1000f, 25);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		this.loadDummies();
+		octree.insert(entities);
 	}
 	
 	public void simulate() {
@@ -170,11 +174,11 @@ public class World {
 //		System.out.println("light update: " + (System.currentTimeMillis() - start) + " ms");
 
 //		long start = System.currentTimeMillis();
-		// for (IEntity entity: entities) {
-		// entity.update();
-		// }
-		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
-		fjpool.invoke(task);
+		 for (IEntity entity: entities) {
+		 entity.update(seconds);
+		 }
+//		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
+//		fjpool.invoke(task);
 //		System.out.println("Parallel processing time: " + (System.currentTimeMillis() - start) + " ms");
 
 		Renderer.exitOnGLError("update");
@@ -217,9 +221,9 @@ public class World {
 	private void draw() {
 //		long millisecondsStart = System.currentTimeMillis();
 		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(camera, entities, light);
+			renderer.drawDebug(camera, octree, entities, light);
 		} else {
-			renderer.draw(camera, entities, light);	
+			renderer.draw(camera, octree, entities, light);
 		}
 //		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));

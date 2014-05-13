@@ -100,6 +100,7 @@ public class OctreeTest {
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
 		Assert.assertEquals(octree.rootNode.getSize(), Octree.defaultSize, 0.1f);
 		Assert.assertTrue(octree.rootNode.entities.contains(entity));
+		Assert.assertEquals(0, octree.getCurrentDeepness());
 	}
 
 	@Test
@@ -143,8 +144,8 @@ public class OctreeTest {
 	}
 	
 	@Test
-	@Ignore
-	public void octreeInsertSpeedTest() {
+//	@Ignore
+	public void octreeInsertSpeedAndValidityTest() {
 		getLogger().setLevel(Level.OFF);
 		IEntity entityBottomLeftBack = new IEntity() {
 			
@@ -159,9 +160,9 @@ public class OctreeTest {
 			}
 		};
 		
-		Octree octree = new Octree(new Vector3f(), 2000f, 20);
+		Octree octree = new Octree(new Vector3f(), 2000f, 10);
 		Random random = new Random();
-		final int entityCount = 150000;
+		final int entityCount = 100;
 		long start = System.currentTimeMillis();
 		for (int i = 0; i < entityCount; i++) {
 
@@ -195,5 +196,18 @@ public class OctreeTest {
 		long end = System.currentTimeMillis();
 		System.out.println("Took " + (end - start) + " ms to insert " + entityCount +  " entities.");
 		System.out.println("Current deepness is " + octree.getCurrentDeepness());
+		
+		checkIfValid(octree.rootNode);
+	}
+	
+	private void checkIfValid(Node node) {
+		if (node.hasChildren()) {
+			for (Node child : node.children) {
+				checkIfValid(child);
+			}
+		}
+		Assert.assertTrue(!node.hasChildren() ||
+							(node.hasChildren() && node.entities.isEmpty()) ||
+							node.getDeepness() == 0 );
 	}
 }

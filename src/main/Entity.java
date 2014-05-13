@@ -310,31 +310,25 @@ public class Entity implements IEntity {
 	}
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		Vector4f[] minMax = vertexBuffer.getMinMax();
+		Vector4f[] minMaxWorld = getMinMaxWorld();
+		Vector4f minWorld = minMaxWorld[0];
+		Vector4f maxWorld = minMaxWorld[1];
+		
+		Vector3f centerWorld = new Vector3f();
+		centerWorld.x = (maxWorld.x + minWorld.x)/2;
+		centerWorld.y = (maxWorld.y + minWorld.y)/2;
+		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+		
+		Vector3f distVector = new Vector3f();
+		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
-		Vector4f minView = new Vector4f();
-		Vector4f maxView = new Vector4f();
-		Vector4f minMaxCenterView = new Vector4f();
-
-		Matrix4f.transform(modelMatrix, minMax[0], minView);
-		Matrix4f.transform(camera.getViewMatrix(), minView, minView);
-
-		Matrix4f.transform(modelMatrix, minMax[1], maxView);
-		Matrix4f.transform(camera.getViewMatrix(), maxView, maxView);
-
-		Vector4f.add(minView, maxView, minMaxCenterView);
-		minMaxCenterView.scale(0.5f);
-
-		Vector4f distance = new Vector4f();
-		Vector4f.sub(maxView, minView, distance);
-		distance.scale(0.5f);
-		Vector3f distanceVec3 = new Vector3f(distance.x, distance.y, distance.z);
-		float distanceFloat = distanceVec3.length();
-		//if (camera.getFrustum().pointInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z)) {
-		//if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
+//		if (camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
+//			camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
+//		if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
 //		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
 //				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-		if (camera.getFrustum().sphereInFrustum(minMaxCenterView.x, minMaxCenterView.y, minMaxCenterView.z, distanceFloat)) {
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length())) {
 			return true;
 		}
 		return false;

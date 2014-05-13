@@ -3,8 +3,11 @@ package main;
 import static main.log.ConsoleLogger.getLogger;
 
 import java.nio.FloatBuffer;
-import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
+
+import main.octree.Box;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -226,7 +229,7 @@ public class Frustum {
 	// *Note* - This will sometimes say that a cube is inside the frustum when it isn't.
 	// This happens when all the corners of the bounding box are not behind any one plane.
 	// This is rare and shouldn't effect the overall rendering speed.
-	
+
 	for(int i = 0; i < 6; i++ )
 	{
 		if(values[i][A] * (x - size) + values[i][B] * (y - size) + values[i][C] * (z - size) + values[i][D] > 0)
@@ -262,5 +265,13 @@ public class Frustum {
 		
 		buffer.rewind();
 		return buffer;
+	}
+
+	public boolean boxInFrustum(Box aabb) {
+		
+		return cubeInFrustum(aabb.center, aabb.size);
+//		return sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size/2);
+//		return (pointInFrustum(aabb.getBottomLeftBackCorner().x, aabb.getBottomLeftBackCorner().y, aabb.getBottomLeftBackCorner().z) ||
+//				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));
 	}
 }

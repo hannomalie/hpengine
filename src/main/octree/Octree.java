@@ -2,26 +2,23 @@ package main.octree;
 
 import static main.log.ConsoleLogger.getLogger;
 
-import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.logging.Logger;
 
+import main.Camera;
 import main.DataChannels;
-import main.DeferredRenderer;
-import main.Entity;
+import main.Frustum;
 import main.IEntity;
-import main.Material;
-import main.Model;
 import main.Renderer;
 import main.VertexBuffer;
 import main.shader.Program;
-import main.util.OBJLoader;
-import main.util.Util;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -44,6 +41,8 @@ public class Octree {
 	}
 
 	public Node rootNode;
+
+	private List<IEntity> entities = new ArrayList<>();
 	
 	public Octree() {
 		this(new Vector3f());
@@ -64,8 +63,23 @@ public class Octree {
 	}
 	
 	public void insert(IEntity entity) {
-		Vector4f[] minMaxWorld = entity.getMinMaxWorld();
 		rootNode.insert(entity);
+		entities.add(entity);
+	}
+	
+	public void insert(List<IEntity> entities){
+		for (IEntity iEntity : entities) {
+			insert(iEntity);
+		}
+		entities.addAll(entities);
+	}
+	
+	public List<IEntity> getVisible(Camera camera) {
+		List<IEntity> result = new ArrayList<>();
+		
+		result.addAll(rootNode.getVisible(camera.getFrustum(), camera.getPosition()));
+		
+		return result;
 	}
 	
 	public void drawDebug(Renderer renderer, Program program) {
@@ -89,8 +103,6 @@ public class Octree {
 		};
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
 		buffer.drawDebug();
-		
-		//rootNode.drawDebug(renderer, program);
 	}
 
 	public static class Node {
@@ -117,6 +129,25 @@ public class Octree {
 //			LOGGER.log(Level.INFO, "Created " + this.toString() + " with " + this.aabb.toString());
 		}
 
+
+		public List<IEntity> getVisible(Frustum frustum, Vector3f position) {
+			List<IEntity> result = new ArrayList<IEntity>();
+			if (frustum.boxInFrustum(aabb)) {
+//			if (frustum.sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size)) {
+
+				
+				if (hasChildren) {
+					for(int i = 0; i < 8; i++) {
+						result.addAll(children[i].getVisible(frustum, position));
+					}
+				} else {
+					result.addAll(entities);
+				}
+			}
+			
+			return result;
+		}
+
 		public List<float[]> getPointsForLineDrawing() {
 			List<float[]> arrays = new ArrayList<float[]>();
 			arrays.add(getPoints());
@@ -139,6 +170,7 @@ public class Octree {
 		}
 		
 		public void insert(IEntity entity) {
+//			LOGGER.log(Level.INFO, String.format("Inserting %s ...", entity));
 			if(hasChildren()) {
 				Node hit = searchNodeForInsertion(children, entity);
 				// If insertion point found, child can handle entity
@@ -149,28 +181,43 @@ public class Octree {
 					hit.insert(entity);
 				} else {
 //					LOGGER.log(Level.INFO, String.format("No hit found, collapsing ... "));
-					collapseBecauseOf(entity);
+					collapseBecauseOfAndAdd(entity);
 				}
 			} else if (deepness < octree.maxDeepness) {
 //				LOGGER.log(Level.INFO, String.format("No children for node, expanding ... "));
-				this.expand();
+				List<IEntity> toDispatch = this.expand();
 				this.insert(entity);
+				this.insert(toDispatch);
 			} else if (deepness >= octree.maxDeepness) {
 //				LOGGER.log(Level.INFO, String.format("Max deepness reached, entity added to deepest node ... "));
 				this.entities.add(entity);
+				setHasChildren(false);
+			}
+			checkValid();
+		}
+		
+		public void insert(List<IEntity> toInsert){
+			for (IEntity iEntity : toInsert) {
+				insert(iEntity);
 			}
 		}
 
 		// Node has to insert an entity which its children can't handle, so
 		// the node has to delete all children and take their entities plus
 		// the cause of the collapse
-		private void collapseBecauseOf(IEntity entity) {
-			entities.addAll(collectAllEntitiesFromChildrenAndRemoveNode());
-			this.entities.add(entity);
-			hasChildren = false;
+		private void collapseBecauseOfAndAdd(IEntity entity) {
+			if (deepness == 0) {
+//				LOGGER.log(Level.INFO, String.format("Small deepness, should not collapse ... "));
+				entities.add(entity);
+				return;
+			}
+			entities.addAll(collectAllEntitiesFromChildren());
+			entities.add(entity);
+			setHasChildren(false);
+			checkValid();
 		}
 
-		private Collection<IEntity> collectAllEntitiesFromChildrenAndRemoveNode() {
+		private Collection<IEntity> collectAllEntitiesFromChildren() {
 			
 			List<IEntity> result = new ArrayList<>();
 			for (int i = 0; i < 8; i++) {
@@ -180,9 +227,10 @@ public class Octree {
 					result.addAll(node.entities);
 					node.entities.clear();
 				} else {
-					result.addAll(node.collectAllEntitiesFromChildrenAndRemoveNode());
+					result.addAll(node.collectAllEntitiesFromChildren());
 				}
 			}
+			checkValid();
 			return result;
 		}
 
@@ -190,14 +238,15 @@ public class Octree {
 			Vector4f[] minMaxWorld = entity.getMinMaxWorld();
 			for (int i = 0; i < source.length; i++) {
 				Node node = source[i];
-				if (node.canContain(minMaxWorld)) {
+				if (node.contains(minMaxWorld)) {
 					return node;
 				}
 			}
+			checkValid();
 			return null;
 		}
 
-		private boolean canContain(Vector4f[] minMaxWorld) {
+		private boolean contains(Vector4f[] minMaxWorld) {
 			Vector4f min = minMaxWorld[0];
 			Vector4f max = minMaxWorld[1];
 			
@@ -214,11 +263,18 @@ public class Octree {
 		}
 
 		// Creates 8 new child nodes
-		public void expand() {
+		public List<IEntity> expand() {
 			for (int i = 0; i < 8; i++) {
 				children[i] = new Node(this, i);
 			}
 			hasChildren = true;
+
+			List<IEntity> toDispatchList = new ArrayList<IEntity>();
+			toDispatchList.addAll(entities);
+			entities.clear();
+			
+			checkValid();
+			return toDispatchList;
 		}
 		
 		
@@ -277,6 +333,15 @@ public class Octree {
 			return hasChildren;
 		}
 		
+		public void setHasChildren(boolean hasChildren) {
+			this.hasChildren = hasChildren;
+			if (!hasChildren) {
+				for (int i = 0; i < 8; i++) {
+					children[i] = null;
+				}
+			}
+		}
+
 		@Override
 		public String toString() {
 			return String.format("Node(%.2f) @ (%.2f, %.2f, %.2f)", size, center.x, center.y, center.z);
@@ -350,5 +415,24 @@ public class Octree {
 			}
 			return dest;
 		}
+
+
+		public int getDeepness() {
+			return deepness;
+		}
+		
+		private boolean checkValid() {
+			boolean valid = false;
+			if ((hasChildren() && entities.isEmpty()) || getDeepness() == 0 || !hasChildren()) {
+				valid = true;
+			} else {
+				valid = false;
+			}
+			return valid;
+		}
+	}
+
+	public List<IEntity> getEntities() {
+		return entities;
 	}
 }
