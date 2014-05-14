@@ -18,6 +18,7 @@ import main.Frustum;
 import main.IEntity;
 import main.Renderer;
 import main.VertexBuffer;
+import main.World;
 import main.shader.Program;
 
 import org.lwjgl.BufferUtils;
@@ -26,6 +27,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class Octree {
+
 	private static Logger LOGGER = getLogger();
 
 	private static FloatBuffer matrix44Buffer = null;
@@ -63,7 +65,15 @@ public class Octree {
 	}
 	
 	public void insert(IEntity entity) {
-		rootNode.insert(entity);
+		List<IEntity> toDispatch = new ArrayList<>();
+		toDispatch.add(entity);
+		
+		while (!toDispatch.isEmpty()) {
+			List<IEntity> returns = rootNode.insert(toDispatch.get(0));
+			toDispatch.remove(0);
+			toDispatch.addAll(returns);
+		}
+		
 		entities.add(entity);
 	}
 	
@@ -77,8 +87,8 @@ public class Octree {
 	public List<IEntity> getVisible(Camera camera) {
 		List<IEntity> result = new ArrayList<>();
 		
-		result.addAll(rootNode.getVisible(camera.getFrustum(), camera.getPosition()));
-		
+		result.addAll(rootNode.getVisible(camera));
+		result.addAll(rootNode.entities);
 		return result;
 	}
 	
@@ -105,6 +115,11 @@ public class Octree {
 		buffer.drawDebug();
 	}
 
+	/**
+	 * children: index is clockwise 0-3 for top: left front, left back, right back, right front and 4-7 bottom: right back, right front, left front, left back 
+	 * 
+	 *
+	 */
 	public static class Node {
 		Octree octree;
 		Node parent;
@@ -130,21 +145,34 @@ public class Octree {
 		}
 
 
-		public List<IEntity> getVisible(Frustum frustum, Vector3f position) {
+		public List<IEntity> getVisible(Camera camera) {
 			List<IEntity> result = new ArrayList<IEntity>();
-			if (frustum.boxInFrustum(aabb)) {
-//			if (frustum.sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size)) {
-
-				
+			if (deepness == 0 ) {
 				if (hasChildren) {
 					for(int i = 0; i < 8; i++) {
-						result.addAll(children[i].getVisible(frustum, position));
-					}
-				} else {
-					result.addAll(entities);
+						result.addAll(children[i].getVisible(camera));
+					}	
 				}
+			} else if (aabb.isInFrustum(camera)) {
+				result.addAll(getAllEntitiesInAndBelow());
 			}
 			
+			return result;
+		}
+		
+		public boolean isVisible(Camera camera) {
+			return aabb.isInFrustum(camera);
+		}
+		
+		public List<IEntity> getAllEntitiesInAndBelow() {
+			List<IEntity> result = new ArrayList<IEntity>();
+			if (hasChildren) {
+				for(int i = 0; i < 8; i++) {
+					result.addAll(children[i].getAllEntitiesInAndBelow());
+				}	
+			} else {
+				result.addAll(entities);
+			}
 			return result;
 		}
 
@@ -169,7 +197,9 @@ public class Octree {
 			this(parent.octree, getCenterForNewChild(parent, index), parent.size/2, parent.deepness + 1);
 		}
 		
-		public void insert(IEntity entity) {
+		public List<IEntity> insert(IEntity entity) {
+			List<IEntity> toDispatch = new ArrayList<>();
+			
 //			LOGGER.log(Level.INFO, String.format("Inserting %s ...", entity));
 			if(hasChildren()) {
 				Node hit = searchNodeForInsertion(children, entity);
@@ -185,15 +215,15 @@ public class Octree {
 				}
 			} else if (deepness < octree.maxDeepness) {
 //				LOGGER.log(Level.INFO, String.format("No children for node, expanding ... "));
-				List<IEntity> toDispatch = this.expand();
+				toDispatch.addAll(this.expand());
 				this.insert(entity);
-				this.insert(toDispatch);
 			} else if (deepness >= octree.maxDeepness) {
 //				LOGGER.log(Level.INFO, String.format("Max deepness reached, entity added to deepest node ... "));
 				this.entities.add(entity);
 				setHasChildren(false);
 			}
 			checkValid();
+			return toDispatch;
 		}
 		
 		public void insert(List<IEntity> toInsert){
@@ -435,4 +465,5 @@ public class Octree {
 	public List<IEntity> getEntities() {
 		return entities;
 	}
+
 }

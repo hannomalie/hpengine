@@ -328,7 +328,7 @@ public class Entity implements IEntity {
 //		if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
 //		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
 //				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length())) {
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
 			return true;
 		}
 		return false;

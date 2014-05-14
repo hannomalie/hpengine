@@ -8,13 +8,18 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import junit.framework.Assert;
+import main.Camera;
+import main.DeferredRenderer;
 import main.Entity;
 import main.IEntity;
 import main.Material;
+import main.Renderer;
+import main.Spotlight;
 import main.octree.Box;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
@@ -23,6 +28,13 @@ import org.lwjgl.util.vector.Vector4f;
 import com.sun.javafx.geom.CubicApproximator;
 
 public class OctreeTest {
+	Renderer renderer;
+	
+	@Before
+	public void init() {
+		renderer = new DeferredRenderer(new Spotlight(true));
+	}
+	
 	@Test
 	public void generatingBox() {
 		Box box = new Box(new Vector3f(), 10);
@@ -116,6 +128,27 @@ public class OctreeTest {
 								new Vector4f(-5, -5, -5, 0),
 								new Vector4f(-1, -1, -1, 0)};
 			}
+
+			@Override
+			public boolean isInFrustum(Camera camera) {
+				Vector4f[] minMaxWorld = getMinMaxWorld();
+				Vector4f minWorld = minMaxWorld[0];
+				Vector4f maxWorld = minMaxWorld[1];
+				
+				Vector3f centerWorld = new Vector3f();
+				centerWorld.x = (maxWorld.x + minWorld.x)/2;
+				centerWorld.y = (maxWorld.y + minWorld.y)/2;
+				centerWorld.z = (maxWorld.z + minWorld.z)/2;
+				
+				Vector3f distVector = new Vector3f();
+				Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+								new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+
+				if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
+					return true;
+				}
+				return false;
+			}
 		};
 		IEntity entityTopRightFront = new IEntity() {
 			
@@ -127,6 +160,27 @@ public class OctreeTest {
 						return new Vector4f[] {
 								new Vector4f(1, 1, 1, 0),
 								new Vector4f(5, 5, 5, 0)};
+			}
+
+			@Override
+			public boolean isInFrustum(Camera camera) {
+				Vector4f[] minMaxWorld = getMinMaxWorld();
+				Vector4f minWorld = minMaxWorld[0];
+				Vector4f maxWorld = minMaxWorld[1];
+				
+				Vector3f centerWorld = new Vector3f();
+				centerWorld.x = (maxWorld.x + minWorld.x)/2;
+				centerWorld.y = (maxWorld.y + minWorld.y)/2;
+				centerWorld.z = (maxWorld.z + minWorld.z)/2;
+				
+				Vector3f distVector = new Vector3f();
+				Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+								new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+
+				if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
+					return true;
+				}
+				return false;
 			}
 		};
 		
@@ -141,28 +195,34 @@ public class OctreeTest {
 		
 		Assert.assertTrue(octree.rootNode.children[7].entities.contains(entityBottomLeftBack));
 		Assert.assertTrue(octree.rootNode.children[3].entities.contains(entityTopRightFront));
+		
+		// Octree culling
+		Camera camera = new Camera(renderer); // cam is at 0 0 0 and looks into -z, up is y, right is x
+		Assert.assertTrue(octree.rootNode.isVisible(camera));
+		Assert.assertTrue(entityBottomLeftBack.isInFrustum(camera));
+		Assert.assertFalse(entityTopRightFront.isInFrustum(camera));
+
+		camera.move(new Vector3f(0, 0, -2));
+		camera.update(1);
+		Assert.assertTrue(octree.rootNode.isVisible(camera));
+		Assert.assertTrue(octree.rootNode.children[1].isVisible(camera));
+		Assert.assertTrue(octree.rootNode.children[2].isVisible(camera));
+		Assert.assertFalse(octree.rootNode.children[0].isVisible(camera));
+		Assert.assertFalse(octree.rootNode.children[3].isVisible(camera));
+		
+		List<IEntity> visibleEntities = octree.getVisible(camera);
+		Assert.assertTrue(visibleEntities.contains(entityBottomLeftBack));
+		Assert.assertFalse(visibleEntities.contains(entityTopRightFront));
 	}
 	
 	@Test
-//	@Ignore
+	@Ignore
 	public void octreeInsertSpeedAndValidityTest() {
 		getLogger().setLevel(Level.OFF);
-		IEntity entityBottomLeftBack = new IEntity() {
-			
-			@Override public Vector3f getPosition() { return null; }
-			@Override public String getName() { return null; }
-			@Override public Material getMaterial() { return null; }
-			@Override public void destroy() { }
-			@Override public Vector4f[] getMinMaxWorld() {
-						return new Vector4f[] {
-								new Vector4f(-5, -5, -5, 0),
-								new Vector4f(-1, -1, -1, 0)};
-			}
-		};
 		
 		Octree octree = new Octree(new Vector3f(), 2000f, 10);
 		Random random = new Random();
-		final int entityCount = 100;
+		final int entityCount = 100000;
 		long start = System.currentTimeMillis();
 		for (int i = 0; i < entityCount; i++) {
 

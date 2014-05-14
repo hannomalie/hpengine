@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.Camera;
+
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -85,6 +87,33 @@ public class Box {
 		return bottomLeftBackCorner;
 	}
 
+
+	public boolean isInFrustum(Camera camera) {
+		Vector4f[] minMaxWorld = new Vector4f[]{new Vector4f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z, 0),
+												new Vector4f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z, 0)};
+		Vector4f minWorld = minMaxWorld[0];
+		Vector4f maxWorld = minMaxWorld[1];
+		
+		Vector3f centerWorld = new Vector3f();
+		centerWorld.x = (maxWorld.x + minWorld.x)/2;
+		centerWorld.y = (maxWorld.y + minWorld.y)/2;
+		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+		
+		Vector3f distVector = new Vector3f();
+		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+
+//		if (camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
+//			camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
+		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
+//		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
+//				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
+//		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
+			return true;
+		}
+		return false;
+	}
+	
 	// TODO: Fix
 	public boolean containsOrIntersectsSphere(Vector3f position, float radius) {
 		boolean result = false;

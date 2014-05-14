@@ -56,7 +56,7 @@ public class World {
 
 	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 15;
+	private int entityCount = 20;
 	public Renderer renderer;
 	private Camera camera;
 	

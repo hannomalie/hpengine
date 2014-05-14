@@ -334,6 +334,7 @@ public class DeferredRenderer implements Renderer {
 			// TODO: Use octree for culling
 			entities = octree.getVisible(camera);
 //			entities.addAll(octree.getEntities());
+			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
 					entities.remove(i);
