@@ -7,11 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import javax.swing.Icon;
-import javax.swing.JFrame;
 
 import main.octree.Octree;
 import main.util.DebugFrame;
@@ -19,9 +15,7 @@ import main.util.OBJLoader;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.laf.WebLookAndFeel;
 
@@ -63,7 +57,7 @@ public class World {
 	public World() {
 		WebLookAndFeel.install();
 		renderer = new DeferredRenderer(light);
-		octree = new Octree(new Vector3f(), 1000f, 25);
+		octree = new Octree(new Vector3f(), 400, 5);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		this.loadDummies();
@@ -116,7 +110,7 @@ public class World {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
 						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-						scale.scale(new Random().nextFloat()*4);
+						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
 						entities.add(entity);
 					} catch (Exception e) {

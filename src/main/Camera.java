@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import junit.framework.Assert;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
@@ -193,7 +194,6 @@ public class Camera implements IEntity {
 
 	@Override
 	public void destroy() {
-		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -267,8 +267,6 @@ public class Camera implements IEntity {
 
 	@Override
 	public void setScale(Vector3f scale) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override

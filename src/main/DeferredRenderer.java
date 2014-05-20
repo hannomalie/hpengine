@@ -93,7 +93,6 @@ public class DeferredRenderer implements Renderer {
 			sphere.setScale(scale);
 			sphere.update(0);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -332,14 +331,16 @@ public class DeferredRenderer implements Renderer {
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
 			// TODO: Use octree for culling
-			entities = octree.getVisible(camera);
+			entities.addAll(octree.getVisible(camera));
 //			entities.addAll(octree.getEntities());
-			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size());
+//			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
 					entities.remove(i);
 				}
 			}
+//			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size());
+			
 		} else {
 			entities.addAll(octree.getEntities());
 		}
@@ -535,7 +536,7 @@ public class DeferredRenderer implements Renderer {
 		
 		List<IEntity> visibleEntities = new ArrayList<>();
 		if (World.useFrustumCulling) {
-			visibleEntities = octree.getVisible(camera);
+			visibleEntities.addAll(octree.getVisible(camera));
 //			entities.addAll(octree.getEntities());
 			for (int i = 0; i < visibleEntities.size(); i++) {
 				if (!visibleEntities.get(i).isInFrustum(camera)) {
@@ -555,7 +556,7 @@ public class DeferredRenderer implements Renderer {
 			}	
 		}
 
-		octree.drawDebug(this, firstPassProgram);
+		octree.drawDebug(this, camera, firstPassProgram);
 		
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);

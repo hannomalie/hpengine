@@ -366,7 +366,7 @@ public class DebugFrame {
 		parent.add(current);
 		if(node.hasChildren()) {
 			for(int i = 0; i < 8; i++) {
-				addOctreeChildren(current, node.children[i]);
+				addOctreeChildren(current, node.children[i]);	
 			}
 		}
 		

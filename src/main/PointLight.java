@@ -58,7 +58,6 @@ public class PointLight extends Entity {
 		return null;
 	}
 
-	// TODO: IMPLEMENT
 	@Override
 	public Vector3f getPosition() {
 		return position;
