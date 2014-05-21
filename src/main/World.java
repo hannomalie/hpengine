@@ -40,6 +40,8 @@ public class World {
 	public static float AMBIENTOCCLUSION_FACTOR = 0.006f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.006f;
 	public static float AMBIENTOCCLUSION_FALLOFF = 0.000002f;
+
+	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.2f, 0.2f,0.2f);
 	
 	public static void main(String[] args) {
 

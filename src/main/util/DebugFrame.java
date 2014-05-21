@@ -3,6 +3,7 @@ package main.util;
 import static main.util.Util.vectorToString;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -15,7 +16,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
-import javax.swing.SpinnerModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
@@ -27,17 +27,17 @@ import main.IEntity;
 import main.Material;
 import main.PointLight;
 import main.World;
-import main.octree.Octree;
 import main.octree.Octree.Node;
 
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
-import org.newdawn.slick.opengl.Texture;
 
+import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
+import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.slider.WebSlider;
-import com.alee.laf.spinner.WebSpinner;
+import com.alee.utils.ImageUtils;
+
 
 public class DebugFrame {
 
@@ -59,7 +59,9 @@ public class DebugFrame {
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
-	
+	WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
+	WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
+
 
 	private JTree scene = new JTree();
 	private JTree sceneOctree = new JTree();
@@ -300,14 +302,31 @@ public class DebugFrame {
 				World.light.rotate(value, 0.7f);
 			}
 		};
-		buttonPanel.add(new WebLabel("Direcitonal Light Col:"));
-		new Vector3fInput(buttonPanel) {
+
+		lightColorChooserPanel.addChangeListener(new ChangeListener() {
 			
 			@Override
-			void onChange(Vector3f value) {
-				World.light.setColor(value);
+			public void stateChanged(ChangeEvent e) {
+				Color color = lightColorChooserPanel.getColor();
+				World.light.setColor(new Vector3f(color.getRed()/255.f,
+						color.getGreen()/255.f,
+						color.getBlue()/255.f));
 			}
-		};
+		});
+		buttonPanel.add(lightColorChooserPanel);
+		
+		ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				Color color = ambientLightColorChooserPanel.getColor();
+				World.AMBIENT_LIGHT = (new Vector3f(color.getRed()/255.f,
+						color.getGreen()/255.f,
+						color.getBlue()/255.f));
+			}
+		});
+		buttonPanel.add(ambientLightColorChooserPanel);
+		
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);

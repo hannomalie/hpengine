@@ -437,6 +437,8 @@ public class DeferredRenderer implements Renderer {
 		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
 		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
+		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
+		
 		target.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
