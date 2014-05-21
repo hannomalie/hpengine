@@ -33,7 +33,7 @@ public class Material implements IEntity {
 	public static boolean MIPMAP_DEFAULT = true;
 	
 	public static Map<String, Material> LIBRARY = new HashMap<>();
-	public static Map<String, Texture> TEXTURES = new HashMap();
+	public static Map<String, main.util.Texture> TEXTURES = new HashMap();
 	
 	private static Logger LOGGER = getLogger();
 
@@ -94,7 +94,7 @@ public class Material implements IEntity {
 		LIBRARY.put(path, this);
 	}
 	
-	private void addTexture(MAP map, String path, Texture texture) {
+	private void addTexture(MAP map, String path, main.util.Texture texture) {
 		if (TEXTURES.containsKey(path)) {
 			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 		} else {
@@ -107,7 +107,7 @@ public class Material implements IEntity {
 		if (TEXTURES.containsKey(path)) {
 			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 		} else {
-			Texture texture = Util.loadTexture(path);
+			main.util.Texture texture = Util.loadTexture(path);
 			TEXTURES.put(path, texture);
 			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 		}
@@ -145,10 +145,11 @@ public class Material implements IEntity {
 		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
 			String path = entry.getValue();
-			Texture texture = TEXTURES.get(path);
+			main.util.Texture texture = TEXTURES.get(path);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
-//			texture.bind();
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
+			texture.bind();
+//			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
+			// TODO: CHECK IF PROPER GETTER IS USED
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));

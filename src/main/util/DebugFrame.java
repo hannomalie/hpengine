@@ -119,8 +119,8 @@ public class DebugFrame {
 				if (col == 0) {
 					return paths.get(row);
 				}
-				Texture texture = (Texture) textures.get(row);
-				return String.format("Texture %d x %d", texture.getTextureWidth(), texture.getTextureHeight());
+				main.util.Texture texture = (main.util.Texture) textures.get(row);
+				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
 			}
 
 			public String getColumnName(int column) {

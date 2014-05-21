@@ -65,13 +65,13 @@ public class OBJLoaderTest {
 
 	@Test
 	public void loadTextureFromJar() {
-		Texture texture = Util.loadTexture("src/assets/textures/stone_diffuse.png");
+		main.util.Texture texture = Util.loadTexture("src/assets/textures/stone_diffuse.png");
 		Assert.assertEquals(512, texture.getImageHeight());
 	}
 	
 	@Test
 	public void loadTextureFromDirecotry() {
-		Texture texture = Util.loadTexture("C://default.png");
+		main.util.Texture texture = Util.loadTexture("C://default.png");
 		Assert.assertEquals(128, texture.getImageHeight());
 	}
 

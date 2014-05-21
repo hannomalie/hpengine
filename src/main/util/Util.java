@@ -48,22 +48,25 @@ public class Util {
 		return result;
 	}
 
-	public static Texture loadTexture(String filename) {
+	public static main.util.Texture loadTexture(String filename) {
 		return loadTexture(filename, Material.MIPMAP_DEFAULT);
 	}
 	
-	private static Texture loadDefaultTexture() {
+	private static main.util.Texture loadDefaultTexture() {
 		return Util.loadTexture("assets/textures/stone_diffuse.png");
 	}
 
-	public static Texture loadTexture(String filename, boolean mipmap) {
-		Texture texture = null;
+	public static main.util.Texture loadTexture(String filename, boolean mipmap) {
+//		Texture texture = null;
+		main.util.Texture texture = null;
 		String extension = getFileExtension(filename).toUpperCase();
 		try {
-			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
+//			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
+			texture = new main.util.TextureLoader().getTexture(filename);
 		} catch (IOException e) {
 			try {
-				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
+//				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
+				texture = new main.util.TextureLoader().getTextureAsStream(filename);
 			} catch (IOException e1) {
 				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
 				texture = loadDefaultTexture();
