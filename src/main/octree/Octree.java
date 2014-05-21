@@ -4,11 +4,14 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import main.Camera;
@@ -70,14 +73,28 @@ public class Octree {
 		   rootNode.entities.add(entity);
 	   }
 	   rootNode.optimize();
+//		   rootNode.optimizeThreaded();
+	   entities.add(entity);
+	}
+		
+	public void insertWithoutOptimize(IEntity entity) {
+
+	   boolean insertSuccessfull = rootNode.insert(entity);
+	   if (!insertSuccessfull) {
+		   rootNode.entities.add(entity);
+	   }
 	   entities.add(entity);
 	}
 	
 	
 	public void insert(List<IEntity> toDispatch){
 		for (IEntity iEntity : toDispatch) {
-			insert(iEntity);
+			insertWithoutOptimize(iEntity);
 		}
+//		long start = System.currentTimeMillis();
+		rootNode.optimizeThreaded();
+//		long end = System.currentTimeMillis();
+//		System.out.println("Took " + (end - start) + " ms to optimize.");
 	}
 	
 	public List<IEntity> getVisible(Camera camera) {
@@ -181,7 +198,8 @@ public class Octree {
 			return aabb.isInFrustum(camera);
 		}
 		
-		public List<IEntity> getAllEntitiesInAndBelow() {
+		private List<IEntity> getAllEntitiesInAndBelow() {
+			
 			List<IEntity> result = new ArrayList<IEntity>();
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {
@@ -191,12 +209,55 @@ public class Octree {
 			result.addAll(entities);
 			return result;
 		}
+		
 
+		private List<IEntity> getAllEntitiesInAndBelowThreaded() {
+
+			ExecutorService	collectExecutor = Executors.newFixedThreadPool(8);
+			List<Future<List<IEntity>>> toGather = new ArrayList<Future<List<IEntity>>>();
+			List<IEntity> result = new ArrayList<>();
+			
+			if (hasChildren) {
+				for(int i = 0; i < 8; i++) {
+				      Callable<List<IEntity>> worker = new CollectEntitiesInAndBelowCallable(children[i]);
+				      Future<List<IEntity>> submit = collectExecutor.submit(worker);
+				      toGather.add(submit);
+				}	
+			}
+			for (Future<List<IEntity>> future : toGather) {
+			      try {
+			        result.addAll(future.get());
+			      } catch (InterruptedException e) {
+			        e.printStackTrace();
+			      } catch (ExecutionException e) {
+			        e.printStackTrace();
+			      }
+			    }
+			
+			collectExecutor.shutdown();
+			result.addAll(entities);
+			return result;
+		}
+		
+		static class CollectEntitiesInAndBelowCallable implements Callable<List<IEntity>> {
+			private Node node;
+			
+			CollectEntitiesInAndBelowCallable(Node node) {
+			    this.node = node;
+			  }
+
+			  @Override
+			  public List<IEntity> call() {
+					List<IEntity> result = new ArrayList<IEntity>();
+					result.addAll(node.getAllEntitiesInAndBelow());
+					return result;
+			  }
+		}
 
 		public List<float[]> getPointsForLineDrawing(Camera camera) {
 			List<float[]> arrays = new ArrayList<float[]>();
 
-			if (World.useFrustumCulling && !isVisible(camera)) {return arrays;}
+			if (!isVisible(camera) || getAllEntitiesInAndBelowThreaded().isEmpty()) {return arrays;}
 			
 			arrays.add(getPoints());
 			if (hasChildren()) {
@@ -254,13 +315,31 @@ public class Octree {
 			return false;
 		}
 
-
+		private static final ExecutorService executor = Executors.newFixedThreadPool(8);
+		public void optimizeThreaded() {
+			if (hasChildren()) {
+				for (int i = 0; i < 8; i++) {
+					Node node = children[i];
+					
+					Runnable worker = new OptimizeRunnable(node);
+					executor.execute(worker);
+				}
+			    try {
+					executor.shutdown();
+					executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			    System.out.println("Finished all threads");
+			}
+		}
 		public void optimize() {
 			if (hasChildren()) {
 				for (int i = 0; i < 8; i++) {
 					Node node = children[i];
+					
 					if (node.hasEntities() && node.hasEntitiesInChildNodes()) {
-						node.entities.addAll(collectAllEntitiesFromChildren());
+						node.entities.addAll(node.collectAllEntitiesFromChildren());
 						node.setHasChildren(false);
 						System.out.println("Optimized...");
 						return;
@@ -270,6 +349,25 @@ public class Octree {
 			}
 		}
 
+		static class OptimizeRunnable implements Runnable {
+			private Node node;
+			
+			OptimizeRunnable(Node node) {
+			    this.node = node;
+			  }
+
+			  @Override
+			  public void run() {
+				  if (node.hasEntities() && node.hasEntitiesInChildNodes()) {
+					node.entities.addAll(node.collectAllEntitiesFromChildren());
+					node.setHasChildren(false);
+					System.out.println("Optimized...");
+					return;
+				}
+				node.optimize();
+			  }
+		}
+		
 		private List<IEntity> collectAllEntitiesFromChildren() {
 			
 			List<IEntity> result = new ArrayList<>();
@@ -468,7 +566,9 @@ public class Octree {
 	}
 
 	public List<IEntity> getEntities() {
-		return rootNode.getAllEntitiesInAndBelow();
+		List<IEntity> result = rootNode.getAllEntitiesInAndBelowThreaded();
+//		List<IEntity> result = rootNode.getAllEntitiesInAndBelow();
+		return result;
 	}
 	
 	public int getEntityCount() {

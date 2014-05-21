@@ -220,7 +220,7 @@ public class OctreeTest {
 	public void octreeInsertSpeedAndValidityTest() {
 		getLogger().setLevel(Level.OFF);
 		
-		Octree octree = new Octree(new Vector3f(), 2000f, 4);
+		Octree octree = new Octree(new Vector3f(), 2000f, 7);
 		Random random = new Random();
 		final int entityCount = 10000;
 		List<IEntity> toAdd = new ArrayList<>();

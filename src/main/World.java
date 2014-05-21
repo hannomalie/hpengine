@@ -57,7 +57,7 @@ public class World {
 	public World() {
 		WebLookAndFeel.install();
 		renderer = new DeferredRenderer(light);
-		octree = new Octree(new Vector3f(), 400, 5);
+		octree = new Octree(new Vector3f(), 400, 6);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		this.loadDummies();
@@ -119,15 +119,15 @@ public class World {
 				}
 			}
 			
-			//List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
-//			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
-//			for (Model model : sponza) {
-////				model.setMaterial(stone);
-//				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), model.getMaterial(),  true);
-//				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-////				entity.setScale(scale);
-//				entities.add(entity);
-//			}
+//			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
+			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\sponza\\sponza.obj"));
+			for (Model model : sponza) {
+//				model.setMaterial(stone);
+				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), model.getMaterial(),  true);
+				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+//				entity.setScale(scale);
+				entities.add(entity);
+			}
 			
 		} catch (Exception e) {
 			e.printStackTrace();

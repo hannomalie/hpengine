@@ -467,7 +467,7 @@ public class DeferredRenderer implements Renderer {
 
 		buffer.draw();
 		
-		exitOnGLError("glDrawArrays in drawToQuad");
+//		exitOnGLError("glDrawArrays in drawToQuad");
 	}
 
 	public void destroy() {
