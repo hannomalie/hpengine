@@ -27,7 +27,9 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	
-  	vec3 color = texture2D(diffuseMap, st).xyz;
+  	vec4 colorAlpha = texture2D(diffuseMap, st); 
+  	vec3 color = colorAlpha.xyz;
+  	float alpha = colorAlpha.w;
   	vec3 specularColor = texture2D(specularMap, st).xyz;
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
 	vec4 normalAndDepth = texture2D(normalMap, st);
@@ -35,10 +37,11 @@ void main(void) {
 	float depth = normalAndDepth.w;
 	
 	float ao = 1;
+	//vec3 ssdo = vec3(0,0,0);
 	if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
 		vec3 N = normal;
 		float falloff = ambientOcclusionFalloff;
-		const float samples = 15;
+		const float samples = 16;
 		float invSamples = 1/samples;
 		
 		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
@@ -65,13 +68,18 @@ void main(void) {
 		
 		  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
 		  bl += step(falloff,depthDifference)*normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
+		  
+		  
+		  //vec3 occluderColor = texture2D(diffuseMap, se.xy).xyz;
+		  //ssdo += occluderColor;
 	
 	    }
 	    
 		ao = 1.0-totStrength*bl*invSamples;
+		//ssdo *= invSamples;
 	}
-	//ao = 1-ao;
-	vec3 ambientTerm = color * ambientColor * ao;
+
+	vec3 ambientTerm = (color * ambientColor * ao);// + ssdo * ao)/2;
 	out_color = vec4((ambientTerm + color * lightDiffuseSpecular.xyz + lightDiffuseSpecular.xyz*specularColor * lightDiffuseSpecular.w), 1);
-  	//out_color = vec4(lightDiffuseSpecular.w,lightDiffuseSpecular.w,lightDiffuseSpecular.w, 1);
+  	//out_color = vec4(alpha,alpha,alpha, 1);
 }
