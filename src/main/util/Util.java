@@ -4,8 +4,10 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,13 +55,15 @@ public class Util {
 	}
 	
 	private static main.util.Texture loadDefaultTexture() {
-		return Util.loadTexture("assets/textures/stone_diffuse.png");
+		return Util.loadTexture("assets/textures/default.dds");
 	}
+	
 
 	public static main.util.Texture loadTexture(String filename, boolean mipmap) {
 //		Texture texture = null;
 		main.util.Texture texture = null;
 		String extension = getFileExtension(filename).toUpperCase();
+		
 		try {
 //			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
 			texture = new main.util.TextureLoader().getTexture(filename);

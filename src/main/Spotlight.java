@@ -32,6 +32,8 @@ public class Spotlight implements IEntity {
 	private IEntity box;
 
 	private Vector3f color = new Vector3f(1,1,1);
+
+	private boolean selected;
 	
 	public Spotlight(boolean castsShadows) {
 		this.castsShadows = castsShadows;
@@ -197,6 +199,17 @@ public class Spotlight implements IEntity {
 
 	public void setColor(Vector3f color) {
 		this.color = color;
+	}
+
+
+	@Override
+	public boolean isSelected() {
+		return selected;
+	}
+
+	@Override
+	public void setSelected(boolean selected) {
+		this.selected = selected;
 	}
 
 }

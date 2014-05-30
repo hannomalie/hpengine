@@ -2,6 +2,9 @@ package main;
 
 import java.util.List;
 
+import main.shader.Program;
+import main.util.Util;
+
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -34,7 +37,7 @@ public class PointLight extends Entity {
 	}
 	
 	public PointLight(Renderer renderer, Model model, Vector3f position) {
-		super(renderer, model, position, new Material(renderer, "", "stone_diffuse.png"), false);
+		super(renderer, model, position, new Material(renderer, "", "default.dds"), false);
 	}
 
 	private void setName() {
@@ -68,6 +71,27 @@ public class PointLight extends Entity {
 		this.position = position;
 	}
 	
+	public void drawAsMesh(Program program) {
+		Matrix4f tempModel = calculateCurrentModelMatrixWithLowerScale(); 
+		tempModel.store(matrix44Buffer);
+		matrix44Buffer.flip();
+		super.draw(program);
+		modelMatrix.store(matrix44Buffer);
+		matrix44Buffer.flip();
+	}
+
+	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
+		Matrix4f temp = new Matrix4f();
+		Matrix4f.translate(position, temp, temp);
+		Matrix4f.mul(Util.toMatrix(getOrientation()), temp, temp);
+		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
+		return temp;
+	}
+	
+	public float getRadius() {
+		return scale.x;
+	}
+	
 	public static float[] convert(List<PointLight> list) {
 		final int elementsPerLight = 10;
 		int elementCount = list.size() * elementsPerLight;
@@ -90,5 +114,26 @@ public class PointLight extends Entity {
 			result[i+9] = light.getColor().z;
 		}
 		return result;
+	}
+
+	@Override
+	public boolean isInFrustum(Camera camera) {
+		Vector4f[] minMaxWorld = getMinMaxWorld();
+		Vector4f minWorld = minMaxWorld[0];
+		Vector4f maxWorld = minMaxWorld[1];
+		
+		Vector3f centerWorld = new Vector3f();
+		centerWorld.x = (maxWorld.x + minWorld.x)/2;
+		centerWorld.y = (maxWorld.y + minWorld.y)/2;
+		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+		
+		Vector3f distVector = new Vector3f();
+		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
+			return true;
+		}
+		return false;
 	}
 }

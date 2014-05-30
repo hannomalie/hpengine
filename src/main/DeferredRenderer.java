@@ -19,6 +19,7 @@ import main.shader.ComputeShaderProgram;
 import main.shader.Program;
 import main.util.CLUtil;
 import main.util.OBJLoader;
+import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -71,8 +72,8 @@ public class DeferredRenderer implements Renderer {
 	private VertexBuffer debugBuffer;
 
 	private static float MINLIGHTRADIUS = 0.5f;
-	private static float LIGHTRADIUSSCALE = 1f;
-	private static int MAXLIGHTS = 128;
+	private static float LIGHTRADIUSSCALE = 20f;
+	private static int MAXLIGHTS = 512;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -90,25 +91,19 @@ public class DeferredRenderer implements Renderer {
 			sphereModel = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
 			sphere = new Entity(this, sphereModel);
 			Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-			scale.scale(new Random().nextFloat()*10);
+			scale.scale(new Random().nextFloat()*20);
 			sphere.setScale(scale);
 			sphere.update(0);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		Random random = new Random();
+		Random randomGenerator = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
-			float randomFloatX = (random.nextFloat() -0.5f) * 20f;
-			float randomFloatY = (random.nextFloat() -0.5f) * 2;
-			float randomFloatZ = (random.nextFloat() -0.5f) * 20f;
-			Vector3f position = new Vector3f();
-			position.x += randomFloatX;
-			position.y -= randomFloatY;
-			position.z += randomFloatZ;
-			PointLight pointLight = new PointLight(this, sphereModel, position);
-			pointLight.setScale(MINLIGHTRADIUS + LIGHTRADIUSSCALE* random.nextFloat());
-			pointLight.setColor(new Vector4f(random.nextFloat(),random.nextFloat(),random.nextFloat(),random.nextFloat()));
+			float random = randomGenerator.nextFloat() * ( 1f - (-1f) );
+			PointLight pointLight = new PointLight(this, sphereModel, new Vector3f(i*randomGenerator.nextFloat()*4,0+random*i,i*randomGenerator.nextFloat()*4));
+			pointLight.setScale(MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat());
+			pointLight.setColor(new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1));
 			pointLights.add(pointLight);
 		}
 	}
@@ -140,7 +135,7 @@ public class DeferredRenderer implements Renderer {
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGB, 1);
+		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
 		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
 
@@ -243,9 +238,13 @@ public class DeferredRenderer implements Renderer {
 	
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
 
+		StopWatch.getInstance().start("First pass");
 		drawFirstPass(camera, octree);
+		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.getInstance().start("Second pass");
 		drawSecondPass(camera, light, pointLights);
-		combinePass(finalTarget, firstPassTarget, secondPassTarget);
+		StopWatch.getInstance().stopAndPrintMS();
+//		combinePass(finalTarget, firstPassTarget, secondPassTarget);
 //		openClTest(finalTarget);
 //		tiledDeferredPass(camera, light, pointLights);
 		
@@ -254,11 +253,13 @@ public class DeferredRenderer implements Renderer {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		StopWatch.getInstance().start("Draw to screen");
 		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
+		StopWatch.getInstance().stopAndPrintMS();
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(0), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -331,9 +332,11 @@ public class DeferredRenderer implements Renderer {
 		
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
-			// TODO: Use octree for culling
+			StopWatch.getInstance().start("Get visible from octree");
 			entities.addAll(octree.getVisible(camera));
-//			entities.addAll(octree.getEntities());
+			StopWatch.getInstance().stopAndPrintMS();
+			
+			entities.addAll(octree.getEntities());
 //			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
@@ -346,14 +349,19 @@ public class DeferredRenderer implements Renderer {
 			entities.addAll(octree.getEntities());
 		}
 
+		StopWatch.getInstance().start("Entities draw");
 		for (IEntity entity : entities) {
 			entity.draw(firstPassProgram);
+//			if (entity.isSelected()) {
+//				entity.drawDebug(firstPassProgram);
+//			}
 		}
+		StopWatch.getInstance().stopAndGetStringMS();
 		
 		if (World.DRAWLIGHTS_ENABLED) {
-			for (IEntity entity : pointLights) {
-				if (!entity.isInFrustum(camera)) { continue;}
-				entity.draw(firstPassProgram);
+			for (PointLight light : pointLights) {
+				if (!light.isInFrustum(camera)) { continue;}
+				light.drawAsMesh(firstPassProgram);
 			}	
 		}
 		
@@ -367,7 +375,8 @@ public class DeferredRenderer implements Renderer {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
-		secondPassTarget.use(false);
+		finalTarget.use(true);
+		//secondPassTarget.use(false);
 		//GL11.glClearColor(0.15f,0.15f,0.15f,0.15f); // ambient light
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
@@ -382,7 +391,13 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3));
-
+		
+		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
+		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+//		secondPassDirectionalProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
+//		secondPassDirectionalProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
+		secondPassDirectionalProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) HEIGHT);
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
@@ -403,9 +418,13 @@ public class DeferredRenderer implements Renderer {
 		
 		for (int i = 0 ; i < pointLights.size(); i++) {
 			PointLight light = pointLights.get(i);
+			if(!light.isInFrustum(camera)) {
+				continue;
+			}
+			
 			Vector3f distance = new Vector3f();
 			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
-			float lightRadius = light.getScale().x;
+			float lightRadius = light.getRadius();
 			
 			//TODO: Check this....
 			// camera is inside light range
@@ -424,7 +443,8 @@ public class DeferredRenderer implements Renderer {
 			secondPassPointProgram.setUniform("lightSpecular", light.getColor().x, light.getColor().y, light.getColor().z);
 			light.draw(secondPassPointProgram);
 		}
-		secondPassTarget.unuse();
+		//secondPassTarget.unuse();
+		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
 	}
 
@@ -436,8 +456,8 @@ public class DeferredRenderer implements Renderer {
 		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
-		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
+//		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
+//		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		
 		target.use(true);
@@ -558,8 +578,10 @@ public class DeferredRenderer implements Renderer {
 				entity.drawDebug(firstPassProgram);
 			}	
 		}
-
-		octree.drawDebug(this, camera, firstPassProgram);
+		
+		if (Octree.DRAW_LINES) {
+			octree.drawDebug(this, camera, firstPassProgram);	
+		}
 		
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);

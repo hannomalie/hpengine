@@ -34,7 +34,7 @@ in vec4 position_view;
 
 out vec4 out_DiffuseSpecular;
 
-vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
+vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
 //////////////////////
   //Pointlight currentLight = lights[currentLightIndex];
   //vec3 lightPosition = currentLight._position;
@@ -42,30 +42,27 @@ vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
   //vec3 lightSpecular = currentLight._specular;
   //float lightRadius = currentLight._specular;
 //////////////////////
-  vec3 light_position_eye = position_view.xyz;//(viewMatrix * vec4(lightPosition,1)).xyz;//vec3 (V * vec4 (lp, 1.0));
-  vec3 dist_to_light_eye = light_position_eye - p_eye;
+  vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
+  vec3 dist_to_light_eye = light_position_eye - position;
   vec3 direction_to_light_eye = normalize (dist_to_light_eye);
   
   // standard diffuse light
-  float dot_prod = max (dot (direction_to_light_eye,  n_eye), 0.0);
+  float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
   
   // standard specular light
-  vec3 reflection_eye = reflect (-direction_to_light_eye, n_eye);
-  vec3 surface_to_viewer_eye = normalize (-p_eye);
+  vec3 reflection_eye = reflect (-(viewMatrix * vec4(direction_to_light_eye, 0)).xyz, (viewMatrix * vec4(normal, 0)).xyz);
+  vec3 surface_to_viewer_eye = normalize (-(viewMatrix * vec4(normal, 0)).xyz);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = pow (dot_prod_specular, specular.w);
   
   // attenuation (fade out to sphere edges)
-  float dist_2d = length ((viewMatrix * vec4(lightPosition,1)).xyz - p_eye);
-  float distDivRadius = (dist_2d / lightRadius);
-  //if (distDivRadius > 1) {return vec3(distDivRadius,0,0);}
-  //float atten_factor = 1.0 / ((1+0.22*distDivRadius)*(1+0.20*distDivRadius*distDivRadius));
-  float atten_factor = clamp(1.0f - dist_2d/lightRadius, 0.0, 1.0);
-  //float atten_factor = -log (min (1.0, dist_2d / lightRadius));
-  //return vec3(atten_factor,atten_factor,atten_factor);
-  //return (Id/* + Is*/) * atten_factor;
-  return vec4(lightDiffuse*dot_prod*atten_factor, specular_factor * specular.x*atten_factor);
+  float dist = length (dist_to_light_eye);
+  float distDivRadius = (dist / lightRadius);
+  //float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+  float atten_factor = -log (min (1.0, distDivRadius));
+  //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
+  return vec4((color * vec4(lightDiffuse,1) * dot_prod * atten_factor + specular_factor * specular * color * atten_factor));
 }
 void main(void) {
 	
@@ -73,18 +70,19 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   
-	vec3 position = texture2D(positionMap, st).xyz;
+	vec3 positionView = texture2D(positionMap, st).xyz;
 	vec3 albedo = texture2D(diffuseMap, st).xyz;
 	
 	//skip background
-	if (position.z > -0.0001) {
-	  discard;
+	if (positionView.z > -0.0001) {
+	  //discard;
 	}
 	
-	vec3 normal = texture2D(normalMap, st).xyz;
+	vec3 normalView = texture2D(normalMap, st).xyz;
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
-	vec4 finalColor = phong(position.xyz, (normal).xyz, specular);
+	vec4 finalColor = phong(positionView, normalView, vec4(albedo,1), specular);
+	
 	out_DiffuseSpecular = finalColor;
 }

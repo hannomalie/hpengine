@@ -219,12 +219,12 @@ public class VertexBuffer {
 
 				min.x = position.x < min.x ? position.x : min.x;
 				min.y = position.y < min.y ? position.y : min.y;
-				min.z = position.z < min.z ? position.x : min.z;
+				min.z = position.z < min.z ? position.z : min.z;
 				min.w = 1;
 				
 				max.x = position.x > max.x ? position.x : max.x;
 				max.y = position.y > max.y ? position.y : max.y;
-				max.z = position.z > max.z ? position.x : max.z;
+				max.z = position.z > max.z ? position.z : max.z;
 				max.w = 1;
 			}
 			

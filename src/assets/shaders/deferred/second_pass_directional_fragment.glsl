@@ -17,40 +17,107 @@ uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
 
+uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
+
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
 
-vec4 phong (in vec3 p_eye, in vec3 n_eye, in vec4 specular) {
+vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   vec3 direction_to_light_eye = normalize((viewMatrix * vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
-  float dot_prod = max (dot (direction_to_light_eye,  n_eye), 0.0);
+  float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
   
   // standard specular light
-  vec3 reflection_eye = reflect (-direction_to_light_eye, n_eye);
-  vec3 surface_to_viewer_eye = normalize (-p_eye);
+  vec3 reflection_eye = reflect (-direction_to_light_eye, normal);
+  vec3 surface_to_viewer_eye = normalize (-position);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = pow (dot_prod_specular, specular.w);
   
-  return vec4(lightDiffuse * dot_prod, specular_factor * specular.x);
+  return vec4(color * vec4(lightDiffuse,1) * dot_prod + specular_factor * specular * color);
 }
+
+///////////////////// AO
+uniform bool useAmbientOcclusion = false;
+uniform float ambientOcclusionRadius = 0.006;
+uniform float ambientOcclusionTotalStrength = 0.38;
+uniform float ambientOcclusionStrength = 0.07;
+uniform float ambientOcclusionFalloff = 0.000002;
+
+const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+/////////////////////
+
 void main(void) {
 	
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   
-	vec3 position = texture2D(positionMap, st).xyz;
-	vec3 albedo = texture2D(diffuseMap, st).xyz;
+	vec3 positionView = texture2D(positionMap, st).xyz;
+	vec3 color = texture2D(diffuseMap, st).xyz;
 	
 	// skip background
-	if (position.z > -0.0001) {
+	if (positionView.z > -0.0001) {
 	  discard;
 	}
-	vec3 normal = texture2D(normalMap, st).xyz;
+	vec3 normalView = texture2D(normalMap, st).xyz;
+	float depth = texture2D(normalMap, st).w;
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = phong(position.xyz, normalize(normal).xyz, specular);
-	out_DiffuseSpecular = finalColor;
+	vec4 finalColor = vec4(color,1) * phong(positionView, normalView, vec4(color,1), specular);
+	
+	float ao = 1;
+	vec3 ssdo = vec3(0,0,0);
+	if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
+		vec3 N = normalView;
+		float falloff = ambientOcclusionFalloff;
+		const float samples = 16;
+		float invSamples = 1/samples;
+		
+		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
+		vec3 ep = vec3(st, depth);
+		float rad = ambientOcclusionRadius;
+		float radD = rad/depth;
+		float bl = 0.0f;
+		float occluderDepth, depthDifference, normDiff;
+		float totStrength = ambientOcclusionTotalStrength;
+		float strength = ambientOcclusionStrength;
+	
+	
+		for(int i=0; i<samples;++i) {
+		  vec3 ray = (viewMatrix *vec4(radD*reflect(pSphere[i],fres),0)).xyz;
+		  vec3 se = ep + sign(dot(ray,N) )*ray;
+		  vec4 occluderFragment = texture2D(normalMap,se.xy);
+		  vec3 occNorm = occluderFragment.xyz;
+		
+		  // Wenn die Diff der beiden Punkte negativ ist, ist der Verdecker hinter dem aktuellen Bildpunkt
+		  depthDifference = depth-occluderFragment.w;
+		
+		  // Berechne die Differenz der beiden Normalen als ein Gewicht
+		  float dotProd = dot(occNorm,N);
+		  normDiff = (1.0-dotProd);
+		
+		  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
+		  bl += step(falloff,depthDifference)*normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
+		  
+		  
+		  
+		  vec3 occluderColor = texture2D(diffuseMap, se.xy).xyz;
+		  float dotProdSSDO = dot((viewMatrix * vec4(lightDirection, 0)).xyz, occNorm);
+		  vec3 occluderLit = occluderColor * dotProdSSDO * lightDiffuse;
+		  ssdo += occluderLit * dotProd;
+	
+	    }
+	    
+		ao = 1.0-totStrength*bl*invSamples;
+		ssdo *= ao;
+	}
+	
+	
+	vec4 ambientTerm = vec4((color * ambientColor * ao), 0);
+	out_DiffuseSpecular = finalColor + ambientTerm;//+ vec4(ssdo,1);
 }

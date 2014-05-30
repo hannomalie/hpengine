@@ -1,4 +1,4 @@
-package main.util;
+package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
@@ -21,13 +21,17 @@ import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeSelectionModel;
 
 import main.DeferredRenderer;
 import main.IEntity;
 import main.Material;
 import main.PointLight;
 import main.World;
+import main.octree.Octree;
 import main.octree.Octree.Node;
+import main.util.Texture;
+import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.util.vector.Vector3f;
 
@@ -36,12 +40,16 @@ import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.slider.WebSlider;
+import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.utils.ImageUtils;
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
 
 
 public class DebugFrame {
 
 	private JFrame mainFrame = new JFrame();
+	private WebTabbedPane tabbedPane = new WebTabbedPane();
+	
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane lightsPane = new JScrollPane();
@@ -53,12 +61,12 @@ public class DebugFrame {
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
+	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
-	WebSlider ambientOcclusionFalloff = new WebSlider ( WebSlider.HORIZONTAL );
+
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
-	WebSlider ambientOcclusionStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
 	WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
 
@@ -211,19 +219,24 @@ public class DebugFrame {
 		toggleDrawLines.addActionListener(e -> {
 			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
 		});
+		
+		toggleDrawOctree.addActionListener(e -> {
+			Octree.DRAW_LINES = !Octree.DRAW_LINES;
+		});
 
 		toggleDebugFrame.addActionListener(e -> {
 			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
 		});
-		
+
 		toggleDrawLights.addActionListener(e -> {
 			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
 		});
+
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
 	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
 	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
 	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
-	    ambientOcclusionRadiusSlider.setValue(100);
+	    ambientOcclusionRadiusSlider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * 10000f));
 	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
 	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
 	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
@@ -232,8 +245,8 @@ public class DebugFrame {
 			public void stateChanged(ChangeEvent e) {
 				WebSlider slider = (WebSlider) e.getSource();
 				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 100;
-				World.AMBIENTOCCLUSION_RADIUS = World.AMBIENTOCCLUSION_FACTOR * valueAsFactor;
+				float valueAsFactor = ((float) value) / 10000;
+				World.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
 			}
 		});
 
@@ -241,7 +254,7 @@ public class DebugFrame {
 	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
 	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
 	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-	    ambientOcclusionTotalStrengthSlider.setValue(38);
+	    ambientOcclusionTotalStrengthSlider.setValue((int) (World.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
 	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
 	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
 	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
@@ -255,43 +268,8 @@ public class DebugFrame {
 			}
 		});
 
-	    ambientOcclusionStrengthSlider.setMinimum ( 0 );
-	    ambientOcclusionStrengthSlider.setMaximum ( 100 );
-	    ambientOcclusionStrengthSlider.setMinorTickSpacing ( 10 );
-	    ambientOcclusionStrengthSlider.setMajorTickSpacing ( 20 );
-	    ambientOcclusionStrengthSlider.setValue(7);
-	    ambientOcclusionStrengthSlider.setPaintTicks ( true );
-	    ambientOcclusionStrengthSlider.setPaintLabels ( true );
-	    ambientOcclusionStrengthSlider.addChangeListener(new ChangeListener() {
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 1000;
-				World.AMBIENTOCCLUSION_STRENGTH = valueAsFactor;
-			}
-		});
-	    
-	    ambientOcclusionFalloff.setMinimum ( 0 );
-	    ambientOcclusionFalloff.setMaximum ( 100 );
-	    ambientOcclusionFalloff.setMinorTickSpacing ( 10 );
-	    ambientOcclusionFalloff.setMajorTickSpacing ( 20 );
-	    ambientOcclusionFalloff.setValue(7);
-	    ambientOcclusionFalloff.setPaintTicks ( true );
-	    ambientOcclusionFalloff.setPaintLabels ( true );
-	    ambientOcclusionFalloff.addChangeListener(new ChangeListener() {
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 10000000;
-				World.AMBIENTOCCLUSION_FALLOFF = valueAsFactor;
-			}
-		});
-	    
 		buttonPanel.add(toggleDrawLines);
+		buttonPanel.add(toggleDrawOctree);
 		buttonPanel.add(toggleDebugFrame);
 		buttonPanel.add(toggleDrawLights);
 		buttonPanel.add(new WebLabel("Direcitonal Light Dir:"));
@@ -338,10 +316,13 @@ public class DebugFrame {
 		buttonPanel.setSize(200, 200);
 
 //		mainFrame.add(materialPane);
-		mainFrame.add(buttonPanel, BorderLayout.PAGE_START);
-		mainFrame.add(texturePane, BorderLayout.LINE_START);
-		mainFrame.add(lightsPane, BorderLayout.PAGE_END);
-		mainFrame.add(scenePane, BorderLayout.CENTER);
+		mainFrame.add(tabbedPane);
+		
+		tabbedPane.addTab("Main", buttonPanel);
+		tabbedPane.addTab("Scene", scenePane);
+		tabbedPane.addTab("Texture", texturePane);
+		tabbedPane.addTab("Light", lightsPane);
+		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
@@ -370,6 +351,7 @@ public class DebugFrame {
 		}
 		
 		scene = new JTree(top);
+		new SetSelectedListener(scene);
 	}
 	
 	private void addOctreeSceneObjects(World world) {
@@ -378,10 +360,11 @@ public class DebugFrame {
 		
 		addOctreeChildren(top, world.octree.rootNode);
 		sceneOctree = new JTree(top);
+		new SetSelectedListener(sceneOctree);
 	}
 	
 	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {
-		DefaultMutableTreeNode current = new DefaultMutableTreeNode("Node @ " + node.getCenter() + " " + node.getSize());
+		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node);
 		parent.add(current);
 		if(node.hasChildren()) {
 			for(int i = 0; i < 8; i++) {
@@ -390,7 +373,7 @@ public class DebugFrame {
 		}
 		
 		for (IEntity entitiy : node.entities) {
-			current.add(new DefaultMutableTreeNode(entitiy.getName() + " @ " + entitiy.getPosition() + " scale " + entitiy.getScale()));
+			current.add(new DefaultMutableTreeNode(entitiy));
 		}
 		
 		if (node.hasChildren() && node.entities.size() > 0) {

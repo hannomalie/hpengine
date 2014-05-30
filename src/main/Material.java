@@ -96,20 +96,20 @@ public class Material implements IEntity {
 	
 	private void addTexture(MAP map, String path, main.util.Texture texture) {
 		if (TEXTURES.containsKey(path)) {
-			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
+//			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 		} else {
 			TEXTURES.put(path, texture);
-			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
+//			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 		}
 		textures.put(map, path);
 	}
 	public void loadAndAddTexture(MAP map, String path) {
 		if (TEXTURES.containsKey(path)) {
-			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
+//			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
 		} else {
 			main.util.Texture texture = Util.loadTexture(path);
 			TEXTURES.put(path, texture);
-			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
+//			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
 		}
 		textures.put(map, path);
 		
@@ -226,5 +226,15 @@ public class Material implements IEntity {
 	}
 	public void setSpecularCoefficient(float specularCoefficient) {
 		this.specularCoefficient = specularCoefficient;
+	}
+	
+
+	@Override
+	public boolean isSelected() {
+		return false;
+	}
+
+	@Override
+	public void setSelected(boolean selected) {
 	}
 }

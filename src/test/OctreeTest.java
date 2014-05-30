@@ -20,6 +20,7 @@ import main.octree.Octree;
 import main.octree.Octree.Node;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
@@ -28,10 +29,10 @@ import org.lwjgl.util.vector.Vector4f;
 import com.sun.javafx.geom.CubicApproximator;
 
 public class OctreeTest {
-	Renderer renderer;
+	static Renderer renderer;
 	
-	@Before
-	public void init() {
+	@BeforeClass
+	public static void init() {
 		renderer = new DeferredRenderer(new Spotlight(true));
 	}
 	
@@ -83,27 +84,18 @@ public class OctreeTest {
 	public void singleNodeOctree() {
 		IEntity entity = new IEntity() {
 			
-			@Override
-			public Vector3f getPosition() {
-				return null;
-			}
-			@Override
-			public String getName() {
-				return null;
-			}
-			@Override
-			public Material getMaterial() {
-				return null;
-			}
-			@Override
-			public void destroy() {
-			}
+			@Override public Vector3f getPosition() { return null; }
+			@Override public String getName() { return null; }
+			@Override public Material getMaterial() { return null; }
+			@Override public void destroy() { }
 			@Override
 			public Vector4f[] getMinMaxWorld() {
 				return new Vector4f[] {
 						new Vector4f(-10, -10, -10, 0),
 						new Vector4f(10, 10, 10, 0)};
 			}
+			@Override public boolean isSelected() { return false; }
+			@Override public void setSelected(boolean selected) { }
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 0);
@@ -149,6 +141,8 @@ public class OctreeTest {
 				}
 				return false;
 			}
+			@Override public boolean isSelected() { return false; }
+			@Override public void setSelected(boolean selected) { }
 		};
 		IEntity entityTopRightFront = new IEntity() {
 			
@@ -182,6 +176,8 @@ public class OctreeTest {
 				}
 				return false;
 			}
+			@Override public boolean isSelected() { return false; }
+			@Override public void setSelected(boolean selected) { }
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
@@ -250,6 +246,8 @@ public class OctreeTest {
 									new Vector4f(Math.min(rX1, rX2), Math.min(rY1, rY2), Math.min(rZ1, rZ2), 0),
 									new Vector4f(Math.max(rX1, rX2), Math.max(rY1, rY2), Math.max(rZ1, rZ2), 0)};
 				}
+				@Override public boolean isSelected() { return false; }
+				@Override public void setSelected(boolean selected) { }
 			};
 //			octree.insert(entity);
 			toAdd.add(entity);

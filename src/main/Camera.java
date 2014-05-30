@@ -48,6 +48,8 @@ public class Camera implements IEntity {
 	private Vector3f back = new Vector3f(0, 0, 1);
 
 	private Frustum frustum;
+
+	private boolean selected;
 	
 	public Camera(Renderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 400f));
@@ -279,6 +281,16 @@ public class Camera implements IEntity {
 	}
 	public FloatBuffer getViewMatrixAsBuffer() {
 		return viewMatrixBuffer.asReadOnlyBuffer();
+	}
+
+	@Override
+	public boolean isSelected() {
+		return selected;
+	}
+
+	@Override
+	public void setSelected(boolean selected) {
+		this.selected = selected;
 	}
 
 }

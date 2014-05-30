@@ -2,6 +2,7 @@ package main;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -45,17 +46,20 @@ public class Entity implements IEntity {
 	protected int modelMatrixLocation = 0;
 	protected Vector3f position = null;
 	protected Vector3f scale = new Vector3f(1,1,1);
-	private Material material;
+	transient private Material material;
 
 	protected VertexBuffer vertexBuffer;
 
 	public boolean castsShadows = false;
 
-	protected String name;
+	protected String name = "Entity_" + System.currentTimeMillis();
 
 	private Quaternion orientation = new Quaternion();
 
-	public Entity() {}
+	private boolean selected;
+
+	public Entity() {
+	}
 	
 	public Entity(Renderer renderer, Model model) {
 		this(renderer, model, new Vector3f(0, 0, 0),
@@ -92,7 +96,7 @@ public class Entity implements IEntity {
 		List<Vector3f> normalsTemp = model.getNormals();
 		List<Face> facesTemp = model.getFaces();
 		
-		LOGGER.log(Level.INFO, String.format("Faces: %d", facesTemp.size()));
+//		LOGGER.log(Level.INFO, String.format("Faces: %d", facesTemp.size()));
 		
 		List<Float> values = new ArrayList<Float>();
 		
@@ -155,7 +159,7 @@ public class Entity implements IEntity {
 			
 		}
 
-		LOGGER.log(Level.INFO, String.format("Values: %d", values.size()));
+//		LOGGER.log(Level.INFO, String.format("Values: %d", values.size()));
 		
 		FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(values.size() * 4);
 		float[] floatArray = new float[values.size()];
@@ -167,7 +171,7 @@ public class Entity implements IEntity {
 		verticesFloatBuffer.put(floatArray);
 		verticesFloatBuffer.rewind();
 
-		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
+//		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
@@ -202,9 +206,9 @@ public class Entity implements IEntity {
 
 	private Matrix4f calculateCurrentModelMatrix() {
 		modelMatrix = new Matrix4f();
-		Matrix4f.scale(scale, modelMatrix, modelMatrix);
-		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
+		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
+		Matrix4f.scale(scale, modelMatrix, modelMatrix);
 		
 		return modelMatrix;
 	}
@@ -341,7 +345,9 @@ public class Entity implements IEntity {
 		Vector4f minView = new Vector4f(0,0,0,1);
 		Vector4f maxView = new Vector4f(0,0,0,1);
 		
-		Matrix4f.transform(getModelMatrix(), minMax[0], minView);
+		Matrix4f modelMatrix = getModelMatrix();
+		
+		Matrix4f.transform(modelMatrix, minMax[0], minView);
 		Matrix4f.transform(getModelMatrix(), minMax[1], maxView);
 
 		minView.w = 0;
@@ -349,5 +355,15 @@ public class Entity implements IEntity {
 		minMax = new Vector4f[] {minView, maxView};
 		
 		return minMax;
+	}
+
+	@Override
+	public boolean isSelected() {
+		return selected;
+	}
+
+	@Override
+	public void setSelected(boolean selected) {
+		this.selected = selected;
 	}
 }

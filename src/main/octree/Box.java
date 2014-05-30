@@ -99,9 +99,9 @@ public class Box {
 		centerWorld.y = (maxWorld.y + minWorld.y)/2;
 		centerWorld.z = (maxWorld.z + minWorld.z)/2;
 		
-		Vector3f distVector = new Vector3f();
-		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+//		Vector3f distVector = new Vector3f();
+//		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
+//						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
 //		if (camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
 //			camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {

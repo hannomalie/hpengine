@@ -70,8 +70,8 @@ public class VertexBufferTest {
 		
 		Vector4f[] minMax = buffer.getMinMax();
 
-		Assert.assertEquals(new Vector4f(-1, -1, 0, 0), minMax[0]);
-		Assert.assertEquals(new Vector4f(1, 1, 0, 0), minMax[1]);
+		Assert.assertEquals(new Vector4f(-1, -1, 0, 1), minMax[0]);
+		Assert.assertEquals(new Vector4f(1, 1, 0, 1), minMax[1]);
 	}
 
 

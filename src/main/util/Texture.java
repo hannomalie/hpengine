@@ -1,5 +1,9 @@
 package main.util;
 
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -15,7 +19,7 @@ import org.lwjgl.opengl.GL11;
  * @author Kevin Glass
  * @author Brian Matzon
  */
-public class Texture {
+public class Texture implements Serializable {
     /** The GL target type */
     private int target; 
     /** The GL texture ID */
@@ -32,6 +36,12 @@ public class Texture {
     private float widthRatio;
     /** The ratio of the height of the image to the texture */
     private float heightRatio;
+    
+	private byte[] data;
+	private int dstPixelFormat;
+	private int srcPixelFormat;
+	private int minFilter;
+	private int magFilter;
     
     /**
      * Create a new texture
@@ -148,4 +158,75 @@ public class Texture {
             widthRatio = ((float) width)/texWidth;
         }
     }
+
+	public void setData(byte[] data) {
+		this.data = data;
+	}
+
+	public void setDstPixelFormat(int dstPixelFormat) {
+		this.dstPixelFormat = dstPixelFormat;
+	}
+
+	public void setSrcPixelFormat(int srcPixelFormat) {
+		this.srcPixelFormat = srcPixelFormat;
+	}
+	
+    /**
+     * Get the closest greater power of 2 to the fold number
+     * 
+     * @param fold The target number
+     * @return The power of 2
+     */
+    private int get2Fold(int fold) {
+        int ret = 2;
+        while (ret < fold) {
+            ret *= 2;
+        }
+        return ret;
+    }
+
+	public ByteBuffer buffer() {
+		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
+		imageBuffer = ByteBuffer.allocateDirect(data.length);
+		imageBuffer.order(ByteOrder.nativeOrder());
+		imageBuffer.put(data, 0, data.length);
+		imageBuffer.flip();
+		return imageBuffer;
+	}
+
+	public void upload() {
+		upload(buffer());
+	}
+	
+	public void upload(ByteBuffer textureBuffer) {
+
+        bind();
+        if (target == GL11.GL_TEXTURE_2D) 
+        { 
+            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
+            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
+        } 
+ 
+        GL11.glTexImage2D(target, 
+                      0, 
+                      dstPixelFormat, 
+                      get2Fold(getImageWidth()), 
+                      get2Fold(getImageHeight()), 
+                      0, 
+                      srcPixelFormat, 
+                      GL11.GL_UNSIGNED_BYTE, 
+                      textureBuffer);
+	}
+
+	public void setMinFilter(int minFilter) {
+		this.minFilter = minFilter;
+	}
+
+	public void setMagFilter(int magFilter) {
+		this.magFilter = magFilter;
+	}
+
+	public byte[] getData() {
+		return data;
+	}
 }

@@ -10,17 +10,19 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.octree.Octree;
-import main.util.DebugFrame;
 import main.util.OBJLoader;
+import main.util.gui.DebugFrame;
+import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.laf.WebLookAndFeel;
+import com.sun.prism.paint.Stop;
 
 public class World {
-
+	public static final String WORKDIR_NAME = "hp";
 
 	private static Logger LOGGER = getLogger();
 
@@ -35,14 +37,12 @@ public class World {
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
-	public static float AMBIENTOCCLUSION_STRENGTH = 0.07f;
-	//public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.38f;
-	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 2f;
-	public static float AMBIENTOCCLUSION_FACTOR = 0.006f;
-	public static float AMBIENTOCCLUSION_RADIUS = 0.006f;
-	public static float AMBIENTOCCLUSION_FALLOFF = 0.0000012f;
+//	public static float AMBIENTOCCLUSION_STRENGTH = 0.07f;
+	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
+	public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
+//	public static float AMBIENTOCCLUSION_FALLOFF = 0.0000012f;
 
-	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.2f, 0.2f,0.2f);
+	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
 	public static void main(String[] args) {
 
@@ -53,18 +53,28 @@ public class World {
 
 	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 20;
+	private int entityCount = 5;
 	public Renderer renderer;
 	private Camera camera;
 	
 	public World() {
 		WebLookAndFeel.install();
+		initWorkDir();
 		renderer = new DeferredRenderer(light);
 		octree = new Octree(new Vector3f(), 400, 6);
 		camera = new Camera(renderer);
 		light.init(renderer);
-		this.loadDummies();
+		loadDummies();
 		octree.insert(entities);
+	}
+
+	private void initWorkDir() {
+		File theDir = new File(WORKDIR_NAME);
+
+		// if the directory does not exist, create it
+		if (!theDir.exists()) {
+			boolean result = theDir.mkdir();
+		}
 	}
 	
 	public void simulate() {
@@ -73,10 +83,9 @@ public class World {
 			this.loopCycle(renderer.getElapsedSeconds());
 //			Display.sync(60);
 
-//			long millisecondsStart = System.currentTimeMillis();
+			StopWatch.getInstance().start("Display update");
 			Display.update();
-//			long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
-//			LOGGER.log(Level.INFO, String.format("%d ms for display update", timeSpentInMilliseconds));
+			StopWatch.getInstance().stopAndPrintMS();
 		}
 		
 		destroy();
@@ -101,6 +110,8 @@ public class World {
 		Material wood = new Material(renderer, "", "wood_diffuse.png", "wood_normal.png",
 												"wood_specular.png", "wood_occlusion.png",
 												"wood_height.png");
+
+		StopWatch.getInstance().start("Load Dummies");
 		try {
 			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
@@ -111,7 +122,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() * ( 1f - (-1f) ));
-						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*2,0-random*i+j,j*2), mat, true);
+						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*10,0-random*i+j,j*10), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
@@ -131,6 +142,8 @@ public class World {
 //				entity.setScale(scale);
 				entities.add(entity);
 			}
+
+			StopWatch.getInstance().stopAndPrintMS();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -141,7 +154,7 @@ public class World {
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 	private void update(float seconds) {
 
-//		long start = System.currentTimeMillis();
+		StopWatch.getInstance().start("Controls update");
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
 			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed());
 		}
@@ -159,24 +172,24 @@ public class World {
 //			float random = (float) (Math.random() -1f );
 //			entity.getPosition().x += 0.01 * random;
 //		}
-//		System.out.println("Controls update: " + (System.currentTimeMillis() - start) + " ms");
-//		start = System.currentTimeMillis();
+		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.getInstance().start("Renderer update");
 		renderer.update(seconds);
-//		System.out.println("Renderer update: " + (System.currentTimeMillis() - start) + " ms");
-//		start = System.currentTimeMillis();
+		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);
-//		System.out.println("camera update: " + (System.currentTimeMillis() - start) + " ms");
-//		start = System.currentTimeMillis();
+		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.getInstance().start("Light update");
 		light.update(seconds);
-//		System.out.println("light update: " + (System.currentTimeMillis() - start) + " ms");
+		StopWatch.getInstance().stopAndPrintMS();
 
-//		long start = System.currentTimeMillis();
+		StopWatch.getInstance().start("Entities update");
 		 for (IEntity entity: entities) {
 		 entity.update(seconds);
 		 }
 //		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
 //		fjpool.invoke(task);
-//		System.out.println("Parallel processing time: " + (System.currentTimeMillis() - start) + " ms");
+		StopWatch.getInstance().stopAndPrintMS();
 
 		Renderer.exitOnGLError("update");
 	}
@@ -216,14 +229,15 @@ public class World {
 	}
 	
 	private void draw() {
-//		long millisecondsStart = System.currentTimeMillis();
+
+		StopWatch.getInstance().start("Draw");
 		if (DRAWLINES_ENABLED) {
 			renderer.drawDebug(camera, octree, entities, light);
 		} else {
 			renderer.draw(camera, octree, entities, light);
 		}
-//		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
-//		LOGGER.log(Level.INFO, String.format("%d ms for rendering", timeSpentInMilliseconds));
+
+		StopWatch.getInstance().stopAndPrintMS();
 
 		Renderer.exitOnGLError("draw in render");
 		

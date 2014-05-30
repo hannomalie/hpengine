@@ -12,8 +12,12 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -22,6 +26,9 @@ import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.imageio.ImageIO;
+
+import main.DeferredRenderer;
+import main.World;
 
 import org.lwjgl.opengl.GL11;
 
@@ -106,7 +113,7 @@ public class TextureLoader {
         
         return tex;
     }
-    
+
     public Texture getTextureAsStream(String resourceName) throws IOException {
     	Texture tex = (Texture) table.get(resourceName);
         
@@ -161,6 +168,8 @@ public class TextureLoader {
         } 
         texture.setWidth(bufferedImage.getWidth());
         texture.setHeight(bufferedImage.getHeight());
+        texture.setMinFilter(minFilter);
+        texture.setMagFilter(magFilter);
         
         if (bufferedImage.getColorModel().hasAlpha()) {
             srcPixelFormat = GL11.GL_RGBA;
@@ -168,25 +177,13 @@ public class TextureLoader {
             srcPixelFormat = GL11.GL_RGB;
         }
 
-        // convert that image into a byte buffer of texture data 
-        ByteBuffer textureBuffer = convertImageData(bufferedImage,texture); 
+        texture.setDstPixelFormat(dstPixelFormat);
+        texture.setSrcPixelFormat(srcPixelFormat);
         
-        if (target == GL11.GL_TEXTURE_2D) 
-        { 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
-        } 
- 
-        // produce a texture from the byte buffer
-        GL11.glTexImage2D(target, 
-                      0, 
-                      dstPixelFormat, 
-                      get2Fold(bufferedImage.getWidth()), 
-                      get2Fold(bufferedImage.getHeight()), 
-                      0, 
-                      srcPixelFormat, 
-                      GL11.GL_UNSIGNED_BYTE, 
-                      textureBuffer ); 
+        // convert that image into a byte buffer of texture data 
+        ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
+        
+        texture.upload(textureBuffer);
         
         return texture; 
     } 
@@ -252,12 +249,14 @@ public class TextureLoader {
         // that be used by OpenGL to produce a texture.
         byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
 
-        imageBuffer = ByteBuffer.allocateDirect(data.length); 
-        imageBuffer.order(ByteOrder.nativeOrder()); 
-        imageBuffer.put(data, 0, data.length); 
-        imageBuffer.flip();
+        texture.setData(data);
         
-        return imageBuffer; 
+        return texture.buffer();
+//        imageBuffer = ByteBuffer.allocateDirect(data.length); 
+//        imageBuffer.order(ByteOrder.nativeOrder()); 
+//        imageBuffer.put(data, 0, data.length); 
+//        imageBuffer.flip();
+//        return imageBuffer; 
     } 
     
     /** 

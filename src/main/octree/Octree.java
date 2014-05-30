@@ -35,6 +35,8 @@ public class Octree {
 	private static Matrix4f modelMatrix = new Matrix4f();
 	
 	public static final float defaultSize = 1000;
+
+	public static boolean DRAW_LINES = false;
 	public int maxDeepness;
 
 	private int currentDeepness = 0;
