@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.DataChannels;
+import main.Entity;
 import main.Renderer;
 import main.util.Util;
 
@@ -21,6 +22,8 @@ import org.lwjgl.util.vector.Vector3f;
 public class Program {
 	private static Logger LOGGER = getLogger();
 	
+	public static HashMap<Integer, Program> LIBRARY = new HashMap<>();
+	
 	private int id;
 	private int vertexShaderId = 0;
 	private int geometryShaderId = 0;
@@ -31,15 +34,25 @@ public class Program {
 	private HashMap<String, Uniform> uniforms = new HashMap<>();
 
 	private boolean needsTextures = true;
+	private String definesString;
+	private String geometryShaderLocation;
+	private String vertexShaderLocation;
+	private String fragmentShaderLocation;
 
 	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
 		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, true);
 	}
-	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
+
+	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, String definesString, boolean needsTextures) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
+		this.definesString = definesString;
+		this.geometryShaderLocation = geometryShaderLocation;
+		this.vertexShaderLocation = vertexShaderLocation;
+		this.fragmentShaderLocation = fragmentShaderLocation;
+		
 		vertexShaderId = Program.loadShader(vertexShaderLocation, GL20.GL_VERTEX_SHADER);
-		fragmentShaderId = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER);
+		fragmentShaderId = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER, definesString);
 		id = GL20.glCreateProgram();
 		GL20.glAttachShader(id, vertexShaderId);
 		GL20.glAttachShader(id, fragmentShaderId);
@@ -53,6 +66,45 @@ public class Program {
 		GL20.glValidateProgram(id);
 		
 		use();
+		LIBRARY.put(hashCode(), this);
+	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof Program) || other == null) {
+			return false;
+		}
+		
+		Program otherProgram = (Program) other;
+		
+		if (this.channels == otherProgram.channels &&
+			this.needsTextures == otherProgram.needsTextures &&
+			this.definesString == otherProgram.definesString &&
+			this.geometryShaderLocation == otherProgram.geometryShaderLocation &&
+			this.vertexShaderLocation == otherProgram.vertexShaderLocation &&
+			this.fragmentShaderLocation == otherProgram.fragmentShaderLocation) {
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		int hash = 0;
+		hash += (channels != null? channels.hashCode() : 0);
+		hash += (geometryShaderLocation != null? geometryShaderLocation.hashCode() : 0);
+		hash += (vertexShaderLocation != null? vertexShaderLocation.hashCode() : 0);
+		hash += (fragmentShaderLocation != null? fragmentShaderLocation.hashCode() : 0);
+		hash += (definesString != null? definesString.hashCode() : 0);
+		return hash;
+	};
+	
+	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
+		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, null, needsTextures);
+	}
+	
+	public static Program firstPassProgramForDefines(String definesString) {
+		return new Program(null, "/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, definesString, true);
 	}
 
 	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
@@ -99,11 +151,15 @@ public class Program {
 		this.fragmentShaderId = fragmentShaderId;
 	}
 
-	public static int loadShader(String filename, int type) {
+	public static int loadShader(String filename, int type, String mapDefinesString) {
 		String shaderSource;
 		int shaderID = 0;
 		
-		shaderSource = Util.loadAsTextFile(filename);
+		shaderSource = mapDefinesString;
+		if (shaderSource == null) {
+			shaderSource = "";
+		}
+		shaderSource += Util.loadAsTextFile(filename);
 		
 		shaderID = GL20.glCreateShader(type);
 		GL20.glShaderSource(shaderID, shaderSource);
@@ -118,6 +174,10 @@ public class Program {
 		Renderer.exitOnGLError("loadShader");
 		
 		return shaderID;
+	}
+	
+	public static int loadShader(String filename, int type) {
+		return loadShader(filename, type, "");
 	}
 
 	public boolean needsTextures() {

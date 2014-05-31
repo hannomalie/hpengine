@@ -61,7 +61,7 @@ public class World {
 		WebLookAndFeel.install();
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
-		octree = new Octree(new Vector3f(), 400, 6);
+		octree = new Octree(new Vector3f(), 400, 4);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		loadDummies();

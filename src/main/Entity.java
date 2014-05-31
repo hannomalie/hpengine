@@ -186,9 +186,24 @@ public class Entity implements IEntity {
 	}
 
 	@Override
-	public void draw(Program program) {
-		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-		material.setTexturesActive(program);
+	public void draw(Renderer renderer, Camera camera) {
+		Program firstPassProgram = material.getFirstPassProgram();
+		if (firstPassProgram == null) {
+			return;
+		}
+		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
+			firstPassProgram.use();
+			renderer.setLastUsedProgram(firstPassProgram);
+		}
+		
+		firstPassProgram.setUniform("useParallax", World.useParallax);
+		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+		
+		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		material.setTexturesActive(firstPassProgram);
 		vertexBuffer.draw();
 
 //		material.setTexturesInactive();

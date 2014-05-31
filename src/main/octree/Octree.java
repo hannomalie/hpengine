@@ -200,16 +200,14 @@ public class Octree {
 			return aabb.isInFrustum(camera);
 		}
 		
-		private List<IEntity> getAllEntitiesInAndBelow() {
+		private void getAllEntitiesInAndBelow(List<IEntity> result) {
 			
-			List<IEntity> result = new ArrayList<IEntity>();
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {
-					result.addAll(children[i].getAllEntitiesInAndBelow());
+					children[i].getAllEntitiesInAndBelow(result);
 				}	
 			}
 			result.addAll(entities);
-			return result;
 		}
 		
 
@@ -251,7 +249,8 @@ public class Octree {
 			  @Override
 			  public List<IEntity> call() {
 					List<IEntity> result = new ArrayList<IEntity>();
-					result.addAll(node.getAllEntitiesInAndBelow());
+//					result.addAll(node.getAllEntitiesInAndBelow());
+				  	node.getAllEntitiesInAndBelow(result);
 					return result;
 			  }
 		}

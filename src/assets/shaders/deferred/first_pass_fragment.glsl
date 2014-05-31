@@ -77,10 +77,11 @@ void main(void) {
 	
 	vec3 V = normalize(eyeVec);
 	vec2 UV = texCoord;
-	if (hasNormalMap) {
+
+#ifdef use_normalMap
 		UV.x = texCoord.x * normalMapWidth;
 		UV.y = texCoord.y * normalMapHeight;
-	}
+#endif
 	
 	if (useParallax) {
 		float height = texture2D(heightMap, UV).r;
@@ -106,9 +107,10 @@ void main(void) {
 	// NORMAL
 	vec3 N = normal_world;
 	vec3 PN = N;
-	if (hasNormalMap) {
+
+#ifdef use_normalMap
 		PN = normalize((vec4(perturb_normal(PN, eyeVec, UV), 0)).xyz);
-	}
+#endif
 	
 	vec3 PN_view = (viewMatrix *vec4(PN, 0)).xyz;
 	out_position = viewMatrix * position_world;
@@ -116,21 +118,24 @@ void main(void) {
 	out_normal = vec4(PN_view, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
-	if (hasDiffuseMap) {
+
+#ifdef use_diffuseMap
 		UV = texCoord;
 		UV.x = texCoord.x * diffuseMapWidth;
 		UV.y = texCoord.y * diffuseMapHeight;
 		color = texture2D(diffuseMap, UV);
-	}
+#endif
+	
 	out_albedo = color;
 	
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
-	if (hasSpecularMap) {
+
+#ifdef use_specularMap
 		UV = texCoord;
 		UV.x = texCoord.x * specularMapWidth;
 		UV.y = texCoord.y * specularMapHeight;
 		vec3 specularSample = texture2D(specularMap, UV).xyz;
 		specularColor = vec4(specularSample, materialSpecularCoefficient);
-	}
+#endif
 	out_specular = specularColor;
 }

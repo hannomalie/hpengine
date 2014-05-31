@@ -71,13 +71,18 @@ public class PointLight extends Entity {
 		this.position = position;
 	}
 	
-	public void drawAsMesh(Program program) {
+	public void drawAsMesh(Renderer renderer, Camera camera) {
 		Matrix4f tempModel = calculateCurrentModelMatrixWithLowerScale(); 
 		tempModel.store(matrix44Buffer);
 		matrix44Buffer.flip();
-		super.draw(program);
+		super.draw(renderer, camera);
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
+	}
+	
+	public void draw(Renderer renderer, Program program) {
+		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		vertexBuffer.draw();
 	}
 
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {

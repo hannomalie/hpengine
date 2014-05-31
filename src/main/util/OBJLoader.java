@@ -103,8 +103,8 @@ public class OBJLoader {
         BufferedReader reader = new BufferedReader(new FileReader(f));
         List<Model> models = new ArrayList<>();
         Model model = null;// = new Model();
-        Map<String, Material> materials = new HashMap();
-
+        
+//        Map<String, Material> materials = new HashMap();
         ArrayList<Vector3f> vertices = new ArrayList<>();
         ArrayList<Vector2f> texCoords = new ArrayList<>();
         ArrayList<Vector3f> normals = new ArrayList<>();
@@ -116,21 +116,25 @@ public class OBJLoader {
 //            }
             
             if (line.startsWith("mtllib ")) {
-            	materials.putAll(parseMaterialLib(line, f));
+            	Material.MATERIALS.putAll(parseMaterialLib(line, f));
             } else if (line.startsWith("usemtl ")) {
 		    	  String materialName = line.replaceAll("usemtl ", "");
-		    	  Material material = materials.get(materialName);
+		    	  Material material = Material.MATERIALS.get(materialName);
 		    	  if(material == null) {
 		    		  LOGGER.log(Level.INFO, "No material found!!!");
 		    	  }
 		    	  model.setMaterial(material);
 	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
 		    } else if (line.startsWith("o ") || line.startsWith("# object ")) {
+                if (model != null && model.getMaterial() == null) {
+                	int d = 3;
+                }
             	model = new Model();
             	model.setName(line);
                 model.setVertices(vertices);
                 model.setTexCoords(texCoords);
                 model.setNormals(normals);
+
             	models.add(model);
             	parseName(line, model);
             } else if (line.startsWith("v ")) {
@@ -175,6 +179,7 @@ public class OBJLoader {
 			    	continue;
 			    } else if (materialLine.startsWith("newmtl ")) {
 			    	  String name = materialLine.replaceAll("newmtl ", "");
+			    	  currentMaterial.setup();
 			    	  currentMaterial = new Material();
 			    	  currentMaterial.setName(name);
 			    	  materials.put(name, currentMaterial);

@@ -200,12 +200,12 @@ public class ForwardRenderer implements Renderer {
 		for (IEntity entity: entities) {
 			if (World.useFrustumCulling == 1) {
 				if(entity.isInFrustum(camera)) {
-					entity.draw(materialProgram);
+					entity.draw(materialProgram, null);
 				} else {
 //					entity.drawDebug();
 				}
 			} else {
-				entity.draw(materialProgram);
+				entity.draw(materialProgram, null);
 				notInfrustum++;
 			}
 		}
@@ -239,7 +239,7 @@ public class ForwardRenderer implements Renderer {
 		GL20.glUniformMatrix4(GL20.glGetUniformLocation(shadowMapProgram.getId(),"projectionMatrix"), false, camera.getProjectionMatrixAsBuffer());
 
 		for (IEntity entity: entities) {
-			entity.draw(depthMapProgram);
+			entity.draw(depthMapProgram, null);
 		}
 		
 		target.unuse();
@@ -258,7 +258,7 @@ public class ForwardRenderer implements Renderer {
 
 		 for (IEntity entity: entities) {
 			 if (true) {
-				 entity.draw(shadowMapProgram);
+				 entity.draw(shadowMapProgram, null);
 			 }
 		 }
 		

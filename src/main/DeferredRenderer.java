@@ -61,6 +61,7 @@ public class DeferredRenderer implements Renderer {
 	private Program secondPassDirectionalProgram;
 	private Program combineProgram;
 	private static Program renderToQuadProgram;
+	private Program lastUsedProgram = null;
 	
 	private CLKernel kernel;
 
@@ -73,7 +74,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 0.5f;
 	private static float LIGHTRADIUSSCALE = 20f;
-	private static int MAXLIGHTS = 512;
+	private static int MAXLIGHTS = 128;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -322,13 +323,11 @@ public class DeferredRenderer implements Renderer {
 		firstPassTarget.use(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-		firstPassProgram.setUniform("screenWidth", (float) WIDTH);
-		firstPassProgram.setUniform("screenHeight", (float) HEIGHT);
-		firstPassProgram.setUniform("useParallax", World.useParallax);
-		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+//		firstPassProgram.setUniform("useParallax", World.useParallax);
+//		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+//		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+//		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+//		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
@@ -351,7 +350,7 @@ public class DeferredRenderer implements Renderer {
 
 		StopWatch.getInstance().start("Entities draw");
 		for (IEntity entity : entities) {
-			entity.draw(firstPassProgram);
+			entity.draw(this, camera);
 //			if (entity.isSelected()) {
 //				entity.drawDebug(firstPassProgram);
 //			}
@@ -361,7 +360,7 @@ public class DeferredRenderer implements Renderer {
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (PointLight light : pointLights) {
 				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(firstPassProgram);
+				light.drawAsMesh(this, camera);
 			}	
 		}
 		
@@ -441,7 +440,7 @@ public class DeferredRenderer implements Renderer {
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
 			secondPassPointProgram.setUniform("lightSpecular", light.getColor().x, light.getColor().y, light.getColor().z);
-			light.draw(secondPassPointProgram);
+			light.draw(this, secondPassPointProgram);
 		}
 		//secondPassTarget.unuse();
 		finalTarget.unuse();
@@ -597,5 +596,15 @@ public class DeferredRenderer implements Renderer {
 		drawToQuad(firstPassTarget.getRenderedTexture(2), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
+	}
+
+	@Override
+	public Program getLastUsedProgram() {
+		return lastUsedProgram;
+	}
+
+	@Override
+	public void setLastUsedProgram(Program program) {
+		this.lastUsedProgram = program;
 	}
 }

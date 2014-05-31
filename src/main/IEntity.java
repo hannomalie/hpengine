@@ -12,7 +12,7 @@ import org.lwjgl.util.vector.Vector4f;
 
 public interface IEntity {
 	default public void update(float seconds) {};
-	default public void draw(Program program) {};
+	default public void draw(Renderer renderer, Camera camera) {};
 	default public void drawDebug(Program program) {};
 	public void destroy();
 	public Vector3f getPosition();

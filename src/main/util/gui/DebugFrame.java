@@ -80,9 +80,9 @@ public class DebugFrame {
 
 		TableModel materialDataModel = new AbstractTableModel() {
 
-			List<Object> paths = Arrays.asList(Material.LIBRARY.keySet()
+			List<Object> paths = Arrays.asList(Material.MATERIALS.keySet()
 					.toArray());
-			List<Object> materials = Arrays.asList(Material.LIBRARY.values()
+			List<Object> materials = Arrays.asList(Material.MATERIALS.values()
 					.toArray());
 
 			public int getColumnCount() {
@@ -90,7 +90,7 @@ public class DebugFrame {
 			}
 
 			public int getRowCount() {
-				return Material.LIBRARY.size();
+				return Material.MATERIALS.size();
 			}
 
 			public Object getValueAt(int row, int col) {
@@ -321,6 +321,7 @@ public class DebugFrame {
 		tabbedPane.addTab("Main", buttonPanel);
 		tabbedPane.addTab("Scene", scenePane);
 		tabbedPane.addTab("Texture", texturePane);
+		tabbedPane.addTab("Material", materialPane);
 		tabbedPane.addTab("Light", lightsPane);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

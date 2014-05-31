@@ -7,7 +7,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 public class StopWatch {
-	public static boolean ACTIVE = true;
+	public static boolean ACTIVE = false;
 	public static boolean PRINT = true;
 	
 	public static StopWatch stopWatch;

@@ -3,6 +3,7 @@ package main;
 import java.util.List;
 
 import main.octree.Octree;
+import main.shader.Program;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -32,5 +33,7 @@ public interface Renderer {
 	public void update(float seconds);
 	public float getElapsedSeconds();
 	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
+	public Program getLastUsedProgram();
+	public void setLastUsedProgram(Program firstPassProgram);
 
 }

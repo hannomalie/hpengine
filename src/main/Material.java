@@ -2,38 +2,27 @@ package main;
 
 import static main.log.ConsoleLogger.getLogger;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import main.Material.MAP;
 import main.shader.Program;
+import main.shader.ShaderDefine;
+import main.util.Texture;
 import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
-import org.newdawn.slick.opengl.Texture;
 
 public class Material implements IEntity {
 	
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	
 	public static boolean MIPMAP_DEFAULT = true;
-	
-	public static Map<String, Material> LIBRARY = new HashMap<>();
-	public static Map<String, main.util.Texture> TEXTURES = new HashMap();
+	public static int TEXTUREINDEX = 0;
+	public static Map<String, Material> MATERIALS = new HashMap<>();
+	public static Map<String, Texture> TEXTURES = new HashMap<>();
 	
 	private static Logger LOGGER = getLogger();
 
@@ -42,6 +31,7 @@ public class Material implements IEntity {
 	Vector3f specular = new Vector3f(0.5f,0.5f,0.5f);
 	float specularCoefficient = 1;
 	float transparency = 1;
+	private Program firstPassProgram;
 	
 	public enum MAP {
 		DIFFUSE("diffuseMap", 0),
@@ -61,37 +51,40 @@ public class Material implements IEntity {
 
 	public Map<MAP, String> textures = new HashMap<>();
 	private boolean textureLess = false;
+	private boolean setUp = false;
 
-	private String name;
-	
-	public static int textureIndex = 0;
+	private String name = "";
+	private String path;
 
-	public Material(Renderer renderer, String path, String diffuse, String... maps) {
-		setup(path, diffuse, maps);
+	public Material(Renderer renderer, String path, String... maps) {
+		setup(path, maps);
 	}
-	public Material(String path, String diffuse, String... maps) {
-		setup(path, diffuse, maps);
-	}
+//	public Material(String path, String... maps) {
+//		setup(path, maps);
+//	}
 
 	public Material() {
 	}
 	
-	public void setup(String path, String diffuse, String... maps) {
+	public void setup(String path, String... maps) {
 		if (path == null || path == "") {
-			path = TEXTUREASSETSPATH;
+			this.path = TEXTUREASSETSPATH;
 		}
 		MAP[] allMaps = MAP.values();
 		
-		String finalPath = path + diffuse;
-		addTexture(allMaps[0], finalPath, Util.loadTexture(finalPath));
-		
 		for (int i = 0; i < maps.length; i++) {
 			String map = maps[i];
-			finalPath = path + map;
-			addTexture(allMaps[i+1], finalPath, Util.loadTexture(finalPath));
+			String finalPath = this.path + map;
+			addTexture(allMaps[i], finalPath, Util.loadTexture(finalPath));
 		}
 		
-		LIBRARY.put(path, this);
+		setup();
+	}
+	
+	public void setup() {
+		firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(textures.keySet()));
+		MATERIALS.put(name, this);
+		setUp = true;
 	}
 	
 	private void addTexture(MAP map, String path, main.util.Texture texture) {
@@ -155,9 +148,9 @@ public class Material implements IEntity {
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
-		program.setUniform("hasDiffuseMap", hasDiffuseMap()? 1: 0);
-		program.setUniform("hasNormalMap", hasNormalMap()? 1: 0);
-		program.setUniform("hasSpecularMap", hasSpecularMap()? 1: 0);
+//		program.setUniform("hasDiffuseMap", hasDiffuseMap()? 1: 0);
+//		program.setUniform("hasNormalMap", hasNormalMap()? 1: 0);
+//		program.setUniform("hasSpecularMap", hasSpecularMap()? 1: 0);
 		program.setUniform("materialDiffuseColor", diffuse);
 		program.setUniform("materialSpecularColor", specular);
 		program.setUniform("materialSpecularCoefficient", specularCoefficient);
@@ -166,7 +159,6 @@ public class Material implements IEntity {
 		
 	}
 	public void setTexturesInactive() {
-				
 		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
@@ -228,7 +220,6 @@ public class Material implements IEntity {
 		this.specularCoefficient = specularCoefficient;
 	}
 	
-
 	@Override
 	public boolean isSelected() {
 		return false;
@@ -236,5 +227,8 @@ public class Material implements IEntity {
 
 	@Override
 	public void setSelected(boolean selected) {
+	}
+	public Program getFirstPassProgram() {
+		return firstPassProgram;
 	}
 }
