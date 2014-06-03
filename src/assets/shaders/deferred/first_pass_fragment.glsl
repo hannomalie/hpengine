@@ -5,21 +5,21 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
-layout(binding=5) uniform sampler2D shadowMap;
-layout(binding=6) uniform sampler2D depthMap;
+layout(binding=5) uniform sampler2D reflectionMap;
+
+layout(binding=6) uniform samplerCube cubeMap;
+//layout(binding=5) uniform sampler2D shadowMap;
+//layout(binding=6) uniform sampler2D depthMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
 
-uniform bool hasNormalMap;
 uniform float normalMapWidth = 1;
 uniform float normalMapHeight = 1;
 
-uniform bool hasDiffuseMap;
 uniform float diffuseMapWidth = 1;
 uniform float diffuseMapHeight = 1;
 
-uniform bool hasSpecularMap;
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
 
@@ -37,18 +37,18 @@ in vec2 texCoord;
 in vec3 normalVec;
 in vec3 normal_model;
 in vec3 normal_world;
+in vec3 normal_view;
 in vec4 position_clip;
-in vec4 position_clip_uv;
-in vec4 position_clip_shadow;
+//in vec4 position_clip_uv;
+//in vec4 position_clip_shadow;
 in vec4 position_world;
-in vec3 view_up;
-in vec3 view_back;
 
 in vec3 eyeVec;
+in vec3 eyePos_world;
 
 layout(location=0)out vec4 out_position;
 layout(location=1)out vec4 out_normal;
-layout(location=2)out vec4 out_albedo;
+layout(location=2)out vec4 out_color;
 layout(location=3)out vec4 out_specular;
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
@@ -105,31 +105,38 @@ void main(void) {
 	}
 	
 	// NORMAL
-	vec3 N = normal_world;
-	vec3 PN = N;
-
+	vec3 N = normal_model;
 #ifdef use_normalMap
-		PN = normalize((vec4(perturb_normal(PN, eyeVec, UV), 0)).xyz);
+		N = ((vec4(perturb_normal(normal_model, eyeVec, UV), 0)).xyz);
 #endif
 	
-	vec3 PN_view = (viewMatrix *vec4(PN, 0)).xyz;
 	out_position = viewMatrix * position_world;
 	float depth = position_clip.z / position_clip.w;
+	vec3 PN_view = (viewMatrix * vec4(N, 0)).xyz;
 	out_normal = vec4(PN_view, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
-
 #ifdef use_diffuseMap
 		UV = texCoord;
 		UV.x = texCoord.x * diffuseMapWidth;
 		UV.y = texCoord.y * diffuseMapHeight;
 		color = texture2D(diffuseMap, UV);
+		if(color.a<0.1)
+		{
+			discard;
+		}
 #endif
-	
-	out_albedo = color;
-	
-	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
+	out_color = color;
 
+#ifdef use_reflectionMap
+	float reflect_factor = texture2D(reflectionMap, UV).x;
+	vec3 tempEyeVec = out_position.xyz - eyePos_world;
+	vec3 texCoords3d = normalize(reflect(tempEyeVec, N));
+	texCoords3d.y *= -1;
+	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
+#endif
+
+	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap
 		UV = texCoord;
 		UV.x = texCoord.x * specularMapWidth;

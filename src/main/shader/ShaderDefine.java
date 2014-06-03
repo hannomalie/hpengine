@@ -12,7 +12,8 @@ public enum ShaderDefine {
 	NORMAL(MAP.NORMAL),
 	SPECULAR(MAP.SPECULAR),
 	OCCLUSION(MAP.OCCLUSION),
-	HEIGHT(MAP.HEIGHT);
+	HEIGHT(MAP.HEIGHT),
+	REFLECTION(MAP.REFLECTION);
 
 	private String defineString;
 	private MAP map;

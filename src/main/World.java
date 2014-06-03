@@ -3,15 +3,18 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
+import main.Material.MAP;
 import main.octree.Octree;
 import main.util.OBJLoader;
 import main.util.gui.DebugFrame;
+import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.input.Keyboard;
@@ -25,6 +28,8 @@ public class World {
 	public static final String WORKDIR_NAME = "hp";
 
 	private static Logger LOGGER = getLogger();
+	
+	private OpenGLStopWatch glWatch;
 
 	public static Spotlight light= new Spotlight(true);
 	public static volatile boolean useParallaxLocation = false;
@@ -53,7 +58,7 @@ public class World {
 
 	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 5;
+	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
 	
@@ -61,7 +66,8 @@ public class World {
 		WebLookAndFeel.install();
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
-		octree = new Octree(new Vector3f(), 400, 4);
+		glWatch = new OpenGLStopWatch();
+		octree = new Octree(new Vector3f(), 400, 6);
 		camera = new Camera(renderer);
 		light.init(renderer);
 		loadDummies();
@@ -107,21 +113,42 @@ public class World {
 		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
 												"stone_specular.png", "stone_occlusion.png",
 												"stone_height.png");
+		Material stone2 = new Material(renderer, "", new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"brick.png");
+														    		put(MAP.NORMAL,"brick_normal.png");
+		}});
 		Material wood = new Material(renderer, "", "wood_diffuse.png", "wood_normal.png",
 												"wood_specular.png", "wood_occlusion.png",
 												"wood_height.png");
+		Material stoneWet = new Material(renderer, "", new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"stone_diffuse.png");
+														    		put(MAP.NORMAL,"stone_normal.png");
+														    		put(MAP.REFLECTION,"stone_reflection.png");
+	    }});
+		Material mirror = new Material(renderer, "", new HashMap<MAP,String>(){{
+														    		put(MAP.REFLECTION,"default.dds");
+		}});
 
 		StopWatch.getInstance().start("Load Dummies");
 		try {
-			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
+			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
-					Material mat = stone;
-					if (i%2 == 0 || j%2 == 0) {
+					Material mat = mirror;
+					if (i%4 == 1) {
+						mat = stone;
+					}
+					if (i%4 == 2) {
 						mat = wood;
 					}
+					if (i%4 == 3) {
+						mat = stoneWet;
+					}
+					if (i%4 == 4) {
+						mat = mirror;
+					}
 					try {
-						float random = (float) (Math.random() * ( 1f - (-1f) ));
+						float random = (float) (Math.random() -0.5);
 						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*10,0-random*i+j,j*10), mat, true);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
@@ -137,9 +164,16 @@ public class World {
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(stone);
-				Entity entity = new Entity(renderer, model, new Vector3f(0,-1.5f,0), model.getMaterial(),  true);
+				Entity entity = new Entity(renderer, model, new Vector3f(0,-1f,0), model.getMaterial(),  true);
 //				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 //				entity.setScale(scale);
+				entities.add(entity);
+			}
+			List<Model> skyBox = OBJLoader.loadTexturedModel(new File("C:\\skybox.obj"));
+			for (Model model : skyBox) {
+				Entity entity = new Entity(renderer, model, new Vector3f(0,0,0), mirror,  true);
+				Vector3f scale = new Vector3f(1000, 1000f, 1000f);
+				entity.setScale(scale);
 				entities.add(entity);
 			}
 
@@ -252,7 +286,7 @@ public class World {
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 		
-		Renderer.exitOnGLError("loopCycle");
+//		Renderer.exitOnGLError("loopCycle");
 	}
 	
 }

@@ -9,6 +9,7 @@ import java.io.ObjectOutputStream;
 import javafx.scene.paint.StopBuilder;
 import main.DeferredRenderer;
 import main.Spotlight;
+import main.util.CubeMap;
 import main.util.Texture;
 import main.util.TextureLoader;
 import main.util.Util;
@@ -57,5 +58,10 @@ public class TextureTest {
 		StopWatch.ACTIVE = false;
 	    Assert.assertArrayEquals(data, texture.getData());
 	    
+	}
+	
+	@Test
+	public void loadsCubeMap() {
+		CubeMap cubeMap = Util.loadCubeMap("assets/textures/wood_diffuse.png");
 	}
 }

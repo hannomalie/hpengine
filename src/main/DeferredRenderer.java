@@ -18,14 +18,16 @@ import main.octree.Octree;
 import main.shader.ComputeShaderProgram;
 import main.shader.Program;
 import main.util.CLUtil;
+import main.util.CubeMap;
 import main.util.OBJLoader;
+import main.util.Util;
+import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.Sys;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opencl.CL10;
 import org.lwjgl.opencl.CL10GL;
 import org.lwjgl.opencl.CLKernel;
@@ -34,7 +36,6 @@ import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
@@ -53,6 +54,7 @@ public class DeferredRenderer implements Renderer {
 			DataChannels.TEXCOORD);
 	
 	public int testTexture = -1;
+	private OpenGLStopWatch glWatch;
 
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
@@ -72,20 +74,22 @@ public class DeferredRenderer implements Renderer {
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
 
-	private static float MINLIGHTRADIUS = 0.5f;
-	private static float LIGHTRADIUSSCALE = 20f;
-	private static int MAXLIGHTS = 128;
+	private static float MINLIGHTRADIUS = 4.5f;
+	private static float LIGHTRADIUSSCALE = 15f;
+	private static int MAXLIGHTS = 0;//256;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
 
 	private int deferredOutput;
+
+	public CubeMap cubeMap;
 	
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
 		setupShaders();
 		
-		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
+//		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
 		
 		Model sphereModel = null;
 		try {
@@ -101,8 +105,7 @@ public class DeferredRenderer implements Renderer {
 		
 		Random randomGenerator = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
-			float random = randomGenerator.nextFloat() * ( 1f - (-1f) );
-			PointLight pointLight = new PointLight(this, sphereModel, new Vector3f(i*randomGenerator.nextFloat()*4,0+random*i,i*randomGenerator.nextFloat()*4));
+			PointLight pointLight = new PointLight(this, sphereModel, new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat()));
 			pointLight.setScale(MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat());
 			pointLight.setColor(new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1));
 			pointLights.add(pointLight);
@@ -118,7 +121,7 @@ public class DeferredRenderer implements Renderer {
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
 			Display.setVSyncEnabled(false);
-			Display.setTitle("ForwardRenderer");
+			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
 			
 			GL11.glViewport(0, 0, WIDTH, HEIGHT);
@@ -152,6 +155,10 @@ public class DeferredRenderer implements Renderer {
 		
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
+		
+		glWatch = new OpenGLStopWatch();
+		
+		cubeMap = Util.loadCubeMap("assets/textures/skybox.png");
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 		CLUtil.initialize();
@@ -215,10 +222,10 @@ public class DeferredRenderer implements Renderer {
 		protected void compute() {
 			if ((end - start) < LIMIT) {
 				for (int i = start; i < end; i++) {
-					double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
-					double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
-					lights.get(i).move(new Vector3f((float)sinusX,(float)sinusY, 0f));
-					lights.get(i).update(0);
+					double x =  Math.sin(System.currentTimeMillis() / 1000);
+					double z =  Math.cos(System.currentTimeMillis() / 1000);
+					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
+					lights.get(i).update(1);
 				}
 			} else {
 				int mid = (start + end) / 2;
@@ -260,7 +267,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(0), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(1), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -327,15 +334,15 @@ public class DeferredRenderer implements Renderer {
 //		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
 //		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 //		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-//		firstPassProgram.setUniform("eyePosition", camera.getPosition());
-		
+		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
 			StopWatch.getInstance().start("Get visible from octree");
 			entities.addAll(octree.getVisible(camera));
 			StopWatch.getInstance().stopAndPrintMS();
 			
-			entities.addAll(octree.getEntities());
+			//entities.addAll(octree.getEntities());
 //			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
@@ -348,6 +355,7 @@ public class DeferredRenderer implements Renderer {
 			entities.addAll(octree.getEntities());
 		}
 
+//		glWatch.start("Draw entities in first pass");
 		StopWatch.getInstance().start("Entities draw");
 		for (IEntity entity : entities) {
 			entity.draw(this, camera);
@@ -355,6 +363,7 @@ public class DeferredRenderer implements Renderer {
 //				entity.drawDebug(firstPassProgram);
 //			}
 		}
+//		glWatch.stopAndPrintTimeInMS();
 		StopWatch.getInstance().stopAndGetStringMS();
 		
 		if (World.DRAWLIGHTS_ENABLED) {
@@ -606,5 +615,10 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void setLastUsedProgram(Program program) {
 		this.lastUsedProgram = program;
+	}
+
+	@Override
+	public CubeMap getEnvironmentMap() {
+		return cubeMap;
 	}
 }

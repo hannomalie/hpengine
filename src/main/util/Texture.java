@@ -21,28 +21,30 @@ import org.lwjgl.opengl.GL11;
  */
 public class Texture implements Serializable {
     /** The GL target type */
-    private int target; 
+	protected int target; 
     /** The GL texture ID */
-    private int textureID;
+    protected int textureID;
     /** The height of the image */
-    private int height;
+    protected int height;
     /** The width of the image */
-    private int width;
+    protected int width;
     /** The width of the texture */
-    private int texWidth;
+    protected int texWidth;
     /** The height of the texture */
-    private int texHeight;
+    protected int texHeight;
     /** The ratio of the width of the image to the texture */
-    private float widthRatio;
+    protected float widthRatio;
     /** The ratio of the height of the image to the texture */
-    private float heightRatio;
+    protected float heightRatio;
     
-	private byte[] data;
-	private int dstPixelFormat;
-	private int srcPixelFormat;
-	private int minFilter;
-	private int magFilter;
+    protected byte[] data;
+    protected int dstPixelFormat;
+    protected int srcPixelFormat;
+    protected int minFilter;
+    protected int magFilter;
     
+	protected Texture() {}
+	
     /**
      * Create a new texture
      *
@@ -177,7 +179,7 @@ public class Texture implements Serializable {
      * @param fold The target number
      * @return The power of 2
      */
-    private int get2Fold(int fold) {
+    protected int get2Fold(int fold) {
         int ret = 2;
         while (ret < fold) {
             ret *= 2;

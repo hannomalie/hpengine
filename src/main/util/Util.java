@@ -54,8 +54,16 @@ public class Util {
 		return loadTexture(filename, Material.MIPMAP_DEFAULT);
 	}
 	
+	public static CubeMap loadCubeMap(String filename) {
+		return loadCubeMap(filename, Material.MIPMAP_DEFAULT);
+	}
+
 	private static main.util.Texture loadDefaultTexture() {
 		return Util.loadTexture("assets/textures/default.dds");
+	}
+	
+	private static CubeMap loadDefaultCubeMap() {
+		return Util.loadCubeMap("assets/textures/default.dds");
 	}
 	
 
@@ -91,6 +99,40 @@ public class Util {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
 		
 		return texture;
+	}
+	
+	public static CubeMap loadCubeMap(String filename, boolean mipmap) {
+//		Texture texture = null;
+		main.util.Texture texture = null;
+		String extension = getFileExtension(filename).toUpperCase();
+		
+		try {
+//			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
+			texture = new main.util.TextureLoader().getCubeMap(filename);
+		} catch (IOException e) {
+			try {
+//				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
+				texture = new main.util.TextureLoader().getCubeMapAsStream(filename);
+			} catch (IOException e1) {
+				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
+				texture = loadDefaultCubeMap();
+			} catch (NullPointerException np) {
+				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
+				texture = loadDefaultCubeMap();
+			}
+		}
+
+		texture.bind();
+		if (mipmap) {
+			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		}
+
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+		
+		return (CubeMap) texture;
 	}
 	
 	public static String getFileExtension(String in) {

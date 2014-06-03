@@ -200,7 +200,7 @@ public class Octree {
 			return aabb.isInFrustum(camera);
 		}
 		
-		private void getAllEntitiesInAndBelow(List<IEntity> result) {
+		public void getAllEntitiesInAndBelow(List<IEntity> result) {
 			
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {

@@ -12,25 +12,23 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
 import main.DeferredRenderer;
-import main.World;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.util.vector.Vector2f;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -113,8 +111,26 @@ public class TextureLoader {
         
         return tex;
     }
+    public CubeMap getCubeMap(String resourceName) throws IOException {
+        Texture tex = (Texture) table.get(resourceName+ "_cube");
+        
+        if (tex != null && tex instanceof CubeMap) {
+            return (CubeMap) tex;
+        }
+        
+        tex = getCubeMap(resourceName,
+        				 GL13.GL_TEXTURE_CUBE_MAP, // target
+                         GL11.GL_RGBA,     // dst pixel format
+                         GL11.GL_LINEAR, // min filter (unused)
+                         GL11.GL_LINEAR, false);
 
-    public Texture getTextureAsStream(String resourceName) throws IOException {
+        table.put(resourceName + "_cube",tex);
+        
+        return (CubeMap) tex;
+    }
+
+
+	public Texture getTextureAsStream(String resourceName) throws IOException {
     	Texture tex = (Texture) table.get(resourceName);
         
         if (tex != null) {
@@ -130,6 +146,24 @@ public class TextureLoader {
         table.put(resourceName,tex);
         
         return tex;
+    }
+	
+	public CubeMap getCubeMapAsStream(String resourceName) throws IOException {
+    	Texture tex = (Texture) table.get(resourceName+ "_cube");
+        
+        if (tex != null && tex instanceof CubeMap) {
+            return (CubeMap) tex;
+        }
+        
+        tex = getCubeMap(resourceName,
+                         GL13.GL_TEXTURE_CUBE_MAP, // target
+                         GL11.GL_RGBA,     // dst pixel format
+                         GL11.GL_LINEAR, // min filter (unused)
+                         GL11.GL_LINEAR, true);
+        
+        table.put(resourceName+ "_cube",tex);
+        
+        return (CubeMap) tex;
     }
     
     /**
@@ -186,8 +220,53 @@ public class TextureLoader {
         texture.upload(textureBuffer);
         
         return texture; 
-    } 
+    }
     
+    private CubeMap getCubeMap(String resourceName, 
+					            int target, 
+					            int dstPixelFormat, 
+					            int minFilter, 
+					            int magFilter, boolean asStream) throws IOException {
+    	
+    	
+    	 int srcPixelFormat = 0;
+         
+         // create the texture ID for this texture 
+         int textureID = createTextureID(); 
+         CubeMap cubeMap = new CubeMap(target,textureID); 
+         
+         // bind this texture 
+         GL11.glBindTexture(target, textureID);
+         
+         BufferedImage bufferedImage = null;
+         if (asStream) {
+             bufferedImage = loadImageAsStream(resourceName);
+         } else {
+             bufferedImage = loadImage(resourceName);	
+         } 
+         cubeMap.setWidth(bufferedImage.getWidth());
+         cubeMap.setHeight(bufferedImage.getHeight());
+         cubeMap.setMinFilter(minFilter);
+         cubeMap.setMagFilter(magFilter);
+         
+         if (bufferedImage.getColorModel().hasAlpha()) {
+             srcPixelFormat = GL11.GL_RGBA;
+         } else {
+             srcPixelFormat = GL11.GL_RGB;
+         }
+
+         cubeMap.setDstPixelFormat(dstPixelFormat);
+         cubeMap.setSrcPixelFormat(srcPixelFormat);
+         
+         // convert that image into a byte buffer of texture data 
+         ByteBuffer[] textureBuffers = convertCubeMapData(bufferedImage,cubeMap);
+         
+         cubeMap.upload();
+         
+         return cubeMap; 
+	}
+    
+	
     /**
      * Get the closest greater power of 2 to the fold number
      * 
@@ -252,14 +331,120 @@ public class TextureLoader {
         texture.setData(data);
         
         return texture.buffer();
-//        imageBuffer = ByteBuffer.allocateDirect(data.length); 
-//        imageBuffer.order(ByteOrder.nativeOrder()); 
-//        imageBuffer.put(data, 0, data.length); 
-//        imageBuffer.flip();
-//        return imageBuffer; 
-    } 
+    }
     
-    /** 
+    private ByteBuffer[] convertCubeMapData(BufferedImage bufferedImage,CubeMap cubeMap) { 
+        ByteBuffer imageBuffers[] = new ByteBuffer[6];
+        List<byte[]> byteArrays = new ArrayList<>();
+        
+        WritableRaster raster;
+        BufferedImage texImage;
+        
+        int texWidth = 2;
+        int texHeight = 2;
+        
+        // find the closest power of 2 for the width and height
+        // of the produced texture
+        while (texWidth < bufferedImage.getWidth()) {
+            texWidth *= 2;
+        }
+        while (texHeight < bufferedImage.getHeight()) {
+            texHeight *= 2;
+        }
+
+    	cubeMap.setTextureHeight(texHeight);
+    	cubeMap.setTextureWidth(texWidth);
+
+    	int tileWidthPoT = get2Fold(texWidth/4);
+    	int tileHeightPoT = get2Fold(texHeight/3);
+    	
+        for(int i = 0; i < 6; i++) {
+
+            //Vector2f[] topLeftBottomRight = getRectForFaceIndex(i, texWidth, texHeight);
+        	Vector2f[] topLeftBottomRight = getRectForFaceIndex(i, bufferedImage.getWidth(), bufferedImage.getHeight());
+            
+            if (bufferedImage.getColorModel().hasAlpha()) {
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidthPoT,tileHeightPoT,4,null);
+                texImage = new BufferedImage(glAlphaColorModel,raster,false,new Hashtable());
+            } else {
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidthPoT,tileHeightPoT,3,null);
+                texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
+            }
+            
+            Graphics g = texImage.getGraphics();
+            g.setColor(new Color(0f,0f,0f,0f));
+            g.fillRect(0,0,tileWidthPoT,tileHeightPoT);
+            
+            g.drawImage(bufferedImage,0,0,get2Fold(texWidth/4), get2Fold(texHeight/3)/2, (int)topLeftBottomRight[0].x,(int)topLeftBottomRight[0].y,
+					  (int)topLeftBottomRight[1].x,(int)topLeftBottomRight[1].y, null);
+
+//            try {
+//                File outputfile = new File(i + ".png");
+//                ImageIO.write(texImage, "png", outputfile);
+//            } catch (IOException e) {
+//            	System.out.println("xoxoxoxo");
+//            }
+            
+            
+            byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
+            byteArrays.add(data);
+            
+    		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
+    		tempBuffer = ByteBuffer.allocateDirect(data.length);
+    		tempBuffer.order(ByteOrder.nativeOrder());
+    		tempBuffer.put(data, 0, data.length);
+    		tempBuffer.flip();
+            
+            imageBuffers[i] = tempBuffer;
+            
+		}
+//        System.exit(0);
+        cubeMap.setData(byteArrays);
+        return imageBuffers;
+    }
+    
+    private Vector2f[] getRectForFaceIndex(int index, int imageWidth, int imageHeight) {
+    	Vector2f[] result = new Vector2f[2];
+    	
+    	switch (index) {
+		case 0: // GL_TEXTURE_CUBE_MAP_POSITIVE_X
+			result[0] = new Vector2f(imageWidth/2, imageHeight/3);
+			result[1] = new Vector2f(3*imageWidth/4, 2*imageHeight/3);
+			break;
+
+		case 1: // GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+			result[0] = new Vector2f(0, imageHeight/3);
+			result[1] = new Vector2f(imageWidth/4, 2*imageHeight/3);
+			break;
+
+		case 2: // GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+			result[1] = new Vector2f(imageWidth/4, 0);
+			result[0] = new Vector2f(imageWidth/2, imageHeight/3); // TODO: Why do I have to flip this bxxxx!?
+			break;
+
+		case 3: // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+			result[0] = new Vector2f(imageWidth/4, 2*imageHeight/3);
+			result[1] = new Vector2f(imageWidth/2, imageHeight);
+			break;
+
+		case 4: // GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+			result[0] = new Vector2f(3*imageWidth/4, imageHeight/3);
+			result[1] = new Vector2f(imageWidth, 2*imageHeight/3);
+			break;
+
+		case 5: // GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+			result[0] = new Vector2f(imageWidth/4, imageHeight/3);
+			result[1] = new Vector2f(imageWidth/2, 2*imageHeight/3);
+			break;
+
+		default:
+			break;
+		}
+    	
+    	return result;
+	}
+
+	/** 
      * Load a given resource as a buffered image
      * 
      * @param ref The location of the resource to load
@@ -298,5 +483,6 @@ public class TextureLoader {
       temp.order(ByteOrder.nativeOrder());
 
       return temp.asIntBuffer();
-    }    
+    }
+
 }

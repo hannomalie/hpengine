@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -365,7 +366,10 @@ public class DebugFrame {
 	}
 	
 	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {
-		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node);
+		List<IEntity> entitiesInAndBelow = new ArrayList<IEntity>();
+		node.getAllEntitiesInAndBelow(entitiesInAndBelow);
+		
+		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node.toString() + "(" + entitiesInAndBelow.size() + " Entities in/below");
 		parent.add(current);
 		if(node.hasChildren()) {
 			for(int i = 0; i < 8; i++) {

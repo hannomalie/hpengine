@@ -136,7 +136,8 @@ public class PointLight extends Entity {
 		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
 						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
-		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
+		//if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
+		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
 			return true;
 		}
 		return false;

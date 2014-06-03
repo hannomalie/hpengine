@@ -38,7 +38,8 @@ public class Material implements IEntity {
 		NORMAL("normalMap", 1),
 		SPECULAR("specularMap", 2),
 		OCCLUSION("occlusionMap", 3),
-		HEIGHT("heightMap", 3);
+		HEIGHT("heightMap", 4),
+		REFLECTION("reflectionMap", 5);
 		
 		public final String shaderVariableName;
 		public final int textureSlot;
@@ -59,13 +60,17 @@ public class Material implements IEntity {
 	public Material(Renderer renderer, String path, String... maps) {
 		setup(path, maps);
 	}
+	
+	public Material(Renderer renderer, String path, HashMap<MAP, String> maps) {
+		setup(path, maps);
+	}
 //	public Material(String path, String... maps) {
 //		setup(path, maps);
 //	}
 
 	public Material() {
 	}
-	
+
 	public void setup(String path, String... maps) {
 		if (path == null || path == "") {
 			this.path = TEXTUREASSETSPATH;
@@ -76,6 +81,20 @@ public class Material implements IEntity {
 			String map = maps[i];
 			String finalPath = this.path + map;
 			addTexture(allMaps[i], finalPath, Util.loadTexture(finalPath));
+		}
+		
+		setup();
+	}
+
+	public void setup(String path, HashMap<MAP, String> maps) {
+		if (path == null || path == "") {
+			this.path = TEXTUREASSETSPATH;
+		}
+		
+		for (MAP map : maps.keySet()) {
+			String fileName = maps.get(map);
+			String finalPath = this.path + fileName;
+			addTexture(map, finalPath, Util.loadTexture(finalPath));
 		}
 		
 		setup();

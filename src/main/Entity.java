@@ -14,6 +14,7 @@ import main.shader.Program;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
@@ -197,13 +198,17 @@ public class Entity implements IEntity {
 		}
 		
 		firstPassProgram.setUniform("useParallax", World.useParallax);
-		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+//		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+//		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		
 		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		material.setTexturesActive(firstPassProgram);
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		renderer.getEnvironmentMap().bind();
+		
 		vertexBuffer.draw();
 
 //		material.setTexturesInactive();
