@@ -76,7 +76,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 4.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 0;//256;
+	private static int MAXLIGHTS = 256;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -157,7 +157,7 @@ public class DeferredRenderer implements Renderer {
 		
 		glWatch = new OpenGLStopWatch();
 		
-		cubeMap = Util.loadCubeMap("assets/textures/skybox2.jpg");
+		cubeMap = Util.loadCubeMap("assets/textures/skybox.png");
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 		CLUtil.initialize();

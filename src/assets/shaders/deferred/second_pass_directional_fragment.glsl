@@ -58,57 +58,42 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 binarySearchHitPoint(vec3 positionView, vec3 rayDirection) {
-	const int steps = 10;
-	float dist = 200;
-	
-	vec3 start = positionView;
-	vec3 end = start + dist * rayDirection;
-	vec3 currentViewPos = end;
-	
-	for (int i = 0; i < steps; i++) {
-		//FIXME
-		  currentViewPos = texture2D(positionMap, getViewPosInTextureSpace(end).xy).xyz;
-		  
-		  float zDiff = end.z - currentViewPos.z;
-		  
-		  if (zDiff > 0) {
-		  	end += dist*rayDirection;
-		  }
-		  
-		  dist *= 0.5;
-		  end -= dist*rayDirection;
-	}
-	
-	return end;
-}
-
 vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
-	vec3 eyeToSurfaceView =  /*(viewMatrix * vec4(eyePosition,1)).xyz*/ targetPosView;
+	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
-	vec3 viewRay = 40*normalize(reflectionVecView);
+	vec3 viewRay = 20*normalize(reflectionVecView);
 	
 	vec3 currentViewPos = targetPosView;
 	
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 20; i++) {
 	
 		  currentViewPos += viewRay;
 		  
 		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 		  float difference = currentViewPos.z - currentPosSample.z;
-		  if (difference > 0.0025) {
-		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
-		  	if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1) {
+		  if (difference < 0) {
+		  	
+		  	currentViewPos -= viewRay;
+		  	
+		  	for(int x = 0; x < 10; x++) {
+		 		currentViewPos += viewRay/10;
+		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
+		  
+				  difference = currentViewPos.z - currentPosSample.z;
+				  if (difference < 0) {
+	  		  		break;
+				  }
+		  	}
+		  	
+  		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
+  			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1) {
 				return texture2D(diffuseMap, resultCoords.xy).xyz;
 		  	}
 			return color;
+		  	
 		  }
 	}
-	
-	//vec3 hitPoint = binarySearchHitPoint(currentViewPos, viewRay);
-	//vec2 resultCoords = getViewPosInTextureSpace(hitPoint).xy;
-	//return texture2D(diffuseMap, resultCoords).xyz;
 	
 	return color;
 }
@@ -123,6 +108,7 @@ void main(void) {
   
 	vec3 positionView = texture2D(positionMap, st).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
+	float reflect_factor = texture2D(diffuseMap, st).w;
 	
 	// skip background
 	if (positionView.z > -0.0001) {
@@ -183,5 +169,5 @@ void main(void) {
 	
 	vec4 ambientTerm = vec4((color * ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor + ambientTerm;//+ vec4(ssdo,1);
-	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), 0.5);
+	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), 1);//reflect_factor);
 }

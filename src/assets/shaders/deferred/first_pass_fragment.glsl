@@ -129,12 +129,14 @@ void main(void) {
 	}
 #endif
 	out_color = color;
+	out_color.w = 0;
 
 #ifdef use_reflectionMap
 	float reflect_factor = texture2D(reflectionMap, UV).x;
 	vec3 texCoords3d = normalize(reflect(V, normal_world));
 	//texCoords3d.y *= -1;
 	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
+	out_color.w = reflect_factor;
 #endif
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
