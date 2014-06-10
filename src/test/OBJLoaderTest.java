@@ -1,8 +1,14 @@
 package test;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
 import main.Face;
+import main.Model;
 import main.util.OBJLoader;
 import main.util.Util;
+import main.util.stopwatch.StopWatch;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,6 +79,15 @@ public class OBJLoaderTest {
 	public void loadTextureFromDirecotry() {
 		main.util.Texture texture = Util.loadTexture("C://default.png");
 		Assert.assertEquals(128, texture.getImageHeight());
+	}
+	
+	@Test
+	public void loadSponzaTest() throws IOException {
+		StopWatch.ACTIVE = true;
+		StopWatch.getInstance().start("Sponza loading");
+		List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
+		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.ACTIVE = false;
 	}
 
 }

@@ -76,7 +76,7 @@ public class Camera implements IEntity {
 		storeMatrices();
 	}
 	public void updateShadow() {
-		transform();
+//		transform();
 
 		storeMatrices();
 	}
@@ -91,7 +91,10 @@ public class Camera implements IEntity {
 		if (Mouse.isButtonDown(0)) {
 			rotate(up, Mouse.getDX() * rotationSpeed);
 //			rotate(right, Mouse.getDY() * rotationSpeed/2);
-			
+			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
+		}
+		if (Mouse.isButtonDown(1)) {
+			rotate(right, Mouse.getDY() * rotationSpeed/2);
 			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
@@ -134,21 +137,31 @@ public class Camera implements IEntity {
 	
 
 	private void transform() {
-		setViewMatrix(new Matrix4f());
-		
-		Matrix4f rotation = Util.toMatrix(orientation);
-		Matrix4f.mul(rotation, viewMatrix, viewMatrix);
-		Matrix4f.translate(position, viewMatrix, viewMatrix);
+		setViewMatrix(calculateCurrentViewMatrix());
 
+//		System.out.println(viewMatrix);
+//		System.out.println(getPosition());
+//		System.out.println(Matrix4f.transform((Matrix4f) viewMatrix.invert(), new Vector4f(position.x, position.y, position.z, 1), null));
+
+//		Vector4f temp = Matrix4f.transform(rotation, new Vector4f(1f,0f,0f,0f), null);
+//		right = new Vector3f(temp.x, temp.y, temp.z);
 		right = (Vector3f) new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02).normalise();
 		up = (Vector3f) new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12).normalise();
+//		temp = Matrix4f.transform(rotation, new Vector4f(0f,1f,0f,0f), null);
+//		up = new Vector3f(temp.x, temp.y, temp.z);
 		back = (Vector3f) new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22).normalise();
-
-//		right = (Vector3f) new Vector3f(viewMatrix.m00, viewMatrix.m10, viewMatrix.m20).normalise();
-//		up = (Vector3f) new Vector3f(viewMatrix.m01, viewMatrix.m11, viewMatrix.m22).normalise();
-//		back = (Vector3f) new Vector3f(viewMatrix.m01, viewMatrix.m11, viewMatrix.m22).normalise();
+//		temp = Matrix4f.transform(rotation, new Vector4f(0f,0f,-1f,0f), null);
+//		back = new Vector3f(temp.x, temp.y, temp.z);
 
 		frustum.calculate(this);
+	}
+	
+	private Matrix4f calculateCurrentViewMatrix() {
+		viewMatrix = new Matrix4f();
+		Matrix4f.translate(position, viewMatrix, viewMatrix);
+		Matrix4f.mul(Util.toMatrix(orientation), viewMatrix, viewMatrix);
+		
+		return viewMatrix;
 	}
 
 
@@ -201,7 +214,7 @@ public class Camera implements IEntity {
 	@Override
 	public void move(Vector3f amount) {
 		amount.z = -amount.z;
-		Vector3f.add(getPosition(), amount, getPosition());
+		setPosition(Vector3f.add(getPosition(), amount, null));
 		transform();
 	}
 
@@ -224,7 +237,8 @@ public class Camera implements IEntity {
 	public void rotate(Vector4f axisAngle) {
 		Quaternion rot = new Quaternion();
 		rot.setFromAxisAngle(axisAngle);
-		orientation = Quaternion.mul(orientation, rot, orientation);
+		Quaternion.mul(orientation, rot, orientation);
+		orientation.normalise(orientation);
 		transform();
 	}
 
@@ -249,7 +263,7 @@ public class Camera implements IEntity {
 	@Override
 	public void rotate(Vector3f axis, float degree, boolean isDegree) {
 		float radians = (float) Math.toRadians(degree);
-		axis = (Vector3f) axis.normalise();
+		axis.normalise(axis);
 		rotate(new Vector4f(axis.x, axis.y, axis.z, radians));
 	}
 

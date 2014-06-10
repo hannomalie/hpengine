@@ -130,7 +130,6 @@ public class DeferredRenderer implements Renderer {
 			System.exit(-1);
 		}
 
-		// Setup an XNA like background color
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -158,7 +157,7 @@ public class DeferredRenderer implements Renderer {
 		
 		glWatch = new OpenGLStopWatch();
 		
-		cubeMap = Util.loadCubeMap("assets/textures/skybox.png");
+		cubeMap = Util.loadCubeMap("assets/textures/skybox2.jpg");
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 		CLUtil.initialize();
@@ -330,11 +329,6 @@ public class DeferredRenderer implements Renderer {
 		firstPassTarget.use(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-//		firstPassProgram.setUniform("useParallax", World.useParallax);
-//		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
-//		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-//		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
@@ -342,7 +336,6 @@ public class DeferredRenderer implements Renderer {
 			entities.addAll(octree.getVisible(camera));
 			StopWatch.getInstance().stopAndPrintMS();
 			
-			//entities.addAll(octree.getEntities());
 //			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
@@ -381,7 +374,7 @@ public class DeferredRenderer implements Renderer {
 
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
-		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
+		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
 		finalTarget.use(true);
 		//secondPassTarget.use(false);
@@ -399,7 +392,10 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3));
-		
+
+		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
+		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);

@@ -1,9 +1,18 @@
 package main.util;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import main.World;
+
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -230,5 +239,44 @@ public class Texture implements Serializable {
 
 	public byte[] getData() {
 		return data;
+	}
+
+	public static Texture read(String resourceName) {
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileInputStream fis = null;
+		ObjectInputStream in = null;
+		try {
+			fis = new FileInputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			in = new ObjectInputStream(fis);
+			Texture texture = (Texture) in.readObject();
+			in.close();
+			texture.upload();
+			return texture;
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static boolean write(Texture texture, String resourceName) {
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		try {
+			fos = new FileOutputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			out = new ObjectOutputStream(fos);
+			out.writeObject(texture);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				out.close();
+				return true;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
 	}
 }

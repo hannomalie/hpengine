@@ -14,5 +14,6 @@
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/junit-4.10.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/weblaf-1.15.jar"/>
 	<classpathentry kind="lib" path="C:/workspace - Kopie/java-dds/target/dds-1.0.1-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/commons-io-2.4/commons-io-2.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -13,6 +13,7 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
+uniform vec3 eyePosition;
 uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
@@ -23,14 +24,14 @@ in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
 
 vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
-  vec3 direction_to_light_eye = normalize((viewMatrix * vec4(lightDirection, 0)).xyz);
+  vec3 direction_to_light_eye = normalize((vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
   float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
   
   // standard specular light
   vec3 reflection_eye = reflect (-direction_to_light_eye, normal);
-  vec3 surface_to_viewer_eye = normalize (-position);
+  vec3 surface_to_viewer_eye = normalize (position);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = pow (dot_prod_specular, specular.w);
@@ -49,6 +50,69 @@ const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
+
+vec4 getViewPosInTextureSpace(vec3 viewPosition) {
+	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
+    projectedCoord.xy /= projectedCoord.w;
+    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+    return projectedCoord;
+}
+
+vec3 binarySearchHitPoint(vec3 positionView, vec3 rayDirection) {
+	const int steps = 10;
+	float dist = 200;
+	
+	vec3 start = positionView;
+	vec3 end = start + dist * rayDirection;
+	vec3 currentViewPos = end;
+	
+	for (int i = 0; i < steps; i++) {
+		//FIXME
+		  currentViewPos = texture2D(positionMap, getViewPosInTextureSpace(end).xy).xyz;
+		  
+		  float zDiff = end.z - currentViewPos.z;
+		  
+		  if (zDiff > 0) {
+		  	end += dist*rayDirection;
+		  }
+		  
+		  dist *= 0.5;
+		  end -= dist*rayDirection;
+	}
+	
+	return end;
+}
+
+vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
+	vec3 eyeToSurfaceView =  /*(viewMatrix * vec4(eyePosition,1)).xyz*/ targetPosView;
+	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
+	vec3 viewRay = 40*normalize(reflectionVecView);
+	
+	vec3 currentViewPos = targetPosView;
+	
+	for (int i = 0; i < 10; i++) {
+	
+		  currentViewPos += viewRay;
+		  
+		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
+		  
+		  float difference = currentViewPos.z - currentPosSample.z;
+		  if (difference > 0.0025) {
+		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
+		  	if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1) {
+				return texture2D(diffuseMap, resultCoords.xy).xyz;
+		  	}
+			return color;
+		  }
+	}
+	
+	//vec3 hitPoint = binarySearchHitPoint(currentViewPos, viewRay);
+	//vec2 resultCoords = getViewPosInTextureSpace(hitPoint).xy;
+	//return texture2D(diffuseMap, resultCoords).xyz;
+	
+	return color;
+}
+
 /////////////////////
 
 void main(void) {
@@ -105,7 +169,6 @@ void main(void) {
 		  bl += step(falloff,depthDifference)*normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
 		  
 		  
-		  
 		  vec3 occluderColor = texture2D(diffuseMap, se.xy).xyz;
 		  float dotProdSSDO = dot((viewMatrix * vec4(lightDirection, 0)).xyz, occNorm);
 		  vec3 occluderLit = occluderColor * dotProdSSDO * lightDiffuse;
@@ -120,4 +183,5 @@ void main(void) {
 	
 	vec4 ambientTerm = vec4((color * ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor + ambientTerm;//+ vec4(ssdo,1);
+	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), 0.5);
 }

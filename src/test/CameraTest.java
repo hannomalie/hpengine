@@ -39,7 +39,7 @@ public class CameraTest {
 		Assert.assertEquals(0, camera.getRight().y, epsilon);
 		Assert.assertEquals(-1, camera.getRight().z, epsilon);
 		
-		Assert.assertEquals(1, camera.getBack().x, epsilon); // z is 1, not -1!
+		Assert.assertEquals(-1, camera.getBack().x, epsilon); // z is 1, not -1!
 		Assert.assertEquals(0, camera.getBack().y, epsilon);
 		Assert.assertEquals(0, camera.getBack().z, epsilon);
 	}

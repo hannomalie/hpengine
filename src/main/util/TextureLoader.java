@@ -25,7 +25,9 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import main.DeferredRenderer;
+import main.World;
 
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector2f;
@@ -101,6 +103,15 @@ public class TextureLoader {
             return tex;
         }
         
+        if (texturePreCompiled(resourceName)) {
+        	tex = Texture.read(resourceName);
+        	if (tex != null) {
+                table.put(resourceName,tex);
+                return tex;
+            }
+        }
+        
+        
         tex = getTexture(resourceName,
                          GL11.GL_TEXTURE_2D, // target
                          GL11.GL_RGBA,     // dst pixel format
@@ -108,14 +119,29 @@ public class TextureLoader {
                          GL11.GL_LINEAR, false);
         
         table.put(resourceName,tex);
-        
+        System.out.println("Precompiled " + Texture.write(tex, resourceName));
         return tex;
     }
-    public CubeMap getCubeMap(String resourceName) throws IOException {
+    
+    public boolean texturePreCompiled(String resourceName) {
+    	String fileName = FilenameUtils.getBaseName(resourceName);
+    	File f = new File(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+    	return f.exists();
+	}
+
+	public CubeMap getCubeMap(String resourceName) throws IOException {
         Texture tex = (Texture) table.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
             return (CubeMap) tex;
+        }
+        
+        if (texturePreCompiled(resourceName)) {
+        	tex = Texture.read(resourceName);
+        	if (tex != null) {
+                table.put(resourceName,tex);
+                return (CubeMap) tex;
+            }
         }
         
         tex = getCubeMap(resourceName,
@@ -125,7 +151,7 @@ public class TextureLoader {
                          GL11.GL_LINEAR, false);
 
         table.put(resourceName + "_cube",tex);
-        
+        System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
         return (CubeMap) tex;
     }
 
@@ -137,6 +163,14 @@ public class TextureLoader {
             return tex;
         }
         
+        if (texturePreCompiled(resourceName)) {
+        	tex = Texture.read(resourceName);
+        	if (tex != null) {
+                table.put(resourceName,tex);
+                return tex;
+            }
+        }
+        
         tex = getTexture(resourceName,
                          GL11.GL_TEXTURE_2D, // target
                          GL11.GL_RGBA,     // dst pixel format
@@ -144,6 +178,7 @@ public class TextureLoader {
                          GL11.GL_LINEAR, true);
         
         table.put(resourceName,tex);
+        System.out.println("Precompiled " + Texture.write(tex, resourceName));
         
         return tex;
     }
@@ -155,6 +190,14 @@ public class TextureLoader {
             return (CubeMap) tex;
         }
         
+        if (texturePreCompiled(resourceName)) {
+        	tex = Texture.read(resourceName);
+        	if (tex != null) {
+                table.put(resourceName,tex);
+                return (CubeMap) tex;
+            }
+        }
+        
         tex = getCubeMap(resourceName,
                          GL13.GL_TEXTURE_CUBE_MAP, // target
                          GL11.GL_RGBA,     // dst pixel format
@@ -162,7 +205,7 @@ public class TextureLoader {
                          GL11.GL_LINEAR, true);
         
         table.put(resourceName+ "_cube",tex);
-        
+        System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
         return (CubeMap) tex;
     }
     
@@ -418,8 +461,8 @@ public class TextureLoader {
 			break;
 
 		case 2: // GL_TEXTURE_CUBE_MAP_POSITIVE_Y
-			result[1] = new Vector2f(imageWidth/4, 0);
-			result[0] = new Vector2f(imageWidth/2, imageHeight/3); // TODO: Why do I have to flip this bxxxx!?
+			result[0] = new Vector2f(imageWidth/4, 0);
+			result[1] = new Vector2f(imageWidth/2, imageHeight/3); // TODO: Why do I have to flip this bxxxx!?
 			break;
 
 		case 3: // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y

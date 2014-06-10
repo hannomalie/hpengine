@@ -31,9 +31,9 @@ public class Entity implements IEntity {
 		DataChannels.NORMAL
 	);
 	public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
-			DataChannels.POSITION3,
-			DataChannels.NORMAL
-		);
+		DataChannels.POSITION3,
+		DataChannels.NORMAL
+	);
 	
 	public static EnumSet<DataChannels> SHADOWCHANNELS = EnumSet.of(
 			DataChannels.POSITION3);
@@ -197,11 +197,11 @@ public class Entity implements IEntity {
 			renderer.setLastUsedProgram(firstPassProgram);
 		}
 		
-		firstPassProgram.setUniform("useParallax", World.useParallax);
+//		firstPassProgram.setUniform("useParallax", World.useParallax);
 //		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-//		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		
 		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		material.setTexturesActive(firstPassProgram);
@@ -321,7 +321,7 @@ public class Entity implements IEntity {
 	public void rotate(Vector4f axisAngle) {
 		Quaternion rot = new Quaternion();
 		rot.setFromAxisAngle(axisAngle);
-		orientation = Quaternion.mul(orientation, rot, orientation);
+		Quaternion.mul(orientation, rot, orientation);
 	}
 	@Override
 	public void setOrientation(Quaternion orientation) {

@@ -38,22 +38,9 @@ public class TextureTest {
 		
 		String filename = "wood_diffuse.hptexture";
 
-	    // save the object to file
-	    FileOutputStream fos = null;
-	    ObjectOutputStream out = null;
-	      fos = new FileOutputStream(filename);
-	      out = new ObjectOutputStream(fos);
-	      out.writeObject(texture);
-
-	      out.close();
+		Assert.assertTrue(Texture.write(texture, filename));
 	      
-	    FileInputStream fis = null;
-	    ObjectInputStream in = null;
-	      fis = new FileInputStream(filename);
-	      in = new ObjectInputStream(fis);
-	      texture = (Texture) in.readObject();
-	      in.close();
-	      texture.upload();
+        texture = Texture.read(filename);
 	    
 		StopWatch.ACTIVE = false;
 	    Assert.assertArrayEquals(data, texture.getData());

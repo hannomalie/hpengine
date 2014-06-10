@@ -30,6 +30,7 @@ uniform float materialSpecularCoefficient = 0;
 //uniform float materialTransparency = 1;
 
 uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
 in vec4 color;
@@ -75,7 +76,8 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 
 void main(void) {
 	
-	vec3 V = normalize(eyeVec);
+	vec3 V = normalize((position_world.xyz - eyePos_world.xyz).xyz);
+	//V = (viewMatrix * vec4(V, 0)).xyz;
 	vec2 UV = texCoord;
 
 #ifdef use_normalMap
@@ -86,7 +88,7 @@ void main(void) {
 	if (useParallax) {
 		float height = texture2D(heightMap, UV).r;
 		float v = height * 0.106 - 0.012;
-		UV = UV + (normalize(eyeVec).xy * v);
+		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
 		float n = 30;
 		float bumpScale = 15;
@@ -105,34 +107,33 @@ void main(void) {
 	}
 	
 	// NORMAL
-	vec3 N = normal_model;
+	vec3 PN_view =  (viewMatrix * vec4(normal_model, 0)).xyz;
 #ifdef use_normalMap
-		N = ((vec4(perturb_normal(normal_model, eyeVec, UV), 0)).xyz);
+		PN_view = ((viewMatrix * vec4(perturb_normal(normal_world, V, UV), 0)).xyz);
 #endif
 	
 	out_position = viewMatrix * position_world;
 	float depth = position_clip.z / position_clip.w;
-	vec3 PN_view = (viewMatrix * vec4(N, 0)).xyz;
+	
 	out_normal = vec4(PN_view, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
 #ifdef use_diffuseMap
-		UV = texCoord;
-		UV.x = texCoord.x * diffuseMapWidth;
-		UV.y = texCoord.y * diffuseMapHeight;
-		color = texture2D(diffuseMap, UV);
-		if(color.a<0.1)
-		{
-			discard;
-		}
+	UV = texCoord;
+	UV.x = texCoord.x * diffuseMapWidth;
+	UV.y = texCoord.y * diffuseMapHeight;
+	color = texture2D(diffuseMap, UV);
+	if(color.a<0.1)
+	{
+		discard;
+	}
 #endif
 	out_color = color;
 
 #ifdef use_reflectionMap
 	float reflect_factor = texture2D(reflectionMap, UV).x;
-	vec3 tempEyeVec = out_position.xyz - eyePos_world;
-	vec3 texCoords3d = normalize(reflect(tempEyeVec, N));
-	texCoords3d.y *= -1;
+	vec3 texCoords3d = normalize(reflect(V, normal_world));
+	//texCoords3d.y *= -1;
 	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
 #endif
 
@@ -145,4 +146,5 @@ void main(void) {
 		specularColor = vec4(specularSample, materialSpecularCoefficient);
 #endif
 	out_specular = specularColor;
+	
 }
