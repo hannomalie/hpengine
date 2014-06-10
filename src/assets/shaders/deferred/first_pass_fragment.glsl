@@ -86,22 +86,22 @@ void main(void) {
 #endif
 	
 	if (useParallax) {
-		float height = texture2D(heightMap, UV).r;
-		float v = height * 0.106 - 0.012;
+		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
+		float v = height * 0.05106 - 0.012;
 		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
 		float n = 30;
-		float bumpScale = 15;
+		float bumpScale = 100;
 		float step = 1/n;
 		vec2 dt = V.xy * bumpScale / (n * V.z);
 		
 		float height = 1;
 		vec2 t = UV;
-		vec4 nb = texture2D(heightMap, t);
-		while (nb.a < height) { 
+		vec4 nb = texture2D(normalMap, t);
+		while (length(nb.xyz) < height) { 
 			height -= step;
 			t += dt; 
-			nb = texture2D(heightMap, t); 
+			nb = texture2D(normalMap, t); 
 		}
 		UV = t;
 	}

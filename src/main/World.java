@@ -163,7 +163,7 @@ public class World {
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
 			for (Model model : sponza) {
-//				model.setMaterial(mirror);
+				model.setMaterial(wood);
 				Entity entity = new Entity(renderer, model, new Vector3f(0,-1f,0), model.getMaterial(),  true);
 //				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 //				entity.setScale(scale);

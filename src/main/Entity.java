@@ -197,8 +197,8 @@ public class Entity implements IEntity {
 			renderer.setLastUsedProgram(firstPassProgram);
 		}
 		
-//		firstPassProgram.setUniform("useParallax", World.useParallax);
-//		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		firstPassProgram.setUniform("useParallax", World.useParallax);
+		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());

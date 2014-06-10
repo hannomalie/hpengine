@@ -76,8 +76,8 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 		  	
 		  	currentViewPos -= viewRay;
 		  	
-		  	for(int x = 0; x < 10; x++) {
-		 		currentViewPos += viewRay/10;
+		  	for(int x = 0; x < 20; x++) {
+		 		currentViewPos += viewRay/20;
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 				  difference = currentViewPos.z - currentPosSample.z;
@@ -169,5 +169,5 @@ void main(void) {
 	
 	vec4 ambientTerm = vec4((color * ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor + ambientTerm;//+ vec4(ssdo,1);
-	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), 1);//reflect_factor);
+	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), reflect_factor);
 }
