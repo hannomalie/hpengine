@@ -28,6 +28,8 @@ public class World {
 	public static final String WORKDIR_NAME = "hp";
 
 	private static Logger LOGGER = getLogger();
+	public static boolean RELOAD_ON_FILE_CHANGE = (java.lang.management.ManagementFactory.getRuntimeMXBean().
+		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
 	
 	private OpenGLStopWatch glWatch;
 
@@ -110,24 +112,32 @@ public class World {
 		
 		Renderer.exitOnGLError("loadDummies");
 
-		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
-												"stone_specular.png", "stone_occlusion.png",
-												"stone_height.png");
+		Material white = new Material(renderer, "", new HashMap<MAP,String>(){{
+														put(MAP.DIFFUSE,"default.dds");
+													}});
+
+		Material stone = new Material(renderer, "", new HashMap<MAP,String>(){{
+														put(MAP.DIFFUSE,"stone_diffuse.png");
+														put(MAP.NORMAL,"stone_normal.png");
+													}});
+		
 		Material stone2 = new Material(renderer, "", new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"brick.png");
 														    		put(MAP.NORMAL,"brick_normal.png");
-		}});
-		Material wood = new Material(renderer, "", "wood_diffuse.png", "wood_normal.png",
-												"wood_specular.png", "wood_occlusion.png",
-												"wood_height.png");
+													}});
+		
+		Material wood = new Material(renderer, "", new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"wood_diffuse.png");
+														    		put(MAP.NORMAL,"wood_normal.png");
+													}});
 		Material stoneWet = new Material(renderer, "", new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"stone_diffuse.png");
 														    		put(MAP.NORMAL,"stone_normal.png");
 														    		put(MAP.REFLECTION,"stone_reflection.png");
-	    }});
+													}});
 		Material mirror = new Material(renderer, "", new HashMap<MAP,String>(){{
 														    		put(MAP.REFLECTION,"default.dds");
-		}});
+													}});
 
 		StopWatch.getInstance().start("Load Dummies");
 		try {
@@ -142,7 +152,7 @@ public class World {
 						mat = wood;
 					}
 					if (i%4 == 3) {
-						mat = stoneWet;
+						mat = stone2;
 					}
 					if (i%4 == 4) {
 						mat = mirror;
@@ -163,7 +173,10 @@ public class World {
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
 			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
 			for (Model model : sponza) {
-				model.setMaterial(wood);
+//				model.setMaterial(mirror);
+//				if(model.getMaterial().getName().contains("fabric")) {
+//					model.setMaterial(mirror);
+//				}
 				Entity entity = new Entity(renderer, model, new Vector3f(0,-1f,0), model.getMaterial(),  true);
 //				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 //				entity.setScale(scale);

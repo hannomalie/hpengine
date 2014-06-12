@@ -15,6 +15,7 @@ uniform bool useParallax;
 uniform bool useSteepParallax;
 
 uniform float normalMapWidth = 1;
+
 uniform float normalMapHeight = 1;
 
 uniform float diffuseMapWidth = 1;
@@ -22,6 +23,7 @@ uniform float diffuseMapHeight = 1;
 
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
+
 
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);

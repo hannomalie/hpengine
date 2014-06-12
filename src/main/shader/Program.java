@@ -2,10 +2,11 @@ package main.shader;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,13 +14,20 @@ import main.DataChannels;
 import main.Entity;
 import main.Renderer;
 import main.util.Util;
+import main.util.ressources.FileMonitor;
+import main.util.ressources.Loadable;
+import main.util.ressources.ReloadOnFileChangeListener;
+import main.util.ressources.Reloadable;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Program {
+public class Program implements Reloadable {
 	private static Logger LOGGER = getLogger();
 	
 	public static HashMap<Integer, Program> LIBRARY = new HashMap<>();
@@ -39,6 +47,10 @@ public class Program {
 	private String vertexShaderLocation;
 	private String fragmentShaderLocation;
 
+	private String geometryShaderSource;
+	private String vertexShaderSource;
+	private String fragmentShaderSource;
+
 	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
 		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, true);
 	}
@@ -51,8 +63,49 @@ public class Program {
 		this.vertexShaderLocation = vertexShaderLocation;
 		this.fragmentShaderLocation = fragmentShaderLocation;
 		
+		copyToWorkDirIfNotExists();
+		load();
+		addFileListeners();
+	}
+	
+	private void copyToWorkDirIfNotExists() {
+		try {
+			if (!new File("hp/" + vertexShaderLocation).exists()) {
+				FileUtils.copyFile(new File("bin/" + vertexShaderLocation), new File("hp/" + vertexShaderLocation));
+			}
+			if (!new File("hp/" + fragmentShaderLocation).exists()) {
+				FileUtils.copyFile(new File("bin/" + fragmentShaderLocation), new File("hp/" + fragmentShaderLocation));
+			}
+			if (geometryShaderLocation != null && !new File("hp/" + geometryShaderLocation).exists()) {
+				FileUtils.copyFile(new File("bin/" + geometryShaderLocation), new File("hp/" + geometryShaderLocation));
+			}
+			
+			this.vertexShaderLocation = "hp/" +vertexShaderLocation;
+			this.fragmentShaderLocation = "hp/" +fragmentShaderLocation;
+			this.geometryShaderLocation = geometryShaderLocation == null ? null :"hp/programs/" +geometryShaderLocation;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void addFileListeners() {
+//		File directoryVertexShader = new File(vertexShaderLocation);
+//		FileAlterationObserver observerVertexShader = new FileAlterationObserver(directoryVertexShader);
+//		observerVertexShader.addListener(new ReloadOnFileChangeListener(this));
+
+		File directoryFragmentShader = new File(fragmentShaderLocation);
+		FileAlterationObserver observerFragmentShader = new FileAlterationObserver(directoryFragmentShader.getParent());
+		observerFragmentShader.addListener(new ReloadOnFileChangeListener(this));
+		FileMonitor.getInstance().add(observerFragmentShader);
+	}
+
+	public void load() {
 		vertexShaderId = Program.loadShader(vertexShaderLocation, GL20.GL_VERTEX_SHADER);
-		fragmentShaderId = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER, definesString);
+		
+		LoadedShader _fragmentShader = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER, definesString); 
+		fragmentShaderId = _fragmentShader.shaderId;
+		fragmentShaderSource = _fragmentShader.source;
+		
 		id = GL20.glCreateProgram();
 		GL20.glAttachShader(id, vertexShaderId);
 		GL20.glAttachShader(id, fragmentShaderId);
@@ -67,6 +120,15 @@ public class Program {
 		
 		use();
 		LIBRARY.put(hashCode(), this);
+	}
+	
+	public void reload() {
+		unload();
+		load();
+	}
+	
+	public void unload() {
+		GL20.glDeleteProgram(id);
 	}
 	
 	@Override
@@ -150,8 +212,8 @@ public class Program {
 	public void setFragmentShaderId(int fragmentShaderId) {
 		this.fragmentShaderId = fragmentShaderId;
 	}
-
-	public static int loadShader(String filename, int type, String mapDefinesString) {
+	
+	public static LoadedShader loadShader(String filename, int type, String mapDefinesString) {
 		String shaderSource;
 		int shaderID = 0;
 		
@@ -159,7 +221,11 @@ public class Program {
 		if (shaderSource == null) {
 			shaderSource = "";
 		}
-		shaderSource += Util.loadAsTextFile(filename);
+		try {
+			shaderSource += FileUtils.readFileToString(new File(filename));//Util.loadAsTextFile(filename);
+		} catch (IOException e) {
+			shaderSource += Util.loadAsTextFile(filename);
+		}
 		
 		shaderID = GL20.glCreateShader(type);
 		GL20.glShaderSource(shaderID, shaderSource);
@@ -173,11 +239,22 @@ public class Program {
 		
 		Renderer.exitOnGLError("loadShader");
 		
-		return shaderID;
+		return new LoadedShader(shaderID, shaderSource);
+		//return shaderID;
+	}
+	
+	static class LoadedShader {
+		public int shaderId = -1;
+		public String source = "";
+		
+		public LoadedShader(int shaderId, String source) {
+			this.shaderId = shaderId;
+			this.source = source;
+		}
 	}
 	
 	public static int loadShader(String filename, int type) {
-		return loadShader(filename, type, "");
+		return loadShader(filename, type, "").shaderId;
 	}
 
 	public boolean needsTextures() {
@@ -244,5 +321,9 @@ public class Program {
 	}
 	public void addEmptyUniform(Uniform uniform) {
 		uniforms.put(uniform.name, uniform);
+	}
+
+	public String getFragmentShaderSource() {
+		return fragmentShaderSource;
 	}
 }

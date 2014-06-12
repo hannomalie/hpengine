@@ -21,6 +21,7 @@ import main.util.CLUtil;
 import main.util.CubeMap;
 import main.util.OBJLoader;
 import main.util.Util;
+import main.util.ressources.FileMonitor;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
@@ -76,7 +77,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 4.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 256;
+	private static int MAXLIGHTS = 156;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -185,6 +186,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public void update(float seconds) {
+		FileMonitor.getInstance().checkAndNotify();
 		updateLights(seconds);
 		setLastFrameTime();
 	}
@@ -363,7 +365,7 @@ public class DeferredRenderer implements Renderer {
 			for (PointLight light : pointLights) {
 				if (!light.isInFrustum(camera)) { continue;}
 				light.drawAsMesh(this, camera);
-			}	
+			}
 		}
 		
 		GL11.glDepthMask(false);
@@ -392,6 +394,8 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3));
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		cubeMap.bind();
 
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
