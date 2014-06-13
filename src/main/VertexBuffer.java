@@ -170,6 +170,9 @@ public class VertexBuffer {
 //		LOGGER.log(Level.INFO, String.format("Drawing %d vertices => %d triangles", verticesCount, verticesCount/3));
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
+	public void drawAgain() {
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+	}
 	
 	public void drawDebug() {
 		GL30.glBindVertexArray(vertexArray);

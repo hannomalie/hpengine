@@ -79,10 +79,15 @@ public class PointLight extends Entity {
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
 	}
-	
+
 	public void draw(Renderer renderer, Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		vertexBuffer.draw();
+	}
+	
+	public void drawAgain(Renderer renderer, Program program) {
+		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		vertexBuffer.drawAgain();
 	}
 
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {

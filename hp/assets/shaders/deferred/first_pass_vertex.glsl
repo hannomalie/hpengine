@@ -59,10 +59,10 @@ void main(void) {
 	texCoord = in_TextureCoord;
 	normalVec = in_Normal;
 	normal_model = (vec4(in_Normal,0)).xyz;
-	normal_world = (modelMatrix * vec4(normal_model,0)).xyz;
+	normal_world = (transpose(inverse(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
 	
 	eyePos_world = ( vec4(eyePosition,1)).xyz;
-	eyeVec = (eyePos_world-(vec4(position_world.xyz, 0)).xyz);
+	eyeVec = (eyePos_world+(vec4(position_world.xyz, 0)).xyz);
 	
 }

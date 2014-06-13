@@ -185,7 +185,7 @@ public class Program implements Reloadable {
 		EnumSet<DataChannels> channels = EnumSet.allOf(DataChannels.class);
 		for (DataChannels channel: channels) {
 			GL20.glBindAttribLocation(id, channel.getLocation(), channel.getBinding());
-			LOGGER.log(Level.INFO, String.format("Program(%d): Bound GL attribute location for %s with %s", id, channel.getLocation(), channel.getBinding()));
+//			LOGGER.log(Level.INFO, String.format("Program(%d): Bound GL attribute location for %s with %s", id, channel.getLocation(), channel.getBinding()));
 		}
 	}
 	

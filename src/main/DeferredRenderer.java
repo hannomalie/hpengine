@@ -77,7 +77,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 4.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 156;
+	private static int MAXLIGHTS = 300;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -424,6 +424,7 @@ public class DeferredRenderer implements Renderer {
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
+		boolean firstLightDrawn = false;
 		for (int i = 0 ; i < pointLights.size(); i++) {
 			PointLight light = pointLights.get(i);
 			if(!light.isInFrustum(camera)) {
@@ -449,7 +450,13 @@ public class DeferredRenderer implements Renderer {
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
 			secondPassPointProgram.setUniform("lightSpecular", light.getColor().x, light.getColor().y, light.getColor().z);
-			light.draw(this, secondPassPointProgram);
+			
+			if(firstLightDrawn) {
+				light.drawAgain(this, secondPassPointProgram);
+			} else {
+				light.draw(this, secondPassPointProgram);
+			}
+			firstLightDrawn = true;
 		}
 		//secondPassTarget.unuse();
 		finalTarget.unuse();

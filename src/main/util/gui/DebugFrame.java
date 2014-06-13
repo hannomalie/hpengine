@@ -56,7 +56,8 @@ public class DebugFrame {
 	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
-	
+
+	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
@@ -195,6 +196,11 @@ public class DebugFrame {
 		addOctreeSceneObjects(world);
 		scenePane = new JScrollPane(sceneOctree);
 
+		toggleFileReload.addActionListener( e -> {
+			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
+			toggleParallax.setSelected(World.RELOAD_ON_FILE_CHANGE);
+		});
+		
 		toggleParallax.addActionListener( e -> {
 			World.useParallax = !World.useParallax;
 			World.useSteepParallax = false;
@@ -305,7 +311,8 @@ public class DebugFrame {
 			}
 		});
 		buttonPanel.add(ambientLightColorChooserPanel);
-		
+
+		buttonPanel.add(toggleFileReload);
 		buttonPanel.add(toggleParallax);
 		buttonPanel.add(toggleSteepParallax);
 		buttonPanel.add(toggleAmbientOcclusion);
