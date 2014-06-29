@@ -32,6 +32,7 @@ import main.World;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.util.Texture;
+import main.util.script.ScriptManager;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.util.vector.Vector3f;
@@ -40,14 +41,17 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.label.WebLabel;
+import com.alee.laf.panel.WebPanel;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.tabbedpane.WebTabbedPane;
+import com.alee.laf.text.WebTextArea;
 import com.alee.utils.ImageUtils;
 import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
 
 
 public class DebugFrame {
 
+	ScriptManager scriptManager;
 	private JFrame mainFrame = new JFrame();
 	private WebTabbedPane tabbedPane = new WebTabbedPane();
 	
@@ -55,6 +59,7 @@ public class DebugFrame {
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
+	private WebPanel scriptPanel;
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
 
 	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
@@ -77,6 +82,8 @@ public class DebugFrame {
 	private JTree sceneOctree = new JTree();
 	
 	public DebugFrame(World world) {
+		
+		scriptManager = new ScriptManager(world);
 		
 		mainFrame.setLayout(new BorderLayout(5,5));
 
@@ -195,6 +202,20 @@ public class DebugFrame {
 		addSceneObjects(world);
 		addOctreeSceneObjects(world);
 		scenePane = new JScrollPane(sceneOctree);
+		
+		scriptPanel = new WebPanel();
+		scriptPanel.setMargin ( 10 );
+		WebTextArea scriptArea = new WebTextArea(600,600);
+		scriptPanel.add(scriptArea, BorderLayout.CENTER);
+		WebButton runScriptButton = new WebButton("Run");
+		runScriptButton.addActionListener(e -> {
+			try {
+				scriptManager.eval(scriptArea.getText());
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		});
+		scriptPanel.add(runScriptButton, BorderLayout.NORTH);
 
 		toggleFileReload.addActionListener( e -> {
 			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
@@ -319,8 +340,6 @@ public class DebugFrame {
 		buttonPanel.add(toggleFrustumCulling);
 		buttonPanel.add(ambientOcclusionRadiusSlider);
 		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
-//		buttonPanel.add(ambientOcclusionStrengthSlider);
-//		buttonPanel.add(ambientOcclusionFalloff);
 		buttonPanel.setSize(200, 200);
 
 //		mainFrame.add(materialPane);
@@ -331,6 +350,7 @@ public class DebugFrame {
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
 		tabbedPane.addTab("Light", lightsPane);
+		tabbedPane.addTab("Script", scriptPanel);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
