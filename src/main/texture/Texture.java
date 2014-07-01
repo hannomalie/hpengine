@@ -1,4 +1,4 @@
-package main.util;
+package main.texture;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,6 +29,9 @@ import org.lwjgl.opengl.GL11;
  * @author Brian Matzon
  */
 public class Texture implements Serializable {
+	
+	private String path = "";
+	
     /** The GL target type */
 	protected int target; 
     /** The GL texture ID */
@@ -60,9 +63,10 @@ public class Texture implements Serializable {
      * @param target The GL target 
      * @param textureID The GL texture ID
      */
-    public Texture(int target,int textureID) {
+    public Texture(String path, int target,int textureID) {
         this.target = target;
         this.textureID = textureID;
+        this.path = path;
     }
     
     /**
@@ -246,7 +250,7 @@ public class Texture implements Serializable {
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
 		try {
-			fis = new FileInputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			fis = new FileInputStream(getDirectory() + fileName + ".hptexture");
 			in = new ObjectInputStream(fis);
 			Texture texture = (Texture) in.readObject();
 			in.close();
@@ -263,7 +267,7 @@ public class Texture implements Serializable {
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
 		try {
-			fos = new FileOutputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			fos = new FileOutputStream(getDirectory() + fileName + ".hptexture");
 			out = new ObjectOutputStream(fos);
 			out.writeObject(texture);
 
@@ -272,11 +276,19 @@ public class Texture implements Serializable {
 		} finally {
 			try {
 				out.close();
-				return true;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 		return false;
+	}
+
+	public static String getDirectory() {
+		return World.WORKDIR_NAME + "/assets/textures/";
+	}
+	
+	@Override
+	public String toString() {
+		return path;
 	}
 }

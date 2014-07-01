@@ -14,12 +14,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import main.Camera;
-import main.DataChannels;
-import main.IEntity;
-import main.Renderer;
-import main.VertexBuffer;
-import main.World;
+import main.camera.Camera;
+import main.model.DataChannels;
+import main.model.IEntity;
+import main.model.VertexBuffer;
+import main.renderer.Renderer;
 import main.shader.Program;
 
 import org.lwjgl.BufferUtils;

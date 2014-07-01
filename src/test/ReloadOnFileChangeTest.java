@@ -2,33 +2,24 @@ package test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.EnumSet;
-
-import javax.management.monitor.Monitor;
 
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import junit.framework.Assert;
-import main.DataChannels;
-import main.DeferredRenderer;
-import main.Spotlight;
 import main.World;
-import main.shader.Program;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
 import main.util.ressources.FileMonitor;
-import main.util.ressources.Loadable;
 import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.monitor.FileAlterationListener;
-import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Commons;
-
 public class ReloadOnFileChangeTest {
 	
-	private static DeferredRenderer renderer;
+	private static Renderer renderer;
 	private static File simpleFile;
 
 	@BeforeClass

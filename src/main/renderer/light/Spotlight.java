@@ -1,20 +1,25 @@
-package main;
+package main.renderer.light;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.logging.Level;
+import java.util.HashMap;
 
+import main.camera.Camera;
+import main.model.Entity;
+import main.model.IEntity;
+import main.model.Model;
+import main.model.OBJLoader;
+import main.renderer.RenderTarget;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
+import main.renderer.material.Material.MAP;
 import main.shader.Program;
-import main.util.OBJLoader;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
@@ -55,13 +60,13 @@ public class Spotlight implements IEntity {
 	}
 	
 	public void init(Renderer renderer, Camera camera) {
-		Material stone = new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
-				"stone_specular.png", "stone_occlusion.png",
-				"stone_height.png");
+		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+																	put(MAP.DIFFUSE,"assets/textures/default.dds");
+																}});
 
 		try {
-			Model model = OBJLoader.loadTexturedModel(new File("C:\\cube.obj")).get(0);
-			box = new Entity(renderer, model, camera.getPosition(), stone, true);
+			Model model = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj")).get(0);
+			box = renderer.getEntityFactory().getEntity(camera.getPosition(), model, white);
 			box.setScale(0.4f);
 		} catch (IOException e) {
 			e.printStackTrace();

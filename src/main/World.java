@@ -10,19 +10,28 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
-import main.Material.MAP;
+import main.camera.Camera;
+import main.model.Entity;
+import main.model.IEntity;
+import main.model.Model;
+import main.model.OBJLoader;
 import main.octree.Octree;
-import main.util.OBJLoader;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
+import main.renderer.material.Material;
+import main.renderer.material.Material.MAP;
+import main.texture.Texture;
 import main.util.gui.DebugFrame;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
+import org.apache.commons.io.FileUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.laf.WebLookAndFeel;
-import com.sun.prism.paint.Stop;
 
 public class World {
 	public static final String WORKDIR_NAME = "hp";
@@ -60,7 +69,7 @@ public class World {
 
 	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 10;
+	private int entityCount = 0;
 	public Renderer renderer;
 	private Camera camera;
 	
@@ -77,12 +86,21 @@ public class World {
 	}
 
 	private void initWorkDir() {
-		File theDir = new File(WORKDIR_NAME);
+		ArrayList<File> dirs = new ArrayList<>();
+		dirs.add(new File(WORKDIR_NAME));
+		dirs.add(new File(Texture.getDirectory()));
 
-		// if the directory does not exist, create it
-		if (!theDir.exists()) {
-			boolean result = theDir.mkdir();
+		for (File file : dirs) {
+			createIfAbsent(file);
 		}
+	}
+	
+	private boolean createIfAbsent(File folder) {
+
+		if (!folder.exists()) {
+			return folder.mkdir();
+		}
+		return true;
 	}
 	
 	public void simulate() {
@@ -112,36 +130,36 @@ public class World {
 		
 		Renderer.exitOnGLError("loadDummies");
 
-		Material white = new Material(renderer, "", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"default.dds");
-													}});
+		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														put(MAP.DIFFUSE,"assets/textures/default.dds");
+																}});
 
-		Material stone = new Material(renderer, "", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"stone_diffuse.png");
-														put(MAP.NORMAL,"stone_normal.png");
-													}});
+		Material stone = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
+														put(MAP.NORMAL,"assets/textures/stone_normal.png");
+																}});
 		
-		Material stone2 = new Material(renderer, "", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"brick.png");
-														    		put(MAP.NORMAL,"brick_normal.png");
-													}});
+		Material stone2 = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"assets/textures/brick.png");
+														    		put(MAP.NORMAL,"assets/textures/brick_normal.png");
+																}});
 		
-		Material wood = new Material(renderer, "", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"wood_diffuse.png");
-														    		put(MAP.NORMAL,"wood_normal.png");
-													}});
-		Material stoneWet = new Material(renderer, "", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"stone_diffuse.png");
-														    		put(MAP.NORMAL,"stone_normal.png");
-														    		put(MAP.REFLECTION,"stone_reflection.png");
-													}});
-		Material mirror = new Material(renderer, "", new HashMap<MAP,String>(){{
-														    		put(MAP.REFLECTION,"default.dds");
-													}});
+		Material wood = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"assets/textures/wood_diffuse.png");
+														    		put(MAP.NORMAL,"assets/textures/wood_normal.png");
+																}});
+		Material stoneWet = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														    		put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
+														    		put(MAP.NORMAL,"assets/textures/stone_normal.png");
+														    		put(MAP.REFLECTION,"assets/textures/stone_reflection.png");
+																}});
+		Material mirror = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+														    		put(MAP.REFLECTION,"assets/textures/default.dds");
+																}});
 
 		StopWatch.getInstance().start("Load Dummies");
 		try {
-			List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj"));
+			List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = mirror;
@@ -159,7 +177,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
-						IEntity entity = new Entity(renderer, box.get(0), new Vector3f(i*10,0-random*i+j,j*10), mat, true);
+						IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(i*10,0-random*i+j,j*10), box.get(0), mat);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
@@ -171,20 +189,20 @@ public class World {
 			}
 			
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
-			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
+			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(mirror);
 //				if(model.getMaterial().getName().contains("fabric")) {
 //					model.setMaterial(mirror);
 //				}
-				Entity entity = new Entity(renderer, model, new Vector3f(0,-1f,0), model.getMaterial(),  true);
+				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,-1f,0), model);
 //				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 //				entity.setScale(scale);
 				entities.add(entity);
 			}
-			List<Model> skyBox = OBJLoader.loadTexturedModel(new File("C:\\skybox.obj"));
+			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File("C:\\skybox.obj"));
 			for (Model model : skyBox) {
-				Entity entity = new Entity(renderer, model, new Vector3f(0,0,0), mirror,  true);
+				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model, mirror);
 				Vector3f scale = new Vector3f(1000, 1000f, 1000f);
 				entity.setScale(scale);
 				entities.add(entity);
@@ -301,5 +319,7 @@ public class World {
 		
 //		Renderer.exitOnGLError("loopCycle");
 	}
-	
-}
+
+	public Renderer getRenderer() {
+		return renderer;
+	}}

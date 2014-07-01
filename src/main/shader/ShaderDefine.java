@@ -4,7 +4,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Set;
 
-import main.Material.MAP;
+import main.renderer.material.Material.MAP;
 
 public enum ShaderDefine {
 	

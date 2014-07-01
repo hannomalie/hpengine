@@ -1,7 +1,13 @@
-package main;
+package main.renderer.light;
 
+import java.awt.Color;
 import java.util.List;
 
+import main.camera.Camera;
+import main.model.Entity;
+import main.model.Model;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
 import main.shader.Program;
 import main.util.Util;
 
@@ -16,44 +22,39 @@ public class PointLight extends Entity {
 	private static int counter = 0;
 	private Vector4f color;
 	
-	public PointLight() {
-		this(new Vector3f(0,0,0));
-	}
-
-	public PointLight(Vector3f position) {
-		this(position, new Vector4f(0,0,0,0));
-	}
-
-	public PointLight(Vector3f position, Vector4f colorIntensity) {
-		this(position, colorIntensity, DEFAULT_RANGE);
-	}
-
-	public PointLight(Vector3f position, Vector4f colorIntensity, float range) {
+	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range, Material material) {
 		setPosition(position);
 		setColor(colorIntensity);
 		setName();
+		createVertexBuffer(model);
+		setMaterial(material);
 		counter++;
-		setScale(DEFAULT_RANGE);
+		setScale(range);
 	}
 	
-	public PointLight(Renderer renderer, Model model, Vector3f position) {
-		super(renderer, model, position, new Material(renderer, "", "default.dds"), false);
+	@Override
+	public void setMaterial(Material material) {
+		this.material = material;
 	}
 
 	private void setName() {
 		name = String.format("PointLight_%d", counter);
 	}
 
-	void setColor(Vector4f color) {
+	public void setColor(Vector4f color) {
 		this.color  = color;
 	}
 
 	public Vector4f getColor() {
 		return color;
 	}
-	
+
 	@Override
 	public void destroy() {
+	}
+	
+	@Override
+	public void update(float seconds) {
 	}
 
 	@Override
@@ -128,21 +129,9 @@ public class PointLight extends Entity {
 
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		Vector4f[] minMaxWorld = getMinMaxWorld();
-		Vector4f minWorld = minMaxWorld[0];
-		Vector4f maxWorld = minMaxWorld[1];
-		
-		Vector3f centerWorld = new Vector3f();
-		centerWorld.x = (maxWorld.x + minWorld.x)/2;
-		centerWorld.y = (maxWorld.y + minWorld.y)/2;
-		centerWorld.z = (maxWorld.z + minWorld.z)/2;
-		
-		Vector3f distVector = new Vector3f();
-		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
-		//if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
-		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
+		if (camera.getFrustum().sphereInFrustum(position.x, position.y, position.z, getRadius())) {
+//		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
 			return true;
 		}
 		return false;

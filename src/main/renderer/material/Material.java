@@ -1,14 +1,18 @@
-package main;
+package main.renderer.material;
 
 import static main.log.ConsoleLogger.getLogger;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import main.model.IEntity;
+import main.renderer.Renderer;
+import main.renderer.material.Material.MAP;
 import main.shader.Program;
 import main.shader.ShaderDefine;
-import main.util.Texture;
+import main.texture.Texture;
 import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
@@ -17,12 +21,8 @@ import org.lwjgl.util.vector.Vector3f;
 
 public class Material implements IEntity {
 	
-	public static final String TEXTUREASSETSPATH = "assets/textures/";
-	
 	public static boolean MIPMAP_DEFAULT = true;
 	public static int TEXTUREINDEX = 0;
-	public static Map<String, Material> MATERIALS = new HashMap<>();
-	public static Map<String, Texture> TEXTURES = new HashMap<>();
 	
 	private static Logger LOGGER = getLogger();
 
@@ -50,95 +50,20 @@ public class Material implements IEntity {
 		}
 	}
 
-	public Map<MAP, String> textures = new HashMap<>();
+	public Map<MAP, Texture> textures = new HashMap<>();
+	
 	private boolean textureLess = false;
-	private boolean setUp = false;
+	boolean setUp = false;
 
 	private String name = "";
 	private String path;
 
-	public Material(Renderer renderer, String path, String... maps) {
-		setup(path, maps);
+	protected Material() { }
+
+	void addTexture(MAP map, Texture texture) {
+		textures.put(map, texture);
 	}
 	
-	public Material(Renderer renderer, String path, HashMap<MAP, String> maps) {
-		setup(path, maps);
-	}
-//	public Material(String path, String... maps) {
-//		setup(path, maps);
-//	}
-
-	public Material() {
-	}
-
-	public void setup(String path, String... maps) {
-		if (path == null || path == "") {
-			this.path = TEXTUREASSETSPATH;
-		}
-		MAP[] allMaps = MAP.values();
-		
-		for (int i = 0; i < maps.length; i++) {
-			String map = maps[i];
-			String finalPath = this.path + map;
-			addTexture(allMaps[i], finalPath, Util.loadTexture(finalPath));
-		}
-		
-		setup();
-	}
-
-	public void setup(String path, HashMap<MAP, String> maps) {
-		if (path == null || path == "") {
-			this.path = TEXTUREASSETSPATH;
-		}
-		
-		for (MAP map : maps.keySet()) {
-			String fileName = maps.get(map);
-			String finalPath = this.path + fileName;
-			addTexture(map, finalPath, Util.loadTexture(finalPath));
-		}
-		
-		setup();
-	}
-	
-	public void setup() {
-		firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(textures.keySet()));
-		MATERIALS.put(name, this);
-		setUp = true;
-	}
-	
-	private void addTexture(MAP map, String path, main.util.Texture texture) {
-		if (TEXTURES.containsKey(path)) {
-//			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
-		} else {
-			TEXTURES.put(path, texture);
-//			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
-		}
-		textures.put(map, path);
-	}
-	public void loadAndAddTexture(MAP map, String path) {
-		if (TEXTURES.containsKey(path)) {
-//			LOGGER.log(Level.WARNING, String.format("Texture already loaded: %s", path));
-		} else {
-			main.util.Texture texture = Util.loadTexture(path);
-			TEXTURES.put(path, texture);
-//			LOGGER.log(Level.INFO, String.format("Texture loaded to atlas: %s", path));
-		}
-		textures.put(map, path);
-		
-	}
-	
-//	public void setup(ForwardRenderer renderer, String path) {
-//		String texture = "wood";
-//		texture = "stone";
-//		texIds[0] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_diffuse.png");
-//		texIds[1] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_normal.png");
-//		texIds[2] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_specular.png");
-//		texIds[3] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_occlusion.png");
-//		texIds[4] = ForwardRenderer.loadTextureToGL("/assets/textures/" + texture + "_height.png");
-//		
-//		ForwardRenderer.exitOnGLError("setupTexture");
-//	}
-
 	public boolean hasSpecularMap() {
 		return textures.containsKey(MAP.SPECULAR);
 	}
@@ -154,14 +79,11 @@ public class Material implements IEntity {
 			return;
 		}
 				
-		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
+		for (Entry<MAP, Texture> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
-			String path = entry.getValue();
-			main.util.Texture texture = TEXTURES.get(path);
+			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 			texture.bind();
-//			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureID());
-			// TODO: CHECK IF PROPER GETTER IS USED
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
@@ -178,7 +100,7 @@ public class Material implements IEntity {
 		
 	}
 	public void setTexturesInactive() {
-		for (Map.Entry<MAP, String> entry : textures.entrySet()) {
+		for (Map.Entry<MAP, Texture> entry : textures.entrySet()) {
 			MAP map = entry.getKey();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
@@ -214,7 +136,7 @@ public class Material implements IEntity {
 	
 	@Override
 	public String toString() {
-		return name;
+		return name + this.textures.size();
 	}
 	@Override
 	public Material getMaterial() {
@@ -249,5 +171,9 @@ public class Material implements IEntity {
 	}
 	public Program getFirstPassProgram() {
 		return firstPassProgram;
+	}
+
+	public void setProgram(Program firstPassProgram) {
+		this.firstPassProgram = firstPassProgram;
 	}
 }

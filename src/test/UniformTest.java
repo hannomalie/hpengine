@@ -1,10 +1,9 @@
 package test;
 
-import main.DeferredRenderer;
-import main.Entity;
-import main.Renderer;
-import main.Spotlight;
-import main.World;
+import main.model.Entity;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
 import main.shader.Program;
 import main.shader.Uniform;
 

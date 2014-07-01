@@ -1,4 +1,4 @@
-package main;
+package main.renderer;
 
 import static main.log.ConsoleLogger.getLogger;
 
@@ -8,19 +8,36 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import main.World;
+import main.camera.Camera;
+import main.model.DataChannels;
+import main.model.Entity;
+import main.model.EntityFactory;
+import main.model.IEntity;
+import main.model.Model;
+import main.model.OBJLoader;
+import main.model.QuadVertexBuffer;
+import main.model.VertexBuffer;
 import main.octree.Octree;
+import main.renderer.light.LightFactory;
+import main.renderer.light.PointLight;
+import main.renderer.light.Spotlight;
+import main.renderer.material.Material;
+import main.renderer.material.Material.MAP;
+import main.renderer.material.MaterialFactory;
 import main.shader.ComputeShaderProgram;
 import main.shader.Program;
+import main.texture.CubeMap;
+import main.texture.TextureFactory;
 import main.util.CLUtil;
-import main.util.CubeMap;
-import main.util.OBJLoader;
-import main.util.Util;
 import main.util.ressources.FileMonitor;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
@@ -85,17 +102,28 @@ public class DeferredRenderer implements Renderer {
 	private int deferredOutput;
 
 	public CubeMap cubeMap;
+
+	private OBJLoader objLoader;
+	private EntityFactory entityFactory;
+	private LightFactory lightFactory;
+	private MaterialFactory materialFactory;
+	private TextureFactory textureFactory;
+
+	private Model sphereModel;
 	
 	public DeferredRenderer(Spotlight light) {
+		textureFactory = new TextureFactory();
 		setupOpenGL();
 		setupShaders();
+		objLoader = new OBJLoader(this);
+		entityFactory = new EntityFactory();
+		lightFactory = new LightFactory(this);
+		materialFactory = new MaterialFactory(this);
 		
-//		Mouse.setCursorPosition(WIDTH/2, HEIGHT/2);
-		
-		Model sphereModel = null;
+		sphereModel = null;
 		try {
-			sphereModel = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
-			sphere = new Entity(this, sphereModel);
+			sphereModel = objLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
+			sphere = entityFactory.getEntity(sphereModel);
 			Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 			scale.scale(new Random().nextFloat()*20);
 			sphere.setScale(scale);
@@ -104,11 +132,15 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 		
+		Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
+														put(MAP.DIFFUSE,"assets/textures/default.dds");
+													}});
 		Random randomGenerator = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
-			PointLight pointLight = new PointLight(this, sphereModel, new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat()));
-			pointLight.setScale(MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat());
-			pointLight.setColor(new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1));
+			Vector4f color = new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1);
+			Vector3f position = new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat());
+			float range = MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat();
+			PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, range);
 			pointLights.add(pointLight);
 		}
 	}
@@ -141,7 +173,7 @@ public class DeferredRenderer implements Renderer {
 
 		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
-		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
+		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
 
 //		deferredOutput = GL11.glGenTextures();
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput);
@@ -158,14 +190,16 @@ public class DeferredRenderer implements Renderer {
 		
 		glWatch = new OpenGLStopWatch();
 		
-		cubeMap = Util.loadCubeMap("assets/textures/skybox.png");
+		try {
+			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 		CLUtil.initialize();
 	}
 	
-
-
 	private void setupShaders() {
 		
 		firstPassProgram = new Program("/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, true);
@@ -191,55 +225,7 @@ public class DeferredRenderer implements Renderer {
 		setLastFrameTime();
 	}
 	
-	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
-	private void updateLights(float seconds) {
-//		for (PointLight light : pointLights) {
-//			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
-//			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
-//			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
-//			light.update();
-//		}
-		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size(), seconds);
-//         long start = System.currentTimeMillis();
-         fjpool.invoke(task);
-//         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
-	}
 	
-	private class RecursiveUpdate extends RecursiveAction {
-		final int LIMIT = 3;
-		int result;
-		int start, end;
-		List<PointLight> lights;
-		private float seconds;
-
-		RecursiveUpdate(List<PointLight> lights, int start, int end, float seconds) {
-			this.start = start;
-			this.end = end;
-			this.lights = lights;
-			this.seconds = seconds;
-		}
-		
-		@Override
-		protected void compute() {
-			if ((end - start) < LIMIT) {
-				for (int i = start; i < end; i++) {
-					double x =  Math.sin(System.currentTimeMillis() / 1000);
-					double z =  Math.cos(System.currentTimeMillis() / 1000);
-					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
-					lights.get(i).update(1);
-				}
-			} else {
-				int mid = (start + end) / 2;
-				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid, seconds);
-				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end, seconds);
-				left.fork();
-				right.fork();
-				left.join();
-				right.join();
-			}
-		}
-		
-	}
 
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
 		draw(finalTarget, octree, camera, entities, light);
@@ -263,12 +249,12 @@ public class DeferredRenderer implements Renderer {
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		StopWatch.getInstance().start("Draw to screen");
-		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
+		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		StopWatch.getInstance().stopAndPrintMS();
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(1), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(2), debugBuffer);
 //			drawToQuad(deferredOutput, debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -294,34 +280,6 @@ public class DeferredRenderer implements Renderer {
 //		finalTarget.saveBuffer("C:\\" +  System.currentTimeMillis() + ".png");
 //		System.exit(-1);
 		
-	}
-
-	private void openClTest(RenderTarget target) {
-		GL11.glFinish();
-		IntBuffer errorBuffer = BufferUtils.createIntBuffer(1);
-		
-		
-		CLMem memSourceImage = org.lwjgl.opencl.CL10GL.clCreateFromGLTexture2D(CLUtil.context, CL10.CL_READ_ONLY_CACHE, GL11.GL_TEXTURE_2D, 0, firstPassTarget.getRenderedTexture(), errorBuffer);
-		CLMem memTargetImage = org.lwjgl.opencl.CL10GL.clCreateFromGLTexture2D(CLUtil.context, CL10.CL_MEM_WRITE_ONLY, GL11.GL_TEXTURE_2D, 0, target.getRenderedTexture(), errorBuffer);
-		int x = 0;
-		
-		int error = CL10GL.clEnqueueAcquireGLObjects(CLUtil.queue, memTargetImage, null, null);
-		
-		
-		kernel.setArg(0, memSourceImage);
-		kernel.setArg(1, memTargetImage);
-
-		final int dimensions = 1;
-		PointerBuffer globalWorkSize = BufferUtils.createPointerBuffer(dimensions);
-		globalWorkSize.put(0, 10);
-
-		CL10.clEnqueueNDRangeKernel(CLUtil.queue, kernel, dimensions, null, globalWorkSize, null, null, null);
-
-		FloatBuffer writeTo = BufferUtils.createFloatBuffer(200);
-		CL10.clEnqueueReadBuffer(CLUtil.queue, memTargetImage, CL10.CL_TRUE, 0, writeTo, null, null);
-		float[] result = new float[200];
-		writeTo.get(result, 0, 200);
-		CL10.clFinish(CLUtil.queue);
 	}
 
 	private void drawFirstPass(Camera camera, Octree octree) {
@@ -354,10 +312,15 @@ public class DeferredRenderer implements Renderer {
 		StopWatch.getInstance().start("Entities draw");
 		for (IEntity entity : entities) {
 			entity.draw(this, camera);
-//			if (entity.isSelected()) {
-//				entity.drawDebug(firstPassProgram);
-//			}
 		}
+		
+		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
+			Material old = entity.getMaterial();
+			entity.setMaterial(materialFactory.getDefaultMaterial());
+			entity.draw(this, camera);
+			entity.setMaterial(old);			
+		}
+		
 //		glWatch.stopAndPrintTimeInMS();
 		StopWatch.getInstance().stopAndGetStringMS();
 		
@@ -378,8 +341,8 @@ public class DeferredRenderer implements Renderer {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
-		finalTarget.use(true);
-		//secondPassTarget.use(false);
+		//finalTarget.use(true);
+		secondPassTarget.use(false);
 		//GL11.glClearColor(0.15f,0.15f,0.15f,0.15f); // ambient light
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
@@ -387,13 +350,13 @@ public class DeferredRenderer implements Renderer {
 		secondPassDirectionalProgram.use();
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal, depth
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // color, reflectiveness
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		cubeMap.bind();
 
@@ -458,8 +421,8 @@ public class DeferredRenderer implements Renderer {
 			}
 			firstLightDrawn = true;
 		}
-		//secondPassTarget.unuse();
-		finalTarget.unuse();
+		secondPassTarget.unuse();
+		//finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
 	}
 
@@ -479,7 +442,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // color
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
@@ -627,5 +590,109 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public CubeMap getEnvironmentMap() {
 		return cubeMap;
+	}
+	
+
+	private void openClTest(RenderTarget target) {
+		GL11.glFinish();
+		IntBuffer errorBuffer = BufferUtils.createIntBuffer(1);
+		
+		
+		CLMem memSourceImage = org.lwjgl.opencl.CL10GL.clCreateFromGLTexture2D(CLUtil.context, CL10.CL_READ_ONLY_CACHE, GL11.GL_TEXTURE_2D, 0, firstPassTarget.getRenderedTexture(), errorBuffer);
+		CLMem memTargetImage = org.lwjgl.opencl.CL10GL.clCreateFromGLTexture2D(CLUtil.context, CL10.CL_MEM_WRITE_ONLY, GL11.GL_TEXTURE_2D, 0, target.getRenderedTexture(), errorBuffer);
+		int x = 0;
+		
+		int error = CL10GL.clEnqueueAcquireGLObjects(CLUtil.queue, memTargetImage, null, null);
+		
+		
+		kernel.setArg(0, memSourceImage);
+		kernel.setArg(1, memTargetImage);
+
+		final int dimensions = 1;
+		PointerBuffer globalWorkSize = BufferUtils.createPointerBuffer(dimensions);
+		globalWorkSize.put(0, 10);
+
+		CL10.clEnqueueNDRangeKernel(CLUtil.queue, kernel, dimensions, null, globalWorkSize, null, null, null);
+
+		FloatBuffer writeTo = BufferUtils.createFloatBuffer(200);
+		CL10.clEnqueueReadBuffer(CLUtil.queue, memTargetImage, CL10.CL_TRUE, 0, writeTo, null, null);
+		float[] result = new float[200];
+		writeTo.get(result, 0, 200);
+		CL10.clFinish(CLUtil.queue);
+	}
+	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
+
+	private void updateLights(float seconds) {
+//		for (PointLight light : pointLights) {
+//			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
+//			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
+//			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
+//			light.update();
+//		}
+		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size(), seconds);
+//         long start = System.currentTimeMillis();
+         fjpool.invoke(task);
+//         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
+	}
+	
+	private class RecursiveUpdate extends RecursiveAction {
+		final int LIMIT = 3;
+		int result;
+		int start, end;
+		List<PointLight> lights;
+		private float seconds;
+
+		RecursiveUpdate(List<PointLight> lights, int start, int end, float seconds) {
+			this.start = start;
+			this.end = end;
+			this.lights = lights;
+			this.seconds = seconds;
+		}
+		
+		@Override
+		protected void compute() {
+			if ((end - start) < LIMIT) {
+				for (int i = start; i < end; i++) {
+					double x =  Math.sin(System.currentTimeMillis() / 1000);
+					double z =  Math.cos(System.currentTimeMillis() / 1000);
+					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
+					lights.get(i).update(1);
+				}
+			} else {
+				int mid = (start + end) / 2;
+				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid, seconds);
+				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end, seconds);
+				left.fork();
+				right.fork();
+				left.join();
+				right.join();
+			}
+		}
+		
+	}
+
+	@Override
+	public MaterialFactory getMaterialFactory() {
+		return materialFactory;
+	}
+
+	@Override
+	public TextureFactory getTextureFactory() {
+		return textureFactory;
+	}
+
+	@Override
+	public OBJLoader getOBJLoader() {
+		return objLoader;
+	}
+
+	@Override
+	public EntityFactory getEntityFactory() {
+		return entityFactory;
+	}
+
+	@Override
+	public IEntity getSphere() {
+		return sphere;
 	}
 }

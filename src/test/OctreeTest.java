@@ -8,25 +8,20 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import junit.framework.Assert;
-import main.Camera;
-import main.DeferredRenderer;
-import main.Entity;
-import main.IEntity;
-import main.Material;
-import main.Renderer;
-import main.Spotlight;
+import main.camera.Camera;
+import main.model.IEntity;
 import main.octree.Box;
 import main.octree.Octree;
 import main.octree.Octree.Node;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
+import main.renderer.material.Material;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-
-import com.sun.javafx.geom.CubicApproximator;
 
 public class OctreeTest {
 	static Renderer renderer;

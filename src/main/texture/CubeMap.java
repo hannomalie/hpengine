@@ -1,4 +1,4 @@
-package main.util;
+package main.texture;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,8 +22,8 @@ public class CubeMap extends Texture implements Serializable {
 
 	private List<byte[]> dataList;
 
-	public CubeMap(int target, int textureID) {
-		super(target, textureID);
+	public CubeMap(String path, int target, int textureID) {
+		super(path, target, textureID);
 	}
 
 	public void upload() {
@@ -78,7 +78,7 @@ public class CubeMap extends Texture implements Serializable {
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
 		try {
-			fis = new FileInputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			fis = new FileInputStream(getDirectory() + fileName + ".hptexture");
 			in = new ObjectInputStream(fis);
 			CubeMap texture = (CubeMap) in.readObject();
 			in.close();
@@ -95,7 +95,7 @@ public class CubeMap extends Texture implements Serializable {
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
 		try {
-			fos = new FileOutputStream(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+			fos = new FileOutputStream(getDirectory() + fileName + ".hptexture");
 			out = new ObjectOutputStream(fos);
 			out.writeObject(texture);
 

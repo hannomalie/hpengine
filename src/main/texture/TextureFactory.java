@@ -1,4 +1,4 @@
-package main.util;
+package main.texture;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -24,12 +24,14 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import main.DeferredRenderer;
 import main.World;
+import main.renderer.material.Material;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector2f;
 
 /**
@@ -45,9 +47,9 @@ import org.lwjgl.util.vector.Vector2f;
  * @author Kevin Glass
  * @author Brian Matzon
  */
-public class TextureLoader {
+public class TextureFactory {
     /** The table of textures that have been loaded in this loader */
-    private HashMap table = new HashMap();
+    public HashMap TEXTURES = new HashMap();
 
     /** The colour model including alpha for the GL image */
     private ColorModel glAlphaColorModel;
@@ -60,7 +62,7 @@ public class TextureLoader {
      *
      * @param gl The GL content in which the textures should be loaded
      */
-    public TextureLoader() {
+    public TextureFactory() {
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,
@@ -75,6 +77,7 @@ public class TextureLoader {
                                             ComponentColorModel.OPAQUE,
                                             DataBuffer.TYPE_BYTE);
     }
+    
     
     /**
      * Create a new texture ID 
@@ -97,7 +100,7 @@ public class TextureLoader {
      * @throws IOException Indicates a failure to access the resource
      */
     public Texture getTexture(String resourceName) throws IOException {
-        Texture tex = (Texture) table.get(resourceName);
+        Texture tex = (Texture) TEXTURES.get(resourceName);
         
         if (tex != null) {
             return tex;
@@ -106,7 +109,8 @@ public class TextureLoader {
         if (texturePreCompiled(resourceName)) {
         	tex = Texture.read(resourceName);
         	if (tex != null) {
-                table.put(resourceName,tex);
+                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
+                TEXTURES.put(resourceName,tex);
                 return tex;
             }
         }
@@ -118,19 +122,19 @@ public class TextureLoader {
                          GL11.GL_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, false);
         
-        table.put(resourceName,tex);
+        TEXTURES.put(resourceName,tex);
         System.out.println("Precompiled " + Texture.write(tex, resourceName));
         return tex;
     }
     
     public boolean texturePreCompiled(String resourceName) {
     	String fileName = FilenameUtils.getBaseName(resourceName);
-    	File f = new File(World.WORKDIR_NAME + "/" + fileName + ".hptexture");
+    	File f = new File(Texture.getDirectory() + fileName + ".hptexture");
     	return f.exists();
 	}
 
 	public CubeMap getCubeMap(String resourceName) throws IOException {
-        Texture tex = (Texture) table.get(resourceName+ "_cube");
+        Texture tex = (Texture) TEXTURES.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
             return (CubeMap) tex;
@@ -139,7 +143,8 @@ public class TextureLoader {
         if (texturePreCompiled(resourceName)) {
         	tex = Texture.read(resourceName);
         	if (tex != null) {
-                table.put(resourceName,tex);
+                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
+                TEXTURES.put(resourceName+ "_cube",tex);
                 return (CubeMap) tex;
             }
         }
@@ -150,14 +155,14 @@ public class TextureLoader {
                          GL11.GL_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, false);
 
-        table.put(resourceName + "_cube",tex);
+        TEXTURES.put(resourceName + "_cube",tex);
         System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
         return (CubeMap) tex;
     }
 
 
 	public Texture getTextureAsStream(String resourceName) throws IOException {
-    	Texture tex = (Texture) table.get(resourceName);
+    	Texture tex = (Texture) TEXTURES.get(resourceName);
         
         if (tex != null) {
             return tex;
@@ -166,7 +171,8 @@ public class TextureLoader {
         if (texturePreCompiled(resourceName)) {
         	tex = Texture.read(resourceName);
         	if (tex != null) {
-                table.put(resourceName,tex);
+                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
+                TEXTURES.put(resourceName,tex);
                 return tex;
             }
         }
@@ -177,14 +183,14 @@ public class TextureLoader {
                          GL11.GL_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, true);
         
-        table.put(resourceName,tex);
+        TEXTURES.put(resourceName,tex);
         System.out.println("Precompiled " + Texture.write(tex, resourceName));
         
         return tex;
     }
 	
 	public CubeMap getCubeMapAsStream(String resourceName) throws IOException {
-    	Texture tex = (Texture) table.get(resourceName+ "_cube");
+    	Texture tex = (Texture) TEXTURES.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
             return (CubeMap) tex;
@@ -193,7 +199,8 @@ public class TextureLoader {
         if (texturePreCompiled(resourceName)) {
         	tex = Texture.read(resourceName);
         	if (tex != null) {
-                table.put(resourceName,tex);
+                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
+                TEXTURES.put(resourceName+ "_cube",tex);
                 return (CubeMap) tex;
             }
         }
@@ -204,7 +211,7 @@ public class TextureLoader {
                          GL11.GL_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, true);
         
-        table.put(resourceName+ "_cube",tex);
+        TEXTURES.put(resourceName+ "_cube",tex);
         System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
         return (CubeMap) tex;
     }
@@ -232,7 +239,7 @@ public class TextureLoader {
         
         // create the texture ID for this texture 
         int textureID = createTextureID(); 
-        Texture texture = new Texture(target,textureID); 
+        Texture texture = new Texture(resourceName, target,textureID); 
         
         // bind this texture 
         GL11.glBindTexture(target, textureID); 
@@ -262,6 +269,8 @@ public class TextureLoader {
         
         texture.upload(textureBuffer);
         
+        generateMipMaps(texture, Material.MIPMAP_DEFAULT);
+        
         return texture; 
     }
     
@@ -276,7 +285,7 @@ public class TextureLoader {
          
          // create the texture ID for this texture 
          int textureID = createTextureID(); 
-         CubeMap cubeMap = new CubeMap(target,textureID); 
+         CubeMap cubeMap = new CubeMap(resourceName, target, textureID); 
          
          // bind this texture 
          GL11.glBindTexture(target, textureID);
@@ -496,10 +505,11 @@ public class TextureLoader {
      */
     private BufferedImage loadImage(String ref) throws IOException 
     { 
-        URL url = TextureLoader.class.getClassLoader().getResource(ref);
+        URL url = TextureFactory.class.getClassLoader().getResource(ref);
         
         if (url == null) {
-            throw new IOException("Cannot find: "+ref);
+//            throw new IOException("Cannot find: "+ref);
+            return loadImageAsStream(ref);
         }
         
         BufferedImage bufferedImage = ImageIO.read(new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref))); 
@@ -527,5 +537,16 @@ public class TextureLoader {
 
       return temp.asIntBuffer();
     }
+    
+    private void generateMipMaps(Texture texture, boolean mipmap) {
+        texture.bind();
+    	if (mipmap) {
+    		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+    		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+    		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+    	}
 
+    	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
+    	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+    }
 }

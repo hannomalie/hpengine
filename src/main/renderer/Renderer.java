@@ -1,10 +1,18 @@
-package main;
+package main.renderer;
 
 import java.util.List;
 
+import main.camera.Camera;
+import main.model.EntityFactory;
+import main.model.IEntity;
+import main.model.Model;
+import main.model.OBJLoader;
 import main.octree.Octree;
+import main.renderer.light.Spotlight;
+import main.renderer.material.MaterialFactory;
 import main.shader.Program;
-import main.util.CubeMap;
+import main.texture.CubeMap;
+import main.texture.TextureFactory;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -37,5 +45,10 @@ public interface Renderer {
 	public Program getLastUsedProgram();
 	public void setLastUsedProgram(Program firstPassProgram);
 	public CubeMap getEnvironmentMap();
+	public MaterialFactory getMaterialFactory();
+	public TextureFactory getTextureFactory();
+	public OBJLoader getOBJLoader();
+	public EntityFactory getEntityFactory();
+	public IEntity getSphere();
 
 }

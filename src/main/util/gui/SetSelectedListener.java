@@ -10,7 +10,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
-import main.IEntity;
+import main.model.IEntity;
 
 public class SetSelectedListener implements TreeSelectionListener {
 

@@ -4,7 +4,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-import main.Material.MAP;
+import main.renderer.material.Material.MAP;
 import main.shader.ShaderDefine;
 
 import org.junit.Assert;

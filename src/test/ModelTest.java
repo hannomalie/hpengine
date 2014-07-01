@@ -4,17 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import main.DeferredRenderer;
-import main.Entity;
-import main.ForwardRenderer;
-import main.Model;
-import main.Renderer;
-import main.Spotlight;
-import main.VertexBuffer;
-import main.util.OBJLoader;
+import main.model.Entity;
+import main.model.IEntity;
+import main.model.Model;
+import main.model.OBJLoader;
+import main.model.VertexBuffer;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
@@ -31,8 +30,8 @@ public class ModelTest {
 	
 	@Test
 	public void loadsCorrectly() throws IOException {
-		List<Model> box = OBJLoader.loadTexturedModel(new File("C:\\cube.obj"));
-		Entity entity = new Entity(renderer, box.get(0));
+		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj"));
+		IEntity entity = renderer.getEntityFactory().getEntity(box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();
 		int verticesCount = buffer.getVerticesCount();
 		// Korrekter Vertices count
@@ -72,8 +71,8 @@ public class ModelTest {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws IOException {
 
-		List<Model> sphere = OBJLoader.loadTexturedModel(new File("C:\\sphere.obj"));
-		Entity entity = new Entity(renderer, sphere.get(0));
+		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
+		IEntity entity = renderer.getEntityFactory().getEntity(sphere.get(0));
 		
 		entity.setPosition(new Vector3f(0, 0, 0));
 		

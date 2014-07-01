@@ -1,4 +1,4 @@
-package main;
+package main.model;
 
 import static main.log.ConsoleLogger.getLogger;
 
@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.World;
+import main.camera.Camera;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
 import main.shader.Program;
 import main.util.Util;
 
@@ -41,13 +45,13 @@ public class Entity implements IEntity {
 	public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
 			DataChannels.POSITION3);
 	
-	FloatBuffer matrix44Buffer;
+	protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 
-	public Matrix4f modelMatrix = null;
+	public Matrix4f modelMatrix = new Matrix4f();
 	protected int modelMatrixLocation = 0;
 	protected Vector3f position = null;
 	protected Vector3f scale = new Vector3f(1,1,1);
-	transient private Material material;
+	protected transient Material material;
 
 	protected VertexBuffer vertexBuffer;
 
@@ -59,29 +63,20 @@ public class Entity implements IEntity {
 
 	private boolean selected;
 
-	public Entity() {
-	}
-	
-	public Entity(Renderer renderer, Model model) {
-		this(renderer, model, new Vector3f(0, 0, 0),
-				new Material(renderer, "", "stone_diffuse.png", "stone_normal.png",
-				"stone_specular.png", "stone_occlusion.png",
-				"stone_height.png"),
-				false);
+	protected Entity() {
 	}
 
-	public Entity(Renderer renderer, Model model, Material material, boolean castsShadows) {
-		this(renderer, model, new Vector3f(0, 0, 0), material, castsShadows);
+	protected Entity(Model model, Material material) {
+		this(new Vector3f(0, 0, 0), model, material);
 	}
 
-	public Entity(Renderer renderer, Model model, Vector3f position, Material material, boolean castsShadows) {
+	protected Entity(Vector3f position, Model model, Material material) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
 		this.castsShadows = castsShadows;
 
 		this.position = position;
-		//angle = new Vector3f(0, 0, 0);
 		scale = new Vector3f(1, 1, 1);
 		
 		createVertexBuffer(model);
@@ -108,11 +103,6 @@ public class Entity implements IEntity {
 			int[] referencedNormals = face.getNormalIndices();
 			int[] referencedTexcoords = face.getTextureCoordinateIndices();
 
-//			// for normalmapping
-//			Vector3f[] nm_vertives= new Vector3f[3];
-//			Vector2f[] nm_tcoords= new Vector2f[3];
-			
-			
 			for (int j = 0; j < 3; j++) {
 				Vector3f referencedVertex = verticesTemp.get(referencedVertices[j]-1);
 				Vector2f referencedTexcoord = texcoordsTemp.get(referencedTexcoords[j]-1);
@@ -127,37 +117,6 @@ public class Entity implements IEntity {
 				values.add(referencedNormal.y);
 				values.add(referencedNormal.z);
 			}
-
-//			
-//			Vector3f D = null;
-//			Vector3f E = null;
-//			D = Vector3f.sub(nm_vertives[1], nm_vertives[0], D);
-//			E = Vector3f.sub(nm_vertives[2], nm_vertives[0], E);
-//			
-//			Vector2f F = null;
-//			Vector2f G = null;
-//			F = Vector2f.sub(nm_tcoords[1], nm_tcoords[0], F);
-//			G = Vector2f.sub(nm_tcoords[2], nm_tcoords[0], G);
-//			
-//			float coef = 1/(F.x * G.y - F.y * G.x);
-//			
-//			Vector3f tangent = new Vector3f();
-//
-//			tangent.x = (G.y * D.x - F.y * E.x) * coef;
-//			tangent.y = (G.y * D.y - F.y * E.y) * coef;
-//			tangent.z = (G.y * D.z - F.y * E.z) * coef;
-//			tangent.normalise();
-//			
-//			vds[0].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
-//			vds[1].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
-//			vds[2].setTangent(new float[]{tangent.x, tangent.y, tangent.z});
-//			
-//			Vector3f biNormal = null;
-//			biNormal = Vector3f.cross(tangent, new Vector3f(vds[0].getN()[0],vds[0].getN()[1],vds[0].getN()[1] ), biNormal);
-//			vds[0].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
-//			vds[1].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
-//			vds[2].setBinormal(new float[]{biNormal.x, biNormal.y, biNormal.z});
-			
 		}
 
 //		LOGGER.log(Level.INFO, String.format("Values: %d", values.size()));
@@ -376,6 +335,11 @@ public class Entity implements IEntity {
 		
 		return minMax;
 	}
+	
+	@Override
+	public void setMaterial(Material material) {
+		this.material = material;
+	};
 
 	@Override
 	public boolean isSelected() {
@@ -385,5 +349,10 @@ public class Entity implements IEntity {
 	@Override
 	public void setSelected(boolean selected) {
 		this.selected = selected;
+	}
+	
+	@Override
+	public String toString() {
+		return name;
 	}
 }

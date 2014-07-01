@@ -1,4 +1,4 @@
-package main;
+package main.camera;
 
 import static main.log.ConsoleLogger.getLogger;
 

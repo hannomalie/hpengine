@@ -1,17 +1,12 @@
 package test;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
-import javafx.scene.paint.StopBuilder;
-import main.DeferredRenderer;
-import main.Spotlight;
-import main.util.CubeMap;
-import main.util.Texture;
-import main.util.TextureLoader;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
+import main.texture.CubeMap;
+import main.texture.Texture;
 import main.util.Util;
 import main.util.stopwatch.StopWatch;
 
@@ -19,11 +14,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.sun.scenario.effect.light.SpotLight;
-
 public class TextureTest {
 	
-	private static DeferredRenderer renderer;
+	private static Renderer renderer;
 
 	@BeforeClass
 	public static void init() {
@@ -32,7 +25,7 @@ public class TextureTest {
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
-		Texture texture = Util.loadTexture("wood_diffuse.png");
+		Texture texture = renderer.getTextureFactory().getTexture("assets/textures/wood_diffuse.png");
 		
 		byte[] data = texture.getData();
 		
@@ -48,7 +41,7 @@ public class TextureTest {
 	}
 	
 	@Test
-	public void loadsCubeMap() {
-		CubeMap cubeMap = Util.loadCubeMap("assets/textures/wood_diffuse.png");
+	public void loadsCubeMap() throws IOException {
+		CubeMap cubeMap = renderer.getTextureFactory().getCubeMap("assets/textures/wood_diffuse.png");
 	}
 }

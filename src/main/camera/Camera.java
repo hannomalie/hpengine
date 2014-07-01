@@ -1,4 +1,4 @@
-package main;
+package main.camera;
 
 import static main.log.ConsoleLogger.getLogger;
 
@@ -6,16 +6,16 @@ import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import junit.framework.Assert;
+import main.model.IEntity;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.ReadableVector4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 

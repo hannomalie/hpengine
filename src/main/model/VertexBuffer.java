@@ -1,16 +1,12 @@
-package main;
+package main.model;
 
 import static main.log.ConsoleLogger.getLogger;
 
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import main.renderer.Renderer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;

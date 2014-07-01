@@ -10,17 +10,15 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import main.DataChannels;
-import main.Entity;
-import main.Renderer;
+import main.model.DataChannels;
+import main.model.Entity;
+import main.renderer.Renderer;
 import main.util.Util;
 import main.util.ressources.FileMonitor;
-import main.util.ressources.Loadable;
 import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -181,7 +179,7 @@ public class Program implements Reloadable {
 	}
 	
 	private void bindShaderAttributeChannels() {
-		LOGGER.log(Level.INFO, "Binding shader input channels:");
+//		LOGGER.log(Level.INFO, "Binding shader input channels:");
 		EnumSet<DataChannels> channels = EnumSet.allOf(DataChannels.class);
 		for (DataChannels channel: channels) {
 			GL20.glBindAttribLocation(id, channel.getLocation(), channel.getBinding());

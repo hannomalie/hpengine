@@ -7,52 +7,57 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.MenuBar;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeSelectionModel;
 
-import main.DeferredRenderer;
-import main.IEntity;
-import main.Material;
-import main.PointLight;
 import main.World;
+import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
-import main.util.Texture;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.PointLight;
+import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
+import main.texture.TextureFactory;
 import main.util.script.ScriptManager;
-import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.util.vector.Vector3f;
 
+import com.alee.extended.window.ComponentMoveAdapter;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextArea;
-import com.alee.utils.ImageUtils;
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Occurs;
 
 
 public class DebugFrame {
 
 	ScriptManager scriptManager;
-	private JFrame mainFrame = new JFrame();
+	private WebFrame mainFrame = new WebFrame("Main");
+	private WebFrame materialViewFrame = new WebFrame("Material");
 	private WebTabbedPane tabbedPane = new WebTabbedPane();
 	
 	private JScrollPane materialPane = new JScrollPane();
@@ -84,22 +89,22 @@ public class DebugFrame {
 	public DebugFrame(World world) {
 		
 		scriptManager = new ScriptManager(world);
+		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
+		TextureFactory textureFactory = world.getRenderer().getTextureFactory();
 		
 		mainFrame.setLayout(new BorderLayout(5,5));
-
+		
 		TableModel materialDataModel = new AbstractTableModel() {
 
-			List<Object> paths = Arrays.asList(Material.MATERIALS.keySet()
-					.toArray());
-			List<Object> materials = Arrays.asList(Material.MATERIALS.values()
-					.toArray());
+			List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
+			List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
 
 			public int getColumnCount() {
 				return 2;
 			}
 
 			public int getRowCount() {
-				return Material.MATERIALS.size();
+				return world.getRenderer().getMaterialFactory().MATERIALS.size();
 			}
 
 			public Object getValueAt(int row, int col) {
@@ -121,9 +126,9 @@ public class DebugFrame {
 
 		TableModel textureDataModel = new AbstractTableModel() {
 
-			List<Object> paths = Arrays.asList(Material.TEXTURES.keySet()
+			List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
 					.toArray());
-			List<Object> textures = Arrays.asList(Material.TEXTURES.values()
+			List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
 					.toArray());
 
 			public int getColumnCount() {
@@ -131,14 +136,14 @@ public class DebugFrame {
 			}
 
 			public int getRowCount() {
-				return Material.TEXTURES.size();
+				return textureFactory.TEXTURES.size();
 			}
 
 			public Object getValueAt(int row, int col) {
 				if (col == 0) {
 					return paths.get(row);
 				}
-				main.util.Texture texture = (main.util.Texture) textures.get(row);
+				main.texture.Texture texture = (main.texture.Texture) textures.get(row);
 				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
 			}
 
@@ -194,6 +199,24 @@ public class DebugFrame {
 		JTable materialTable = new JTable(materialDataModel);
 		JTable textureTable = new JTable(textureDataModel);
 		JTable lightsTable = new JTable(lightsTableModel);
+		
+		materialTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+	        public void valueChanged(ListSelectionEvent event) {
+	        	java.awt.EventQueue.invokeLater(new Runnable() {
+	        	    @Override
+	        	    public void run() {
+	    	            // do some actions here, for example
+	    	            // print first column value from selected row
+	    	        	materialViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+	    	        	materialViewFrame.getContentPane().removeAll();
+	    	        	materialViewFrame.pack();
+	    	        	materialViewFrame.setSize(600, 600);
+	    	        	materialViewFrame.add(new MaterialView(world, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
+	    	            materialViewFrame.setVisible(true);
+	        	    }
+	        	});
+	        }
+	    });
 
 		materialPane =  new JScrollPane(materialTable);
 		texturePane  =  new JScrollPane(textureTable);
@@ -396,7 +419,7 @@ public class DebugFrame {
 		List<IEntity> entitiesInAndBelow = new ArrayList<IEntity>();
 		node.getAllEntitiesInAndBelow(entitiesInAndBelow);
 		
-		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node.toString() + "(" + entitiesInAndBelow.size() + " Entities in/below");
+		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node.toString() + " (" + entitiesInAndBelow.size() + " Entities in/below)");
 		parent.add(current);
 		if(node.hasChildren()) {
 			for(int i = 0; i < 8; i++) {
@@ -411,22 +434,6 @@ public class DebugFrame {
 		if (node.hasChildren() && node.entities.size() > 0) {
 			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
 		}
-	}
-	
-	private class ImagePanel extends JPanel{
-
-	    private BufferedImage image;
-
-	    public ImagePanel(BufferedImage image) {
-	       this.image = image;
-	    }
-
-	    @Override
-	    protected void paintComponent(Graphics g) {
-	        super.paintComponent(g);
-	        g.drawImage(image, 0, 0, null); // see javadoc for more info on the parameters            
-	    }
-
 	}
 
 }

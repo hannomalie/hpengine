@@ -7,8 +7,8 @@ import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-import main.DataChannels;
-import main.VertexBuffer;
+import main.model.DataChannels;
+import main.model.VertexBuffer;
 
 public class VertexBufferTest {
 	

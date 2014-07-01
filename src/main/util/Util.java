@@ -4,18 +4,16 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import main.Material;
-import main.TextureBuffer;
+import main.renderer.material.Material;
+import main.texture.CubeMap;
 
 import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
@@ -25,12 +23,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import org.newdawn.slick.opengl.Texture;
-import org.newdawn.slick.opengl.TextureLoader;
-import org.newdawn.slick.util.ResourceLoader;
-
-import de.matthiasmann.twl.utils.PNGDecoder;
-import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class Util {
 	private static Logger LOGGER = getLogger();
@@ -50,91 +42,6 @@ public class Util {
 		return result;
 	}
 
-	public static main.util.Texture loadTexture(String filename) {
-		return loadTexture(filename, Material.MIPMAP_DEFAULT);
-	}
-	
-	public static CubeMap loadCubeMap(String filename) {
-		return loadCubeMap(filename, Material.MIPMAP_DEFAULT);
-	}
-
-	private static main.util.Texture loadDefaultTexture() {
-		return Util.loadTexture("assets/textures/default.dds");
-	}
-	
-	private static CubeMap loadDefaultCubeMap() {
-		return Util.loadCubeMap("assets/textures/default.dds");
-	}
-	
-
-	public static main.util.Texture loadTexture(String filename, boolean mipmap) {
-//		Texture texture = null;
-		main.util.Texture texture = null;
-		String extension = getFileExtension(filename).toUpperCase();
-		
-		try {
-//			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
-			texture = new main.util.TextureLoader().getTexture(filename);
-		} catch (IOException e) {
-			try {
-//				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
-				texture = new main.util.TextureLoader().getTextureAsStream(filename);
-			} catch (IOException e1) {
-				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
-				texture = loadDefaultTexture();
-			} catch (NullPointerException np) {
-				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
-				texture = loadDefaultTexture();
-			}
-		}
-
-		texture.bind();
-		if (mipmap) {
-			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		}
-
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
-		
-		return texture;
-	}
-	
-	public static CubeMap loadCubeMap(String filename, boolean mipmap) {
-//		Texture texture = null;
-		main.util.Texture texture = null;
-		String extension = getFileExtension(filename).toUpperCase();
-		
-		try {
-//			texture = TextureLoader.getTexture(extension, ResourceLoader.getResourceAsStream(filename));
-			texture = new main.util.TextureLoader().getCubeMap(filename);
-		} catch (IOException e) {
-			try {
-//				texture = TextureLoader.getTexture(extension, ResourceLoader.class.getResourceAsStream(filename));
-				texture = new main.util.TextureLoader().getCubeMapAsStream(filename);
-			} catch (IOException e1) {
-				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
-				texture = loadDefaultCubeMap();
-			} catch (NullPointerException np) {
-				LOGGER.log(Level.WARNING, filename + " could not be loaded, default texture used instead");
-				texture = loadDefaultCubeMap();
-			}
-		}
-
-		texture.bind();
-		if (mipmap) {
-			GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		}
-
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
-		
-		return (CubeMap) texture;
-	}
-	
 	public static String getFileExtension(String in) {
 		String extension = "";
 		int i = in.lastIndexOf('.');

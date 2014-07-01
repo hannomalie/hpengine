@@ -1,12 +1,12 @@
 package test;
 
 import junit.framework.Assert;
-import main.Camera;
-import main.DeferredRenderer;
-import main.Frustum;
-import main.Renderer;
-import main.Spotlight;
+import main.camera.Camera;
+import main.camera.Frustum;
 import main.octree.Box;
+import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
 import main.util.Util;
 
 import org.junit.Before;

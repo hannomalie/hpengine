@@ -1,7 +1,10 @@
-package main;
+package main.model;
 
 import java.nio.FloatBuffer;
 
+import main.camera.Camera;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
 import main.shader.Program;
 
 import org.lwjgl.util.vector.Matrix4f;
@@ -37,4 +40,6 @@ public interface IEntity {
 	public default Vector4f[] getMinMaxWorld() { return new Vector4f[] {new Vector4f(), new Vector4f()};};
 	public boolean isSelected();
 	public void setSelected(boolean selected);
+	public default VertexBuffer getVertexBuffer() { return null; }
+	public default void setMaterial(Material defaultMaterial) {};
 }
