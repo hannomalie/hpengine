@@ -58,6 +58,7 @@ public class DebugFrame {
 	ScriptManager scriptManager;
 	private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame materialViewFrame = new WebFrame("Material");
+	private WebFrame entityViewFrame = new WebFrame("Entity");
 	private WebTabbedPane tabbedPane = new WebTabbedPane();
 	
 	private JScrollPane materialPane = new JScrollPane();
@@ -381,8 +382,7 @@ public class DebugFrame {
 	}
 
 	private void addSceneObjects(World world) {
-		DefaultMutableTreeNode top =
-		        new DefaultMutableTreeNode("Scene");
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene");
 		
 		for (IEntity e : world.entities) {
 			DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode(e.getName());
@@ -403,7 +403,7 @@ public class DebugFrame {
 		}
 		
 		scene = new JTree(top);
-		new SetSelectedListener(scene);
+		new SetSelectedListener(scene, world, entityViewFrame);
 	}
 	
 	private void addOctreeSceneObjects(World world) {
@@ -412,7 +412,7 @@ public class DebugFrame {
 		
 		addOctreeChildren(top, world.octree.rootNode);
 		sceneOctree = new JTree(top);
-		new SetSelectedListener(sceneOctree);
+		new SetSelectedListener(sceneOctree, world, entityViewFrame);
 	}
 	
 	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {

@@ -31,6 +31,8 @@ public class Material implements IEntity {
 	Vector3f specular = new Vector3f(0.5f,0.5f,0.5f);
 	float specularCoefficient = 1;
 	float transparency = 1;
+	float reflectiveness = 0.2f;
+
 	private Program firstPassProgram;
 	
 	public enum MAP {
@@ -176,4 +178,27 @@ public class Material implements IEntity {
 	public void setProgram(Program firstPassProgram) {
 		this.firstPassProgram = firstPassProgram;
 	}
+	public float getReflectiveness() {
+		return reflectiveness;
+	}
+
+	public void setReflectiveness(float reflectiveness) {
+		this.reflectiveness = reflectiveness;
+	}
+	public Vector3f getAmbient() {
+		return ambient;
+	}
+
+	public Vector3f getDiffuse() {
+		return diffuse;
+	}
+
+	public Vector3f getSpecular() {
+		return specular;
+	}
+
+	public float getSpecularCoefficient() {
+		return specularCoefficient;
+	}
+
 }

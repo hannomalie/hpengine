@@ -4,11 +4,14 @@ import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.lwjgl.util.vector.Vector3f;
+
 import main.World;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.texture.Texture;
 
+import com.alee.extended.panel.BorderPanel;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
@@ -31,10 +34,8 @@ public class MaterialView extends WebPanel {
 		
 		List<WebComponentPanel> panels = new ArrayList<>();
 		
-        for (MAP map : material.textures.keySet()) {
-			Texture texture = material.textures.get(map);
-			panels.add(getComponentPanel(map, texture));
-		}
+		addTexturePanel(panels);
+        addValuePanels(panels);
         
         Component[] components = new Component[panels.size()];
         panels.toArray(components);
@@ -42,29 +43,50 @@ public class MaterialView extends WebPanel {
         this.add(new GridPanel ( panels.size(), 1, components));
 	}
 
-	private WebComponentPanel getComponentPanel(MAP map, Texture texture) {
+	private void addTexturePanel(List<WebComponentPanel> panels) {
+		
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
-        WebLabel label = new WebLabel ( map.name() );
-//        WebTextField field = new WebTextField ();
-//        field.putClientProperty ( GroupPanel.FILL_CELL, true );
-//        field.setText(texture.toString());
+
+        for (MAP map : material.textures.keySet()) {
+			Texture texture = material.textures.get(map);
+			
+	        WebLabel label = new WebLabel ( map.name() );
+	        
+	        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
+	        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
+	        WebComboBox select = new WebComboBox(textures);
+	        
+	        int assignedTexture = ( new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values())).indexOf(material.textures.get(map));
+	        select.setSelectedIndex(assignedTexture);
+	        
+	        select.addActionListener(e -> {
+	        	WebComboBox cb = (WebComboBox) e.getSource();
+	        	Texture selectedTexture = textures[cb.getSelectedIndex()];
+	        	material.textures.put(map, selectedTexture);
+	        });
+	        
+	        GroupPanel groupPanel = new GroupPanel ( 4, label, select );
+			webComponentPanel.addElement(groupPanel);
+	        
+		}
         
-        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
-        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
-        WebComboBox select = new WebComboBox(textures);
-        
-        int assignedTexture = ( new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values())).indexOf(material.textures.get(map));
-        select.setSelectedIndex(assignedTexture);
-        
-        select.addActionListener(e -> {
-        	WebComboBox cb = (WebComboBox) e.getSource();
-        	Texture selectedTexture = textures[cb.getSelectedIndex()];
-        	material.textures.put(map, selectedTexture);
-        });
-        
-		webComponentPanel.addElement ( new GroupPanel ( 10, label, select ) );
-        return webComponentPanel;
+        panels.add(webComponentPanel);
 	}
 
+	private void addValuePanels(List<WebComponentPanel> panels) {
+		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
+        webComponentPanel.setElementMargin ( 4 );
+
+        webComponentPanel.addElement(new WebFormattedVec3Field("Ambient", material.getAmbient()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				material.setAmbient(current);
+			}
+		});
+		
+		//TODO: Refactor Vec3 input and add other attributes here
+		
+		panels.add(webComponentPanel);
+	}
 }

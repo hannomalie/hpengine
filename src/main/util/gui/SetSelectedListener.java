@@ -1,8 +1,6 @@
 package main.util.gui;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
+import javax.swing.JFrame;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -10,16 +8,24 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import main.World;
 import main.model.IEntity;
+import main.renderer.material.Material;
+
+import com.alee.laf.rootpane.WebFrame;
 
 public class SetSelectedListener implements TreeSelectionListener {
 
 	JTree tree;
+	private WebFrame entityViewFrame;
+	private World world;
 
 	private SetSelectedListener() { }
 	
-	public SetSelectedListener(JTree tree) {
+	public SetSelectedListener(JTree tree, World world, WebFrame entityViewFrame) {
 		this.tree = tree;
+		this.entityViewFrame = entityViewFrame;
+		this.world = world;
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
 	}
@@ -44,7 +50,22 @@ public class SetSelectedListener implements TreeSelectionListener {
         
         if (nodeInfo instanceof IEntity) {
         	IEntity selected = (IEntity) nodeInfo;
-        	selected.setSelected(!selected.isSelected());
+//        	selected.setSelected(!selected.isSelected());
+        	
+        	java.awt.EventQueue.invokeLater(new Runnable() {
+        	    @Override
+        	    public void run() {
+    	            // do some actions here, for example
+    	            // print first column value from selected row
+        	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        	    	entityViewFrame.getContentPane().removeAll();
+        	    	entityViewFrame.pack();
+        	    	entityViewFrame.setSize(600, 600);
+        	    	entityViewFrame.add(new EntitiyView(world, selected));
+        	    	entityViewFrame.setVisible(true);
+        	    }
+        	});
+        	
         }
     }
 }
