@@ -230,16 +230,22 @@ public class OctreeTest {
 			final int rY2 = rY1 + rAddY;
 			final int rZ2 = rZ1 + rAddZ;
 			
+			final Vector4f[] minMax = new Vector4f[] {
+					new Vector4f(Math.min(rX1, rX2), Math.min(rY1, rY2), Math.min(rZ1, rZ2), 0),
+					new Vector4f(Math.max(rX1, rX2), Math.max(rY1, rY2), Math.max(rZ1, rZ2), 0)};
+			
+			final Vector3f position = new Vector3f((minMax[0].x + minMax[1].x)/2,
+											 (minMax[0].x + minMax[1].y)/2,
+											 (minMax[0].x + minMax[1].z)/2);
+			
 			IEntity entity = new IEntity() {
 				
-				@Override public Vector3f getPosition() { return null; }
+				@Override public Vector3f getPosition() { return position; }
 				@Override public String getName() { return null; }
 				@Override public Material getMaterial() { return null; }
 				@Override public void destroy() { }
 				@Override public Vector4f[] getMinMaxWorld() {
-							return new Vector4f[] {
-									new Vector4f(Math.min(rX1, rX2), Math.min(rY1, rY2), Math.min(rZ1, rZ2), 0),
-									new Vector4f(Math.max(rX1, rX2), Math.max(rY1, rY2), Math.max(rZ1, rZ2), 0)};
+							return minMax;
 				}
 				@Override public boolean isSelected() { return false; }
 				@Override public void setSelected(boolean selected) { }

@@ -175,16 +175,6 @@ public class DeferredRenderer implements Renderer {
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
 		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
 
-//		deferredOutput = GL11.glGenTextures();
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-//
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGB32F, WIDTH, HEIGHT, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(WIDTH * HEIGHT));
-//		
-		
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
@@ -211,11 +201,6 @@ public class DeferredRenderer implements Renderer {
 		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 
-//		String kernelString = Util.loadAsTextFile("/assets/shaders/deferred/second_pass_point.cls");
-//		CLProgram sumProgram = CL10.clCreateProgramWithSource(CLUtil.context, kernelString, null);
-//		
-//		kernel = CLUtil.build(sumProgram, "main");
-		
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
@@ -233,52 +218,22 @@ public class DeferredRenderer implements Renderer {
 	
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
 
-		StopWatch.getInstance().start("First pass");
 		drawFirstPass(camera, octree);
-		StopWatch.getInstance().stopAndPrintMS();
-		StopWatch.getInstance().start("Second pass");
 		drawSecondPass(camera, light, pointLights);
-		StopWatch.getInstance().stopAndPrintMS();
 //		combinePass(finalTarget, firstPassTarget, secondPassTarget);
-//		openClTest(finalTarget);
-//		tiledDeferredPass(camera, light, pointLights);
 		
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		StopWatch.getInstance().start("Draw to screen");
-		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
-		StopWatch.getInstance().stopAndPrintMS();
+		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(2), debugBuffer);
-//			drawToQuad(deferredOutput, debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(1), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		
-	}
-
-	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {
-		secondPassPointComputeShaderProgram.use();
-
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput); // output map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo map
-
-		GL42.glBindImageTexture(0, deferredOutput, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA32F);
-		//GL20.glUniform1i(GL20.glGetUniformLocation(secondPassPointComputeShaderProgram.getId(),"outTexture"), deferredOutput);
-		secondPassPointComputeShaderProgram.dispatchCompute(16, 16, 1);
-
-//		finalTarget.saveBuffer("C:\\" +  System.currentTimeMillis() + ".png");
-//		System.exit(-1);
 		
 	}
 
@@ -292,9 +247,7 @@ public class DeferredRenderer implements Renderer {
 
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
-			StopWatch.getInstance().start("Get visible from octree");
 			entities.addAll(octree.getVisible(camera));
-			StopWatch.getInstance().stopAndPrintMS();
 			
 //			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
@@ -308,8 +261,6 @@ public class DeferredRenderer implements Renderer {
 			entities.addAll(octree.getEntities());
 		}
 
-//		glWatch.start("Draw entities in first pass");
-		StopWatch.getInstance().start("Entities draw");
 		for (IEntity entity : entities) {
 			entity.draw(this, camera);
 		}
@@ -321,8 +272,6 @@ public class DeferredRenderer implements Renderer {
 			entity.setMaterial(old);			
 		}
 		
-//		glWatch.stopAndPrintTimeInMS();
-		StopWatch.getInstance().stopAndGetStringMS();
 		
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (PointLight light : pointLights) {
@@ -341,9 +290,8 @@ public class DeferredRenderer implements Renderer {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
-		//finalTarget.use(true);
-		secondPassTarget.use(false);
-		//GL11.glClearColor(0.15f,0.15f,0.15f,0.15f); // ambient light
+		finalTarget.use(true);
+//		secondPassTarget.use(false);
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
@@ -366,8 +314,6 @@ public class DeferredRenderer implements Renderer {
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-//		secondPassDirectionalProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
-//		secondPassDirectionalProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
 		secondPassDirectionalProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) HEIGHT);
@@ -390,9 +336,9 @@ public class DeferredRenderer implements Renderer {
 		boolean firstLightDrawn = false;
 		for (int i = 0 ; i < pointLights.size(); i++) {
 			PointLight light = pointLights.get(i);
-			if(!light.isInFrustum(camera)) {
-				continue;
-			}
+//			if(!light.isInFrustum(camera)) {
+//				continue;
+//			}
 			
 			Vector3f distance = new Vector3f();
 			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
@@ -421,8 +367,8 @@ public class DeferredRenderer implements Renderer {
 			}
 			firstLightDrawn = true;
 		}
-		secondPassTarget.unuse();
-		//finalTarget.unuse();
+		//secondPassTarget.unuse();
+		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
 	}
 
@@ -467,8 +413,6 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
 
 		buffer.draw();
-		
-//		exitOnGLError("glDrawArrays in drawToQuad");
 	}
 
 	public void destroy() {
@@ -694,5 +638,26 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public IEntity getSphere() {
 		return sphere;
+	}
+
+	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {
+		secondPassPointComputeShaderProgram.use();
+
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput); // output map
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position map
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal map
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo map
+
+		GL42.glBindImageTexture(0, deferredOutput, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA32F);
+		//GL20.glUniform1i(GL20.glGetUniformLocation(secondPassPointComputeShaderProgram.getId(),"outTexture"), deferredOutput);
+		secondPassPointComputeShaderProgram.dispatchCompute(16, 16, 1);
+
+//		finalTarget.saveBuffer("C:\\" +  System.currentTimeMillis() + ".png");
+//		System.exit(-1);
+		
 	}
 }

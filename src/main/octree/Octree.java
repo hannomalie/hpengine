@@ -73,8 +73,8 @@ public class Octree {
 	   if (!insertSuccessfull) {
 		   rootNode.entities.add(entity);
 	   }
-	   rootNode.optimize();
-//		   rootNode.optimizeThreaded();
+//	   rootNode.optimize();
+//	   rootNode.optimizeThreaded();
 	   entities.add(entity);
 	}
 		
@@ -89,11 +89,21 @@ public class Octree {
 	
 	
 	public void insert(List<IEntity> toDispatch){
+		ArrayList<IEntity> temp = new ArrayList<>();
+		rootNode.getAllEntitiesInAndBelow(temp);
+		System.out.println("EXPECTED " + temp + toDispatch.size());
+		
 		for (IEntity iEntity : toDispatch) {
 			insertWithoutOptimize(iEntity);
 		}
 //		long start = System.currentTimeMillis();
-		rootNode.optimizeThreaded();
+//	    rootNode.optimize();
+//		optimize();
+		
+		temp.clear();
+		rootNode.getAllEntitiesInAndBelow(temp);
+		System.out.println("GOT " + temp.size());
+//		rootNode.optimizeThreaded();
 //		long end = System.currentTimeMillis();
 //		System.out.println("Took " + (end - start) + " ms to optimize.");
 	}
@@ -103,6 +113,14 @@ public class Octree {
 		
 		result.addAll(rootNode.getVisible(camera));
 		return result;
+	}
+	
+	public void optimize() {
+		if(rootNode.hasChildren()) {
+			for (Node node : rootNode.children) {
+				node.optimize();
+			}
+		}
 	}
 	
 	public void drawDebug(Renderer renderer, Camera camera, Program program) {
@@ -141,6 +159,7 @@ public class Octree {
 		Vector3f center;
 		float size;
 		Box aabb;
+		Box looseAabb;
 		private int deepness;
 		private boolean hasChildren = false;
 
@@ -153,6 +172,7 @@ public class Octree {
 				octree.currentDeepness = deepness;
 			}
 			this.aabb = new Box(center, size);
+			this.looseAabb = new Box(center, 2*size);
 
 //			LOGGER.log(Level.INFO, "Created " + this.toString() + " with " + this.aabb.toString());
 		}
@@ -200,13 +220,13 @@ public class Octree {
 		}
 		
 		public void getAllEntitiesInAndBelow(List<IEntity> result) {
-			
+
+			result.addAll(entities);
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {
 					children[i].getAllEntitiesInAndBelow(result);
 				}	
 			}
-			result.addAll(entities);
 		}
 		
 
@@ -291,28 +311,44 @@ public class Octree {
 		}
 		
 		public boolean insert(IEntity entity) {
-			
 //			LOGGER.log(Level.INFO, String.format("Inserting %s ...", entity));
-			if (isLeaf()) {
-				entities.add(entity);
-				return true;
-			}
-			
+
 			Vector4f[] minMaxWorld = entity.getMinMaxWorld();
+			
+			if (isLeaf()) {
+				if(contains(minMaxWorld)) {
+					entities.add(entity);
+					return true;	
+				} else {
+					return false;
+				}
+			}
 			
 			if (hasChildren()) {
 				for (int i = 0; i < 8; i++) {
 					Node node = children[i];
 					if (node.contains(minMaxWorld)) {
-						return node.insert(entity);
+						if(node.contains(entity.getCenter())) {
+							if(node.insert(entity)) {
+								return true;
+							}
+						}
 					}
 				}
+				
+				// Wasn't able to add entity to children
+				this.entities.add(entity);
+				return true;
+				
 			} else {
 				entities.add(entity);
 				return true;
 			}
-			checkValid();
-			return false;
+		}
+		
+		private boolean contains(Vector3f position) {
+			//return aabb.contains(new Vector4f(position.x, position.y, position.z, 1));
+			return looseAabb.contains(new Vector4f(position.x, position.y, position.z, 1));
 		}
 
 		private static final ExecutorService executor = Executors.newFixedThreadPool(8);
@@ -334,17 +370,20 @@ public class Octree {
 			}
 		}
 		public void optimize() {
+			
 			if (hasChildren()) {
-				for (int i = 0; i < 8; i++) {
-					Node node = children[i];
-					
-					if (node.hasEntities() && node.hasEntitiesInChildNodes()) {
+				if(hasEntities()) {
+					for (int i = 0; i < 8; i++) {
+						Node node = children[i];
 						node.entities.addAll(node.collectAllEntitiesFromChildren());
 						node.setHasChildren(false);
-						System.out.println("Optimized...");
-						return;
 					}
-					node.optimize();
+					setHasChildren(false);
+				} else {
+					for (int i = 0; i < 8; i++) {
+						Node node = children[i];
+						node.optimize();
+					}
 				}
 			}
 		}
@@ -358,12 +397,12 @@ public class Octree {
 
 			  @Override
 			  public void run() {
-				  if (node.hasEntities() && node.hasEntitiesInChildNodes()) {
+				  if (node.hasEntities() && node.hasChildren()) {
 					node.entities.addAll(node.collectAllEntitiesFromChildren());
 					node.setHasChildren(false);
 					System.out.println("Optimized...");
-					return;
-				}
+//					return;
+				  }
 				node.optimize();
 			  }
 		}
@@ -379,6 +418,7 @@ public class Octree {
 					node.entities.clear();
 				} else {
 					result.addAll(node.collectAllEntitiesFromChildren());
+//					node.setHasChildren(false);
 				}
 			}
 			checkValid();
@@ -390,8 +430,7 @@ public class Octree {
 			Vector4f min = minMaxWorld[0];
 			Vector4f max = minMaxWorld[1];
 			
-			if (aabb.contains(min) && aabb.contains(max)) {
-
+			if (looseAabb.contains(min) && looseAabb.contains(max)) {
 //				LOGGER.log(Level.INFO, String.format("(%.2f, %.2f, %.2f) is in %s", min.x, min.y, min.z, aabb));
 //				LOGGER.log(Level.INFO, String.format("(%.2f, %.2f, %.2f) is in %s", max.x, max.y, max.z, aabb));
 				return true;

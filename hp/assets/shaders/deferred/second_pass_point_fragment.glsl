@@ -86,4 +86,5 @@ void main(void) {
 	vec4 finalColor = phong(positionView, normalView, vec4(albedo,1), specular);
 	
 	out_DiffuseSpecular = finalColor;
+	out_DiffuseSpecular = vec4(1,0,0,1);
 }

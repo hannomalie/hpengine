@@ -133,6 +133,11 @@ public class Entity implements IEntity {
 
 //		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
+		verticesTemp = null;
+		texcoordsTemp = null;
+		normalsTemp = null;
+		facesTemp = null;
+		
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 		
@@ -334,6 +339,20 @@ public class Entity implements IEntity {
 		minMax = new Vector4f[] {minView, maxView};
 		
 		return minMax;
+	}
+	
+	@Override
+	public Vector3f getCenter() {
+		Vector4f[] minMax = vertexBuffer.getMinMax();
+		
+		Vector4f center = Vector4f.sub(minMax[1], minMax[0], null);
+		center.w = 1;
+		
+		Matrix4f modelMatrix = getModelMatrix();
+		
+		Matrix4f.transform(modelMatrix, center, center);
+
+		return new Vector3f(center.x, center.y, center.z);
 	}
 	
 	@Override

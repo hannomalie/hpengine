@@ -48,15 +48,13 @@ public class World {
 	public static volatile boolean useSteepParallaxLocation = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;
-	public static volatile boolean useFrustumCulling = true;
+	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
-//	public static float AMBIENTOCCLUSION_STRENGTH = 0.07f;
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
-//	public static float AMBIENTOCCLUSION_FALLOFF = 0.0000012f;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
@@ -69,7 +67,7 @@ public class World {
 
 	public Octree octree;
 	public List<IEntity> entities = new ArrayList<>();
-	private int entityCount = 0;
+	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
 	

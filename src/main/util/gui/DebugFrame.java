@@ -407,8 +407,7 @@ public class DebugFrame {
 	}
 	
 	private void addOctreeSceneObjects(World world) {
-		DefaultMutableTreeNode top =
-		        new DefaultMutableTreeNode("Scene");
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + world.octree.getEntityCount() + " entities)");
 		
 		addOctreeChildren(top, world.octree.rootNode);
 		sceneOctree = new JTree(top);
