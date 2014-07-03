@@ -77,9 +77,9 @@ public class DeferredRenderer implements Renderer {
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private Program firstPassProgram;
 	private Program secondPassPointProgram;
-	private ComputeShaderProgram secondPassPointComputeShaderProgram;
+//	private ComputeShaderProgram secondPassPointComputeShaderProgram;
 	private Program secondPassDirectionalProgram;
-	private Program combineProgram;
+//	private Program combineProgram;
 	private static Program renderToQuadProgram;
 	private Program lastUsedProgram = null;
 	
@@ -132,11 +132,12 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 		
-		Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"assets/textures/default.dds");
-													}});
+		
 		Random randomGenerator = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
+			Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
+				put(MAP.DIFFUSE,"assets/textures/default.dds");
+			}});
 			Vector4f color = new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1);
 			Vector3f position = new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat());
 			float range = MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat();
@@ -171,9 +172,9 @@ public class DeferredRenderer implements Renderer {
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 
-		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
+		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
-		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA, 1);
+		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
@@ -187,7 +188,7 @@ public class DeferredRenderer implements Renderer {
 		}
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
-		CLUtil.initialize();
+//		CLUtil.initialize();
 	}
 	
 	private void setupShaders() {
@@ -195,10 +196,10 @@ public class DeferredRenderer implements Renderer {
 		firstPassProgram = new Program("/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, true);
 
 		secondPassPointProgram = new Program("/assets/shaders/deferred/second_pass_point_vertex.glsl", "/assets/shaders/deferred/second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		secondPassPointComputeShaderProgram = new ComputeShaderProgram("/assets/shaders/deferred/second_pass_point_compute.glsl");
+//		secondPassPointComputeShaderProgram = new ComputeShaderProgram("/assets/shaders/deferred/second_pass_point_compute.glsl");
 		secondPassDirectionalProgram = new Program("/assets/shaders/deferred/second_pass_directional_vertex.glsl", "/assets/shaders/deferred/second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 
-		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
+//		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 
 		DeferredRenderer.exitOnGLError("setupShaders");
@@ -231,7 +232,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(1), debugBuffer);
+			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -309,8 +310,6 @@ public class DeferredRenderer implements Renderer {
 		cubeMap.bind();
 
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
-		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
@@ -373,34 +372,34 @@ public class DeferredRenderer implements Renderer {
 	}
 
 
-	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
-		combineProgram.use();
-		combineProgram.setUniform("screenWidth", (float) WIDTH);
-		combineProgram.setUniform("screenHeight", (float) HEIGHT);
-		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
-		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
-		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-//		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
-//		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
-		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
-		
-		target.use(true);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // color
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
-		
-		fullscreenBuffer.draw();
-
-		target.unuse();
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-	}
+//	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
+//		combineProgram.use();
+//		combineProgram.setUniform("screenWidth", (float) WIDTH);
+//		combineProgram.setUniform("screenHeight", (float) HEIGHT);
+//		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+//		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
+//		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+////		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
+////		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
+//		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
+//		
+//		target.use(true);
+//		GL11.glDisable(GL11.GL_DEPTH_TEST);
+//		
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // color
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
+//		
+//		fullscreenBuffer.draw();
+//
+//		target.unuse();
+//		GL11.glEnable(GL11.GL_DEPTH_TEST);
+//	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer) {
 		drawToQuad(texture, buffer, renderToQuadProgram);
@@ -640,24 +639,24 @@ public class DeferredRenderer implements Renderer {
 		return sphere;
 	}
 
-	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {
-		secondPassPointComputeShaderProgram.use();
-
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput); // output map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal map
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo map
-
-		GL42.glBindImageTexture(0, deferredOutput, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA32F);
-		//GL20.glUniform1i(GL20.glGetUniformLocation(secondPassPointComputeShaderProgram.getId(),"outTexture"), deferredOutput);
-		secondPassPointComputeShaderProgram.dispatchCompute(16, 16, 1);
-
-//		finalTarget.saveBuffer("C:\\" +  System.currentTimeMillis() + ".png");
-//		System.exit(-1);
-		
-	}
+//	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {
+//		secondPassPointComputeShaderProgram.use();
+//
+////		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, deferredOutput); // output map
+////		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position map
+////		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal map
+////		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // albedo map
+//
+//		GL42.glBindImageTexture(0, deferredOutput, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA32F);
+//		//GL20.glUniform1i(GL20.glGetUniformLocation(secondPassPointComputeShaderProgram.getId(),"outTexture"), deferredOutput);
+//		secondPassPointComputeShaderProgram.dispatchCompute(16, 16, 1);
+//
+////		finalTarget.saveBuffer("C:\\" +  System.currentTimeMillis() + ".png");
+////		System.exit(-1);
+//		
+//	}
 }

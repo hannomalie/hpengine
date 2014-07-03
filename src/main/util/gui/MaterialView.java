@@ -84,8 +84,15 @@ public class MaterialView extends WebPanel {
 				material.setAmbient(current);
 			}
 		});
+        
+        webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", material.getSpecular()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				material.setSpecular(current);
+			}
+		});
 		
-		//TODO: Refactor Vec3 input and add other attributes here
+		//TODO: add other attributes here
 		
 		panels.add(webComponentPanel);
 	}

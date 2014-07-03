@@ -74,8 +74,6 @@ public class Entity implements IEntity {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
-		this.castsShadows = castsShadows;
-
 		this.position = position;
 		scale = new Vector3f(1, 1, 1);
 		
@@ -188,7 +186,7 @@ public class Entity implements IEntity {
 //		material.setTexturesInactive();
 	}
 
-	private Matrix4f calculateCurrentModelMatrix() {
+	protected Matrix4f calculateCurrentModelMatrix() {
 		modelMatrix = new Matrix4f();
 		Matrix4f.translate(position, modelMatrix, modelMatrix);
 		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);

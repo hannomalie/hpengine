@@ -54,16 +54,16 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   vec3 surface_to_viewer_eye = normalize (-(viewMatrix * vec4(normal, 0)).xyz);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
-  float specular_factor = pow (dot_prod_specular, 10*length(specular.rgb));
+  float specular_factor = pow (dot_prod_specular, specular.a);
   
   // attenuation (fade out to sphere edges)
   float dist = length (dist_to_light_eye);
   float distDivRadius = (dist / lightRadius);
-  if(dist > lightRadius) {discard;}
-  //float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
-  float atten_factor = -log (min (1.0, distDivRadius));
+  //if(dist > lightRadius) {discard;}
+  float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+  //float atten_factor = -log (min (1.0, distDivRadius));
   //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
-  return vec4((color * vec4(lightDiffuse,1) * dot_prod * atten_factor + specular_factor * specular * color * atten_factor));
+  return vec4((color * vec4(lightDiffuse,1) * dot_prod * atten_factor + specular_factor * specular * color * atten_factor).xyz, 1);
 }
 void main(void) {
 	
@@ -86,5 +86,4 @@ void main(void) {
 	vec4 finalColor = phong(positionView, normalView, vec4(albedo,1), specular);
 	
 	out_DiffuseSpecular = finalColor;
-	out_DiffuseSpecular = vec4(1,0,0,1);
 }

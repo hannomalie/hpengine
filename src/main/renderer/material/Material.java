@@ -28,8 +28,8 @@ public class Material implements IEntity {
 
 	Vector3f ambient = new Vector3f(0.5f,0.5f,0.5f);
 	Vector3f diffuse = new Vector3f(0.5f,0.5f,0.5f);
-	Vector3f specular = new Vector3f(0.5f,0.5f,0.5f);
-	float specularCoefficient = 1;
+	Vector3f specular = new Vector3f(1f,1f,1f);
+	float specularCoefficient = 0;
 	float transparency = 1;
 	float reflectiveness = 0.2f;
 
@@ -135,7 +135,6 @@ public class Material implements IEntity {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
 	@Override
 	public String toString() {
 		return name + this.textures.size();

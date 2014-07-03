@@ -17,6 +17,7 @@ import main.util.Util;
 public class MaterialFactory {
 
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
+	public static int count = 0;
 	
 	private Renderer renderer;
 	public Map<String, Material> MATERIALS = new HashMap<>();
@@ -32,6 +33,9 @@ public class MaterialFactory {
 
 	public Material getMaterial(MaterialInfo materialInfo) {
 		Material material = new Material();
+		if(materialInfo.name == null || materialInfo.name == "") {
+			materialInfo.name = "Material " + count++;
+		}
 		material.setName(materialInfo.name);
 		material.textures = materialInfo.maps;
 		material.ambient = materialInfo.ambient;
@@ -53,7 +57,6 @@ public class MaterialFactory {
 				e.printStackTrace();
 			}
 		}
-
 		Material material = getMaterial(new MaterialInfo(textures));
 		return material;
 	}
@@ -74,6 +77,11 @@ public class MaterialFactory {
 			this.maps = maps;
 		}
 
+		public MaterialInfo setName(String name) {
+			this.name = name;
+			return this;
+		}
+
 		public MaterialInfo() {
 		}
 
@@ -81,8 +89,8 @@ public class MaterialFactory {
 		public String name = "";
 		public Vector3f ambient = new Vector3f();
 		public Vector3f diffuse = new Vector3f();
-		public Vector3f specular = new Vector3f();
-		public float specularCoefficient = 0.5f;
+		public Vector3f specular = new Vector3f(0,0,0);
+		public float specularCoefficient = 1f;
 	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {

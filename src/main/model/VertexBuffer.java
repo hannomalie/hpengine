@@ -59,7 +59,7 @@ public class VertexBuffer {
 	}
 	
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
-		this( buffer, channels, Usage.DYNAMIC);
+		this( buffer, channels, Usage.STATIC);
 		this.verticesCount = calculateVerticesCount(buffer, channels);
 		buffer.rewind();
 		float[] floatArray = new float[buffer.limit()/4];
@@ -68,7 +68,7 @@ public class VertexBuffer {
 	}
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
-		this( null, channels, Usage.DYNAMIC);
+		this( null, channels, Usage.STATIC);
 //		this.verticesCount = calculateVerticesCount(values, channels);
 		buffer = buffer(values, channels);
 //		LOGGER.log(Level.INFO, String.format("Added Buffer(%d vertices) with %d bytes %s", verticesCount, buffer.remaining() * 4, channels.toString()));

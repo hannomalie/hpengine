@@ -23,11 +23,9 @@ public class PointLight extends Entity {
 	private Vector4f color;
 	
 	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range, Material material) {
-		setPosition(position);
+		super(position, model, material);
 		setColor(colorIntensity);
 		setName();
-		createVertexBuffer(model);
-		setMaterial(material);
 		counter++;
 		setScale(range);
 	}
@@ -62,16 +60,6 @@ public class PointLight extends Entity {
 		return null;
 	}
 
-	@Override
-	public Vector3f getPosition() {
-		return position;
-	}
-	
-	@Override
-	public void setPosition(Vector3f position) {
-		this.position = position;
-	}
-	
 	public void drawAsMesh(Renderer renderer, Camera camera) {
 		Matrix4f tempModel = calculateCurrentModelMatrixWithLowerScale(); 
 		tempModel.store(matrix44Buffer);
@@ -82,11 +70,17 @@ public class PointLight extends Entity {
 	}
 
 	public void draw(Renderer renderer, Program program) {
+		calculateCurrentModelMatrix();
+		modelMatrix.store(matrix44Buffer);
+		matrix44Buffer.flip();
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		vertexBuffer.draw();
 	}
 	
 	public void drawAgain(Renderer renderer, Program program) {
+		calculateCurrentModelMatrix();
+		modelMatrix.store(matrix44Buffer);
+		matrix44Buffer.flip();
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		vertexBuffer.drawAgain();
 	}
@@ -129,7 +123,6 @@ public class PointLight extends Entity {
 
 	@Override
 	public boolean isInFrustum(Camera camera) {
-
 		if (camera.getFrustum().sphereInFrustum(position.x, position.y, position.z, getRadius())) {
 //		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
 			return true;

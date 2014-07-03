@@ -37,7 +37,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = clamp(pow (dot_prod_specular, length(specular.x)), 0, 1);
   
-  return vec4(color * vec4(lightDiffuse,1) * dot_prod + specular_factor * specular * color);
+  return vec4((color * vec4(lightDiffuse,1) * dot_prod + specular_factor * specular * color).xyz, 1);
 }
 
 ///////////////////// AO
