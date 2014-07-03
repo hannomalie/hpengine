@@ -114,11 +114,11 @@ public class DeferredRenderer implements Renderer {
 	public DeferredRenderer(Spotlight light) {
 		textureFactory = new TextureFactory();
 		setupOpenGL();
+		materialFactory = new MaterialFactory(this);
 		setupShaders();
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory();
 		lightFactory = new LightFactory(this);
-		materialFactory = new MaterialFactory(this);
 		
 		sphereModel = null;
 		try {

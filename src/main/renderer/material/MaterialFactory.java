@@ -1,9 +1,13 @@
 package main.renderer.material;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
 import main.renderer.Renderer;
@@ -32,27 +36,65 @@ public class MaterialFactory {
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
-		Material material = new Material();
-		if(materialInfo.name == null || materialInfo.name == "") {
-			materialInfo.name = "Material " + count++;
+		Material material = MATERIALS.get(materialInfo.name);
+		if(material != null) {
+			return material;
 		}
+
+		if(materialInfo.name == null || materialInfo.name == "") {
+			materialInfo.name = "Material_" + count++;
+		}
+		
+		material = read(Material.getDirectory() + materialInfo.name);
+		
+		if(material != null) {
+			return material;
+		}
+		
+		material = new Material();
 		material.setName(materialInfo.name);
 		material.textures = materialInfo.maps;
 		material.ambient = materialInfo.ambient;
 		material.diffuse = materialInfo.diffuse;
 		material.specular = materialInfo.specular;
 		material.specularCoefficient = materialInfo.specularCoefficient;
+		material.materialInfo = materialInfo;
 		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
+		Material.write(material, materialInfo.name);
+		return material;
+	}
+
+	public Material getMaterialWithoutRead(MaterialInfo materialInfo) {
+		Material material = MATERIALS.get(materialInfo.name);
+		if(material != null) {
+			return material;
+		}
+
+		if(materialInfo.name == null || materialInfo.name == "") {
+			materialInfo.name = "Material_" + count++;
+		}
+		
+		material = new Material();
+		material.setName(materialInfo.name);
+		material.textures = materialInfo.maps;
+		material.ambient = materialInfo.ambient;
+		material.diffuse = materialInfo.diffuse;
+		material.specular = materialInfo.specular;
+		material.specularCoefficient = materialInfo.specularCoefficient;
+		material.materialInfo = materialInfo;
+		//material.transparency = materialInfo.transparency;
+		initMaterial(material);
+		Material.write(material, materialInfo.name);
 		return material;
 	}
 
 	public Material getMaterial(HashMap<MAP, String> hashMap) {
-		HashMap<MAP, Texture> textures = new HashMap<>();
+		MaterialMap textures = new MaterialMap();
 		
 		for (MAP map : hashMap.keySet()) {
 			try {
-				textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map)));
+				textures.textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -62,7 +104,7 @@ public class MaterialFactory {
 	}
 
 	private void initMaterial(Material material) {
-		Program firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(material.textures.keySet()));
+		Program firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(material.textures.textures.keySet()));
 		material.setProgram(firstPassProgram);
 		MATERIALS.put(material.getName(), material);
 		material.setUp = true;
@@ -72,8 +114,8 @@ public class MaterialFactory {
 		return MATERIALS.get(materialName);
 	}
 	
-	public static final class MaterialInfo {
-		public MaterialInfo(HashMap<MAP, Texture> maps) {
+	public static final class MaterialInfo implements Serializable {
+		public MaterialInfo(MaterialMap maps) {
 			this.maps = maps;
 		}
 
@@ -85,7 +127,7 @@ public class MaterialFactory {
 		public MaterialInfo() {
 		}
 
-		public HashMap<MAP,Texture> maps = new HashMap<>();
+		public MaterialMap maps = new MaterialMap();
 		public String name = "";
 		public Vector3f ambient = new Vector3f();
 		public Vector3f diffuse = new Vector3f();
@@ -101,5 +143,23 @@ public class MaterialFactory {
 
 	public Material getDefaultMaterial() {
 		return defaultMaterial;
+	}
+
+    public Material read(String resourceName) {
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileInputStream fis = null;
+		ObjectInputStream in = null;
+		try {
+			fis = new FileInputStream(Material.getDirectory() + fileName + ".hpmaterial");
+			in = new ObjectInputStream(fis);
+			Material material = (Material) in.readObject();
+			in.close();
+			
+			return getMaterialWithoutRead(material.materialInfo);
+//			return material;
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

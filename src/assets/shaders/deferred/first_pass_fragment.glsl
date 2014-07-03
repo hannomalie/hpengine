@@ -15,6 +15,7 @@ uniform bool useParallax;
 uniform bool useSteepParallax;
 
 uniform float normalMapWidth = 1;
+
 uniform float normalMapHeight = 1;
 
 uniform float diffuseMapWidth = 1;
@@ -22,6 +23,7 @@ uniform float diffuseMapHeight = 1;
 
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
+
 
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
@@ -77,7 +79,7 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 void main(void) {
 	
 	vec3 V = normalize((position_world.xyz - eyePos_world.xyz).xyz);
-	V = (viewMatrix * vec4(V, 0)).xyz;
+	//V = (viewMatrix * vec4(V, 0)).xyz;
 	vec2 UV = texCoord;
 
 #ifdef use_normalMap
@@ -87,7 +89,7 @@ void main(void) {
 	
 	if (useParallax) {
 		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
-		float v = height * 0.05106 - 0.012;
+		float v = height * 0.02106 - 0.012;
 		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
 		float n = 30;
@@ -107,7 +109,7 @@ void main(void) {
 	}
 	
 	// NORMAL
-	vec3 PN_view =  (viewMatrix * vec4(normal_model, 0)).xyz;
+	vec3 PN_view =  (viewMatrix * vec4(normal_model,0)).xyz;
 #ifdef use_normalMap
 		PN_view = ((viewMatrix * vec4(perturb_normal(normal_world, V, UV), 0)).xyz);
 #endif
@@ -133,7 +135,7 @@ void main(void) {
 
 #ifdef use_reflectionMap
 	float reflect_factor = texture2D(reflectionMap, UV).x;
-	vec3 texCoords3d = normalize(reflect(V, normal_view));
+	vec3 texCoords3d = normalize(reflect(V, normal_world));
 	//texCoords3d.y *= -1;
 	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
 	out_color.w = reflect_factor;

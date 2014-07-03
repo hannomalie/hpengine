@@ -2,38 +2,40 @@ package main.renderer.material;
 
 import static main.log.ConsoleLogger.getLogger;
 
-import java.util.HashMap;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import main.World;
 import main.model.IEntity;
-import main.renderer.Renderer;
-import main.renderer.material.Material.MAP;
+import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
-import main.shader.ShaderDefine;
 import main.texture.Texture;
-import main.util.Util;
 
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Material implements IEntity {
+public class Material implements IEntity, Serializable {
 	
 	public static boolean MIPMAP_DEFAULT = true;
 	public static int TEXTUREINDEX = 0;
 	
 	private static Logger LOGGER = getLogger();
 
-	Vector3f ambient = new Vector3f(0.5f,0.5f,0.5f);
-	Vector3f diffuse = new Vector3f(0.5f,0.5f,0.5f);
-	Vector3f specular = new Vector3f(1f,1f,1f);
-	float specularCoefficient = 0;
-	float transparency = 1;
-	float reflectiveness = 0.2f;
+	transient Vector3f ambient = new Vector3f(0.5f,0.5f,0.5f);
+	transient Vector3f diffuse = new Vector3f(0.5f,0.5f,0.5f);
+	transient Vector3f specular = new Vector3f(1f,1f,1f);
+	transient float specularCoefficient = 0;
+	transient float transparency = 1;
+	transient float reflectiveness = 0.2f;
 
-	private Program firstPassProgram;
+	transient private Program firstPassProgram;
 	
 	public enum MAP {
 		DIFFUSE("diffuseMap", 0),
@@ -52,28 +54,29 @@ public class Material implements IEntity {
 		}
 	}
 
-	public Map<MAP, Texture> textures = new HashMap<>();
+	transient public MaterialMap textures = new MaterialMap();
 	
-	private boolean textureLess = false;
-	boolean setUp = false;
+	transient private boolean textureLess = false;
+	transient boolean setUp = false;
 
-	private String name = "";
-	private String path;
+	transient private String name = "";
+	transient private String path;
+	public MaterialInfo materialInfo;
 
 	protected Material() { }
 
 	void addTexture(MAP map, Texture texture) {
-		textures.put(map, texture);
+		textures.textures.put(map, texture);
 	}
 	
 	public boolean hasSpecularMap() {
-		return textures.containsKey(MAP.SPECULAR);
+		return textures.textures.containsKey(MAP.SPECULAR);
 	}
 	public boolean hasNormalMap() {
-		return textures.containsKey(MAP.NORMAL);
+		return textures.textures.containsKey(MAP.NORMAL);
 	}
 	public boolean hasDiffuseMap() {
-		return !isTextureLess() && textures.containsKey(MAP.DIFFUSE);
+		return !isTextureLess() && textures.textures.containsKey(MAP.DIFFUSE);
 	}
 	
 	public void setTexturesActive(Program program) {
@@ -81,7 +84,7 @@ public class Material implements IEntity {
 			return;
 		}
 				
-		for (Entry<MAP, Texture> entry : textures.entrySet()) {
+		for (Entry<MAP, Texture> entry : textures.textures.entrySet()) {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
@@ -102,7 +105,7 @@ public class Material implements IEntity {
 		
 	}
 	public void setTexturesInactive() {
-		for (Map.Entry<MAP, Texture> entry : textures.entrySet()) {
+		for (Map.Entry<MAP, Texture> entry : textures.textures.entrySet()) {
 			MAP map = entry.getKey();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
@@ -198,6 +201,49 @@ public class Material implements IEntity {
 
 	public float getSpecularCoefficient() {
 		return specularCoefficient;
+	}
+
+	public static boolean write(Material material, String resourceName) {
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		try {
+			fos = new FileOutputStream(getDirectory() + fileName + ".hpmaterial");
+			out = new ObjectOutputStream(fos);
+			out.writeObject(material);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				out.close();
+				return true;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+
+	public static String getDirectory() {
+		return World.WORKDIR_NAME + "/assets/materials/";
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (!(other instanceof Material)) {
+			return false;
+		}
+		
+		Material m = (Material) other;
+		return (m.ambient.equals(ambient) &&
+				m.diffuse.equals(diffuse) &&
+				m.specular.equals(specular) &&
+				m.specularCoefficient == specularCoefficient &&
+//				m.textures.equals(textures) &&
+//				m.name.equals(name) &&
+				m.reflectiveness == reflectiveness &&
+				m.firstPassProgram.equals(firstPassProgram));
 	}
 
 }

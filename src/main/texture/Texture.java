@@ -287,8 +287,21 @@ public class Texture implements Serializable {
 		return World.WORKDIR_NAME + "/assets/textures/";
 	}
 	
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
 	@Override
 	public String toString() {
 		return path;
+	}
+
+	@Override
+	public int hashCode() {
+		return path.hashCode();
 	}
 }

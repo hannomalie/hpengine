@@ -59,7 +59,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   // attenuation (fade out to sphere edges)
   float dist = length (dist_to_light_eye);
   float distDivRadius = (dist / lightRadius);
-  //if(dist > lightRadius) {discard;}
+  if(dist > lightRadius) {discard;}
   float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
   //float atten_factor = -log (min (1.0, distDivRadius));
   //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);

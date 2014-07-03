@@ -11,10 +11,8 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
-import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
-import main.model.OBJLoader;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
@@ -26,7 +24,6 @@ import main.util.gui.DebugFrame;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
-import org.apache.commons.io.FileUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
@@ -87,6 +84,7 @@ public class World {
 		ArrayList<File> dirs = new ArrayList<>();
 		dirs.add(new File(WORKDIR_NAME));
 		dirs.add(new File(Texture.getDirectory()));
+		dirs.add(new File(Material.getDirectory()));
 
 		for (File file : dirs) {
 			createIfAbsent(file);

@@ -392,7 +392,7 @@ public class DebugFrame {
 			if (material != null) {
 				DefaultMutableTreeNode materialNode = new DefaultMutableTreeNode(material.getName());
 				
-				for (Object map: Arrays.asList(material.textures.keySet().toArray())) {
+				for (Object map: Arrays.asList(material.textures.textures.keySet().toArray())) {
 					DefaultMutableTreeNode textureNode = new DefaultMutableTreeNode(String.format("%S - %s", map, material.textures.get(map)));
 					materialNode.add(textureNode);
 				}

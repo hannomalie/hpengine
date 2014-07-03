@@ -40,10 +40,10 @@ public class Program implements Reloadable {
 	private HashMap<String, Uniform> uniforms = new HashMap<>();
 
 	private boolean needsTextures = true;
-	private String definesString;
-	private String geometryShaderLocation;
-	private String vertexShaderLocation;
-	private String fragmentShaderLocation;
+	private String definesString = "";
+	private String geometryShaderLocation = "";
+	private String vertexShaderLocation = "";
+	private String fragmentShaderLocation = "";
 
 	private String geometryShaderSource;
 	private String vertexShaderSource;
@@ -80,7 +80,7 @@ public class Program implements Reloadable {
 			
 			this.vertexShaderLocation = "hp/" +vertexShaderLocation;
 			this.fragmentShaderLocation = "hp/" +fragmentShaderLocation;
-			this.geometryShaderLocation = geometryShaderLocation == null ? null :"hp/programs/" +geometryShaderLocation;
+			this.geometryShaderLocation = (geometryShaderLocation == null || geometryShaderLocation == "") ? "" :"hp/programs/" +geometryShaderLocation;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -107,7 +107,7 @@ public class Program implements Reloadable {
 		id = GL20.glCreateProgram();
 		GL20.glAttachShader(id, vertexShaderId);
 		GL20.glAttachShader(id, fragmentShaderId);
-		if (geometryShaderLocation != null) {
+		if (geometryShaderLocation != null && geometryShaderLocation != "") {
 			geometryShaderId = Program.loadShader(geometryShaderLocation, GL32.GL_GEOMETRY_SHADER);
 			GL20.glAttachShader(id, geometryShaderId);
 		}
@@ -139,10 +139,10 @@ public class Program implements Reloadable {
 		
 		if (this.channels == otherProgram.channels &&
 			this.needsTextures == otherProgram.needsTextures &&
-			this.definesString == otherProgram.definesString &&
+			this.definesString.equals(otherProgram.definesString) &&
 			this.geometryShaderLocation == otherProgram.geometryShaderLocation &&
-			this.vertexShaderLocation == otherProgram.vertexShaderLocation &&
-			this.fragmentShaderLocation == otherProgram.fragmentShaderLocation) {
+			this.vertexShaderLocation.equals(otherProgram.vertexShaderLocation) &&
+			this.fragmentShaderLocation.equals(otherProgram.fragmentShaderLocation)) {
 			return true;
 		}
 		return false;

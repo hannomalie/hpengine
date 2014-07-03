@@ -17,7 +17,7 @@ public abstract class ColorChooserFrame extends WebFrame {
 	private WebColorChooserPanel colorChooserPanel;
 
 	public ColorChooserFrame() {
-		this.setSize(600, 600);
+		this.setSize(400, 400);
 		this.colorChooserPanel = new WebColorChooserPanel(false);
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		

@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import main.World;
 import main.renderer.material.Material;
 
 import org.apache.commons.io.FilenameUtils;

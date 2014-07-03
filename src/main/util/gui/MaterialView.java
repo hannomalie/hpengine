@@ -51,8 +51,8 @@ public class MaterialView extends WebPanel {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
 
-        for (MAP map : material.textures.keySet()) {
-			Texture texture = material.textures.get(map);
+        for (MAP map : material.textures.textures.keySet()) {
+			Texture texture = material.textures.textures.get(map);
 			
 	        WebLabel label = new WebLabel ( map.name() );
 	        
@@ -60,7 +60,8 @@ public class MaterialView extends WebPanel {
 	        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
 	        WebComboBox select = new WebComboBox(textures);
 	        
-	        int assignedTexture = ( new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values())).indexOf(material.textures.get(map));
+	        List allTexturesList = new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values());
+	        int assignedTexture = allTexturesList.indexOf(world.getRenderer().getTextureFactory().TEXTURES.get(material.textures.textures.get(map).getPath()));
 	        select.setSelectedIndex(assignedTexture);
 	        
 	        select.addActionListener(e -> {
