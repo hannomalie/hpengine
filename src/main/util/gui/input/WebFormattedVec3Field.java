@@ -1,4 +1,4 @@
-package main.util.gui;
+package main.util.gui.input;
 
 import org.lwjgl.util.vector.Vector3f;
 

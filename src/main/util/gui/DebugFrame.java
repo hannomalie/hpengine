@@ -37,6 +37,7 @@ import main.renderer.light.PointLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
 import main.texture.TextureFactory;
+import main.util.gui.input.Vector3fInput;
 import main.util.script.ScriptManager;
 
 import org.lwjgl.util.vector.Vector3f;
@@ -328,7 +329,7 @@ public class DebugFrame {
 		new Vector3fInput(buttonPanel) {
 			
 			@Override
-			void onChange(Vector3f value) {
+			public void onChange(Vector3f value) {
 				World.light.rotate(value, 0.7f);
 			}
 		};

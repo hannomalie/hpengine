@@ -1,4 +1,4 @@
-package main.util.gui;
+package main.util.gui.input;
 
 import com.alee.laf.text.WebFormattedTextField;
 

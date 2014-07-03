@@ -8,6 +8,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import main.World;
 import main.model.IEntity;
+import main.util.gui.input.WebFormattedVec3Field;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;

@@ -10,6 +10,9 @@ import main.World;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.texture.Texture;
+import main.util.gui.input.ColorChooserButton;
+import main.util.gui.input.ColorChooserFrame;
+import main.util.gui.input.WebFormattedVec3Field;
 
 import com.alee.extended.panel.BorderPanel;
 import com.alee.extended.panel.GridPanel;
@@ -78,12 +81,31 @@ public class MaterialView extends WebPanel {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
 
+        webComponentPanel.addElement(new WebFormattedVec3Field("Diffuse", material.getDiffuse()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				material.setDiffuse(current);
+			}
+		});
+        webComponentPanel.addElement(new ColorChooserButton("Diffuse", new ColorChooserFrame() {
+			@Override
+			public void onColorChange(Vector3f color) {
+				material.setDiffuse(color);
+			}
+		}));
+
         webComponentPanel.addElement(new WebFormattedVec3Field("Ambient", material.getAmbient()) {
 			@Override
 			public void onValueChange(Vector3f current) {
 				material.setAmbient(current);
 			}
 		});
+        webComponentPanel.addElement(new ColorChooserButton("Ambient", new ColorChooserFrame() {
+			@Override
+			public void onColorChange(Vector3f color) {
+				material.setAmbient(color);
+			}
+		}));
         
         webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", material.getSpecular()) {
 			@Override
@@ -91,6 +113,12 @@ public class MaterialView extends WebPanel {
 				material.setSpecular(current);
 			}
 		});
+        webComponentPanel.addElement(new ColorChooserButton("SpecularColor", new ColorChooserFrame() {
+			@Override
+			public void onColorChange(Vector3f color) {
+				material.setSpecular(color);
+			}
+		}));
 		
 		//TODO: add other attributes here
 		

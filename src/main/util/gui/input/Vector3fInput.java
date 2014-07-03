@@ -1,4 +1,4 @@
-package main.util.gui;
+package main.util.gui.input;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -51,5 +51,5 @@ public abstract class Vector3fInput {
 		 
 	}
 	
-	abstract void onChange(Vector3f value);
+	public abstract void onChange(Vector3f value);
 }
