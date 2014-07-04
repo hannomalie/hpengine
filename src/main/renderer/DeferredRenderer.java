@@ -117,17 +117,12 @@ public class DeferredRenderer implements Renderer {
 		materialFactory = new MaterialFactory(this);
 		setupShaders();
 		objLoader = new OBJLoader(this);
-		entityFactory = new EntityFactory();
+		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		
 		sphereModel = null;
 		try {
 			sphereModel = objLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
-			sphere = entityFactory.getEntity(sphereModel);
-			Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-			scale.scale(new Random().nextFloat()*20);
-			sphere.setScale(scale);
-			sphere.update(0);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -635,9 +630,14 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public IEntity getSphere() {
-		return sphere;
+	public Model getSphere() {
+		return sphereModel;
 	}
+
+//	@Override
+//	public IEntity getSphere() {
+//		return sphere;
+//	}
 
 //	private void tiledDeferredPass(Camera camera, Spotlight light, List<PointLight> pointLights) {
 //		secondPassPointComputeShaderProgram.use();

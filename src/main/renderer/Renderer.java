@@ -49,6 +49,6 @@ public interface Renderer {
 	public TextureFactory getTextureFactory();
 	public OBJLoader getOBJLoader();
 	public EntityFactory getEntityFactory();
-	public IEntity getSphere();
+	public Model getSphere();
 
 }

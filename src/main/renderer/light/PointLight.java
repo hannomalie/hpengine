@@ -23,9 +23,8 @@ public class PointLight extends Entity {
 	private Vector4f color;
 	
 	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range, Material material) {
-		super(position, model, material);
+		super(position, generateName(), model, material);
 		setColor(colorIntensity);
-		setName();
 		counter++;
 		setScale(range);
 	}
@@ -35,8 +34,8 @@ public class PointLight extends Entity {
 		this.material = material;
 	}
 
-	private void setName() {
-		name = String.format("PointLight_%d", counter);
+	private static String generateName() {
+		return String.format("PointLight_%d", counter);
 	}
 
 	public void setColor(Vector4f color) {
@@ -87,7 +86,7 @@ public class PointLight extends Entity {
 
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
 		Matrix4f temp = new Matrix4f();
-		Matrix4f.translate(position, temp, temp);
+		Matrix4f.translate(getPosition(), temp, temp);
 		Matrix4f.mul(Util.toMatrix(getOrientation()), temp, temp);
 		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
 		return temp;
@@ -123,7 +122,7 @@ public class PointLight extends Entity {
 
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(position.x, position.y, position.z, getRadius())) {
+		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z, getRadius())) {
 //		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, getRadius())) {
 			return true;
 		}

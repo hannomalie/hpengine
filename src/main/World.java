@@ -11,6 +11,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
+import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
 import main.octree.Octree;
@@ -85,6 +86,7 @@ public class World {
 		dirs.add(new File(WORKDIR_NAME));
 		dirs.add(new File(Texture.getDirectory()));
 		dirs.add(new File(Material.getDirectory()));
+		dirs.add(new File(Entity.getDirectory()));
 
 		for (File file : dirs) {
 			createIfAbsent(file);
@@ -153,9 +155,8 @@ public class World {
 														    		put(MAP.REFLECTION,"assets/textures/default.dds");
 																}});
 
-		StopWatch.getInstance().start("Load Dummies");
 		try {
-			List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
+			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = mirror;
@@ -173,7 +174,7 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
-						IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(i*10,0-random*i+j,j*10), box.get(0), mat);
+						IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(i*10,0-random*i+j,j*10), "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
@@ -183,7 +184,8 @@ public class World {
 					}
 				}
 			}
-			
+
+			StopWatch.getInstance().start("Load Sponza");
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
 			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
 			for (Model model : sponza) {
@@ -198,7 +200,7 @@ public class World {
 			}
 			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File("C:\\skybox.obj"));
 			for (Model model : skyBox) {
-				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model, mirror);
+				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, mirror);
 				Vector3f scale = new Vector3f(1000, 1000f, 1000f);
 				entity.setScale(scale);
 				entities.add(entity);

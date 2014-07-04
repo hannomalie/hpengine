@@ -2,6 +2,9 @@ package main.model;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import main.renderer.material.Material;
 import main.shader.Program;
 import main.util.Util;
 
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
@@ -26,7 +30,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class Entity implements IEntity {
+public class Entity implements IEntity, Serializable {
 	private static Logger LOGGER = getLogger();
 
 	public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
@@ -44,16 +48,19 @@ public class Entity implements IEntity {
 	
 	public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
 			DataChannels.POSITION3);
-	
-	protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 
-	public Matrix4f modelMatrix = new Matrix4f();
-	protected int modelMatrixLocation = 0;
-	protected Vector3f position = null;
+	public static int count = 0;
+	
+	transient protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
+
+	transient public Matrix4f modelMatrix = new Matrix4f();
+	transient protected int modelMatrixLocation = 0;
+	private Vector3f position = null;
 	protected Vector3f scale = new Vector3f(1,1,1);
 	protected transient Material material;
+	private String materialName = "";
 
-	protected VertexBuffer vertexBuffer;
+	transient protected VertexBuffer vertexBuffer;
 
 	public boolean castsShadows = false;
 
@@ -61,29 +68,40 @@ public class Entity implements IEntity {
 
 	private Quaternion orientation = new Quaternion();
 
-	private boolean selected;
+	transient private boolean selected = false;
+
+	private float[] floatArray;
 
 	protected Entity() {
 	}
 
 	protected Entity(Model model, Material material) {
-		this(new Vector3f(0, 0, 0), model, material);
+		this(new Vector3f(0, 0, 0), model.getName(), model, material);
 	}
 
-	protected Entity(Vector3f position, Model model, Material material) {
+	protected Entity(Vector3f position, String name, Model model, Material material) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
 		this.position = position;
 		scale = new Vector3f(1, 1, 1);
-		
-		createVertexBuffer(model);
+//		this.model = model;
+		createFloatArray(model);
+		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+		createVertexBuffer();
 		
 		this.material = material;
-		this.name = model.getName();
+		this.materialName = material.getName();
+		this.name = name;
 	}
 	
-	public void createVertexBuffer(Model model) {
+	protected void init(Renderer renderer) {
+		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+		createVertexBuffer();
+		material = renderer.getMaterialFactory().get(materialName);
+	}
+	
+	public void createFloatArray(Model model) {
 
 		List<Vector3f> verticesTemp = model.getVertices();
 		List<Vector2f> texcoordsTemp = model.getTexCoords();
@@ -119,26 +137,28 @@ public class Entity implements IEntity {
 
 //		LOGGER.log(Level.INFO, String.format("Values: %d", values.size()));
 		
-		FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(values.size() * 4);
-		float[] floatArray = new float[values.size()];
+		floatArray = new float[values.size()];
 
 		for (int i = 0; i < values.size(); i++) {
 		    floatArray[i] = values.get(i);
 		}
-		verticesFloatBuffer.rewind();
-		verticesFloatBuffer.put(floatArray);
-		verticesFloatBuffer.rewind();
-
-//		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
-
+		
 		verticesTemp = null;
 		texcoordsTemp = null;
 		normalsTemp = null;
 		facesTemp = null;
+	}
+	
+	public void createVertexBuffer() {
+
+		FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(floatArray.length * 4);
+		verticesFloatBuffer.rewind();
+		verticesFloatBuffer.put(floatArray);
+		verticesFloatBuffer.rewind();
+//		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 		
 		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
-		
 	}
 
 	@Override
@@ -372,4 +392,46 @@ public class Entity implements IEntity {
 	public String toString() {
 		return name;
 	}
+	
+	public static boolean write(Entity entity, String resourceName) {
+		System.out.println("XXXXXXXXXXXXXXXXXXXXX ENTITY WRITTEN");
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		try {
+			fos = new FileOutputStream(getDirectory() + fileName + ".hpentity");
+			out = new ObjectOutputStream(fos);
+			out.writeObject(entity);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				out.close();
+				return true;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+
+	public static String getDirectory() {
+		return World.WORKDIR_NAME + "/assets/entities/";
+	}
+	public boolean equals(Object other) {
+		if (!(other instanceof Entity)) {
+			return false;
+		}
+		
+		Entity b = (Entity) other;
+		
+		return b.getName().equals(getName());
+	}
+
+	@Override
+	public void setName(String string) {
+		this.name = string;
+	}
+	
 }

@@ -42,5 +42,6 @@ public interface IEntity {
 	public void setSelected(boolean selected);
 	public default VertexBuffer getVertexBuffer() { return null; }
 	public default void setMaterial(Material defaultMaterial) {}
-	public default Vector3f getCenter() { return new Vector3f(); };
+	public default Vector3f getCenter() { return new Vector3f(); }
+	public default void setName(String string) {};
 }

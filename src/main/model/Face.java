@@ -1,6 +1,8 @@
 package main.model;
 
-public class Face {
+import java.io.Serializable;
+
+public class Face implements Serializable {
 	private final int[] vertexIndices = {-1, -1, -1};
     private final int[] normalIndices = {-1, -1, -1};
     private final int[] textureCoordinateIndices = {-1, -1, -1};

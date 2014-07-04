@@ -5,13 +5,14 @@ import main.renderer.material.Material;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Model {
+public class Model implements Serializable {
 
     private List<Vector3f> vertices = new ArrayList<Vector3f>();
     private List<Vector2f> texCoords = new ArrayList<Vector2f>();

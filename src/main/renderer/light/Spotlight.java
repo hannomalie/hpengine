@@ -66,7 +66,7 @@ public class Spotlight implements IEntity {
 
 		try {
 			Model model = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj")).get(0);
-			box = renderer.getEntityFactory().getEntity(camera.getPosition(), model, white);
+			box = renderer.getEntityFactory().getEntity(camera.getPosition(), "DefaultCube", model, white);
 			box.setScale(0.4f);
 		} catch (IOException e) {
 			e.printStackTrace();
