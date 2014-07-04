@@ -39,14 +39,12 @@ public class Octree {
 	public int maxDeepness;
 
 	private int currentDeepness = 0;
-	
-	public int getCurrentDeepness() {
-		return rootNode.getMaxDeepness();
-	}
 
 	public Node rootNode;
 
-	private List<IEntity> entities = new ArrayList<>();
+	transient private List<IEntity> entities = new ArrayList<>();
+	
+	private List<String> entityNames = new ArrayList<>();
 	
 	public Octree() {
 		this(new Vector3f());
@@ -76,6 +74,7 @@ public class Octree {
 //	   rootNode.optimize();
 //	   rootNode.optimizeThreaded();
 	   entities.add(entity);
+	   entityNames.add(entity.getName());
 	}
 		
 	public void insertWithoutOptimize(IEntity entity) {
@@ -85,6 +84,7 @@ public class Octree {
 		   rootNode.entities.add(entity);
 	   }
 	   entities.add(entity);
+	   entityNames.add(entity.getName());
 	}
 	
 	
@@ -612,6 +612,10 @@ public class Octree {
 	
 	public int getEntityCount() {
 		return entities.size();
+	}
+
+	public int getCurrentDeepness() {
+		return rootNode.getMaxDeepness();
 	}
 
 }

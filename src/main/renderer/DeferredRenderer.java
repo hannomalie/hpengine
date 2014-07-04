@@ -39,6 +39,8 @@ import main.texture.CubeMap;
 import main.texture.TextureFactory;
 import main.util.CLUtil;
 import main.util.ressources.FileMonitor;
+import main.util.stopwatch.GPUProfiler;
+import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
@@ -209,13 +211,27 @@ public class DeferredRenderer implements Renderer {
 	
 
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
+		GPUProfiler.startFrame();
 		draw(finalTarget, octree, camera, entities, light);
+	    GPUProfiler.endFrame();
+//	    GPUTaskProfile tp;
+//	    while((tp = GPUProfiler.getFrameResults()) != null){
+//	        
+//	        tp.dump(); //Dumps the frame to System.out.
+//	    }
 	}
 	
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
 
+		GPUProfiler.start("First pass");
 		drawFirstPass(camera, octree);
+		GPUProfiler.end();
+
+		GPUProfiler.start("Second pass");
 		drawSecondPass(camera, light, pointLights);
+		GPUProfiler.end();
+
+		GPUProfiler.start("Render to quad pass");
 //		combinePass(finalTarget, firstPassTarget, secondPassTarget);
 		
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
@@ -230,6 +246,7 @@ public class DeferredRenderer implements Renderer {
 			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GPUProfiler.end();
 		
 	}
 
@@ -282,6 +299,7 @@ public class DeferredRenderer implements Renderer {
 
 	private void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights) {
 
+		GPUProfiler.start("Directional light");
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
@@ -292,7 +310,8 @@ public class DeferredRenderer implements Renderer {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		secondPassDirectionalProgram.use();
-		
+
+		GPUProfiler.start("Activate GBuffer textures");
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
@@ -303,7 +322,9 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		cubeMap.bind();
+		GPUProfiler.end();
 
+		GPUProfiler.start("Set uniforms");
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
@@ -316,17 +337,25 @@ public class DeferredRenderer implements Renderer {
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
+		GPUProfiler.end();
+		GPUProfiler.start("Draw fullscreen buffer");
 		fullscreenBuffer.draw();
+		GPUProfiler.end();
 
+		GPUProfiler.end();
+		GPUProfiler.start("Pointlights");
 		secondPassPointProgram.use();
-		
+
+		GPUProfiler.start("Set shared uniforms");
 //		secondPassPointProgram.setUniform("lightCount", pointLights.size());
 //		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
 		secondPassPointProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassPointProgram.setUniform("screenHeight", (float) HEIGHT);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		
+		GPUProfiler.end();
+
+		GPUProfiler.start("Draw lights");
 		boolean firstLightDrawn = false;
 		for (int i = 0 ; i < pointLights.size(); i++) {
 			PointLight light = pointLights.get(i);
@@ -364,6 +393,8 @@ public class DeferredRenderer implements Renderer {
 		//secondPassTarget.unuse();
 		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
+		GPUProfiler.end();
+		GPUProfiler.end();
 	}
 
 

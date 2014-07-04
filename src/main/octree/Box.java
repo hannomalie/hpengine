@@ -2,6 +2,7 @@ package main.octree;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -12,7 +13,7 @@ import main.camera.Camera;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class Box {
+public class Box implements Serializable {
 	private static Logger LOGGER = getLogger();
 	// this is the point -x, y, z if you look in -z with opengl coords
 	private Vector3f topRightForeCorner;

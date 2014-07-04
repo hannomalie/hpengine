@@ -57,9 +57,11 @@ public class World {
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
 	public static void main(String[] args) {
-
 		final World world = new World();
+
+		WebLookAndFeel.install();
 		new DebugFrame(world);
+		
 		world.simulate();
 	}
 
@@ -68,19 +70,26 @@ public class World {
 	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
+
+	private Material white;
+	private Material stone;
+	private Material stone2;
+	private Material wood;
+	private Material stoneWet;
+	private Material mirror;
 	
 	public World() {
-		WebLookAndFeel.install();
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
 		glWatch = new OpenGLStopWatch();
 		octree = new Octree(new Vector3f(), 400, 6);
 		camera = new Camera(renderer);
 		light.init(renderer);
+		initDefaultMaterials();
 		loadDummies();
 		octree.insert(entities);
 	}
-
+	
 	private void initWorkDir() {
 		ArrayList<File> dirs = new ArrayList<>();
 		dirs.add(new File(WORKDIR_NAME));
@@ -123,37 +132,40 @@ public class World {
 
 		renderer.destroy();
 	}
+	
+	private void initDefaultMaterials() {
 
-	private void loadDummies() {
-		
-		Renderer.exitOnGLError("loadDummies");
-
-		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														put(MAP.DIFFUSE,"assets/textures/default.dds");
 																}});
 
-		Material stone = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stone = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
 														put(MAP.NORMAL,"assets/textures/stone_normal.png");
 																}});
 		
-		Material stone2 = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stone2 = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/brick.png");
 														    		put(MAP.NORMAL,"assets/textures/brick_normal.png");
 																}});
 		
-		Material wood = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		wood = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/wood_diffuse.png");
 														    		put(MAP.NORMAL,"assets/textures/wood_normal.png");
 																}});
-		Material stoneWet = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stoneWet = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
 														    		put(MAP.NORMAL,"assets/textures/stone_normal.png");
 														    		put(MAP.REFLECTION,"assets/textures/stone_reflection.png");
 																}});
-		Material mirror = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		mirror = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 														    		put(MAP.REFLECTION,"assets/textures/default.dds");
 																}});
+	}
+
+	private void loadDummies() {
+		
+		Renderer.exitOnGLError("loadDummies");
 
 		try {
 			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));

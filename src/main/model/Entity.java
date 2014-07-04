@@ -95,7 +95,7 @@ public class Entity implements IEntity, Serializable {
 		this.name = name;
 	}
 	
-	protected void init(Renderer renderer) {
+	public void init(Renderer renderer) {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
 		material = renderer.getMaterialFactory().get(materialName);
@@ -394,7 +394,6 @@ public class Entity implements IEntity, Serializable {
 	}
 	
 	public static boolean write(Entity entity, String resourceName) {
-		System.out.println("XXXXXXXXXXXXXXXXXXXXX ENTITY WRITTEN");
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
