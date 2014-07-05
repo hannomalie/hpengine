@@ -62,8 +62,8 @@ public class Transform {
 		setOrientation(Quaternion.mul(getOrientation(), temp, null).normalise(null));
 	}
 	public void move(Vector3f amount) {
-		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation()), new Vector4f(amount.x, amount.y, amount.z, 0), null);
-		moveInWorld(localDirectionToWorld(amount));
+		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation().negate(null)), new Vector4f(amount.x, amount.y, amount.z, 0), null);
+		moveInWorld(new Vector3f(temp.x, temp.y, temp.z));
 	}
 	public void moveInWorld(Vector3f amount) {
 		setPosition(Vector3f.add(getPosition(), amount, null));

@@ -95,23 +95,29 @@ public class Camera implements IEntity {
 		if (Mouse.isButtonDown(1)) {
 			transform.rotateWorld(transform.getRightDirection(), Mouse.getDY() * turbo*rotationDelta * seconds);
 		}
+		if (Mouse.isButtonDown(2)) {
+			transform.rotateWorld(transform.getViewDirection(), Mouse.getDX() * turbo*rotationDelta * seconds);
+		}
+		
+		float moveAmount = turbo*posDelta * seconds;
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			transform.moveInWorld(new Vector3f(0, 0, -turbo*posDelta * seconds));
+			//transform.moveInWorld((Vector3f) transform.getViewDirection().scale(-turbo*posDelta * seconds));
+			transform.move(new Vector3f(0,0,moveAmount));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-			transform.move(new Vector3f(-turbo*posDelta * seconds, 0, 0));
+			transform.move(new Vector3f(moveAmount, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-			transform.move(new Vector3f(0, 0, turbo*posDelta * seconds));
+			transform.move(new Vector3f(0, 0, -moveAmount));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-			transform.move(new Vector3f(turbo*posDelta * seconds, 0, 0));
+			transform.move(new Vector3f(-moveAmount, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			transform.move(new Vector3f(0, turbo*posDelta * seconds, 0));
+			transform.move(new Vector3f(0, moveAmount, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			transform.move(new Vector3f(0, -turbo*posDelta * seconds, 0));
+			transform.move(new Vector3f(0, -moveAmount, 0));
 		}
 	}
 	
