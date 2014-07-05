@@ -4,11 +4,11 @@ import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.util.vector.Vector3f;
-
 import main.World;
 import main.model.IEntity;
 import main.util.gui.input.WebFormattedVec3Field;
+
+import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
@@ -29,17 +29,20 @@ public class EntitiyView extends WebPanel {
 		this.setSize(600, 600);
 		setMargin(20);
 		
-		List<WebComponentPanel> panels = new ArrayList<>();
+		List<Component> panels = new ArrayList<>();
 		
 		addAttributesPanel(panels);
+        MaterialView materialView = new MaterialView(world, entity.getMaterial());
+        panels.add(materialView);
         
         Component[] components = new Component[panels.size()];
         panels.toArray(components);
         
-        this.add(new GridPanel ( panels.size(), 1, components));
+        
+        this.add(new GridPanel ( components.length, 1, components));
 	}
 	
-	private void addAttributesPanel(List<WebComponentPanel> panels) {
+	private void addAttributesPanel(List<Component> panels) {
 			
 			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
 	        webComponentPanel.setElementMargin ( 4 );

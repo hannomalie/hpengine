@@ -201,6 +201,53 @@ public class Util {
         return m;
     }
 
+//	public static Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
+//		Quaternion qInterpolated = new Quaternion();
+//
+//		if (q1.equals(q2)) {
+//			return q1;
+//		}
+//
+//		// Temporary array to hold second quaternion.
+//
+//		float cosTheta = q1.x * q2.x + q1.y * q2.y + q1.z * q2.z + q1.w * q2.w;
+//
+//		if (cosTheta < 0.0f) {
+//			// Flip sigh if so.
+//			q2 = conjugate(q2);
+//			cosTheta = -cosTheta;
+//		}
+//
+//		float beta = 1.0f - t;
+//
+//		// Set the first and second scale for the interpolation
+//		float scale0 = 1.0f - t;
+//		float scale1 = t;
+//
+//		if (1.0f - cosTheta > 0.1f) {
+//			// We are using spherical interpolation.
+//			float theta = (float) Math.acos(cosTheta);
+//			float sinTheta = (float) Math.sin(theta);
+//			scale0 = (float) Math.sin(theta * beta) / sinTheta;
+//			scale1 = (float) Math.sin(theta * t) / sinTheta;
+//		}
+//
+//		// Interpolation.
+//		qInterpolated.x = scale0 * q1.x + scale1 * q2.x;
+//		qInterpolated.y = scale0 * q1.y + scale1 * q2.y;
+//		qInterpolated.z = scale0 * q1.z + scale1 * q2.z;
+//		qInterpolated.w = scale0 * q1.w + scale1 * q2.w;
+//
+//		return qInterpolated;
+//	}
+
+	public static Quaternion conjugate(Quaternion q) {
+		q.x = -q.x;
+		q.y = -q.y;
+		q.z = -q.z;
+		return q;
+	}
+
 	public static String vectorToString(Vector3f in) {
 		StringBuilder b = new StringBuilder();
 		b.append(in.x);

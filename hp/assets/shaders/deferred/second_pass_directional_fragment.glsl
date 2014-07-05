@@ -9,6 +9,7 @@ uniform float materialSpecularCoefficient = 0;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
+uniform float secondPassScale = 1;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -19,10 +20,21 @@ uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
 
-uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
-
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
+out vec4 out_AOReflection;
+
+float packColor(vec3 color) {
+    return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
+}
+vec3 unpackColor(float f) {
+    vec3 color;
+    color.b = floor(f / 256.0 / 256.0);
+    color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
+    color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
+    // now we have a vec3 with the 3 components in range [0..256]. Let's normalize it!
+    return color / 256.0;
+}
 
 vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   vec3 direction_to_light_eye = normalize((vec4(lightDirection, 0)).xyz);
@@ -37,7 +49,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = clamp(pow (dot_prod_specular, length(specular.x)), 0, 1);
   
-  return vec4((color * vec4(lightDiffuse,1) * dot_prod + specular_factor * specular * color).xyz, 1);
+  return vec4((vec4(lightDiffuse,1) * dot_prod).xyz, specular_factor);
 }
 
 ///////////////////// AO
@@ -65,7 +77,7 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 	
 	if (targetNormalView.z > 0.5) {
 		//return vec3(1,0,0);
-	  	//color = texture(environmentMap, normalize(reflectionVecView)).rgb;
+	  	color = texture(environmentMap, normalize(reflectionVecView)).rgb;
 		return color;
 	}
 	
@@ -74,7 +86,7 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 	vec3 currentViewPos = targetPosView;
 	for (int i = 0; i < 40; i++) {
 	
-		  currentViewPos += viewRay;
+		  currentViewPos += 5*viewRay;
 		  
 		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
@@ -117,10 +129,11 @@ void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
+  	st /= secondPassScale;
   
 	vec3 positionView = texture2D(positionMap, st).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
-	float glossiness = texture2D(diffuseMap, st).w;
+	float reflectiveness = texture2D(diffuseMap, st).w;
 	
 	// skip background
 	if (positionView.z > -0.0001) {
@@ -131,7 +144,7 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = vec4(color,1) * phong(positionView, normalView, vec4(color,1), specular);
+	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
 	
 	float ao = 1;
 	vec3 ssdo = vec3(0,0,0);
@@ -181,8 +194,13 @@ void main(void) {
 	}
 	
 	
-	vec4 ambientTerm = vec4((color * ambientColor * ao), 0);
-	out_DiffuseSpecular = finalColor + ambientTerm;
-	out_DiffuseSpecular = mix(out_DiffuseSpecular, vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0), glossiness+0.525);
+	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
+	out_DiffuseSpecular = finalColor;// + ambientTerm;
+	if(reflectiveness == 0) {
+		out_AOReflection = vec4(ao, 0, 0, 0);
+	} else {
+		vec4 reflectedColor = vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0);
+		out_AOReflection = vec4(ao, reflectedColor);
+	}
 	//out_DiffuseSpecular = vec4(ssdo,1);
 }

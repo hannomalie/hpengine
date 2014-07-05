@@ -170,6 +170,9 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void draw(Renderer renderer, Camera camera) {
+//		if (material == null) {
+//			return;
+//		}
 		Program firstPassProgram = material.getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
@@ -181,6 +184,7 @@ public class Entity implements IEntity, Serializable {
 		
 		firstPassProgram.setUniform("useParallax", World.useParallax);
 		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		firstPassProgram.setUniform("reflectiveness", material.getReflectiveness());
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());

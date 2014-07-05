@@ -35,9 +35,13 @@ public class EntityFactory {
 		if(entity != null) {
 			return entity;
 		}
+		entity = read(name);
+		if(entity != null) {
+			return entity;
+		}
 		
 		entity = new Entity(position, name, model, material);
-		Entity.write((Entity) entity, entity.getName());
+		Entity.write((Entity) entity, name);
 		return entity;
 	}
 
@@ -54,7 +58,7 @@ public class EntityFactory {
 			
 			return entity;
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		return null;
 	}

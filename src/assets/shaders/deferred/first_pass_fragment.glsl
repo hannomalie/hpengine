@@ -13,6 +13,7 @@ layout(binding=6) uniform samplerCube cubeMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
+uniform float reflectiveness;
 
 uniform float normalMapWidth = 1;
 
@@ -131,7 +132,7 @@ void main(void) {
 	}
 #endif
 	out_color = color;
-	out_color.w = 0;
+	out_color.w = reflectiveness;
 
 #ifdef use_reflectionMap
 	float reflect_factor = texture2D(reflectionMap, UV).x;

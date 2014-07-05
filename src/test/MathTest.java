@@ -80,4 +80,16 @@ public class MathTest {
 		Assert.assertEquals(1f, rotMatrix.m33, delta);
 	}
 
+//	@Test
+//	public void slerpTest() {
+//		Quaternion q1 = new Quaternion();
+//		q1.setFromAxisAngle(new Vector4f(1,0,0,0));
+//		
+//		Quaternion q2 = new Quaternion();
+//		q2.setFromAxisAngle(new Vector4f(1,0,0,360));
+//
+//		Quaternion half = new Quaternion();
+//		half.setFromAxisAngle(new Vector4f(1,0,0,180));
+//		Assert.assertEquals(half, Util.slerp(q1, q2, 0.5f));
+//	}
 }

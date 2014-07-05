@@ -14,6 +14,7 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
+import main.model.OBJLoader;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
@@ -51,8 +52,10 @@ public class World {
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
-	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
-	public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
+	//public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
+	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.0f;
+	//public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
+	public static float AMBIENTOCCLUSION_RADIUS = 0.1f;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
@@ -135,30 +138,30 @@ public class World {
 	
 	private void initDefaultMaterials() {
 
-		white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		white = renderer.getMaterialFactory().getMaterial("default", new HashMap<MAP,String>(){{
 														put(MAP.DIFFUSE,"assets/textures/default.dds");
 																}});
 
-		stone = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stone = renderer.getMaterialFactory().getMaterial("stone", new HashMap<MAP,String>(){{
 														put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
 														put(MAP.NORMAL,"assets/textures/stone_normal.png");
 																}});
 		
-		stone2 = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stone2 = renderer.getMaterialFactory().getMaterial("stone2", new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/brick.png");
 														    		put(MAP.NORMAL,"assets/textures/brick_normal.png");
 																}});
 		
-		wood = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		wood = renderer.getMaterialFactory().getMaterial("wood", new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/wood_diffuse.png");
 														    		put(MAP.NORMAL,"assets/textures/wood_normal.png");
 																}});
-		stoneWet = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		stoneWet = renderer.getMaterialFactory().getMaterial("stoneWet", new HashMap<MAP,String>(){{
 														    		put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
 														    		put(MAP.NORMAL,"assets/textures/stone_normal.png");
 														    		put(MAP.REFLECTION,"assets/textures/stone_reflection.png");
 																}});
-		mirror = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
+		mirror = renderer.getMaterialFactory().getMaterial("mirror", new HashMap<MAP,String>(){{
 														    		put(MAP.REFLECTION,"assets/textures/default.dds");
 																}});
 	}
@@ -187,6 +190,7 @@ public class World {
 					try {
 						float random = (float) (Math.random() -0.5);
 						IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(i*10,0-random*i+j,j*10), "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
+						entity.setMaterial(mat);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);

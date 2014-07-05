@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.Transform;
 import main.model.IEntity;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
@@ -27,25 +28,18 @@ public class Camera implements IEntity {
 	private int projectionMatrixLocation = 0;
 	private int viewMatrixLocation = 0;
 	
-	private float rotationDelta = 15f;
+	Transform transform = new Transform();
+	private float rotationDelta = 45f;
 	private float scaleDelta = 0.1f;
-	private float posDelta = 12f;
+	private float posDelta = 180f;
 	
 	Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
 	Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
 	
-	private Vector3f position = null;
-	private Quaternion orientation = new Quaternion();
-	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
-	private float rotationSpeed = 0.02f;
 
 	private Renderer renderer;
-
-	private Vector3f right = new Vector3f(1, 0, 0);
-	private Vector3f up = new Vector3f(0, 1, 0);
-	private Vector3f back = new Vector3f(0, 0, 1);
 
 	private Frustum frustum;
 
@@ -66,11 +60,13 @@ public class Camera implements IEntity {
 
 		this.viewMatrix = viewMatrix;
 
-		position = new Vector3f(0, 0, -1);
 		frustum = new Frustum(this);
 	}
 
 	public void update(float seconds) {
+//		System.out.println("View " + transform.getViewDirection());
+//		System.out.println("Up " + transform.getUpDirection());
+//		System.out.println("Right " + transform.getRightDirection());
 		transform();
 		updateControls(seconds);
 		storeMatrices();
@@ -87,80 +83,46 @@ public class Camera implements IEntity {
 	}
 	
 	public void updateControls(float seconds) {
+		
+		float turbo = 1f;
+		if(Keyboard.isKeyDown(Keyboard.KEY_CAPITAL)) {
+			turbo = 2;
+		}
 
 		if (Mouse.isButtonDown(0)) {
-			rotate(up, Mouse.getDX() * rotationSpeed);
-//			rotate(right, Mouse.getDY() * rotationSpeed/2);
-			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
+			transform.rotateWorld(transform.getUpDirection(), -Mouse.getDX() * turbo*rotationDelta * seconds);
 		}
 		if (Mouse.isButtonDown(1)) {
-			rotate(right, Mouse.getDY() * rotationSpeed/2);
-			LOGGER.log(Level.INFO, String.format("Camera angle: %f | %f | %f | %f", orientation.x, orientation.y, orientation.z, orientation.w));
+			transform.rotateWorld(transform.getRightDirection(), Mouse.getDY() * turbo*rotationDelta * seconds);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			position.x -= posDelta * seconds * back.x;
-			position.y -= posDelta * seconds * back.y;
-			position.z -= posDelta * seconds * -back.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.moveInWorld(new Vector3f(0, 0, -turbo*posDelta * seconds));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-			position.x += posDelta * seconds * right.x;
-			position.y += posDelta * seconds * right.y;
-			position.z += posDelta * seconds * -right.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.move(new Vector3f(-turbo*posDelta * seconds, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-			position.x += posDelta * seconds * back.x;
-			position.y += posDelta * seconds * back.y;
-			position.z += posDelta * seconds * -back.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.move(new Vector3f(0, 0, turbo*posDelta * seconds));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-			position.x -= posDelta * seconds * right.x;
-			position.y -= posDelta * seconds * right.y;
-			position.z -= posDelta * seconds * -right.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.move(new Vector3f(turbo*posDelta * seconds, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			position.x += posDelta * seconds * up.x;
-			position.y += posDelta * seconds * up.y;
-			position.z += posDelta * seconds * -up.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.move(new Vector3f(0, turbo*posDelta * seconds, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			position.x -= posDelta * seconds * up.x;
-			position.y -= posDelta * seconds * up.y;
-			position.z -= posDelta * seconds * -up.z;
-			LOGGER.log(Level.INFO, String.format("Camera position: %f | %f | %f", position.x, position.y, position.z));
+			transform.move(new Vector3f(0, -turbo*posDelta * seconds, 0));
 		}
 	}
 	
 
 	private void transform() {
 		setViewMatrix(calculateCurrentViewMatrix());
-
-//		System.out.println(viewMatrix);
-//		System.out.println(getPosition());
-//		System.out.println(Matrix4f.transform((Matrix4f) viewMatrix.invert(), new Vector4f(position.x, position.y, position.z, 1), null));
-
-//		Vector4f temp = Matrix4f.transform(rotation, new Vector4f(1f,0f,0f,0f), null);
-//		right = new Vector3f(temp.x, temp.y, temp.z);
-		right = (Vector3f) new Vector3f(viewMatrix.m00, viewMatrix.m01, viewMatrix.m02).normalise();
-		up = (Vector3f) new Vector3f(viewMatrix.m10, viewMatrix.m11, viewMatrix.m12).normalise();
-//		temp = Matrix4f.transform(rotation, new Vector4f(0f,1f,0f,0f), null);
-//		up = new Vector3f(temp.x, temp.y, temp.z);
-		back = (Vector3f) new Vector3f(viewMatrix.m20, viewMatrix.m21, viewMatrix.m22).normalise();
-//		temp = Matrix4f.transform(rotation, new Vector4f(0f,0f,-1f,0f), null);
-//		back = new Vector3f(temp.x, temp.y, temp.z);
-
 		frustum.calculate(this);
 	}
 	
 	private Matrix4f calculateCurrentViewMatrix() {
-		viewMatrix = new Matrix4f();
-		Matrix4f.translate(position, viewMatrix, viewMatrix);
-		Matrix4f.mul(Util.toMatrix(orientation), viewMatrix, viewMatrix);
-		
+		viewMatrix = transform.getTransformation();
 		return viewMatrix;
 	}
 
@@ -183,11 +145,11 @@ public class Camera implements IEntity {
 
 	@Override
 	public Vector3f getPosition() {
-		return position;
+		return transform.getPosition();
 	}
 
 	public void setPosition(Vector3f position) {
-		this.position = position;
+		transform.setPosition(position);
 		transform();
 	}
 	
@@ -230,30 +192,27 @@ public class Camera implements IEntity {
 
 	@Override
 	public Quaternion getOrientation() {
-		return orientation;
+		return transform.getOrientation();
 	}
 
 	@Override
 	public void rotate(Vector4f axisAngle) {
-		Quaternion rot = new Quaternion();
-		rot.setFromAxisAngle(axisAngle);
-		Quaternion.mul(orientation, rot, orientation);
-		orientation.normalise(orientation);
+		transform.rotate(axisAngle);
 		transform();
 	}
 
 	public float getRotationSpeed() {
-		return rotationSpeed;
+		return rotationDelta;
 	}
 
 	public Vector3f getRight() {
-		return right;
+		return transform.getRightDirection();
 	}
 	public Vector3f getUp() {
-		return up;
+		return transform.getUpDirection();
 	}
 	public Vector3f getBack() {
-		return back;
+		return (Vector3f) transform.getViewDirection().negate();
 	}
 
 	@Override
@@ -268,7 +227,7 @@ public class Camera implements IEntity {
 	}
 
 	public void setOrientation(Quaternion orientation) {
-		this.orientation = orientation;
+		transform.getOrientation();
 		transform();
 	}
 

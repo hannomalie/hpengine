@@ -63,6 +63,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -81,13 +82,13 @@ public class DeferredRenderer implements Renderer {
 	private Program secondPassPointProgram;
 //	private ComputeShaderProgram secondPassPointComputeShaderProgram;
 	private Program secondPassDirectionalProgram;
-//	private Program combineProgram;
+	private Program combineProgram;
 	private static Program renderToQuadProgram;
 	private Program lastUsedProgram = null;
 	
 	private CLKernel kernel;
 
-	private RenderTarget finalTarget;
+//	private RenderTarget finalTarget;
 	private RenderTarget firstPassTarget;
 	private RenderTarget secondPassTarget;
 
@@ -96,7 +97,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 4.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 300;
+	private static int MAXLIGHTS = 100;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -112,6 +113,10 @@ public class DeferredRenderer implements Renderer {
 	private TextureFactory textureFactory;
 
 	private Model sphereModel;
+
+	private FloatBuffer identityMatrix44Buffer;
+
+	private float secondPassScale = 0.5f;
 	
 	public DeferredRenderer(Spotlight light) {
 		textureFactory = new TextureFactory();
@@ -125,6 +130,7 @@ public class DeferredRenderer implements Renderer {
 		sphereModel = null;
 		try {
 			sphereModel = objLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
+			sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -168,10 +174,12 @@ public class DeferredRenderer implements Renderer {
 		
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
-
-		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 1);
+		
+		initIdentityMatrixBuffer();
+		 
+//		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
-		secondPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 0.0f, 0.0f, 0.0f, 0f, GL11.GL_LINEAR, 1);
+		secondPassTarget = new RenderTarget((int) (WIDTH * secondPassScale) , (int) (HEIGHT * secondPassScale), GL30.GL_RGBA32F, 2);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
@@ -188,6 +196,13 @@ public class DeferredRenderer implements Renderer {
 //		CLUtil.initialize();
 	}
 	
+	private void initIdentityMatrixBuffer() {
+		identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
+		matrix44Buffer.rewind();
+		new Matrix4f().store(matrix44Buffer);
+		matrix44Buffer.rewind();
+	}
+	
 	private void setupShaders() {
 		
 		firstPassProgram = new Program("/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, true);
@@ -196,7 +211,7 @@ public class DeferredRenderer implements Renderer {
 //		secondPassPointComputeShaderProgram = new ComputeShaderProgram("/assets/shaders/deferred/second_pass_point_compute.glsl");
 		secondPassDirectionalProgram = new Program("/assets/shaders/deferred/second_pass_directional_vertex.glsl", "/assets/shaders/deferred/second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 
-//		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
+		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
 
 		DeferredRenderer.exitOnGLError("setupShaders");
@@ -212,7 +227,7 @@ public class DeferredRenderer implements Renderer {
 
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
 		GPUProfiler.startFrame();
-		draw(finalTarget, octree, camera, entities, light);
+		draw(null, octree, camera, entities, light);
 	    GPUProfiler.endFrame();
 //	    GPUTaskProfile tp;
 //	    while((tp = GPUProfiler.getFrameResults()) != null){
@@ -230,23 +245,23 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Second pass");
 		drawSecondPass(camera, light, pointLights);
 		GPUProfiler.end();
-
-		GPUProfiler.start("Render to quad pass");
-//		combinePass(finalTarget, firstPassTarget, secondPassTarget);
 		
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		drawToQuad(finalTarget.getRenderedTexture(), fullscreenBuffer);
+
+		GPUProfiler.start("Combine pass");
+		combinePass(target, firstPassTarget, secondPassTarget);
+		GPUProfiler.end();
+//		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
 			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GPUProfiler.end();
 		
 	}
 
@@ -304,8 +319,8 @@ public class DeferredRenderer implements Renderer {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
-		finalTarget.use(true);
-//		secondPassTarget.use(false);
+//		finalTarget.use(true);
+		secondPassTarget.use(true);
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
@@ -329,9 +344,9 @@ public class DeferredRenderer implements Renderer {
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-		secondPassDirectionalProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) HEIGHT);
+		secondPassDirectionalProgram.setUniform("secondPassScale", secondPassScale);
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
@@ -351,6 +366,7 @@ public class DeferredRenderer implements Renderer {
 //		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
 		secondPassPointProgram.setUniform("screenWidth", (float) WIDTH);
 		secondPassPointProgram.setUniform("screenHeight", (float) HEIGHT);
+		secondPassPointProgram.setUniform("secondPassScale", secondPassScale);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		GPUProfiler.end();
@@ -390,42 +406,43 @@ public class DeferredRenderer implements Renderer {
 			}
 			firstLightDrawn = true;
 		}
-		//secondPassTarget.unuse();
-		finalTarget.unuse();
+		secondPassTarget.unuse();
+//		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
 		GPUProfiler.end();
 		GPUProfiler.end();
 	}
 
 
-//	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
-//		combineProgram.use();
-//		combineProgram.setUniform("screenWidth", (float) WIDTH);
-//		combineProgram.setUniform("screenHeight", (float) HEIGHT);
-//		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
-//		combineProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
-//		combineProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-////		combineProgram.setUniform("ambientOcclusionStrength", World.AMBIENTOCCLUSION_STRENGTH);
-////		combineProgram.setUniform("ambientOcclusionFalloff", World.AMBIENTOCCLUSION_FALLOFF);
-//		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
-//		
-//		target.use(true);
-//		GL11.glDisable(GL11.GL_DEPTH_TEST);
-//		
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(2)); // color
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, secondPassTarget.getRenderedTexture(0)); // light accumulation
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
-//		
-//		fullscreenBuffer.draw();
-//
-//		target.unuse();
-//		GL11.glEnable(GL11.GL_DEPTH_TEST);
-//	}
+	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
+		combineProgram.use();
+		combineProgram.setUniform("screenWidth", (float) WIDTH);
+		combineProgram.setUniform("screenHeight", (float) HEIGHT);
+//		combineProgram.setUniform("secondPassScale", secondPassScale);
+		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
+		
+		if(target == null) {
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		} else {
+			target.use(true);
+		}
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(2)); // color, reflectiveness
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, laBuffer.getRenderedTexture(0)); // light accumulation
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, laBuffer.getRenderedTexture(1)); // ao, reflection
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position, glossiness
+		
+		fullscreenBuffer.draw();
+
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer) {
 		drawToQuad(texture, buffer, renderToQuadProgram);
@@ -527,8 +544,16 @@ public class DeferredRenderer implements Renderer {
 		}
 		
 		if (Octree.DRAW_LINES) {
-			octree.drawDebug(this, camera, firstPassProgram);	
+			octree.drawDebug(this, camera, firstPassProgram);
 		}
+
+	    drawLine(new Vector3f(), new Vector3f(15,0,0));
+	    drawLine(new Vector3f(), new Vector3f(0,15,0));
+	    drawLine(new Vector3f(), new Vector3f(0,0,-15));
+	    drawLine(new Vector3f(), (Vector3f) camera.getBack().negate(null).scale(15));
+	    drawLine(new Vector3f(), (Vector3f) camera.getUp().scale(15));
+	    drawLine(new Vector3f(), (Vector3f) camera.getRight().scale(15));
+		drawLines(firstPassProgram);
 		
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -539,11 +564,33 @@ public class DeferredRenderer implements Renderer {
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-
+	    
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(firstPassTarget.getRenderedTexture(2), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
+	}
+	
+
+	private void drawLines(Program program) {
+
+		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
+		float[] points = new float[linePoints.size() * 3];
+		for (int i = 0; i < linePoints.size(); i++) {
+			Vector3f point = linePoints.get(i);
+			points[3*i + 0] = point.x;
+			points[3*i + 1] = point.y;
+			points[3*i + 2] = point.z;
+		}
+		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+		buffer.drawDebug();
+		linePoints.clear();
+	}
+
+	@Override
+	public void drawLine(Vector3f from, Vector3f to) {
+		linePoints.add(from);
+		linePoints.add(to);
 	}
 
 	@Override
@@ -590,6 +637,8 @@ public class DeferredRenderer implements Renderer {
 		CL10.clFinish(CLUtil.queue);
 	}
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
+
+	private List<Vector3f> linePoints = new ArrayList<>();
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {

@@ -13,6 +13,7 @@ layout(binding=6) uniform samplerCube cubeMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
+uniform float reflectiveness;
 
 uniform float normalMapWidth = 1;
 
@@ -28,6 +29,7 @@ uniform float specularMapHeight = 1;
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
+uniform float materialGlossiness = 0;
 //uniform vec3 materialAmbientColor = vec3(0,0,0);
 //uniform float materialTransparency = 1;
 
@@ -115,6 +117,7 @@ void main(void) {
 #endif
 	
 	out_position = viewMatrix * position_world;
+	out_position.w = materialGlossiness;
 	float depth = position_clip.z / position_clip.w;
 	
 	out_normal = vec4(PN_view, depth);
@@ -131,7 +134,7 @@ void main(void) {
 	}
 #endif
 	out_color = color;
-	out_color.w = 0;
+	out_color.w = reflectiveness;
 
 #ifdef use_reflectionMap
 	float reflect_factor = texture2D(reflectionMap, UV).x;

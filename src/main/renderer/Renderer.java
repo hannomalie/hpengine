@@ -17,6 +17,7 @@ import main.texture.TextureFactory;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Vector3f;
 
 public interface Renderer {
 	static final boolean CHECKERRORS = false;
@@ -50,5 +51,6 @@ public interface Renderer {
 	public OBJLoader getOBJLoader();
 	public EntityFactory getEntityFactory();
 	public Model getSphere();
+	void drawLine(Vector3f from, Vector3f to);
 
 }

@@ -33,7 +33,8 @@ public class Material implements IEntity, Serializable {
 	transient Vector3f specular = new Vector3f(1f,1f,1f);
 	transient float specularCoefficient = 0;
 	transient float transparency = 1;
-	transient float reflectiveness = 0.2f;
+	transient float reflectiveness = 0.01f;
+	transient float glossiness = 0.25f;
 
 	transient private Program firstPassProgram;
 	
@@ -59,9 +60,9 @@ public class Material implements IEntity, Serializable {
 	transient private boolean textureLess = false;
 	transient boolean setUp = false;
 
-	transient private String name = "";
+	transient String name = "";
 	transient private String path;
-	public MaterialInfo materialInfo;
+	public MaterialInfo materialInfo = new MaterialInfo();
 
 	protected Material() { }
 
@@ -94,14 +95,10 @@ public class Material implements IEntity, Serializable {
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
-//		program.setUniform("hasDiffuseMap", hasDiffuseMap()? 1: 0);
-//		program.setUniform("hasNormalMap", hasNormalMap()? 1: 0);
-//		program.setUniform("hasSpecularMap", hasSpecularMap()? 1: 0);
 		program.setUniform("materialDiffuseColor", diffuse);
 		program.setUniform("materialSpecularColor", specular);
 		program.setUniform("materialSpecularCoefficient", specularCoefficient);
-		//program.setUniform("materialAmbientColor", ambient);
-		//program.setUniform("materialTransparency", transparency);
+		program.setUniform("materialGlossiness", glossiness);
 		
 	}
 	public void setTexturesInactive() {
@@ -137,6 +134,7 @@ public class Material implements IEntity, Serializable {
 	}
 	public void setName(String name) {
 		this.name = name;
+		this.materialInfo.name = name;
 	}
 	@Override
 	public String toString() {
@@ -154,22 +152,25 @@ public class Material implements IEntity, Serializable {
 	}
 	public void setAmbient(Vector3f ambient) {
 		this.ambient = ambient;
+		this.materialInfo.ambient = ambient;
 	}
 	public void setDiffuse(Vector3f diffuse) {
 		this.diffuse = diffuse;
+		this.materialInfo.diffuse = diffuse;
 	}
 	public void setSpecular(Vector3f specular) {
 		this.specular = specular;
+		this.materialInfo.specular = specular;
 	}
 	public void setSpecularCoefficient(float specularCoefficient) {
 		this.specularCoefficient = specularCoefficient;
+		this.materialInfo.specularCoefficient = specularCoefficient;
 	}
 	
 	@Override
 	public boolean isSelected() {
 		return false;
 	}
-
 	@Override
 	public void setSelected(boolean selected) {
 	}
@@ -186,6 +187,7 @@ public class Material implements IEntity, Serializable {
 
 	public void setReflectiveness(float reflectiveness) {
 		this.reflectiveness = reflectiveness;
+		this.materialInfo.reflectiveness = reflectiveness;
 	}
 	public Vector3f getAmbient() {
 		return ambient;
@@ -203,6 +205,15 @@ public class Material implements IEntity, Serializable {
 		return specularCoefficient;
 	}
 
+	public float getGlossiness() {
+		return glossiness;
+	}
+
+	public void setGlossiness(float glossiness) {
+		this.glossiness = glossiness;
+		this.materialInfo.glossiness = glossiness;
+	}
+
 	public static boolean write(Material material, String resourceName) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
@@ -210,6 +221,7 @@ public class Material implements IEntity, Serializable {
 		try {
 			fos = new FileOutputStream(getDirectory() + fileName + ".hpmaterial");
 			out = new ObjectOutputStream(fos);
+			
 			out.writeObject(material);
 
 		} catch (IOException e) {

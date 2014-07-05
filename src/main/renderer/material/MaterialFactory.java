@@ -76,20 +76,26 @@ public class MaterialFactory {
 		}
 		
 		material = new Material();
-		material.setName(materialInfo.name);
+		material.materialInfo = materialInfo;
+		material.name = materialInfo.name;
 		material.textures = materialInfo.maps;
 		material.ambient = materialInfo.ambient;
 		material.diffuse = materialInfo.diffuse;
 		material.specular = materialInfo.specular;
 		material.specularCoefficient = materialInfo.specularCoefficient;
+		material.reflectiveness = materialInfo.reflectiveness;
+		material.glossiness = materialInfo.glossiness;
 		material.materialInfo = materialInfo;
-		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
 		Material.write(material, materialInfo.name);
 		return material;
 	}
 
 	public Material getMaterial(HashMap<MAP, String> hashMap) {
+		return getMaterial("Material_" + MATERIALS.size(), hashMap);
+	}
+
+	public Material getMaterial(String name, HashMap<MAP, String> hashMap) {
 		MaterialMap textures = new MaterialMap();
 		
 		for (MAP map : hashMap.keySet()) {
@@ -99,7 +105,9 @@ public class MaterialFactory {
 				e.printStackTrace();
 			}
 		}
-		Material material = getMaterial(new MaterialInfo(textures));
+		MaterialInfo info = new MaterialInfo(textures);
+		info.name = name;
+		Material material = getMaterial(info);
 		return material;
 	}
 
@@ -127,12 +135,18 @@ public class MaterialFactory {
 		public MaterialInfo() {
 		}
 
+		public MaterialInfo(String name, MaterialMap maps) {
+			this(maps);
+		}
+
 		public MaterialMap maps = new MaterialMap();
 		public String name = "";
 		public Vector3f ambient = new Vector3f();
 		public Vector3f diffuse = new Vector3f();
 		public Vector3f specular = new Vector3f(0,0,0);
 		public float specularCoefficient = 1f;
+		public float reflectiveness = 0.05f;
+		public float glossiness = 0.25f;
 	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
@@ -158,7 +172,7 @@ public class MaterialFactory {
 			return getMaterialWithoutRead(material.materialInfo);
 //			return material;
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 		return null;
 	}

@@ -7,6 +7,7 @@ layout(binding=3) uniform sampler2D specularMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
+uniform float secondPassScale = 1;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -63,27 +64,28 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
   //float atten_factor = -log (min (1.0, distDivRadius));
   //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
-  return vec4((color * vec4(lightDiffuse,1) * dot_prod * atten_factor + specular_factor * specular * color * atten_factor).xyz, 1);
+  return vec4((vec4(lightDiffuse,1) * dot_prod * atten_factor).xyz, specular_factor * atten_factor);
 }
 void main(void) {
 	
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
+  	st /= secondPassScale;
   
 	vec3 positionView = texture2D(positionMap, st).xyz;
-	vec3 albedo = texture2D(diffuseMap, st).xyz;
+	vec3 color = texture2D(diffuseMap, st).xyz;
 	
 	//skip background
 	if (positionView.z > -0.0001) {
-	  //discard;
+	  discard;
 	}
 	
 	vec3 normalView = texture2D(normalMap, st).xyz;
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
-	vec4 finalColor = phong(positionView, normalView, vec4(albedo,1), specular);
+	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
 	
 	out_DiffuseSpecular = finalColor;
 }

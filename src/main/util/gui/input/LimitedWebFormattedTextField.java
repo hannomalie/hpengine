@@ -2,7 +2,7 @@ package main.util.gui.input;
 
 import com.alee.laf.text.WebFormattedTextField;
 
-public class LimitedWebFormattedTextField extends WebFormattedTextField {
+public abstract class LimitedWebFormattedTextField extends WebFormattedTextField {
 	
 	private float min;
 	private float max;
@@ -20,8 +20,12 @@ public class LimitedWebFormattedTextField extends WebFormattedTextField {
 			} else if(value > max) {
 				value = max;
 			}
+			
+			onChange(value);
 		});
 	}
+	
+	public abstract void onChange(float currentValue);
 	
 	
 
