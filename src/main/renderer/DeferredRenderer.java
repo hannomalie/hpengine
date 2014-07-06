@@ -176,7 +176,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		
 		initIdentityMatrixBuffer();
-		 
+
 //		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 1);
 		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
 		secondPassTarget = new RenderTarget((int) (WIDTH * secondPassScale) , (int) (HEIGHT * secondPassScale), GL30.GL_RGBA32F, 2);

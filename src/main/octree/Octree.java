@@ -26,6 +26,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
+
 public class Octree {
 
 	private static Logger LOGGER = getLogger();
@@ -89,20 +91,19 @@ public class Octree {
 	
 	
 	public void insert(List<IEntity> toDispatch){
-		ArrayList<IEntity> temp = new ArrayList<>();
-		rootNode.getAllEntitiesInAndBelow(temp);
-		System.out.println("EXPECTED " + temp + toDispatch.size());
 		
 		for (IEntity iEntity : toDispatch) {
 			insertWithoutOptimize(iEntity);
 		}
 //		long start = System.currentTimeMillis();
-//	    rootNode.optimize();
-//		optimize();
-		
-		temp.clear();
+		ArrayList<IEntity> temp = new ArrayList<>();
 		rootNode.getAllEntitiesInAndBelow(temp);
-		System.out.println("GOT " + temp.size());
+		System.out.println("Before optimization: " + temp.size());
+//	    rootNode.optimize();
+	    temp.clear();
+		rootNode.getAllEntitiesInAndBelow(temp);
+		System.out.println("After optimization: " + temp.size());
+//		optimize();
 //		rootNode.optimizeThreaded();
 //		long end = System.currentTimeMillis();
 //		System.out.println("Took " + (end - start) + " ms to optimize.");
@@ -216,7 +217,7 @@ public class Octree {
 		
 		public boolean isVisible(Camera camera) {
 //			System.out.println("Node visible " + aabb.isInFrustum(camera) + " with " + getAllEntitiesInAndBelow().size());
-			return aabb.isInFrustum(camera);
+			return looseAabb.isInFrustum(camera);
 		}
 		
 		public void getAllEntitiesInAndBelow(List<IEntity> result) {
@@ -370,14 +371,19 @@ public class Octree {
 			}
 		}
 		public void optimize() {
-			
+
+			System.out.println("Optimizing node...");
 			if (hasChildren()) {
+				System.out.println("Node has children");
 				if(hasEntities()) {
-					for (int i = 0; i < 8; i++) {
-						Node node = children[i];
-						node.entities.addAll(node.collectAllEntitiesFromChildren());
-						node.setHasChildren(false);
-					}
+					List<IEntity> temp = new ArrayList<>();
+					getAllEntitiesInAndBelow(temp);
+					System.out.println("Node has entities: " + temp.size());
+					List<IEntity> collected = collectAllEntitiesFromChildren();
+					System.out.println("Nodes direct entities: " + entities.size());
+					System.out.println("Collected entities: " + collected.size());
+					entities.addAll(collected);
+					System.out.println("Nodes new direct entities: " + entities.size());
 					setHasChildren(false);
 				} else {
 					for (int i = 0; i < 8; i++) {
@@ -417,11 +423,11 @@ public class Octree {
 					result.addAll(node.entities);
 					node.entities.clear();
 				} else {
+					result.addAll(node.entities);
+					node.entities.clear();
 					result.addAll(node.collectAllEntitiesFromChildren());
-//					node.setHasChildren(false);
 				}
 			}
-			checkValid();
 			return result;
 		}
 

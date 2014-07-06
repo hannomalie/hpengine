@@ -6,15 +6,13 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.MenuBar;
-import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JFrame;
-import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -32,26 +30,34 @@ import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.renderer.DeferredRenderer;
-import main.renderer.Renderer;
 import main.renderer.light.PointLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
+import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.Vector3fInput;
 import main.util.script.ScriptManager;
 
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
-import com.alee.extended.window.ComponentMoveAdapter;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
+import com.alee.laf.filechooser.WebFileChooser;
 import com.alee.laf.label.WebLabel;
+import com.alee.laf.menu.WebMenu;
+import com.alee.laf.menu.WebMenuBar;
+import com.alee.laf.menu.WebMenuItem;
+import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextArea;
+import com.alee.managers.notification.NotificationIcon;
+import com.alee.managers.notification.NotificationManager;
+import com.alee.managers.notification.WebNotificationPopup;
 
 
 public class DebugFrame {
@@ -87,8 +93,10 @@ public class DebugFrame {
 
 	private JTree scene = new JTree();
 	private JTree sceneOctree = new JTree();
+	private WebFileChooser fileChooser;
 	
 	public DebugFrame(World world) {
+		fileChooser = new WebFileChooser(new File("."));
 		
 		scriptManager = new ScriptManager(world);
 		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
@@ -367,7 +375,44 @@ public class DebugFrame {
 		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
 		buttonPanel.setSize(200, 200);
 
-//		mainFrame.add(materialPane);
+		WebMenuBar menuBar = new WebMenuBar ();
+		WebMenu menu = new WebMenu("Scene");
+        menuBar.setUndecorated ( true );
+        {
+	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
+	        sceneSaveMenuItem.addActionListener(e -> {
+	        	Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
+	        	if(selection != null) {
+	        		world.getScene().write(selection.toString());
+	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+	                notificationPopup.setIcon(NotificationIcon.clock);
+	                notificationPopup.setDisplayTime( 2000 );
+	                notificationPopup.setContent(new WebLabel("Saved scene as " + selection));
+	                NotificationManager.showNotification(notificationPopup);
+	        	}
+	        });
+
+	        menu.add(sceneSaveMenuItem);
+        }
+        {
+        	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
+        	sceneLoadMenuItem.addActionListener(e -> {
+        		
+	    		File chosenFile = fileChooser.showOpenDialog();
+	    		if(chosenFile != null) {
+	    			String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
+	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
+	    			world.setScene(newScene);
+	    		}
+	    		
+        	});
+
+	        menu.add(sceneLoadMenuItem);
+        }
+
+        menuBar.add(menu);
+        mainFrame.setJMenuBar(menuBar);
+        
 		mainFrame.add(tabbedPane);
 		
 		tabbedPane.addTab("Main", buttonPanel);
@@ -385,7 +430,7 @@ public class DebugFrame {
 	private void addSceneObjects(World world) {
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene");
 		
-		for (IEntity e : world.entities) {
+		for (IEntity e : world.getScene().getEntities()) {
 			DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode(e.getName());
 			
 			Material material = e.getMaterial();
@@ -408,9 +453,9 @@ public class DebugFrame {
 	}
 	
 	private void addOctreeSceneObjects(World world) {
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + world.octree.getEntityCount() + " entities)");
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + world.getScene().getEntities().size() + " entities)");
 		
-		addOctreeChildren(top, world.octree.rootNode);
+		addOctreeChildren(top, world.getScene().getOctree().rootNode);
 		sceneOctree = new JTree(top);
 		new SetSelectedListener(sceneOctree, world, entityViewFrame);
 	}

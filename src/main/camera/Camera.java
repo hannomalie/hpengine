@@ -101,7 +101,6 @@ public class Camera implements IEntity {
 		
 		float moveAmount = turbo*posDelta * seconds;
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			//transform.moveInWorld((Vector3f) transform.getViewDirection().scale(-turbo*posDelta * seconds));
 			transform.move(new Vector3f(0,0,moveAmount));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {

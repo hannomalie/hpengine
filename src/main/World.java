@@ -14,13 +14,13 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
-import main.model.OBJLoader;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+import main.scene.Scene;
 import main.texture.Texture;
 import main.util.gui.DebugFrame;
 import main.util.stopwatch.OpenGLStopWatch;
@@ -68,8 +68,9 @@ public class World {
 		world.simulate();
 	}
 
-	public Octree octree;
-	public List<IEntity> entities = new ArrayList<>();
+//	public Octree octree;
+//	public List<IEntity> entities = new ArrayList<>();
+	Scene scene;
 	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
@@ -85,12 +86,12 @@ public class World {
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
 		glWatch = new OpenGLStopWatch();
-		octree = new Octree(new Vector3f(), 400, 6);
+		scene = new Scene();
 		camera = new Camera(renderer);
 		light.init(renderer);
 		initDefaultMaterials();
-		loadDummies();
-		octree.insert(entities);
+		scene.addAll(loadDummies());
+		scene.setInitialized(true);
 	}
 	
 	private void initWorkDir() {
@@ -99,6 +100,7 @@ public class World {
 		dirs.add(new File(Texture.getDirectory()));
 		dirs.add(new File(Material.getDirectory()));
 		dirs.add(new File(Entity.getDirectory()));
+		dirs.add(new File(Scene.getDirectory()));
 
 		for (File file : dirs) {
 			createIfAbsent(file);
@@ -129,10 +131,6 @@ public class World {
 	}
 	
 	private void destroy() {
-		for (IEntity entity: entities) {
-			entity.destroy();
-		}
-
 		renderer.destroy();
 	}
 	
@@ -166,7 +164,8 @@ public class World {
 																}});
 	}
 
-	private void loadDummies() {
+	private List<IEntity> loadDummies() {
+		List<IEntity> entities = new ArrayList<>();
 		
 		Renderer.exitOnGLError("loadDummies");
 
@@ -226,6 +225,8 @@ public class World {
 			
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			return entities;
 		}
 	}
 	
@@ -263,9 +264,7 @@ public class World {
 		StopWatch.getInstance().stopAndPrintMS();
 
 		StopWatch.getInstance().start("Entities update");
-		 for (IEntity entity: entities) {
-		 entity.update(seconds);
-		 }
+		scene.update(seconds);
 //		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
 //		fjpool.invoke(task);
 		StopWatch.getInstance().stopAndPrintMS();
@@ -311,9 +310,9 @@ public class World {
 
 		StopWatch.getInstance().start("Draw");
 		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(camera, octree, entities, light);
+			renderer.drawDebug(camera, scene.getOctree(), scene.getEntities(), light);
 		} else {
-			renderer.draw(camera, octree, entities, light);
+			renderer.draw(camera, scene.getOctree(), scene.getEntities(), light);
 		}
 
 		StopWatch.getInstance().stopAndPrintMS();
@@ -336,4 +335,13 @@ public class World {
 
 	public Renderer getRenderer() {
 		return renderer;
-	}}
+	}
+
+	public Scene getScene() {
+		return scene;
+	}
+
+	public void setScene(Scene scene) {
+		this.scene = scene;
+	}
+}
