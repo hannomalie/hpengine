@@ -75,9 +75,9 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
 	
-	if (targetNormalView.z > 0.5) {
+	if (targetNormalView.z > 0.3) {
 		//return vec3(1,0,0);
-	  	color = texture(environmentMap, normalize(reflectionVecView)).rgb;
+	  	//color = texture(environmentMap, normalize(reflectionVecView)).rgb;
 		return color;
 	}
 	

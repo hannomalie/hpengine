@@ -60,7 +60,7 @@ public class Spotlight implements IEntity {
 		this.renderTarget = renderTarget;
 	}
 	
-	public void init(Renderer renderer, Camera camera) {
+	public void init(Renderer renderer, Camera camera) throws Exception {
 		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 																	put(MAP.DIFFUSE,"assets/textures/default.dds");
 																}});
@@ -78,7 +78,7 @@ public class Spotlight implements IEntity {
 		this.camera = camera;
 	}
 
-	public void init(Renderer renderer) {
+	public void init(Renderer renderer) throws Exception {
 		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 //		camera =  new Camera(renderer, Util.createOrthogonal(-20f, 20f, 20f, -20f, 0.1f, 100f), Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0)));
 		camera.setPosition(new Vector3f(12f,2f,2f));

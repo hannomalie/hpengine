@@ -1,7 +1,5 @@
 package main.model;
 
-import java.nio.FloatBuffer;
-
 import main.Transform;
 import main.camera.Camera;
 import main.renderer.Renderer;
@@ -50,6 +48,8 @@ public interface IEntity {
 
 	default public Vector3f getCenter() { return getPosition(); }
 	default public boolean isInFrustum(Camera camera) { return true; }
+	default public boolean isVisible() { return true; }
+	default public void setVisible(boolean visible) {};
 	default public Vector4f[] getMinMaxWorld() {
 		Vector3f position = getPosition();
 		Vector4f temp = new Vector4f(position.x, position.y, position.z, 1);

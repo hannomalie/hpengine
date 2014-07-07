@@ -1,13 +1,16 @@
 package main.renderer;
 
 import java.util.List;
+import java.util.concurrent.SynchronousQueue;
 
+import main.World;
 import main.camera.Camera;
 import main.model.EntityFactory;
 import main.model.IEntity;
 import main.model.Model;
 import main.model.OBJLoader;
 import main.octree.Octree;
+import main.renderer.command.Command;
 import main.renderer.light.Spotlight;
 import main.renderer.material.MaterialFactory;
 import main.shader.Program;
@@ -40,7 +43,7 @@ public interface Renderer {
 	}
 	public void destroy();
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
-	public void update(float seconds);
+	public void update(World world, float seconds);
 	public float getElapsedSeconds();
 	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
 	public Program getLastUsedProgram();
@@ -52,5 +55,6 @@ public interface Renderer {
 	public EntityFactory getEntityFactory();
 	public Model getSphere();
 	void drawLine(Vector3f from, Vector3f to);
+	public <T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
 
 }

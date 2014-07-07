@@ -11,6 +11,7 @@ import main.renderer.Renderer;
 import main.renderer.material.Material.MAP;
 import main.shader.Program;
 import main.shader.ShaderDefine;
+import main.texture.Texture;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -49,13 +50,7 @@ public class MaterialFactory {
 		}
 		
 		material = new Material();
-		material.setName(materialInfo.name);
-		material.textures = materialInfo.maps;
-		material.ambient = materialInfo.ambient;
-		material.diffuse = materialInfo.diffuse;
-		material.specular = materialInfo.specular;
-		material.specularCoefficient = materialInfo.specularCoefficient;
-		material.materialInfo = materialInfo;
+		material.setMaterialInfo(materialInfo);
 		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
 		Material.write(material, materialInfo.name);
@@ -73,16 +68,7 @@ public class MaterialFactory {
 		}
 		
 		material = new Material();
-		material.materialInfo = materialInfo;
-		material.name = materialInfo.name;
-		material.textures = materialInfo.maps;
-		material.ambient = materialInfo.ambient;
-		material.diffuse = materialInfo.diffuse;
-		material.specular = materialInfo.specular;
-		material.specularCoefficient = materialInfo.specularCoefficient;
-		material.reflectiveness = materialInfo.reflectiveness;
-		material.glossiness = materialInfo.glossiness;
-		material.materialInfo = materialInfo;
+		material.setMaterialInfo(materialInfo);
 		initMaterial(material);
 		Material.write(material, materialInfo.name);
 		return material;
@@ -97,7 +83,7 @@ public class MaterialFactory {
 		
 		for (MAP map : hashMap.keySet()) {
 			try {
-				textures.textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map)));
+				textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map)));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -109,10 +95,9 @@ public class MaterialFactory {
 	}
 
 	private void initMaterial(Material material) {
-		Program firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(material.textures.textures.keySet()));
-		material.setProgram(firstPassProgram);
+		material.init(renderer);
 		MATERIALS.put(material.getName(), material);
-		material.setUp = true;
+		material.initialized = true;
 	}
 
 	public Material get(String materialName) {
@@ -144,6 +129,11 @@ public class MaterialFactory {
 		public float specularCoefficient = 1f;
 		public float reflectiveness = 0.05f;
 		public float glossiness = 0.25f;
+		public boolean textureLess;
+		transient public Program firstPassProgram;
+		public void put(MAP map, Texture texture) {
+			maps.put(map, texture);
+		}
 	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
@@ -165,8 +155,7 @@ public class MaterialFactory {
 			in = new ObjectInputStream(fis);
 			Material material = (Material) in.readObject();
 			in.close();
-			
-			return getMaterialWithoutRead(material.materialInfo);
+			return getMaterialWithoutRead(material.getMaterialInfo());
 //			return material;
 		} catch (IOException | ClassNotFoundException e) {
 //			e.printStackTrace();

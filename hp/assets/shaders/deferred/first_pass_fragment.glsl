@@ -6,8 +6,8 @@ layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5) uniform sampler2D reflectionMap;
+layout(binding=6) uniform samplerCube environmentMap;
 
-layout(binding=6) uniform samplerCube cubeMap;
 //layout(binding=5) uniform sampler2D shadowMap;
 //layout(binding=6) uniform sampler2D depthMap;
 
@@ -137,12 +137,11 @@ void main(void) {
 	out_color.w = reflectiveness;
 
 #ifdef use_reflectionMap
-	float reflect_factor = texture2D(reflectionMap, UV).x;
-	vec3 texCoords3d = normalize(reflect(V, normal_world));
-	//texCoords3d.y *= -1;
-	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
-	out_color.w = reflect_factor;
+	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
+vec3 texCoords3d = normalize(reflect(V, normal_world));
+//texCoords3d.y *= -1;
+out_color = mix(out_color, texture(environmentMap, texCoords3d), out_color.w);
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap

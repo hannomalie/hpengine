@@ -29,7 +29,7 @@ public class ModelTest {
 	}
 	
 	@Test
-	public void loadsCorrectly() throws IOException {
+	public void loadsCorrectly() throws Exception {
 		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj"));
 		IEntity entity = renderer.getEntityFactory().getEntity(box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();
@@ -69,7 +69,7 @@ public class ModelTest {
 	}
 	
 	@Test
-	public void loadsSphereAndTransformsCorrectly() throws IOException {
+	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
 		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
 		IEntity entity = renderer.getEntityFactory().getEntity(sphere.get(0));

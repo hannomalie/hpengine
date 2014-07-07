@@ -1,12 +1,20 @@
 package main.util.gui;
 
 import java.awt.Component;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.lwjgl.util.vector.Vector3f;
 
 import main.World;
+import main.renderer.command.InitMaterialCommand;
+import main.renderer.command.InitMaterialCommand.MaterialResult;
+import main.renderer.command.LoadModelCommand;
+import main.renderer.command.LoadModelCommand.EntityListResult;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.texture.Texture;
@@ -24,6 +32,9 @@ import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.text.WebTextField;
+import com.alee.managers.notification.NotificationIcon;
+import com.alee.managers.notification.NotificationManager;
+import com.alee.managers.notification.WebNotificationPopup;
 
 public class MaterialView extends WebPanel {
 
@@ -44,7 +55,7 @@ public class MaterialView extends WebPanel {
 
         WebButton saveButton = new WebButton("Save");
         saveButton.addActionListener(e -> {
-        	Material.write(material, material.materialInfo.name);
+        	Material.write(material, material.getMaterialInfo().name);
         });
         panels.add(saveButton);
         
@@ -59,8 +70,47 @@ public class MaterialView extends WebPanel {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
 
-        for (MAP map : material.textures.textures.keySet()) {
-			Texture texture = material.textures.textures.get(map);
+        addExistingTexturesPanels(webComponentPanel);
+        addMissingTexturesPanels(webComponentPanel);
+        
+        panels.add(webComponentPanel);
+	}
+
+	private void addMissingTexturesPanels(WebComponentPanel webComponentPanel) {
+		EnumSet<MAP> missingMaps = EnumSet.allOf(MAP.class);
+		missingMaps.removeAll(material.getMaterialInfo().maps.getTextures().keySet());
+		for (MAP map : missingMaps) {
+			WebLabel label = new WebLabel ( map.name() );
+	        
+	        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
+	        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
+	        WebComboBox select = new WebComboBox(textures);
+	        select.setSelectedIndex(-1);
+	        
+	        List allTexturesList = new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values());
+	        
+	        select.addActionListener(e -> {
+	        	WebComboBox cb = (WebComboBox) e.getSource();
+	        	Texture selectedTexture = textures[cb.getSelectedIndex()];
+	        	material.getMaterialInfo().maps.put(map, selectedTexture);
+	        	addMaterialInitCommand();
+	        });
+	        
+	        WebButton removeTextureButton = new WebButton("Remove");
+	        removeTextureButton.addActionListener(e -> {
+	        	material.getMaterialInfo().maps.getTextures().remove(map);
+	        	addMaterialInitCommand();
+		        select.setSelectedIndex(-1);
+	        });
+
+	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
+			webComponentPanel.addElement(groupPanel);
+		}
+	}
+	
+	private void addExistingTexturesPanels(WebComponentPanel webComponentPanel) {
+		for (MAP map : material.getMaterialInfo().maps.getTextures().keySet()) {
+			Texture texture = material.getMaterialInfo().maps.getTextures().get(map);
 			
 	        WebLabel label = new WebLabel ( map.name() );
 	        
@@ -69,21 +119,25 @@ public class MaterialView extends WebPanel {
 	        WebComboBox select = new WebComboBox(textures);
 	        
 	        List allTexturesList = new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values());
-	        int assignedTexture = allTexturesList.indexOf(world.getRenderer().getTextureFactory().TEXTURES.get(material.textures.textures.get(map).getPath()));
+	        int assignedTexture = allTexturesList.indexOf(world.getRenderer().getTextureFactory().TEXTURES.get(material.getMaterialInfo().maps.getTextures().get(map).getPath()));
 	        select.setSelectedIndex(assignedTexture);
 	        
 	        select.addActionListener(e -> {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures[cb.getSelectedIndex()];
-	        	material.textures.put(map, selectedTexture);
+	        	material.getMaterialInfo().maps.put(map, selectedTexture);
 	        });
 	        
-	        GroupPanel groupPanel = new GroupPanel ( 4, label, select );
-			webComponentPanel.addElement(groupPanel);
+	        WebButton removeTextureButton = new WebButton("Remove");
+	        removeTextureButton.addActionListener(e -> {
+	        	material.getMaterialInfo().maps.getTextures().remove(map);
+	        	addMaterialInitCommand();
+		        select.setSelectedIndex(-1);
+	        });
 	        
+	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
+			webComponentPanel.addElement(groupPanel);
 		}
-        
-        panels.add(webComponentPanel);
 	}
 
 	private void addValuePanels(List<Component> panels) {
@@ -152,5 +206,31 @@ public class MaterialView extends WebPanel {
         }
 		
 		panels.add(webComponentPanel);
+	}
+
+	private void addMaterialInitCommand() {
+		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new InitMaterialCommand(material));
+		
+		MaterialResult result = null;
+		try {
+			result = queue.poll(1, TimeUnit.MINUTES);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			showNotification(NotificationIcon.error, "Not able to change material");
+		}
+		
+		if (!result.isSuccessful()) {
+			showNotification(NotificationIcon.error, "Not able to change material");
+		} else {
+			showNotification(NotificationIcon.plus, "Material changed");
+		}
+	}
+	
+	private void showNotification(NotificationIcon icon, String text) {
+		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+		notificationPopup.setIcon(icon);
+		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setContent(new WebLabel(text));
+		NotificationManager.showNotification(notificationPopup);
 	}
 }

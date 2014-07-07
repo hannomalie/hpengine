@@ -24,7 +24,7 @@ public class EntityTest {
 	}
 
 	@Test
-	public void writeAndRead() throws IOException, ClassNotFoundException {
+	public void writeAndRead() throws Exception {
 		Entity entity = (Entity) renderer.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj")).get(0));
 		
 		String filename = "default.hpentity";

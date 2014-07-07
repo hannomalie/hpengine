@@ -10,9 +10,14 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -27,6 +32,7 @@ import main.model.OBJLoader;
 import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
 import main.octree.Octree;
+import main.renderer.command.Command;
 import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
@@ -69,6 +75,9 @@ import org.lwjgl.util.vector.Vector4f;
 
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
+	
+	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
+	private Map<Command, SynchronousQueue<Result>> commandQueueMap = new ConcurrentHashMap<Command, SynchronousQueue<Result>>();
 
 	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
 			DataChannels.POSITION3,
@@ -132,6 +141,8 @@ public class DeferredRenderer implements Renderer {
 			sphereModel = objLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
 			sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -217,7 +228,12 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
-	public void update(float seconds) {
+	public void update(World world, float seconds) {
+		try {
+			executeCommands(world);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		FileMonitor.getInstance().checkAndNotify();
 		updateLights(seconds);
 		setLastFrameTime();
@@ -712,6 +728,23 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public Model getSphere() {
 		return sphereModel;
+	}
+	
+	public SynchronousQueue<Result> addCommand(Command command) {
+	    SynchronousQueue<Result> queue = new SynchronousQueue<Result>();
+	    commandQueueMap.put(command, queue);
+	    workQueue.offer(command);
+	    return queue;
+	}
+
+	private void executeCommands(World world) throws Exception {
+        Command command = workQueue.poll();
+        while(command != null) {
+        	Result result = command.execute(world);
+            SynchronousQueue<Result> queue = commandQueueMap.get(command);
+            queue.offer(result);
+        	command = workQueue.poll();
+        }
 	}
 
 //	@Override

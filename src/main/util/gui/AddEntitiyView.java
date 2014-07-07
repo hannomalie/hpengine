@@ -4,30 +4,12 @@ import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-
-
-
-
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 import main.World;
-import main.model.IEntity;
-import main.model.Model;
-import main.scene.Scene;
-import main.util.gui.input.WebFormattedVec3Field;
-
-
-
-
-
-
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
-
-
-
-
-
+import main.renderer.command.LoadModelCommand;
+import main.renderer.command.LoadModelCommand.EntityListResult;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
@@ -46,9 +28,11 @@ public class AddEntitiyView extends WebPanel {
 	private World world;
 	private WebFormattedTextField nameField;
 	private WebFileChooser fileChooser;
+	private DebugFrame debugFrame;
 
-	public AddEntitiyView(World world) {
+	public AddEntitiyView(World world, DebugFrame debugFrame) {
 		this.world = world;
+		this.debugFrame = debugFrame;
 		fileChooser = new WebFileChooser(new File("."));
 		setUndecorated(true);
 		this.setSize(600, 600);
@@ -69,26 +53,44 @@ public class AddEntitiyView extends WebPanel {
 	private void addOkButton(List<Component> panels) {
 		WebButton saveButton = new WebButton("Ok");
 		saveButton.addActionListener(e -> {
-			File chosenFile = fileChooser.showOpenDialog();
+			File chosenFile = WebFileChooser.showOpenDialog();
     		if(chosenFile != null) {
-    			List<Model> models = new ArrayList<>();
+				SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(new LoadModelCommand(chosenFile, nameField.getText()));
+    				
+				EntityListResult result = null;
 				try {
-					models = world.getRenderer().getOBJLoader().loadTexturedModel(chosenFile);
+					result = queue.poll(5, TimeUnit.MINUTES);
 				} catch (Exception e1) {
-					final WebNotificationPopup notificationPopup = new WebNotificationPopup();
-	                notificationPopup.setIcon(NotificationIcon.error);
-	                notificationPopup.setDisplayTime( 2000 );
-	                notificationPopup.setContent(new WebLabel("Not able to load " + chosenFile.getAbsolutePath()));
-					NotificationManager.showNotification(notificationPopup);
+					e1.printStackTrace();
+					showError(chosenFile);
 				}
-    			for (int i = 0; i < models.size(); i++) {
-    				Model model = models.get(i);
-    				String counter = i == 0 ? "" : "_" +i;
-        			world.getRenderer().getEntityFactory().getEntity(new Vector3f(), nameField.getText() + counter, model, model.getMaterial());
+				
+				if (!result.isSuccessful()) {
+					showError(chosenFile);
+				} else {
+					world.getScene().addAll(result.entities);
+					debugFrame.refreshSceneTree();
+					showSuccess(chosenFile);
 				}
-    		}
+			}
 		});
 		panels.add(saveButton);
+	}
+
+	private void showSuccess(File chosenFile) {
+		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+		notificationPopup.setIcon(NotificationIcon.plus);
+		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setContent(new WebLabel("Loading successful: " + chosenFile.getAbsolutePath()));
+		NotificationManager.showNotification(notificationPopup);
+	}
+
+	private void showError(File chosenFile) {
+		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+		notificationPopup.setIcon(NotificationIcon.error);
+		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setContent(new WebLabel("Not able to load " + chosenFile.getAbsolutePath()));
+		NotificationManager.showNotification(notificationPopup);
 	}
 
 	private void addAttributesPanel(List<Component> panels) {

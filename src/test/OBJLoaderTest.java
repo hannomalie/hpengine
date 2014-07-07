@@ -53,7 +53,7 @@ public class OBJLoaderTest {
 		Assert.assertTrue(vertex.equals(expected));
 	}
 	@Test
-	public void parseFace() {
+	public void parseFace() throws Exception {
 		Face expected = new Face(new int[]{1,2,3}, new int[]{1,2,3}, new int[]{1,1,1});
 		Face face =  renderer.getOBJLoader().parseFace("f 1/1/1 2/2/1 3/3/1");
 		Assert.assertArrayEquals(expected.getVertexIndices(), face.getVertexIndices());
@@ -80,7 +80,7 @@ public class OBJLoaderTest {
 	}
 	
 	@Test
-	public void loadSponzaTest() throws IOException {
+	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
 		List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));

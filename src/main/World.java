@@ -89,7 +89,11 @@ public class World {
 		glWatch = new OpenGLStopWatch();
 		scene = new Scene();
 		camera = new Camera(renderer);
-		light.init(renderer);
+		try {
+			light.init(renderer);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		initDefaultMaterials();
 		scene.addAll(loadDummies());
 		scene.setInitialized(true);
@@ -256,7 +260,7 @@ public class World {
 //		}
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Renderer update");
-		renderer.update(seconds);
+		renderer.update(this, seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);

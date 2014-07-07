@@ -12,8 +12,10 @@ import java.util.logging.Logger;
 
 import main.World;
 import main.model.IEntity;
+import main.renderer.Renderer;
 import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
+import main.shader.ShaderDefine;
 import main.texture.Texture;
 
 import org.apache.commons.io.FilenameUtils;
@@ -28,16 +30,6 @@ public class Material implements Serializable {
 	public static int TEXTUREINDEX = 0;
 	
 	private static Logger LOGGER = getLogger();
-
-	transient Vector3f ambient = new Vector3f(0.5f,0.5f,0.5f);
-	transient Vector3f diffuse = new Vector3f(0.5f,0.5f,0.5f);
-	transient Vector3f specular = new Vector3f(1f,1f,1f);
-	transient float specularCoefficient = 0;
-	transient float transparency = 1;
-	transient float reflectiveness = 0.01f;
-	transient float glossiness = 0.25f;
-
-	transient private Program firstPassProgram;
 	
 	public enum MAP {
 		DIFFUSE("diffuseMap", 0),
@@ -45,7 +37,8 @@ public class Material implements Serializable {
 		SPECULAR("specularMap", 2),
 		OCCLUSION("occlusionMap", 3),
 		HEIGHT("heightMap", 4),
-		REFLECTION("reflectionMap", 5);
+		REFLECTION("reflectionMap", 5),
+		ENVIRONMENT("environmentMap", 6);
 		
 		public final String shaderVariableName;
 		public final int textureSlot;
@@ -56,29 +49,24 @@ public class Material implements Serializable {
 		}
 	}
 
-	transient public MaterialMap textures = new MaterialMap();
-	
-	transient private boolean textureLess = false;
-	transient boolean setUp = false;
+	transient boolean initialized = false;
 
-	transient String name = "";
-	transient private String path;
-	public MaterialInfo materialInfo = new MaterialInfo();
+	private MaterialInfo materialInfo = new MaterialInfo();
 
 	protected Material() { }
 
 	void addTexture(MAP map, Texture texture) {
-		textures.textures.put(map, texture);
+		materialInfo.put(map, texture);
 	}
 	
 	public boolean hasSpecularMap() {
-		return textures.textures.containsKey(MAP.SPECULAR);
+		return materialInfo.maps.getTextures().containsKey(MAP.SPECULAR);
 	}
 	public boolean hasNormalMap() {
-		return textures.textures.containsKey(MAP.NORMAL);
+		return materialInfo.maps.getTextures().containsKey(MAP.NORMAL);
 	}
 	public boolean hasDiffuseMap() {
-		return !isTextureLess() && textures.textures.containsKey(MAP.DIFFUSE);
+		return !isTextureLess() && materialInfo.maps.getTextures().containsKey(MAP.DIFFUSE);
 	}
 	
 	public void setTexturesActive(Program program) {
@@ -86,7 +74,7 @@ public class Material implements Serializable {
 			return;
 		}
 				
-		for (Entry<MAP, Texture> entry : textures.textures.entrySet()) {
+		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
@@ -96,14 +84,15 @@ public class Material implements Serializable {
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
-		program.setUniform("materialDiffuseColor", diffuse);
-		program.setUniform("materialSpecularColor", specular);
-		program.setUniform("materialSpecularCoefficient", specularCoefficient);
-		program.setUniform("materialGlossiness", glossiness);
+		program.setUniform("materialDiffuseColor", getDiffuse());
+		program.setUniform("materialSpecularColor", getSpecular());
+		program.setUniform("materialSpecularCoefficient", getSpecularCoefficient());
+		program.setUniform("materialGlossiness", getGlossiness());
 		
 	}
+
 	public void setTexturesInactive() {
-		for (Map.Entry<MAP, Texture> entry : textures.textures.entrySet()) {
+		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 //			texture.bind();
@@ -114,76 +103,69 @@ public class Material implements Serializable {
 	}
 
 	public String getName() {
-		return name;
+		return materialInfo.name;
 	}
 	public void setName(String name) {
-		this.name = name;
 		this.materialInfo.name = name;
 	}
 	@Override
 	public String toString() {
-		return name + this.textures.size();
+		return materialInfo.name;
 	}
 	public boolean isTextureLess() {
-		return textureLess;
+		return materialInfo.textureLess;
 	}
 	public void setTextureLess(boolean textureLess) {
-		this.textureLess = textureLess;
+		materialInfo.textureLess = textureLess;
 	}
 	public void setAmbient(Vector3f ambient) {
-		this.ambient = ambient;
-		this.materialInfo.ambient = ambient;
+		materialInfo.ambient = ambient;
 	}
 	public void setDiffuse(Vector3f diffuse) {
-		this.diffuse = diffuse;
-		this.materialInfo.diffuse = diffuse;
+		materialInfo.diffuse = diffuse;
 	}
 	public void setSpecular(Vector3f specular) {
-		this.specular = specular;
-		this.materialInfo.specular = specular;
+		materialInfo.specular = specular;
 	}
 	public void setSpecularCoefficient(float specularCoefficient) {
-		this.specularCoefficient = specularCoefficient;
-		this.materialInfo.specularCoefficient = specularCoefficient;
+		materialInfo.specularCoefficient = specularCoefficient;
 	}
 	public Program getFirstPassProgram() {
-		return firstPassProgram;
+		return materialInfo.firstPassProgram;
 	}
 
 	public void setProgram(Program firstPassProgram) {
-		this.firstPassProgram = firstPassProgram;
+		materialInfo.firstPassProgram = firstPassProgram;
 	}
 	public float getReflectiveness() {
-		return reflectiveness;
+		return materialInfo.reflectiveness;
 	}
 
 	public void setReflectiveness(float reflectiveness) {
-		this.reflectiveness = reflectiveness;
-		this.materialInfo.reflectiveness = reflectiveness;
+		materialInfo.reflectiveness = reflectiveness;
 	}
 	public Vector3f getAmbient() {
-		return ambient;
+		return materialInfo.ambient;
 	}
 
 	public Vector3f getDiffuse() {
-		return diffuse;
+		return materialInfo.diffuse;
 	}
 
 	public Vector3f getSpecular() {
-		return specular;
+		return materialInfo.specular;
 	}
 
 	public float getSpecularCoefficient() {
-		return specularCoefficient;
+		return materialInfo.specularCoefficient;
 	}
 
 	public float getGlossiness() {
-		return glossiness;
+		return materialInfo.glossiness;
 	}
 
 	public void setGlossiness(float glossiness) {
-		this.glossiness = glossiness;
-		this.materialInfo.glossiness = glossiness;
+		materialInfo.glossiness = glossiness;
 	}
 
 	public static boolean write(Material material, String resourceName) {
@@ -220,14 +202,41 @@ public class Material implements Serializable {
 		}
 		
 		Material m = (Material) other;
-		return (m.ambient.equals(ambient) &&
-				m.diffuse.equals(diffuse) &&
-				m.specular.equals(specular) &&
-				m.specularCoefficient == specularCoefficient &&
+		MaterialInfo mi = m.getMaterialInfo();
+		return (mi.ambient.equals(materialInfo.ambient) &&
+				mi.diffuse.equals(materialInfo.diffuse) &&
+				mi.specular.equals(materialInfo.specular) &&
+				mi.specularCoefficient == materialInfo.specularCoefficient &&
 //				m.textures.equals(textures) &&
 //				m.name.equals(name) &&
-				m.reflectiveness == reflectiveness &&
-				m.firstPassProgram.equals(firstPassProgram));
+				mi.reflectiveness == materialInfo.reflectiveness &&
+				mi.firstPassProgram.equals(materialInfo.firstPassProgram));
+	}
+
+	public void init(Renderer renderer) {
+		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
+			String name = materialInfo.maps.getTextureNames().get(map);
+			try {
+				Texture tex = renderer.getTextureFactory().getTexture(name);
+				materialInfo.maps.getTextures().put(map, tex);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
+			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
+		}
+		Program firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
+		setProgram(firstPassProgram);
+		
+	}
+
+	public MaterialInfo getMaterialInfo() {
+		return materialInfo;
+	}
+
+	public void setMaterialInfo(MaterialInfo materialInfo) {
+		this.materialInfo = materialInfo;
 	}
 
 }

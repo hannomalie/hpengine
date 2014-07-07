@@ -63,6 +63,7 @@ public class Entity implements IEntity, Serializable {
 	protected String name = "Entity_" + System.currentTimeMillis();
 
 	transient private boolean selected = false;
+	private boolean visible = true;
 
 	protected Entity() {
 	}
@@ -163,6 +164,9 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void draw(Renderer renderer, Camera camera) {
+		if(!isVisible()) {
+			return;
+		}
 		Program firstPassProgram = material.getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
@@ -182,8 +186,8 @@ public class Entity implements IEntity, Serializable {
 		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		material.setTexturesActive(firstPassProgram);
 		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-		renderer.getEnvironmentMap().bind();
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+//		renderer.getEnvironmentMap().bind();
 		
 		vertexBuffer.draw();
 
@@ -329,6 +333,15 @@ public class Entity implements IEntity, Serializable {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public boolean isVisible() {
+		return visible;
+	}
+	@Override
+	public void setVisible(boolean visible) {
+		this.visible = visible;
 	}
 	
 	@Override

@@ -79,7 +79,7 @@ public class OBJLoader {
         return new Vector3f(x, y, z);
     }
 
-	public Face parseFace(String line) {
+	public Face parseFace(String line) throws Exception {
 		String[] faceIndices = line.split(" ");
 
 		String[] firstTriple = (faceIndices[1].split("/"));
@@ -104,8 +104,8 @@ public class OBJLoader {
 		Face face = new Face(vertexIndices, texCoordsIndices, normalIndices);
         return face;
 	}
-
-    public List<Model> loadTexturedModel(File f) throws IOException {
+	
+    public List<Model> loadTexturedModel(File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
         List<Model> models = new ArrayList<>();
         Model model = null;// = new Model();

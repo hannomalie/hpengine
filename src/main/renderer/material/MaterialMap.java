@@ -1,5 +1,7 @@
 package main.renderer.material;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -10,7 +12,14 @@ import main.texture.Texture;
 public class MaterialMap implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	public HashMap<MAP, Texture> textures = new HashMap<MAP, Texture>();
+	private transient HashMap<MAP, Texture> textures = new HashMap<MAP, Texture>();
+	private HashMap<MAP, String> textureNames = new HashMap<MAP, String>();
+	
+	
+	public MaterialMap() {
+		setTextures(new HashMap<MAP, Texture>());
+		setTextureNames(new HashMap<MAP, String>());
+	}
 	
 	@Override
 	public boolean equals(Object other) {
@@ -20,11 +29,11 @@ public class MaterialMap implements Serializable {
 		
 		MaterialMap b = (MaterialMap) other;
 		
-		for (Object key : textures.keySet()) {
-			if(!b.textures.containsKey(key)) {
+		for (Object key : getTextures().keySet()) {
+			if(!b.getTextures().containsKey(key)) {
 				return false;
 			} else {
-				if (!((Texture) b.textures.get(key)).equals((Texture)textures.get(key))) {
+				if (!((Texture) b.getTextures().get(key)).equals((Texture)getTextures().get(key))) {
 					return false;
 				}
 			}
@@ -34,15 +43,43 @@ public class MaterialMap implements Serializable {
 	}
 
 	public Object get(Object key) {
-		return textures.get(key);
+		return getTextures().get(key);
 	}
 
 	public void put(MAP key, Texture value) {
-		textures.put(key, value);
+		getTextures().put(key, value);
+	}
+
+	public HashMap<MAP, Texture> getTextures() {
+		return textures;
+	}
+
+	public void setTextures(HashMap<MAP, Texture> textures) {
+		this.textures = textures;
+	}
+
+	public HashMap<MAP, String> getTextureNames() {
+		return textureNames;
+	}
+
+	public void setTextureNames(HashMap<MAP, String> textureNames) {
+		this.textureNames = textureNames;
 	}
 
 	public int size() {
-		return textures.size();
+		return getTextures().size();
 	}
-
+	
+	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+	    in.defaultReadObject();
+	    setTextures(new HashMap<MAP, Texture>());
+	}
+	
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		textureNames = new HashMap<Material.MAP, String>();
+		for (MAP map : textures.keySet()) {
+			textureNames.put(map, textures.get(map).getPath());
+		}
+        oos.defaultWriteObject();
+    }
 }

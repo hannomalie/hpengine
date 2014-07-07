@@ -41,6 +41,11 @@ import main.util.script.ScriptManager;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
+import com.alee.extended.checkbox.CheckState;
+import com.alee.extended.tree.CheckStateChange;
+import com.alee.extended.tree.CheckStateChangeListener;
+import com.alee.extended.tree.TreeCheckingModel;
+import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
@@ -58,6 +63,7 @@ import com.alee.laf.text.WebTextArea;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.alee.utils.swing.StateProvider;
 
 
 public class DebugFrame {
@@ -91,16 +97,17 @@ public class DebugFrame {
 	WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
 
 
-	private JTree scene = new JTree();
-	private JTree sceneOctree = new JTree();
+	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	private WebFileChooser fileChooser;
 	private WebFrame addEntityFrame;
+	private World world;
 	
 	public DebugFrame(World world) {
 		init(world);
 	}
 
 	private void init(World world) {
+		this.world = world;
 		tabbedPane = new WebTabbedPane();
 		fileChooser = new WebFileChooser(new File("."));
 		
@@ -238,9 +245,8 @@ public class DebugFrame {
 		texturePane  =  new JScrollPane(textureTable);
 		lightsPane  =  new JScrollPane(lightsTable);
 
-		addSceneObjects(world);
+//		addSceneObjects(world);
 		addOctreeSceneObjects(world);
-		scenePane = new JScrollPane(sceneOctree);
 		
 		scriptPanel = new WebPanel();
 		scriptPanel.setMargin ( 10 );
@@ -410,6 +416,7 @@ public class DebugFrame {
 	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
 	    			world.setScene(newScene);
 	    			init(world);
+	    			
 	    		}
 	    		
         	});
@@ -423,7 +430,7 @@ public class DebugFrame {
         		
 	    		addEntityFrame = new WebFrame("Add Entity");
 	    		addEntityFrame.setSize(600, 600);
-	    		addEntityFrame.add(new AddEntitiyView(world));
+	    		addEntityFrame.add(new AddEntitiyView(world, this));
 	    		addEntityFrame.setVisible(true);
 	    		
         	});
@@ -459,8 +466,8 @@ public class DebugFrame {
 			if (material != null) {
 				DefaultMutableTreeNode materialNode = new DefaultMutableTreeNode(material.getName());
 				
-				for (Object map: Arrays.asList(material.textures.textures.keySet().toArray())) {
-					DefaultMutableTreeNode textureNode = new DefaultMutableTreeNode(String.format("%S - %s", map, material.textures.get(map)));
+				for (Object map: Arrays.asList(material.getMaterialInfo().maps.getTextures().keySet().toArray())) {
+					DefaultMutableTreeNode textureNode = new DefaultMutableTreeNode(String.format("%S - %s", map, material.getMaterialInfo().maps.get(map)));
 					materialNode.add(textureNode);
 				}
 				
@@ -470,19 +477,52 @@ public class DebugFrame {
 			top.add(entityNode);
 		}
 		
-		scene = new JTree(top);
+		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
+		addCheckStateListener(scene);
 		new SetSelectedListener(scene, world, entityViewFrame);
+	}
+
+	private void addCheckStateListener(WebCheckBoxTree<DefaultMutableTreeNode> scene) {
+		scene.addCheckStateChangeListener(new CheckStateChangeListener<DefaultMutableTreeNode>() {
+			
+			@Override
+			public void checkStateChanged(List<CheckStateChange<DefaultMutableTreeNode>> stateChanges) {
+				for (CheckStateChange<DefaultMutableTreeNode> checkStateChange : stateChanges) {
+					boolean checked = checkStateChange.getNewState() == CheckState.checked ? true : false;
+					
+					Object object = checkStateChange.getNode().getUserObject();
+					if(object instanceof IEntity) {
+						IEntity entity = (IEntity) object;
+						entity.setVisible(checked);
+					} else if (object instanceof Node) {
+						Node node = (Node) object;
+						List<IEntity> result = new ArrayList<>();
+						node.getAllEntitiesInAndBelow(result);
+						for (IEntity e : result) {
+							e.setVisible(checked);
+						}
+					}
+				}
+			}
+		});
 	}
 	
 	private void addOctreeSceneObjects(World world) {
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + world.getScene().getEntities().size() + " entities)");
 		
 		addOctreeChildren(top, world.getScene().getOctree().rootNode);
-		sceneOctree = new JTree(top);
-		new SetSelectedListener(sceneOctree, world, entityViewFrame);
+		System.out.println("Added " + world.getScene().getEntities().size());
+		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
+		addCheckStateListener(scene);
+		new SetSelectedListener(scene, world, entityViewFrame);
+
+		tabbedPane.remove(scenePane);
+		scenePane = new JScrollPane(scene);
+		tabbedPane.addTab("Scene", scenePane);
 	}
 	
 	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {
+		
 		List<IEntity> entitiesInAndBelow = new ArrayList<IEntity>();
 		node.getAllEntitiesInAndBelow(entitiesInAndBelow);
 		
@@ -501,6 +541,13 @@ public class DebugFrame {
 		if (node.hasChildren() && node.entities.size() > 0) {
 			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
 		}
+	}
+
+	public void refreshSceneTree() {
+		System.out.println("Refreshing");
+//		tabbedPane.remove(scenePane);
+		addOctreeSceneObjects(world);
+//		tabbedPane.addTab("Scene", scenePane);
 	}
 
 }
