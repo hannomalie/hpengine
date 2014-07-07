@@ -96,13 +96,7 @@ public class Octree {
 			insertWithoutOptimize(iEntity);
 		}
 //		long start = System.currentTimeMillis();
-		ArrayList<IEntity> temp = new ArrayList<>();
-		rootNode.getAllEntitiesInAndBelow(temp);
-		System.out.println("Before optimization: " + temp.size());
 	    rootNode.optimize();
-	    temp.clear();
-		rootNode.getAllEntitiesInAndBelow(temp);
-		System.out.println("After optimization: " + temp.size());
 //		optimize();
 //		rootNode.optimizeThreaded();
 //		long end = System.currentTimeMillis();
@@ -112,7 +106,7 @@ public class Octree {
 	public List<IEntity> getVisible(Camera camera) {
 		List<IEntity> result = new ArrayList<>();
 		
-		result.addAll(rootNode.getVisible(camera));
+		rootNode.getVisible(camera, result);
 		return result;
 	}
 	
@@ -200,19 +194,15 @@ public class Octree {
 		}
 
 
-		public List<IEntity> getVisible(Camera camera) {
-			List<IEntity> result = new ArrayList<IEntity>();
+		public void getVisible(Camera camera, List<IEntity> result) {
 			if (isRoot() || isVisible(camera)) {
 				if (hasChildren) {
 					for(int i = 0; i < 8; i++) {
-						result.addAll(children[i].getVisible(camera));
+						children[i].getVisible(camera, result);
 					}	
 				}
 				result.addAll(entities);
-				
 			}
-			
-			return result;
 		}
 		
 		public boolean isVisible(Camera camera) {
@@ -603,9 +593,9 @@ public class Octree {
 	}
 
 	public List<IEntity> getEntities() {
-		List<IEntity> result = rootNode.getAllEntitiesInAndBelowThreaded();
+//		List<IEntity> result = rootNode.getAllEntitiesInAndBelowThreaded();
 //		List<IEntity> result = rootNode.getAllEntitiesInAndBelow();
-		return result;
+		return entities;
 	}
 	
 	public int getEntityCount() {
