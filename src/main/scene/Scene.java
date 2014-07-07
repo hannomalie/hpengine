@@ -35,7 +35,7 @@ public class Scene implements Serializable {
 	transient Renderer renderer;
 
 	public Scene() {
-		octree = new Octree(new Vector3f(), 400, 6);
+		octree = new Octree(new Vector3f(), 600, 6);
 	}
 	public Scene(String name) {
 		this.name = name;

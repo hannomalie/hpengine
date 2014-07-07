@@ -299,7 +299,7 @@ public class DeferredRenderer implements Renderer {
 					entities.remove(i);
 				}
 			}
-//			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size());
+//			System.out.println("Visible exactly: " + entities.size() + " / " + octree.getEntities().size());
 			
 		} else {
 			entities.addAll(octree.getEntities());
@@ -457,7 +457,7 @@ public class DeferredRenderer implements Renderer {
 		
 		fullscreenBuffer.draw();
 
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+//		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer) {

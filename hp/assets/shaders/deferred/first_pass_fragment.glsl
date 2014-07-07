@@ -37,6 +37,8 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
+uniform float time = 0;
+
 in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
@@ -87,6 +89,7 @@ void main(void) {
 #ifdef use_normalMap
 		UV.x = texCoord.x * normalMapWidth;
 		UV.y = texCoord.y * normalMapHeight;
+		//UV = UV + time/2000.0;
 #endif
 	
 	if (useParallax) {

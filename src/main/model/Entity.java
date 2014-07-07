@@ -77,9 +77,6 @@ public class Entity implements IEntity, Serializable {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
 		transform.setPosition(position);
-//		this.position = position;
-//		scale = new Vector3f(1, 1, 1);
-//		this.model = model;
 		createFloatArray(model);
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
@@ -182,6 +179,7 @@ public class Entity implements IEntity, Serializable {
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+		firstPassProgram.setUniform("time", System.currentTimeMillis() % 1000);
 		
 		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		material.setTexturesActive(firstPassProgram);

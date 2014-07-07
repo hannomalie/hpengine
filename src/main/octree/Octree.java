@@ -73,7 +73,7 @@ public class Octree {
 	   if (!insertSuccessfull) {
 		   rootNode.entities.add(entity);
 	   }
-//	   rootNode.optimize();
+	   rootNode.optimize();
 //	   rootNode.optimizeThreaded();
 	   entities.add(entity);
 	   entityNames.add(entity.getName());
@@ -99,7 +99,7 @@ public class Octree {
 		ArrayList<IEntity> temp = new ArrayList<>();
 		rootNode.getAllEntitiesInAndBelow(temp);
 		System.out.println("Before optimization: " + temp.size());
-//	    rootNode.optimize();
+	    rootNode.optimize();
 	    temp.clear();
 		rootNode.getAllEntitiesInAndBelow(temp);
 		System.out.println("After optimization: " + temp.size());
@@ -372,18 +372,10 @@ public class Octree {
 		}
 		public void optimize() {
 
-			System.out.println("Optimizing node...");
 			if (hasChildren()) {
-				System.out.println("Node has children");
-				if(hasEntities()) {
-					List<IEntity> temp = new ArrayList<>();
-					getAllEntitiesInAndBelow(temp);
-					System.out.println("Node has entities: " + temp.size());
+				if(hasEntities() && !isRoot()) {
 					List<IEntity> collected = collectAllEntitiesFromChildren();
-					System.out.println("Nodes direct entities: " + entities.size());
-					System.out.println("Collected entities: " + collected.size());
 					entities.addAll(collected);
-					System.out.println("Nodes new direct entities: " + entities.size());
 					setHasChildren(false);
 				} else {
 					for (int i = 0; i < 8; i++) {

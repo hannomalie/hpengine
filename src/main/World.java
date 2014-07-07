@@ -242,16 +242,16 @@ public class World {
 
 		StopWatch.getInstance().start("Controls update");
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed());
+			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed());
+			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.rotate(new Vector3f(0,1,0), camera.getRotationSpeed());
+			light.rotate(new Vector3f(0,1,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.rotate(new Vector3f(0,1,0), -camera.getRotationSpeed());
+			light.rotate(new Vector3f(0,1,0), -camera.getRotationSpeed()/100);
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (IEntity entity : entities) {

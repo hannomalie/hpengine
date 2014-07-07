@@ -64,7 +64,7 @@ void main(void) {
 	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
 	vec3 ambientTerm = ambientColor * ao;
-	vec3 specularTerm = specularColor * specularFactor;
+	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
 	vec4 lit = vec4(mix(color, reflectedColor, reflectiveness) + specularTerm, 1) * vec4(ambientTerm + lightDiffuseSpecular.xyz, 1);
 	out_color = lit;
 }
