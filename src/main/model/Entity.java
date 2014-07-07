@@ -10,9 +10,9 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.Transform;
 import main.World;
 import main.camera.Camera;
 import main.renderer.Renderer;
@@ -23,7 +23,6 @@ import main.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
@@ -31,6 +30,8 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class Entity implements IEntity, Serializable {
+	private static final long serialVersionUID = 1;
+	public static int count = 0;
 	private static Logger LOGGER = getLogger();
 
 	public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
@@ -42,35 +43,26 @@ public class Entity implements IEntity, Serializable {
 		DataChannels.POSITION3,
 		DataChannels.NORMAL
 	);
-	
 	public static EnumSet<DataChannels> SHADOWCHANNELS = EnumSet.of(
 			DataChannels.POSITION3);
-	
 	public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
 			DataChannels.POSITION3);
 
-	public static int count = 0;
-	
-	transient protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 
+	transient protected VertexBuffer vertexBuffer;
+	private float[] floatArray;
 	transient public Matrix4f modelMatrix = new Matrix4f();
-	transient protected int modelMatrixLocation = 0;
-	private Vector3f position = null;
-	protected Vector3f scale = new Vector3f(1,1,1);
+	
+	private Transform transform = new Transform();
+	transient protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
+	
 	protected transient Material material;
 	private String materialName = "";
 
-	transient protected VertexBuffer vertexBuffer;
-
-	public boolean castsShadows = false;
 
 	protected String name = "Entity_" + System.currentTimeMillis();
 
-	private Quaternion orientation = new Quaternion();
-
 	transient private boolean selected = false;
-
-	private float[] floatArray;
 
 	protected Entity() {
 	}
@@ -83,8 +75,9 @@ public class Entity implements IEntity, Serializable {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
-		this.position = position;
-		scale = new Vector3f(1, 1, 1);
+		transform.setPosition(position);
+//		this.position = position;
+//		scale = new Vector3f(1, 1, 1);
 //		this.model = model;
 		createFloatArray(model);
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
@@ -170,9 +163,6 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void draw(Renderer renderer, Camera camera) {
-//		if (material == null) {
-//			return;
-//		}
 		Program firstPassProgram = material.getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
@@ -212,9 +202,9 @@ public class Entity implements IEntity, Serializable {
 
 	protected Matrix4f calculateCurrentModelMatrix() {
 		modelMatrix = new Matrix4f();
-		Matrix4f.translate(position, modelMatrix, modelMatrix);
-		Matrix4f.mul(Util.toMatrix(orientation), modelMatrix, modelMatrix);
-		Matrix4f.scale(scale, modelMatrix, modelMatrix);
+		Matrix4f.translate(transform.getPosition(), modelMatrix, modelMatrix);
+		Matrix4f.mul(Util.toMatrix(transform.getOrientation()), modelMatrix, modelMatrix);
+		Matrix4f.scale(transform.getScale(), modelMatrix, modelMatrix);
 		
 		return modelMatrix;
 	}
@@ -224,99 +214,96 @@ public class Entity implements IEntity, Serializable {
 		return calculateCurrentModelMatrix();
 	}
 
+	@Override
 	public void setModelMatrix(Matrix4f modelMatrix) {
 		this.modelMatrix = modelMatrix;
 	}
 
 	@Override
-	public Vector3f getPosition() {
-		return position;
+	public void setTransform(Transform transform) {
+		this.transform = transform;
 	}
-
-	public void setPosition(Vector3f position) {
-		this.position = position;
+	@Override
+	public Transform getTransform() {
+		return transform;
 	}
 	
+	@Override
+	public Vector3f getPosition() {
+		return transform.getPosition();
+	}
+
+	@Override
+	public void setPosition(Vector3f position) {
+		transform.setPosition(position);
+	}
+	
+	@Override
 	public Vector3f getScale() {
-		return scale;
+		return transform.getScale();
 	}
 
 	@Override
 	public void setScale(Vector3f scale) {
-		this.scale = scale;
+		transform.setScale(scale);
 	}
 
-
-	public int getModelMatrixLocation() {
-		return modelMatrixLocation;
-	}
-
-	public void setModelMatrixLocation(int modelMatrixLocation) {
-		this.modelMatrixLocation = modelMatrixLocation;
-	}
-
-	public void destroy() {
-
-//		// Select the VAO
-//		GL30.glBindVertexArray(vaoId);
-//		
-//		// Disable the VBO index from the VAO attributes list
-//		GL20.glDisableVertexAttribArray(0);
-//		GL20.glDisableVertexAttribArray(1);
-//		
-//		// Delete the vertex VBO
-//		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-//		GL15.glDeleteBuffers(vboId);
-//		
-//		// Delete the index VBO
-//		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-//		GL15.glDeleteBuffers(vboiId);
-//		
-//		// Delete the VAO
-//		GL30.glBindVertexArray(0);
-//		GL30.glDeleteVertexArrays(vaoId);
-//		
-		material.destroy();
-	}
-
+	@Override
 	public VertexBuffer getVertexBuffer() {
 		return vertexBuffer;
 	}
 
 	@Override
 	public void move(Vector3f amount) {
-		Vector3f.add(getPosition(), amount, getPosition());
+		transform.move(amount);
+	}
+	@Override
+	public void moveInWorld(Vector3f amount) {
+		transform.moveInWorld(amount);
 	}
 	@Override
 	public String getName() {
 		return name;
 	}
 	@Override
+	public void setName(String string) {
+		this.name = string;
+	}
+	@Override
 	public Material getMaterial() {
 		return material;
 	}
 	@Override
+	public void setMaterial(Material material) {
+		this.material = material;
+	};
+	@Override
 	public Quaternion getOrientation() {
-		return orientation;
+		return transform.getOrientation();
 	}
 	@Override
 	public void rotate(Vector3f axis, float degree) {
-		rotate(new Vector4f(axis.x, axis.y, axis.z, degree));
+		transform.rotate(axis, degree);
 	}
 	@Override
 	public void rotate(Vector4f axisAngle) {
-		Quaternion rot = new Quaternion();
-		rot.setFromAxisAngle(axisAngle);
-		Quaternion.mul(orientation, rot, orientation);
+		transform.rotate(axisAngle);
+	}
+	@Override
+	public void rotateWorld(Vector3f axis, float degree) {
+		transform.rotateWorld(axis, degree);
+	}
+	@Override
+	public void rotateWorld(Vector4f axisAngle) {
+		transform.rotateWorld(axisAngle);
 	}
 	@Override
 	public void setOrientation(Quaternion orientation) {
-		this.orientation = orientation;
+		transform.setOrientation(orientation);
 	}
-
 	@Override
 	public void setScale(float scale) {
-		setScale(new Vector3f(scale,scale,scale));
+		transform.setScale(scale);
 	}
 	@Override
 	public boolean isInFrustum(Camera camera) {
@@ -376,17 +363,11 @@ public class Entity implements IEntity, Serializable {
 
 		return new Vector3f(center.x, center.y, center.z);
 	}
-	
-	@Override
-	public void setMaterial(Material material) {
-		this.material = material;
-	};
 
 	@Override
 	public boolean isSelected() {
 		return selected;
 	}
-
 	@Override
 	public void setSelected(boolean selected) {
 		this.selected = selected;
@@ -432,9 +413,26 @@ public class Entity implements IEntity, Serializable {
 		return b.getName().equals(getName());
 	}
 
-	@Override
-	public void setName(String string) {
-		this.name = string;
+	public void destroy() {
+
+//		// Select the VAO
+//		GL30.glBindVertexArray(vaoId);
+//		
+//		// Disable the VBO index from the VAO attributes list
+//		GL20.glDisableVertexAttribArray(0);
+//		GL20.glDisableVertexAttribArray(1);
+//		
+//		// Delete the vertex VBO
+//		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+//		GL15.glDeleteBuffers(vboId);
+//		
+//		// Delete the index VBO
+//		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+//		GL15.glDeleteBuffers(vboiId);
+//		
+//		// Delete the VAO
+//		GL30.glBindVertexArray(0);
+//		GL30.glDeleteVertexArrays(vaoId);
+//		
 	}
-	
 }

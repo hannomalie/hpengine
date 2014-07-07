@@ -26,6 +26,7 @@ import main.renderer.Renderer;
 import main.texture.Texture;
 
 public class Scene implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	String name = "";
 	List<String> entitieNames = new ArrayList<>();

@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import junit.framework.Assert;
+import main.Transform;
 import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Box;
@@ -91,6 +92,13 @@ public class OctreeTest {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
+			@Override
+			public Transform getTransform() {
+				return null;
+			}
+			@Override
+			public void setTransform(Transform transform) {
+			}
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 0);
@@ -138,6 +146,13 @@ public class OctreeTest {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
+			@Override
+			public Transform getTransform() {
+				return null;
+			}
+			@Override
+			public void setTransform(Transform transform) {
+			}
 		};
 		IEntity entityTopRightFront = new IEntity() {
 			
@@ -173,6 +188,13 @@ public class OctreeTest {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
+			@Override
+			public Transform getTransform() {
+				return null;
+			}
+			@Override
+			public void setTransform(Transform transform) {
+			}
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
@@ -249,6 +271,13 @@ public class OctreeTest {
 				}
 				@Override public boolean isSelected() { return false; }
 				@Override public void setSelected(boolean selected) { }
+				@Override
+				public Transform getTransform() {
+					return null;
+				}
+				@Override
+				public void setTransform(Transform transform) {
+				}
 			};
 //			octree.insert(entity);
 			toAdd.add(entity);

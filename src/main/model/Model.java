@@ -13,8 +13,9 @@ import java.util.List;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Model implements Serializable {
-
-    private List<Vector3f> vertices = new ArrayList<Vector3f>();
+	private static final long serialVersionUID = 1L;
+	
+	private List<Vector3f> vertices = new ArrayList<Vector3f>();
     private List<Vector2f> texCoords = new ArrayList<Vector2f>();
     private List<Vector3f> normals = new ArrayList<Vector3f>();
     private List<Face> faces = new ArrayList<Face>();

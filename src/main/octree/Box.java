@@ -13,7 +13,7 @@ import main.camera.Camera;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class Box implements Serializable {
+public class Box {
 	private static Logger LOGGER = getLogger();
 	// this is the point -x, y, z if you look in -z with opengl coords
 	private Vector3f topRightForeCorner;

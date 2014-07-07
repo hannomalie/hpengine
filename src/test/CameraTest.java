@@ -26,29 +26,29 @@ public class CameraTest {
 	@Test
 	public void rotation() {
 		Camera camera = new Camera(renderer);
-		Assert.assertEquals(new Vector3f(0,1,0), camera.getUp());
+		Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
 		
 		camera.rotate(new Vector3f(0,1,0), 90f, true);
 
 		float epsilon = 0.01f;
-		Assert.assertEquals(0, camera.getUp().x, epsilon);
-		Assert.assertEquals(1, camera.getUp().y, epsilon);
-		Assert.assertEquals(0, camera.getUp().z, epsilon);
+		Assert.assertEquals(0, camera.getUpDirection().x, epsilon);
+		Assert.assertEquals(1, camera.getUpDirection().y, epsilon);
+		Assert.assertEquals(0, camera.getUpDirection().z, epsilon);
 
-		Assert.assertEquals(0, camera.getRight().x, epsilon);
-		Assert.assertEquals(0, camera.getRight().y, epsilon);
-		Assert.assertEquals(-1, camera.getRight().z, epsilon);
+		Assert.assertEquals(0, camera.getRightDirection().x, epsilon);
+		Assert.assertEquals(0, camera.getRightDirection().y, epsilon);
+		Assert.assertEquals(-1, camera.getRightDirection().z, epsilon);
 		
-		Assert.assertEquals(-1, camera.getBack().x, epsilon); // z is 1, not -1!
-		Assert.assertEquals(0, camera.getBack().y, epsilon);
-		Assert.assertEquals(0, camera.getBack().z, epsilon);
+		Assert.assertEquals(-1, ((Vector3f)(camera.getViewDirection().negate())).x, epsilon); // z is 1, not -1!
+		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection().negate())).y, epsilon);
+		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection().negate())).z, epsilon);
 	}
 	
 	@Test
 	public void inFrustum() {
 		Matrix4f projectionMatrix = Util.createPerpective(60, 16/9, 0.1f, 100f);
 		Camera camera = new Camera(renderer, projectionMatrix);
-		Assert.assertEquals(new Vector3f(0,0,1), camera.getBack());
+		Assert.assertEquals(new Vector3f(0,0,1), ((Vector3f)(camera.getViewDirection().negate())));
 		
 		Frustum frustum = camera.getFrustum();
 

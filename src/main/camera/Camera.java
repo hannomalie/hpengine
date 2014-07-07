@@ -25,16 +25,11 @@ public class Camera implements IEntity {
 
 	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
-	private int projectionMatrixLocation = 0;
-	private int viewMatrixLocation = 0;
 	
 	Transform transform = new Transform();
 	private float rotationDelta = 45f;
 	private float scaleDelta = 0.1f;
 	private float posDelta = 180f;
-	
-	Vector3f scaleAddResolution = new Vector3f(scaleDelta, scaleDelta, scaleDelta);
-	Vector3f scaleMinusResolution = new Vector3f(-scaleDelta, -scaleDelta, -scaleDelta);
 	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
@@ -44,6 +39,7 @@ public class Camera implements IEntity {
 	private Frustum frustum;
 
 	private boolean selected;
+	private String name;
 	
 	public Camera(Renderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 1000f));
@@ -55,6 +51,7 @@ public class Camera implements IEntity {
 	}
 	
 	public Camera(Renderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+		this.name = "Camera_" +  System.currentTimeMillis();
 		this.renderer = renderer;
 		this.projectionMatrix = projectionMatrix;
 
@@ -64,16 +61,11 @@ public class Camera implements IEntity {
 	}
 
 	public void update(float seconds) {
-//		System.out.println("View " + transform.getViewDirection());
-//		System.out.println("Up " + transform.getUpDirection());
-//		System.out.println("Right " + transform.getRightDirection());
 		transform();
 		updateControls(seconds);
 		storeMatrices();
 	}
 	public void updateShadow() {
-//		transform();
-
 		storeMatrices();
 	}
 	
@@ -122,7 +114,6 @@ public class Camera implements IEntity {
 	
 
 	private void transform() {
-		setViewMatrix(calculateCurrentViewMatrix());
 		frustum.calculate(this);
 	}
 	
@@ -130,7 +121,6 @@ public class Camera implements IEntity {
 		viewMatrix = transform.getTransformation();
 		return viewMatrix;
 	}
-
 
 	public Matrix4f getProjectionMatrix() {
 		return projectionMatrix;
@@ -141,117 +131,12 @@ public class Camera implements IEntity {
 	}
 
 	public Matrix4f getViewMatrix() {
+		setViewMatrix(calculateCurrentViewMatrix());
 		return viewMatrix;
 	}
 
 	public void setViewMatrix(Matrix4f viewMatrix) {
 		this.viewMatrix = viewMatrix;
-	}
-
-	@Override
-	public Vector3f getPosition() {
-		return transform.getPosition();
-	}
-
-	public void setPosition(Vector3f position) {
-		transform.setPosition(position);
-		transform();
-	}
-	
-	public int getProjectionMatrixLocation() {
-		return projectionMatrixLocation;
-	}
-
-	public void setProjectionMatrixLocation(int projectionMatrixLocation) {
-		this.projectionMatrixLocation = projectionMatrixLocation;
-	}
-
-	public int getViewMatrixLocation() {
-		return viewMatrixLocation;
-	}
-
-	public void setViewMatrixLocation(int viewMatrixLocation) {
-		this.viewMatrixLocation = viewMatrixLocation;
-	}
-
-	@Override
-	public void destroy() {
-	}
-
-	@Override
-	public void move(Vector3f amount) {
-		amount.z = -amount.z;
-		setPosition(Vector3f.add(getPosition(), amount, null));
-		transform();
-	}
-
-	@Override
-	public String getName() {
-		return "Camera";
-	}
-
-	@Override
-	public Material getMaterial() {
-		return null;
-	}
-
-	@Override
-	public Quaternion getOrientation() {
-		return transform.getOrientation();
-	}
-
-	@Override
-	public void rotate(Vector4f axisAngle) {
-		transform.rotate(axisAngle);
-		transform();
-	}
-
-	public float getRotationSpeed() {
-		return rotationDelta;
-	}
-
-	public Vector3f getRight() {
-		return transform.getRightDirection();
-	}
-	public Vector3f getUp() {
-		return transform.getUpDirection();
-	}
-	public Vector3f getBack() {
-		return (Vector3f) transform.getViewDirection().negate();
-	}
-
-	@Override
-	public void rotate(Vector3f axis, float radians) {
-		rotate(new Vector4f(axis.x, axis.y, axis.z, radians));
-	}
-	@Override
-	public void rotate(Vector3f axis, float degree, boolean isDegree) {
-		float radians = (float) Math.toRadians(degree);
-		axis.normalise(axis);
-		rotate(new Vector4f(axis.x, axis.y, axis.z, radians));
-	}
-
-	public void setOrientation(Quaternion orientation) {
-		transform.getOrientation();
-		transform();
-	}
-
-	@Override
-	public void setScale(float scale) {
-		setScale(new Vector3f(scale,scale,scale));
-	}
-
-	public Frustum getFrustum() {
-		return frustum;
-	}
-
-	@Override
-	public void setScale(Vector3f scale) {
-	}
-
-	@Override
-	public Matrix4f getModelMatrix() {
-		return new Matrix4f();
 	}
 
 	public FloatBuffer getProjectionMatrixAsBuffer() {
@@ -262,13 +147,47 @@ public class Camera implements IEntity {
 	}
 
 	@Override
-	public boolean isSelected() {
-		return selected;
+	public String getName() {
+		return name;
+	}
+	@Override
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	@Override
+	public Material getMaterial() {
+		return null;
+	}
+
+	public float getRotationSpeed() {
+		return rotationDelta;
+	}
+
+	public Frustum getFrustum() {
+		return frustum;
+	}
+
+	@Override
+	public Matrix4f getModelMatrix() {
+		return new Matrix4f();
+	}
+	@Override
+	public boolean isSelected() {
+		return selected;
+	}
+	@Override
 	public void setSelected(boolean selected) {
 		this.selected = selected;
+	}
+	@Override
+	public Transform getTransform() {
+		return transform;
+	}
+
+	@Override
+	public void setTransform(Transform transform) {
+		this.transform = transform;
 	}
 
 }

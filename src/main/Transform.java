@@ -1,5 +1,7 @@
 package main;
 
+import java.io.Serializable;
+
 import main.util.Util;
 
 import org.lwjgl.util.vector.Matrix4f;
@@ -7,8 +9,9 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class Transform {
-
+public class Transform implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
 	public static Vector3f WORLD_UP = new Vector3f(0,1,0);
 	public static Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
 	public static Vector3f WORLD_VIEW = new Vector3f(0,0,-1);
@@ -31,6 +34,9 @@ public class Transform {
 	}
 	public void setScale(Vector3f scale) {
 		this.scale = scale;
+	}
+	public void setScale(float scale) {
+		setScale(new Vector3f(scale, scale, scale));
 	}
 	public Quaternion getOrientation() {
 		return orientation;
@@ -60,6 +66,9 @@ public class Transform {
 		Quaternion temp = new Quaternion();
 		temp.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(-angleInDegrees)));
 		setOrientation(Quaternion.mul(getOrientation(), temp, null).normalise(null));
+	}
+	public void rotateWorld(Vector4f axisAngle) {
+		rotateWorld(new Vector3f(axisAngle.x,  axisAngle.y, axisAngle.z), axisAngle.w);
 	}
 	public void move(Vector3f amount) {
 		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation().negate(null)), new Vector4f(amount.x, amount.y, amount.z, 0), null);

@@ -34,6 +34,7 @@ import com.alee.laf.WebLookAndFeel;
 
 public class World {
 	public static final String WORKDIR_NAME = "hp";
+	public static final String ASSETDIR_NAME = "hp/assets";
 
 	private static Logger LOGGER = getLogger();
 	public static boolean RELOAD_ON_FILE_CHANGE = (java.lang.management.ManagementFactory.getRuntimeMXBean().
@@ -53,9 +54,9 @@ public class World {
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
 	//public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
-	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.0f;
+	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1f;
 	//public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
-	public static float AMBIENTOCCLUSION_RADIUS = 0.1f;
+	public static float AMBIENTOCCLUSION_RADIUS = 0.0125f;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
@@ -97,6 +98,7 @@ public class World {
 	private void initWorkDir() {
 		ArrayList<File> dirs = new ArrayList<>();
 		dirs.add(new File(WORKDIR_NAME));
+		dirs.add(new File(ASSETDIR_NAME));
 		dirs.add(new File(Texture.getDirectory()));
 		dirs.add(new File(Material.getDirectory()));
 		dirs.add(new File(Entity.getDirectory()));

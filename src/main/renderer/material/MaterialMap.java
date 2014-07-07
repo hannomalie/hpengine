@@ -8,6 +8,7 @@ import main.texture.Texture;
 
 
 public class MaterialMap implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	public HashMap<MAP, Texture> textures = new HashMap<MAP, Texture>();
 	

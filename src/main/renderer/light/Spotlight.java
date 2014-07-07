@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
+import main.Transform;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
@@ -215,6 +216,18 @@ public class Spotlight implements IEntity {
 	@Override
 	public void setSelected(boolean selected) {
 		this.selected = selected;
+	}
+
+	@Override
+	public Transform getTransform() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void setTransform(Transform transform) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

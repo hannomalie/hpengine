@@ -550,9 +550,9 @@ public class DeferredRenderer implements Renderer {
 	    drawLine(new Vector3f(), new Vector3f(15,0,0));
 	    drawLine(new Vector3f(), new Vector3f(0,15,0));
 	    drawLine(new Vector3f(), new Vector3f(0,0,-15));
-	    drawLine(new Vector3f(), (Vector3f) camera.getBack().negate(null).scale(15));
-	    drawLine(new Vector3f(), (Vector3f) camera.getUp().scale(15));
-	    drawLine(new Vector3f(), (Vector3f) camera.getRight().scale(15));
+	    drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
+	    drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
+	    drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
 		drawLines(firstPassProgram);
 		
 		GL11.glDepthMask(false);

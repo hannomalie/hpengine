@@ -93,7 +93,7 @@ public class PointLight extends Entity {
 	}
 	
 	public float getRadius() {
-		return scale.x;
+		return getTransform().getScale().x;
 	}
 	
 	public static float[] convert(List<PointLight> list) {

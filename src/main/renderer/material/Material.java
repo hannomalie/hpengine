@@ -21,7 +21,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Material implements IEntity, Serializable {
+public class Material implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	public static boolean MIPMAP_DEFAULT = true;
 	public static int TEXTUREINDEX = 0;
@@ -112,23 +113,6 @@ public class Material implements IEntity, Serializable {
 		
 	}
 
-	@Override
-	public void destroy() {
-//		GL11.glDeleteTextures(texIds[0]);
-//		GL11.glDeleteTextures(texIds[1]);
-//		GL11.glDeleteTextures(texIds[2]);
-//		GL11.glDeleteTextures(texIds[3]);
-//		GL11.glDeleteTextures(texIds[4]);
-	}
-
-	@Override
-	public Vector3f getPosition() {
-		return null;
-	}
-
-	@Override
-	public void move(Vector3f amount) {
-	}
 	public String getName() {
 		return name;
 	}
@@ -139,10 +123,6 @@ public class Material implements IEntity, Serializable {
 	@Override
 	public String toString() {
 		return name + this.textures.size();
-	}
-	@Override
-	public Material getMaterial() {
-		return this;
 	}
 	public boolean isTextureLess() {
 		return textureLess;
@@ -165,14 +145,6 @@ public class Material implements IEntity, Serializable {
 	public void setSpecularCoefficient(float specularCoefficient) {
 		this.specularCoefficient = specularCoefficient;
 		this.materialInfo.specularCoefficient = specularCoefficient;
-	}
-	
-	@Override
-	public boolean isSelected() {
-		return false;
-	}
-	@Override
-	public void setSelected(boolean selected) {
 	}
 	public Program getFirstPassProgram() {
 		return firstPassProgram;

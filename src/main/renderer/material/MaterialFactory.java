@@ -7,16 +7,13 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
-
 import main.renderer.Renderer;
 import main.renderer.material.Material.MAP;
-import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
 import main.shader.ShaderDefine;
-import main.texture.Texture;
-import main.util.Util;
+
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector3f;
 
 public class MaterialFactory {
 

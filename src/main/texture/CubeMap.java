@@ -19,7 +19,8 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL32;
 
 public class CubeMap extends Texture implements Serializable {
-
+	private static final long serialVersionUID = 1L;
+	
 	private List<byte[]> dataList;
 
 	public CubeMap(String path, int target, int textureID) {

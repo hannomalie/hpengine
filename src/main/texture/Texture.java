@@ -29,7 +29,8 @@ import org.lwjgl.opengl.GL11;
  * @author Brian Matzon
  */
 public class Texture implements Serializable {
-	
+	private static final long serialVersionUID = 1L;
+
 	private String path = "";
 	
     /** The GL target type */
