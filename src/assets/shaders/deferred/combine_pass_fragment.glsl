@@ -1,14 +1,39 @@
 #version 420
 
-layout(binding=0) uniform sampler2D diffuseMap;
+layout(binding=0) uniform sampler2D diffuseMap; // diffuse, reflectiveness 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
-layout(binding=2) uniform sampler2D aoReflection; // diffuse, specular
+layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
+layout(binding=3) uniform sampler2D specularMap; // specular color
+layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
+uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
+
+in vec3 position;
+in vec2 texCoord;
+
 out vec4 out_color;
+
+vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
+
+	vec4 result = texture2D(sampler, texCoord);
+	
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y + dist));
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y));
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y - dist));
+	result += texture2D(sampler, vec2(texCoord.x, texCoord.y - dist));
+	
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y + dist));
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y));
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y - dist));
+	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
+	
+	return result/8;
+
+}
 
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 float rand(vec2 co){
@@ -20,15 +45,26 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	
-  	vec4 colorAlpha = texture2D(diffuseMap, st);
-  	vec3 color = colorAlpha.xyz;
+  	vec4 positionGlossiness = texture2D(positionMap, st);
+  	float glossiness = positionGlossiness.w;
   	
-	st.s *= secondPassScale;
+  	vec4 colorReflectiveness = texture2D(diffuseMap, st);
+  	vec3 color = colorReflectiveness.xyz;
+  	float reflectiveness = colorReflectiveness.w;
+  	
+  	vec4 specularColorPower = texture2D(specularMap, st);
+  	vec3 specularColor = specularColorPower.xyz;
+  	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
+	float specularFactor = lightDiffuseSpecular.a;
+	
 	vec4 aoReflect = texture2D(aoReflection, st);
-	float ao = aoReflect.r;
-	float refl = aoReflect.g;
+	float ao = blurSample(aoReflection, st, 0.005).r;
+	//vec3 reflectedColor = aoReflect.gba;
+	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
-	
-	out_color = vec4(lightDiffuseSpecular.xyz, 1);
+	vec3 ambientTerm = ambientColor * ao;
+	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
+	vec4 lit = vec4(mix(color, reflectedColor, reflectiveness) + specularTerm, 1) * vec4(ambientTerm + lightDiffuseSpecular.xyz, 1);
+	out_color = lit;
 }

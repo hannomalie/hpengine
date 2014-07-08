@@ -6,8 +6,8 @@ layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5) uniform sampler2D reflectionMap;
+layout(binding=6) uniform samplerCube environmentMap;
 
-layout(binding=6) uniform samplerCube cubeMap;
 //layout(binding=5) uniform sampler2D shadowMap;
 //layout(binding=6) uniform sampler2D depthMap;
 
@@ -29,12 +29,15 @@ uniform float specularMapHeight = 1;
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
+uniform float materialGlossiness = 0;
 //uniform vec3 materialAmbientColor = vec3(0,0,0);
 //uniform float materialTransparency = 1;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
+
+uniform float time = 0;
 
 in vec4 color;
 in vec2 texCoord;
@@ -86,6 +89,7 @@ void main(void) {
 #ifdef use_normalMap
 		UV.x = texCoord.x * normalMapWidth;
 		UV.y = texCoord.y * normalMapHeight;
+		//UV = UV + time/2000.0;
 #endif
 	
 	if (useParallax) {
@@ -116,6 +120,7 @@ void main(void) {
 #endif
 	
 	out_position = viewMatrix * position_world;
+	out_position.w = materialGlossiness;
 	float depth = position_clip.z / position_clip.w;
 	
 	out_normal = vec4(PN_view, depth);
@@ -135,12 +140,11 @@ void main(void) {
 	out_color.w = reflectiveness;
 
 #ifdef use_reflectionMap
-	float reflect_factor = texture2D(reflectionMap, UV).x;
-	vec3 texCoords3d = normalize(reflect(V, normal_world));
-	//texCoords3d.y *= -1;
-	out_color = mix(texture(cubeMap, texCoords3d), out_color, reflect_factor);
-	out_color.w = reflect_factor;
+	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
+vec3 texCoords3d = normalize(reflect(V, normal_world));
+//texCoords3d.y *= -1;
+out_color = mix(out_color, texture(environmentMap, texCoords3d), out_color.w);
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap

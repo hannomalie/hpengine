@@ -131,10 +131,19 @@ public class MaterialFactory {
 		public float glossiness = 0.25f;
 		public boolean textureLess;
 		transient public Program firstPassProgram;
+		String geometryShader = "";
 		String vertexShader = "";
 		String fragmentShader = "";
 		public void put(MAP map, Texture texture) {
 			maps.put(map, texture);
+		}
+
+		public boolean hasCustomVertexShader() {
+			return !vertexShader.equals("");
+		}
+
+		public boolean hasCustomFragmentShader() {
+			return !fragmentShader.equals("");
 		}
 	}
 

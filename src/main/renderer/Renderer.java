@@ -14,6 +14,7 @@ import main.renderer.command.Command;
 import main.renderer.light.Spotlight;
 import main.renderer.material.MaterialFactory;
 import main.shader.Program;
+import main.shader.ProgramFactory;
 import main.texture.CubeMap;
 import main.texture.TextureFactory;
 
@@ -27,7 +28,7 @@ public interface Renderer {
 
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
-	
+
 	public static void exitOnGLError(String errorMessage) { 
 		if (!CHECKERRORS) {return;}
 		
@@ -56,5 +57,6 @@ public interface Renderer {
 	public Model getSphere();
 	void drawLine(Vector3f from, Vector3f to);
 	public <T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
+	public ProgramFactory getProgramFactory();
 
 }

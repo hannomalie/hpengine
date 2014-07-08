@@ -19,7 +19,7 @@ public class UniformTest {
 	@Before
 	public void init() {
 		renderer = new DeferredRenderer(new Spotlight(true));
-		program = new Program("/assets/shaders/deferred/second_pass_point_vertex.glsl", "/assets/shaders/deferred/second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		program = renderer.getProgramFactory().getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		
 	}
 	@Test

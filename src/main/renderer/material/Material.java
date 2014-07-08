@@ -228,10 +228,11 @@ public class Material implements Serializable {
 		}
 		
 		Program firstPassProgram = null;
-		if(materialInfo.vertexShader.equals("") && materialInfo.fragmentShader.equals("")) {
-			firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
+		
+		if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, materialInfo.fragmentShader);
 		} else {
-			
+			firstPassProgram = renderer.getProgramFactory().getProgram(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
 		}
 		setProgram(firstPassProgram);
 		

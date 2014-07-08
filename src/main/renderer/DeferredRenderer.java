@@ -41,6 +41,7 @@ import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
 import main.shader.ComputeShaderProgram;
 import main.shader.Program;
+import main.shader.ProgramFactory;
 import main.texture.CubeMap;
 import main.texture.TextureFactory;
 import main.util.CLUtil;
@@ -50,6 +51,8 @@ import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.PointerBuffer;
@@ -65,6 +68,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.PixelFormat;
@@ -116,6 +120,7 @@ public class DeferredRenderer implements Renderer {
 	public CubeMap cubeMap;
 
 	private OBJLoader objLoader;
+	private ProgramFactory programFactory;
 	private EntityFactory entityFactory;
 	private LightFactory lightFactory;
 	private MaterialFactory materialFactory;
@@ -130,8 +135,9 @@ public class DeferredRenderer implements Renderer {
 	public DeferredRenderer(Spotlight light) {
 		textureFactory = new TextureFactory();
 		setupOpenGL();
-		materialFactory = new MaterialFactory(this);
+		programFactory = new ProgramFactory(this);
 		setupShaders();
+		materialFactory = new MaterialFactory(this);
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
@@ -216,16 +222,45 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() {
 		
-		firstPassProgram = new Program("/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, true);
+		copyDefaultShaders();
 
-		secondPassPointProgram = new Program("/assets/shaders/deferred/second_pass_point_vertex.glsl", "/assets/shaders/deferred/second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
+
+		secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
 //		secondPassPointComputeShaderProgram = new ComputeShaderProgram("/assets/shaders/deferred/second_pass_point_compute.glsl");
-		secondPassDirectionalProgram = new Program("/assets/shaders/deferred/second_pass_directional_vertex.glsl", "/assets/shaders/deferred/second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 
-		combineProgram = new Program("/assets/shaders/deferred/combine_pass_vertex.glsl", "/assets/shaders/deferred/combine_pass_fragment.glsl", RENDERTOQUAD, false);
-		renderToQuadProgram = new Program("/assets/shaders/passthrough_vertex.glsl", "/assets/shaders/simpletexture_fragment.glsl", RENDERTOQUAD);
+		combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
+		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
 
 		DeferredRenderer.exitOnGLError("setupShaders");
+	}
+
+	private void copyDefaultShaders() {
+		copyShaderIfNotExists(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE);
+		copyShaderIfNotExists(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE);
+		copyShaderIfNotExists("second_pass_directional_fragment.glsl");
+		copyShaderIfNotExists("second_pass_directional_vertex.glsl");
+		copyShaderIfNotExists("second_pass_point_fragment.glsl");
+		copyShaderIfNotExists("second_pass_point_vertex.glsl");
+		copyShaderIfNotExists("combine_pass_vertex.glsl");
+		copyShaderIfNotExists("combine_pass_fragment.glsl");
+		copyShaderIfNotExists("passthrough_vertex.glsl");
+		copyShaderIfNotExists("simpletexture_fragment.glsl");
+		
+	}
+
+	private void copyShaderIfNotExists(String fileName) {
+		File fromFile = new File("assets/shaders/deferred/" + fileName);
+		File toFile = new File(Program.getDirectory() + fileName);
+		
+		if (!toFile.exists()) {
+			try {
+				FileUtils.copyFile(fromFile, toFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
+		}
 	}
 
 	public void update(World world, float seconds) {
@@ -745,6 +780,11 @@ public class DeferredRenderer implements Renderer {
             queue.offer(result);
         	command = workQueue.poll();
         }
+	}
+
+	@Override
+	public ProgramFactory getProgramFactory() {
+		return programFactory;
 	}
 
 //	@Override

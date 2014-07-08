@@ -9,6 +9,7 @@ uniform mat4 lightMatrix;
 //uniform mat4 viewMatrixShadow;
 
 uniform vec3 eyePosition;
+uniform float time = 0;
 //uniform vec3 lightPosition;
 
 in vec3 in_Position;
@@ -33,16 +34,10 @@ out vec3 halfVec;
 out vec3 eyeVec;
 out vec3 eyePos_world;
 
-mat4 biasMatrix = mat4(
-	0.5, 0.0, 0.0, 0.0,
-	0.0, 0.5, 0.0, 0.0,
-	0.0, 0.0, 0.5, 0.0,
-	0.5, 0.5, 0.5, 1.0
-);
-
 void main(void) {
 
 	position_world = modelMatrix * vec4(in_Position.xyz,1);
+	position_world = position_world;
 	position_clip = (projectionMatrix * viewMatrix * position_world);
 	gl_Position = position_clip;
 	//position_clip_shadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * vec4(in_Position.xyz,1);

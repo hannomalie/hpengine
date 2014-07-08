@@ -7,11 +7,12 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import main.World;
 import main.model.DataChannels;
 import main.model.Entity;
+import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.util.Util;
 import main.util.ressources.FileMonitor;
@@ -28,101 +29,49 @@ import org.lwjgl.util.vector.Vector3f;
 public class Program implements Reloadable {
 	private static Logger LOGGER = getLogger();
 	
-	public static HashMap<Integer, Program> LIBRARY = new HashMap<>();
-	
 	private int id;
-	private int vertexShaderId = 0;
-	private int geometryShaderId = 0;
-	private int fragmentShaderId = 0;
 	
 	private EnumSet<DataChannels> channels;
 	
 	private HashMap<String, Uniform> uniforms = new HashMap<>();
 
 	private boolean needsTextures = true;
-	private String definesString = "";
-	private String geometryShaderLocation = "";
-	private String vertexShaderLocation = "";
-	private String fragmentShaderLocation = "";
+	
+	private String geometryShaderName;
+	private String vertexShaderName;
+	private String fragmentShaderName;
 
-	private String geometryShaderSource;
-	private String vertexShaderSource;
-	private String fragmentShaderSource;
+	private String fragmentDefines;
 
-	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
-		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, true);
-	}
-
-	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, String definesString, boolean needsTextures) {
+	protected Program(String geometryShaderName, String vertexShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
-		this.definesString = definesString;
-		this.geometryShaderLocation = geometryShaderLocation;
-		this.vertexShaderLocation = vertexShaderLocation;
-		this.fragmentShaderLocation = fragmentShaderLocation;
+		this.fragmentDefines = fragmentDefines;
 		
-		copyToWorkDirIfNotExists();
+		this.geometryShaderName = geometryShaderName;
+		this.vertexShaderName = vertexShaderName;
+		this.fragmentShaderName = fragmentShaderName;
+
+		DeferredRenderer.exitOnGLError("A");
 		load();
-		addFileListeners();
+		DeferredRenderer.exitOnGLError("B");
 	}
 	
-	private void copyToWorkDirIfNotExists() {
-		try {
-			if (!new File("hp/" + vertexShaderLocation).exists()) {
-				FileUtils.copyFile(new File("bin/" + vertexShaderLocation), new File("hp/" + vertexShaderLocation));
-			}
-			if (!new File("hp/" + fragmentShaderLocation).exists()) {
-				FileUtils.copyFile(new File("bin/" + fragmentShaderLocation), new File("hp/" + fragmentShaderLocation));
-			}
-			if (geometryShaderLocation != null && !new File("hp/" + geometryShaderLocation).exists()) {
-				FileUtils.copyFile(new File("bin/" + geometryShaderLocation), new File("hp/" + geometryShaderLocation));
-			}
-			
-			this.vertexShaderLocation = "hp/" +vertexShaderLocation;
-			this.fragmentShaderLocation = "hp/" +fragmentShaderLocation;
-			this.geometryShaderLocation = (geometryShaderLocation == null || geometryShaderLocation == "") ? "" :"hp/programs/" +geometryShaderLocation;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private void addFileListeners() {
-//		File directoryVertexShader = new File(vertexShaderLocation);
-//		FileAlterationObserver observerVertexShader = new FileAlterationObserver(directoryVertexShader);
-//		observerVertexShader.addListener(new ReloadOnFileChangeListener(this));
-
-		File directoryFragmentShader = new File(fragmentShaderLocation);
-		FileAlterationObserver observerFragmentShader = new FileAlterationObserver(directoryFragmentShader.getParent());
-		observerFragmentShader.addListener(new ReloadOnFileChangeListener(this));
-		FileMonitor.getInstance().add(observerFragmentShader);
-	}
-
 	public void load() {
-		vertexShaderId = Program.loadShader(vertexShaderLocation, GL20.GL_VERTEX_SHADER);
-		
-		LoadedShader _fragmentShader = Program.loadShader(fragmentShaderLocation, GL20.GL_FRAGMENT_SHADER, definesString); 
-		fragmentShaderId = _fragmentShader.shaderId;
-		fragmentShaderSource = _fragmentShader.source;
-		
 		id = GL20.glCreateProgram();
-		GL20.glAttachShader(id, vertexShaderId);
-		GL20.glAttachShader(id, fragmentShaderId);
-		if (geometryShaderLocation != null && geometryShaderLocation != "") {
-			geometryShaderId = Program.loadShader(geometryShaderLocation, GL32.GL_GEOMETRY_SHADER);
-			GL20.glAttachShader(id, geometryShaderId);
+		
+		GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
+		GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+		if (geometryShaderName != null && geometryShaderName != "") {
+			GL20.glAttachShader(id, loadShader(vertexShaderName, GL32.GL_GEOMETRY_SHADER));
 		}
+		
 		bindShaderAttributeChannels();
 		
 		GL20.glLinkProgram(id);
 		GL20.glValidateProgram(id);
-		
+
 		use();
-		LIBRARY.put(hashCode(), this);
-	}
-	
-	public void reload() {
-		unload();
-		load();
 	}
 	
 	public void unload() {
@@ -139,10 +88,11 @@ public class Program implements Reloadable {
 		
 		if (this.channels == otherProgram.channels &&
 			this.needsTextures == otherProgram.needsTextures &&
-			this.definesString.equals(otherProgram.definesString) &&
-			this.geometryShaderLocation == otherProgram.geometryShaderLocation &&
-			this.vertexShaderLocation.equals(otherProgram.vertexShaderLocation) &&
-			this.fragmentShaderLocation.equals(otherProgram.fragmentShaderLocation)) {
+				((this.geometryShaderName == null && otherProgram.geometryShaderName == null) ||
+				(this.geometryShaderName == "" && otherProgram.geometryShaderName == "") ||
+				(this.geometryShaderName.equals(otherProgram.geometryShaderName))) &&
+			this.vertexShaderName.equals(otherProgram.vertexShaderName) &&
+			this.fragmentShaderName.equals(otherProgram.fragmentShaderName)) {
 			return true;
 		}
 		return false;
@@ -152,27 +102,11 @@ public class Program implements Reloadable {
 	public int hashCode() {
 		int hash = 0;
 		hash += (channels != null? channels.hashCode() : 0);
-		hash += (geometryShaderLocation != null? geometryShaderLocation.hashCode() : 0);
-		hash += (vertexShaderLocation != null? vertexShaderLocation.hashCode() : 0);
-		hash += (fragmentShaderLocation != null? fragmentShaderLocation.hashCode() : 0);
-		hash += (definesString != null? definesString.hashCode() : 0);
+		hash += (geometryShaderName != null? geometryShaderName.hashCode() : 0);
+		hash += (vertexShaderName != null? vertexShaderName.hashCode() : 0);
+		hash += (fragmentShaderName != null? fragmentShaderName.hashCode() : 0);
 		return hash;
 	};
-	
-	public Program(String geometryShaderLocation, String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
-		this(geometryShaderLocation, vertexShaderLocation, fragmentShaderLocation, channels, null, needsTextures);
-	}
-	
-	public static Program firstPassProgramForDefines(String definesString) {
-		return new Program(null, "/assets/shaders/deferred/first_pass_vertex.glsl", "/assets/shaders/deferred/first_pass_fragment.glsl", Entity.DEFAULTCHANNELS, definesString, true);
-	}
-
-	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels) {
-		this(null, vertexShaderLocation, fragmentShaderLocation, channels, true);
-	}
-	public Program(String vertexShaderLocation, String fragmentShaderLocation, EnumSet<DataChannels> channels, boolean needsTextures) {
-		this(null, vertexShaderLocation, fragmentShaderLocation, channels, needsTextures);
-	}
 	
 	public void use() {
 		GL20.glUseProgram(id);
@@ -195,23 +129,8 @@ public class Program implements Reloadable {
 	public int getId() {
 		return id;
 	}
-	private void setId(int id) {
-		this.id = id;
-	}
-	public int getVertexShaderId() {
-		return vertexShaderId;
-	}
-	public void setVertexShaderId(int vertexShaderId) {
-		this.vertexShaderId = vertexShaderId;
-	}
-	public int getFragmentShaderId() {
-		return fragmentShaderId;
-	}
-	public void setFragmentShaderId(int fragmentShaderId) {
-		this.fragmentShaderId = fragmentShaderId;
-	}
 	
-	public static LoadedShader loadShader(String filename, int type, String mapDefinesString) {
+	public static int loadShader(String filename, int type, String mapDefinesString) {
 		String shaderSource;
 		int shaderID = 0;
 		
@@ -220,7 +139,7 @@ public class Program implements Reloadable {
 			shaderSource = "";
 		}
 		try {
-			shaderSource += FileUtils.readFileToString(new File(filename));//Util.loadAsTextFile(filename);
+			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);
 		} catch (IOException e) {
 			shaderSource += Util.loadAsTextFile(filename);
 		}
@@ -237,21 +156,11 @@ public class Program implements Reloadable {
 		
 		Renderer.exitOnGLError("loadShader");
 		
-		return new LoadedShader(shaderID, shaderSource);
-	}
-	
-	static class LoadedShader {
-		public int shaderId = -1;
-		public String source = "";
-		
-		public LoadedShader(int shaderId, String source) {
-			this.shaderId = shaderId;
-			this.source = source;
-		}
+		return shaderID;
 	}
 	
 	public static int loadShader(String filename, int type) {
-		return loadShader(filename, type, "").shaderId;
+		return loadShader(filename, type, "");
 	}
 
 	public boolean needsTextures() {
@@ -320,7 +229,7 @@ public class Program implements Reloadable {
 		uniforms.put(uniform.name, uniform);
 	}
 
-	public String getFragmentShaderSource() {
-		return fragmentShaderSource;
+	public static String getDirectory() {
+		return World.WORKDIR_NAME + "/assets/shaders/deferred/";
 	}
 }
