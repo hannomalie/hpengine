@@ -90,32 +90,13 @@ public class Box {
 
 
 	public boolean isInFrustum(Camera camera) {
-//		Vector4f[] minMaxWorld = new Vector4f[]{new Vector4f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z, 0),
-//												new Vector4f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z, 0)};
-//		Vector4f minWorld = minMaxWorld[0];
-//		Vector4f maxWorld = minMaxWorld[1];
-		
-//		Vector3f centerWorld = new Vector3f();
-//		centerWorld.x = (maxWorld.x + minWorld.x)/2;
-//		centerWorld.y = (maxWorld.y + minWorld.y)/2;
-//		centerWorld.z = (maxWorld.z + minWorld.z)/2;
-		
 		Vector3f[] minMaxWorld = new Vector3f[]{new Vector3f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z),
 												new Vector3f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z)};
 		Vector3f minWorld = minMaxWorld[0];
 		Vector3f maxWorld = minMaxWorld[1];
 		Vector3f centerWorld = (Vector3f) (Vector3f.add(maxWorld, minWorld, null)).scale(0.5f);
 		
-//		Vector3f distVector = new Vector3f();
-//		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-//						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
-
-//		if (camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
-//			camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
 		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
-//		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
-//				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-//		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
 			return true;
 		}
 		return false;

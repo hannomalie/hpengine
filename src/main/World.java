@@ -53,9 +53,7 @@ public class World {
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
-	//public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1.1f;
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1f;
-	//public static float AMBIENTOCCLUSION_RADIUS = 0.012f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.0125f;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
@@ -69,8 +67,6 @@ public class World {
 		world.simulate();
 	}
 
-//	public Octree octree;
-//	public List<IEntity> entities = new ArrayList<>();
 	Scene scene;
 	private int entityCount = 10;
 	public Renderer renderer;

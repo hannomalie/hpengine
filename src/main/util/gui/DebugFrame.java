@@ -4,6 +4,7 @@ import static main.util.Util.vectorToString;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.File;
@@ -39,9 +40,14 @@ import main.util.gui.input.Vector3fInput;
 import main.util.script.ScriptManager;
 
 import org.apache.commons.io.FilenameUtils;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
+import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
 import com.alee.extended.tree.TreeCheckingModel;
@@ -78,8 +84,10 @@ public class DebugFrame {
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
-	private WebPanel scriptPanel;
+	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private JPanel buttonPanel = new JPanel(new FlowLayout());
+	private RSyntaxTextArea console = new RSyntaxTextArea();
+	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
 	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
@@ -116,6 +124,11 @@ public class DebugFrame {
 		TextureFactory textureFactory = world.getRenderer().getTextureFactory();
 		
 		mainFrame.setLayout(new BorderLayout(5,5));
+
+		console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+		console.setCodeFoldingEnabled(true);
+		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
+		ac.install(console);
 		
 		TableModel materialDataModel = new AbstractTableModel() {
 
@@ -245,23 +258,8 @@ public class DebugFrame {
 		texturePane  =  new JScrollPane(textureTable);
 		lightsPane  =  new JScrollPane(lightsTable);
 
-//		addSceneObjects(world);
 		addOctreeSceneObjects(world);
 		
-		scriptPanel = new WebPanel();
-		scriptPanel.setMargin ( 10 );
-		WebTextArea scriptArea = new WebTextArea(600,600);
-		scriptPanel.add(scriptArea, BorderLayout.CENTER);
-		WebButton runScriptButton = new WebButton("Run");
-		runScriptButton.addActionListener(e -> {
-			try {
-				scriptManager.eval(scriptArea.getText());
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
-		});
-		scriptPanel.add(runScriptButton, BorderLayout.NORTH);
-
 		toggleFileReload.addActionListener( e -> {
 			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
 			toggleParallax.setSelected(World.RELOAD_ON_FILE_CHANGE);
@@ -437,9 +435,19 @@ public class DebugFrame {
 
         	menuEntity.add(entitiyAddManuItem);
         }
+        
+        WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
+        runScriptMenuItem.addActionListener(e -> {
+			try {
+				scriptManager.eval(console.getText());
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		});
 
         menuBar.add(menuScene);
         menuBar.add(menuEntity);
+        menuBar.add(runScriptMenuItem);
         mainFrame.setJMenuBar(menuBar);
         
 		mainFrame.add(tabbedPane);
@@ -449,7 +457,8 @@ public class DebugFrame {
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
 		tabbedPane.addTab("Light", lightsPane);
-		tabbedPane.addTab("Script", scriptPanel);
+		tabbedPane.addTab("Console", consolePane);
+		tabbedPane.addTab("Scripts", scriptsPane);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));

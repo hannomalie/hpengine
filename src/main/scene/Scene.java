@@ -8,7 +8,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 
 
@@ -114,6 +116,10 @@ public class Scene implements Serializable {
 	}
 	public List<IEntity> getEntities() {
 		return octree.getEntities();
+	}
+	public Optional<IEntity> getEntity(String name) {
+		List<IEntity> candidates = getEntities().stream().filter(e -> { return e.getName().equals(name); }).collect(Collectors.toList());
+		return candidates.size() > 0 ? Optional.of(candidates.get(0)) : Optional.of(null);
 	}
 	public boolean isInitialized() {
 		return initialized;
