@@ -21,6 +21,7 @@ import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -44,6 +45,10 @@ public class Program implements Reloadable {
 
 	private String fragmentDefines;
 
+	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
+
+	private FileAlterationObserver observerFragmentShader;
+
 	protected Program(String geometryShaderName, String vertexShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
@@ -53,6 +58,8 @@ public class Program implements Reloadable {
 		this.vertexShaderName = vertexShaderName;
 		this.fragmentShaderName = fragmentShaderName;
 
+		observerFragmentShader = new FileAlterationObserver(getDirectory());
+		
 		load();
 	}
 	
@@ -75,11 +82,28 @@ public class Program implements Reloadable {
 	}
 	
 	private void addFileListeners() {
+		
+		clearListeners();
 
-		File directoryFragmentShader = new File(getDirectory() + fragmentShaderName);
-		FileAlterationObserver observerFragmentShader = new FileAlterationObserver(directoryFragmentShader.getParent());
-		observerFragmentShader.addListener(new ReloadOnFileChangeListener(this));
+		reloadOnFileChangeListener = new ReloadOnFileChangeListener<Program>(this) {
+			@Override
+			public boolean shouldReload(File changedFile) {
+				String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
+				if(fragmentShaderName != null && fragmentShaderName.startsWith(fileName) ||
+				   vertexShaderName != null && vertexShaderName.startsWith(fileName)) {
+					return true;
+				}
+				return false;
+			}
+		};
+		observerFragmentShader.addListener(reloadOnFileChangeListener);
 		FileMonitor.getInstance().add(observerFragmentShader);
+	}
+
+	private void clearListeners() {
+		if(observerFragmentShader != null) {
+			observerFragmentShader.removeListener(reloadOnFileChangeListener);
+		}
 	}
 
 	public void unload() {

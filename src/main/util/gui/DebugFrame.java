@@ -384,7 +384,7 @@ public class DebugFrame {
 		buttonPanel.add(ambientOcclusionRadiusSlider);
 		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
 		buttonPanel.setSize(200, 200);
-
+		
 		WebMenuBar menuBar = new WebMenuBar ();
 		WebMenu menuScene = new WebMenu("Scene");
         menuBar.setUndecorated ( true );

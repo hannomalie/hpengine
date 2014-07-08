@@ -179,7 +179,7 @@ public class Entity implements IEntity, Serializable {
 		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
-		firstPassProgram.setUniform("time", System.currentTimeMillis() % 1000);
+		firstPassProgram.setUniform("time", System.currentTimeMillis());
 		
 		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		material.setTexturesActive(firstPassProgram);

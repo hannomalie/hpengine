@@ -14,8 +14,14 @@ public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChan
 
 	@Override
 	public void onFileChangeAction(File arg0) {
-		System.out.println("Reloading...........................");
-		owner.reload();
+		if(shouldReload(arg0)) {
+			System.out.println("Reloading......." + arg0.getAbsolutePath());
+			owner.reload();
+		}
+	}
+	
+	public boolean shouldReload(File changedFile) {
+		return true;
 	}
 
 	public static void createAndAddToMonitor(String path, Reloadable loadable) {

@@ -207,7 +207,7 @@ public class MaterialView extends WebPanel {
 					material.setSpecularCoefficient(currentValue);
 				}
 			};
-			specularExponentInput.setValue(material.getReflectiveness());
+			specularExponentInput.setValue(material.getSpecularCoefficient());
 	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Specular Power"), specularExponentInput );
 	        TooltipManager.setTooltip ( groupPanel, "1 soft, 100 hard highlights", TooltipWay.up );
 	        webComponentPanel.addElement(groupPanel);
@@ -244,6 +244,7 @@ public class MaterialView extends WebPanel {
         webComponentPanel.setLayout(new FlowLayout());
 		{
         	final WebFileChooserField vertexShaderChooser = new WebFileChooserField ();
+        	vertexShaderChooser.setSelectedFile(new File(Program.getDirectory() + material.getVertexShader()));
         	vertexShaderChooser.setPreferredWidth ( 200 );
         	vertexShaderChooser.setPreferredHeight( 20 );
         	vertexShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
@@ -283,6 +284,7 @@ public class MaterialView extends WebPanel {
         }
         {
         	final WebFileChooserField fragmentShaderChooser = new WebFileChooserField ();
+        	fragmentShaderChooser.setSelectedFile(new File(Program.getDirectory() + material.getFragmentShader()));
         	fragmentShaderChooser.setPreferredWidth ( 200 );
         	fragmentShaderChooser.setPreferredHeight( 20 );
         	fragmentShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
