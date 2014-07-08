@@ -16,6 +16,7 @@ import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.util.Util;
 import main.util.ressources.FileMonitor;
+import main.util.ressources.OnFileChangeListener;
 import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
 
@@ -52,9 +53,7 @@ public class Program implements Reloadable {
 		this.vertexShaderName = vertexShaderName;
 		this.fragmentShaderName = fragmentShaderName;
 
-		DeferredRenderer.exitOnGLError("A");
 		load();
-		DeferredRenderer.exitOnGLError("B");
 	}
 	
 	public void load() {
@@ -72,8 +71,17 @@ public class Program implements Reloadable {
 		GL20.glValidateProgram(id);
 
 		use();
+		addFileListeners();
 	}
 	
+	private void addFileListeners() {
+
+		File directoryFragmentShader = new File(getDirectory() + fragmentShaderName);
+		FileAlterationObserver observerFragmentShader = new FileAlterationObserver(directoryFragmentShader.getParent());
+		observerFragmentShader.addListener(new ReloadOnFileChangeListener(this));
+		FileMonitor.getInstance().add(observerFragmentShader);
+	}
+
 	public void unload() {
 		GL20.glDeleteProgram(id);
 	}

@@ -15,6 +15,7 @@ import main.model.IEntity;
 import main.renderer.Renderer;
 import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
+import main.shader.ProgramFactory;
 import main.shader.ShaderDefine;
 import main.texture.Texture;
 
@@ -168,6 +169,38 @@ public class Material implements Serializable {
 		materialInfo.glossiness = glossiness;
 	}
 
+	public boolean hasCustomVertexShader() {
+		return materialInfo.hasCustomVertexShader();
+	}
+
+	public boolean hasCustomFragmentShader() {
+		return materialInfo.hasCustomFragmentShader();
+	}
+
+	public String getGeometryShader() {
+		return materialInfo.getGeometryShader();
+	}
+
+	public void setGeometryShader(String geometryShader) {
+		materialInfo.setGeometryShader(geometryShader);
+	}
+
+	public String getVertexShader() {
+		return materialInfo.getVertexShader();
+	}
+
+	public void setVertexShader(String vertexShader) {
+		materialInfo.setVertexShader(vertexShader);
+	}
+
+	public String getFragmentShader() {
+		return materialInfo.getFragmentShader();
+	}
+
+	public void setFragmentShader(String fragmentShader) {
+		materialInfo.setFragmentShader(fragmentShader);
+	}
+	
 	public static boolean write(Material material, String resourceName) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
@@ -229,10 +262,28 @@ public class Material implements Serializable {
 		
 		Program firstPassProgram = null;
 		
-		if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
+		String definesString = ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet());
+		
+		if(materialInfo.hasCustomVertexShader() && !materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE);
+			if(firstPassProgram == null) {
+				System.err.println("File not found for material " + materialInfo.name);
+				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
+			}
+		} else if(!materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, materialInfo.fragmentShader);
+			if(firstPassProgram == null) {
+				System.err.println("File not found for material " + materialInfo.name);
+				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
+			}
+		} else if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
 			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, materialInfo.fragmentShader);
+			if(firstPassProgram == null) {
+				System.err.println("File not found for material " + materialInfo.name);
+				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
+			}
 		} else {
-			firstPassProgram = renderer.getProgramFactory().getProgram(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
+			firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
 		}
 		setProgram(firstPassProgram);
 		

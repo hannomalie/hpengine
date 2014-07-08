@@ -2,13 +2,18 @@ package main.util.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
 import main.World;
@@ -18,12 +23,16 @@ import main.renderer.command.LoadModelCommand;
 import main.renderer.command.LoadModelCommand.EntityListResult;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+import main.scene.Scene;
+import main.shader.Program;
 import main.texture.Texture;
 import main.util.gui.input.ColorChooserButton;
 import main.util.gui.input.ColorChooserFrame;
 import main.util.gui.input.LimitedWebFormattedTextField;
 import main.util.gui.input.WebFormattedVec3Field;
 
+import com.alee.extended.filechooser.FilesSelectionListener;
+import com.alee.extended.filechooser.WebFileChooserField;
 import com.alee.extended.panel.BorderPanel;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
@@ -31,6 +40,7 @@ import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
+import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.text.WebTextField;
@@ -56,6 +66,7 @@ public class MaterialView extends WebPanel {
 		
 		addTexturePanel(panels);
         addValuePanels(panels);
+        addShaderChoosers(panels);
 
         WebButton saveButton = new WebButton("Save");
         saveButton.addActionListener(e -> {
@@ -149,6 +160,7 @@ public class MaterialView extends WebPanel {
 	private void addValuePanels(List<Component> panels) {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
+        webComponentPanel.setLayout(new FlowLayout());
 
         webComponentPanel.addElement(new WebFormattedVec3Field("Diffuse", material.getDiffuse()) {
 			@Override
@@ -226,6 +238,102 @@ public class MaterialView extends WebPanel {
 		panels.add(webComponentPanel);
 	}
 
+	private void addShaderChoosers(List<Component> panels) {
+		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
+        webComponentPanel.setElementMargin ( 4 );
+        webComponentPanel.setLayout(new FlowLayout());
+		{
+        	final WebFileChooserField vertexShaderChooser = new WebFileChooserField ();
+        	vertexShaderChooser.setPreferredWidth ( 200 );
+        	vertexShaderChooser.setPreferredHeight( 20 );
+        	vertexShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
+				
+				@Override
+				public void selectionChanged(List<File> files) {
+					File chosenFile = files.get(0);
+					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
+					
+					File shaderFileInWorkDir = new File(Program.getDirectory() + fileName + ".glsl");
+					
+					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
+					material.setVertexShader(fileName + ".glsl");
+		        	addMaterialInitCommand();
+				}
+
+			});
+        	WebButton copyFromDefaultButton = new WebButton("Copy from default");
+        	copyFromDefaultButton.addActionListener(e -> {
+        		Object selection = WebOptionPane.showInputDialog( this, "Vertexshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
+	        	if(selection != null) {
+	        		try {
+						world.getRenderer().getProgramFactory().copyDefaultVertexShaderToFile(selection.toString());
+						material.setVertexShader(selection.toString() + ".glsl");
+			        	addMaterialInitCommand();
+					} catch (Exception e1) {
+						e1.printStackTrace();
+						showNotification(NotificationIcon.error, "Not able to set vertex shader");
+					}
+	        	}
+        	});
+            GroupPanel vertexShaderPanel = new GroupPanel ( 4, new WebLabel("VertexShader"), vertexShaderChooser, copyFromDefaultButton );
+            vertexShaderPanel.setPreferredWidth ( 200 );
+            vertexShaderPanel.setPreferredHeight( 20 );
+            vertexShaderPanel.setLayout(new GridLayout(1,2));
+        	webComponentPanel.add(vertexShaderPanel);
+        }
+        {
+        	final WebFileChooserField fragmentShaderChooser = new WebFileChooserField ();
+        	fragmentShaderChooser.setPreferredWidth ( 200 );
+        	fragmentShaderChooser.setPreferredHeight( 20 );
+        	fragmentShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
+				
+				@Override
+				public void selectionChanged(List<File> files) {
+					File chosenFile = files.get(0);
+					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
+					
+					File shaderFileInWorkDir = new File(Program.getDirectory() + fileName + ".glsl");
+					
+					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
+					material.setFragmentShader(fileName + ".glsl");
+		        	addMaterialInitCommand();
+				}
+
+			});
+        	WebButton copyFromDefaultButton = new WebButton("Copy from default");
+        	copyFromDefaultButton.addActionListener(e -> {
+        		Object selection = WebOptionPane.showInputDialog( this, "Fragmentshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
+	        	if(selection != null) {
+	        		try {
+						world.getRenderer().getProgramFactory().copyDefaultFragmentShaderToFile(selection.toString());
+						material.setFragmentShader(selection.toString() + ".glsl");
+			        	addMaterialInitCommand();
+					} catch (Exception e1) {
+						e1.printStackTrace();
+						showNotification(NotificationIcon.error, "Not able to set fragment shader");
+					}
+	        	}
+        	});
+            GroupPanel fragmentShaderPanel = new GroupPanel ( 4, new WebLabel("FragmentShader"), fragmentShaderChooser, copyFromDefaultButton );
+            fragmentShaderPanel.setPreferredWidth ( 200 );
+            fragmentShaderPanel.setPreferredHeight( 20 );
+            fragmentShaderPanel.setLayout(new GridLayout(1,2));
+        	webComponentPanel.add(fragmentShaderPanel);
+        }
+        
+        panels.add(webComponentPanel);
+	}
+
+	private void copyShaderIfNotPresent(File chosenFile, File shaderFileInWorkDir) {
+		if (!shaderFileInWorkDir.exists()) {
+			try {
+				FileUtils.copyFile(chosenFile, shaderFileInWorkDir);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private void addMaterialInitCommand() {
 		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new InitMaterialCommand(material));
 		

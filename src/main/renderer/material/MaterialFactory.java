@@ -145,6 +145,30 @@ public class MaterialFactory {
 		public boolean hasCustomFragmentShader() {
 			return !fragmentShader.equals("");
 		}
+
+		public String getGeometryShader() {
+			return geometryShader;
+		}
+
+		public void setGeometryShader(String geometryShader) {
+			this.geometryShader = geometryShader;
+		}
+
+		public String getVertexShader() {
+			return vertexShader;
+		}
+
+		public void setVertexShader(String vertexShader) {
+			this.vertexShader = vertexShader;
+		}
+
+		public String getFragmentShader() {
+			return fragmentShader;
+		}
+
+		public void setFragmentShader(String fragmentShader) {
+			this.fragmentShader = fragmentShader;
+		}
 	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {

@@ -1,6 +1,10 @@
 package main.shader;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.EnumSet;
+
+import org.apache.commons.io.FileUtils;
 
 import main.model.DataChannels;
 import main.renderer.Renderer;
@@ -28,4 +32,13 @@ public class ProgramFactory {
 		return new Program(null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
 	}
 
+	public void copyDefaultFragmentShaderToFile(String name) throws IOException {
+		name = name.endsWith(".glsl") ? name : name + ".glsl";
+		FileUtils.copyFile(new File(Program.getDirectory() + FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE), new File(Program.getDirectory() + name));
+	}
+	
+	public void copyDefaultVertexShaderToFile(String name) throws IOException {
+		name = name.endsWith(".glsl") ? name : name + ".glsl";
+		FileUtils.copyFile(new File(Program.getDirectory() + FIRSTPASS_DEFAULT_VERTEXSHADER_FILE), new File(Program.getDirectory() + name));
+	}
 }
