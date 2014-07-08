@@ -1,5 +1,6 @@
 package main.util.gui;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
@@ -31,10 +32,13 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.text.WebTextField;
+import com.alee.managers.language.data.TooltipWay;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.alee.managers.tooltip.TooltipManager;
 
 public class MaterialView extends WebPanel {
 
@@ -57,12 +61,14 @@ public class MaterialView extends WebPanel {
         saveButton.addActionListener(e -> {
         	Material.write(material, material.getMaterialInfo().name);
         });
-        panels.add(saveButton);
         
         Component[] components = new Component[panels.size()];
         panels.toArray(components);
 
-        this.add(new GridPanel ( panels.size(), 1, components));
+        WebScrollPane materialAttributesPane = new WebScrollPane(new GridPanel ( panels.size(), 1, components));
+        this.setLayout(new BorderLayout());
+        this.add(materialAttributesPane, BorderLayout.CENTER);
+        this.add(saveButton, BorderLayout.SOUTH);
 	}
 
 	private void addTexturePanel(List<Component> panels) {
@@ -182,6 +188,18 @@ public class MaterialView extends WebPanel {
 				material.setSpecular(color);
 			}
 		}));
+        {
+	        LimitedWebFormattedTextField specularExponentInput = new LimitedWebFormattedTextField(1, 10000) {
+				@Override
+				public void onChange(float currentValue) {
+					material.setSpecularCoefficient(currentValue);
+				}
+			};
+			specularExponentInput.setValue(material.getReflectiveness());
+	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Specular Power"), specularExponentInput );
+	        TooltipManager.setTooltip ( groupPanel, "1 soft, 100 hard highlights", TooltipWay.up );
+	        webComponentPanel.addElement(groupPanel);
+        }
         {
 	        LimitedWebFormattedTextField reflectiveNessInput = new LimitedWebFormattedTextField(0, 1) {
 				@Override

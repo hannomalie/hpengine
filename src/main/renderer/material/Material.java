@@ -226,7 +226,13 @@ public class Material implements Serializable {
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
 			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
 		}
-		Program firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
+		
+		Program firstPassProgram = null;
+		if(materialInfo.vertexShader.equals("") && materialInfo.fragmentShader.equals("")) {
+			firstPassProgram = Program.firstPassProgramForDefines(ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet()));
+		} else {
+			
+		}
 		setProgram(firstPassProgram);
 		
 	}

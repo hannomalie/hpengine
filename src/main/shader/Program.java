@@ -238,7 +238,6 @@ public class Program implements Reloadable {
 		Renderer.exitOnGLError("loadShader");
 		
 		return new LoadedShader(shaderID, shaderSource);
-		//return shaderID;
 	}
 	
 	static class LoadedShader {
