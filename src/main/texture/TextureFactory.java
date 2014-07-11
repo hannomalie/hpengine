@@ -51,7 +51,7 @@ import org.lwjgl.util.vector.Vector2f;
  */
 public class TextureFactory {
     /** The table of textures that have been loaded in this loader */
-    public HashMap TEXTURES = new HashMap();
+    public HashMap TEXTURES = new HashMap<String, Texture>();
 
     /** The colour model including alpha for the GL image */
     private ColorModel glAlphaColorModel;

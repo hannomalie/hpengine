@@ -94,11 +94,11 @@ void main(void) {
 	
 	if (useParallax) {
 		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
-		float v = height * 0.02106 - 0.012;
+		float v = height * 0.01 - 0.012;
 		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
-		float n = 30;
-		float bumpScale = 100;
+		float n = 10;
+		float bumpScale = 0.001;
 		float step = 1/n;
 		vec2 dt = V.xy * bumpScale / (n * V.z);
 		

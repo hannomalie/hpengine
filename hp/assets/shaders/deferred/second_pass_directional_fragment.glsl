@@ -75,18 +75,12 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
 	
-	//if (targetNormalView.z > 0.6) {
-		//return vec3(1,0,0);
-	  	//color = texture(environmentMap, normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz)).rgb;
-		//return color;
-	//}
-	
-	vec3 viewRay = 5*normalize(reflectionVecView);
+	vec3 viewRay = 20*normalize(reflectionVecView);
 	
 	vec3 currentViewPos = targetPosView;
-	for (int i = 0; i < 40; i++) {
+	for (int i = 0; i < 20; i++) {
 	
-		  currentViewPos += 5*viewRay;
+		  currentViewPos += viewRay;
 		  
 		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
@@ -95,8 +89,8 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 		  	
 		  	currentViewPos -= viewRay;
 		  	
-		  	for(int x = 0; x < 40; x++) {
-		 		currentViewPos += viewRay/40;
+		  	for(int x = 0; x < 20; x++) {
+		 		currentViewPos += viewRay/20;
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 				  difference = currentViewPos.z - currentPosSample.z;
@@ -107,10 +101,12 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 		  	
   		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
   			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1) {
-    			float screenEdgefactor = 1-clamp(distance(resultCoords.xy , vec2(0.5, 0.5))*2,0,1);
+				float minDist = distance(vec2(0.7,0.7) , vec2(0.5, 0.5));
+				float amount = clamp(distance(resultCoords.xy , vec2(0.5, 0.5)) - minDist, 0, 1);
+    			float screenEdgefactor = amount;
     			//return vec3(screenEdgefactor,0,0);
     			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
-				return mix(color, reflectedColor, screenEdgefactor);
+				return mix(color, reflectedColor, 1-screenEdgefactor);
 		  	}
 		  	
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
@@ -200,7 +196,7 @@ void main(void) {
 		out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
 	} else {
 		vec4 reflectedColor = vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0);
-		out_AOReflection = vec4(ao, reflectedColor);
+		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
 	//out_DiffuseSpecular = vec4(ssdo,1);
 }

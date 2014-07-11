@@ -110,7 +110,7 @@ public class DeferredRenderer implements Renderer {
 
 	private static float MINLIGHTRADIUS = 4.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 100;
+	private static int MAXLIGHTS = 50;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -196,8 +196,8 @@ public class DeferredRenderer implements Renderer {
 		initIdentityMatrixBuffer();
 
 //		finalTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 1);
-		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA32F, 4);
-		secondPassTarget = new RenderTarget((int) (WIDTH * secondPassScale) , (int) (HEIGHT * secondPassScale), GL30.GL_RGBA32F, 2);
+		firstPassTarget = new RenderTarget(WIDTH, HEIGHT, GL30.GL_RGBA16F, 4);
+		secondPassTarget = new RenderTarget((int) (WIDTH * secondPassScale) , (int) (HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();

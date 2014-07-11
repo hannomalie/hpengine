@@ -44,11 +44,11 @@ public class World {
 
 	public static Spotlight light= new Spotlight(true);
 	public static volatile boolean useParallaxLocation = false;
-	public static volatile boolean useParallax = false;
+	public static volatile boolean useParallax = true;
 	public static volatile boolean useSteepParallaxLocation = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;
-	public static volatile boolean useFrustumCulling = false;
+	public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
@@ -190,7 +190,8 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
-						IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(i*10,0-random*i+j,j*10), "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
+						Vector3f position = new Vector3f(i*10,0-random*i+j,j*10);
+						IEntity entity = renderer.getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
 						entity.setMaterial(mat);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
