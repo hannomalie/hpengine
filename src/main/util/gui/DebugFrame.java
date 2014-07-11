@@ -4,20 +4,19 @@ import static main.util.Util.vectorToString;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -31,6 +30,9 @@ import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.renderer.DeferredRenderer;
+import main.renderer.command.AddCubeMapCommand;
+import main.renderer.command.AddTextureCommand;
+import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.light.PointLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
@@ -47,12 +49,11 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
+import com.alee.extended.panel.GridPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
-import com.alee.extended.tree.TreeCheckingModel;
 import com.alee.extended.tree.WebCheckBoxTree;
-import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.filechooser.WebFileChooser;
@@ -63,13 +64,12 @@ import com.alee.laf.menu.WebMenuItem;
 import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.rootpane.WebFrame;
+import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.tabbedpane.WebTabbedPane;
-import com.alee.laf.text.WebTextArea;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import com.alee.utils.swing.StateProvider;
 
 
 public class DebugFrame {
@@ -130,68 +130,6 @@ public class DebugFrame {
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
 		ac.install(console);
 		
-		TableModel materialDataModel = new AbstractTableModel() {
-
-			List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
-			List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
-
-			public int getColumnCount() {
-				return 2;
-			}
-
-			public int getRowCount() {
-				return world.getRenderer().getMaterialFactory().MATERIALS.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					return paths.get(row);
-				}
-				return materials.get(row);
-			}
-			
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Path";
-				} else if (column == 1) {
-					return "Material";
-				}
-				return "Null";
-			}
-		};
-
-		TableModel textureDataModel = new AbstractTableModel() {
-
-			List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
-					.toArray());
-			List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
-					.toArray());
-
-			public int getColumnCount() {
-				return 2;
-			}
-
-			public int getRowCount() {
-				return textureFactory.TEXTURES.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					return paths.get(row);
-				}
-				main.texture.Texture texture = (main.texture.Texture) textures.get(row);
-				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Path";
-				} else if (column == 1) {
-					return "Texture";
-				}
-				return "Null";
-			}
-		};
 		
 		TableModel lightsTableModel = new AbstractTableModel() {
 
@@ -232,30 +170,10 @@ public class DebugFrame {
 			}
 		};
 
-		JTable materialTable = new JTable(materialDataModel);
-		JTable textureTable = new JTable(textureDataModel);
+		createMaterialPane(world);
+		
 		JTable lightsTable = new JTable(lightsTableModel);
 		
-		materialTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-	        public void valueChanged(ListSelectionEvent event) {
-	        	java.awt.EventQueue.invokeLater(new Runnable() {
-	        	    @Override
-	        	    public void run() {
-	    	            // do some actions here, for example
-	    	            // print first column value from selected row
-	    	        	materialViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-	    	        	materialViewFrame.getContentPane().removeAll();
-	    	        	materialViewFrame.pack();
-	    	        	materialViewFrame.setSize(600, 600);
-	    	        	materialViewFrame.add(new MaterialView(world, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
-	    	            materialViewFrame.setVisible(true);
-	        	    }
-	        	});
-	        }
-	    });
-
-		materialPane =  new JScrollPane(materialTable);
-		texturePane  =  new JScrollPane(textureTable);
 		lightsPane  =  new JScrollPane(lightsTable);
 
 		addOctreeSceneObjects(world);
@@ -435,7 +353,7 @@ public class DebugFrame {
 
         	menuEntity.add(entitiyAddManuItem);
         }
-        
+
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
@@ -445,8 +363,65 @@ public class DebugFrame {
 			}
 		});
 
+		WebMenu menuTextures = new WebMenu("Texture");
+        {
+        	WebMenuItem textureAddMenuItem = new WebMenuItem ( "Add 2D" );
+        	textureAddMenuItem.addActionListener(e -> {
+        		
+	    		File chosenFile = fileChooser.showOpenDialog();
+	    		if(chosenFile != null) {
+					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath()));
+					
+					TextureResult result = null;
+					try {
+						result = queue.poll(5, TimeUnit.MINUTES);
+					} catch (Exception e1) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					}
+					
+					if (!result.isSuccessful()) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					} else {
+						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+						refreshTextureTab();
+					}
+	    			
+	    		}
+	    		
+        	});
+        	menuTextures.add(textureAddMenuItem);
+        }
+        {
+        	WebMenuItem textureAddMenuItem = new WebMenuItem ( "Add Cube" );
+    		textureAddMenuItem.addActionListener(e -> {
+        		
+	    		File chosenFile = fileChooser.showOpenDialog();
+	    		if(chosenFile != null) {
+					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
+					
+					TextureResult result = null;
+					try {
+						result = queue.poll(5, TimeUnit.MINUTES);
+					} catch (Exception e1) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					}
+					
+					if (!result.isSuccessful()) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					} else {
+						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+						refreshTextureTab();
+					}
+	    			
+	    		}
+	    		
+        	});
+        	menuTextures.add(textureAddMenuItem);
+        }
+
         menuBar.add(menuScene);
         menuBar.add(menuEntity);
+        menuBar.add(menuTextures);
         menuBar.add(runScriptMenuItem);
         mainFrame.setJMenuBar(menuBar);
         
@@ -454,6 +429,7 @@ public class DebugFrame {
 		
 		tabbedPane.addTab("Main", buttonPanel);
 		tabbedPane.addTab("Scene", scenePane);
+		createTexturePane(textureFactory);
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
 		tabbedPane.addTab("Light", lightsPane);
@@ -463,6 +439,96 @@ public class DebugFrame {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
+	}
+
+	private void createMaterialPane(World world) {
+		DebugFrame debugFrame = this;
+		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
+		TableModel materialDataModel = new AbstractTableModel() {
+
+			List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
+			List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
+
+			public int getColumnCount() {
+				return 2;
+			}
+
+			public int getRowCount() {
+				return world.getRenderer().getMaterialFactory().MATERIALS.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					return paths.get(row);
+				}
+				return materials.get(row);
+			}
+			
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Path";
+				} else if (column == 1) {
+					return "Material";
+				}
+				return "Null";
+			}
+		};
+		JTable materialTable = new JTable(materialDataModel);
+		materialTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+	        public void valueChanged(ListSelectionEvent event) {
+	        	materialViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+	        	materialViewFrame.getContentPane().removeAll();
+	        	materialViewFrame.pack();
+	        	materialViewFrame.setSize(600, 600);
+	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, world, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
+	        	scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+	        	materialViewFrame.add(scrollPane);
+	            materialViewFrame.setVisible(true);
+	        }
+	    });
+
+		materialPane =  new JScrollPane(materialTable);
+	}
+
+	private void createTexturePane(TextureFactory textureFactory) {
+		TableModel textureDataModel = createTextureDataModel(textureFactory);
+		JTable textureTable = new JTable(textureDataModel);
+		texturePane  =  new JScrollPane(textureTable);
+	}
+
+	private AbstractTableModel createTextureDataModel(TextureFactory textureFactory) {
+		return new AbstractTableModel() {
+
+			List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
+					.toArray());
+			List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
+					.toArray());
+
+			public int getColumnCount() {
+				return 2;
+			}
+
+			public int getRowCount() {
+				return textureFactory.TEXTURES.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					return paths.get(row);
+				}
+				main.texture.Texture texture = (main.texture.Texture) textures.get(row);
+				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
+			}
+
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Path";
+				} else if (column == 1) {
+					return "Texture";
+				}
+				return "Null";
+			}
+		};
 	}
 
 	private void addSceneObjects(World world) {
@@ -554,9 +620,36 @@ public class DebugFrame {
 
 	public void refreshSceneTree() {
 		System.out.println("Refreshing");
-//		tabbedPane.remove(scenePane);
 		addOctreeSceneObjects(world);
-//		tabbedPane.addTab("Scene", scenePane);
 	}
 
+	public void refreshTextureTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(texturePane);
+		createTexturePane(world.getRenderer().getTextureFactory());
+		tabbedPane.addTab("Texture", texturePane);
+	}
+	
+	public void refreshMaterialTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(materialPane);
+		createMaterialPane(world);
+		tabbedPane.addTab("Material", materialPane);
+	}
+	
+	private void showSuccess(String content) {
+		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+		notificationPopup.setIcon(NotificationIcon.plus);
+		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setContent(new WebLabel(content));
+		NotificationManager.showNotification(notificationPopup);
+	}
+
+	private void showError(String content) {
+		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
+		notificationPopup.setIcon(NotificationIcon.error);
+		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setContent(new WebLabel(content));
+		NotificationManager.showNotification(notificationPopup);
+	}
 }

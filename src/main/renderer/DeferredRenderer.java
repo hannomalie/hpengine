@@ -133,8 +133,8 @@ public class DeferredRenderer implements Renderer {
 	private float secondPassScale = 0.5f;
 	
 	public DeferredRenderer(Spotlight light) {
-		textureFactory = new TextureFactory();
 		setupOpenGL();
+		textureFactory = new TextureFactory();
 		programFactory = new ProgramFactory(this);
 		setupShaders();
 		materialFactory = new MaterialFactory(this);
@@ -203,12 +203,6 @@ public class DeferredRenderer implements Renderer {
 		
 		glWatch = new OpenGLStopWatch();
 		
-		try {
-			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 //		CLUtil.initialize();
 	}
@@ -221,6 +215,11 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	private void setupShaders() {
+		try {
+			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		copyDefaultShaders();
 

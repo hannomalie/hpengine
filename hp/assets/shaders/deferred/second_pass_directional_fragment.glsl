@@ -75,11 +75,11 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
 	
-	if (targetNormalView.z > 0.3) {
+	//if (targetNormalView.z > 0.6) {
 		//return vec3(1,0,0);
-	  	//color = texture(environmentMap, normalize(reflectionVecView)).rgb;
-		return color;
-	}
+	  	//color = texture(environmentMap, normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz)).rgb;
+		//return color;
+	//}
 	
 	vec3 viewRay = 5*normalize(reflectionVecView);
 	
@@ -113,8 +113,8 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 				return mix(color, reflectedColor, screenEdgefactor);
 		  	}
 		  	
-		  	color = texture(environmentMap, normalize(reflectionVecView)).rgb;
-			return color;
+		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
+			return vec3(0,0,0);
 		  	
 		  }
 	}

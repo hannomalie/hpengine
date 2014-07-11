@@ -2,12 +2,15 @@ package main.renderer.material;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.World;
@@ -54,7 +57,52 @@ public class Material implements Serializable {
 
 	private MaterialInfo materialInfo = new MaterialInfo();
 
+	transient private Renderer renderer;
+
 	protected Material() { }
+	
+	public void init(Renderer renderer) {
+		this.renderer = renderer;
+		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
+			String name = materialInfo.maps.getTextureNames().get(map);
+			try {
+				Texture tex = renderer.getTextureFactory().getTexture(name);
+				materialInfo.maps.getTextures().put(map, tex);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
+			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
+		}
+		
+		Program firstPassProgram = null;
+		
+		firstPassProgram = getFirstpassProgramForShaderDefinitions(renderer, firstPassProgram);
+		setProgram(firstPassProgram);
+	}
+
+	private Program getFirstpassProgramForShaderDefinitions(Renderer renderer, Program firstPassProgram) {
+		String definesString = ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet());
+		
+		if(materialInfo.hasCustomVertexShader() && !materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE);
+		} else if(!materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, materialInfo.fragmentShader);
+		} else if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
+			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, materialInfo.fragmentShader);
+		}
+		firstPassProgram = logAndFallBackIfNull(renderer, firstPassProgram, definesString);
+		return firstPassProgram;
+	}
+
+	private Program logAndFallBackIfNull(Renderer renderer, Program firstPassProgram, String definesString) {
+		if(firstPassProgram == null) {
+			System.err.println("File not found for material " + materialInfo.name);
+			firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
+		}
+		return firstPassProgram;
+	}
 
 	void addTexture(MAP map, Texture texture) {
 		materialInfo.put(map, texture);
@@ -82,6 +130,9 @@ public class Material implements Serializable {
 			texture.bind();
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
+//			if(map.equals(MAP.ENVIRONMENT)) {
+//				System.out.println("Bound " + map + " " + texture.getPath() +  " to " + map.textureSlot);	
+//			}
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 
@@ -228,6 +279,15 @@ public class Material implements Serializable {
 		return World.WORKDIR_NAME + "/assets/materials/";
 	}
 
+	public MaterialInfo getMaterialInfo() {
+		return materialInfo;
+	}
+
+	public void setMaterialInfo(MaterialInfo materialInfo) {
+		this.materialInfo = materialInfo;
+	}
+	
+
 	@Override
 	public boolean equals(Object other) {
 		if (!(other instanceof Material)) {
@@ -244,57 +304,6 @@ public class Material implements Serializable {
 //				m.name.equals(name) &&
 				mi.reflectiveness == materialInfo.reflectiveness &&
 				mi.firstPassProgram.equals(materialInfo.firstPassProgram));
-	}
-
-	public void init(Renderer renderer) {
-		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
-			String name = materialInfo.maps.getTextureNames().get(map);
-			try {
-				Texture tex = renderer.getTextureFactory().getTexture(name);
-				materialInfo.maps.getTextures().put(map, tex);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
-		}
-		
-		Program firstPassProgram = null;
-		
-		String definesString = ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet());
-		
-		if(materialInfo.hasCustomVertexShader() && !materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE);
-			if(firstPassProgram == null) {
-				System.err.println("File not found for material " + materialInfo.name);
-				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
-			}
-		} else if(!materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, materialInfo.fragmentShader);
-			if(firstPassProgram == null) {
-				System.err.println("File not found for material " + materialInfo.name);
-				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
-			}
-		} else if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, materialInfo.fragmentShader);
-			if(firstPassProgram == null) {
-				System.err.println("File not found for material " + materialInfo.name);
-				firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
-			}
-		} else {
-			firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
-		}
-		setProgram(firstPassProgram);
-		
-	}
-
-	public MaterialInfo getMaterialInfo() {
-		return materialInfo;
-	}
-
-	public void setMaterialInfo(MaterialInfo materialInfo) {
-		this.materialInfo = materialInfo;
 	}
 
 }

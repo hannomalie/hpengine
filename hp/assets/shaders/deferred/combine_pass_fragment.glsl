@@ -16,7 +16,17 @@ in vec3 position;
 in vec2 texCoord;
 
 out vec4 out_color;
+vec3 Uncharted2Tonemap(vec3 x)
+{
+    float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
 
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
 vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 
 	vec4 result = texture2D(sampler, texCoord);

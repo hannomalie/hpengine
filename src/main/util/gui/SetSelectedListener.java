@@ -45,7 +45,6 @@ public class SetSelectedListener implements TreeSelectionListener {
         }
 
         if (node == null) return;
-
         Object nodeInfo = node.getUserObject();
         
         if (nodeInfo instanceof IEntity) {

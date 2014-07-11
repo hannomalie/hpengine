@@ -26,7 +26,9 @@ import javax.imageio.ImageIO;
 
 import main.renderer.material.Material;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
@@ -75,8 +77,21 @@ public class TextureFactory {
                                             false,
                                             ComponentColorModel.OPAQUE,
                                             DataBuffer.TYPE_BYTE);
+        
+    	loadAllAvailableTextures();
     }
     
+    private void loadAllAvailableTextures() {
+    	File textureDir = new File(Texture.getDirectory());
+    	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+		for (File file : files) {
+			try {
+				getTexture(file.getAbsolutePath());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+    }
     
     /**
      * Create a new texture ID 

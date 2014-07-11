@@ -168,21 +168,23 @@ public class Entity implements IEntity, Serializable {
 		if (firstPassProgram == null) {
 			return;
 		}
+		Program currentProgram;
 		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
-			firstPassProgram.use();
-			renderer.setLastUsedProgram(firstPassProgram);
+			currentProgram = firstPassProgram;
+			renderer.setLastUsedProgram(currentProgram);
+			currentProgram.use();
 		}
+		currentProgram = renderer.getLastUsedProgram();
+		currentProgram.setUniform("useParallax", World.useParallax);
+		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		currentProgram.setUniform("reflectiveness", material.getReflectiveness());
+		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		currentProgram.setUniform("eyePosition", camera.getPosition());
+		currentProgram.setUniform("time", (int)System.currentTimeMillis());
 		
-		firstPassProgram.setUniform("useParallax", World.useParallax);
-		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		firstPassProgram.setUniform("reflectiveness", material.getReflectiveness());
-		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		firstPassProgram.setUniform("eyePosition", camera.getPosition());
-		firstPassProgram.setUniform("time", System.currentTimeMillis());
-		
-		firstPassProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-		material.setTexturesActive(firstPassProgram);
+		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		material.setTexturesActive(currentProgram);
 		
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();

@@ -112,4 +112,9 @@ public class CubeMap extends Texture implements Serializable {
 		}
 		return false;
 	}
+
+	@Override
+	public String toString() {
+		return "(Cubemap)" + getPath();
+	}
 }

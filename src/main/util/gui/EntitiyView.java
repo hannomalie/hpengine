@@ -15,6 +15,7 @@ import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.text.WebFormattedTextField;
 
 public class EntitiyView extends WebPanel {
@@ -67,5 +68,4 @@ public class EntitiyView extends WebPanel {
 		
 		webComponentPanel.addElement(groupPanel);
 	}
-	    
 }

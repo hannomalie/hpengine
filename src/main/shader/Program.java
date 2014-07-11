@@ -2,11 +2,15 @@ package main.shader;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 import main.World;
@@ -35,7 +39,7 @@ public class Program implements Reloadable {
 	
 	private EnumSet<DataChannels> channels;
 	
-	private HashMap<String, Uniform> uniforms = new HashMap<>();
+	private HashMap<String, Uniform> uniforms;
 
 	private boolean needsTextures = true;
 	
@@ -69,7 +73,7 @@ public class Program implements Reloadable {
 		GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
 		GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
 		if (geometryShaderName != null && geometryShaderName != "") {
-			GL20.glAttachShader(id, loadShader(vertexShaderName, GL32.GL_GEOMETRY_SHADER));
+			GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
 		}
 		
 		bindShaderAttributeChannels();
@@ -79,6 +83,7 @@ public class Program implements Reloadable {
 
 		use();
 		addFileListeners();
+		uniforms = new HashMap<>();
 	}
 	
 	private void addFileListeners() {
@@ -86,6 +91,7 @@ public class Program implements Reloadable {
 		clearListeners();
 
 		reloadOnFileChangeListener = new ReloadOnFileChangeListener<Program>(this) {
+
 			@Override
 			public boolean shouldReload(File changedFile) {
 				String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());

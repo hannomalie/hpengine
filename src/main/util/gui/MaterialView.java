@@ -54,14 +54,21 @@ public class MaterialView extends WebPanel {
 
 	private Material material;
 	private World world;
+	private DebugFrame parent;
 
-	public MaterialView(World world, Material material) {
-		this.material = material;
+	public MaterialView(DebugFrame parent, World world, Material material) {
+		this.parent = parent;
 		this.world = world;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
 		
+		init(material);
+	}
+
+	private void init(Material material) {
+		this.material = material;
+		this.removeAll();
 		List<Component> panels = new ArrayList<>();
 		
 		addTexturePanel(panels);
@@ -80,6 +87,10 @@ public class MaterialView extends WebPanel {
         this.setLayout(new BorderLayout());
         this.add(materialAttributesPane, BorderLayout.CENTER);
         this.add(saveButton, BorderLayout.SOUTH);
+	}
+
+	public MaterialView(World world, Material material) {
+		this(null, world, material);
 	}
 
 	private void addTexturePanel(List<Component> panels) {
@@ -116,8 +127,8 @@ public class MaterialView extends WebPanel {
 	        WebButton removeTextureButton = new WebButton("Remove");
 	        removeTextureButton.addActionListener(e -> {
 	        	material.getMaterialInfo().maps.getTextures().remove(map);
-	        	addMaterialInitCommand();
 		        select.setSelectedIndex(-1);
+	        	addMaterialInitCommand();
 	        });
 
 	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
@@ -148,8 +159,8 @@ public class MaterialView extends WebPanel {
 	        WebButton removeTextureButton = new WebButton("Remove");
 	        removeTextureButton.addActionListener(e -> {
 	        	material.getMaterialInfo().maps.getTextures().remove(map);
+	        	material.getMaterialInfo().maps.getTextureNames().remove(map);
 	        	addMaterialInitCommand();
-		        select.setSelectedIndex(-1);
 	        });
 	        
 	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
@@ -351,6 +362,10 @@ public class MaterialView extends WebPanel {
 			showNotification(NotificationIcon.error, "Not able to change material");
 		} else {
 			showNotification(NotificationIcon.plus, "Material changed");
+			if(parent != null) {
+				parent.refreshMaterialTab();	
+			}
+			init(result.material);
 		}
 	}
 	
