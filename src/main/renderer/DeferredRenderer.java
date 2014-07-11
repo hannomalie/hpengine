@@ -135,6 +135,7 @@ public class DeferredRenderer implements Renderer {
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
 		textureFactory = new TextureFactory();
+		DeferredRenderer.exitOnGLError("After TextureFactory");
 		programFactory = new ProgramFactory(this);
 		setupShaders();
 		materialFactory = new MaterialFactory(this);
@@ -215,6 +216,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	private void setupShaders() {
+		DeferredRenderer.exitOnGLError("Before setupShaders");
 		try {
 			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
 		} catch (IOException e) {

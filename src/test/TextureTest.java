@@ -33,7 +33,7 @@ public class TextureTest {
 
 		Assert.assertTrue(Texture.write(texture, filename));
 	      
-        texture = Texture.read(filename);
+        texture = renderer.getTextureFactory().getTexture(filename);
 	    
 		StopWatch.ACTIVE = false;
 	    Assert.assertArrayEquals(data, texture.getData());

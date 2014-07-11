@@ -11,6 +11,7 @@ import java.nio.ByteOrder;
 import java.util.List;
 
 import main.World;
+import main.renderer.DeferredRenderer;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
@@ -31,7 +32,7 @@ public class CubeMap extends Texture implements Serializable {
 
         bind();
         if (target == GL13.GL_TEXTURE_CUBE_MAP)
-        { 
+        {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
             GL11.glTexParameteri (target, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
@@ -41,14 +42,13 @@ public class CubeMap extends Texture implements Serializable {
 
 
         ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(dataList.get(0).length);
-        
+
         load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, buffer(perFaceBuffer, dataList.get(1))); //1
 		load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, buffer(perFaceBuffer, dataList.get(0))); //0
         load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, buffer(perFaceBuffer, dataList.get(2)));
         load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, buffer(perFaceBuffer, dataList.get(3)));
         load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, buffer(perFaceBuffer, dataList.get(4)));
         load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, buffer(perFaceBuffer, dataList.get(5)));
-        GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	}
 	
 	public ByteBuffer buffer(ByteBuffer buffer, byte[] values) {
@@ -74,15 +74,16 @@ public class CubeMap extends Texture implements Serializable {
 		dataList = byteArrays;
 	}
 	
-	public static CubeMap read(String resourceName) {
+	public static CubeMap read(String resourceName, int textureId) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
 		try {
-			fis = new FileInputStream(getDirectory() + fileName + ".hptexture");
+			fis = new FileInputStream(getDirectory() + fileName + ".hpcubemap");
 			in = new ObjectInputStream(fis);
 			CubeMap texture = (CubeMap) in.readObject();
 			in.close();
+			texture.textureID = textureId;
 			texture.upload();
 			return texture;
 		} catch (IOException | ClassNotFoundException e) {
@@ -96,7 +97,7 @@ public class CubeMap extends Texture implements Serializable {
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
 		try {
-			fos = new FileOutputStream(getDirectory() + fileName + ".hptexture");
+			fos = new FileOutputStream(getDirectory() + fileName + ".hpcubemap");
 			out = new ObjectOutputStream(fos);
 			out.writeObject(texture);
 

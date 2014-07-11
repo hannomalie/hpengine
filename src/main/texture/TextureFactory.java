@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import main.renderer.DeferredRenderer;
 import main.renderer.material.Material;
 
 import org.apache.commons.io.FileUtils;
@@ -77,16 +78,25 @@ public class TextureFactory {
                                             false,
                                             ComponentColorModel.OPAQUE,
                                             DataBuffer.TYPE_BYTE);
-        
+
     	loadAllAvailableTextures();
+		DeferredRenderer.exitOnGLError("After loadAllAvailableTextures");
     }
     
     private void loadAllAvailableTextures() {
     	File textureDir = new File(Texture.getDirectory());
     	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+		DeferredRenderer.exitOnGLError("Before loadAllAvailableTextures");
 		for (File file : files) {
 			try {
-				getTexture(file.getAbsolutePath());
+				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {
+					getTexture(file.getAbsolutePath());
+					DeferredRenderer.exitOnGLError("After getTexture");
+				} else {
+					DeferredRenderer.exitOnGLError("Before getCubeMap");
+					getCubeMap(file.getAbsolutePath());
+					DeferredRenderer.exitOnGLError("After getCubeMap");
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -100,9 +110,7 @@ public class TextureFactory {
      */
     private int createTextureID() 
     { 
-       IntBuffer tmp = createIntBuffer(1); 
-       GL11.glGenTextures(tmp); 
-       return tmp.get(0);
+       return GL11.glGenTextures(); 
     } 
     
     /**
@@ -121,7 +129,7 @@ public class TextureFactory {
         }
         
         if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName);
+        	tex = Texture.read(resourceName, createTextureID());
         	if (tex != null) {
                 generateMipMaps(tex, Material.MIPMAP_DEFAULT);
                 TEXTURES.put(resourceName,tex);
@@ -146,20 +154,27 @@ public class TextureFactory {
     	File f = new File(Texture.getDirectory() + fileName + ".hptexture");
     	return f.exists();
 	}
+    
+
+	private boolean cubeMapPreCompiled(String resourceName) {
+    	String fileName = FilenameUtils.getBaseName(resourceName);
+    	File f = new File(Texture.getDirectory() + fileName + ".hpcubemap");
+    	return f.exists();
+	}
 
 	public CubeMap getCubeMap(String resourceName) throws IOException {
-        Texture tex = (Texture) TEXTURES.get(resourceName+ "_cube");
+		CubeMap tex = (CubeMap) TEXTURES.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
-            return (CubeMap) tex;
+            return tex;
         }
-        
-        if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName);
+
+        if (cubeMapPreCompiled(resourceName)) {
+        	tex = CubeMap.read(resourceName, createTextureID());
         	if (tex != null) {
                 generateMipMaps(tex, Material.MIPMAP_DEFAULT);
                 TEXTURES.put(resourceName+ "_cube",tex);
-                return (CubeMap) tex;
+                return tex;
             }
         }
         
@@ -171,9 +186,8 @@ public class TextureFactory {
 
         TEXTURES.put(resourceName + "_cube",tex);
         System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
-        return (CubeMap) tex;
+        return tex;
     }
-
 
 	public Texture getTextureAsStream(String resourceName) throws IOException {
     	Texture tex = (Texture) TEXTURES.get(resourceName);
@@ -183,7 +197,7 @@ public class TextureFactory {
         }
         
         if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName);
+        	tex = Texture.read(resourceName, createTextureID());
         	if (tex != null) {
                 generateMipMaps(tex, Material.MIPMAP_DEFAULT);
                 TEXTURES.put(resourceName,tex);
@@ -210,8 +224,8 @@ public class TextureFactory {
             return (CubeMap) tex;
         }
         
-        if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName);
+        if (cubeMapPreCompiled(resourceName)) {
+        	tex = Texture.read(resourceName, createTextureID());
         	if (tex != null) {
                 generateMipMaps(tex, Material.MIPMAP_DEFAULT);
                 TEXTURES.put(resourceName+ "_cube",tex);
@@ -252,11 +266,10 @@ public class TextureFactory {
         int srcPixelFormat = 0;
         
         // create the texture ID for this texture 
-        int textureID = createTextureID(); 
-        Texture texture = new Texture(resourceName, target,textureID); 
+        Texture texture = new Texture(resourceName, target,createTextureID()); 
         
         // bind this texture 
-        GL11.glBindTexture(target, textureID); 
+        texture.bind();
         
         BufferedImage bufferedImage = null;
         if (asStream) {
@@ -308,7 +321,7 @@ public class TextureFactory {
          if (asStream) {
              bufferedImage = loadImageAsStream(resourceName);
          } else {
-             bufferedImage = loadImage(resourceName);	
+             bufferedImage = loadImage(resourceName);
          } 
          cubeMap.setWidth(bufferedImage.getWidth());
          cubeMap.setHeight(bufferedImage.getHeight());

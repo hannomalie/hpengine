@@ -114,7 +114,7 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 		  	}
 		  	
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
-			return vec3(0,0,0);
+			return color;
 		  	
 		  }
 	}
@@ -197,7 +197,7 @@ void main(void) {
 	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
 	if(reflectiveness == 0) {
-		out_AOReflection = vec4(ao, 0, 0, 0);
+		out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
 	} else {
 		vec4 reflectedColor = vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor);

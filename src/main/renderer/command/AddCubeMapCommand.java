@@ -11,8 +11,6 @@ public class AddCubeMapCommand extends AddTextureCommand {
 		super(path);
 	}
 
-	String path;
-	
 	@Override
 	public TextureResult execute(World world) {
 		Texture texture = null;

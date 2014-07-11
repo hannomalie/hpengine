@@ -36,7 +36,7 @@ public class Texture implements Serializable {
     /** The GL target type */
 	protected int target; 
     /** The GL texture ID */
-    protected int textureID;
+    transient protected int textureID;
     /** The height of the image */
     protected int height;
     /** The width of the image */
@@ -246,7 +246,7 @@ public class Texture implements Serializable {
 		return data;
 	}
 
-	public static Texture read(String resourceName) {
+	public static Texture read(String resourceName, int textureId) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
@@ -255,6 +255,7 @@ public class Texture implements Serializable {
 			in = new ObjectInputStream(fis);
 			Texture texture = (Texture) in.readObject();
 			in.close();
+			texture.textureID = textureId;
 			texture.upload();
 			return texture;
 		} catch (IOException | ClassNotFoundException e) {
