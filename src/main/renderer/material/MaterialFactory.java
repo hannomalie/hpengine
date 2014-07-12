@@ -101,7 +101,12 @@ public class MaterialFactory {
 	}
 
 	public Material get(String materialName) {
-		return MATERIALS.get(materialName);
+		Material material = MATERIALS.get(materialName);
+		if(material == null) {
+			material = read(Material.getDirectory() + materialName);
+			MATERIALS.put(material.getName(), material);
+		}
+		return material;
 	}
 	
 	public static final class MaterialInfo implements Serializable {

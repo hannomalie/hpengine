@@ -164,6 +164,7 @@ public class Entity implements IEntity, Serializable {
 		if(!isVisible()) {
 			return;
 		}
+		
 		Program firstPassProgram = material.getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
@@ -231,39 +232,10 @@ public class Entity implements IEntity, Serializable {
 	public Transform getTransform() {
 		return transform;
 	}
-	
-	@Override
-	public Vector3f getPosition() {
-		return transform.getPosition();
-	}
-
-	@Override
-	public void setPosition(Vector3f position) {
-		transform.setPosition(position);
-	}
-	
-	@Override
-	public Vector3f getScale() {
-		return transform.getScale();
-	}
-
-	@Override
-	public void setScale(Vector3f scale) {
-		transform.setScale(scale);
-	}
 
 	@Override
 	public VertexBuffer getVertexBuffer() {
 		return vertexBuffer;
-	}
-
-	@Override
-	public void move(Vector3f amount) {
-		transform.move(amount);
-	}
-	@Override
-	public void moveInWorld(Vector3f amount) {
-		transform.moveInWorld(amount);
 	}
 	@Override
 	public String getName() {
@@ -281,34 +253,7 @@ public class Entity implements IEntity, Serializable {
 	public void setMaterial(Material material) {
 		this.material = material;
 	};
-	@Override
-	public Quaternion getOrientation() {
-		return transform.getOrientation();
-	}
-	@Override
-	public void rotate(Vector3f axis, float degree) {
-		transform.rotate(axis, degree);
-	}
-	@Override
-	public void rotate(Vector4f axisAngle) {
-		transform.rotate(axisAngle);
-	}
-	@Override
-	public void rotateWorld(Vector3f axis, float degree) {
-		transform.rotateWorld(axis, degree);
-	}
-	@Override
-	public void rotateWorld(Vector4f axisAngle) {
-		transform.rotateWorld(axisAngle);
-	}
-	@Override
-	public void setOrientation(Quaternion orientation) {
-		transform.setOrientation(orientation);
-	}
-	@Override
-	public void setScale(float scale) {
-		transform.setScale(scale);
-	}
+
 	@Override
 	public boolean isInFrustum(Camera camera) {
 		Vector4f[] minMaxWorld = getMinMaxWorld();

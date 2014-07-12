@@ -14,8 +14,6 @@ import main.renderer.command.LoadModelCommand.EntityListResult;
 
 import org.lwjgl.util.vector.Vector3f;
 
-import com.sun.istack.internal.NotNull;
-
 public class LoadModelCommand implements Command<EntityListResult> {
 	private final File file;
 	private final String name;
@@ -25,7 +23,6 @@ public class LoadModelCommand implements Command<EntityListResult> {
 		this.name = name;
 	}
 
-	@NotNull
 	public EntityListResult execute(World world) {
 		Renderer renderer = world.getRenderer();
 		EntityListResult result = new EntityListResult();

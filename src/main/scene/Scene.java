@@ -43,7 +43,7 @@ public class Scene implements Serializable {
 		this.name = name;
 	}
 
-	private void init(Renderer renderer) {
+	public void init(Renderer renderer) {
 		List<IEntity> entities = new ArrayList<>();
 		octree = new Octree(new Vector3f(), 400, 6);
 		entitieNames.forEach(name -> {entities .add(renderer.getEntityFactory().read(name));});
@@ -64,6 +64,9 @@ public class Scene implements Serializable {
 			fos = new FileOutputStream(getDirectory() + fileName + ".hpscene");
 			out = new ObjectOutputStream(fos);
 			entitieNames = octree.getEntities().stream().map(e -> e.getName()).collect(Collectors.toList());
+			octree.getEntities().stream().forEach(e -> {
+				Entity.write((Entity) e, e.getName());
+			});
 			out.writeObject(this);
 
 		} catch (IOException e) {

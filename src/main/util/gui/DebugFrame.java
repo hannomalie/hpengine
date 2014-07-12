@@ -123,6 +123,7 @@ public class DebugFrame {
 		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
 		TextureFactory textureFactory = world.getRenderer().getTextureFactory();
 		
+		mainFrame.getContentPane().removeAll();
 		mainFrame.setLayout(new BorderLayout(5,5));
 
 		console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
@@ -338,6 +339,16 @@ public class DebugFrame {
         	});
 
 	        menuScene.add(sceneLoadMenuItem);
+        }
+        {
+        	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
+        	sceneNewMenuItem.addActionListener(e -> {
+	    			Scene newScene = new Scene();
+	    			world.setScene(newScene);
+	    			init(world);
+        	});
+
+	        menuScene.add(sceneNewMenuItem);
         }
 		WebMenu menuEntity = new WebMenu("Entity");
         {

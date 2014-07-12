@@ -8,7 +8,9 @@ import main.World;
 import main.model.IEntity;
 import main.util.gui.input.WebFormattedVec3Field;
 
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
@@ -54,6 +56,20 @@ public class EntitiyView extends WebPanel {
 				@Override
 				public void onValueChange(Vector3f current) {
 					entity.setPosition(current);
+				}
+			});
+	        webComponentPanel.addElement(new WebFormattedVec3Field("Scale", entity.getScale()) {
+				@Override
+				public void onValueChange(Vector3f current) {
+					entity.setScale(current);
+				}
+			});
+	        webComponentPanel.addElement(new WebFormattedVec3Field("View Direction", entity.getViewDirection()) {
+				@Override
+				public void onValueChange(Vector3f current) {
+					Quaternion temp = new Quaternion();
+					temp.setFromAxisAngle(new Vector4f(current.x, current.y, current.z, 0));
+					entity.setOrientation(temp);
 				}
 			});
 	        

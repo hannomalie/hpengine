@@ -14,7 +14,6 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
-import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
@@ -59,8 +58,17 @@ public class World {
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
 	public static void main(String[] args) {
-		final World world = new World();
+		final World world;
+		
+		String sceneName;
+		if (args.length > 0) {
+			sceneName = args[0];
+		} else {
+			sceneName = "default";
+		}
 
+		world = new World(sceneName);
+		
 		WebLookAndFeel.install();
 		new DebugFrame(world);
 		
@@ -78,7 +86,7 @@ public class World {
 	private Material wood;
 	private Material stoneWet;
 	private Material mirror;
-	
+
 	public World() {
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
@@ -93,6 +101,21 @@ public class World {
 		initDefaultMaterials();
 		scene.addAll(loadDummies());
 		scene.setInitialized(true);
+	}
+	
+	public World(String sceneName) {
+		initWorkDir();
+		renderer = new DeferredRenderer(light);
+		glWatch = new OpenGLStopWatch();
+		initDefaultMaterials();
+		scene = Scene.read(renderer, sceneName);
+		scene.init(renderer);
+		camera = new Camera(renderer);
+		try {
+			light.init(renderer);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private void initWorkDir() {
