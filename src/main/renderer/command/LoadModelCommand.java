@@ -39,8 +39,10 @@ public class LoadModelCommand implements Command<EntityListResult> {
 			return new EntityListResult(entities);
 			
 		} catch (IOException e) {
+			e.printStackTrace();
 			return result;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return result;
 		}
 	}

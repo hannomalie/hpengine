@@ -237,7 +237,7 @@ public class OBJLoader {
 	private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, MAP map) {
 		try {
 			currentMaterialInfo.maps.put(map, renderer.getTextureFactory().getTexture(path+name));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 //		LOGGER.log(Level.INFO, String.format("%s to %s as %s",path+name, currentMaterialInfo.name, map ));

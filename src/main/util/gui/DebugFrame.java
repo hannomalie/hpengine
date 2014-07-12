@@ -352,8 +352,8 @@ public class DebugFrame {
         }
 		WebMenu menuEntity = new WebMenu("Entity");
         {
-        	WebMenuItem entitiyAddManuItem = new WebMenuItem ( "Add" );
-        	entitiyAddManuItem.addActionListener(e -> {
+        	WebMenuItem entitiyAddMenuItem = new WebMenuItem ( "Add" );
+        	entitiyAddMenuItem.addActionListener(e -> {
         		
 	    		addEntityFrame = new WebFrame("Add Entity");
 	    		addEntityFrame.setSize(600, 600);
@@ -362,7 +362,7 @@ public class DebugFrame {
 	    		
         	});
 
-        	menuEntity.add(entitiyAddManuItem);
+        	menuEntity.add(entitiyAddMenuItem);
         }
 
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");

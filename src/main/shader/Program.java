@@ -70,10 +70,33 @@ public class Program implements Reloadable {
 	public void load() {
 		id = GL20.glCreateProgram();
 		
-		GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
-		GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+		try {
+			GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
+		} catch (Exception e) {
+			try {
+				GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, GL20.GL_VERTEX_SHADER));
+			} catch (Exception e1) {
+				System.err.println("Not able to load default vertex shader, so what else could be done...");
+				System.exit(-1);
+			}
+		}
+		try {
+			GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+		} catch (Exception e) {
+			try {
+				GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+			} catch (Exception e1) {
+				System.err.println("Not able to load default vertex shader, so what else could be done...");
+				System.exit(-1);
+			}
+		}
 		if (geometryShaderName != null && geometryShaderName != "") {
-			GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+			try {
+				GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+			} catch (Exception e) {
+				System.err.println("Not able to load geometry shader, so what else could be done...");
+				System.exit(-1);
+			}
 		}
 		
 		bindShaderAttributeChannels();
@@ -168,7 +191,7 @@ public class Program implements Reloadable {
 		return id;
 	}
 	
-	public static int loadShader(String filename, int type, String mapDefinesString) {
+	public static int loadShader(String filename, int type, String mapDefinesString) throws Exception {
 		String shaderSource;
 		int shaderID = 0;
 		
@@ -189,7 +212,8 @@ public class Program implements Reloadable {
 		if (GL20.glGetShader(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not compile shader: " + filename);
 			System.err.println(GL20.glGetShaderInfoLog(shaderID, 10000));
-			System.exit(-1);
+//			System.exit(-1);
+			throw new Exception();
 		}
 		
 		Renderer.exitOnGLError("loadShader");
@@ -197,7 +221,7 @@ public class Program implements Reloadable {
 		return shaderID;
 	}
 	
-	public static int loadShader(String filename, int type) {
+	public static int loadShader(String filename, int type) throws Exception {
 		return loadShader(filename, type, "");
 	}
 

@@ -138,6 +138,7 @@ public class Entity implements IEntity, Serializable {
 		texcoordsTemp = null;
 		normalsTemp = null;
 		facesTemp = null;
+		System.gc();
 	}
 	
 	public void createVertexBuffer() {

@@ -65,7 +65,7 @@ public class AddEntitiyView extends WebPanel {
 					showError(chosenFile);
 				}
 				
-				if (!result.isSuccessful()) {
+				if (result == null || !result.isSuccessful()) {
 					showError(chosenFile);
 				} else {
 					world.getScene().addAll(result.entities);

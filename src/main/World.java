@@ -60,18 +60,23 @@ public class World {
 	public static void main(String[] args) {
 		final World world;
 		
-		String sceneName;
-		if (args.length > 0) {
-			sceneName = args[0];
-		} else {
-			sceneName = "default";
+		String sceneName = "default";
+		boolean debug = true;
+		for (String string : args) {
+			if("debug=false".equals(string)) {
+				debug = false;
+			} else {
+				sceneName = string;
+				break;
+			}
 		}
 
 		world = new World(sceneName);
 		
 		WebLookAndFeel.install();
-		new DebugFrame(world);
-		
+		if(debug) {
+			new DebugFrame(world);
+		}
 		world.simulate();
 	}
 
