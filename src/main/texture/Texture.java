@@ -9,11 +9,28 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.zip.DataFormatException;
 
 import main.World;
+import main.renderer.material.Material;
+import main.renderer.material.Material.MAP;
+import main.util.CompressionUtils;
+import main.util.stopwatch.StopWatch;
+import net.nikr.dds.DDSLineReader;
 
 import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL21;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL41;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 
 /**
  * A texture to be bound within JOGL. This object is responsible for 
@@ -223,9 +240,10 @@ public class Texture implements Serializable {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
         } 
  
+//        GL13.glCompressedTexImage2D(target,
         GL11.glTexImage2D(target, 
                       0, 
-                      dstPixelFormat, 
+                      GL13.GL_COMPRESSED_RGBA, 
                       get2Fold(getImageWidth()), 
                       get2Fold(getImageHeight()), 
                       0, 
@@ -284,7 +302,35 @@ public class Texture implements Serializable {
 		}
 		return false;
 	}
+	
 
+	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+	    in.defaultReadObject();
+	    decompress();
+	}
+
+	
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		compress();
+        oos.defaultWriteObject();
+    }
+
+	protected void compress() throws IOException {
+//    	long start = System.currentTimeMillis();
+		setData(CompressionUtils.compress(getData()));
+//		System.out.println("Compression took " + (System.currentTimeMillis() - start));
+	}
+
+	protected void decompress() throws IOException {
+		try {
+//	    	long start = System.currentTimeMillis();
+			setData(CompressionUtils.decompress(getData()));
+//			System.out.println("Decompression took " + (System.currentTimeMillis() - start));
+		} catch (DataFormatException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static String getDirectory() {
 		return World.WORKDIR_NAME + "/assets/textures/";
 	}

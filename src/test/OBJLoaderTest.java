@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import main.World;
 import main.model.Face;
 import main.model.Model;
 import main.model.OBJLoader;
@@ -83,7 +84,7 @@ public class OBJLoaderTest {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-		List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
+		List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}

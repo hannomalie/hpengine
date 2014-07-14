@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.util.HashMap;
 
 import main.Transform;
+import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
@@ -66,7 +67,7 @@ public class Spotlight implements IEntity {
 																}});
 
 		try {
-			Model model = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj")).get(0);
+			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
 			box = renderer.getEntityFactory().getEntity(camera.getPosition(), "DefaultCube", model, white);
 			box.setScale(0.4f);
 		} catch (IOException e) {

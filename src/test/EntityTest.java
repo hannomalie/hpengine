@@ -3,6 +3,7 @@ package test;
 import java.io.File;
 import java.io.IOException;
 
+import main.World;
 import main.model.Entity;
 import main.model.IEntity;
 import main.renderer.DeferredRenderer;
@@ -25,7 +26,7 @@ public class EntityTest {
 
 	@Test
 	public void writeAndRead() throws Exception {
-		Entity entity = (Entity) renderer.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj")).get(0));
+		Entity entity = (Entity) renderer.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
 		
 		String filename = "default.hpentity";
 

@@ -145,7 +145,7 @@ public class DeferredRenderer implements Renderer {
 		
 		sphereModel = null;
 		try {
-			sphereModel = objLoader.loadTexturedModel(new File("C:\\sphere.obj")).get(0);
+			sphereModel = objLoader.loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 			sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();

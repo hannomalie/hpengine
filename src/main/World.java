@@ -200,7 +200,7 @@ public class World {
 		Renderer.exitOnGLError("loadDummies");
 
 		try {
-			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
+			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = mirror;
@@ -233,7 +233,7 @@ public class World {
 
 			StopWatch.getInstance().start("Load Sponza");
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
-			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File("C:\\crytek-sponza-converted\\sponza.obj"));
+			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(mirror);
 //				if(model.getMaterial().getName().contains("fabric")) {
@@ -244,7 +244,7 @@ public class World {
 //				entity.setScale(scale);
 				entities.add(entity);
 			}
-			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File("C:\\skybox.obj"));
+			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
 			for (Model model : skyBox) {
 				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, mirror);
 				Vector3f scale = new Vector3f(1000, 1000f, 1000f);

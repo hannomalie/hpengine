@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import main.World;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
@@ -30,7 +31,7 @@ public class ModelTest {
 	
 	@Test
 	public void loadsCorrectly() throws Exception {
-		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File("C:\\cube.obj"));
+		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
 		IEntity entity = renderer.getEntityFactory().getEntity(box.get(0));
 		VertexBuffer buffer = entity.getVertexBuffer();
 		int verticesCount = buffer.getVerticesCount();
@@ -71,7 +72,7 @@ public class ModelTest {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File("C:\\sphere.obj"));
+		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
 		IEntity entity = renderer.getEntityFactory().getEntity(sphere.get(0));
 		
 		entity.setPosition(new Vector3f(0, 0, 0));

@@ -9,15 +9,14 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.zip.DataFormatException;
 
-import main.World;
-import main.renderer.DeferredRenderer;
+import main.util.CompressionUtils;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL32;
 
 public class CubeMap extends Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -113,7 +112,32 @@ public class CubeMap extends Texture implements Serializable {
 		}
 		return false;
 	}
+	
+	// TODO: Implement compression for cubemaps
+	@Override
+	protected void compress() throws IOException {
+//		long start = System.currentTimeMillis();
+//    	for (int i = 0; i < dataList.size(); i++) {
+//    		byte[] compressed = CompressionUtils.compress(dataList.get(i));
+//    		System.out.println("Compressed " +  compressed.length);
+//    		dataList.set(i, compressed);
+//		}
+//		System.out.println("CubeMap compression took " + (System.currentTimeMillis() - start));
+	}
 
+	@Override
+	protected void decompress() throws IOException {
+//		try {
+//	    	long start = System.currentTimeMillis();
+//	    	for (int i = 0; i < dataList.size(); i++) {
+//	    		dataList.set(i, CompressionUtils.decompress(dataList.get(i)));
+//			}
+//			System.out.println("CubeMap decompression took " + (System.currentTimeMillis() - start));
+//		} catch (DataFormatException e) {
+//			e.printStackTrace();
+//		}
+	}
+	
 	@Override
 	public String toString() {
 		return "(Cubemap)" + getPath();
