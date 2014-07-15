@@ -20,5 +20,8 @@
 	<classpathentry kind="lib" path="C:/workspace - Kopie/java-dds/target/dds-1.0.1-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/commons-io-2.4/commons-io-2.4.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/rsyntaxtextarea.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/gdx-bullet-0.9.9.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/libgdx-1.2.0/gdx.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Hanno/Downloads/libgdx-1.2.0/extensions/gdx-bullet/gdx-bullet-natives.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

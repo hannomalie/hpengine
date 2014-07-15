@@ -134,12 +134,9 @@ void main(void) {
 	vec4 lit = vec4(mix(color + specularTerm, reflectedColor+ specularTerm, reflectiveness), 1);
 	out_color = lit;
 	//out_color.rgb = reflectedColor;
-	float bias = 0.005;
+
 	float visibility = 1.0;
-	/*if(depth-bias > depthShadow) {
-		visibility = 0.5;
-	}*/
+
 	visibility = clamp(chebyshevUpperBound(depth, positionShadow), 0, 1);
 	out_color *= vec4(ambientTerm, 1) + visibility * vec4(lightDiffuseSpecular.xyz, 1);
-	//out_color = vec4(depthShadow,depthShadow,depthShadow,1);
 }
