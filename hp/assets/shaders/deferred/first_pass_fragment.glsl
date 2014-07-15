@@ -52,12 +52,20 @@ in vec4 position_world;
 
 in vec3 eyeVec;
 in vec3 eyePos_world;
+uniform float near = 0.1;
+uniform float far = 100.0;
 
 layout(location=0)out vec4 out_position;
 layout(location=1)out vec4 out_normal;
 layout(location=2)out vec4 out_color;
 layout(location=3)out vec4 out_specular;
 
+float linearizeDepth(float z)
+{
+  float n = near; // camera z near
+  float f = far; // camera z far
+  return (2.0 * n) / (f + n - z * (f - n));	
+}
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
 	vec3 dp1 = dFdx( p );
@@ -121,7 +129,7 @@ void main(void) {
 	
 	out_position = viewMatrix * position_world;
 	out_position.w = materialGlossiness;
-	float depth = position_clip.z / position_clip.w;
+	float depth = (position_clip.z / position_clip.w);
 	
 	out_normal = vec4(PN_view, depth);
 	
@@ -144,7 +152,7 @@ void main(void) {
 #endif
 vec3 texCoords3d = normalize(reflect(V, normal_world));
 //texCoords3d.y *= -1;
-out_color = mix(out_color, texture(environmentMap, texCoords3d), out_color.w);
+out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, out_color.w);
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap

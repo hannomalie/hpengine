@@ -36,8 +36,8 @@ public class World {
 	public static final String ASSETDIR_NAME = "hp/assets";
 
 	private static Logger LOGGER = getLogger();
-	public static boolean RELOAD_ON_FILE_CHANGE = (java.lang.management.ManagementFactory.getRuntimeMXBean().
-		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
+	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
+//		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
 	
 	private OpenGLStopWatch glWatch;
 
@@ -247,7 +247,7 @@ public class World {
 			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
 			for (Model model : skyBox) {
 				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, mirror);
-				Vector3f scale = new Vector3f(1000, 1000f, 1000f);
+				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
 				entity.setScale(scale);
 				entities.add(entity);
 			}
@@ -267,16 +267,28 @@ public class World {
 
 		StopWatch.getInstance().start("Controls update");
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
+			light.rotate(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
+			light.rotate(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
 			light.rotate(new Vector3f(0,1,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
 			light.rotate(new Vector3f(0,1,0), -camera.getRotationSpeed()/100);
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
+			light.move(new Vector3f(0,-1f,0));
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
+			light.move(new Vector3f(0,1f,0));
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
+			light.move(new Vector3f(-1f,0,0));
+		}
+		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
+			light.move(new Vector3f(1f,0,0));
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (IEntity entity : entities) {

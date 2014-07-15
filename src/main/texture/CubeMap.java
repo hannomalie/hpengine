@@ -14,6 +14,7 @@ import java.util.zip.DataFormatException;
 import main.util.CompressionUtils;
 
 import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
@@ -60,7 +61,7 @@ public class CubeMap extends Texture implements Serializable {
 	private void load(int cubemapFace, ByteBuffer buffer) {
         GL11.glTexImage2D(cubemapFace,
                 0, 
-                dstPixelFormat, 
+                EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 
                 get2Fold(getImageWidth()/4), 
                 get2Fold(getImageHeight()/3), 
                 0, 

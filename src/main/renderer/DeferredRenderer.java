@@ -248,6 +248,8 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("combine_pass_fragment.glsl");
 		copyShaderIfNotExists("passthrough_vertex.glsl");
 		copyShaderIfNotExists("simpletexture_fragment.glsl");
+		copyShaderIfNotExists("shadowmap_fragment.glsl");
+		copyShaderIfNotExists("mvp_vertex.glsl");
 		
 	}
 
@@ -273,6 +275,7 @@ public class DeferredRenderer implements Renderer {
 		FileMonitor.getInstance().checkAndNotify();
 		updateLights(seconds);
 		setLastFrameTime();
+		fpsCounter.update(seconds);
 	}
 	
 	
@@ -293,8 +296,17 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("First pass");
 		drawFirstPass(camera, octree);
 		GPUProfiler.end();
+		
+		GPUProfiler.start("Shadowmap pass");
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		light.drawShadowMap(octree);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
+		
 		drawSecondPass(camera, light, pointLights);
 		GPUProfiler.end();
 		
@@ -305,13 +317,13 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 
 		GPUProfiler.start("Combine pass");
-		combinePass(target, firstPassTarget, secondPassTarget);
+		combinePass(target, firstPassTarget, secondPassTarget, light, camera);
 		GPUProfiler.end();
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(firstPassTarget.getRenderedTexture(3), debugBuffer);
+			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -466,7 +478,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 
-	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer) {
+	private void combinePass(RenderTarget target, RenderTarget gBuffer, RenderTarget laBuffer, Spotlight light, Camera camera) {
 		combineProgram.use();
 		combineProgram.setUniform("screenWidth", (float) WIDTH);
 		combineProgram.setUniform("screenHeight", (float) HEIGHT);
@@ -490,6 +502,13 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(3)); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(0)); // position, glossiness
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, firstPassTarget.getRenderedTexture(1)); // normal, depth
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId()); // position, glossiness
+		combineProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
+		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
 		fullscreenBuffer.draw();
 
@@ -523,8 +542,10 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private static long lastFrameTime = 0l;
-	private static void setLastFrameTime() {
-		Display.setTitle("FPS: " + (int)(1000/getDeltainMS()));
+
+	private FPSCounter fpsCounter = new FPSCounter();
+	private void setLastFrameTime() {
+		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()));
 		lastFrameTime = getTime();
 	}
 	private static long getTime() {

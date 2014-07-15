@@ -66,7 +66,12 @@ public class Material implements Serializable {
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
 			String name = materialInfo.maps.getTextureNames().get(map);
 			try {
-				Texture tex = renderer.getTextureFactory().getTexture(name);
+				Texture tex;
+				if(map.equals(MAP.ENVIRONMENT)) {
+					tex = renderer.getTextureFactory().getCubeMap(name);
+				} else {
+					tex = renderer.getTextureFactory().getTexture(name);
+				}
 				materialInfo.maps.getTextures().put(map, tex);
 			} catch (IOException e) {
 				e.printStackTrace();

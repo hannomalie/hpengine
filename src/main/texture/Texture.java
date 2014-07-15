@@ -1,7 +1,6 @@
 package main.texture;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,28 +8,16 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
 import java.util.zip.DataFormatException;
 
 import main.World;
-import main.renderer.material.Material;
-import main.renderer.material.Material.MAP;
 import main.util.CompressionUtils;
-import main.util.stopwatch.StopWatch;
-import net.nikr.dds.DDSLineReader;
 
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.Sys;
+import org.lwjgl.opengl.ARBES3Compatibility;
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL21;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
 
 /**
  * A texture to be bound within JOGL. This object is responsible for 
@@ -240,10 +227,9 @@ public class Texture implements Serializable {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
         } 
  
-//        GL13.glCompressedTexImage2D(target,
         GL11.glTexImage2D(target, 
                       0, 
-                      GL13.GL_COMPRESSED_RGBA, 
+                      EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 
                       get2Fold(getImageWidth()), 
                       get2Fold(getImageHeight()), 
                       0, 

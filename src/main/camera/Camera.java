@@ -40,18 +40,24 @@ public class Camera implements IEntity {
 
 	private boolean selected;
 	private String name;
+
+	private float near;
+
+	private float far;
 	
 	public Camera(Renderer renderer) {
-		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 1000f));
+		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 5000f), 0.1f, 5000f);
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	
-	public Camera(Renderer renderer, Matrix4f projectionMatrix) {
-		this(renderer, projectionMatrix, new Matrix4f());
+	public Camera(Renderer renderer, Matrix4f projectionMatrix, float near, float far) {
+		this(renderer, projectionMatrix, new Matrix4f(), near, far);
 	}
 	
-	public Camera(Renderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix) {
+	public Camera(Renderer renderer, Matrix4f projectionMatrix, Matrix4f viewMatrix, float near, float far) {
 		this.name = "Camera_" +  System.currentTimeMillis();
+		this.near = near;
+		this.far = far;
 		this.renderer = renderer;
 		this.projectionMatrix = projectionMatrix;
 
@@ -66,6 +72,7 @@ public class Camera implements IEntity {
 		storeMatrices();
 	}
 	public void updateShadow() {
+		transform();
 		storeMatrices();
 	}
 	
@@ -188,6 +195,14 @@ public class Camera implements IEntity {
 	@Override
 	public void setTransform(Transform transform) {
 		this.transform = transform;
+	}
+
+	public float getNear() {
+		return near;
+	}
+
+	public float getFar() {
+		return far;
 	}
 
 }
