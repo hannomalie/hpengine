@@ -99,10 +99,11 @@ void main(void) {
 		UV.y = texCoord.y * normalMapHeight;
 		//UV = UV + time/2000.0;
 #endif
-	
+vec2 uvParallax = vec2(0,0);
 	if (useParallax) {
 		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
 		float v = height * 0.01 - 0.012;
+		uvParallax = (V.xy * v);
 		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
 		float n = 10;
@@ -138,6 +139,7 @@ void main(void) {
 	UV = texCoord;
 	UV.x = texCoord.x * diffuseMapWidth;
 	UV.y = texCoord.y * diffuseMapHeight;
+	UV += uvParallax;
 	color = texture2D(diffuseMap, UV);
 	if(color.a<0.1)
 	{
@@ -156,7 +158,7 @@ out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, out
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap
-		UV = texCoord;
+		UV = texCoord + uvParallax;
 		UV.x = texCoord.x * specularMapWidth;
 		UV.y = texCoord.y * specularMapHeight;
 		vec3 specularSample = texture2D(specularMap, UV).xyz;

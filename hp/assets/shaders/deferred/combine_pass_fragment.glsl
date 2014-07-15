@@ -57,6 +57,8 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
 	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/100).rg;
+	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/50).rg;
+	moments /= 2;
 	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist <= moments.x)
 		return 1.0 ;
@@ -115,7 +117,7 @@ void main(void) {
 	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
 	/*color *=1;
-	color.rgb = Uncharted2Tonemap(3*color.rgb);
+	color.rgb = Uncharted2Tonemap(4*color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
 	color.rgb = color.rgb * whiteScale;
 	//color.r = pow(color.r, 1/2.2);
@@ -123,7 +125,7 @@ void main(void) {
 	//color.b = pow(color.b, 1/2.2);
 	
 	reflectedColor *=1;
-	reflectedColor.rgb = Uncharted2Tonemap(3*reflectedColor.rgb);
+	reflectedColor.rgb = Uncharted2Tonemap(4*reflectedColor.rgb);
 	reflectedColor.rgb = reflectedColor.rgb * whiteScale;
 	//reflectedColor.r = pow(reflectedColor.r, 1/2.2);
 	//reflectedColor.g = pow(reflectedColor.g, 1/2.2);

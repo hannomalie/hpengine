@@ -1,10 +1,9 @@
 package main.renderer;
 
-import org.lwjgl.Sys;
 
 public class FPSCounter {
 	
-	private final long[] lastFrameTimes = new long[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	private final long[] lastFrameTimes = new long[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	
 	
 	public void update(float elapsedSeconds) {
@@ -14,11 +13,12 @@ public class FPSCounter {
 		lastFrameTimes[lastFrameTimes.length-1] = getTime();
 	}
 	private static long getTime() {
-		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+		return System.currentTimeMillis();
 	}
 	
 	public float getFPS() {
-		return (lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length;
+		float msPerFrame = (lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length;
+		return 1000f / msPerFrame;
 	}
 	
 }
