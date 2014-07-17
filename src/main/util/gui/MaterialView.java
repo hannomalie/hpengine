@@ -7,10 +7,12 @@ import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -111,7 +113,13 @@ public class MaterialView extends WebPanel {
 			WebLabel label = new WebLabel ( map.name() );
 	        
 	        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
-	        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
+	        List<Texture> temp = (List<Texture>) world.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+				@Override
+				public int compare(Texture o1, Texture o2) {
+					return (o1.getPath().compareTo(o2.getPath()));
+				}
+			}).collect(Collectors.toList());
+	        temp.toArray(textures);
 	        WebComboBox select = new WebComboBox(textures);
 	        select.setSelectedIndex(-1);
 	        

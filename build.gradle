@@ -1,0 +1,35 @@
+apply plugin: 'java'
+
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: '*.jar')
+    compile fileTree(dir: 'libs/lwjgl-2.9.2/jar', include: '*.jar')
+    compile fileTree(dir: 'libs/commons-io-2.4', include: '*.jar')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'main.World'
+    }
+
+	into('lib') {
+        from configurations.runtime
+    }
+}
+task copyWorkdir(type: Copy) {
+    from 'hp'
+    into 'build/libs/hp'
+}
+
+task copyNatives(type: Copy) {
+    from 'libs/lwjgl-2.9.2/native/windows'
+    into 'build/libs'
+}

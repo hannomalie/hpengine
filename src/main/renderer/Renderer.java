@@ -55,7 +55,8 @@ public interface Renderer {
 	public OBJLoader getOBJLoader();
 	public EntityFactory getEntityFactory();
 	public Model getSphere();
-	void drawLine(Vector3f from, Vector3f to);
+	public void drawLine(Vector3f from, Vector3f to);
+	public void drawLines(Program firstPassProgram);
 	public <T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
 	public ProgramFactory getProgramFactory();
 
