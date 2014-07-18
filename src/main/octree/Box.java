@@ -90,13 +90,12 @@ public class Box {
 
 
 	public boolean isInFrustum(Camera camera) {
-		Vector3f[] minMaxWorld = new Vector3f[]{new Vector3f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z),
-												new Vector3f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z)};
-		Vector3f minWorld = minMaxWorld[0];
-		Vector3f maxWorld = minMaxWorld[1];
-		Vector3f centerWorld = (Vector3f) (Vector3f.add(maxWorld, minWorld, null)).scale(0.5f);
+		Vector3f centerWorld = new Vector3f();
+		Vector3f.add(topRightForeCorner, bottomLeftBackCorner, centerWorld);
+		centerWorld.scale(0.5f);
 		
-		if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
+		//if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
 			return true;
 		}
 		return false;

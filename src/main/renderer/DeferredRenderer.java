@@ -273,7 +273,7 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.startFrame();
 		draw(null, octree, camera, entities, light);
 	    GPUProfiler.endFrame();
-//	    GPUTaskProfile tp;
+	    GPUTaskProfile tp;
 //	    while((tp = GPUProfiler.getFrameResults()) != null){
 //	        
 //	        tp.dump(); //Dumps the frame to System.out.

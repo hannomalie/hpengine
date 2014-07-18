@@ -119,6 +119,9 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(3)); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		cubeMap.bind();
+		// 5 is missing yet
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 		GPUProfiler.end();
 
 		GPUProfiler.start("Set uniforms");
@@ -131,6 +134,7 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("secondPassScale", secondPassScale);
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
@@ -222,11 +226,6 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(0)); // position, glossiness
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1)); // normal, depth
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId()); // position, glossiness
-		combineProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
-		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		
 		fullscreenBuffer.draw();
 
@@ -292,6 +291,9 @@ public class GBuffer {
 	}
 	public int getColorReflectivenessImage() {
 		return gBuffer.getRenderedTexture(2);
+	}
+	public int getLightAccumulationMapOneId() {
+		return laBuffer.getRenderedTexture(0);
 	}
 	
 

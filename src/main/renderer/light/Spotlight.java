@@ -102,14 +102,14 @@ public class Spotlight implements IEntity {
 		
 		camera.updateShadow();
 
-		box.setPosition(camera.getPosition());
-		box.setOrientation(camera.getOrientation());
+		box.setPosition(getPosition());
+		box.setOrientation(getOrientation());
 		box.update(seconds);
-		
+		System.out.println("ViewDirection " + getViewDirection());
 	}
 
 	public void drawShadowMap(Octree octree) {
-		List<IEntity> visibles = octree.getVisible(getCamera());
+		List<IEntity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
 		directionalShadowPassProgram.use();
 		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());

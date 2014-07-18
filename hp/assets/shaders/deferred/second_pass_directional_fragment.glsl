@@ -5,6 +5,7 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D specularMap;
 layout(binding=4) uniform samplerCube environmentMap;
+layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
 uniform float materialSpecularCoefficient = 0;
 
 uniform float screenWidth = 1280;
@@ -14,6 +15,7 @@ uniform float secondPassScale = 1;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+uniform mat4 shadowMatrix;
 
 uniform vec3 eyePosition;
 uniform vec3 lightDirection;
@@ -37,7 +39,7 @@ vec3 unpackColor(float f) {
 }
 
 vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
-  vec3 direction_to_light_eye = normalize((vec4(lightDirection, 0)).xyz);
+  vec3 direction_to_light_eye = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
   float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
@@ -49,6 +51,8 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = clamp(pow (dot_prod_specular, length(specular.x)), 0, 1);
   
+  //vec3 environmentSample = texture(environmentMap, -normal).rgb;
+  //return vec4((vec4(environmentSample,1) * dot_prod).xyz, specular_factor);
   return vec4((vec4(lightDiffuse,1) * dot_prod).xyz, specular_factor);
 }
 
@@ -62,6 +66,48 @@ uniform float ambientOcclusionFalloff = 0.0002;
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
+
+	vec4 result = texture2D(sampler, texCoord);
+	
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y + dist));
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y));
+	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y - dist));
+	result += texture2D(sampler, vec2(texCoord.x, texCoord.y - dist));
+	
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y + dist));
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y));
+	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y - dist));
+	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
+	
+	return result/8;
+
+}
+float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
+{
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return 0;
+	}
+	// We retrive the two moments previously stored (depth and depth*depth)
+	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
+	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/100).rg;
+	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/50).rg;
+	moments /= 2;
+	// Surface is fully lit. as the current fragment is before the light occluder
+	if (dist < moments.x)
+		return 1.0 ;
+
+	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
+	// How likely this pixel is to be lit (p_max)
+	float variance = moments.y - (moments.x*moments.x);
+	variance = max(variance,0.0001);
+
+	float d = dist - moments.x;
+	float p_max = variance / (variance + d*d);
+
+	return p_max;
 }
 
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
@@ -128,6 +174,7 @@ void main(void) {
   	st /= secondPassScale;
   
 	vec3 positionView = texture2D(positionMap, st).xyz;
+  	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
 	float reflectiveness = texture2D(diffuseMap, st).w;
 	
@@ -141,6 +188,21 @@ void main(void) {
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
 	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
+	
+	/////////////////// SHADOWMAP
+	float visibility = 1.0;
+	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+  	positionShadow.xyz /= positionShadow.w;
+  	float depthInLightSpace = positionShadow.z;
+    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+  	float momentum2 = texture2D(shadowMap, positionShadow.xy).g;
+  	float depthShadow = blurSample(shadowMap, positionShadow.xy, momentum2/20).r;
+
+	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1);
+
+	finalColor *= visibility;
+	//finalColor = vec4(visibility,visibility,visibility,visibility);
+	/////////////////// SHADOWMAP
 	
 	float ao = 1;
 	vec3 ssdo = vec3(0,0,0);

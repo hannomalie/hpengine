@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -112,22 +113,13 @@ public class MaterialView extends WebPanel {
 		for (MAP map : missingMaps) {
 			WebLabel label = new WebLabel ( map.name() );
 	        
-	        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
-	        List<Texture> temp = (List<Texture>) world.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
-				@Override
-				public int compare(Texture o1, Texture o2) {
-					return (o1.getPath().compareTo(o2.getPath()));
-				}
-			}).collect(Collectors.toList());
-	        temp.toArray(textures);
-	        WebComboBox select = new WebComboBox(textures);
+	        List<Texture> textures = getAllTexturesSorted();
+	        WebComboBox select = new WebComboBox(new Vector<Texture>(textures));
 	        select.setSelectedIndex(-1);
-	        
-	        List allTexturesList = new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values());
 	        
 	        select.addActionListener(e -> {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
-	        	Texture selectedTexture = textures[cb.getSelectedIndex()];
+	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
 	        	addMaterialInitCommand();
 	        });
@@ -143,24 +135,22 @@ public class MaterialView extends WebPanel {
 			webComponentPanel.addElement(groupPanel);
 		}
 	}
-	
+
 	private void addExistingTexturesPanels(WebComponentPanel webComponentPanel) {
 		for (MAP map : material.getMaterialInfo().maps.getTextures().keySet()) {
 			Texture texture = material.getMaterialInfo().maps.getTextures().get(map);
 			
 	        WebLabel label = new WebLabel ( map.name() );
 	        
-	        Texture[] textures = new Texture[world.getRenderer().getTextureFactory().TEXTURES.values().size()];
-	        world.getRenderer().getTextureFactory().TEXTURES.values().toArray(textures);
-	        WebComboBox select = new WebComboBox(textures);
+	        List<Texture> textures = getAllTexturesSorted();
+	        WebComboBox select = new WebComboBox(new Vector<Texture>(textures));
 	        
-	        List allTexturesList = new ArrayList(world.getRenderer().getTextureFactory().TEXTURES.values());
-	        int assignedTexture = allTexturesList.indexOf(world.getRenderer().getTextureFactory().TEXTURES.get(material.getMaterialInfo().maps.getTextures().get(map).getPath()));
+	        int assignedTexture = textures.indexOf(texture);
 	        select.setSelectedIndex(assignedTexture);
 	        
 	        select.addActionListener(e -> {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
-	        	Texture selectedTexture = textures[cb.getSelectedIndex()];
+	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
 	        });
 	        
@@ -376,7 +366,16 @@ public class MaterialView extends WebPanel {
 			init(result.material);
 		}
 	}
-	
+
+	private List<Texture> getAllTexturesSorted() {
+        List<Texture> temp = (List<Texture>) world.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+			@Override
+			public int compare(Texture o1, Texture o2) {
+				return (o1.getPath().compareTo(o2.getPath()));
+			}
+		}).collect(Collectors.toList());
+        return temp;
+	}
 	private void showNotification(NotificationIcon icon, String text) {
 		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 		notificationPopup.setIcon(icon);

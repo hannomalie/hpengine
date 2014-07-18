@@ -47,7 +47,7 @@ public class World {
 	public static volatile boolean useSteepParallaxLocation = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;
-	public static volatile boolean useFrustumCulling = true;
+	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;

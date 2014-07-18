@@ -4,7 +4,9 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -102,10 +104,10 @@ public class Octree {
 	}
 	
 	public List<IEntity> getVisible(Camera camera) {
-		List<IEntity> result = new ArrayList<>();
+		List<IEntity> result = new LinkedList();//ArrayList<>();
 		
 		rootNode.getVisible(camera, result);
-		return result;
+		return new ArrayList<IEntity>(result);
 	}
 	
 	public void optimize() {
@@ -197,6 +199,7 @@ public class Octree {
 				if (hasChildren) {
 					for(int i = 0; i < 8; i++) {
 						children[i].getVisible(camera, result);
+						//children[i].getAllEntitiesInAndBelow(result);
 					}	
 				}
 				result.addAll(entities);
@@ -210,12 +213,12 @@ public class Octree {
 		
 		public void getAllEntitiesInAndBelow(List<IEntity> result) {
 
-			result.addAll(entities);
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {
 					children[i].getAllEntitiesInAndBelow(result);
-				}	
+				}
 			}
+			result.addAll(entities);
 		}
 		
 

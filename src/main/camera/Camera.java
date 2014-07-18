@@ -85,7 +85,7 @@ public class Camera implements IEntity {
 		
 		float turbo = 1f;
 		if(Keyboard.isKeyDown(Keyboard.KEY_CAPITAL)) {
-			turbo = 2;
+			turbo = 3f;
 		}
 
 		if (Mouse.isButtonDown(0)) {
