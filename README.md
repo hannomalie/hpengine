@@ -18,6 +18,7 @@ This engine is my hobby project - I wanted to learn more about graphics programm
 * Deferred Rendering with Light Accumulation Buffer, One directional light, endless pointlights
 * Extensive per-object-materials with diffusemaps, heightmaps, normalmaps, reflectionmaps, environment maps, specular attributes, reflectiveness attributes for reflections, etc.
 * per-material vertex and fragment shaders if you want them
+* Parallax mapping
 * Screen Space local reflections
 * Variance shadowmapping for directional light
 * HDR rendering with tone mapping
