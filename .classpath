@@ -16,5 +16,7 @@
 	<classpathentry kind="lib" path="libs/slick-util.jar"/>
 	<classpathentry kind="lib" path="libs/weblaf-complete-1.28.jar"/>
 	<classpathentry kind="lib" path="libs/trove-3.0.3.jar"/>
+	<classpathentry kind="lib" path="libs/jbullet.jar" sourcepath="libs/jbullet-javadoc"/>
+	<classpathentry kind="lib" path="libs/vecmath.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

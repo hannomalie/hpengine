@@ -105,7 +105,6 @@ public class Spotlight implements IEntity {
 		box.setPosition(getPosition());
 		box.setOrientation(getOrientation());
 		box.update(seconds);
-		System.out.println("ViewDirection " + getViewDirection());
 	}
 
 	public void drawShadowMap(Octree octree) {

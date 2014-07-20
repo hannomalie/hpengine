@@ -87,35 +87,36 @@ public class Camera implements IEntity {
 		if(Keyboard.isKeyDown(Keyboard.KEY_CAPITAL)) {
 			turbo = 3f;
 		}
+		
 
 		if (Mouse.isButtonDown(0)) {
-			transform.rotateWorld(transform.getUpDirection(), -Mouse.getDX() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_UP, Mouse.getDX() * turbo*rotationDelta * seconds);
 		}
 		if (Mouse.isButtonDown(1)) {
-			transform.rotateWorld(transform.getRightDirection(), Mouse.getDY() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * turbo*rotationDelta * seconds);
 		}
 		if (Mouse.isButtonDown(2)) {
-			transform.rotateWorld(transform.getViewDirection(), Mouse.getDX() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_VIEW, Mouse.getDX() * turbo*rotationDelta * seconds);
 		}
 		
 		float moveAmount = turbo*posDelta * seconds;
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			transform.move(new Vector3f(0,0,moveAmount));
+			move(new Vector3f(0,0,moveAmount));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-			transform.move(new Vector3f(moveAmount, 0, 0));
+			move(new Vector3f(moveAmount, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-			transform.move(new Vector3f(0, 0, -moveAmount));
+			move(new Vector3f(0, 0, -moveAmount));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-			transform.move(new Vector3f(-moveAmount, 0, 0));
+			move(new Vector3f(-moveAmount, 0, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			transform.move(new Vector3f(0, moveAmount, 0));
+			move(new Vector3f(0, moveAmount, 0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			transform.move(new Vector3f(0, -moveAmount, 0));
+			move(new Vector3f(0, -moveAmount, 0));
 		}
 	}
 	
@@ -191,7 +192,6 @@ public class Camera implements IEntity {
 	public Transform getTransform() {
 		return transform;
 	}
-
 	@Override
 	public void setTransform(Transform transform) {
 		this.transform = transform;

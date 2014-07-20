@@ -1,5 +1,6 @@
 package main.renderer;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,11 +18,15 @@ import main.shader.Program;
 import main.texture.CubeMap;
 import main.util.stopwatch.GPUProfiler;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class GBuffer {
 
@@ -34,6 +39,7 @@ public class GBuffer {
 	private Program secondPassDirectionalProgram;
 	private Program secondPassPointProgram;
 	private Program combineProgram;
+	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program combineProgram) {
 		this.renderer = renderer;
@@ -44,7 +50,7 @@ public class GBuffer {
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
-
+		new Matrix4f().setIdentity().store(identityMatrixBuffer);
 	}
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -232,7 +238,7 @@ public class GBuffer {
 //		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	
-	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, CubeMap cubeMap) {
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, CubeMap cubeMap) {
 		///////////// firstpass
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
@@ -263,6 +269,10 @@ public class GBuffer {
 		
 		for (IEntity entity : visibleEntities) {
 			entity.drawDebug(firstPassProgram);
+			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getViewDirection(), null).scale(10));
+			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getUpDirection(), null).scale(10));
+			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getRightDirection(), null).scale(10));
 		}
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (IEntity entity : pointLights) {
@@ -277,9 +287,10 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,15,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,0,-15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection().negate())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
+	    dynamicsWorld.debugDrawWorld();
 	    renderer.drawLines(firstPassProgram);
 		
 		GL11.glDepthMask(false);

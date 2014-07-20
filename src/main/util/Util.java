@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
+import javax.vecmath.Quat4f;
 
 import main.renderer.material.Material;
 import main.texture.CubeMap;
@@ -19,10 +20,13 @@ import org.lwjgl.Sys;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.vector.Matrix;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+
+import com.bulletphysics.linearmath.Transform;
 
 public class Util {
 	private static Logger LOGGER = getLogger();
@@ -166,6 +170,20 @@ public class Util {
         return mat;
     }
 	
+	//http://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+	public static Vector3f _mul(Vector3f a, Quaternion b) {
+		Vector3f temp = (Vector3f) Vector3f.cross(new Vector3f(b.x, b.y, b.z), a, null).scale(2f);
+		Vector3f result = Vector3f.add(a, (Vector3f) temp.scale(b.w), null);
+		result = Vector3f.add(result, Vector3f.cross(new Vector3f(b.x,  b.y,  b.z), temp, null), null);
+		return result;
+	}
+	public static Vector3f mul(Vector3f a, Quaternion b) {
+		Quaternion in = new Quaternion(a.x,a.y,a.z,0);
+		Quaternion temp = Quaternion.mul(b, in, null);
+		temp = Quaternion.mul(temp, conjugate(b), null);
+		return new Vector3f(temp.x, temp.y, temp.z);
+	}
+	
 	public static Matrix4f toMatrix(Quaternion q) {
 		Matrix4f m = new Matrix4f();
 
@@ -270,6 +288,71 @@ public class Util {
 		
 		return b.toString();
 	}
-	
+
+	public static javax.vecmath.Vector3f toBullet(Vector3f in) {
+		return new javax.vecmath.Vector3f(in.x, in.y, in.z);
+	}
+	public static Transform toBullet(main.Transform in) {
+		Matrix4f out = in.getTransformation();
+		return new Transform(toBullet(out));
+	}
+
+	public static javax.vecmath.Matrix4f toBullet(Matrix4f in) {
+		javax.vecmath.Matrix4f out = new javax.vecmath.Matrix4f();
+		out.m00 = in.m00;
+		out.m01 = in.m01;
+		out.m02 = in.m02;
+		out.m03 = in.m03;
+		out.m10 = in.m10;
+		out.m11 = in.m11;
+		out.m12 = in.m12;
+		out.m13 = in.m13;
+		out.m20 = in.m20;
+		out.m21 = in.m21;
+		out.m22 = in.m22;
+		out.m23 = in.m23;
+		out.m30 = in.m30;
+		out.m31 = in.m31;
+		out.m32 = in.m32;
+		out.m33 = in.m33;
+		
+		return out;
+	}
+	public static Matrix4f fromBullet(javax.vecmath.Matrix4f in) {
+		Matrix4f out = new Matrix4f();
+		out.m00 = in.m00;
+		out.m01 = in.m01;
+		out.m02 = in.m02;
+		out.m03 = in.m03;
+		out.m10 = in.m10;
+		out.m11 = in.m11;
+		out.m12 = in.m12;
+		out.m13 = in.m13;
+		out.m20 = in.m20;
+		out.m21 = in.m21;
+		out.m22 = in.m22;
+		out.m23 = in.m23;
+		out.m30 = in.m30;
+		out.m31 = in.m31;
+		out.m32 = in.m32;
+		out.m33 = in.m33;
+		
+		return out;
+	}
+
+	public static main.Transform fromBullet(Transform in) {
+		javax.vecmath.Matrix4f out = new javax.vecmath.Matrix4f();
+		in.getMatrix(out);
+		Quat4f outRot = new Quat4f();
+		
+		main.Transform finalTransform = new main.Transform();
+		finalTransform.setPosition(new Vector3f(out.m30,out.m31,out.m32));
+		finalTransform.setOrientation(fromBullet(in.getRotation(outRot)));
+		return finalTransform;
+	}
+
+	private static Quaternion fromBullet(Quat4f rotation) {
+		return new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+	}
 
 }

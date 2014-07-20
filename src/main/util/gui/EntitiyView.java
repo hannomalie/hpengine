@@ -1,11 +1,14 @@
 package main.util.gui;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 import main.World;
 import main.model.IEntity;
+import main.util.gui.input.ButtonInput;
+import main.util.gui.input.SliderInput;
 import main.util.gui.input.WebFormattedVec3Field;
 
 import org.lwjgl.util.vector.Quaternion;
@@ -18,15 +21,20 @@ import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.rootpane.WebFrame;
+import com.alee.laf.slider.WebSlider;
 import com.alee.laf.text.WebFormattedTextField;
 
 public class EntitiyView extends WebPanel {
 
 	private IEntity entity;
+	private Quaternion startOrientation;
+	private Vector3f startPosition;
 	private World world;
 
 	public EntitiyView(World world, IEntity entity) {
 		this.entity = entity;
+		this.startOrientation = new Quaternion(entity.getOrientation());
+		this.startPosition = new Vector3f(entity.getPosition());
 		this.world = world;
 		setUndecorated(true);
 		this.setSize(600, 600);
@@ -58,6 +66,48 @@ public class EntitiyView extends WebPanel {
 					entity.setPosition(current);
 				}
 			});
+
+	        webComponentPanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 360, 0) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Quaternion amount = new Quaternion();
+					Vector3f axis = entity.getRightDirection();
+					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
+					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+				}
+			});
+	        webComponentPanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 360, 0) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Quaternion amount = new Quaternion();
+					Vector3f axis = entity.getUpDirection();
+					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
+					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+				}
+			});
+	        webComponentPanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 360, 0) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Quaternion amount = new Quaternion();
+					Vector3f axis = entity.getViewDirection().negate(null);
+					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
+					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+				}
+			});
+
+	        webComponentPanel.addElement(new ButtonInput("Rotation", "Reset") {
+				@Override
+				public void onClick(ActionEvent e) {
+					entity.setOrientation(startOrientation);
+				}
+			});
+	        webComponentPanel.addElement(new ButtonInput("Position", "Reset") {
+				@Override
+				public void onClick(ActionEvent e) {
+					entity.setPosition(startPosition);
+				}
+			});
+	        
 	        webComponentPanel.addElement(new WebFormattedVec3Field("Scale", entity.getScale()) {
 				@Override
 				public void onValueChange(Vector3f current) {

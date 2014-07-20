@@ -4,6 +4,7 @@ import static main.util.Util.vectorToString;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.File;
@@ -39,6 +40,7 @@ import main.renderer.material.MaterialFactory;
 import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.Vector3fInput;
+import main.util.gui.input.WebFormattedVec3Field;
 import main.util.script.ScriptManager;
 
 import org.apache.commons.io.FilenameUtils;
@@ -50,6 +52,8 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
+import com.alee.extended.panel.GroupPanel;
+import com.alee.extended.panel.WebComponentPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
@@ -85,7 +89,7 @@ public class DebugFrame {
 	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
-	private JPanel buttonPanel = new JPanel(new FlowLayout());
+	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea();
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
@@ -258,21 +262,31 @@ public class DebugFrame {
 			}
 		});
 
-		buttonPanel.add(toggleDrawLines);
-		buttonPanel.add(toggleDrawOctree);
-		buttonPanel.add(toggleDebugFrame);
-		buttonPanel.add(toggleDrawLights);
-		buttonPanel.add(new WebLabel("Direcitonal Light Dir:"));
-		new Vector3fInput(buttonPanel) {
-			
-			@Override
-			public void onChange(Vector3f value) {
-				World.light.rotate(value, 0.7f);
-			}
-		};
-
+////////////////
+	    List<Component> mainElements = new ArrayList<>();
+		mainElements.add(new WebLabel("Ambient Occlusion Radius"));
+		mainElements.add(ambientOcclusionRadiusSlider);
+		mainElements.add(new WebLabel("Ambient Occlusion Strength"));
+		mainElements.add(ambientOcclusionTotalStrengthSlider);
+        Component[] mainElementsArray = new Component[mainElements.size()];
+        mainElements.toArray(mainElementsArray);
+////////////////
+	    List<Component> mainButtonElements = new ArrayList<>();
+	    mainButtonElements.add(toggleDrawLines);
+	    mainButtonElements.add(toggleDrawOctree);
+	    mainButtonElements.add(toggleDebugFrame);
+	    mainButtonElements.add(toggleDrawLights);
+		mainButtonElements.add(toggleFileReload);
+		mainButtonElements.add(toggleParallax);
+		mainButtonElements.add(toggleSteepParallax);
+		mainButtonElements.add(toggleAmbientOcclusion);
+		mainButtonElements.add(toggleFrustumCulling);
+        Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
+        mainButtonElements.toArray(mainButtonsElementsArray);
+        GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length, 1, 5, mainButtonsElementsArray);
+////////////////
+	    WebLabel lightColorChooserLabel = new WebLabel("Directional light");
 		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-			
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				Color color = lightColorChooserPanel.getColor();
@@ -281,10 +295,9 @@ public class DebugFrame {
 						color.getBlue()/255.f));
 			}
 		});
-		buttonPanel.add(lightColorChooserPanel);
-		
+
+	    WebLabel ambientLightColorChooserLabel = new WebLabel("Ambient light");
 		ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
-			
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				Color color = ambientLightColorChooserPanel.getColor();
@@ -293,17 +306,17 @@ public class DebugFrame {
 						color.getBlue()/255.f));
 			}
 		});
-		buttonPanel.add(ambientLightColorChooserPanel);
+		WebComponentPanel lightColorChooserGridPanelPanel = new WebComponentPanel();
+		lightColorChooserGridPanelPanel.addElement(lightColorChooserLabel);
+		lightColorChooserGridPanelPanel.addElement(lightColorChooserPanel);
 
-		buttonPanel.add(toggleFileReload);
-		buttonPanel.add(toggleParallax);
-		buttonPanel.add(toggleSteepParallax);
-		buttonPanel.add(toggleAmbientOcclusion);
-		buttonPanel.add(toggleFrustumCulling);
-		buttonPanel.add(ambientOcclusionRadiusSlider);
-		buttonPanel.add(ambientOcclusionTotalStrengthSlider);
-		buttonPanel.setSize(200, 200);
-		
+		WebComponentPanel mainColorChooserGridPanelPanel = new WebComponentPanel();
+	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserLabel);
+	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserPanel);
+        
+		GroupPanel mainGroupPanel = new GroupPanel(buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel), new GridPanel(4,1,4,mainElementsArray));
+        mainPane = new WebScrollPane(mainGroupPanel);
+        
 		WebMenuBar menuBar = new WebMenuBar ();
 		WebMenu menuScene = new WebMenu("Scene");
         menuBar.setUndecorated ( true );
@@ -438,7 +451,7 @@ public class DebugFrame {
         
 		mainFrame.add(tabbedPane);
 		
-		tabbedPane.addTab("Main", buttonPanel);
+		tabbedPane.addTab("Main", mainPane);
 		tabbedPane.addTab("Scene", scenePane);
 		createTexturePane(textureFactory);
 		tabbedPane.addTab("Texture", texturePane);

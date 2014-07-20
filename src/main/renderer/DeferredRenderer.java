@@ -77,6 +77,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import com.bulletphysics.dynamics.DynamicsWorld;
+
 public class DeferredRenderer implements Renderer {
 	private static Logger LOGGER = getLogger();
 	
@@ -519,10 +521,10 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities,
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities,
 			Spotlight light) {
 
-		gBuffer.drawDebug(camera, octree, entities, light, pointLights, cubeMap);
+		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, pointLights, cubeMap);
 		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);

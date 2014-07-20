@@ -79,7 +79,7 @@ public class TextureFactory {
                                             ComponentColorModel.OPAQUE,
                                             DataBuffer.TYPE_BYTE);
 
-    	loadAllAvailableTextures();
+//    	loadAllAvailableTextures();
 		DeferredRenderer.exitOnGLError("After loadAllAvailableTextures");
     }
     

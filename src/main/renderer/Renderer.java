@@ -23,6 +23,8 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
 
+import com.bulletphysics.dynamics.DynamicsWorld;
+
 public interface Renderer {
 	static final boolean CHECKERRORS = false;
 
@@ -46,7 +48,7 @@ public interface Renderer {
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
 	public void update(World world, float seconds);
 	public float getElapsedSeconds();
-	public void drawDebug(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light);
 	public Program getLastUsedProgram();
 	public void setLastUsedProgram(Program firstPassProgram);
 	public CubeMap getEnvironmentMap();

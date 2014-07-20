@@ -11,9 +11,12 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
+import main.component.IGameComponent.ComponentIdentifier;
+import main.component.PhysicsComponent;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
+import main.physic.PhysicsFactory;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
@@ -26,10 +29,26 @@ import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.laf.WebLookAndFeel;
+import com.bulletphysics.collision.broadphase.BroadphaseInterface;
+import com.bulletphysics.collision.broadphase.DbvtBroadphase;
+import com.bulletphysics.collision.dispatch.CollisionConfiguration;
+import com.bulletphysics.collision.dispatch.CollisionDispatcher;
+import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
+import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.SphereShape;
+import com.bulletphysics.collision.shapes.StaticPlaneShape;
+import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
+import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
+import com.bulletphysics.linearmath.DefaultMotionState;
+import com.bulletphysics.linearmath.MotionState;
 
 public class World {
 	public static final String WORKDIR_NAME = "hp";
@@ -71,7 +90,8 @@ public class World {
 			}
 		}
 
-		world = new World(sceneName);
+//		world = new World(sceneName);
+		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {
@@ -80,8 +100,9 @@ public class World {
 		world.simulate();
 	}
 
+	PhysicsFactory physicsFactory;
 	Scene scene;
-	private int entityCount = 10;
+	private int entityCount = 1;
 	public Renderer renderer;
 	private Camera camera;
 
@@ -96,6 +117,7 @@ public class World {
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
 		glWatch = new OpenGLStopWatch();
+		physicsFactory = new PhysicsFactory(this);
 		scene = new Scene();
 		camera = new Camera(renderer);
 		try {
@@ -112,6 +134,7 @@ public class World {
 		initWorkDir();
 		renderer = new DeferredRenderer(light);
 		glWatch = new OpenGLStopWatch();
+		physicsFactory = new PhysicsFactory(this);
 		initDefaultMaterials();
 		scene = Scene.read(renderer, sceneName);
 		scene.init(renderer);
@@ -218,12 +241,17 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
-						Vector3f position = new Vector3f(i*10,0-random*i+j,j*10);
+						Vector3f position = new Vector3f(i*10,random*i+j,j*10);
 						IEntity entity = renderer.getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
 						entity.setMaterial(mat);
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
+						
+						PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+						physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
+						physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
+						
 						entities.add(entity);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -239,7 +267,8 @@ public class World {
 //				if(model.getMaterial().getName().contains("fabric")) {
 //					model.setMaterial(mirror);
 //				}
-				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,-1f,0), model);
+				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
+//				physicsFactory.addMeshPhysicsComponent(entity, 0);
 //				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 //				entity.setScale(scale);
 				entities.add(entity);
@@ -266,6 +295,20 @@ public class World {
 	private void update(float seconds) {
 
 		StopWatch.getInstance().start("Controls update");
+
+//		if (Mouse.isButtonDown(0)) {
+//			List<Model> sphere;
+//			try {
+//				sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
+//				IEntity shot = renderer.getEntityFactory().getEntity(camera.getPosition(), sphere.get(0));
+//				PhysicsComponent physicsBall = physicsFactory.addBallPhysicsComponent(shot);
+//				physicsBall.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(5,0,5));
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//			
+//		}
+		
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
 			light.rotate(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
 		}
@@ -296,6 +339,7 @@ public class World {
 //			entity.getPosition().x += 0.01 * random;
 //		}
 		StopWatch.getInstance().stopAndPrintMS();
+		physicsFactory.update(seconds);
 		StopWatch.getInstance().start("Renderer update");
 		renderer.update(this, seconds);
 		StopWatch.getInstance().stopAndPrintMS();
@@ -353,7 +397,7 @@ public class World {
 
 		StopWatch.getInstance().start("Draw");
 		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(camera, scene.getOctree(), scene.getEntities(), light);
+			renderer.drawDebug(camera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities(), light);
 		} else {
 			renderer.draw(camera, scene.getOctree(), scene.getEntities(), light);
 		}
@@ -378,6 +422,10 @@ public class World {
 
 	public Renderer getRenderer() {
 		return renderer;
+	}
+	
+	public PhysicsFactory getPhysicsFactory() {
+		return physicsFactory;
 	}
 
 	public Scene getScene() {

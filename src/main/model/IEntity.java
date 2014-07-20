@@ -1,7 +1,11 @@
 package main.model;
 
+import java.util.HashMap;
+
 import main.Transform;
 import main.camera.Camera;
+import main.component.IGameComponent;
+import main.component.IGameComponent.ComponentIdentifier;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.shader.Program;
@@ -61,5 +65,7 @@ public interface IEntity {
 	
 	public default VertexBuffer getVertexBuffer() { return null; }
 	
-	public default void destroy() {};
+	public default void destroy() {}
+
+	public default HashMap<ComponentIdentifier, IGameComponent> getComponents() { return new HashMap<>(); };
 }

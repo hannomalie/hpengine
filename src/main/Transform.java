@@ -64,15 +64,19 @@ public class Transform implements Serializable {
 	}
 	public void rotateWorld(Vector3f axis, float angleInDegrees) {
 		Quaternion temp = new Quaternion();
-		temp.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(-angleInDegrees)));
-		setOrientation(Quaternion.mul(getOrientation(), temp, null).normalise(null));
+		temp.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(angleInDegrees)));
+		setOrientation(Quaternion.mul(getOrientation(), temp, null));
 	}
 	public void rotateWorld(Vector4f axisAngle) {
 		rotateWorld(new Vector3f(axisAngle.x,  axisAngle.y, axisAngle.z), axisAngle.w);
 	}
 	public void move(Vector3f amount) {
-		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation().negate(null)), new Vector4f(amount.x, amount.y, amount.z, 0), null);
-		moveInWorld(new Vector3f(temp.x, temp.y, temp.z));
+//		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation()), new Vector4f(amount.x, amount.y, amount.z, 0), null);
+		Vector3f combined = (Vector3f) getRightDirection().scale(amount.x);
+		Vector3f.add(combined, (Vector3f) getUpDirection().scale(amount.y), combined);
+		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-amount.z), combined); // We need the BACK direction here since that is our pos z!
+//		moveInWorld(new Vector3f(temp.x, temp.y, temp.z));
+		moveInWorld(combined);
 	}
 	public void moveInWorld(Vector3f amount) {
 		setPosition(Vector3f.add(getPosition(), amount, null));
@@ -87,8 +91,11 @@ public class Transform implements Serializable {
 	}
 	
 	public Vector3f localToWorld(Vector4f homogenVector) {
-		Vector4f temp = Matrix4f.transform(getTranslationRotation(), homogenVector, null);
-		return (Vector3f) new Vector3f(temp.x, temp.y, temp.z).normalise();
+		//Vector4f temp = Matrix4f.transform(getTranslationRotation(), homogenVector, null);
+		Vector3f combined = (Vector3f) getRightDirection().scale(homogenVector.x);
+		Vector3f.add(combined, (Vector3f) getUpDirection().scale(homogenVector.y), combined);
+		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-homogenVector.z), combined);
+		return (Vector3f) new Vector3f(combined.x, combined.y, combined.z);
 	}
 
 	public Matrix4f getTranslationRotation() {
@@ -100,6 +107,23 @@ public class Transform implements Serializable {
 	
 	public Matrix4f getTransformation() {
 		return getTranslationRotation().scale(getScale());
+	}
+	
+	@Override
+	public boolean equals(Object b) {
+		if(!(b instanceof Transform)) {
+			return false;
+		}
+		Transform other = (Transform) b;
+		
+		return (equals(getPosition(), other.getPosition()) && equals(getOrientation(), other.getOrientation()));
+	}
+
+	private boolean equals(Vector3f a, Vector3f b) {
+		return a.x == b.x && a.y == b.y && a.z == b.z;
+	}
+	private boolean equals(Quaternion a, Quaternion b) {
+		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
 }

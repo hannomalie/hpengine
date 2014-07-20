@@ -285,7 +285,12 @@ public class MaterialView extends WebPanel {
 					}
 	        	}
         	});
-            GroupPanel vertexShaderPanel = new GroupPanel ( 4, new WebLabel("VertexShader"), vertexShaderChooser, copyFromDefaultButton );
+        	WebButton deleteShaderButton = new WebButton("X");
+        	deleteShaderButton.addActionListener(e -> {
+        		material.setVertexShader("");
+	        	addMaterialInitCommand();
+        	});
+            GroupPanel vertexShaderPanel = new GroupPanel ( 4, new WebLabel("VertexShader"), vertexShaderChooser, copyFromDefaultButton, deleteShaderButton);
             vertexShaderPanel.setPreferredWidth ( 200 );
             vertexShaderPanel.setPreferredHeight( 20 );
             vertexShaderPanel.setLayout(new GridLayout(1,2));
@@ -325,7 +330,12 @@ public class MaterialView extends WebPanel {
 					}
 	        	}
         	});
-            GroupPanel fragmentShaderPanel = new GroupPanel ( 4, new WebLabel("FragmentShader"), fragmentShaderChooser, copyFromDefaultButton );
+        	WebButton deleteShaderButton = new WebButton("X");
+        	deleteShaderButton.addActionListener(e -> {
+        		material.setFragmentShader("");
+	        	addMaterialInitCommand();
+        	});
+            GroupPanel fragmentShaderPanel = new GroupPanel ( 4, new WebLabel("FragmentShader"), fragmentShaderChooser, copyFromDefaultButton, deleteShaderButton);
             fragmentShaderPanel.setPreferredWidth ( 200 );
             fragmentShaderPanel.setPreferredHeight( 20 );
             fragmentShaderPanel.setLayout(new GridLayout(1,2));

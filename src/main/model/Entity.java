@@ -9,12 +9,15 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
 import main.Transform;
 import main.World;
 import main.camera.Camera;
+import main.component.IGameComponent;
+import main.component.IGameComponent.ComponentIdentifier;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.shader.Program;
@@ -22,9 +25,7 @@ import main.util.Util;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -64,6 +65,8 @@ public class Entity implements IEntity, Serializable {
 
 	transient private boolean selected = false;
 	private boolean visible = true;
+	
+	transient public HashMap<ComponentIdentifier, IGameComponent> components = new HashMap<ComponentIdentifier, IGameComponent>();
 
 	protected Entity() {
 	}
@@ -90,6 +93,7 @@ public class Entity implements IEntity, Serializable {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
 		material = renderer.getMaterialFactory().get(materialName);
+		components = new HashMap<ComponentIdentifier, IGameComponent>();
 	}
 	
 	public void createFloatArray(Model model) {
@@ -155,10 +159,18 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void update(float seconds) {
+		for (IGameComponent c : components.values()) {
+			c.update(seconds);
+		}
 		modelMatrix = calculateCurrentModelMatrix();
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
 	}
+	
+	@Override
+	public HashMap<ComponentIdentifier,IGameComponent> getComponents() {
+		return components;
+	};
 
 	@Override
 	public void draw(Renderer renderer, Camera camera) {
@@ -170,13 +182,14 @@ public class Entity implements IEntity, Serializable {
 		if (firstPassProgram == null) {
 			return;
 		}
-		Program currentProgram;
-		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
-			currentProgram = firstPassProgram;
-			renderer.setLastUsedProgram(currentProgram);
-			currentProgram.use();
-		}
-		currentProgram = renderer.getLastUsedProgram();
+		Program currentProgram = firstPassProgram;
+//		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
+//			currentProgram = firstPassProgram;
+//			renderer.setLastUsedProgram(currentProgram);
+//			currentProgram.use();
+//		}
+//		currentProgram = renderer.getLastUsedProgram();
+		currentProgram.use();
 		currentProgram.setUniform("useParallax", World.useParallax);
 		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
 		currentProgram.setUniform("reflectiveness", material.getReflectiveness());
@@ -209,10 +222,7 @@ public class Entity implements IEntity, Serializable {
 	}
 
 	protected Matrix4f calculateCurrentModelMatrix() {
-		modelMatrix = new Matrix4f();
-		Matrix4f.translate(transform.getPosition(), modelMatrix, modelMatrix);
-		Matrix4f.mul(Util.toMatrix(transform.getOrientation()), modelMatrix, modelMatrix);
-		Matrix4f.scale(transform.getScale(), modelMatrix, modelMatrix);
+		modelMatrix = transform.getTransformation();
 		
 		return modelMatrix;
 	}

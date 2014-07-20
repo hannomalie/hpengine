@@ -127,10 +127,10 @@ public class OBJLoader {
 		    	  String materialName = line.replaceAll("usemtl ", "");
 		    	  Material material = renderer.getMaterialFactory().get(materialName);
 		    	  if(material == null) {
-		    		  LOGGER.log(Level.INFO, "No material found!!!");
+//		    		  LOGGER.log(Level.INFO, "No material found!!!");
 		    	  }
 		    	  model.setMaterial(material);
-	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
+//	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
 		    } else if (line.startsWith("o ") || line.startsWith("# object ")) {
                 if (model != null && model.getMaterial() == null) {
                 	int d = 3;
