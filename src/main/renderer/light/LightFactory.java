@@ -38,7 +38,7 @@ public class LightFactory {
     		put(MAP.DIFFUSE,"assets/textures/default.dds");
 		}});
 		
-		PointLight light = new PointLight(position, model, colorIntensity, range, material);
+		PointLight light = new PointLight(renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
 		return light;
 	}
 }

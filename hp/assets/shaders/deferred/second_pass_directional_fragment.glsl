@@ -46,7 +46,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   
   // standard specular light
   vec3 reflection_eye = reflect (-direction_to_light_eye, normal);
-  vec3 surface_to_viewer_eye = normalize (position);
+  vec3 surface_to_viewer_eye = normalize (-position);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = clamp(pow (dot_prod_specular, length(specular.x)), 0, 1);
@@ -146,15 +146,14 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
 		  	}
 		  	
   		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
-  			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1) {
-				float minDist = distance(vec2(0.7,0.7) , vec2(0.5, 0.5));
-				float amount = clamp(distance(resultCoords.xy , vec2(0.5, 0.5)) - minDist, 0, 1);
-    			float screenEdgefactor = amount;
+  			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
+			{
+    			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//return vec3(screenEdgefactor,0,0);
     			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
 				return mix(color, reflectedColor, 1-screenEdgefactor);
 		  	}
-		  	
+
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
 			return color;
 		  	
@@ -208,8 +207,8 @@ void main(void) {
 	vec3 ssdo = vec3(0,0,0);
 	if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
 		vec3 N = normalView;
-		float falloff = ambientOcclusionFalloff;
-		const float samples = 8;
+		float falloff = 0.000;//ambientOcclusionFalloff;
+		const float samples = 16;
 		const float invSamples = 1/samples;
 		
 		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
@@ -242,15 +241,13 @@ void main(void) {
 		  //////////
 		  
 		  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
-		  bl += normDiff*step(falloff,depthDifference)*(1.0-smoothstep(falloff,strength,depthDifference));
+		  bl += normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
 	
 	    }
 	    
 		ao = 1.0-totStrength*bl*invSamples;
 		ssdo *= 1-ao;
-		
 	}
-	
 	
 	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
@@ -260,5 +257,7 @@ void main(void) {
 		vec4 reflectedColor = vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
+	
 	//out_DiffuseSpecular = vec4(ssdo,1);
+	//out_DiffuseSpecular.rgb = vec3(ao,ao,ao);
 }

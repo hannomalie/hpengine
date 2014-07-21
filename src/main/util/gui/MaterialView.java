@@ -15,18 +15,16 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
+
 
 import main.World;
+import main.model.IEntity;
+import main.renderer.command.GetMaterialCommand;
 import main.renderer.command.InitMaterialCommand;
 import main.renderer.command.InitMaterialCommand.MaterialResult;
-import main.renderer.command.LoadModelCommand;
-import main.renderer.command.LoadModelCommand.EntityListResult;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
-import main.scene.Scene;
+import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
 import main.texture.Texture;
 import main.util.gui.input.ColorChooserButton;
@@ -34,9 +32,16 @@ import main.util.gui.input.ColorChooserFrame;
 import main.util.gui.input.LimitedWebFormattedTextField;
 import main.util.gui.input.WebFormattedVec3Field;
 
+
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector3f;
+
+
+
 import com.alee.extended.filechooser.FilesSelectionListener;
 import com.alee.extended.filechooser.WebFileChooserField;
-import com.alee.extended.panel.BorderPanel;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
@@ -58,15 +63,21 @@ public class MaterialView extends WebPanel {
 	private Material material;
 	private World world;
 	private DebugFrame parent;
+	private WebTextField nameField;
+	private IEntity entity;
 
-	public MaterialView(DebugFrame parent, World world, Material material) {
+	public MaterialView(DebugFrame parent, World world, Material material, IEntity entity) {
 		this.parent = parent;
+		this.entity = entity;
 		this.world = world;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
 		
 		init(material);
+	}
+	public MaterialView(DebugFrame parent, World world, Material material) {
+		this(parent, world, material, null);
 	}
 
 	private void init(Material material) {
@@ -80,7 +91,34 @@ public class MaterialView extends WebPanel {
 
         WebButton saveButton = new WebButton("Save");
         saveButton.addActionListener(e -> {
-        	Material.write(material, material.getMaterialInfo().name);
+        	Material toSave = null;
+        	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
+        		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
+        		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new GetMaterialCommand(newInfo));
+        		MaterialResult result = null;
+        		try {
+        			result = queue.poll(1, TimeUnit.MINUTES);
+        		} catch (Exception e1) {
+        			e1.printStackTrace();
+        			showNotification(NotificationIcon.error, "Not able to change material");
+        		}
+        		if (!result.isSuccessful()) {
+        			showNotification(NotificationIcon.error, "Not able to change material");
+        		} else {
+        			showNotification(NotificationIcon.plus, "Material changed/created");
+            		toSave = result.material;
+        			if(parent != null) {
+        				parent.refreshMaterialTab();	
+        			}
+        		}
+
+        	} else {
+        		toSave = material;
+        		Material.write(toSave, toSave.getMaterialInfo().name);
+        	}
+
+        	addMaterialInitCommand(toSave);
+        	if(entity != null) { entity.setMaterial(toSave.getName()); }
         });
         
         Component[] components = new Component[panels.size()];
@@ -121,14 +159,14 @@ public class MaterialView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
-	        	addMaterialInitCommand();
+	        	addMaterialInitCommand(material);
 	        });
 	        
 	        WebButton removeTextureButton = new WebButton("Remove");
 	        removeTextureButton.addActionListener(e -> {
 	        	material.getMaterialInfo().maps.getTextures().remove(map);
 		        select.setSelectedIndex(-1);
-	        	addMaterialInitCommand();
+	        	addMaterialInitCommand(material);
 	        });
 
 	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
@@ -158,7 +196,7 @@ public class MaterialView extends WebPanel {
 	        removeTextureButton.addActionListener(e -> {
 	        	material.getMaterialInfo().maps.getTextures().remove(map);
 	        	material.getMaterialInfo().maps.getTextureNames().remove(map);
-	        	addMaterialInitCommand();
+	        	addMaterialInitCommand(material);
 	        });
 	        
 	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
@@ -171,6 +209,9 @@ public class MaterialView extends WebPanel {
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.setLayout(new FlowLayout());
 
+        nameField = new WebTextField(material.getName());
+		webComponentPanel.addElement(nameField);
+        
         webComponentPanel.addElement(new WebFormattedVec3Field("Diffuse", material.getDiffuse()) {
 			@Override
 			public void onValueChange(Vector3f current) {
@@ -267,7 +308,7 @@ public class MaterialView extends WebPanel {
 					
 					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
 					material.setVertexShader(fileName + ".glsl");
-		        	addMaterialInitCommand();
+		        	addMaterialInitCommand(material);
 				}
 
 			});
@@ -278,7 +319,7 @@ public class MaterialView extends WebPanel {
 	        		try {
 						world.getRenderer().getProgramFactory().copyDefaultVertexShaderToFile(selection.toString());
 						material.setVertexShader(selection.toString() + ".glsl");
-			        	addMaterialInitCommand();
+			        	addMaterialInitCommand(material);
 					} catch (Exception e1) {
 						e1.printStackTrace();
 						showNotification(NotificationIcon.error, "Not able to set vertex shader");
@@ -288,7 +329,7 @@ public class MaterialView extends WebPanel {
         	WebButton deleteShaderButton = new WebButton("X");
         	deleteShaderButton.addActionListener(e -> {
         		material.setVertexShader("");
-	        	addMaterialInitCommand();
+	        	addMaterialInitCommand(material);
         	});
             GroupPanel vertexShaderPanel = new GroupPanel ( 4, new WebLabel("VertexShader"), vertexShaderChooser, copyFromDefaultButton, deleteShaderButton);
             vertexShaderPanel.setPreferredWidth ( 200 );
@@ -312,7 +353,7 @@ public class MaterialView extends WebPanel {
 					
 					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
 					material.setFragmentShader(fileName + ".glsl");
-		        	addMaterialInitCommand();
+		        	addMaterialInitCommand(material);
 				}
 
 			});
@@ -323,7 +364,7 @@ public class MaterialView extends WebPanel {
 	        		try {
 						world.getRenderer().getProgramFactory().copyDefaultFragmentShaderToFile(selection.toString());
 						material.setFragmentShader(selection.toString() + ".glsl");
-			        	addMaterialInitCommand();
+			        	addMaterialInitCommand(material);
 					} catch (Exception e1) {
 						e1.printStackTrace();
 						showNotification(NotificationIcon.error, "Not able to set fragment shader");
@@ -333,7 +374,7 @@ public class MaterialView extends WebPanel {
         	WebButton deleteShaderButton = new WebButton("X");
         	deleteShaderButton.addActionListener(e -> {
         		material.setFragmentShader("");
-	        	addMaterialInitCommand();
+	        	addMaterialInitCommand(material);
         	});
             GroupPanel fragmentShaderPanel = new GroupPanel ( 4, new WebLabel("FragmentShader"), fragmentShaderChooser, copyFromDefaultButton, deleteShaderButton);
             fragmentShaderPanel.setPreferredWidth ( 200 );
@@ -355,7 +396,7 @@ public class MaterialView extends WebPanel {
 		}
 	}
 	
-	private void addMaterialInitCommand() {
+	private void addMaterialInitCommand(Material material) {
 		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new InitMaterialCommand(material));
 		
 		MaterialResult result = null;

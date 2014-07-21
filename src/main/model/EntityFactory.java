@@ -9,6 +9,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import main.renderer.Renderer;
 import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
 
 public class EntityFactory {
 	private Renderer renderer;
@@ -40,7 +41,7 @@ public class EntityFactory {
 			return entity;
 		}
 		
-		entity = new Entity(position, name, model, material);
+		entity = new Entity(renderer.getMaterialFactory(), position, name, model, material.getName());
 		Entity.write((Entity) entity, name);
 		return entity;
 	}

@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javafx.beans.DefaultProperty;
 import main.Transform;
 import main.World;
 import main.camera.Camera;
@@ -20,6 +21,7 @@ import main.component.IGameComponent;
 import main.component.IGameComponent.ComponentIdentifier;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
 import main.shader.Program;
 import main.util.Util;
 
@@ -57,13 +59,12 @@ public class Entity implements IEntity, Serializable {
 	private Transform transform = new Transform();
 	transient protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	
-	protected transient Material material;
-	private String materialName = "";
-
+	protected transient MaterialFactory materialFactory;
+	protected String materialName = "";
 
 	protected String name = "Entity_" + System.currentTimeMillis();
 
-	transient private boolean selected = false;
+	private boolean selected = false;
 	private boolean visible = true;
 	
 	transient public HashMap<ComponentIdentifier, IGameComponent> components = new HashMap<ComponentIdentifier, IGameComponent>();
@@ -71,29 +72,28 @@ public class Entity implements IEntity, Serializable {
 	protected Entity() {
 	}
 
-	protected Entity(Model model, Material material) {
-		this(new Vector3f(0, 0, 0), model.getName(), model, material);
+	protected Entity(MaterialFactory materialFactory, Model model, String materialName) {
+		this(materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
 	}
 
-	protected Entity(Vector3f position, String name, Model model, Material material) {
+	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		
 		transform.setPosition(position);
 		createFloatArray(model);
-		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
 		
-		this.material = material;
-		this.materialName = material.getName();
+		this.materialFactory = materialFactory;
+		this.materialName = materialName;
 		this.name = name;
 	}
 	
 	public void init(Renderer renderer) {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
-		material = renderer.getMaterialFactory().get(materialName);
 		components = new HashMap<ComponentIdentifier, IGameComponent>();
+		this.materialFactory = renderer.getMaterialFactory();
 	}
 	
 	public void createFloatArray(Model model) {
@@ -178,7 +178,7 @@ public class Entity implements IEntity, Serializable {
 			return;
 		}
 		
-		Program firstPassProgram = material.getFirstPassProgram();
+		Program firstPassProgram = getMaterial().getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
 		}
@@ -192,7 +192,7 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.use();
 		currentProgram.setUniform("useParallax", World.useParallax);
 		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		currentProgram.setUniform("reflectiveness", material.getReflectiveness());
+		currentProgram.setUniform("reflectiveness", getMaterial().getReflectiveness());
 		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		currentProgram.setUniform("eyePosition", camera.getPosition());
@@ -201,7 +201,7 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.setUniform("time", (int)System.currentTimeMillis());
 		
 		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-		material.setTexturesActive(currentProgram);
+		getMaterial().setTexturesActive(currentProgram);
 		
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
@@ -215,7 +215,7 @@ public class Entity implements IEntity, Serializable {
 	public void drawDebug(Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 
-		material.setTexturesActive(program);
+		getMaterial().setTexturesActive(program);
 		vertexBuffer.drawDebug();
 
 //		material.setTexturesInactive();
@@ -260,11 +260,11 @@ public class Entity implements IEntity, Serializable {
 	}
 	@Override
 	public Material getMaterial() {
-		return material;
+		return materialFactory.get(materialName);
 	}
 	@Override
-	public void setMaterial(Material material) {
-		this.material = material;
+	public void setMaterial(String materialName) {
+		this.materialName = materialName;
 	};
 
 	@Override

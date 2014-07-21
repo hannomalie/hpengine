@@ -31,7 +31,7 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 public class GBuffer {
 
 	private Renderer renderer;
-	private float secondPassScale = 0.5f;
+	private float secondPassScale = 1f;
 	private RenderTarget gBuffer;
 	private RenderTarget laBuffer;
 	private VertexBuffer fullscreenBuffer;
@@ -82,9 +82,9 @@ public class GBuffer {
 		
 		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
 			Material old = entity.getMaterial();
-			entity.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
+			entity.setMaterial(renderer.getMaterialFactory().getDefaultMaterial().getName());
 			entity.draw(renderer, camera);
-			entity.setMaterial(old);			
+			entity.setMaterial(old.getName());			
 		}
 		
 		
@@ -210,8 +210,8 @@ public class GBuffer {
 		combineProgram.use();
 		combineProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		combineProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-//		combineProgram.setUniform("secondPassScale", secondPassScale);
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
+		combineProgram.setUniform("exposure", World.EXPOSURE);
 		
 		if(target == null) {
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);

@@ -11,6 +11,7 @@ import main.model.Model;
 import main.model.OBJLoader;
 import main.octree.Octree;
 import main.renderer.command.Command;
+import main.renderer.light.LightFactory;
 import main.renderer.light.Spotlight;
 import main.renderer.material.MaterialFactory;
 import main.shader.Program;
@@ -61,5 +62,6 @@ public interface Renderer {
 	public void drawLines(Program firstPassProgram);
 	public <T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
 	public ProgramFactory getProgramFactory();
+	public LightFactory getLightFactory();
 
 }

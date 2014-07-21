@@ -19,6 +19,7 @@ import main.model.Model;
 import main.physic.PhysicsFactory;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
+import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
@@ -71,15 +72,16 @@ public class World {
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 
-	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 1f;
-	public static float AMBIENTOCCLUSION_RADIUS = 0.0125f;
+	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
+	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;
+	public static int EXPOSURE = 4;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.5f, 0.5f,0.5f);
 	
 	public static void main(String[] args) {
 		final World world;
 		
-		String sceneName = "default";
+		String sceneName = "sponza";
 		boolean debug = true;
 		for (String string : args) {
 			if("debug=false".equals(string)) {
@@ -90,8 +92,8 @@ public class World {
 			}
 		}
 
-//		world = new World(sceneName);
-		world = new World();
+		world = new World(sceneName);
+//		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {
@@ -243,7 +245,7 @@ public class World {
 						float random = (float) (Math.random() -0.5);
 						Vector3f position = new Vector3f(i*10,random*i+j,j*10);
 						IEntity entity = renderer.getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
-						entity.setMaterial(mat);
+						entity.setMaterial(mat.getName());
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
@@ -300,8 +302,9 @@ public class World {
 //			List<Model> sphere;
 //			try {
 //				sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
-//				IEntity shot = renderer.getEntityFactory().getEntity(camera.getPosition(), sphere.get(0));
-//				PhysicsComponent physicsBall = physicsFactory.addBallPhysicsComponent(shot);
+////				IEntity shot = renderer.getEntityFactory().getEntity(camera.getPosition(), sphere.get(0));
+//				PointLight pointLight = renderer.getLightFactory().getPointLight(camera.getPosition(), sphere.get(0));
+//				PhysicsComponent physicsBall = physicsFactory.addBallPhysicsComponent(pointLight);
 //				physicsBall.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(5,0,5));
 //			} catch (Exception e) {
 //				e.printStackTrace();

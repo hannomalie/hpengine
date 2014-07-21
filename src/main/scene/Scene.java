@@ -130,4 +130,7 @@ public class Scene implements Serializable {
 	public void setInitialized(boolean initialized) {
 		this.initialized = initialized;
 	}
+	public boolean removeEntity(IEntity entity) {
+		return octree.removeEntity(entity);
+	}
 }

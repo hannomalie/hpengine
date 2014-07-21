@@ -48,7 +48,7 @@ public interface IEntity {
 	default public void setName(String string) {}
 	
 	public Material getMaterial();
-	default public void setMaterial(Material defaultMaterial) {};
+	default void setMaterial(String materialName) {};
 
 	default public Vector3f getCenter() { return getPosition(); }
 	default public boolean isInFrustum(Camera camera) { return true; }
@@ -67,5 +67,5 @@ public interface IEntity {
 	
 	public default void destroy() {}
 
-	public default HashMap<ComponentIdentifier, IGameComponent> getComponents() { return new HashMap<>(); };
+	public default HashMap<ComponentIdentifier, IGameComponent> getComponents() { return new HashMap<>(); }
 }

@@ -17,6 +17,7 @@ uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
+uniform int exposure = 4;
 
 in vec3 position;
 in vec2 texCoord;
@@ -79,7 +80,8 @@ void main(void) {
 	float specularFactor = lightDiffuseSpecular.a;
 	
 	vec4 aoReflect = texture2D(aoReflection, st);
-	float ao = blurSample(aoReflection, st, 0.005).r;
+	float ao = blurSample(aoReflection, st, 0.00125).r;
+
 	//vec3 reflectedColor = aoReflect.gba;
 	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
@@ -87,15 +89,12 @@ void main(void) {
 	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
 	vec3 finalColor = mix(color + specularTerm, reflectedColor+ specularTerm, reflectiveness);
 	finalColor *=1;
-	finalColor.rgb = Uncharted2Tonemap(4*finalColor.rgb);
+	finalColor.rgb = Uncharted2Tonemap(exposure*finalColor.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
 	finalColor.rgb = finalColor.rgb * whiteScale;
-	//finalColor.r = pow(finalColor.r, 1/2.2);
-	//finalColor.g = pow(finalColor.g, 1/2.2);
-	//finalColor.b = pow(finalColor.b, 1/2.2);
 	finalColor *= 1+finalColor;
 	vec4 lit = vec4(ambientTerm*finalColor, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1);
 	out_color = lit;
-	//out_color.rgb = reflectedColor;
-	
+	//out_color.rgb = vec3(ao,ao,ao);
+	//out_color.rgb = color.xyz;
 }

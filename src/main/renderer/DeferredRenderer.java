@@ -276,10 +276,10 @@ public class DeferredRenderer implements Renderer {
 		draw(null, octree, camera, entities, light);
 	    GPUProfiler.endFrame();
 	    GPUTaskProfile tp;
-//	    while((tp = GPUProfiler.getFrameResults()) != null){
-//	        
-//	        tp.dump(); //Dumps the frame to System.out.
-//	    }
+	    while((tp = GPUProfiler.getFrameResults()) != null){
+	        
+	        tp.dump(); //Dumps the frame to System.out.
+	    }
 	}
 	
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
@@ -491,6 +491,15 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public EntityFactory getEntityFactory() {
 		return entityFactory;
+	}
+
+	@Override
+	public LightFactory getLightFactory() {
+		return lightFactory;
+	}
+
+	public void setLightFactory(LightFactory lightFactory) {
+		this.lightFactory = lightFactory;
 	}
 
 	@Override

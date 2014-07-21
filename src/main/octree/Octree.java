@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 
 import main.camera.Camera;
 import main.model.DataChannels;
+import main.model.Entity;
 import main.model.IEntity;
 import main.model.VertexBuffer;
 import main.renderer.Renderer;
@@ -591,6 +592,18 @@ public class Octree {
 			}
 			return valid;
 		}
+
+
+		public boolean remove(IEntity entity) {
+			if (hasChildren) {
+				for (int i = 0; i < children.length; i++) {
+					if (children[i].entities.contains(entity)) {
+						return children[i].entities.remove(entity);
+					}
+				}
+			}
+			return this.entities.remove(entity);
+		}
 	}
 
 	public List<IEntity> getEntities() {
@@ -605,6 +618,12 @@ public class Octree {
 
 	public int getCurrentDeepness() {
 		return rootNode.getMaxDeepness();
+	}
+
+	public boolean removeEntity(IEntity entity) {
+		entities.remove(entity);
+	    entityNames.remove(entity.getName());
+		return rootNode.remove(entity);
 	}
 
 }

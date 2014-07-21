@@ -4,13 +4,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import main.renderer.Renderer;
 import main.renderer.material.Material.MAP;
 import main.shader.Program;
-import main.shader.ShaderDefine;
 import main.texture.Texture;
 
 import org.apache.commons.io.FilenameUtils;
@@ -103,7 +105,11 @@ public class MaterialFactory {
 	public Material get(String materialName) {
 		Material material = MATERIALS.get(materialName);
 		if(material == null) {
-			material = read(Material.getDirectory() + materialName);
+			material = read(materialName);
+
+			if(material == null) {
+				material = getDefaultMaterial();
+			}
 			MATERIALS.put(material.getName(), material);
 		}
 		return material;
@@ -124,6 +130,22 @@ public class MaterialFactory {
 
 		public MaterialInfo(String name, MaterialMap maps) {
 			this(maps);
+		}
+
+		public MaterialInfo(MaterialInfo materialInfo) {
+			this.maps = materialInfo.maps;
+			this.name = materialInfo.name;
+			this.ambient = materialInfo.ambient;
+			this.diffuse = materialInfo.diffuse;
+			this.specular = materialInfo.specular;
+			this.specularCoefficient = materialInfo.specularCoefficient;
+			this.reflectiveness = materialInfo.reflectiveness;
+			this.glossiness = materialInfo.glossiness;
+			this.textureLess = materialInfo.textureLess;
+			this.firstPassProgram = materialInfo.firstPassProgram;
+			this.geometryShader = materialInfo.geometryShader;
+			this.vertexShader = materialInfo.vertexShader;
+			this.fragmentShader = materialInfo.fragmentShader;
 		}
 
 		public MaterialMap maps = new MaterialMap();
@@ -191,6 +213,7 @@ public class MaterialFactory {
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
 		try {
+//			System.out.println(new File(Material.getDirectory() + fileName + ".hpmaterial").exists());
 			fis = new FileInputStream(Material.getDirectory() + fileName + ".hpmaterial");
 			in = new ObjectInputStream(fis);
 			Material material = (Material) in.readObject();
@@ -198,8 +221,24 @@ public class MaterialFactory {
 			return getMaterialWithoutRead(material.getMaterialInfo());
 //			return material;
 		} catch (IOException | ClassNotFoundException e) {
-//			e.printStackTrace();
+			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public Map<String, Material> getMaterials() {
+		return MATERIALS;
+	}
+
+	public List<Material> getMaterialsAsList() {
+		List<Material> sortedList = new ArrayList<Material>(MATERIALS.values());
+		sortedList.sort(new Comparator<Material>() {
+			@Override
+			public int compare(Material o1, Material o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+		});
+		
+		return sortedList;
 	}
 }

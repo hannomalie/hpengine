@@ -8,6 +8,7 @@ import main.model.Entity;
 import main.model.Model;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
 import main.shader.Program;
 import main.util.Util;
 
@@ -22,18 +23,13 @@ public class PointLight extends Entity {
 	private static int counter = 0;
 	private Vector4f color;
 	
-	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range, Material material) {
-		super(position, generateName(), model, material);
+	protected PointLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
+		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(range);
 	}
 	
-	@Override
-	public void setMaterial(Material material) {
-		this.material = material;
-	}
-
 	private static String generateName() {
 		return String.format("PointLight_%d", counter);
 	}

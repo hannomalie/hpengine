@@ -34,7 +34,7 @@ public class PhysicsComponent implements IGameComponent {
 		main.Transform converted = new main.Transform();//Util.fromBullet(out);
 		Quat4f outQuat = new Quat4f();
 		out.getRotation(outQuat);
-		System.out.println("Rotation " + outQuat.x + " " + outQuat.y + " " + outQuat.z + " " + outQuat.w);
+//		System.out.println("Rotation " + outQuat.x + " " + outQuat.y + " " + outQuat.z + " " + outQuat.w);
 //		converted.setOrientation(new Quaternion(outQuat.x,outQuat.y,outQuat.z,outQuat.w).negate(null));
 		converted.setScale(owner.getScale());
 //		converted.setOrientation(new Quaternion(outQuat.x, outQuat.y, outQuat.z, outQuat.w));

@@ -39,6 +39,7 @@ import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
 import main.scene.Scene;
 import main.texture.TextureFactory;
+import main.util.gui.input.SliderInput;
 import main.util.gui.input.Vector3fInput;
 import main.util.gui.input.WebFormattedVec3Field;
 import main.util.script.ScriptManager;
@@ -268,6 +269,12 @@ public class DebugFrame {
 		mainElements.add(ambientOcclusionRadiusSlider);
 		mainElements.add(new WebLabel("Ambient Occlusion Strength"));
 		mainElements.add(ambientOcclusionTotalStrengthSlider);
+		mainElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, World.EXPOSURE) {
+			@Override
+			public void onValueChange(int value, int delta) {
+				World.EXPOSURE = value;
+			}
+		});
         Component[] mainElementsArray = new Component[mainElements.size()];
         mainElements.toArray(mainElementsArray);
 ////////////////
@@ -578,7 +585,7 @@ public class DebugFrame {
 		
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, world, entityViewFrame);
+		new SetSelectedListener(scene, world, this, entityViewFrame);
 	}
 
 	private void addCheckStateListener(WebCheckBoxTree<DefaultMutableTreeNode> scene) {
@@ -613,7 +620,7 @@ public class DebugFrame {
 		System.out.println("Added " + world.getScene().getEntities().size());
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, world, entityViewFrame);
+		new SetSelectedListener(scene, world, this, entityViewFrame);
 
 		tabbedPane.remove(scenePane);
 		scenePane = new JScrollPane(scene);

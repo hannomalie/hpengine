@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import main.renderer.material.Material.MAP;
 import main.texture.Texture;
@@ -12,12 +13,12 @@ import main.texture.Texture;
 public class MaterialMap implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private transient HashMap<MAP, Texture> textures = new HashMap<MAP, Texture>();
+	private transient ConcurrentHashMap<MAP, Texture> textures = new ConcurrentHashMap<MAP, Texture>();
 	private HashMap<MAP, String> textureNames = new HashMap<MAP, String>();
 	
 	
 	public MaterialMap() {
-		setTextures(new HashMap<MAP, Texture>());
+		setTextures(new ConcurrentHashMap<MAP, Texture>());
 		setTextureNames(new HashMap<MAP, String>());
 	}
 	
@@ -50,11 +51,11 @@ public class MaterialMap implements Serializable {
 		getTextures().put(key, value);
 	}
 
-	public HashMap<MAP, Texture> getTextures() {
+	public ConcurrentHashMap<MAP, Texture> getTextures() {
 		return textures;
 	}
 
-	public void setTextures(HashMap<MAP, Texture> textures) {
+	public void setTextures(ConcurrentHashMap<MAP, Texture> textures) {
 		this.textures = textures;
 	}
 
@@ -72,7 +73,7 @@ public class MaterialMap implements Serializable {
 	
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 	    in.defaultReadObject();
-	    setTextures(new HashMap<MAP, Texture>());
+	    setTextures(new ConcurrentHashMap<MAP, Texture>());
 	}
 	
 	private void writeObject(ObjectOutputStream oos) throws IOException {

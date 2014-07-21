@@ -4,6 +4,7 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -103,7 +104,7 @@ public class Material implements Serializable {
 
 	private Program logAndFallBackIfNull(Renderer renderer, Program firstPassProgram, String definesString) {
 		if(firstPassProgram == null) {
-			System.err.println("File not found for material " + materialInfo.name);
+//			System.err.println("File not found for material " + materialInfo.name);
 			firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
 		}
 		return firstPassProgram;
