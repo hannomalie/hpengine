@@ -105,9 +105,11 @@ public class Octree {
 	}
 	
 	public List<IEntity> getVisible(Camera camera) {
-		List<IEntity> result = new LinkedList();//ArrayList<>();
+		List<IEntity> result = new ArrayList<>();
+		result.addAll(rootNode.entities);
 		
-		rootNode.getVisible(camera, result);
+		//rootNode.getVisible(camera, result);
+		rootNode.getVisibleThreaded(camera, result);
 		return new ArrayList<IEntity>(result);
 	}
 	
@@ -202,14 +204,56 @@ public class Octree {
 						children[i].getVisible(camera, result);
 						//children[i].getAllEntitiesInAndBelow(result);
 					}	
+				}  else {
+					result.addAll(entities);
 				}
-				result.addAll(entities);
 			}
 		}
 		
-		public boolean isVisible(Camera camera) {
-//			System.out.println("Node visible " + aabb.isInFrustum(camera) + " with " + getAllEntitiesInAndBelow().size());
-			return looseAabb.isInFrustum(camera);
+
+		ExecutorService	collectExecutor;
+		private List<IEntity> getVisibleThreaded(Camera camera, List<IEntity> result) {
+
+			collectExecutor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
+			List<Future<List<IEntity>>> toGather = new ArrayList<Future<List<IEntity>>>();
+			
+			if (isRoot()) {
+				for(int i = 0; i < 8; i++) {
+				      Callable<List<IEntity>> worker = new CollectVisibleCallable(camera, children[i]);
+				      Future<List<IEntity>> submit = collectExecutor.submit(worker);
+				      toGather.add(submit);
+				}	
+			}
+			for (Future<List<IEntity>> future : toGather) {
+			      try {
+			        result.addAll(future.get());
+			      } catch (InterruptedException e) {
+			        e.printStackTrace();
+			      } catch (ExecutionException e) {
+			        e.printStackTrace();
+			      }
+			    }
+			
+			collectExecutor.shutdown();
+			result.addAll(entities);
+			return result;
+		}
+		
+		static class CollectVisibleCallable implements Callable<List<IEntity>> {
+			private Node node;
+			private Camera camera;
+			
+			CollectVisibleCallable(Camera camera, Node node) {
+			    this.node = node;
+			    this.camera = camera;
+			  }
+
+			  @Override
+			  public List<IEntity> call() {
+					List<IEntity> result = new ArrayList<IEntity>();
+				  	node.getVisible(camera, result);
+					return result;
+			  }
 		}
 		
 		public void getAllEntitiesInAndBelow(List<IEntity> result) {
@@ -223,6 +267,11 @@ public class Octree {
 		}
 		
 
+		public boolean isVisible(Camera camera) {
+//			System.out.println("Node visible " + aabb.isInFrustum(camera) + " with " + getAllEntitiesInAndBelow().size());
+			return looseAabb.isInFrustum(camera);
+		}
+		
 		private List<IEntity> getAllEntitiesInAndBelowThreaded() {
 
 			ExecutorService	collectExecutor = Executors.newFixedThreadPool(8);
