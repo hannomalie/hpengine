@@ -259,14 +259,13 @@ out_normal.rgb = vec3(0,0.8,0)+ 0.5*vec3(n*n2,n*n2,n*n2);
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
-vec3 texCoords3d = normalize(reflect(V, out_normal.rgb));
+vec3 texCoords3d = normalize(reflect(eyeVec, out_normal.rgb));
 //texCoords3d.y *= -1;
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, out_color.w);
 
 //out_color.rgb *= vec3(0.2+0.4*n*n2,0.2+0.4*n*n2,0.2+0.7*n*n2);
 
 vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
-specularColor.rgb *= vec3(1,1,1);
 
 #ifdef use_specularMap
 		UV = texCoord + uvParallax;

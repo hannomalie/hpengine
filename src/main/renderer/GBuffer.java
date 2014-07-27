@@ -16,7 +16,9 @@ import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.shader.Program;
 import main.texture.CubeMap;
+import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
+import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -62,30 +64,28 @@ public class GBuffer {
 
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
-			entities.addAll(octree.getVisible(camera));
+			entities = (octree.getVisible(camera));
 			
-//			System.out.println("Visible: " + entities.size() + " / " + octree.getEntities().size() + " / " + octree.getEntityCount());
 			for (int i = 0; i < entities.size(); i++) {
 				if (!entities.get(i).isInFrustum(camera)) {
 					entities.remove(i);
 				}
 			}
-//			System.out.println("Visible exactly: " + entities.size() + " / " + octree.getEntities().size());
 			
 		} else {
-			entities.addAll(octree.getEntities());
+			entities = (octree.getEntities());
 		}
 
 		for (IEntity entity : entities) {
 			entity.draw(renderer, camera);
 		}
 		
-		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
-			Material old = entity.getMaterial();
-			entity.setMaterial(renderer.getMaterialFactory().getDefaultMaterial().getName());
-			entity.draw(renderer, camera);
-			entity.setMaterial(old.getName());			
-		}
+//		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
+//			Material old = entity.getMaterial();
+//			entity.setMaterial(renderer.getMaterialFactory().getDefaultMaterial().getName());
+//			entity.draw(renderer, camera);
+//			entity.setMaterial(old.getName());			
+//		}
 		
 		
 		if (World.DRAWLIGHTS_ENABLED) {

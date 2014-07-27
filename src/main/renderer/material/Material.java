@@ -136,9 +136,9 @@ public class Material implements Serializable {
 			texture.bind();
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
-//			if(map.equals(MAP.ENVIRONMENT)) {
-//				System.out.println("Bound " + map + " " + texture.getPath() +  " to " + map.textureSlot);	
-//			}
+			if(map.equals(MAP.ENVIRONMENT)) {
+				renderer.getEnvironmentMap().bind();
+			}
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
 

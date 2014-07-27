@@ -24,14 +24,16 @@ public class CubeMap extends Texture implements Serializable {
 	
 	private List<byte[]> dataList;
 
+	protected CubeMap() {}
+	
 	public CubeMap(String path, int target, int textureID) {
 		super(path, target, textureID);
 	}
-
+	
 	public void upload() {
 
         bind();
-        if (target == GL13.GL_TEXTURE_CUBE_MAP)
+//        if (target == GL13.GL_TEXTURE_CUBE_MAP)
         {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter);

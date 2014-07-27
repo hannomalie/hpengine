@@ -91,11 +91,8 @@ public class TextureFactory {
 			try {
 				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {
 					getTexture(file.getAbsolutePath());
-					DeferredRenderer.exitOnGLError("After getTexture");
 				} else {
-					DeferredRenderer.exitOnGLError("Before getCubeMap");
 					getCubeMap(file.getAbsolutePath());
-					DeferredRenderer.exitOnGLError("After getCubeMap");
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -497,8 +494,8 @@ public class TextureFactory {
 			break;
 
 		case 2: // GL_TEXTURE_CUBE_MAP_POSITIVE_Y
-			result[0] = new Vector2f(imageWidth/4, 0);
-			result[1] = new Vector2f(imageWidth/2, imageHeight/3); // TODO: Why do I have to flip this bxxxx!?
+			result[1] = new Vector2f(imageWidth/4, 0);
+			result[0] = new Vector2f(imageWidth/2, imageHeight/3);
 			break;
 
 		case 3: // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y

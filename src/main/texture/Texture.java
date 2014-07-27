@@ -41,7 +41,7 @@ public class Texture implements Serializable {
 	protected int target; 
     /** The GL texture ID */
     transient protected int textureID;
-    /** The height of the image */
+	/** The height of the image */
     protected int height;
     /** The width of the image */
     protected int width;
@@ -337,5 +337,13 @@ public class Texture implements Serializable {
 	@Override
 	public int hashCode() {
 		return path.hashCode();
+	}
+
+    public int getTextureID() {
+		return textureID;
+	}
+
+	public void setTextureID(int textureID) {
+		this.textureID = textureID;
 	}
 }

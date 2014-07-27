@@ -477,8 +477,6 @@ public class DebugFrame {
 		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
 		TableModel materialDataModel = new AbstractTableModel() {
 
-			List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
-			List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
 
 			public int getColumnCount() {
 				return 2;
@@ -489,9 +487,13 @@ public class DebugFrame {
 			}
 
 			public Object getValueAt(int row, int col) {
+
+				List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
+				
 				if (col == 0) {
 					return paths.get(row);
 				}
+				List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
 				return materials.get(row);
 			}
 			

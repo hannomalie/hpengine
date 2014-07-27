@@ -16,16 +16,18 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
 
 public class RenderTarget {
-	private int framebufferLocation;
-	private int depthbufferLocation;
-	private int[] renderedTextures;
-	private int width;
-	private int height;
-	private float clearR;
-	private float clearG;
-	private float clearB;
-	private float clearA;
+	protected int framebufferLocation;
+	protected int depthbufferLocation;
+	protected int[] renderedTextures;
+	protected int width;
+	protected int height;
+	protected float clearR;
+	protected float clearG;
+	protected float clearB;
+	protected float clearA;
 
+	protected RenderTarget() {}
+	
 	public RenderTarget(int width, int height) {
 		this(width, height, GL11.GL_RGB, 0.4f, 0.4f, 0.4f, 0f, GL11.GL_LINEAR, 1);
 	}
@@ -96,6 +98,7 @@ public class RenderTarget {
 		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
 		if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
 			System.out.println("RenderTarget fucked up");
+			System.out.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
 			System.exit(0);
 		}
 	}
@@ -145,6 +148,8 @@ public class RenderTarget {
 
 		return pixels;
 	}
+	
+	
 	public ByteBuffer getDepthTexturedata() {
 		ByteBuffer pixels = BufferUtils.createByteBuffer(width*height*4);
 		GL11.glReadPixels(0, 0, width, height, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, pixels);

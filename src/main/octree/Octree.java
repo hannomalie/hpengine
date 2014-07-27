@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,6 +24,7 @@ import main.model.IEntity;
 import main.model.VertexBuffer;
 import main.renderer.Renderer;
 import main.shader.Program;
+import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -46,6 +48,7 @@ public class Octree {
 	public Node rootNode;
 
 	transient private List<IEntity> entities = new ArrayList<>();
+	transient private HashMap<IEntity, Octree.Node> entityNodeMappings = new HashMap();
 	
 	private List<String> entityNames = new ArrayList<>();
 	
@@ -70,10 +73,14 @@ public class Octree {
 	
 	public void insert(IEntity entity) {
 
-	   boolean insertSuccessfull = rootNode.insert(entity);
-	   if (!insertSuccessfull) {
+	   Node insertedInto = rootNode.insert(entity);
+	   if (insertedInto == null) {
 		   rootNode.entities.add(entity);
+		   entityNodeMappings.put(entity, rootNode);
+	   } else {
+		   entityNodeMappings.put(entity, insertedInto);
 	   }
+	   
 	   rootNode.optimize();
 //	   rootNode.optimizeThreaded();
 	   entities.add(entity);
@@ -82,10 +89,14 @@ public class Octree {
 		
 	public void insertWithoutOptimize(IEntity entity) {
 
-	   boolean insertSuccessfull = rootNode.insert(entity);
-	   if (!insertSuccessfull) {
+	   Node insertedInto = rootNode.insert(entity);
+	   if (insertedInto == null) {
 		   rootNode.entities.add(entity);
+		   entityNodeMappings.put(entity, rootNode);
+	   } else {
+		   entityNodeMappings.put(entity, insertedInto);
 	   }
+	   
 	   entities.add(entity);
 	   entityNames.add(entity.getName());
 	}
@@ -105,11 +116,13 @@ public class Octree {
 	}
 	
 	public List<IEntity> getVisible(Camera camera) {
+		StopWatch.getInstance().start("Octree get visible");
 		List<IEntity> result = new ArrayList<>();
 		result.addAll(rootNode.entities);
 		
 		//rootNode.getVisible(camera, result);
 		rootNode.getVisibleThreaded(camera, result);
+		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<IEntity>(result);
 	}
 	
@@ -352,7 +365,8 @@ public class Octree {
 			this(parent.octree, getCenterForNewChild(parent, index), parent.size/2, parent.deepness + 1);
 		}
 		
-		public boolean insert(IEntity entity) {
+		// returns the node the entity was inserted into or null, if no insertion point was found
+		public Node insert(IEntity entity) {
 //			LOGGER.log(Level.INFO, String.format("Inserting %s ...", entity));
 
 			Vector4f[] minMaxWorld = entity.getMinMaxWorld();
@@ -360,9 +374,9 @@ public class Octree {
 			if (isLeaf()) {
 				if(contains(minMaxWorld)) {
 					entities.add(entity);
-					return true;	
+					return this;	
 				} else {
-					return false;
+					return null;
 				}
 			}
 			
@@ -371,8 +385,8 @@ public class Octree {
 					Node node = children[i];
 					if (node.contains(minMaxWorld)) {
 						if(node.contains(entity.getCenter())) {
-							if(node.insert(entity)) {
-								return true;
+							if(node.insert(entity) != null) {
+								return node;
 							}
 						}
 					}
@@ -380,11 +394,11 @@ public class Octree {
 				
 				// Wasn't able to add entity to children
 				this.entities.add(entity);
-				return true;
+				return this;
 				
 			} else {
 				entities.add(entity);
-				return true;
+				return this;
 			}
 		}
 		

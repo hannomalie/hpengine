@@ -5,7 +5,6 @@ import static main.log.ConsoleLogger.getLogger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -19,7 +18,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import main.World;
 import main.camera.Camera;
@@ -39,41 +37,31 @@ import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
-import main.shader.ComputeShaderProgram;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.texture.CubeMap;
+import main.texture.DynamicCubeMap;
 import main.texture.TextureFactory;
-import main.util.CLUtil;
+import main.util.Util;
 import main.util.ressources.FileMonitor;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
-import main.util.stopwatch.StopWatch;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.Sys;
-import org.lwjgl.opencl.CL10;
-import org.lwjgl.opencl.CL10GL;
-import org.lwjgl.opencl.CLKernel;
-import org.lwjgl.opencl.CLMem;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -120,6 +108,8 @@ public class DeferredRenderer implements Renderer {
 	private FloatBuffer identityMatrix44Buffer;
 
 	private GBuffer gBuffer;
+
+	private Program cubeMapDiffuseProgram;
 	
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
@@ -132,6 +122,10 @@ public class DeferredRenderer implements Renderer {
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
+		Quaternion cubeMapCamInitialOrientation = new Quaternion();
+		Quaternion.setIdentity(cubeMapCamInitialOrientation);
+		cubeMapCam.setOrientation(cubeMapCamInitialOrientation);
+		cubeMapCam.rotate(new Vector4f(0,1,0,90));
 		
 		sphereModel = null;
 		try {
@@ -163,9 +157,15 @@ public class DeferredRenderer implements Renderer {
 		Program secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
-		
+
 		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, combineProgram);
 
+		cubeMapDiffuseProgram = programFactory.getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		cubeMapRenderTargets = new CubeRenderTarget[6];
+		for(int i = 0; i < 6; i++) {
+			cubeMapRenderTargets[i] = new CubeRenderTarget(cubeMap.getImageWidth(), cubeMap.getImageHeight(), cubeMap.getTextureID(), i);
+		}
+		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
 
@@ -215,11 +215,13 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
-		try {
-			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
+			cubeMap = new DynamicCubeMap(1024, 1024);
+//			DeferredRenderer.exitOnGLError("setup cubemap");
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 		
 		copyDefaultShaders();
 
@@ -287,6 +289,12 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("First pass");
 		gBuffer.drawFirstPass(camera, octree, pointLights);
 		GPUProfiler.end();
+
+		GPUProfiler.start("Draw a cubemap");
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		drawCubeMap(octree, camera);
+		GPUProfiler.end();
 		
 		GPUProfiler.start("Shadowmap pass");
 		GL11.glDepthMask(true);
@@ -297,7 +305,6 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
-		
 		gBuffer.drawSecondPass(camera, light, pointLights, cubeMap);
 		GPUProfiler.end();
 		
@@ -320,6 +327,71 @@ public class DeferredRenderer implements Renderer {
 		
 	}
 
+	
+	private void drawCubeMap(Octree octree, Camera camera) {
+//		cubeMapCam.setPosition(camera.getPosition());
+//		cubeMapCam.setOrientation(camera.getOrientation());
+		
+		drawCubeMapSides(cubeMapRenderTargets, octree, cubeMapCam);
+//		cubeMap.bind();
+//		renderTarget.saveBuffer(""+System.currentTimeMillis()+".png");
+	}
+
+	private void drawCubeMapSides(RenderTarget[] renderTargets, Octree octree, Camera camera) {
+		Quaternion initialOrientation = camera.getOrientation();
+		Vector3f initialPosition = camera.getPosition();
+		
+		cubeMapDiffuseProgram.use();
+		for(int i = 0; i < 6; i++) {
+			rotateForIndex(i, camera);
+			List<IEntity> visibles = octree.getEntities();
+			renderTargets[i].use(true);
+			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
+			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+			cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+			cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+			
+			for (IEntity e : visibles) {
+				entityBuffer.rewind();
+				e.getModelMatrix().store(entityBuffer);
+				entityBuffer.rewind();
+				cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+				e.getMaterial().setTexturesActive(cubeMapDiffuseProgram);
+				e.getVertexBuffer().draw();
+			}
+			
+		}
+		camera.setPosition(initialPosition);
+		camera.setOrientation(initialOrientation);
+	}
+	
+	private void rotateForIndex(int i, Camera camera) {
+		switch (i) {
+		case 0:
+			camera.rotate(new Vector4f(0,0,1, -180));
+			break;
+		case 1:
+			camera.rotate(new Vector4f(0,1,0, -180));
+			break;
+		case 2:
+			camera.rotate(new Vector4f(0,1,0, 90));
+			camera.rotate(new Vector4f(1,0,0, 90));
+			break;
+		case 3:
+			camera.rotate(new Vector4f(1,0,0, -180));
+			break;
+		case 4:
+			camera.rotate(new Vector4f(1,0,0, 90));
+			break;
+		case 5:
+			camera.rotate(new Vector4f(0,1,0, -180));
+			break;
+		default:
+			break;
+		}
+
+		camera.updateShadow();
+	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer) {
 		drawToQuad(texture, buffer, renderToQuadProgram);
@@ -423,6 +495,9 @@ public class DeferredRenderer implements Renderer {
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 
 	private List<Vector3f> linePoints = new ArrayList<>();
+	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
+	private RenderTarget[] cubeMapRenderTargets;
+	private Camera cubeMapCam = new Camera(this, Util.createPerpective(90f, 1, 0.1f, 500f), 0.1f, 500f);
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {

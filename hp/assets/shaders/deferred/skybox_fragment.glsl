@@ -135,6 +135,7 @@ void main(void) {
 	out_normal.rgb = -(viewMatrix * vec4(V, 0)).xyz;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
+	
 #ifdef use_diffuseMap
 	UV = texCoord;
 	UV.x = texCoord.x * diffuseMapWidth;
@@ -151,8 +152,8 @@ void main(void) {
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
-vec3 texCoords3d = normalize(reflect(V, normal_world));
-//texCoords3d.y *= -1;
+vec3 texCoords3d = (reflect(eyeVec, normal_world));
+//texCoords3d.x *= -1;
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 1);
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);

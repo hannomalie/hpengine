@@ -99,15 +99,17 @@ void main(void) {
 		UV.y = texCoord.y * normalMapHeight;
 		//UV = UV + time/2000.0;
 #endif
+
 vec2 uvParallax = vec2(0,0);
+
 	if (useParallax) {
 		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
 		float v = height * 0.021 - 0.025;
 		uvParallax = (V.xy * v);
 		UV = UV + (V.xy * v);
 	} else if (useSteepParallax) {
-		float n = 10;
-		float bumpScale = 0.01;
+		float n = 20;
+		float bumpScale = 0.005;
 		float step = 1/n;
 		vec2 dt = V.xy * bumpScale / (n * V.z);
 		
