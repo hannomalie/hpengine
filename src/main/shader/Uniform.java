@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL20;
 
 public class Uniform {
 	
-	protected int location = -1;
+	protected int location = -2;
 	public String name = "";
 	protected Program program;
 	
@@ -21,23 +21,28 @@ public class Uniform {
 	}
 
 	public void set(int value) {
+//		if(location == -1) { return; };
 		GL20.glUniform1i(location, value);
 	}
 	public void set(float value) {
+//		if(location == -1) { return; };
 		GL20.glUniform1f(location, value);
 	}
 	public void set(double value) {
+//		if(location == -1) { return; };
 		GL20.glUniform1f(location, (float)value);
 	}
 	public void set(float x, float y, float z) {
+//		if(location == -1) { return; };
 		GL20.glUniform3f(location, x, y, z);
 	}
 	public void setAsMatrix4(FloatBuffer values) {
+//		if(location == -1) { return; };
 		GL20.glUniformMatrix4(location, false, values);
 	}
 	
 	public Uniform setLocationIfAbsent() {
-		if (location == -1) {
+		if (location == -2) {
 			location = program.getUniformLocation(name);
 		}
 		return this;

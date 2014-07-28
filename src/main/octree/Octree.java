@@ -10,7 +10,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -47,7 +49,7 @@ public class Octree {
 
 	public Node rootNode;
 
-	transient private List<IEntity> entities = new ArrayList<>();
+	transient private List<IEntity> entities = new CopyOnWriteArrayList<>();
 	transient private HashMap<IEntity, Octree.Node> entityNodeMappings = new HashMap();
 	
 	private List<String> entityNames = new ArrayList<>();
@@ -116,13 +118,13 @@ public class Octree {
 	}
 	
 	public List<IEntity> getVisible(Camera camera) {
-		StopWatch.getInstance().start("Octree get visible");
+//		StopWatch.getInstance().start("Octree get visible");
 		List<IEntity> result = new ArrayList<>();
 		result.addAll(rootNode.entities);
 		
-		//rootNode.getVisible(camera, result);
+//		rootNode.getVisible(camera, result);
 		rootNode.getVisibleThreaded(camera, result);
-		StopWatch.getInstance().stopAndPrintMS();
+//		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<IEntity>(result);
 	}
 	
@@ -224,19 +226,23 @@ public class Octree {
 		}
 		
 
-		ExecutorService	collectExecutor;
+		ExecutorService	executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
 		private List<IEntity> getVisibleThreaded(Camera camera, List<IEntity> result) {
 
-			collectExecutor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
+//			StopWatch.getInstance().start("Octree collects");
+			ExecutorCompletionService ecs = new ExecutorCompletionService(executorService);
 			List<Future<List<IEntity>>> toGather = new ArrayList<Future<List<IEntity>>>();
 			
 			if (isRoot()) {
 				for(int i = 0; i < 8; i++) {
 				      Callable<List<IEntity>> worker = new CollectVisibleCallable(camera, children[i]);
-				      Future<List<IEntity>> submit = collectExecutor.submit(worker);
+				      Future<List<IEntity>> submit = ecs.submit(worker);
 				      toGather.add(submit);
 				}	
 			}
+//			StopWatch.getInstance().stopAndPrintMS();
+
+//			StopWatch.getInstance().start("Octree merge collected");
 			for (Future<List<IEntity>> future : toGather) {
 			      try {
 			        result.addAll(future.get());
@@ -247,8 +253,9 @@ public class Octree {
 			      }
 			    }
 			
-			collectExecutor.shutdown();
+//			collectExecutor.shutdown();
 			result.addAll(entities);
+//			StopWatch.getInstance().stopAndPrintMS();
 			return result;
 		}
 		
@@ -287,14 +294,14 @@ public class Octree {
 		
 		private List<IEntity> getAllEntitiesInAndBelowThreaded() {
 
-			ExecutorService	collectExecutor = Executors.newFixedThreadPool(8);
+			ExecutorCompletionService ecs = new ExecutorCompletionService(executorService);
 			List<Future<List<IEntity>>> toGather = new ArrayList<Future<List<IEntity>>>();
 			List<IEntity> result = new ArrayList<>();
 			
 			if (hasChildren) {
 				for(int i = 0; i < 8; i++) {
 				      Callable<List<IEntity>> worker = new CollectEntitiesInAndBelowCallable(children[i]);
-				      Future<List<IEntity>> submit = collectExecutor.submit(worker);
+				      Future<List<IEntity>> submit = ecs.submit(worker);
 				      toGather.add(submit);
 				}	
 			}
@@ -308,7 +315,6 @@ public class Octree {
 			      }
 			    }
 			
-			collectExecutor.shutdown();
 			result.addAll(entities);
 			return result;
 		}

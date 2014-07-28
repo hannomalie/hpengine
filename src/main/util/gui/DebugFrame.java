@@ -186,7 +186,7 @@ public class DebugFrame {
 		
 		toggleFileReload.addActionListener( e -> {
 			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
-			toggleParallax.setSelected(World.RELOAD_ON_FILE_CHANGE);
+			toggleFileReload.setSelected(World.RELOAD_ON_FILE_CHANGE);
 		});
 		
 		toggleParallax.addActionListener( e -> {

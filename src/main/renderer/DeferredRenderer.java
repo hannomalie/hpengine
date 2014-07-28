@@ -68,6 +68,7 @@ import org.lwjgl.util.vector.Vector4f;
 import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class DeferredRenderer implements Renderer {
+	private static int frameCount = 0;
 	private static Logger LOGGER = getLogger();
 	
 	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
@@ -122,10 +123,6 @@ public class DeferredRenderer implements Renderer {
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
-		Quaternion cubeMapCamInitialOrientation = new Quaternion();
-		Quaternion.setIdentity(cubeMapCamInitialOrientation);
-		cubeMapCam.setOrientation(cubeMapCamInitialOrientation);
-		cubeMapCam.rotate(new Vector4f(0,1,0,90));
 		
 		sphereModel = null;
 		try {
@@ -160,11 +157,7 @@ public class DeferredRenderer implements Renderer {
 
 		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, combineProgram);
 
-		cubeMapDiffuseProgram = programFactory.getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
-		cubeMapRenderTargets = new CubeRenderTarget[6];
-		for(int i = 0; i < 6; i++) {
-			cubeMapRenderTargets[i] = new CubeRenderTarget(cubeMap.getImageWidth(), cubeMap.getImageHeight(), cubeMap.getTextureID(), i);
-		}
+		environmentSampler = new EnvironmentSampler(this, 128, 128);
 		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
@@ -282,6 +275,7 @@ public class DeferredRenderer implements Renderer {
 	        
 	        tp.dump(); //Dumps the frame to System.out.
 	    }
+	    frameCount++;
 	}
 	
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
@@ -290,11 +284,13 @@ public class DeferredRenderer implements Renderer {
 		gBuffer.drawFirstPass(camera, octree, pointLights);
 		GPUProfiler.end();
 
-		GPUProfiler.start("Draw a cubemap");
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		drawCubeMap(octree, camera);
-		GPUProfiler.end();
+		if(frameCount%10 == 0) {
+			GPUProfiler.start("Draw a cubemap");
+			GL11.glDepthMask(true);
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+			cubeMap = environmentSampler.drawCubeMap(octree);
+			GPUProfiler.end();
+		}
 		
 		GPUProfiler.start("Shadowmap pass");
 		GL11.glDepthMask(true);
@@ -325,72 +321,6 @@ public class DeferredRenderer implements Renderer {
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
-	}
-
-	
-	private void drawCubeMap(Octree octree, Camera camera) {
-//		cubeMapCam.setPosition(camera.getPosition());
-//		cubeMapCam.setOrientation(camera.getOrientation());
-		
-		drawCubeMapSides(cubeMapRenderTargets, octree, cubeMapCam);
-//		cubeMap.bind();
-//		renderTarget.saveBuffer(""+System.currentTimeMillis()+".png");
-	}
-
-	private void drawCubeMapSides(RenderTarget[] renderTargets, Octree octree, Camera camera) {
-		Quaternion initialOrientation = camera.getOrientation();
-		Vector3f initialPosition = camera.getPosition();
-		
-		cubeMapDiffuseProgram.use();
-		for(int i = 0; i < 6; i++) {
-			rotateForIndex(i, camera);
-			List<IEntity> visibles = octree.getEntities();
-			renderTargets[i].use(true);
-			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
-			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
-			cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-			cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-			
-			for (IEntity e : visibles) {
-				entityBuffer.rewind();
-				e.getModelMatrix().store(entityBuffer);
-				entityBuffer.rewind();
-				cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
-				e.getMaterial().setTexturesActive(cubeMapDiffuseProgram);
-				e.getVertexBuffer().draw();
-			}
-			
-		}
-		camera.setPosition(initialPosition);
-		camera.setOrientation(initialOrientation);
-	}
-	
-	private void rotateForIndex(int i, Camera camera) {
-		switch (i) {
-		case 0:
-			camera.rotate(new Vector4f(0,0,1, -180));
-			break;
-		case 1:
-			camera.rotate(new Vector4f(0,1,0, -180));
-			break;
-		case 2:
-			camera.rotate(new Vector4f(0,1,0, 90));
-			camera.rotate(new Vector4f(1,0,0, 90));
-			break;
-		case 3:
-			camera.rotate(new Vector4f(1,0,0, -180));
-			break;
-		case 4:
-			camera.rotate(new Vector4f(1,0,0, 90));
-			break;
-		case 5:
-			camera.rotate(new Vector4f(0,1,0, -180));
-			break;
-		default:
-			break;
-		}
-
-		camera.updateShadow();
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer) {
@@ -496,8 +426,7 @@ public class DeferredRenderer implements Renderer {
 
 	private List<Vector3f> linePoints = new ArrayList<>();
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
-	private RenderTarget[] cubeMapRenderTargets;
-	private Camera cubeMapCam = new Camera(this, Util.createPerpective(90f, 1, 0.1f, 500f), 0.1f, 500f);
+	private EnvironmentSampler environmentSampler;
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {

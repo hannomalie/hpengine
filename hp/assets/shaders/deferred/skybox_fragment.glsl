@@ -153,7 +153,7 @@ void main(void) {
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
 vec3 texCoords3d = (reflect(eyeVec, normal_world));
-//texCoords3d.x *= -1;
+
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 1);
 
 	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
