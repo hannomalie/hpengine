@@ -34,10 +34,12 @@ public class EntityFactory {
 		IEntity entity = read(model.getName());
 		
 		if(entity != null) {
+			entity.setPosition(position);
 			return entity;
 		}
 		entity = read(name);
 		if(entity != null) {
+			entity.setPosition(position);
 			return entity;
 		}
 		

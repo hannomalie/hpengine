@@ -14,13 +14,16 @@ import main.octree.Octree;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
+import main.scene.EnvironmentProbe;
 import main.shader.Program;
 import main.texture.CubeMap;
+import main.texture.DynamicCubeMap;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
@@ -52,7 +55,7 @@ public class GBuffer {
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
-		new Matrix4f().setIdentity().store(identityMatrixBuffer);
+		new Matrix4f().store(identityMatrixBuffer);
 	}
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -254,34 +257,42 @@ public class GBuffer {
 		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		firstPassProgram.setUniform("eyePosition", camera.getPosition());
 		
-		List<IEntity> visibleEntities = new ArrayList<>();
-		if (World.useFrustumCulling) {
-			visibleEntities.addAll(octree.getVisible(camera));
-//			entities.addAll(octree.getEntities());
-			for (int i = 0; i < visibleEntities.size(); i++) {
-				if (!visibleEntities.get(i).isInFrustum(camera)) {
-					visibleEntities.remove(i);
+		if(World.DRAWSCENE_ENABLED) {
+			List<IEntity> visibleEntities = new ArrayList<>();
+			if (World.useFrustumCulling) {
+				visibleEntities.addAll(octree.getVisible(camera));
+//				entities.addAll(octree.getEntities());
+				for (int i = 0; i < visibleEntities.size(); i++) {
+					if (!visibleEntities.get(i).isInFrustum(camera)) {
+						visibleEntities.remove(i);
+					}
 				}
+			} else {
+				visibleEntities.addAll(octree.getEntities());
 			}
-		} else {
-			visibleEntities.addAll(octree.getEntities());
+			
+			for (IEntity entity : visibleEntities) {
+				entity.drawDebug(firstPassProgram);
+				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getViewDirection(), null).scale(10));
+				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getUpDirection(), null).scale(10));
+				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getRightDirection(), null).scale(10));
+			}
 		}
-		
-		for (IEntity entity : visibleEntities) {
-			entity.drawDebug(firstPassProgram);
-			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getViewDirection(), null).scale(10));
-			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getUpDirection(), null).scale(10));
-			renderer.drawLine(entity.getPosition(), (Vector3f) Vector3f.add(entity.getPosition(), entity.getRightDirection(), null).scale(10));
-		}
+
+//		firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (IEntity entity : pointLights) {
 				entity.drawDebug(firstPassProgram);
 			}	
 		}
-		
+
 		if (Octree.DRAW_LINES) {
 			octree.drawDebug(renderer, camera, firstPassProgram);
+		}
+		
+		if (World.DRAW_PROBES) {
+//			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+			renderer.getEnvironmentProbeFactory().drawDebug(firstPassProgram);
 		}
 
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
@@ -290,7 +301,7 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
-	    dynamicsWorld.debugDrawWorld();
+//	    dynamicsWorld.debugDrawWorld();
 	    renderer.drawLines(firstPassProgram);
 		
 		GL11.glDepthMask(false);
@@ -305,6 +316,9 @@ public class GBuffer {
 	}
 	public int getLightAccumulationMapOneId() {
 		return laBuffer.getRenderedTexture(0);
+	}
+	public int getNormalMap() {
+		return gBuffer.getRenderedTexture(1);
 	}
 	
 

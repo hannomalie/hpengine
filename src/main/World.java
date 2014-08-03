@@ -62,15 +62,15 @@ public class World {
 	private OpenGLStopWatch glWatch;
 
 	public static Spotlight light= new Spotlight(true);
-	public static volatile boolean useParallaxLocation = false;
-	public static volatile boolean useParallax = true;
-	public static volatile boolean useSteepParallaxLocation = false;
+	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;
 	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
+	public static volatile boolean DRAWSCENE_ENABLED = true;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
+	public static volatile boolean DRAW_PROBES = true;
 
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;
@@ -92,8 +92,8 @@ public class World {
 			}
 		}
 
-		world = new World(sceneName);
-//		world = new World();
+//		world = new World(sceneName);
+		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {
@@ -104,7 +104,7 @@ public class World {
 
 	PhysicsFactory physicsFactory;
 	Scene scene;
-	private int entityCount = 1;
+	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
 
@@ -120,7 +120,7 @@ public class World {
 		renderer = new DeferredRenderer(light);
 		glWatch = new OpenGLStopWatch();
 		physicsFactory = new PhysicsFactory(this);
-		scene = new Scene();
+		scene = new Scene(renderer);
 		camera = new Camera(renderer);
 		try {
 			light.init(renderer);
@@ -243,16 +243,16 @@ public class World {
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
-						Vector3f position = new Vector3f(i*10,random*i+j,j*10);
+						Vector3f position = new Vector3f(i*20,random*i+j,j*20);
 						IEntity entity = renderer.getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
 						entity.setMaterial(mat.getName());
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
 						entity.setScale(scale);
 						
-						PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
-						physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
-						physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
+//						PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+//						physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
+//						physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
 						
 						entities.add(entity);
 					} catch (Exception e) {

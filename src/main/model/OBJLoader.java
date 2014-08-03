@@ -201,6 +201,10 @@ public class OBJLoader {
 			    	  String map = materialLine.replaceAll("map_Disp ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.SPECULAR );
 			    	  
+			    } else if (materialLine.startsWith("map_Ks ")) {
+			    	  String map = materialLine.replaceAll("map_Ks ", "");
+			    	  addHelper(currentMaterialInfo, path, map, MAP.SPECULAR );
+			    	  
 			    } else if (materialLine.startsWith("map_bump ")) {
 			    	  String map = materialLine.replaceAll("map_bump ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.NORMAL );

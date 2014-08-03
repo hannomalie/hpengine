@@ -14,10 +14,10 @@ import main.renderer.command.Command;
 import main.renderer.light.LightFactory;
 import main.renderer.light.Spotlight;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
-import main.texture.CubeMap;
-import main.texture.TextureFactory;
+import main.texture.*;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -63,5 +63,7 @@ public interface Renderer {
 	public <T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
 	public ProgramFactory getProgramFactory();
 	public LightFactory getLightFactory();
+	public EnvironmentProbeFactory getEnvironmentProbeFactory();
+	public void setEnvironmentMap(DynamicCubeMap environmentMap);
 
 }

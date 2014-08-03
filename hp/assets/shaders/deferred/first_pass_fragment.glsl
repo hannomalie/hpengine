@@ -37,6 +37,9 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
+uniform vec3 environmentMapWorldPosition = vec3(0,0,0);
+uniform float environmentMapSize = 1; // this is size of the half extends!
+
 uniform float time = 0;
 
 in vec4 color;
@@ -104,12 +107,12 @@ vec2 uvParallax = vec2(0,0);
 
 	if (useParallax) {
 		float height = length(texture2D(normalMap, UV).rgb);//texture2D(heightMap, UV).r;
-		float v = height * 0.021 - 0.025;
-		uvParallax = (V.xy * v);
-		UV = UV + (V.xy * v);
+		float v = height * 0.005;
+		uvParallax = (eyeVec.xy * v);
+		UV = UV + uvParallax;
 	} else if (useSteepParallax) {
 		float n = 20;
-		float bumpScale = 0.005;
+		float bumpScale = 0.002;
 		float step = 1/n;
 		vec2 dt = V.xy * bumpScale / (n * V.z);
 		
@@ -125,9 +128,11 @@ vec2 uvParallax = vec2(0,0);
 	}
 	
 	// NORMAL
-	vec3 PN_view =  (viewMatrix * vec4(normal_model,0)).xyz;
+	vec3 PN_view = (viewMatrix * vec4(normal_world,0)).xyz;
+	vec3 PN_world = normal_world;
 #ifdef use_normalMap
-		PN_view = ((viewMatrix * vec4(perturb_normal(normal_world, V, UV), 0)).xyz);
+	PN_world = perturb_normal(normal_world, eyeVec, UV);	
+	PN_view = ((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
 	out_position = viewMatrix * position_world;
@@ -154,11 +159,53 @@ vec2 uvParallax = vec2(0,0);
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
-vec3 texCoords3d = normalize(reflect(V, normal_world));
-//texCoords3d.y *= -1;
-out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, out_color.w);
+//vec3 texCoords3d = eyeVec;
+vec3 texCoords3d = normalize(reflect(V, PN_world));
 
-	vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
+//vec3 offset = environmentMapWorldPosition.xyz - eyePos_world.xyz;
+//vec3 offsetAmount = offset / vec3(environmentMapSize,environmentMapSize,environmentMapSize);
+
+vec3 nrdir = normalize(texCoords3d);
+/*vec3 envMapMax = environmentMapWorldPosition + vec3(environmentMapSize,environmentMapSize,environmentMapSize);
+vec3 envMapMin = environmentMapWorldPosition - vec3(environmentMapSize,environmentMapSize,environmentMapSize);
+
+vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+vec3 rbminmax = any(greaterThan(nrdir,vec3(0,0,0))) ? rbmax : rbmin;
+float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+vec3 posonbox = position_world.xyz + nrdir*fa;
+texCoords3d = posonbox - environmentMapWorldPosition.xyz;
+
+//texCoords3d -= offsetAmount;
+*/
+// http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
+float a = dot(nrdir,nrdir);
+float b = 2.0 * dot(nrdir, position_world.xyz - environmentMapWorldPosition);
+float c = dot(position_world.xyz, environmentMapWorldPosition) - environmentMapSize*environmentMapSize;
+float discrim = b * b - 4.0 * a * c;
+float q;
+vec4 reflColor = vec4(1, 0, 0, 0);
+if (discrim > 0) {
+  q = ((abs(sqrt(discrim) - b) / 2.0));
+  float t0 = q / a;
+  float t1 = c / q;
+    if (t0 > t1)
+	{
+	    float temp = t0;
+	    t0 = t1;
+	    t1 = temp;
+	}
+    if (t0 < 0)
+    {
+        texCoords3d = t1 * nrdir - position_world.xyz;
+        texCoords3d.y = -texCoords3d.y;
+    }
+}
+
+out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
+
+vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap
 		UV = texCoord + uvParallax;
 		UV.x = texCoord.x * specularMapWidth;

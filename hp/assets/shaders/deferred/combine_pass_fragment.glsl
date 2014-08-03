@@ -85,7 +85,7 @@ void main(void) {
 	//vec3 reflectedColor = aoReflect.gba;
 	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
-	vec3 ambientTerm = ambientColor * ao;
+	vec3 ambientTerm = ambientColor * ao * color;
 	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
 	vec3 finalColor = mix(color + specularTerm, reflectedColor+ specularTerm, reflectiveness);
 	finalColor *=1;

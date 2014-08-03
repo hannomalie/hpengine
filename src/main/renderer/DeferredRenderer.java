@@ -37,6 +37,7 @@ import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.texture.CubeMap;
@@ -47,6 +48,7 @@ import main.util.ressources.FileMonitor;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
+import main.util.stopwatch.StopWatch;
 
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
@@ -68,6 +70,8 @@ import org.lwjgl.util.vector.Vector4f;
 import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class DeferredRenderer implements Renderer {
+	private static boolean IGNORE_GL_ERRORS = !(java.lang.management.ManagementFactory.getRuntimeMXBean().
+		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
 	private static int frameCount = 0;
 	private static Logger LOGGER = getLogger();
 	
@@ -96,11 +100,13 @@ public class DeferredRenderer implements Renderer {
 	private IEntity sphere;
 
 	public CubeMap cubeMap;
+	private EnvironmentSampler environmentSampler;
 
 	private OBJLoader objLoader;
 	private ProgramFactory programFactory;
 	private EntityFactory entityFactory;
 	private LightFactory lightFactory;
+	private EnvironmentProbeFactory environmentProbeFactory;
 	private MaterialFactory materialFactory;
 	private TextureFactory textureFactory;
 
@@ -123,6 +129,8 @@ public class DeferredRenderer implements Renderer {
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
+		environmentProbeFactory = new EnvironmentProbeFactory(this);
+		environmentProbeFactory.getProbe(new Vector3f(0,10,0),500);
 		
 		sphereModel = null;
 		try {
@@ -157,7 +165,7 @@ public class DeferredRenderer implements Renderer {
 
 		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, combineProgram);
 
-		environmentSampler = new EnvironmentSampler(this, 128, 128);
+		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
@@ -208,13 +216,13 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
-//		try {
-//			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
-			cubeMap = new DynamicCubeMap(1024, 1024);
+		try {
+			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
+//			cubeMap = new DynamicCubeMap(1024, 1024);
 //			DeferredRenderer.exitOnGLError("setup cubemap");
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		copyDefaultShaders();
 
@@ -284,11 +292,19 @@ public class DeferredRenderer implements Renderer {
 		gBuffer.drawFirstPass(camera, octree, pointLights);
 		GPUProfiler.end();
 
+//		if(frameCount%10 == 0) {
+//			GPUProfiler.start("Draw a cubemap");
+//			GL11.glDepthMask(true);
+//			GL11.glEnable(GL11.GL_DEPTH_TEST);
+//			environmentSampler.drawCubeMap(octree);
+//			cubeMap = environmentSampler.getEnvironmentMap();
+//			GPUProfiler.end();
+//		}
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		if(frameCount%10 == 0) {
-			GPUProfiler.start("Draw a cubemap");
-			GL11.glDepthMask(true);
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			cubeMap = environmentSampler.drawCubeMap(octree);
+			GPUProfiler.start("Environment probes");
+			environmentProbeFactory.draw(octree);
 			GPUProfiler.end();
 		}
 		
@@ -317,7 +333,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -369,6 +385,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
+		if(IGNORE_GL_ERRORS) { return; }
 		int errorValue = GL11.glGetError();
 		
 		if (errorValue != GL11.GL_NO_ERROR) {
@@ -387,6 +404,7 @@ public class DeferredRenderer implements Renderer {
 
 	public void drawLines(Program program) {
 
+//		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
@@ -420,13 +438,16 @@ public class DeferredRenderer implements Renderer {
 	public CubeMap getEnvironmentMap() {
 		return cubeMap;
 	}
-	
+
+	@Override
+	public void setEnvironmentMap(DynamicCubeMap environmentMap) {
+		environmentSampler.setCubeMap(environmentMap);
+	}
 
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 
 	private List<Vector3f> linePoints = new ArrayList<>();
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
-	private EnvironmentSampler environmentSampler;
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {
@@ -534,6 +555,10 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
+	public EnvironmentProbeFactory getEnvironmentProbeFactory() {
+		return environmentProbeFactory;
+	}
+	@Override
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities,
 			Spotlight light) {
 
@@ -546,4 +571,5 @@ public class DeferredRenderer implements Renderer {
 		drawToQuad(gBuffer.getColorReflectivenessImage(), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
+
 }

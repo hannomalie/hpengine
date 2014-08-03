@@ -27,6 +27,11 @@ public class Box {
 		calculateCorners();
 	}
 	
+	public void move(Vector3f amount) {
+		Vector3f.add(center, amount, center);
+		calculateCorners();
+	}
+	
 	private void calculateCorners() {
 		float halfSize = size/2;
 		this.bottomLeftBackCorner = new Vector3f(center.x - halfSize, center.y - halfSize, center.z - halfSize);
@@ -47,6 +52,45 @@ public class Box {
 		result.add(new Vector3f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z - size));
 
 		return result;
+	}
+	
+	public float[] getPointsAsArray() {
+		List<Vector3f> points = getPoints();
+		List<Vector3f> pointsForLineDrawing = new ArrayList<>();
+		pointsForLineDrawing.add(points.get(0));
+		pointsForLineDrawing.add(points.get(1));
+		pointsForLineDrawing.add(points.get(1));
+		pointsForLineDrawing.add(points.get(2));
+		pointsForLineDrawing.add(points.get(2));
+		pointsForLineDrawing.add(points.get(3));
+		pointsForLineDrawing.add(points.get(3));
+		pointsForLineDrawing.add(points.get(0));
+		
+		pointsForLineDrawing.add(points.get(4));
+		pointsForLineDrawing.add(points.get(5));
+		pointsForLineDrawing.add(points.get(5));
+		pointsForLineDrawing.add(points.get(6));
+		pointsForLineDrawing.add(points.get(6));
+		pointsForLineDrawing.add(points.get(7));
+		pointsForLineDrawing.add(points.get(7));
+		pointsForLineDrawing.add(points.get(4));
+
+		pointsForLineDrawing.add(points.get(0));
+		pointsForLineDrawing.add(points.get(6));
+		pointsForLineDrawing.add(points.get(1));
+		pointsForLineDrawing.add(points.get(7));
+		pointsForLineDrawing.add(points.get(2));
+		pointsForLineDrawing.add(points.get(4));
+		pointsForLineDrawing.add(points.get(3));
+		pointsForLineDrawing.add(points.get(5));
+
+		float[] dest = new float[3* pointsForLineDrawing.size()];
+		for (int i = 0; i < pointsForLineDrawing.size(); i++) {
+			dest[3*i] = pointsForLineDrawing.get(i).x;
+			dest[3*i+1] = pointsForLineDrawing.get(i).y;
+			dest[3*i+2] = pointsForLineDrawing.get(i).z;
+		}
+		return dest;
 	}
 
 	public boolean contains(Vector4f point) {

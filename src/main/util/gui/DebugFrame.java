@@ -91,7 +91,11 @@ public class DebugFrame {
 	private JScrollPane scenePane = new JScrollPane();
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
-	private RSyntaxTextArea console = new RSyntaxTextArea();
+	private RSyntaxTextArea console = new RSyntaxTextArea(
+	"temp = Java.type('org.lwjgl.util.vector.Vector3f');" +
+	"for each(var probe in renderer.getEnvironmentProbeFactory().getProbes()) {" +
+	"	probe.move(new temp(0,-10,0));" +
+	"}");
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
 	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
@@ -100,6 +104,7 @@ public class DebugFrame {
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
+	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
@@ -214,6 +219,9 @@ public class DebugFrame {
 		toggleDrawLines.addActionListener(e -> {
 			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
 		});
+		toggleDrawScene.addActionListener(e -> {
+			World.DRAWSCENE_ENABLED = !World.DRAWSCENE_ENABLED;
+		});
 		
 		toggleDrawOctree.addActionListener(e -> {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
@@ -280,6 +288,7 @@ public class DebugFrame {
 ////////////////
 	    List<Component> mainButtonElements = new ArrayList<>();
 	    mainButtonElements.add(toggleDrawLines);
+	    mainButtonElements.add(toggleDrawScene);
 	    mainButtonElements.add(toggleDrawOctree);
 	    mainButtonElements.add(toggleDebugFrame);
 	    mainButtonElements.add(toggleDrawLights);
@@ -363,7 +372,7 @@ public class DebugFrame {
         {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
-	    			Scene newScene = new Scene();
+	    			Scene newScene = new Scene(world.getRenderer());
 	    			world.setScene(newScene);
 	    			init(world);
         	});

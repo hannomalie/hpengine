@@ -6,6 +6,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import main.util.Util;
+import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -101,16 +102,20 @@ public class RenderTarget {
 			System.out.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
 			System.exit(0);
 		}
+		GL11.glClearColor(clearR,clearG,clearB,clearA);
 	}
 	
 	public void use(boolean clear) {
+		GPUProfiler.start("Bind framebuffer");
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
+//		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
+		GPUProfiler.end();
+		GPUProfiler.start("Viewport and clear");
 		GL11.glViewport(0, 0, width, height);
 		if (clear) {
-			GL11.glClearColor(clearR,clearG,clearB,clearA);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		}
+		GPUProfiler.end();
 	}
 	
 	public void unuse() {

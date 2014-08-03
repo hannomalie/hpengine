@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import main.renderer.Renderer;
+import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
 import main.renderer.material.Material.MAP;
 import main.shader.Program;
 import main.texture.Texture;
@@ -36,7 +37,7 @@ public class MaterialFactory {
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
-		Material material = MATERIALS.get(materialInfo.name);
+ 	Material material = MATERIALS.get(materialInfo.name);
 		if(material != null) {
 			return material;
 		}
@@ -134,6 +135,7 @@ public class MaterialFactory {
 
 		public MaterialInfo(MaterialInfo materialInfo) {
 			this.maps = materialInfo.maps;
+			this.environmentMapType = materialInfo.environmentMapType;
 			this.name = materialInfo.name;
 			this.ambient = materialInfo.ambient;
 			this.diffuse = materialInfo.diffuse;
@@ -149,6 +151,7 @@ public class MaterialFactory {
 		}
 
 		public MaterialMap maps = new MaterialMap();
+		public ENVIRONMENTMAPTYPE environmentMapType = ENVIRONMENTMAPTYPE.GENERATED;
 		public String name = "";
 		public Vector3f ambient = new Vector3f();
 		public Vector3f diffuse = new Vector3f();
@@ -220,8 +223,9 @@ public class MaterialFactory {
 			in.close();
 			return getMaterialWithoutRead(material.getMaterialInfo());
 //			return material;
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+//			e.printStackTrace();
+			System.out.println("Material read caused an exception, probably not very important");
 		}
 		return null;
 	}

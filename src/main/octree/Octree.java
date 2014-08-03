@@ -24,8 +24,11 @@ import main.model.DataChannels;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.VertexBuffer;
+import main.renderer.DeferredRenderer;
+import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
 import main.shader.Program;
+import main.texture.CubeMap;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.BufferUtils;
@@ -50,25 +53,28 @@ public class Octree {
 	public Node rootNode;
 
 	transient private List<IEntity> entities = new CopyOnWriteArrayList<>();
-	transient private HashMap<IEntity, Octree.Node> entityNodeMappings = new HashMap();
+	public transient HashMap<IEntity, Octree.Node> entityNodeMappings = new HashMap();
 	
 	private List<String> entityNames = new ArrayList<>();
+
+	private Renderer renderer;
 	
-	public Octree() {
-		this(new Vector3f());
+	public Octree(Renderer renderer) {
+		this(renderer, new Vector3f());
 	}
 
-	public Octree(Vector3f center) {
-		this(center, defaultSize);
+	public Octree(Renderer renderer, Vector3f center) {
+		this(renderer, center, defaultSize);
 	}
-	public Octree(Vector3f center, float size) {
-		this(center, size, 5);
+	public Octree(Renderer renderer, Vector3f center, float size) {
+		this(renderer, center, size, 6);
 	}
-	public Octree(Vector3f center, int maxDeepness) {
-		this(center, defaultSize, maxDeepness);
+	public Octree(Renderer renderer, Vector3f center, int maxDeepness) {
+		this(renderer, center, defaultSize, maxDeepness);
 	}
-	public Octree(Vector3f center, float size, int maxDeepness) {
+	public Octree(Renderer renderer, Vector3f center, float size, int maxDeepness) {
 		this.maxDeepness = maxDeepness;
+		this.renderer = renderer;
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
 	}
@@ -110,23 +116,25 @@ public class Octree {
 			insertWithoutOptimize(iEntity);
 		}
 //		long start = System.currentTimeMillis();
-	    rootNode.optimize();
-//		optimize();
+//	    rootNode.optimize();
+		optimize();
 //		rootNode.optimizeThreaded();
 //		long end = System.currentTimeMillis();
 //		System.out.println("Took " + (end - start) + " ms to optimize.");
 	}
-	
+
 	public List<IEntity> getVisible(Camera camera) {
-//		StopWatch.getInstance().start("Octree get visible");
+		StopWatch.getInstance().start("Octree get visible");
 		List<IEntity> result = new ArrayList<>();
 		result.addAll(rootNode.entities);
 		
 //		rootNode.getVisible(camera, result);
 		rootNode.getVisibleThreaded(camera, result);
-//		StopWatch.getInstance().stopAndPrintMS();
+		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<IEntity>(result);
 	}
+	
+	
 	
 	public void optimize() {
 		if(rootNode.hasChildren()) {
@@ -210,8 +218,7 @@ public class Octree {
 		public boolean isRoot() {
 			return octree.rootNode == this;
 		}
-
-
+		
 		public void getVisible(Camera camera, List<IEntity> result) {
 			if (isRoot() || isVisible(camera)) {
 				if (hasChildren) {
@@ -338,7 +345,10 @@ public class Octree {
 		public List<float[]> getPointsForLineDrawing(Camera camera) {
 			List<float[]> arrays = new ArrayList<float[]>();
 
-			if (!isVisible(camera) || getAllEntitiesInAndBelowThreaded().isEmpty()) {return arrays;}
+			if (!isVisible(camera)) {return arrays;}
+			List<IEntity> temp = new ArrayList<>();
+			getVisible(camera, temp);
+			if (temp.isEmpty()) {return arrays;}
 			
 			arrays.add(getPoints());
 			if (hasChildren()) {
@@ -609,42 +619,7 @@ public class Octree {
 		}
 
 		private float[] getPoints() {
-			List<Vector3f> points = aabb.getPoints();
-			List<Vector3f> pointsForLineDrawing = new ArrayList<>();
-			pointsForLineDrawing.add(points.get(0));
-			pointsForLineDrawing.add(points.get(1));
-			pointsForLineDrawing.add(points.get(1));
-			pointsForLineDrawing.add(points.get(2));
-			pointsForLineDrawing.add(points.get(2));
-			pointsForLineDrawing.add(points.get(3));
-			pointsForLineDrawing.add(points.get(3));
-			pointsForLineDrawing.add(points.get(0));
-			
-			pointsForLineDrawing.add(points.get(4));
-			pointsForLineDrawing.add(points.get(5));
-			pointsForLineDrawing.add(points.get(5));
-			pointsForLineDrawing.add(points.get(6));
-			pointsForLineDrawing.add(points.get(6));
-			pointsForLineDrawing.add(points.get(7));
-			pointsForLineDrawing.add(points.get(7));
-			pointsForLineDrawing.add(points.get(4));
-
-			pointsForLineDrawing.add(points.get(0));
-			pointsForLineDrawing.add(points.get(6));
-			pointsForLineDrawing.add(points.get(1));
-			pointsForLineDrawing.add(points.get(7));
-			pointsForLineDrawing.add(points.get(2));
-			pointsForLineDrawing.add(points.get(4));
-			pointsForLineDrawing.add(points.get(3));
-			pointsForLineDrawing.add(points.get(5));
-			
-			float[] dest = new float[3* pointsForLineDrawing.size()];
-			for (int i = 0; i < pointsForLineDrawing.size(); i++) {
-				dest[3*i] = pointsForLineDrawing.get(i).x;
-				dest[3*i+1] = pointsForLineDrawing.get(i).y;
-				dest[3*i+2] = pointsForLineDrawing.get(i).z;
-			}
-			return dest;
+			return aabb.getPointsAsArray();
 		}
 
 

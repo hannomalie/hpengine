@@ -17,12 +17,14 @@ import java.util.stream.Collectors;
 
 
 
+
 import main.World;
 import main.model.IEntity;
 import main.renderer.command.GetMaterialCommand;
 import main.renderer.command.InitMaterialCommand;
 import main.renderer.command.InitMaterialCommand.MaterialResult;
 import main.renderer.material.Material;
+import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory.MaterialInfo;
 import main.shader.Program;
@@ -34,9 +36,11 @@ import main.util.gui.input.WebFormattedVec3Field;
 
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+
 
 
 
@@ -283,6 +287,16 @@ public class MaterialView extends WebPanel {
     		glossinessInput.setValue(material.getGlossiness());
             GroupPanel groupPanelGlossiness = new GroupPanel ( 4, new WebLabel("Glossiness"), glossinessInput );
             webComponentPanel.addElement(groupPanelGlossiness);
+        }
+        {
+            WebComboBox environmentMapInput = new WebComboBox((EnumSet.allOf(ENVIRONMENTMAPTYPE.class)).toArray());
+            environmentMapInput.addActionListener(e -> {
+            	ENVIRONMENTMAPTYPE selected = (ENVIRONMENTMAPTYPE) environmentMapInput.getSelectedItem();
+            	material.setEnvironmentMapType(selected);
+            });
+            environmentMapInput.setSelectedItem(material.getEnvironmentMapType());
+            GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Environment map type"), environmentMapInput );
+            webComponentPanel.addElement(groupPanelEnironmentMapType);
         }
 		
 		panels.add(webComponentPanel);

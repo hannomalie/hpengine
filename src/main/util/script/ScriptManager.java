@@ -25,6 +25,7 @@ public class ScriptManager {
 
 	public void eval(String script) throws ScriptException {
 		engine.eval(script);
+		System.out.println("Script executed...");
 	}
 
 	private void defineGlobals() {

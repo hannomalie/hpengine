@@ -9,6 +9,7 @@ import main.component.IGameComponent.ComponentIdentifier;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.shader.Program;
+import main.texture.CubeMap;
 
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
@@ -18,8 +19,9 @@ import org.lwjgl.util.vector.Vector4f;
 
 public interface IEntity {
 	default public void update(float seconds) {};
-	
+
 	default public void draw(Renderer renderer, Camera camera) {};
+	default public void draw(Renderer renderer, Camera camera, CubeMap environmentMap) {};
 	default public void drawDebug(Program program) {};
 
 	public Transform getTransform();

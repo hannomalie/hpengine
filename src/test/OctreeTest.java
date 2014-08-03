@@ -101,7 +101,7 @@ public class OctreeTest {
 			}
 		};
 		
-		Octree octree = new Octree(new Vector3f(), 0);
+		Octree octree = new Octree(renderer, new Vector3f(), 0);
 		octree.insert(entity);
 		Assert.assertFalse(octree.rootNode.hasChildren());
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
@@ -197,7 +197,7 @@ public class OctreeTest {
 			}
 		};
 		
-		Octree octree = new Octree(new Vector3f(), 10f, 1);
+		Octree octree = new Octree(renderer, new Vector3f(), 10f, 1);
 		octree.insert(entityBottomLeftBack);
 		octree.insert(entityTopRightFront);
 //		Assert.assertEquals(1, octree.getCurrentDeepness());
@@ -233,7 +233,7 @@ public class OctreeTest {
 	public void octreeInsertSpeedAndValidityTest() {
 		getLogger().setLevel(Level.OFF);
 		
-		Octree octree = new Octree(new Vector3f(), 2000f, 7);
+		Octree octree = new Octree(renderer, new Vector3f(), 2000f, 7);
 		Random random = new Random();
 		final int entityCount = 10000;
 		List<IEntity> toAdd = new ArrayList<>();

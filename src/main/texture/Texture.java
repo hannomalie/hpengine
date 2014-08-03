@@ -225,6 +225,8 @@ public class Texture implements Serializable {
         { 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
+            GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT); 
+            GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT); 
         } 
  
         GL11.glTexImage2D(target, 

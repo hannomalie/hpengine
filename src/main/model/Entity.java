@@ -23,10 +23,12 @@ import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
 import main.shader.Program;
+import main.texture.CubeMap;
 import main.util.Util;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -201,10 +203,49 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.setUniform("time", (int)System.currentTimeMillis());
 		
 		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-		getMaterial().setTexturesActive(currentProgram);
+		getMaterial().setTexturesActive(this, currentProgram);
 		
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
+		
+		vertexBuffer.draw();
+
+//		material.setTexturesInactive();
+	}
+	
+	@Override
+	public void draw(Renderer renderer, Camera camera, CubeMap environmentMap) {
+		if(!isVisible()) {
+			return;
+		}
+		
+		Program firstPassProgram = getMaterial().getFirstPassProgram();
+		if (firstPassProgram == null) {
+			return;
+		}
+		Program currentProgram = firstPassProgram;
+//		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
+//			currentProgram = firstPassProgram;
+//			renderer.setLastUsedProgram(currentProgram);
+//			currentProgram.use();
+//		}
+//		currentProgram = renderer.getLastUsedProgram();
+		currentProgram.use();
+		currentProgram.setUniform("useParallax", World.useParallax);
+		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		currentProgram.setUniform("reflectiveness", getMaterial().getReflectiveness());
+		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		currentProgram.setUniform("eyePosition", camera.getPosition());
+		currentProgram.setUniform("near", camera.getNear());
+		currentProgram.setUniform("far", camera.getFar());
+		currentProgram.setUniform("time", (int)System.currentTimeMillis());
+		
+		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		getMaterial().setTexturesActive(this, currentProgram);
+		
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+//		environmentMap.bind();
 		
 		vertexBuffer.draw();
 
@@ -215,7 +256,7 @@ public class Entity implements IEntity, Serializable {
 	public void drawDebug(Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 
-		getMaterial().setTexturesActive(program);
+		getMaterial().setTexturesActive(this, program);
 		vertexBuffer.drawDebug();
 
 //		material.setTexturesInactive();

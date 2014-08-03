@@ -6,6 +6,7 @@ import java.nio.IntBuffer;
 import java.util.Random;
 
 import main.util.Util;
+import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -34,7 +35,7 @@ public class CubeRenderTarget extends RenderTarget {
 		
 //		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeTextureHandle);
 
-		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
+//		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 		for (int i = 0; i < colorBufferCount; i++) {
 
 			GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubeMapFaceIndex, cubeTextureHandle, 0);
@@ -57,7 +58,7 @@ public class CubeRenderTarget extends RenderTarget {
 			System.exit(0);
 		}
 	}
-	
+
 	public void saveBuffer(String path) {
 		Util.saveImage(getBuffer(), path);
 	}

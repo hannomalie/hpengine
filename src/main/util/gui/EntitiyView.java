@@ -107,6 +107,28 @@ public class EntitiyView extends WebPanel {
 					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
 				}
 			});
+	        
+	        webComponentPanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Vector3f axis = entity.getRightDirection();
+					entity.move((Vector3f) axis.scale(delta));
+				}
+			});
+	        webComponentPanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Vector3f axis = entity.getUpDirection();
+					entity.move((Vector3f) axis.scale(delta));
+				}
+			});
+	        webComponentPanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
+				@Override
+				public void onValueChange(int value, int delta) {
+					Vector3f axis = entity.getViewDirection().negate(null);
+					entity.move((Vector3f) axis.scale(delta));
+				}
+			});
 
 	        webComponentPanel.addElement(new ButtonInput("Rotation", "Reset") {
 				@Override

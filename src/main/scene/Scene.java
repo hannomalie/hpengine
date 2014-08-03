@@ -32,12 +32,12 @@ public class Scene implements Serializable {
 	
 	String name = "";
 	List<String> entitieNames = new ArrayList<>();
-	transient Octree octree = new Octree(new Vector3f(), 400, 6);
+	transient Octree octree;// = new Octree(renderer, new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	transient Renderer renderer;
 
-	public Scene() {
-		octree = new Octree(new Vector3f(), 600, 6);
+	public Scene(Renderer renderer) {
+		octree = new Octree(renderer, new Vector3f(), 600, 5);
 	}
 	public Scene(String name) {
 		this.name = name;
@@ -45,7 +45,7 @@ public class Scene implements Serializable {
 
 	public void init(Renderer renderer) {
 		List<IEntity> entities = new ArrayList<>();
-		octree = new Octree(new Vector3f(), 400, 6);
+		octree = new Octree(renderer, new Vector3f(), 600, 5);
 		entitieNames.forEach(name -> {entities .add(renderer.getEntityFactory().read(name));});
 		octree.insert(entities);
 		initialized = true;
@@ -92,7 +92,7 @@ public class Scene implements Serializable {
 			Scene scene = (Scene) in.readObject();
 			in.close();
 			scene.renderer = renderer;
-			scene.octree = new Octree(new Vector3f(), 400, 6);
+			scene.octree = new Octree(renderer, new Vector3f(), 400, 6);
 			return scene;
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();

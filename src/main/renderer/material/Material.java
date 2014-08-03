@@ -11,17 +11,22 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.World;
+import main.model.Entity;
 import main.model.IEntity;
 import main.renderer.Renderer;
+import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
 import main.renderer.material.MaterialFactory.MaterialInfo;
+import main.scene.EnvironmentProbe;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.shader.ShaderDefine;
 import main.texture.Texture;
+import main.util.stopwatch.GPUProfiler;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
@@ -53,6 +58,11 @@ public class Material implements Serializable {
 			this.textureSlot = textureSlot;
 		}
 	}
+	
+	public enum ENVIRONMENTMAPTYPE {
+		PROVIDED,
+		GENERATED
+	}
 
 	transient boolean initialized = false;
 
@@ -70,6 +80,9 @@ public class Material implements Serializable {
 				Texture tex;
 				if(map.equals(MAP.ENVIRONMENT)) {
 					tex = renderer.getTextureFactory().getCubeMap(name);
+					if(tex == null) {
+						tex = renderer.getEnvironmentMap();
+					}
 				} else {
 					tex = renderer.getTextureFactory().getTexture(name);
 				}
@@ -124,7 +137,12 @@ public class Material implements Serializable {
 		return !isTextureLess() && materialInfo.maps.getTextures().containsKey(MAP.DIFFUSE);
 	}
 	
-	public void setTexturesActive(Program program) {
+	public void setTexturesActive(Entity entity, Program program) {
+		program.setUniform("materialDiffuseColor", getDiffuse());
+		program.setUniform("materialSpecularColor", getSpecular());
+		program.setUniform("materialSpecularCoefficient", getSpecularCoefficient());
+		program.setUniform("materialGlossiness", getGlossiness());
+		
 		if (!program.needsTextures()) {
 			return;
 		}
@@ -133,20 +151,32 @@ public class Material implements Serializable {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
-			texture.bind();
+			if(map.equals(MAP.ENVIRONMENT)) {
+				if(materialInfo.environmentMapType == ENVIRONMENTMAPTYPE.GENERATED && entity != null) {
+					Optional<EnvironmentProbe> option = renderer.getEnvironmentProbeFactory().getProbeForEntity(entity);
+					if(option.isPresent()) {
+						EnvironmentProbe environmentProbe = option.get();
+						program.setUniform("environmentMapWorldPosition", environmentProbe.getCenter());
+						program.setUniform("environmentMapSize", environmentProbe.getBox().size/2);
+						environmentProbe.getEnvironmentMap().bind();
+					} else {
+						renderer.getEnvironmentMap().bind();
+					}
+				} else {
+					if (texture != null) {
+						texture.bind();
+					} else {
+						renderer.getEnvironmentMap().bind();
+					}
+				}
+			} else {
+				texture.bind();	
+			}
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
-			if(map.equals(MAP.ENVIRONMENT)) {
-				renderer.getEnvironmentMap().bind();
-			}
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
-		}
 
-		program.setUniform("materialDiffuseColor", getDiffuse());
-		program.setUniform("materialSpecularColor", getSpecular());
-		program.setUniform("materialSpecularCoefficient", getSpecularCoefficient());
-		program.setUniform("materialGlossiness", getGlossiness());
-		
+		}
 	}
 
 	public void setTexturesInactive() {
@@ -310,6 +340,14 @@ public class Material implements Serializable {
 //				m.name.equals(name) &&
 				mi.reflectiveness == materialInfo.reflectiveness &&
 				mi.firstPassProgram.equals(materialInfo.firstPassProgram));
+	}
+
+	public void setEnvironmentMapType(ENVIRONMENTMAPTYPE type) {
+		this.materialInfo.environmentMapType = type;
+	}
+	
+	public ENVIRONMENTMAPTYPE getEnvironmentMapType() {
+		return this.materialInfo.environmentMapType;
 	}
 
 }

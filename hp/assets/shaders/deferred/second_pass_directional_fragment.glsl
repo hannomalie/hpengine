@@ -53,9 +53,35 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   
   //vec3 environmentSample = texture(environmentMap, -normal).rgb;
   //return vec4((vec4(environmentSample,1) * dot_prod).xyz, specular_factor);
-  vec3 lightColor = lightDiffuse;// * texture(environmentMap, normal).rgb;
+  vec3 lightColor = lightDiffuse;//* (inverse(viewMatrix) * vec4(texture(environmentMap, normal).rgb,0)).rgb;
   return vec4((vec4(lightColor,1) * dot_prod).xyz, specular_factor);
 }
+
+vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
+//http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Specular_Highlights_at_Silhouettes
+	vec3 normalDirection = normalize(normal);
+ 
+    vec3 viewDirection = normalize(position);
+    vec3 ambientLighting = vec3(0,0,0);
+ 
+ 	vec3 lightDir = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+    vec3 diffuseReflection = lightDiffuse * max(0.0, dot(normalDirection, lightDir));
+ 
+    vec3 specularReflection;
+    if (dot(normalDirection, lightDir) < 0.0) {
+       specularReflection = vec3(0.0, 0.0, 0.0); 
+    } else {
+       vec3 halfwayDirection = normalize(lightDir + viewDirection);
+       float w = pow(1.0 - max(0.0,  dot(halfwayDirection, viewDirection)), 5.0);
+       specularReflection = lightDiffuse.rgb 
+          * mix(specular.rgb, vec3(1.0), w) 
+          * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
+    }
+ 
+    //return vec4(ambientLighting + diffuseReflection + specularReflection, 1.0);
+    return vec4(ambientLighting + diffuseReflection, clamp(length(specularReflection),0,1));
+}
+
 
 ///////////////////// AO
 uniform bool useAmbientOcclusion = false;
@@ -83,7 +109,7 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y - dist));
 	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
 	
-	return result/8;
+	return result/9;
 
 }
 float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
@@ -93,17 +119,19 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	}
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
-	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/100).rg;
-	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/50).rg;
+	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/150).rg;
+	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/200).rg;
 	moments /= 2;
 	// Surface is fully lit. as the current fragment is before the light occluder
-	if (dist < moments.x)
-		return 1.0 ;
+	if (dist < moments.x) {
+		return 1.0;
+	}
+	
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
 	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.0001);
+	variance = max(variance,0.001);
 
 	float d = dist - moments.x;
 	float p_max = variance / (variance + d*d);
@@ -119,6 +147,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
+return color;
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
 	
@@ -150,11 +179,12 @@ vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetN
   			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
-    			//return vec3(screenEdgefactor,0,0);
+    			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
+    			//return vec3(screenEdgefactor, 0, 0);
 				return mix(color, reflectedColor, 1-screenEdgefactor);
 		  	}
-
+		  	return vec3(0,1,0);
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
 			return color;
 		  	
@@ -187,7 +217,7 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
+	vec4 finalColor = brdf(positionView, normalView, vec4(color,1), specular);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -195,8 +225,6 @@ void main(void) {
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-  	float momentum2 = texture2D(shadowMap, positionShadow.xy).g;
-  	float depthShadow = blurSample(shadowMap, positionShadow.xy, momentum2/20).r;
 
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1);
 
@@ -255,7 +283,7 @@ void main(void) {
 	if(reflectiveness == 0) {
 		out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
 	} else {
-		vec4 reflectedColor = vec4(rayCastReflect(out_DiffuseSpecular.xyz, st, positionView, normalView), 0);
+		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
 	

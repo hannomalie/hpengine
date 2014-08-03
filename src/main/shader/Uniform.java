@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL20;
 
 public class Uniform {
 	
-	protected int location = -2;
+	protected int location = -1;
 	public String name = "";
 	protected Program program;
 	
@@ -42,7 +42,7 @@ public class Uniform {
 	}
 	
 	public Uniform setLocationIfAbsent() {
-		if (location == -2) {
+		if (location == -1) {
 			location = program.getUniformLocation(name);
 		}
 		return this;

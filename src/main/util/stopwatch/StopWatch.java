@@ -7,7 +7,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 public class StopWatch {
-	public static boolean ACTIVE = false;
+	public static boolean ACTIVE = true;
 	public static boolean PRINT = true;
 	
 	public static StopWatch stopWatch;
@@ -21,7 +21,7 @@ public class StopWatch {
 	
 	public void start(String description) {
 		if (!ACTIVE) {return;}
-		watches.addLast(new Watch( System.currentTimeMillis(), description));
+		watches.addLast(new Watch( System.nanoTime(), description));
 	}
 
 	public long stop() {
@@ -32,7 +32,7 @@ public class StopWatch {
 	public String stopAndGetStringMS() {
 		if (!ACTIVE) {return "";}
 		Watch watch = watches.pollLast();
-		return String.format("%s took %d ms", watch.getDescripton(), System.currentTimeMillis() - watch.getStart());
+		return String.format("%s took %.3f ms", watch.getDescripton(), (System.nanoTime() - watch.getStart())/1000000f);
 	}
 	
 	public void stopAndPrintMS() {
