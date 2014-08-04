@@ -18,16 +18,23 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentProbe implements IEntity {
+	
+	public enum Update {
+		STATIC,
+		DYNAMIC
+	}
 
 	private String name = "Probe_" + System.currentTimeMillis();
 	private Renderer renderer;
 	private Box box;
 	private EnvironmentSampler sampler;
+	protected Update update;
 
-	protected EnvironmentProbe(Renderer renderer, Vector3f center, float size) {
+	protected EnvironmentProbe(Renderer renderer, Vector3f center, float size, int resolution, Update update) {
 		this.renderer = renderer;
+		this.update = update;
 		box = new Box(center, size);
-		sampler = new EnvironmentSampler(renderer, center, (int)size, (int)size);
+		sampler = new EnvironmentSampler(renderer, center, resolution, resolution);
 	}
 	
 	public void draw(Octree octree) {

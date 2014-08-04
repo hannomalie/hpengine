@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Random;
 
+import main.texture.CubeMap;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 
@@ -16,29 +17,28 @@ import org.lwjgl.opengl.GL30;
 
 public class CubeRenderTarget extends RenderTarget {
 
+	private CubeMap cubeMap;
 	
-	private int cubeTextureHandle;
-	
-	public CubeRenderTarget(int width, int height, int cubeTextureHandle, int cubeMapFaceIndex) {
+	public CubeRenderTarget(int width, int height, CubeMap cubeMap) {
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
 		this.clearG = 0.3f;
 		this.clearB = 0.3f;
 		this.clearA = 0;
-		this.cubeTextureHandle = cubeTextureHandle;
+		this.cubeMap = cubeMap;
 		int colorBufferCount = 1;
 		renderedTextures = new int[colorBufferCount];
 		
 		framebufferLocation = GL30.glGenFramebuffers();
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		
-//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeTextureHandle);
+//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
 
 //		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 		for (int i = 0; i < colorBufferCount; i++) {
 
-			GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + cubeMapFaceIndex, cubeTextureHandle, 0);
+			GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubeMap.getTextureID(), 0);
 //		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
 		}
 //	    GL20.glDrawBuffers(scratchBuffer);
@@ -57,6 +57,12 @@ public class CubeRenderTarget extends RenderTarget {
 			System.out.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
 			System.exit(0);
 		}
+	}
+	
+	public void setCubeMapFace(int index) {
+		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
 	}
 
 	public void saveBuffer(String path) {
@@ -87,6 +93,6 @@ public class CubeRenderTarget extends RenderTarget {
 	}
 
 	public int getRenderedTexture() {
-		return cubeTextureHandle;
+		return cubeMap.getTextureID();
 	}
 }

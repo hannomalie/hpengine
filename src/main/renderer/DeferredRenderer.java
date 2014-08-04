@@ -37,18 +37,17 @@ import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbe.Update;
 import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
 import main.texture.TextureFactory;
-import main.util.Util;
 import main.util.ressources.FileMonitor;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
-import main.util.stopwatch.StopWatch;
 
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
@@ -59,11 +58,9 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -118,6 +115,7 @@ public class DeferredRenderer implements Renderer {
 
 	private Program cubeMapDiffuseProgram;
 	
+
 	public DeferredRenderer(Spotlight light) {
 		setupOpenGL();
 		textureFactory = new TextureFactory();
@@ -130,7 +128,8 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(0,10,0),500);
+		environmentProbeFactory.getProbe(new Vector3f(0,10,0), 500, 512);
+		environmentProbeFactory.getProbe(new Vector3f(180,10,0), 100, 256, Update.DYNAMIC);
 		
 		sphereModel = null;
 		try {
@@ -259,6 +258,11 @@ public class DeferredRenderer implements Renderer {
 			}	
 		}
 	}
+	
+	@Override
+	public void init(Octree octree) {
+		environmentProbeFactory.drawInitial(octree);
+	}
 
 	public void update(World world, float seconds) {
 		try {
@@ -302,7 +306,7 @@ public class DeferredRenderer implements Renderer {
 //		}
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		if(frameCount%10 == 0) {
+		if(frameCount%1 == 0) {
 			GPUProfiler.start("Environment probes");
 			environmentProbeFactory.draw(octree);
 			GPUProfiler.end();

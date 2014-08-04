@@ -65,5 +65,6 @@ public interface Renderer {
 	public LightFactory getLightFactory();
 	public EnvironmentProbeFactory getEnvironmentProbeFactory();
 	public void setEnvironmentMap(DynamicCubeMap environmentMap);
+	public void init(Octree octree);
 
 }

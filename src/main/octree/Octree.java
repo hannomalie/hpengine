@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import main.camera.Camera;
 import main.model.DataChannels;
@@ -129,7 +130,8 @@ public class Octree {
 		result.addAll(rootNode.entities);
 		
 //		rootNode.getVisible(camera, result);
-		rootNode.getVisibleThreaded(camera, result);
+//		rootNode.getVisibleThreaded(camera, result);
+		result = entities.parallelStream().filter(e -> { return e.isInFrustum(camera); }).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<IEntity>(result);
 	}
@@ -224,7 +226,6 @@ public class Octree {
 				if (hasChildren) {
 					for(int i = 0; i < 8; i++) {
 						children[i].getVisible(camera, result);
-						//children[i].getAllEntitiesInAndBelow(result);
 					}	
 				}  else {
 					result.addAll(entities);
@@ -261,7 +262,6 @@ public class Octree {
 			    }
 			
 //			collectExecutor.shutdown();
-			result.addAll(entities);
 //			StopWatch.getInstance().stopAndPrintMS();
 			return result;
 		}

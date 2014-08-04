@@ -1,15 +1,18 @@
 package main.scene;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import main.model.DataChannels;
 import main.model.IEntity;
 import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.Renderer;
+import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 
 import org.lwjgl.util.vector.Vector3f;
@@ -24,14 +27,19 @@ public class EnvironmentProbeFactory {
 		this.renderer = renderer;
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size) {
-		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size);
+	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution) {
+		return getProbe(center, size, resolution, Update.STATIC);
+	}
+	
+	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution, Update update) {
+		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, resolution, update);
 		probes.add(probe);
 		return probe;
 	}
 	
 	public void draw(Octree octree) {
-		for (EnvironmentProbe environmentProbe : probes) {
+		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return true; }).collect(Collectors.toList());
+		for (EnvironmentProbe environmentProbe : dynamicProbes) {
 			environmentProbe.draw(octree);
 		}
 	}
@@ -57,19 +65,32 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public<T extends IEntity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
-//		return probes.stream().filter(probe -> {
-//			return probe.contains(entity.getMinMaxWorld());
-//		}).findFirst();
-		
-		for (EnvironmentProbe environmentProbe : probes) {
-			if(environmentProbe.contains(entity.getMinMaxWorld())) {
-				return Optional.of(environmentProbe);
+		return probes.stream().filter(probe -> {
+			return probe.contains(entity.getMinMaxWorld());
+		}).sorted(new Comparator<EnvironmentProbe>() {
+			@Override
+			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
+				return (Float.compare(Vector3f.sub(entity.getCenter(), o2.getCenter(), null).lengthSquared(), Vector3f.sub(entity.getCenter(), o1.getCenter(), null).lengthSquared()));
 			}
-		}
-		return Optional.empty();
+		}).findFirst();
+		
+//		for (EnvironmentProbe environmentProbe : probes) {
+//			if(environmentProbe.contains(entity.getMinMaxWorld())) {
+//				System.out.println("Returning " + environmentProbe.getPosition());
+//				return Optional.of(environmentProbe);
+//			}
+//		}
+//		return Optional.empty();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {
 		return probes;
+	}
+
+	public void drawInitial(Octree octree) {
+		List<EnvironmentProbe> staticProbes = probes.stream().filter(probe -> { return probe.update == Update.STATIC; }).collect(Collectors.toList());
+		for (EnvironmentProbe environmentProbe : staticProbes) {
+			environmentProbe.draw(octree);
+		}
 	}
 }

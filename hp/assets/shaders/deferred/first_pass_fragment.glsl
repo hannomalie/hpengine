@@ -160,13 +160,11 @@ vec2 uvParallax = vec2(0,0);
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
 //vec3 texCoords3d = eyeVec;
-vec3 texCoords3d = normalize(reflect(V, PN_world));
+vec3 texCoords3d = PN_world;//normalize(reflect(V, PN_world));
 
-//vec3 offset = environmentMapWorldPosition.xyz - eyePos_world.xyz;
-//vec3 offsetAmount = offset / vec3(environmentMapSize,environmentMapSize,environmentMapSize);
-
-vec3 nrdir = normalize(texCoords3d);
-/*vec3 envMapMax = environmentMapWorldPosition + vec3(environmentMapSize,environmentMapSize,environmentMapSize);
+///////////////////////////////////////////////////////////////////////
+/*vec3 nrdir = normalize(texCoords3d);
+vec3 envMapMax = environmentMapWorldPosition + vec3(environmentMapSize,environmentMapSize,environmentMapSize);
 vec3 envMapMin = environmentMapWorldPosition - vec3(environmentMapSize,environmentMapSize,environmentMapSize);
 
 vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
@@ -175,12 +173,11 @@ vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
 vec3 rbminmax = any(greaterThan(nrdir,vec3(0,0,0))) ? rbmax : rbmin;
 float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
-texCoords3d = posonbox - environmentMapWorldPosition.xyz;
-
-//texCoords3d -= offsetAmount;
-*/
+texCoords3d = posonbox - environmentMapWorldPosition.xyz;*/
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
-float a = dot(nrdir,nrdir);
+/*float a = dot(nrdir,nrdir);
 float b = 2.0 * dot(nrdir, position_world.xyz - environmentMapWorldPosition);
 float c = dot(position_world.xyz, environmentMapWorldPosition) - environmentMapSize*environmentMapSize;
 float discrim = b * b - 4.0 * a * c;
@@ -201,7 +198,8 @@ if (discrim > 0) {
         texCoords3d = t1 * nrdir - position_world.xyz;
         texCoords3d.y = -texCoords3d.y;
     }
-}
+}*/
+///////////////////////////////////////////////////////////////////////
 
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
 

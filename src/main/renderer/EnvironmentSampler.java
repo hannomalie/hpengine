@@ -2,6 +2,7 @@ package main.renderer;
 
 import java.nio.FloatBuffer;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -21,7 +22,7 @@ import main.util.stopwatch.StopWatch;
 
 public class EnvironmentSampler {
 	
-	private CubeRenderTarget[] cubeMapRenderTargets;
+	private CubeRenderTarget cubeMapRenderTarget;
 	private DynamicCubeMap cubeMap;
 	
 	private Camera camera;
@@ -37,10 +38,8 @@ public class EnvironmentSampler {
 		camera.rotate(new Vector4f(0,1,0,90));
 		camera.setPosition(position);
 		
-		this.cubeMapRenderTargets = new CubeRenderTarget[6];
-		for(int i = 0; i < 6; i++) {
-			cubeMapRenderTargets[i] = new CubeRenderTarget(width, height, cubeMap.getTextureID(), i);
-		}
+		this.cubeMapRenderTarget = new CubeRenderTarget(width, height, cubeMap);
+		
 		cubeMapDiffuseProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		DeferredRenderer.exitOnGLError("ZZZ");
 	}
@@ -55,12 +54,13 @@ public class EnvironmentSampler {
 		Vector3f initialPosition = camera.getPosition();
 		
 		cubeMapDiffuseProgram.use();
+		cubeMapRenderTarget.use(true);
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
 			GPUProfiler.start("side " + i);
-			GPUProfiler.start("Switch rendertarget");
-			cubeMapRenderTargets[i].use(true);
+			GPUProfiler.start("Switch attachment");
+			cubeMapRenderTarget.setCubeMapFace(i);
 			GPUProfiler.end();
 			GPUProfiler.start("Matrix uniforms");
 			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
@@ -71,6 +71,7 @@ public class EnvironmentSampler {
 
 			GPUProfiler.start("Draw entities");
 			for (IEntity e : visibles) {
+//				if(!e.isInFrustum(camera)) { continue; }
 				entityBuffer.rewind();
 				e.getModelMatrix().store(entityBuffer);
 				entityBuffer.rewind();

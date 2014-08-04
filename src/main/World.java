@@ -130,6 +130,7 @@ public class World {
 		initDefaultMaterials();
 		scene.addAll(loadDummies());
 		scene.setInitialized(true);
+		renderer.init(scene.getOctree());
 	}
 	
 	public World(String sceneName) {
@@ -146,6 +147,7 @@ public class World {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		renderer.init(scene.getOctree());
 	}
 	
 	private void initWorkDir() {
