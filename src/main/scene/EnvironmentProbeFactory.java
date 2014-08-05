@@ -30,11 +30,14 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution) {
 		return getProbe(center, size, resolution, Update.STATIC);
 	}
-	
-	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution, Update update) {
+
+	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, int resolution, Update update) {
 		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, resolution, update);
 		probes.add(probe);
 		return probe;
+	}
+	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution, Update update) {
+		return getProbe(center, new Vector3f(size, size, size), resolution, update);
 	}
 	
 	public void draw(Octree octree) {
@@ -44,11 +47,11 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void drawDebug(Program program) {
+	public void drawDebug(Program program, Octree octree) {
 		List<float[]> arrays = new ArrayList<>();
 		
 		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
-			probe.drawDebug(program);
+//			probe.drawDebug(program);
 			arrays.add(probe.getBox().getPointsAsArray());
 		}
 		
@@ -61,7 +64,15 @@ public class EnvironmentProbeFactory {
 			}
 		};
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+		program.setUniform("materialDiffuseColor", new Vector3f(0,1,0));
 		buffer.drawDebug();
+		
+		octree.getEntities().stream().forEach(e -> {
+			Optional<EnvironmentProbe> option = getProbeForEntity(e);
+			option.ifPresent(probe -> {
+				renderer.drawLine(probe.getCenter(), e.getPosition());
+			});
+		});
 	}
 	
 	public<T extends IEntity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {
@@ -70,7 +81,7 @@ public class EnvironmentProbeFactory {
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(Vector3f.sub(entity.getCenter(), o2.getCenter(), null).lengthSquared(), Vector3f.sub(entity.getCenter(), o1.getCenter(), null).lengthSquared()));
+				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).lengthSquared(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).lengthSquared()));
 			}
 		}).findFirst();
 		

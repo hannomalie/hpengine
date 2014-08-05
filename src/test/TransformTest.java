@@ -35,13 +35,13 @@ public class TransformTest {
 
 		transform = new Transform();
 		transform.rotate(Transform.WORLD_UP, 90);
-		assertEpsilonEqual(new Vector3f(-1,0,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(1,0,0), transform.getViewDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(0,1,0), transform.getUpDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getRightDirection(), 0.1f);
-		transform.move(new Vector3f(5,5,-5));
-		assertEpsilonEqual(new Vector3f(-5,5,-5), transform.getPosition(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,1), transform.getRightDirection(), 0.1f);
+		transform.move(new Vector3f(5,5,5));
+		assertEpsilonEqual(new Vector3f(-5,5,5), transform.getPosition(), 0.1f);
 		
-		transform.moveInWorld(new Vector3f(5,-5,5));
+		transform.moveInWorld(new Vector3f(5,-5,-5));
 		assertEpsilonEqual(new Vector3f(), transform.getPosition(), 0.1f);
 	}
 
@@ -83,9 +83,9 @@ public class TransformTest {
 	public void rotatationTest() {
 		Transform transform = new Transform();
 		transform.rotateWorld(new Vector3f(0,1,0), 90);
-		assertEpsilonEqual(new Vector3f(-1,0,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(1,0,0), transform.getViewDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(0,1,0), transform.getUpDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getRightDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,1), transform.getRightDirection(), 0.1f);
 
 		transform.rotateWorld(new Vector3f(0,1,0), -90);
 		assertEpsilonEqual(Transform.WORLD_VIEW, transform.getViewDirection(), 0.1f);
@@ -94,29 +94,29 @@ public class TransformTest {
 
 		transform = new Transform();
 		transform.rotateWorld(new Vector3f(1,0,0), 90);
-		assertEpsilonEqual(new Vector3f(0,1,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,-1,0), transform.getViewDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(1,0,0), transform.getRightDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,0,1), transform.getUpDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getUpDirection(), 0.1f);
 
 		transform = new Transform();
 		transform.rotateWorld(new Vector3f(0,0,-1), 90);
 		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getViewDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(1,0,0), transform.getUpDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,-1,0), transform.getRightDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(-1,0,0), transform.getUpDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,1,0), transform.getRightDirection(), 0.1f);
 		
 		transform = new Transform();
 		transform.rotateWorld(new Vector3f(0,1,0), 90);
-		assertEpsilonEqual(new Vector3f(-1,0,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(1,0,0), transform.getViewDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(0,1,0), transform.getUpDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getRightDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,1), transform.getRightDirection(), 0.1f);
 		assertEpsilonEqual(transform.getRightDirection(), transform.localDirectionToWorld(new Vector3f(1,0,0)), 0.1f);
 		assertEpsilonEqual(transform.getUpDirection(), transform.localDirectionToWorld(new Vector3f(0,1,0)), 0.1f);
 		assertEpsilonEqual(transform.getViewDirection(), transform.localDirectionToWorld(new Vector3f(0,0,-1)), 0.1f);
 
 		transform = new Transform();
 		transform.rotate(new Vector3f(1,0,0), 90);
-		assertEpsilonEqual(new Vector3f(0,1,0), transform.getViewDirection(), 0.1f);
-		assertEpsilonEqual(new Vector3f(0,0,1), transform.getUpDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,-1,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getUpDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(1,0,0), transform.getRightDirection(), 0.1f);
 		
 		transform.rotate(new Vector3f(0,1,0), 90);
@@ -125,9 +125,15 @@ public class TransformTest {
 		assertEpsilonEqual(new Vector3f(0,1,0), transform.getRightDirection(), 0.1f);
 	}
 
-	
-	
-	
+
+	@Test
+	public void translationRotatationTest() {
+		Transform transform = new Transform();
+		transform.move(new Vector3f(10, 10, 10));
+		transform.rotate(new Vector3f(1,0,0), 90);
+		transform.rotate(new Vector3f(0,1,0), 55);
+		assertEpsilonEqual(new Vector3f(10, 10, 10), transform.getPosition(), 0.1f);
+	}
 	
 	
 	

@@ -29,8 +29,8 @@ public interface IEntity {
 	default public Vector3f getPosition() { return getTransform().getPosition(); };
 	default public Quaternion getOrientation() { return getTransform().getOrientation(); };
 	default public void rotate(Vector4f axisDegree) { getTransform().rotate(axisDegree); };
-	default public void rotate(Vector3f axis, float radians) { getTransform().rotate(axis, radians);};
-	default public void rotate(Vector3f axis, float degree, boolean isDegree) { getTransform().rotate(axis, degree); };
+	default public void rotate(Vector3f axis, float degree) { getTransform().rotate(axis, degree);};
+	default public void rotate(Vector3f axis, float radians, boolean useRadians) { getTransform().rotate(axis, (float) Math.toDegrees(radians)); };
 	default public void move(Vector3f amount) { getTransform().move(amount); };
 	default public void setScale(Vector3f scale) { getTransform().setScale(scale); };
 	default public void setScale(float scale) { getTransform().setScale(scale); };

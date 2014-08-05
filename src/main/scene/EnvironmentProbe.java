@@ -31,10 +31,10 @@ public class EnvironmentProbe implements IEntity {
 	private EnvironmentSampler sampler;
 	protected Update update;
 
-	protected EnvironmentProbe(Renderer renderer, Vector3f center, float size, int resolution, Update update) {
+	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update) {
 		this.renderer = renderer;
 		this.update = update;
-		box = new Box(center, size);
+		box = new Box(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(renderer, center, resolution, resolution);
 	}
 	
@@ -124,5 +124,11 @@ public class EnvironmentProbe implements IEntity {
 	public void setSize(float size) {
 		box.setSize(size);
 	}
+	public void setSize(float sizeX, float sizeY, float sizeZ) {
+		box.setSize(sizeX, sizeY, sizeZ);
+	}
 
+	public Vector3f getSize() {
+		return new Vector3f(box.sizeX, box.sizeY, box.sizeZ);
+	}
 }

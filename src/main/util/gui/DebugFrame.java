@@ -109,6 +109,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
+	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
 
@@ -228,9 +229,12 @@ public class DebugFrame {
 		toggleDrawScene.addActionListener(e -> {
 			World.DRAWSCENE_ENABLED = !World.DRAWSCENE_ENABLED;
 		});
-		
+
 		toggleDrawOctree.addActionListener(e -> {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
+		});
+		toggleDrawProbes.addActionListener(e -> {
+			World.DRAW_PROBES = !World.DRAW_PROBES;
 		});
 
 		toggleDebugFrame.addActionListener(e -> {
@@ -296,6 +300,7 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDrawLines);
 	    mainButtonElements.add(toggleDrawScene);
 	    mainButtonElements.add(toggleDrawOctree);
+	    mainButtonElements.add(toggleDrawProbes);
 	    mainButtonElements.add(toggleDebugFrame);
 	    mainButtonElements.add(toggleDrawLights);
 		mainButtonElements.add(toggleFileReload);

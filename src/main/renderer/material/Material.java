@@ -157,7 +157,8 @@ public class Material implements Serializable {
 					if(option.isPresent()) {
 						EnvironmentProbe environmentProbe = option.get();
 						program.setUniform("environmentMapWorldPosition", environmentProbe.getCenter());
-						program.setUniform("environmentMapSize", environmentProbe.getBox().size/2);
+						program.setUniform("environmentMapMin", environmentProbe.getBox().getBottomLeftBackCorner());
+						program.setUniform("environmentMapMax", environmentProbe.getBox().getTopRightForeCorner());
 						environmentProbe.getEnvironmentMap().bind();
 					} else {
 						renderer.getEnvironmentMap().bind();

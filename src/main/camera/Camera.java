@@ -89,14 +89,15 @@ public class Camera implements IEntity {
 		}
 		
 
+		float rotationAmount = 1.1f * turbo*rotationDelta * seconds;
 		if (Mouse.isButtonDown(0)) {
-			rotate(Transform.WORLD_UP, Mouse.getDX() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_UP, Mouse.getDX() * rotationAmount);
 		}
 		if (Mouse.isButtonDown(1)) {
-			rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * rotationAmount);
 		}
 		if (Mouse.isButtonDown(2)) {
-			rotate(Transform.WORLD_VIEW, Mouse.getDX() * turbo*rotationDelta * seconds);
+			rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
 		}
 		
 		float moveAmount = turbo*posDelta * seconds;

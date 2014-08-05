@@ -114,7 +114,7 @@ public class OctreeTest {
 	public void quadNodeOctree() {
 		IEntity entityBottomLeftBack = new IEntity() {
 			
-			@Override public Vector3f getPosition() { return null; }
+			@Override public Vector3f getPosition() { return new Vector3f(-3, -3, -3); }
 			@Override public String getName() { return null; }
 			@Override public Material getMaterial() { return null; }
 			@Override public void destroy() { }
@@ -156,7 +156,7 @@ public class OctreeTest {
 		};
 		IEntity entityTopRightFront = new IEntity() {
 			
-			@Override public Vector3f getPosition() { return null; }
+			@Override public Vector3f getPosition() { return new Vector3f(3, 3, 3); }
 			@Override public String getName() { return null; }
 			@Override public Material getMaterial() { return null; }
 			@Override public void destroy() { }

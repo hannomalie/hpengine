@@ -38,7 +38,8 @@ uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
 uniform vec3 environmentMapWorldPosition = vec3(0,0,0);
-uniform float environmentMapSize = 1; // this is size of the half extends!
+uniform vec3 environmentMapMin = vec3(-1,-1,-1);
+uniform vec3 environmentMapMax = vec3(1,1,1);
 
 uniform float time = 0;
 
@@ -169,8 +170,8 @@ vec3 texCoords3d = normalize(reflect(V, PN_world));
 
 ///////////////////////////////////////////////////////////////////////
 vec3 nrdir = normalize(texCoords3d);
-vec3 envMapMax = environmentMapWorldPosition + vec3(environmentMapSize,environmentMapSize,environmentMapSize);
-vec3 envMapMin = environmentMapWorldPosition - vec3(environmentMapSize,environmentMapSize,environmentMapSize);
+vec3 envMapMin = environmentMapMin;
+vec3 envMapMax = environmentMapMax;
 
 vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
 vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;

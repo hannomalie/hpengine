@@ -56,6 +56,7 @@ public class GBuffer {
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
 		new Matrix4f().store(identityMatrixBuffer);
+		identityMatrixBuffer.rewind();
 	}
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -291,8 +292,8 @@ public class GBuffer {
 		}
 		
 		if (World.DRAW_PROBES) {
-//			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-			renderer.getEnvironmentProbeFactory().drawDebug(firstPassProgram);
+			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+			renderer.getEnvironmentProbeFactory().drawDebug(firstPassProgram, octree);
 		}
 
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));

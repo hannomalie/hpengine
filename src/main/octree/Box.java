@@ -19,10 +19,18 @@ public class Box {
 	private Vector3f topRightForeCorner;
 	private Vector3f bottomLeftBackCorner;
 	public Vector3f center;
-	public float size;
-	
+	public float sizeX;
+	public float sizeY;
+	public float sizeZ;
+
 	public Box(Vector3f center, float size) {
-		this.size = size;
+		this(center, size, size, size);
+	}
+	
+	public Box(Vector3f center, float sizeX, float sizeY, float sizeZ) {
+		this.sizeX = sizeX;
+		this.sizeY = sizeY;
+		this.sizeZ = sizeZ;
 		this.center = center;
 		calculateCorners();
 	}
@@ -33,27 +41,34 @@ public class Box {
 	}
 
 	public void setSize(float size) {
-		this.size = size;
+		setSize(size, size, size);
+	}
+	public void setSize(float sizeX, float sizeY, float sizeZ) {
+		this.sizeX = sizeX;
+		this.sizeY = sizeY;
+		this.sizeZ = sizeZ;
 		calculateCorners();
 	}
 	private void calculateCorners() {
-		float halfSize = size/2;
-		this.bottomLeftBackCorner = new Vector3f(center.x - halfSize, center.y - halfSize, center.z - halfSize);
-		this.topRightForeCorner = new Vector3f(center.x + halfSize, center.y + halfSize, center.z + halfSize);
+		float halfX = sizeX/2;
+		float halfY = sizeY/2;
+		float halfZ = sizeZ/2;
+		this.bottomLeftBackCorner = new Vector3f(center.x - halfX, center.y - halfY, center.z - halfZ);
+		this.topRightForeCorner = new Vector3f(center.x + halfX, center.y + halfY, center.z + halfZ);
 	}
 	
 	public List<Vector3f> getPoints() {
 		List<Vector3f> result = new ArrayList<>();
 		
 		result.add(bottomLeftBackCorner);
-		result.add(new Vector3f(bottomLeftBackCorner.x + size, bottomLeftBackCorner.y, bottomLeftBackCorner.z));
-		result.add(new Vector3f(bottomLeftBackCorner.x + size, bottomLeftBackCorner.y, bottomLeftBackCorner.z + size));
-		result.add(new Vector3f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z + size));
+		result.add(new Vector3f(bottomLeftBackCorner.x + sizeX, bottomLeftBackCorner.y, bottomLeftBackCorner.z));
+		result.add(new Vector3f(bottomLeftBackCorner.x + sizeX, bottomLeftBackCorner.y, bottomLeftBackCorner.z + sizeZ));
+		result.add(new Vector3f(bottomLeftBackCorner.x, bottomLeftBackCorner.y, bottomLeftBackCorner.z + sizeZ));
 		
 		result.add(topRightForeCorner);
-		result.add(new Vector3f(topRightForeCorner.x - size, topRightForeCorner.y, topRightForeCorner.z));
-		result.add(new Vector3f(topRightForeCorner.x - size, topRightForeCorner.y, topRightForeCorner.z - size));
-		result.add(new Vector3f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z - size));
+		result.add(new Vector3f(topRightForeCorner.x - sizeX, topRightForeCorner.y, topRightForeCorner.z));
+		result.add(new Vector3f(topRightForeCorner.x - sizeX, topRightForeCorner.y, topRightForeCorner.z - sizeZ));
+		result.add(new Vector3f(topRightForeCorner.x, topRightForeCorner.y, topRightForeCorner.z - sizeZ));
 
 		return result;
 	}
@@ -116,7 +131,7 @@ public class Box {
 
 	@Override
 	public String toString() {
-		return String.format("Box (%f) @ (%.2f, %.2f, %.2f)", size, center.x, center.y, center.z);
+		return String.format("Box (%f %f %f) @ (%.2f, %.2f, %.2f)", sizeX, sizeY, sizeZ, center.x, center.y, center.z);
 	}
 	
 	@Override
@@ -125,7 +140,10 @@ public class Box {
 			return false;
 		}
 		Box otherBox = (Box) other;
-		return (otherBox.center.equals(center) && otherBox.size == size);
+		return (otherBox.center.equals(center)
+				&& otherBox.sizeX == sizeX
+				&& otherBox.sizeY == sizeY
+				&& otherBox.sizeZ == sizeZ);
 	}
 
 	public Vector3f getTopRightForeCorner() {
@@ -143,7 +161,7 @@ public class Box {
 		centerWorld.scale(0.5f);
 		
 		//if (camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
-		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, Math.max(sizeX, Math.max(sizeY, sizeZ))/2f)) {
 			return true;
 		}
 		return false;

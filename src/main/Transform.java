@@ -18,10 +18,18 @@ public class Transform implements Serializable {
 	public static Vector4f WORLD_UP_V4 = new Vector4f(0,1,0,0);
 	public static Vector4f WORLD_RIGHT_V4 = new Vector4f(1,0,0,0);
 	public static Vector4f WORLD_VIEW_V4 = new Vector4f(0,0,-1,0);
+	public static Vector3f IDENTITY_LOCAL_WORLD = new Vector3f(1,1,1);
+	public static Vector4f IDENTITY_LOCAL_WORLD_V4 = new Vector4f(1,1,1,1);
 	
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
 	private Quaternion orientation = new Quaternion();
+	
+//	public Transform() {
+//		position = new Vector3f(0, 0, 0);
+//		orientation = new Quaternion();
+//		Quaternion.setIdentity(orientation);
+//	}
 	
 	public Vector3f getPosition() {
 		return position;
@@ -57,7 +65,7 @@ public class Transform implements Serializable {
 		return (Vector3f) new Vector3f(temp.x, temp.y, temp.z).normalise();
 	}
 	public void rotate(Vector3f axis, float angleInDegrees) {
-		rotateWorld(localDirectionToWorld(axis), angleInDegrees);
+		rotate(new Vector4f(axis.x, axis.y, axis.z, angleInDegrees));
 	}
 	public void rotate(Vector4f axisAngle) {
 		rotateWorld(localDirectionToWorld(new Vector3f(axisAngle.x, axisAngle.y, axisAngle.z)), axisAngle.w);
@@ -87,26 +95,36 @@ public class Transform implements Serializable {
 	}
 
 	public Vector3f localDirectionToWorld(Vector3f localAxis) {
-		return localToWorld(new Vector4f(localAxis.x, localAxis.y, localAxis.z, 0));
+		Vector4f temp = Matrix4f.transform((Matrix4f) Util.toMatrix(getOrientation().negate(null)), new Vector4f(localAxis.x,localAxis.y,localAxis.z, 0), null);
+		return new Vector3f(temp.x, temp.y, temp.z);
+//		return localToWorld(new Vector4f(localAxis.x, localAxis.y, localAxis.z, 0));
 	}
 	
 	public Vector3f localToWorld(Vector4f homogenVector) {
-		//Vector4f temp = Matrix4f.transform(getTranslationRotation(), homogenVector, null);
-		Vector3f combined = (Vector3f) getRightDirection().scale(homogenVector.x);
-		Vector3f.add(combined, (Vector3f) getUpDirection().scale(homogenVector.y), combined);
-		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-homogenVector.z), combined);
-		return (Vector3f) new Vector3f(combined.x, combined.y, combined.z);
+		Vector4f temp = Matrix4f.transform((Matrix4f) getTranslationRotation().invert(), homogenVector, null);
+//		Vector3f combined = (Vector3f) getRightDirection().scale(homogenVector.x);
+//		Vector3f.add(combined, (Vector3f) getUpDirection().scale(homogenVector.y), combined);
+//		Vector3f.add(combined, (Vector3f) getViewDirection().scale(homogenVector.z), combined);
+//		return (Vector3f) new Vector3f(combined.x, combined.y, combined.z);
+		return new Vector3f(temp.x, temp.y, temp.z);
 	}
 
 	public Matrix4f getTranslationRotation() {
 		Matrix4f temp = new Matrix4f();
-		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
+		temp.setIdentity();
+//		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
+		temp.rotate(getOrientation().w, new Vector3f(getOrientation().x,getOrientation().y, getOrientation().z), temp);
 		Matrix4f.translate(getPosition(), temp, temp);
 		return temp;
 	}
 	
 	public Matrix4f getTransformation() {
-		return getTranslationRotation().scale(getScale());
+		Matrix4f temp = new Matrix4f();
+		temp.setIdentity();
+		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
+		Matrix4f.translate(getPosition(), temp, temp);
+		temp.scale(getScale());
+		return temp;
 	}
 	
 	@Override

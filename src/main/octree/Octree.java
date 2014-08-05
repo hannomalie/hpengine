@@ -154,6 +154,7 @@ public class Octree {
 			 matrix44Buffer.rewind();
 		}
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		
 		// List of 24*3 = 72 floats per floatarray
 		List<float[]> arrays = rootNode.getPointsForLineDrawing(camera);

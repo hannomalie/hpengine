@@ -83,28 +83,19 @@ public class EntitiyView extends WebPanel {
 	        webComponentPanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 360, 0) {
 				@Override
 				public void onValueChange(int value, int delta) {
-					Quaternion amount = new Quaternion();
-					Vector3f axis = entity.getRightDirection();
-					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
-					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+					entity.rotate(new Vector4f(1, 0, 0, delta));
 				}
 			});
 	        webComponentPanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 360, 0) {
 				@Override
 				public void onValueChange(int value, int delta) {
-					Quaternion amount = new Quaternion();
-					Vector3f axis = entity.getUpDirection();
-					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
-					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+					entity.rotate(new Vector4f(0, 1, 0, delta));
 				}
 			});
 	        webComponentPanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 360, 0) {
 				@Override
 				public void onValueChange(int value, int delta) {
-					Quaternion amount = new Quaternion();
-					Vector3f axis = entity.getViewDirection().negate(null);
-					amount.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(delta)));
-					entity.setOrientation(Quaternion.mul(entity.getOrientation(), amount, null));
+					entity.rotate(new Vector4f(0, 0, 1, delta));
 				}
 			});
 	        
