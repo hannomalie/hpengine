@@ -10,6 +10,7 @@ import main.octree.Octree;
 import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
+import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
@@ -61,14 +62,20 @@ public class EnvironmentProbe implements IEntity {
 
 	@Override
 	public void move(Vector3f amount) {
-		sampler.getCamera().move(amount);
+		sampler.getCamera().moveInWorld(amount);
 		box.move(amount);
 	}
 	
 	@Override
 	public void moveInWorld(Vector3f amount) {
 		box.move(amount);
-		sampler.getCamera().setPosition(box.center.negate(null)); // TODO: WTFFFFFF
+		sampler.getCamera().moveInWorld(amount);
+	}
+	
+	@Override
+	public void setPosition(Vector3f position) {
+		sampler.getCamera().setPosition(position);
+		box.center = position;
 	}
 	
 	@Override
@@ -104,6 +111,18 @@ public class EnvironmentProbe implements IEntity {
 
 	public Box getBox() {
 		return box;
+	}
+
+	public void setUpdate(Update update) {
+		this.update = update;
+	}
+
+	public Update getUpdate() {
+		return update;
+	}
+
+	public void setSize(float size) {
+		box.setSize(size);
 	}
 
 }

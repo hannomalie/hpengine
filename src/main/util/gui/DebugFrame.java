@@ -37,6 +37,7 @@ import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.light.PointLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.SliderInput;
@@ -83,12 +84,14 @@ public class DebugFrame {
 	private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame materialViewFrame = new WebFrame("Material");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
+	private WebFrame probeViewFrame = new WebFrame("Probe");
 	private WebTabbedPane tabbedPane;
 	
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane lightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
+	private JScrollPane probesPane = new JScrollPane();
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
@@ -116,6 +119,7 @@ public class DebugFrame {
 
 
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
+	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	private WebFileChooser fileChooser;
 	private WebFrame addEntityFrame;
 	private World world;
@@ -188,6 +192,8 @@ public class DebugFrame {
 		lightsPane  =  new JScrollPane(lightsTable);
 
 		addOctreeSceneObjects(world);
+		
+		addProbes(world);
 		
 		toggleFileReload.addActionListener( e -> {
 			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
@@ -469,6 +475,7 @@ public class DebugFrame {
 		
 		tabbedPane.addTab("Main", mainPane);
 		tabbedPane.addTab("Scene", scenePane);
+		tabbedPane.addTab("Probes", probesPane);
 		createTexturePane(textureFactory);
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
@@ -622,6 +629,21 @@ public class DebugFrame {
 				}
 			}
 		});
+	}
+
+	private void addProbes(World world) {
+		List<EnvironmentProbe> probes = world.getRenderer().getEnvironmentProbeFactory().getProbes();
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Probes (" + probes.size() + ")");
+		for (EnvironmentProbe environmentProbe : probes) {
+			top.add(new DefaultMutableTreeNode(environmentProbe));
+		}
+		this.probes = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
+		addCheckStateListener(this.probes);
+		new SetSelectedListener(this.probes, world, this, probeViewFrame);
+
+		tabbedPane.remove(probesPane);
+		probesPane = new JScrollPane(this.probes);
+		tabbedPane.addTab("Scene", probesPane);
 	}
 	
 	private void addOctreeSceneObjects(World world) {

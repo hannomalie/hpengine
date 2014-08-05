@@ -48,7 +48,7 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y - dist));
 	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
 	
-	return result/8;
+	return result/9;
 
 }
 
@@ -80,20 +80,21 @@ void main(void) {
 	float specularFactor = lightDiffuseSpecular.a;
 	
 	vec4 aoReflect = texture2D(aoReflection, st);
-	float ao = blurSample(aoReflection, st, 0.00125).r;
+	float ao = blurSample(aoReflection, st, 0.0025).r;
+	ao += blurSample(aoReflection, st, 0.000125).r;
+	ao /= 2;
 
 	//vec3 reflectedColor = aoReflect.gba;
 	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/250).gba;
 	
 	vec3 ambientTerm = ambientColor * ao * color;
 	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
-	vec3 finalColor = mix(color + specularTerm, reflectedColor+ specularTerm, reflectiveness);
-	finalColor *=1;
+	vec3 finalColor = mix(color, reflectedColor, reflectiveness);
 	finalColor.rgb = Uncharted2Tonemap(exposure*finalColor.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
 	finalColor.rgb = finalColor.rgb * whiteScale;
 	finalColor *= 1+finalColor;
-	vec4 lit = vec4(ambientTerm*finalColor, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1);
+	vec4 lit = vec4(ambientTerm*finalColor, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1) + vec4(specularTerm,1);
 	out_color = lit;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = color.xyz;

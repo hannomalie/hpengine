@@ -31,7 +31,11 @@ public class Box {
 		Vector3f.add(center, amount, center);
 		calculateCorners();
 	}
-	
+
+	public void setSize(float size) {
+		this.size = size;
+		calculateCorners();
+	}
 	private void calculateCorners() {
 		float halfSize = size/2;
 		this.bottomLeftBackCorner = new Vector3f(center.x - halfSize, center.y - halfSize, center.z - halfSize);
@@ -121,7 +125,7 @@ public class Box {
 			return false;
 		}
 		Box otherBox = (Box) other;
-		return (otherBox.center == center && otherBox.size == size);
+		return (otherBox.center.equals(center) && otherBox.size == size);
 	}
 
 	public Vector3f getTopRightForeCorner() {
@@ -179,4 +183,5 @@ public class Box {
 		
 		return length;
 	}
+
 }

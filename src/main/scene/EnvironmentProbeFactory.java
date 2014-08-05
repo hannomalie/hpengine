@@ -38,7 +38,7 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void draw(Octree octree) {
-		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return true; }).collect(Collectors.toList());
+		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		for (EnvironmentProbe environmentProbe : dynamicProbes) {
 			environmentProbe.draw(octree);
 		}

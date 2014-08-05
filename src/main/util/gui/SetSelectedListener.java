@@ -12,6 +12,7 @@ import main.World;
 import main.model.Entity;
 import main.model.IEntity;
 import main.renderer.material.Material;
+import main.scene.EnvironmentProbe;
 
 import com.alee.laf.rootpane.WebFrame;
 
@@ -50,26 +51,23 @@ public class SetSelectedListener implements TreeSelectionListener {
         if (node == null) return;
         Object nodeInfo = node.getUserObject();
         
-        if (nodeInfo instanceof IEntity) {
-        	IEntity selected = (IEntity) nodeInfo;
-//        	selected.setSelected(!selected.isSelected());
+        if (nodeInfo instanceof Entity) {
+        	Entity selected = (Entity) nodeInfo;
+	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+	    	entityViewFrame.getContentPane().removeAll();
+	    	entityViewFrame.pack();
+	    	entityViewFrame.setSize(600, 600);
+	    	entityViewFrame.add(new EntitiyView(world, debugFrame, (Entity) selected));
+	    	entityViewFrame.setVisible(true);
         	
-//        	java.awt.EventQueue.invokeLater(new Runnable() {
-//        	    private DebugFrame debugFrame;
-//
-//				@Override
-//        	    public void run() {
-    	            // do some actions here, for example
-    	            // print first column value from selected row
-        	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-        	    	entityViewFrame.getContentPane().removeAll();
-        	    	entityViewFrame.pack();
-        	    	entityViewFrame.setSize(600, 600);
-        	    	entityViewFrame.add(new EntitiyView(world, debugFrame, (Entity) selected));
-        	    	entityViewFrame.setVisible(true);
-//        	    }
-//        	});
-        	
+        } else if (nodeInfo instanceof EnvironmentProbe) {
+        	EnvironmentProbe selected = (EnvironmentProbe) nodeInfo;
+	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+	    	entityViewFrame.getContentPane().removeAll();
+	    	entityViewFrame.pack();
+	    	entityViewFrame.setSize(600, 600);
+	    	entityViewFrame.add(new ProbeView(world, debugFrame, selected));
+	    	entityViewFrame.setVisible(true);
         }
     }
 }

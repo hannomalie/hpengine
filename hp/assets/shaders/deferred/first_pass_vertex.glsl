@@ -58,6 +58,6 @@ void main(void) {
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
 	
 	eyePos_world = ( vec4(eyePosition,1)).xyz;
-	eyeVec = (eyePos_world+(vec4(position_world.xyz, 0)).xyz);
+	eyeVec = (position_world.xyz - eyePos_world);
 	
 }

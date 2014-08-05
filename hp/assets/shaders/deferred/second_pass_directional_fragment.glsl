@@ -73,7 +73,7 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
     } else {
        vec3 halfwayDirection = normalize(lightDir + viewDirection);
        float w = pow(1.0 - max(0.0,  dot(halfwayDirection, viewDirection)), 5.0);
-       specularReflection = lightDiffuse.rgb 
+       specularReflection = lightDiffuse.rgb
           * mix(specular.rgb, vec3(1.0), w) 
           * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
     }
