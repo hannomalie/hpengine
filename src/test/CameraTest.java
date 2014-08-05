@@ -28,7 +28,7 @@ public class CameraTest {
 		Camera camera = new Camera(renderer);
 		Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
 		
-		camera.rotate(new Vector3f(0,1,0), 90f, true);
+		camera.rotate(new Vector3f(0,1,0), 90f);
 
 		float epsilon = 0.01f;
 		Assert.assertEquals(0, camera.getUpDirection().x, epsilon);
@@ -37,11 +37,11 @@ public class CameraTest {
 
 		Assert.assertEquals(0, camera.getRightDirection().x, epsilon);
 		Assert.assertEquals(0, camera.getRightDirection().y, epsilon);
-		Assert.assertEquals(-1, camera.getRightDirection().z, epsilon);
+		Assert.assertEquals(1, camera.getRightDirection().z, epsilon);
 		
-		Assert.assertEquals(-1, ((Vector3f)(camera.getViewDirection().negate())).x, epsilon); // z is 1, not -1!
-		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection().negate())).y, epsilon);
-		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection().negate())).z, epsilon);
+		Assert.assertEquals(1, ((Vector3f)(camera.getViewDirection())).x, epsilon); // z is 1, not -1!
+		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).y, epsilon);
+		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).z, epsilon);
 	}
 	
 	@Test
@@ -57,7 +57,10 @@ public class CameraTest {
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, -1));
 		
-		camera.move(new Vector3f(0,0,5));
+		camera.moveInWorld(new Vector3f(0,0,5));
+		frustum.calculate(camera);
+		camera.getPosition();
+		camera.getViewDirection();
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 		
 		camera.setPosition(new Vector3f());
