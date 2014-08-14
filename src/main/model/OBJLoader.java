@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,8 +32,17 @@ import static org.lwjgl.opengl.GL15.*;
 public class OBJLoader {
 	private static Logger LOGGER = getLogger();
 
-	private Renderer renderer;
+	public enum State {
+		READING_VERTEX,
+		READING_UV,
+		READING_NORMAL,
+		READING_FACE,
+		READING_MATERIALLIB
+	}
 	
+	private Renderer renderer;
+	private State currentState;
+
 	public OBJLoader(Renderer renderer) {
 		this.renderer = renderer;
 	}
@@ -127,29 +137,28 @@ public class OBJLoader {
 		    	  String materialName = line.replaceAll("usemtl ", "");
 		    	  Material material = renderer.getMaterialFactory().get(materialName);
 		    	  if(material == null) {
-//		    		  LOGGER.log(Level.INFO, "No material found!!!");
+		    		  LOGGER.log(Level.INFO, "No material found!!!");
 		    	  }
-		    	  model.setMaterial(material);
+		    	  if(currentState != State.READING_FACE) {
+			    	  model.setMaterial(material);
+		    	  } else {
+		    		  model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
+			    	  model.setMaterial(material);
+		    	  }
 //	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
 		    } else if (line.startsWith("o ") || line.startsWith("# object ")) {
-                if (model != null && model.getMaterial() == null) {
-                	int d = 3;
-                }
-            	model = new Model();
-            	model.setName(line);
-                model.setVertices(vertices);
-                model.setTexCoords(texCoords);
-                model.setNormals(normals);
-
-            	models.add(model);
-            	parseName(line, model);
+            	model = newModelHelper(models, vertices, texCoords, normals, line, line.replaceAll("o ", ""));
             } else if (line.startsWith("v ")) {
+            	setCurrentState(State.READING_VERTEX);
             	vertices.add(parseVertex(line));
             } else if (line.startsWith("vt ")) {
+            	setCurrentState(State.READING_UV);
             	texCoords.add(parseTexCoords(line));
             } else if (line.startsWith("vn ")) {
+            	setCurrentState(State.READING_NORMAL);
             	normals.add(parseVertex(line));
             } else if (line.startsWith("f ")) {
+            	setCurrentState(State.READING_FACE);
             	model.getFaces().add(parseFace(line));
             }
 
@@ -158,6 +167,22 @@ public class OBJLoader {
         
         return models;
     }
+
+	private Model newModelHelper(List<Model> models,
+			ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
+			ArrayList<Vector3f> normals, String line, String name) {
+		Model model;
+		model = new Model();
+		model.setName(line);
+		model.setVertices(vertices);
+		model.setTexCoords(texCoords);
+		model.setNormals(normals);
+
+		models.add(model);
+//		parseName(line, model);
+		model.setName(name);
+		return model;
+	}
 
 
 	private Map<String, MaterialInfo> parseMaterialLib(String line, File f) {
@@ -250,5 +275,13 @@ public class OBJLoader {
 	private void parseName(String line, Model model) {
 		String name = line.replaceAll("o ", "");
 		model.setName(name);
+	}
+
+	private State getCurrentState() {
+		return currentState;
+	}
+
+	private void setCurrentState(State currentState) {
+		this.currentState = currentState;
 	}
 }
