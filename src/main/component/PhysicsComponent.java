@@ -35,11 +35,10 @@ public class PhysicsComponent implements IGameComponent {
 		Quat4f outQuat = new Quat4f();
 		out.getRotation(outQuat);
 //		System.out.println("Rotation " + outQuat.x + " " + outQuat.y + " " + outQuat.z + " " + outQuat.w);
-//		converted.setOrientation(new Quaternion(outQuat.x,outQuat.y,outQuat.z,outQuat.w).negate(null));
-		converted.setScale(owner.getScale());
+//		owner.getTransform().setOrientation(new Quaternion(outQuat.x,outQuat.y,outQuat.z,outQuat.w));
+		owner.getTransform().setScale(owner.getScale());
 //		converted.setOrientation(new Quaternion(outQuat.x, outQuat.y, outQuat.z, outQuat.w));
-		converted.setPosition(new org.lwjgl.util.vector.Vector3f(out.origin.x,out.origin.y,out.origin.z));
-		owner.setTransform(converted);
+		owner.getTransform().setPosition(new org.lwjgl.util.vector.Vector3f(out.origin.x,out.origin.y,out.origin.z));
 	}
 
 	public RigidBody getRigidBody() {

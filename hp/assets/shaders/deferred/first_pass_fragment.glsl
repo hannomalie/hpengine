@@ -37,6 +37,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
+uniform int environmentProbeIndex = 0;
 uniform vec3 environmentMapWorldPosition = vec3(0,0,0);
 uniform vec3 environmentMapMin = vec3(-1,-1,-1);
 uniform vec3 environmentMapMax = vec3(1,1,1);
@@ -88,21 +89,24 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
 	vec3 map = (texture2D( normalMap, texcoord )).xyz;
-	map = map * 255./127. - 128./127.;
-	//map.y = -map.y;
+	map = map * 2 - 1;
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
 }
 
 void main(void) {
 	
-	vec3 V = normalize((position_world.xyz - eyePos_world.xyz).xyz);
-	//V = (viewMatrix * vec4(V, 0)).xyz;
+	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
 	vec2 UV = texCoord;
+	
+	vec4 position_clip_post_w = position_clip/position_clip.w; 
+	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
+	dir.w = 0.0;
+	V = (inverse(viewMatrix) * dir).xyz;
 
 #ifdef use_normalMap
-		UV.x = texCoord.x * normalMapWidth;
-		UV.y = texCoord.y * normalMapHeight;
+		UV.x = UV.x * normalMapWidth;
+		UV.y = UV.y * normalMapHeight;
 		//UV = UV + time/2000.0;
 #endif
 
@@ -110,8 +114,8 @@ vec2 uvParallax = vec2(0,0);
 
 	if (useParallax) {
 		float height = (texture2D(normalMap, UV).rgb).g;//texture2D(heightMap, UV).r;
-		height = height * 255./127. - 128./127.;
-		float v = height * 0.05;
+		height = height * 2 - 1;
+		float v = height * 0.04 - 0.02;
 		uvParallax = (V.xy * v);
 		UV = UV + uvParallax;
 	} else if (useSteepParallax) {
@@ -123,29 +127,31 @@ vec2 uvParallax = vec2(0,0);
 		float height = 1;
 		vec2 t = UV;
 		vec4 nb = texture2D(normalMap, t);
-		nb = nb * 255./127. - 128./127.;
+		nb = nb * 2 - 1;
 		while (length(nb.xyz) < height) { 
 			height -= step;
 			t += dt; 
 			nb = texture2D(normalMap, t); 
-			nb = nb * 255./127. - 128./127.;
+			nb = nb * 2 - 1;
 		}
 		UV = t;
 	}
 	
 	// NORMAL
-	vec3 PN_view = (viewMatrix * vec4(normal_world,0)).xyz;
-	vec3 PN_world = normal_world;
+	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
+	vec3 PN_world = normalize(normal_world);
 #ifdef use_normalMap
-	PN_world = perturb_normal(normal_model, V, UV);
-	PN_view = ((viewMatrix * vec4(PN_world, 0)).xyz);
+	PN_world = normalize(perturb_normal(normal_world, V, UV));
+	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
 	out_position = viewMatrix * position_world;
 	out_position.w = materialGlossiness;
 	float depth = (position_clip.z / position_clip.w);
 	
+	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
+	//out_normal.z = environmentProbeIndex;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
 #ifdef use_diffuseMap
@@ -166,25 +172,27 @@ vec2 uvParallax = vec2(0,0);
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
 //vec3 texCoords3d = eyeVec;
+//vec3 texCoords3d = PN_world;
 vec3 texCoords3d = normalize(reflect(V, PN_world));
 
 ///////////////////////////////////////////////////////////////////////
 vec3 nrdir = normalize(texCoords3d);
-vec3 envMapMin = environmentMapMin;
-vec3 envMapMax = environmentMapMax;
+vec3 envMapMin = vec3(-300,-300,-300);
+envMapMin = environmentMapMin;
+vec3 envMapMax = vec3(300,300,300);
+envMapMax = environmentMapMax;
 
 vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
 vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
 //vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
-bvec3 temp = greaterThan(nrdir,vec3(0,0,0));
 vec3 rbminmax;
-rbminmax.x = temp.x ? rbmax.x : rbmin.x;
-rbminmax.y = temp.y ? rbmax.y : rbmin.y;
-rbminmax.z = temp.z ? rbmax.z : rbmin.z;
+rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
 float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
-texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);
-texCoords3d.y = -texCoords3d.y;
+//texCoords3d = normalize(posonbox - vec3(0,0,0));
+texCoords3d = (posonbox - environmentMapWorldPosition.xyz);
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection

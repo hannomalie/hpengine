@@ -203,7 +203,10 @@ void main(void) {
   	st.t = gl_FragCoord.y / screenHeight;
   	st /= secondPassScale;
   
+	float depth = texture2D(normalMap, st).w;
 	vec3 positionView = texture2D(positionMap, st).xyz;
+	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
+	//positionView = positionViewPreW.xyz / positionViewPreW.w;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
 	float reflectiveness = texture2D(diffuseMap, st).w;
@@ -213,8 +216,8 @@ void main(void) {
 	  discard;
 	}
 	vec3 normalView = texture2D(normalMap, st).xyz;
+	//int environmentProbeIndex = int(normalView.z);
 	
-	float depth = texture2D(normalMap, st).w;
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
 	vec4 finalColor = brdf(positionView, normalView, vec4(color,1), specular);

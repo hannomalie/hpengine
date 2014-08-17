@@ -18,7 +18,7 @@ public class Box {
 	// this is the point -x, y, z if you look in -z with opengl coords
 	private Vector3f topRightForeCorner;
 	private Vector3f bottomLeftBackCorner;
-	public Vector3f center;
+	private Vector3f center;
 	public float sizeX;
 	public float sizeY;
 	public float sizeZ;
@@ -200,6 +200,15 @@ public class Box {
 		}
 		
 		return length;
+	}
+
+	public Vector3f getCenter() {
+		return center;
+	}
+
+	public void setCenter(Vector3f center) {
+		this.center = center;
+		calculateCorners();
 	}
 
 }

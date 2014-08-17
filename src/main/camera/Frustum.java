@@ -269,7 +269,7 @@ public class Frustum {
 
 	public boolean boxInFrustum(Box aabb) {
 		
-		return cubeInFrustum(aabb.center, Math.max(aabb.sizeX, Math.max(aabb.sizeY, aabb.sizeZ))/2f);
+		return cubeInFrustum(aabb.getCenter(), Math.max(aabb.sizeX, Math.max(aabb.sizeY, aabb.sizeZ))/2f);
 //		return sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size/2);
 //		return (pointInFrustum(aabb.getBottomLeftBackCorner().x, aabb.getBottomLeftBackCorner().y, aabb.getBottomLeftBackCorner().z) ||
 //				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));

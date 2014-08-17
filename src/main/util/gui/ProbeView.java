@@ -74,6 +74,13 @@ public class ProbeView extends WebPanel {
 
 	        addNamePanel(webComponentPanel);
 
+	        webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
+	        	world.setActiveCamera(probe.getCamera());
+	        });}});
+	        webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
+	        	world.setActiveCamera(world.getCamera());
+	        });}});
+
 	        webComponentPanel.addElement(new WebFormattedVec3Field("Position", probe.getPosition()) {
 				@Override
 				public void onValueChange(Vector3f current) {

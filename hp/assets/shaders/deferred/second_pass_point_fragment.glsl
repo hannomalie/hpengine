@@ -51,8 +51,8 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
   
   // standard specular light
-  vec3 reflection_eye = reflect (-(viewMatrix * vec4(direction_to_light_eye, 0)).xyz, (viewMatrix * vec4(normal, 0)).xyz);
-  vec3 surface_to_viewer_eye = normalize (-(viewMatrix * vec4(normal, 0)).xyz);
+  vec3 reflection_eye = reflect (-(vec4(direction_to_light_eye, 0)).xyz, (vec4(normal, 0)).xyz);
+  vec3 surface_to_viewer_eye = normalize(position);//normalize (-(viewMatrix * vec4(normal, 0)).xyz);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
   float specular_factor = pow (dot_prod_specular, specular.a);

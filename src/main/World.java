@@ -107,6 +107,7 @@ public class World {
 	private int entityCount = 10;
 	public Renderer renderer;
 	private Camera camera;
+	private Camera activeCamera;
 
 	private Material white;
 	private Material stone;
@@ -122,6 +123,7 @@ public class World {
 		physicsFactory = new PhysicsFactory(this);
 		scene = new Scene(renderer);
 		camera = new Camera(renderer);
+		activeCamera = camera;
 		try {
 			light.init(renderer);
 		} catch (Exception e) {
@@ -228,6 +230,7 @@ public class World {
 
 		try {
 			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
+			//List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = mirror;
@@ -402,9 +405,9 @@ public class World {
 
 		StopWatch.getInstance().start("Draw");
 		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(camera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities(), light);
+			renderer.drawDebug(activeCamera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities(), light);
 		} else {
-			renderer.draw(camera, scene.getOctree(), scene.getEntities(), light);
+			renderer.draw(activeCamera, scene.getOctree(), scene.getEntities(), light);
 		}
 
 		StopWatch.getInstance().stopAndPrintMS();
@@ -439,5 +442,21 @@ public class World {
 
 	public void setScene(Scene scene) {
 		this.scene = scene;
+	}
+
+	public Camera getCamera() {
+		return camera;
+	}
+
+	public void setCamera(Camera camera) {
+		this.camera = camera;
+	}
+
+	public Camera getActiveCamera() {
+		return activeCamera;
+	}
+
+	public void setActiveCamera(Camera activeCamera) {
+		this.activeCamera = activeCamera;
 	}
 }

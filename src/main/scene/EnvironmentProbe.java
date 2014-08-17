@@ -2,8 +2,8 @@ package main.scene;
 
 import java.util.List;
 
-import javafx.scene.Camera;
 import main.Transform;
+import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Box;
 import main.octree.Octree;
@@ -24,7 +24,7 @@ public class EnvironmentProbe implements IEntity {
 		STATIC,
 		DYNAMIC
 	}
-
+	
 	private String name = "Probe_" + System.currentTimeMillis();
 	private Renderer renderer;
 	private Box box;
@@ -69,13 +69,15 @@ public class EnvironmentProbe implements IEntity {
 	@Override
 	public void moveInWorld(Vector3f amount) {
 		box.move(amount);
+		amount.y *= -1;
 		sampler.getCamera().moveInWorld(amount);
 	}
 	
 	@Override
 	public void setPosition(Vector3f position) {
+		box.setCenter(position);
+		position.y *= -1;
 		sampler.getCamera().setPosition(position);
-		box.center = position;
 	}
 	
 	@Override
@@ -130,5 +132,9 @@ public class EnvironmentProbe implements IEntity {
 
 	public Vector3f getSize() {
 		return new Vector3f(box.sizeX, box.sizeY, box.sizeZ);
+	}
+	
+	public Camera getCamera(){
+		return sampler.getCamera();
 	}
 }
