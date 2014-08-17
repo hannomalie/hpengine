@@ -61,10 +61,11 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
 //http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Specular_Highlights_at_Silhouettes
 	vec3 normalDirection = normalize(normal);
  
-    vec3 viewDirection = normalize(position);
+    vec3 viewDirection = -normalize(position);
     vec3 ambientLighting = vec3(0,0,0);
  
  	vec3 lightDir = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+    vec3 environmentSample = texture(environmentMap, normalDirection).rgb;
     vec3 diffuseReflection = lightDiffuse * max(0.0, dot(normalDirection, lightDir));
  
     vec3 specularReflection;
@@ -72,10 +73,11 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
        specularReflection = vec3(0.0, 0.0, 0.0); 
     } else {
        vec3 halfwayDirection = normalize(lightDir + viewDirection);
-       float w = pow(1.0 - max(0.0,  dot(halfwayDirection, viewDirection)), 5.0);
-       specularReflection = lightDiffuse.rgb
-          * mix(specular.rgb, vec3(1.0), w) 
-          * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
+       //float w = pow(1.0 - max(0.0,  dot(halfwayDirection, viewDirection)), 5.0);
+       //specularReflection = lightDiffuse.rgb
+       //   * mix(specular.rgb, vec3(1.0), w) 
+       //   * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
+       specularReflection = lightDiffuse.rgb * pow(max(0.0, dot(halfwayDirection, viewDirection)), specular.a);
     }
  
     //return vec4(ambientLighting + diffuseReflection + specularReflection, 1.0);
