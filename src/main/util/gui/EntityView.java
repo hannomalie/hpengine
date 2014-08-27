@@ -3,22 +3,19 @@ package main.util.gui;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import main.World;
+import main.model.Entity;
 import main.model.IEntity;
 import main.renderer.Result;
+import main.renderer.command.RemoveEntityCommand;
 import main.renderer.material.Material;
-import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
-import main.scene.EnvironmentProbe;
-import main.scene.EnvironmentProbe.Update;
+import main.texture.Texture;
 import main.util.gui.input.ButtonInput;
-import main.util.gui.input.LimitedWebFormattedTextField;
-import main.util.gui.input.MovablePanel;
 import main.util.gui.input.SliderInput;
 import main.util.gui.input.TransformablePanel;
 import main.util.gui.input.WebFormattedVec3Field;
@@ -40,15 +37,15 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 
-public class ProbeView extends WebPanel {
+public class EntityView extends WebPanel {
 
-	private EnvironmentProbe probe;
+	private Entity entity;
 	private World world;
 	private WebFormattedTextField nameField;
 	private DebugFrame debugFrame;
 
-	public ProbeView(World world, DebugFrame debugFrame, EnvironmentProbe selected) {
-		this.probe = selected;
+	public EntityView(World world, DebugFrame debugFrame, Entity entity) {
+		this.entity = entity;
 		this.world = world;
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
@@ -72,33 +69,44 @@ public class ProbeView extends WebPanel {
 	        webComponentPanel.setElementMargin ( 4 );
 
 	        addNamePanel(webComponentPanel);
-
-	        webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-	        	world.setActiveCamera(probe.getCamera());
-	        });}});
-	        webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-	        	world.setActiveCamera(world.getCamera());
-	        });}});
-
-	        webComponentPanel.addElement(new MovablePanel<IEntity>(probe));
-
-	        webComponentPanel.addElement(new WebFormattedVec3Field("Size", probe.getSize()) {
-				@Override
-				public void onValueChange(Vector3f current) {
-					probe.setSize(current.x, current.y, current.z);
-				}
-			});
 	        
-	        {
-	            WebComboBox updateSelection = new WebComboBox((EnumSet.allOf(Update.class)).toArray());
-	            updateSelection.addActionListener(e -> {
-	            	Update selected = (Update) updateSelection.getSelectedItem();
-	            	probe.setUpdate(selected);
-	            });
-	            updateSelection.setSelectedItem(probe.getUpdate());
-	            GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Update type"), updateSelection );
-	            webComponentPanel.addElement(groupPanelEnironmentMapType);
-	        }
+	        webComponentPanel.addElement(new TransformablePanel<IEntity>(entity));
+
+	        WebButton saveEntityButton = new WebButton("Save Entity");
+	        saveEntityButton.addActionListener(e -> {
+	        	Entity.write(entity, nameField.getText());
+	        });
+	        webComponentPanel.addElement(saveEntityButton);
+	        
+	        WebButton removeEntityButton = new WebButton("Remove Entity");
+	        removeEntityButton.addActionListener(e -> {
+	        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new RemoveEntityCommand((IEntity) entity));
+	    		
+	    		Result result = null;
+	    		try {
+	    			result = queue.poll(1, TimeUnit.MINUTES);
+	    		} catch (Exception e1) {
+	    			e1.printStackTrace();
+	    			showNotification(NotificationIcon.error, "Not able to change material");
+	    		}
+	    		
+	    		if (!result.isSuccessful()) {
+	    			showNotification(NotificationIcon.error, "Not able to remove entity");
+	    		} else {
+	    			showNotification(NotificationIcon.plus, "Entity removed");
+	    			if(debugFrame != null) { debugFrame.refreshSceneTree(); }
+	    		}
+	        });
+	        webComponentPanel.addElement(removeEntityButton);
+	        
+	        WebComboBox materialSelect = new WebComboBox(new Vector<Material>(world.getRenderer().getMaterialFactory().getMaterialsAsList()));
+	        materialSelect.setSelectedIndex(world.getRenderer().getMaterialFactory().getMaterialsAsList().indexOf(entity.getMaterial()));
+	        materialSelect.addActionListener(e -> {
+	        	WebComboBox cb = (WebComboBox) e.getSource();
+	        	Material selectedMaterial = world.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
+	        	entity.setMaterial(selectedMaterial.getName());
+	        });
+	        webComponentPanel.addElement(materialSelect);
 	        
 	        panels.add(webComponentPanel);
 	}
@@ -106,7 +114,7 @@ public class ProbeView extends WebPanel {
 	private void addNamePanel(WebComponentPanel webComponentPanel) {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
-		nameField.setValue(probe.getName());
+		nameField.setValue(entity.getName());
 		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField );
 		
 		webComponentPanel.addElement(groupPanel);

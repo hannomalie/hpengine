@@ -36,8 +36,8 @@ public class EnvironmentSampler {
 		Quaternion.setIdentity(cubeMapCamInitialOrientation);
 		camera.setOrientation(cubeMapCamInitialOrientation);
 		camera.rotate(new Vector4f(0,1,0,90));
-		position.y = -position.y;
-		camera.setPosition(position);
+//		position.y = -position.y;
+		camera.setPosition(position.negate(null));
 		
 		this.cubeMapRenderTarget = new CubeRenderTarget(width, height, cubeMap);
 		

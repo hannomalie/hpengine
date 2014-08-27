@@ -57,7 +57,7 @@ public class SetSelectedListener implements TreeSelectionListener {
 	    	entityViewFrame.getContentPane().removeAll();
 	    	entityViewFrame.pack();
 	    	entityViewFrame.setSize(600, 600);
-	    	entityViewFrame.add(new EntitiyView(world, debugFrame, (Entity) selected));
+	    	entityViewFrame.add(new EntityView(world, debugFrame, (Entity) selected));
 	    	entityViewFrame.setVisible(true);
         	
         } else if (nodeInfo instanceof EnvironmentProbe) {

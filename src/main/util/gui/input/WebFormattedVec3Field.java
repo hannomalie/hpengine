@@ -10,6 +10,9 @@ public abstract class WebFormattedVec3Field extends GroupPanel {
 	
 	private Vector3f input;
 	private String label;
+	private WebFormattedTextField inputX;
+	private WebFormattedTextField inputY;
+	private WebFormattedTextField inputZ;
 
 	public WebFormattedVec3Field(String label, Vector3f input) {
 		this.label = label;
@@ -17,13 +20,13 @@ public abstract class WebFormattedVec3Field extends GroupPanel {
 		
 		WebLabel webLabel = new WebLabel(label);
 		
-        WebFormattedTextField inputX = new WebFormattedTextField();
+        inputX = new WebFormattedTextField();
         inputX.setValue(input.x);
         inputX.setColumns(15);
-        WebFormattedTextField inputY = new WebFormattedTextField();
+        inputY = new WebFormattedTextField();
         inputY.setValue(input.y);
         inputY.setColumns(15);
-        WebFormattedTextField inputZ = new WebFormattedTextField();
+        inputZ = new WebFormattedTextField();
         inputZ.setValue(input.z);
         inputZ.setColumns(15);
         
@@ -45,5 +48,11 @@ public abstract class WebFormattedVec3Field extends GroupPanel {
 	}
 	
 	public abstract void onValueChange(Vector3f current);
+
+	public void setValue(Vector3f position) {
+		inputX.setValue(position.x);
+		inputY.setValue(position.y);
+		inputZ.setValue(position.z);
+	}
 
 }

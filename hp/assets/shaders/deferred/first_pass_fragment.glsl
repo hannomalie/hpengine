@@ -192,8 +192,8 @@ rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
 float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
 
-texCoords3d = normalize(posonbox - vec3(0,0,0));
-//texCoords3d = (posonbox - environmentMapWorldPosition.xyz);
+//texCoords3d = normalize(posonbox - vec3(0,0,0));
+texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection

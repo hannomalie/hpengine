@@ -128,7 +128,7 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(0,50,0), new Vector3f(490, 190, 220), 512, Update.DYNAMIC);
+		environmentProbeFactory.getProbe(new Vector3f(1,100,-1), new Vector3f(490, 250, 220), 512, Update.DYNAMIC);
 		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, 256, Update.DYNAMIC);
 		
 		sphereModel = null;
