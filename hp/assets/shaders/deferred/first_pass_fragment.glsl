@@ -100,6 +100,27 @@ vec2 encodeNormal(vec3 n) {
     return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
 }
 
+vec3 boxProjection(vec3 texCoords3d) {
+	vec3 nrdir = normalize(texCoords3d);
+	vec3 envMapMin = vec3(-300,-300,-300);
+	envMapMin = environmentMapMin;
+	vec3 envMapMax = vec3(300,300,300);
+	envMapMax = environmentMapMax;
+	
+	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+	vec3 rbminmax;
+	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+	vec3 posonbox = position_world.xyz + nrdir*fa;
+	
+	//texCoords3d = normalize(posonbox - vec3(0,0,0));
+	return normalize(posonbox - environmentMapWorldPosition.xyz);
+}
+
 void main(void) {
 	
 	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
@@ -121,7 +142,7 @@ vec2 uvParallax = vec2(0,0);
 	if (useParallax) {
 		float height = (texture2D(normalMap, UV).rgb).y;//texture2D(heightMap, UV).r;
 		height = height * 2 - 1;
-		float v = height * 0.04 - 0.02;
+		float v = height * 0.014;
 		uvParallax = (V.xy * v);
 		UV = UV + uvParallax;
 	} else if (useSteepParallax) {
@@ -183,7 +204,7 @@ vec2 uvParallax = vec2(0,0);
 vec3 texCoords3d = normalize(reflect(V, PN_world));
 
 ///////////////////////////////////////////////////////////////////////
-vec3 nrdir = normalize(texCoords3d);
+/*vec3 nrdir = normalize(texCoords3d);
 vec3 envMapMin = vec3(-300,-300,-300);
 envMapMin = environmentMapMin;
 vec3 envMapMax = vec3(300,300,300);
@@ -200,7 +221,8 @@ float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
 
 //texCoords3d = normalize(posonbox - vec3(0,0,0));
-texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);
+texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);*/
+texCoords3d = boxProjection(texCoords3d);
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
@@ -229,7 +251,12 @@ if (discrim > 0) {
 ///////////////////////////////////////////////////////////////////////
 
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 0);//reflectiveness);
-out_probe.rgb = texture(environmentMap, texCoords3d).rgb;
+out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+if (useParallax) {
+	texCoords3d -= texCoords3d * 0.0000001 * 0.0001 * texture(environmentMap, texCoords3d).a;
+	texCoords3d = boxProjection(texCoords3d);
+	out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+}
 
 vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap

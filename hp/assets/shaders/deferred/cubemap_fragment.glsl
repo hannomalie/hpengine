@@ -35,6 +35,6 @@ void main()
 	vec4 color = vec4(materialDiffuseColor, 1);
 	color = texture2D(diffuseMap, UV);
 	
-	float depth = linearizeDepth(position_clip.z / position_clip.w);
+	float depth = (position_clip.z / position_clip.w);
     out_color = vec4(color.rgb, depth);
 }

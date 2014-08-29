@@ -99,5 +99,4 @@ void main(void) {
 	vec4 lit = vec4(ambientTerm, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1) + vec4(specularTerm,1);
 	out_color = lit;
 	//out_color.rgb = vec3(ao,ao,ao);
-	//out_color.rgb = color.xyz;
 }

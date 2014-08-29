@@ -66,7 +66,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, v
   
   //vec3 environmentSample = texture(environmentMap, -normal).rgb;
   //return vec4((vec4(environmentSample,1) * dot_prod).xyz, specular_factor);
-  vec3 lightColor = lightDiffuse;//* (inverse(viewMatrix) * vec4(texture(environmentMap, normal).rgb,0)).rgb;
+  vec3 lightColor = lightDiffuse;
   return vec4((vec4(lightColor,1) * dot_prod).xyz, specular_factor);
 }
 
@@ -233,7 +233,9 @@ void main(void) {
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
-	vec3 probeColor = texture2D(probe, st).xyz;
+	vec4 probeColorDepth = texture2D(probe, st);
+	vec3 probeColor = probeColorDepth.rgb;
+	float probeDepth = probeColorDepth.a;
 	float reflectiveness = texture2D(diffuseMap, st).w;
 	
 	// skip background
