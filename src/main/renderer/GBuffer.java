@@ -27,6 +27,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -53,7 +54,7 @@ public class GBuffer {
 		this.secondPassPointProgram = secondPassPointProgram;
 		this.combineProgram = combineProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
+		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
@@ -129,11 +130,12 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(3)); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		cubeMap.bind();
-		// 5 is missing yet
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(4)); // probe color
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 		GPUProfiler.end();
-
+		
 		GPUProfiler.start("Set uniforms");
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);

@@ -57,7 +57,9 @@ import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -114,6 +116,7 @@ public class DeferredRenderer implements Renderer {
 	private GBuffer gBuffer;
 
 	private Program cubeMapDiffuseProgram;
+	private int maxTextureUnits;
 	
 
 	public DeferredRenderer(Spotlight light) {
@@ -128,8 +131,8 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(1,100,-1), new Vector3f(490, 250, 220), 512, Update.DYNAMIC);
-		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, 256, Update.DYNAMIC);
+		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), 512, Update.STATIC);
+		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, 512, Update.STATIC);
 		
 		sphereModel = null;
 		try {
@@ -201,6 +204,8 @@ public class DeferredRenderer implements Renderer {
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
 		glWatch = new OpenGLStopWatch();
+		
+		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 //		CLUtil.initialize();
@@ -574,6 +579,15 @@ public class DeferredRenderer implements Renderer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		drawToQuad(gBuffer.getColorReflectivenessImage(), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+	}
+
+	@Override
+	public int getMaxTextureUnits() {
+		return maxTextureUnits;
+	}
+
+	private void setMaxTextureUnits(int maxTextureUnits) {
+		this.maxTextureUnits = maxTextureUnits;
 	}
 
 }

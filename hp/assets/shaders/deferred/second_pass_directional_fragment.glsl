@@ -5,7 +5,9 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D specularMap;
 layout(binding=4) uniform samplerCube environmentMap;
+layout(binding=5) uniform sampler2D probe;
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
+
 uniform float materialSpecularCoefficient = 0;
 
 uniform float screenWidth = 1280;
@@ -38,7 +40,18 @@ vec3 unpackColor(float f) {
     return color / 256.0;
 }
 
-vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
+// http://aras-p.info/texts/CompactNormalStorage.html
+#define kPI 3.1415926536f
+vec3 decodeNormal(vec2 enc) {
+    vec2 ang = enc*2-1;
+    vec2 scth;
+    scth.x = sin(ang.x * kPI);
+    scth.y = cos(ang.x * kPI);
+    vec2 scphi = vec2(sqrt(1.0 - ang.y*ang.y), ang.y);
+    return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
+}
+
+vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor) {
   vec3 direction_to_light_eye = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
@@ -57,7 +70,7 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   return vec4((vec4(lightColor,1) * dot_prod).xyz, specular_factor);
 }
 
-vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
+vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor) {
 //http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Specular_Highlights_at_Silhouettes
 	vec3 normalDirection = normalize(normal);
  
@@ -148,15 +161,18 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 rayCastReflect(vec3 color, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
-return color;
+vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
+
+//return color;
+//return probeColor;
+
 	vec3 eyeToSurfaceView = targetPosView;
-	vec3 reflectionVecView = reflect(eyeToSurfaceView, targetNormalView);
+	vec3 reflectionVecView = normalize(reflect(eyeToSurfaceView, targetNormalView));
 	
-	vec3 viewRay = 20*normalize(reflectionVecView);
+	vec3 viewRay = 10*normalize(reflectionVecView);
 	
 	vec3 currentViewPos = targetPosView;
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 25; i++) {
 	
 		  currentViewPos += viewRay;
 		  
@@ -167,12 +183,12 @@ return color;
 		  	
 		  	currentViewPos -= viewRay;
 		  	
-		  	for(int x = 0; x < 20; x++) {
-		 		currentViewPos += viewRay/20;
+		  	for(int x = 0; x < 10; x++) {
+		 		currentViewPos += viewRay/10;
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 				  difference = currentViewPos.z - currentPosSample.z;
-				  if (difference < 0) {
+				  if (difference < 0 && difference > -2) {
 	  		  		break;
 				  }
 		  	}
@@ -184,16 +200,21 @@ return color;
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
     			//return vec3(screenEdgefactor, 0, 0);
-				return mix(color, reflectedColor, 1-screenEdgefactor);
+    			
+    			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
+    			float screenEdgefactorY = clamp(abs(resultCoords.y) - 0.95, 0, 1);
+    			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
+    			//return vec3(screenEdgefactor, 0, 0);
+    			
+				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
 		  	}
-		  	return vec3(0,1,0);
+		  	//return vec3(1,0,0);
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
-			return color;
-		  	
+			return probeColor;
 		  }
 	}
 	
-	return color;
+	return probeColor;
 }
 
 /////////////////////
@@ -209,8 +230,10 @@ void main(void) {
 	vec3 positionView = texture2D(positionMap, st).xyz;
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
 	//positionView = positionViewPreW.xyz / positionViewPreW.w;
+  	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
+	vec3 probeColor = texture2D(probe, st).xyz;
 	float reflectiveness = texture2D(diffuseMap, st).w;
 	
 	// skip background
@@ -218,11 +241,11 @@ void main(void) {
 	  discard;
 	}
 	vec3 normalView = texture2D(normalMap, st).xyz;
-	//int environmentProbeIndex = int(normalView.z);
+	//normalView = decodeNormal(normalView.xy);
 	
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = brdf(positionView, normalView, vec4(color,1), specular);
+	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular, probeColor);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -259,6 +282,7 @@ void main(void) {
 		  vec3 se = ep + sign(dot(ray,N) )*ray;
 		  vec4 occluderFragment = texture2D(normalMap,se.xy);
 		  vec3 occNorm = occluderFragment.xyz;
+		  //occNorm = decodeNormal(occNorm.xy);
 		
 		  // Wenn die Diff der beiden Punkte negativ ist, ist der Verdecker hinter dem aktuellen Bildpunkt
 		  depthDifference = depth-occluderFragment.w;
@@ -285,10 +309,11 @@ void main(void) {
 	
 	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
+	
 	if(reflectiveness == 0) {
 		out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
 	} else {
-		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, st, positionView, normalView), 0);
+		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
 	

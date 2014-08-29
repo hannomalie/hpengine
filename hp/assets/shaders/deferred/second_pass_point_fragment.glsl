@@ -35,6 +35,16 @@ in vec4 position_view;
 
 out vec4 out_DiffuseSpecular;
 
+#define kPI 3.1415926536f
+vec3 decodeNormal(vec2 enc) {
+    vec2 ang = enc*2-1;
+    vec2 scth;
+    scth.x = sin(ang.x * kPI);
+    scth.y = cos(ang.x * kPI);
+    vec2 scphi = vec2(sqrt(1.0 - ang.y*ang.y), ang.y);
+    return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
+}
+
 vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
 //////////////////////
   //Pointlight currentLight = lights[currentLightIndex];
@@ -52,10 +62,10 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular) {
   
   // standard specular light
   vec3 reflection_eye = reflect (-(vec4(direction_to_light_eye, 0)).xyz, (vec4(normal, 0)).xyz);
-  vec3 surface_to_viewer_eye = normalize(position);//normalize (-(viewMatrix * vec4(normal, 0)).xyz);
+  vec3 surface_to_viewer_eye = normalize(-position);//normalize (-(viewMatrix * vec4(normal, 0)).xyz);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
-  float specular_factor = pow (dot_prod_specular, specular.a);
+  float specular_factor = clamp(pow (dot_prod_specular, length(specular)), 0, 1);
   
   // attenuation (fade out to sphere edges)
   float dist = length (dist_to_light_eye);
@@ -82,6 +92,8 @@ void main(void) {
 	}
 	
 	vec3 normalView = texture2D(normalMap, st).xyz;
+    //normalView = decodeNormal(normalView.xy);
+	
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);

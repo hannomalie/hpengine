@@ -64,6 +64,7 @@ layout(location=0)out vec4 out_position;
 layout(location=1)out vec4 out_normal;
 layout(location=2)out vec4 out_color;
 layout(location=3)out vec4 out_specular;
+layout(location=4)out vec4 out_probe;
 
 float linearizeDepth(float z)
 {
@@ -92,6 +93,11 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 	map = map * 2 - 1;
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
+}
+
+#define kPI 3.1415926536f
+vec2 encodeNormal(vec3 n) {
+    return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
 }
 
 void main(void) {
@@ -152,6 +158,8 @@ vec2 uvParallax = vec2(0,0);
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
 	out_normal = vec4(-V.xyz, depth);
+	//out_normal = vec4(encodeNormal(V.xyz), environmentProbeIndex, depth);
+	//out_normal.z = environmentProbeIndex;
 	//out_normal.z = environmentProbeIndex;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
@@ -172,16 +180,13 @@ vec2 uvParallax = vec2(0,0);
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
-vec3 texCoords3d = V;
-//vec3 texCoords3d = PN_world;
-//vec3 texCoords3d = normalize(reflect(V, PN_world));
+vec3 texCoords3d = normalize(reflect(V, PN_world));
+texCoords3d = V;
 
 ///////////////////////////////////////////////////////////////////////
 vec3 nrdir = normalize(texCoords3d);
-vec3 envMapMin = vec3(-300,-300,-300);
-envMapMin = environmentMapMin;
-vec3 envMapMax = vec3(300,300,300);
-envMapMax = environmentMapMax;
+vec3 envMapMin = vec3(-10000,-10000,-10000);
+vec3 envMapMax = vec3(10000,10000,10000);
 
 vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
 vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
@@ -192,8 +197,9 @@ rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
 rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
 float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
+
 //texCoords3d = normalize(posonbox - vec3(0,0,0));
-//texCoords3d = (posonbox - environmentMapWorldPosition.xyz);
+//texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
@@ -222,6 +228,7 @@ if (discrim > 0) {
 ///////////////////////////////////////////////////////////////////////
 
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 1);
+out_probe.rgb = texture(environmentMap, texCoords3d).rgb;
 
 vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 #ifdef use_specularMap

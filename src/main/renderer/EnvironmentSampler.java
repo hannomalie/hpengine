@@ -6,6 +6,10 @@ import java.util.stream.Collectors;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -28,8 +32,10 @@ public class EnvironmentSampler {
 	private Camera camera;
 	private Program cubeMapDiffuseProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
+	private Renderer renderer;
 
 	public EnvironmentSampler(Renderer renderer, Vector3f position, int width, int height) {
+		this.renderer = renderer;
 		this.cubeMap = new DynamicCubeMap(width, height);
 		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 20f, 5000f), 20f, 5000f);
 		Quaternion cubeMapCamInitialOrientation = new Quaternion();
@@ -84,7 +90,11 @@ public class EnvironmentSampler {
 			GPUProfiler.end();
 			
 		}
-		int errorValue = GL11.glGetError();
+//		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		
+//		int errorValue = GL11.glGetError();
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);
 		

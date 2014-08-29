@@ -34,6 +34,7 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, int resolution, Update update) {
 		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, resolution, update);
 		probes.add(probe);
+		probe.bind(probe.getTextureUnitIndex(renderer, probes.indexOf(probe)));
 		return probe;
 	}
 	public EnvironmentProbe getProbe(Vector3f center, float size, int resolution, Update update) {

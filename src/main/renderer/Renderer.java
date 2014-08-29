@@ -66,5 +66,6 @@ public interface Renderer {
 	public EnvironmentProbeFactory getEnvironmentProbeFactory();
 	public void setEnvironmentMap(DynamicCubeMap environmentMap);
 	public void init(Octree octree);
+	int getMaxTextureUnits();
 
 }

@@ -7,6 +7,7 @@ import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Box;
 import main.octree.Octree;
+import main.renderer.DeferredRenderer;
 import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
@@ -15,6 +16,7 @@ import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
 
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -30,6 +32,7 @@ public class EnvironmentProbe implements IEntity {
 	private Box box;
 	private EnvironmentSampler sampler;
 	protected Update update;
+	private int index;
 
 	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update) {
 		this.renderer = renderer;
@@ -140,4 +143,18 @@ public class EnvironmentProbe implements IEntity {
 	public Camera getCamera(){
 		return sampler.getCamera();
 	}
+
+	public void bind(int index) {
+		this.index = index;
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
+		sampler.getEnvironmentMap().bind();
+	}
+
+	public int getTextureUnitIndex(Renderer renderer, int index) {
+		return renderer.getMaxTextureUnits() - index - 1;
+	}
+	public int getTextureUnitIndex() {
+		return index;
+	}
+	
 }
