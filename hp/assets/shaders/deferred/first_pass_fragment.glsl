@@ -252,6 +252,8 @@ if (discrim > 0) {
 
 out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 0);//reflectiveness);
 out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+//out_probe.rgba = textureLod(environmentMap, texCoords3d, 8).rgba;
+
 if (useParallax) {
 	texCoords3d -= texCoords3d * 0.0000001 * 0.0001 * texture(environmentMap, texCoords3d).a;
 	texCoords3d = boxProjection(texCoords3d);

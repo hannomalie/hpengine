@@ -8,6 +8,7 @@ import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.scene.EnvironmentProbe;
+import main.scene.EnvironmentProbe.Update;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,8 +25,8 @@ public class ProbeTest {
 	
 	@Test
 	public void assignsProbesProperly() {
-		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, 1);
-		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, 1);
+		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC);
+		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC);
 		
 		IEntity centeredEntity = new IEntity() {
 			Transform transform = new Transform();

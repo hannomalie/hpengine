@@ -8,6 +8,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.util.vector.Quaternion;
@@ -48,7 +49,7 @@ public class EnvironmentSampler {
 		this.cubeMapRenderTarget = new CubeRenderTarget(width, height, cubeMap);
 		
 		cubeMapDiffuseProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
-		DeferredRenderer.exitOnGLError("ZZZ");
+		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
 	public CubeMap drawCubeMap(Octree octree) {
@@ -84,16 +85,18 @@ public class EnvironmentSampler {
 				entityBuffer.rewind();
 				cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
 				e.getMaterial().setTexturesActive(null, cubeMapDiffuseProgram);
+				
 				e.getVertexBuffer().draw();
 			}
 			GPUProfiler.end();
 			GPUProfiler.end();
-			
 		}
-//		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		
+
+		cubeMap.bind();
+		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_NEAREST);
 //		int errorValue = GL11.glGetError();
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);

@@ -95,7 +95,7 @@ void main(void) {
 	//finalColor.r = pow(finalColor.r,1/2.2);
 	//finalColor.g = pow(finalColor.g,1/2.2);
 	//finalColor.b = pow(finalColor.b,1/2.2);
-	vec3 ambientTerm = ambientColor/3 * ao * finalColor.rgb;
+	vec3 ambientTerm = ambientColor/3 * ao * finalColor.rgb;// + 0.1* reflectedColor;
 	vec4 lit = vec4(ambientTerm, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1) + vec4(specularTerm,1);
 	out_color = lit;
 	//out_color.rgb = vec3(ao,ao,ao);

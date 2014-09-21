@@ -4,6 +4,7 @@ import static main.log.ConsoleLogger.getLogger;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -37,6 +38,7 @@ import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbe.Update;
 import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
@@ -56,10 +58,18 @@ import org.lwjgl.Sys;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -131,8 +141,8 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), 512, Update.STATIC);
-		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, 512, Update.STATIC);
+		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.STATIC);
+		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.STATIC);
 		
 		sphereModel = null;
 		try {
@@ -169,6 +179,8 @@ public class DeferredRenderer implements Renderer {
 
 		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
+		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
 
@@ -204,8 +216,6 @@ public class DeferredRenderer implements Renderer {
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
 		glWatch = new OpenGLStopWatch();
-		
-		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 		
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 //		CLUtil.initialize();
