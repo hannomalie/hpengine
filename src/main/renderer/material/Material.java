@@ -48,7 +48,8 @@ public class Material implements Serializable {
 		OCCLUSION("occlusionMap", 3),
 		HEIGHT("heightMap", 4),
 		REFLECTION("reflectionMap", 5),
-		ENVIRONMENT("environmentMap", 6);
+		ENVIRONMENT("environmentMap", 6),
+		ROUGHNESS("roughnessMap", 7);
 		
 		public final String shaderVariableName;
 		public final int textureSlot;
@@ -139,9 +140,8 @@ public class Material implements Serializable {
 	
 	public void setTexturesActive(Entity entity, Program program) {
 		program.setUniform("materialDiffuseColor", getDiffuse());
-		program.setUniform("materialSpecularColor", getSpecular());
-		program.setUniform("materialSpecularCoefficient", getSpecularCoefficient());
-		program.setUniform("materialGlossiness", getGlossiness());
+		program.setUniform("materialRoughness", getRoughness());
+		program.setUniform("materialMetallic", getMetallic());
 		
 		if (!program.needsTextures()) {
 			return;
@@ -211,17 +211,8 @@ public class Material implements Serializable {
 	public void setTextureLess(boolean textureLess) {
 		materialInfo.textureLess = textureLess;
 	}
-	public void setAmbient(Vector3f ambient) {
-		materialInfo.ambient = ambient;
-	}
 	public void setDiffuse(Vector3f diffuse) {
 		materialInfo.diffuse = diffuse;
-	}
-	public void setSpecular(Vector3f specular) {
-		materialInfo.specular = specular;
-	}
-	public void setSpecularCoefficient(float specularCoefficient) {
-		materialInfo.specularCoefficient = specularCoefficient;
 	}
 	public Program getFirstPassProgram() {
 		return materialInfo.firstPassProgram;
@@ -230,35 +221,24 @@ public class Material implements Serializable {
 	public void setProgram(Program firstPassProgram) {
 		materialInfo.firstPassProgram = firstPassProgram;
 	}
-	public float getReflectiveness() {
-		return materialInfo.reflectiveness;
-	}
-
-	public void setReflectiveness(float reflectiveness) {
-		materialInfo.reflectiveness = reflectiveness;
-	}
-	public Vector3f getAmbient() {
-		return materialInfo.ambient;
-	}
 
 	public Vector3f getDiffuse() {
 		return materialInfo.diffuse;
 	}
 
-	public Vector3f getSpecular() {
-		return materialInfo.specular;
+	public float getRoughness() {
+		return materialInfo.roughness;
 	}
 
-	public float getSpecularCoefficient() {
-		return materialInfo.specularCoefficient;
+	public void setRoughness(float roughness) {
+		materialInfo.roughness = roughness;
+	}
+	public float getMetallic() {
+		return materialInfo.metallic;
 	}
 
-	public float getGlossiness() {
-		return materialInfo.glossiness;
-	}
-
-	public void setGlossiness(float glossiness) {
-		materialInfo.glossiness = glossiness;
+	public void setMetallic(float metallic) {
+		materialInfo.metallic = metallic;
 	}
 
 	public boolean hasCustomVertexShader() {
@@ -337,13 +317,10 @@ public class Material implements Serializable {
 		
 		Material m = (Material) other;
 		MaterialInfo mi = m.getMaterialInfo();
-		return (mi.ambient.equals(materialInfo.ambient) &&
-				mi.diffuse.equals(materialInfo.diffuse) &&
-				mi.specular.equals(materialInfo.specular) &&
-				mi.specularCoefficient == materialInfo.specularCoefficient &&
+		return (mi.diffuse.equals(materialInfo.diffuse) &&
 //				m.textures.equals(textures) &&
 //				m.name.equals(name) &&
-				mi.reflectiveness == materialInfo.reflectiveness &&
+				mi.roughness == materialInfo.roughness &&
 				mi.firstPassProgram.equals(materialInfo.firstPassProgram));
 	}
 

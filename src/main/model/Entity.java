@@ -194,7 +194,6 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.use();
 		currentProgram.setUniform("useParallax", World.useParallax);
 		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		currentProgram.setUniform("reflectiveness", getMaterial().getReflectiveness());
 		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		currentProgram.setUniform("eyePosition", camera.getPosition());
@@ -233,7 +232,6 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.use();
 		currentProgram.setUniform("useParallax", World.useParallax);
 		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		currentProgram.setUniform("reflectiveness", getMaterial().getReflectiveness());
 		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		currentProgram.setUniform("eyePosition", camera.getPosition());

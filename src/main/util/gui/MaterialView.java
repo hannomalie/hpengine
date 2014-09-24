@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 
 
 
+
+
 import main.World;
 import main.model.IEntity;
 import main.renderer.command.GetMaterialCommand;
@@ -32,7 +34,10 @@ import main.texture.Texture;
 import main.util.gui.input.ColorChooserButton;
 import main.util.gui.input.ColorChooserFrame;
 import main.util.gui.input.LimitedWebFormattedTextField;
+import main.util.gui.input.SliderInput;
 import main.util.gui.input.WebFormattedVec3Field;
+
+
 
 
 
@@ -40,6 +45,8 @@ import main.util.gui.input.WebFormattedVec3Field;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+
+
 
 
 
@@ -55,6 +62,7 @@ import com.alee.laf.label.WebLabel;
 import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
+import com.alee.laf.slider.WebSlider;
 import com.alee.laf.text.WebTextField;
 import com.alee.managers.language.data.TooltipWay;
 import com.alee.managers.notification.NotificationIcon;
@@ -229,65 +237,74 @@ public class MaterialView extends WebPanel {
 			}
 		}));
 
-        webComponentPanel.addElement(new WebFormattedVec3Field("Ambient", material.getAmbient()) {
-			@Override
-			public void onValueChange(Vector3f current) {
-				material.setAmbient(current);
-			}
-		});
-        webComponentPanel.addElement(new ColorChooserButton("Ambient", new ColorChooserFrame() {
-			@Override
-			public void onColorChange(Vector3f color) {
-				material.setAmbient(color);
-			}
-		}));
-        
-        webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", material.getSpecular()) {
-			@Override
-			public void onValueChange(Vector3f current) {
-				material.setSpecular(current);
-			}
-		});
-        webComponentPanel.addElement(new ColorChooserButton("SpecularColor", new ColorChooserFrame() {
-			@Override
-			public void onColorChange(Vector3f color) {
-				material.setSpecular(color);
-			}
-		}));
+//        webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", material.getSpecular()) {
+//			@Override
+//			public void onValueChange(Vector3f current) {
+//				material.setSpecular(current);
+//			}
+//		});
+//        webComponentPanel.addElement(new ColorChooserButton("SpecularColor", new ColorChooserFrame() {
+//			@Override
+//			public void onColorChange(Vector3f color) {
+//				material.setSpecular(color);
+//			}
+//		}));
+//        {
+//	        LimitedWebFormattedTextField specularExponentInput = new LimitedWebFormattedTextField(1, 10000) {
+//				@Override
+//				public void onChange(float currentValue) {
+//					material.setSpecularCoefficient(currentValue);
+//				}
+//			};
+//			specularExponentInput.setValue(material.getSpecularCoefficient());
+//	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Specular Power"), specularExponentInput );
+//	        TooltipManager.setTooltip ( groupPanel, "1 soft, 100 hard highlights", TooltipWay.up );
+//	        webComponentPanel.addElement(groupPanel);
+//        }
         {
-	        LimitedWebFormattedTextField specularExponentInput = new LimitedWebFormattedTextField(1, 10000) {
-				@Override
-				public void onChange(float currentValue) {
-					material.setSpecularCoefficient(currentValue);
-				}
-			};
-			specularExponentInput.setValue(material.getSpecularCoefficient());
-	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Specular Power"), specularExponentInput );
-	        TooltipManager.setTooltip ( groupPanel, "1 soft, 100 hard highlights", TooltipWay.up );
-	        webComponentPanel.addElement(groupPanel);
-        }
-        {
-	        LimitedWebFormattedTextField reflectiveNessInput = new LimitedWebFormattedTextField(0, 1) {
-				@Override
-				public void onChange(float currentValue) {
-					material.setReflectiveness(currentValue);
-				}
-			};
-			reflectiveNessInput.setValue(material.getReflectiveness());
-	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Reflectiveness"), reflectiveNessInput );
-	        webComponentPanel.addElement(groupPanel);
-        }
-        {
-            LimitedWebFormattedTextField glossinessInput = new LimitedWebFormattedTextField(0, 1) {
+            LimitedWebFormattedTextField roughnessInput = new LimitedWebFormattedTextField(0, 1) {
     			@Override
     			public void onChange(float currentValue) {
-    				material.setGlossiness(currentValue);
+    				material.setRoughness(currentValue);
     			}
     		};
-    		glossinessInput.setValue(material.getGlossiness());
-            GroupPanel groupPanelGlossiness = new GroupPanel ( 4, new WebLabel("Glossiness"), glossinessInput );
-            webComponentPanel.addElement(groupPanelGlossiness);
+    		roughnessInput.setValue(material.getRoughness());
+            {
+            	SliderInput roughnessSliderInput = new SliderInput("Roughness", WebSlider.HORIZONTAL, 0, 100, (int)(material.getRoughness()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					roughnessInput.setValue(((float)value/100f));
+    					material.setRoughness(((float)value/100f));
+    				}
+    			};
+                GroupPanel groupPanelRoughness = new GroupPanel ( 4, new WebLabel("Roughness"), roughnessInput, roughnessSliderInput );
+                webComponentPanel.addElement(groupPanelRoughness);
+            }
         }
+        {
+            LimitedWebFormattedTextField metallicInput = new LimitedWebFormattedTextField(0, 1) {
+    			@Override
+    			public void onChange(float currentValue) {
+    				material.setMetallic(currentValue);
+    			}
+    		};
+    		metallicInput.setValue(material.getMetallic());
+            {
+            	SliderInput metallicSliderInput = new SliderInput("Metallic", WebSlider.HORIZONTAL, 0, 100, (int)(material.getMetallic()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					metallicInput.setValue(((float)value/100f));
+    					material.setMetallic(((float)value/100f));
+    				}
+    			};
+    			
+                GroupPanel groupPanelMetallic = new GroupPanel ( 4, new WebLabel("Metallic"), metallicInput, metallicSliderInput );
+                webComponentPanel.addElement(groupPanelMetallic);
+            }
+        }
+
         {
             WebComboBox environmentMapInput = new WebComboBox((EnumSet.allOf(ENVIRONMENTMAPTYPE.class)).toArray());
             environmentMapInput.addActionListener(e -> {

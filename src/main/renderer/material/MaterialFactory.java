@@ -137,13 +137,9 @@ public class MaterialFactory {
 			this.maps = materialInfo.maps;
 			this.environmentMapType = materialInfo.environmentMapType;
 			this.name = materialInfo.name;
-			this.ambient = materialInfo.ambient;
 			this.diffuse = materialInfo.diffuse;
-			this.specular = materialInfo.specular;
-			this.specularCoefficient = materialInfo.specularCoefficient;
-			this.reflectiveness = materialInfo.reflectiveness;
-			this.glossiness = materialInfo.glossiness;
-			this.textureLess = materialInfo.textureLess;
+			this.roughness = materialInfo.roughness;
+			this.metallic = materialInfo.metallic;
 			this.firstPassProgram = materialInfo.firstPassProgram;
 			this.geometryShader = materialInfo.geometryShader;
 			this.vertexShader = materialInfo.vertexShader;
@@ -153,12 +149,10 @@ public class MaterialFactory {
 		public MaterialMap maps = new MaterialMap();
 		public ENVIRONMENTMAPTYPE environmentMapType = ENVIRONMENTMAPTYPE.GENERATED;
 		public String name = "";
-		public Vector3f ambient = new Vector3f();
 		public Vector3f diffuse = new Vector3f();
-		public Vector3f specular = new Vector3f(0,0,0);
-		public float specularCoefficient = 1f;
-		public float reflectiveness = 0.05f;
-		public float glossiness = 0.25f;
+		public float roughness = 0.75f;
+		public float metallic = 0f;
+		
 		public boolean textureLess;
 		transient public Program firstPassProgram;
 		String geometryShader = "";
@@ -225,7 +219,7 @@ public class MaterialFactory {
 //			return material;
 		} catch (Exception e) {
 //			e.printStackTrace();
-			System.out.println("Material read caused an exception, probably not very important");
+			System.out.println("Material read (" + fileName + ") caused an exception, probably not very important");
 		}
 		return null;
 	}

@@ -3,14 +3,13 @@
 layout(binding=0) uniform sampler2D diffuseMap; // diffuse, reflectiveness 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
 layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
-layout(binding=3) uniform sampler2D specularMap; // specular color
+layout(binding=3) uniform sampler2D specularMap; // specular color, metallic
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 projectionMatrix;
-
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -61,18 +60,17 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	
-  	vec4 positionGlossiness = texture2D(positionMap, st);
-  	vec3 positionView = positionGlossiness.xyz;
+  	vec4 positionRoughness = texture2D(positionMap, st);
+  	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
   	
-  	float glossiness = positionGlossiness.w;
+  	vec4 colorRoughness = texture2D(diffuseMap, st);
+  	vec3 color = colorRoughness.xyz * exposure/2;
+  	float roughness = positionRoughness.w;
   	
-  	vec4 colorReflectiveness = texture2D(diffuseMap, st);
-  	vec3 color = colorReflectiveness.xyz * exposure/2;
-  	float reflectiveness = colorReflectiveness.w;
-  	
-  	vec4 specularColorPower = texture2D(specularMap, st);
-  	vec3 specularColor = specularColorPower.xyz;
+  	vec4 specularColorMetallic = texture2D(specularMap, st);
+  	vec3 specularColor = specularColorMetallic.xyz;
+  	float metallic = specularColorMetallic.a;
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
 	lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0);
@@ -84,19 +82,21 @@ void main(void) {
 	ao /= 2;
 
 	//vec3 reflectedColor = aoReflect.gba;
-	vec3 reflectedColor = blurSample(aoReflection, st, glossiness/125).gba;
+	vec3 reflectedColor = blurSample(aoReflection, st, roughness/125).gba;
 	
-	vec3 specularTerm = specularColor * pow(max(specularFactor,0.0), specularColorPower.a);
-	vec3 finalColor = mix(color, reflectedColor, clamp(0.2+reflectiveness,0,1));
+	vec3 finalColor = mix(color, reflectedColor, (1-roughness));
+	vec3 specularTerm = specularColor * specularFactor;
+	
 	//finalColor.rgb = Uncharted2Tonemap(2*finalColor.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
-	finalColor.rgb = finalColor.rgb * whiteScale;
+	//vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
+	//finalColor.rgb = finalColor.rgb * whiteScale;
 	/////////////////////////////// GAMMA
 	//finalColor.r = pow(finalColor.r,1/2.2);
 	//finalColor.g = pow(finalColor.g,1/2.2);
 	//finalColor.b = pow(finalColor.b,1/2.2);
-	vec3 ambientTerm = ambientColor/3 * ao * finalColor.rgb;// + 0.1* reflectedColor;
+	vec3 ambientTerm = ambientColor/3 * ao * mix(color.rgb, specularColor, metallic);// + 0.1* reflectedColor;
 	vec4 lit = vec4(ambientTerm, 1) + vec4(lightDiffuseSpecular.rgb*finalColor, 1) + vec4(specularTerm,1);
 	out_color = lit;
-	//out_color.rgb = vec3(ao,ao,ao);
+	
+	//out_color.rgb = specularColor;
 }

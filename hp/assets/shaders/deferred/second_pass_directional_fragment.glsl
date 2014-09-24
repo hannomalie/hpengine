@@ -8,7 +8,14 @@ layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=5) uniform sampler2D probe;
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
 
-uniform float materialSpecularCoefficient = 0;
+layout(binding=184) uniform samplerCube probe6;
+layout(binding=185) uniform samplerCube probe5;
+layout(binding=186) uniform samplerCube probe4;
+layout(binding=187) uniform samplerCube probe3;
+layout(binding=188) uniform samplerCube probe2;
+layout(binding=190) uniform samplerCube probe1;
+layout(binding=191) uniform samplerCube probe0;
+
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -51,7 +58,7 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor) {
+vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
   vec3 direction_to_light_eye = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
   
   // standard diffuse light
@@ -62,19 +69,20 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, v
   vec3 surface_to_viewer_eye = normalize (-position);
   float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
   dot_prod_specular = max (dot_prod_specular, 0.0);
-  float specular_factor = clamp(pow (dot_prod_specular, length(specular)), 0, 1);
+  int specularPower = int(2048 * (1-roughness) + 1); //specular.a
+  float specular_factor = clamp(pow (dot_prod_specular, (specularPower)), 0, 1);
   
-  //vec3 environmentSample = texture(environmentMap, -normal).rgb;
+  vec3 environmentSample = texture(environmentMap, normal).rgb;
   //return vec4((vec4(environmentSample,1) * dot_prod).xyz, specular_factor);
   vec3 lightColor = lightDiffuse;
   return vec4((vec4(lightColor,1) * dot_prod).xyz, specular_factor);
 }
 
-vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor) {
+vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
 //http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Specular_Highlights_at_Silhouettes
 	vec3 normalDirection = normalize(normal);
  
-    vec3 viewDirection = -normalize(position);
+    vec3 viewDirection = normalize(-position);
     vec3 ambientLighting = vec3(0,0,0);
  
  	vec3 lightDir = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
@@ -90,13 +98,44 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec
        //specularReflection = lightDiffuse.rgb
        //   * mix(specular.rgb, vec3(1.0), w) 
        //   * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
-       specularReflection = lightDiffuse.rgb * pow(max(0.0, dot(halfwayDirection, viewDirection)), specular.a);
+       int specularPower = int(2048 * (1-roughness) + 1); //specular.a
+       specularReflection = lightDiffuse.rgb * pow(max(0.0, dot(halfwayDirection, viewDirection)), specularPower);
     }
  
     //return vec4(ambientLighting + diffuseReflection + specularReflection, 1.0);
     return vec4(ambientLighting + diffuseReflection, clamp(length(specularReflection),0,1));
 }
 
+vec4 cookTorrance(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
+//http://renderman.pixar.com/view/cook-torrance-shader
+	vec3 V = normalize(-position);
+ 	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+    vec3 H = normalize(L + V);
+    vec3 N = normal;
+    vec3 P = position;
+    float NdotH = dot(N, H);
+    float NdotV = dot(N, V);
+    float NdotL = dot(N, L);
+    float VdotH = dot(V, H);
+    
+    // Schlick
+    float base = 1; base -= dot(V, H);
+	float exponential = pow(base, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float F0 = 0.04;
+	float temp = 1.0; temp -= exponential;
+	float F = exponential; F += F0 * temp;
+	
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+	
+	float alpha = acos(NdotH);
+	float gaussConstant = 100.0;
+	float m = 1-roughness;
+	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+	
+	return vec4(vec3(lightDiffuse.rgb), specular.r * (F/3.1416) * (D*G/(NdotL/NdotV)));
+	//return vec4(lightDiffuse.rgb + specular.rgb * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
+}
 
 ///////////////////// AO
 uniform bool useAmbientOcclusion = false;
@@ -134,19 +173,18 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	}
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
-	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/150).rg;
-	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/200).rg;
+	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/50).rg;
+	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/100).rg;
 	moments /= 2;
 	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist < moments.x) {
 		return 1.0;
 	}
-	
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
 	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.001);
+	variance = max(variance,0.002);
 
 	float d = dist - moments.x;
 	float p_max = variance / (variance + d*d);
@@ -188,8 +226,13 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 				  difference = currentViewPos.z - currentPosSample.z;
-				  if (difference < 0 && difference > -2) {
-	  		  		break;
+				  //if (difference < 0 && difference > -2) {
+				  if (abs(difference) > 2) {
+				  	//float temp = currentPosSample - targetPosView; 
+				  	//if(abs(temp) > 2)
+				  	{
+	  		  		  break;
+				  	}
 				  }
 		  	}
 		  	
@@ -199,6 +242,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
+    			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
     			//return vec3(screenEdgefactor, 0, 0);
     			
     			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
@@ -236,7 +280,7 @@ void main(void) {
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
 	float probeDepth = probeColorDepth.a;
-	float reflectiveness = texture2D(diffuseMap, st).w;
+	float roughness = texture2D(diffuseMap, st).w;
 	
 	// skip background
 	if (positionView.z > -0.0001) {
@@ -247,7 +291,7 @@ void main(void) {
 	
 	vec4 specular = texture2D(specularMap, st);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular, probeColor);
+	vec4 finalColor = cookTorrance(positionView, normalView, vec4(color,1), specular, probeColor, roughness);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -312,9 +356,10 @@ void main(void) {
 	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
 	
-	if(reflectiveness == 0) {
-		out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
-	} else {
+	//if(roughness == 0) {
+	//	out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
+	//} else
+	{
 		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}

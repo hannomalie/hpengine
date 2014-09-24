@@ -225,10 +225,12 @@ public class OBJLoader {
 			    } else if (materialLine.startsWith("map_Disp ")) {
 			    	  String map = materialLine.replaceAll("map_Disp ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.SPECULAR );
+//			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 			    	  
 			    } else if (materialLine.startsWith("map_Ks ")) {
 			    	  String map = materialLine.replaceAll("map_Ks ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.SPECULAR );
+//			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 			    	  
 			    } else if (materialLine.startsWith("map_bump ")) {
 			    	  String map = materialLine.replaceAll("map_bump ", "");
@@ -242,18 +244,17 @@ public class OBJLoader {
 			    	  String map = materialLine.replaceAll("map_d ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.NORMAL );
 			    	  
-			    } else if (materialLine.startsWith("Ka ")) {
-			    	  String ambient = materialLine;
-			    	  currentMaterialInfo.ambient = parseVertex(ambient);
 			    } else if (materialLine.startsWith("Kd ")) {
 			    	  String diffuse = materialLine;
 			    	  currentMaterialInfo.diffuse = parseVertex(diffuse);
 			    } else if (materialLine.startsWith("Ks ")) {
 			    	  String specular = materialLine;
-			    	  currentMaterialInfo.specular = parseVertex(specular);
+			    	  //currentMaterialInfo.specular = parseVertex(specular);
+			    	  // Physically based tmaterials translate specular to roughness
+			    	  currentMaterialInfo.roughness = 1-parseVertex(specular).x;
 			    } else if (materialLine.startsWith("Ns ")) {
 			    	  String specularCoefficient = materialLine.replaceAll("Ns ", "");
-			    	  currentMaterialInfo.specularCoefficient = parseFloat(specularCoefficient);
+//			    	  currentMaterialInfo.specularCoefficient = parseFloat(specularCoefficient);
 			    }
 			    // TODO: TRANSPARENCY with "d" and "Tr"
 			}

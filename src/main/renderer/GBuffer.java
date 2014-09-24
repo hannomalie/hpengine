@@ -110,7 +110,8 @@ public class GBuffer {
 		GPUProfiler.start("Directional light");
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
-		GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
+		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
+		//GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
 //		finalTarget.use(true);
 		laBuffer.use(true);

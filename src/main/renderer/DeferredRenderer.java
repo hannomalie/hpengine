@@ -67,6 +67,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
@@ -101,9 +102,9 @@ public class DeferredRenderer implements Renderer {
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
 
-	private static float MINLIGHTRADIUS = 4.5f;
+	private static float MINLIGHTRADIUS = 64.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
-	private static int MAXLIGHTS = 50;
+	private static int MAXLIGHTS = 3;
 	public static List<PointLight> pointLights = new ArrayList<>();
 	
 	private IEntity sphere;
@@ -160,7 +161,8 @@ public class DeferredRenderer implements Renderer {
 			Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
 				put(MAP.DIFFUSE,"assets/textures/default.dds");
 			}});
-			Vector4f color = new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1);
+			//Vector4f color = new Vector4f(randomGenerator.nextFloat(),randomGenerator.nextFloat(),randomGenerator.nextFloat(),1);
+			Vector4f color = new Vector4f(1,1,1,1);
 			Vector3f position = new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat());
 			float range = MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat();
 			PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, range);
@@ -180,6 +182,7 @@ public class DeferredRenderer implements Renderer {
 		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
 		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
