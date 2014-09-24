@@ -186,9 +186,10 @@ public class GBuffer {
 			// camera is inside light range
 			if (distance.length() < lightRadius) {
 				GL11.glDisable(GL11.GL_CULL_FACE);
+				GL11.glCullFace(GL11.GL_FRONT);
 			// camera is outside light range, cull back sides
 			} else {
-				GL11.glEnable(GL11.GL_CULL_FACE);
+				GL11.glDisable(GL11.GL_CULL_FACE);
 				GL11.glCullFace(GL11.GL_BACK);
 			}
 
@@ -208,6 +209,8 @@ public class GBuffer {
 		laBuffer.unuse();
 //		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_BACK);
 		GPUProfiler.end();
 		GPUProfiler.end();
 	}

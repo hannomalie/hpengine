@@ -6,7 +6,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,9 +14,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -27,13 +26,16 @@ import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import main.World;
+import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.renderer.DeferredRenderer;
+import main.renderer.Result;
 import main.renderer.command.AddCubeMapCommand;
 import main.renderer.command.AddTextureCommand;
 import main.renderer.command.AddTextureCommand.TextureResult;
+import main.renderer.command.Command;
 import main.renderer.light.PointLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
@@ -41,8 +43,6 @@ import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.SliderInput;
-import main.util.gui.input.Vector3fInput;
-import main.util.gui.input.WebFormattedVec3Field;
 import main.util.script.ScriptManager;
 
 import org.apache.commons.io.FilenameUtils;
@@ -68,7 +68,6 @@ import com.alee.laf.menu.WebMenu;
 import com.alee.laf.menu.WebMenuBar;
 import com.alee.laf.menu.WebMenuItem;
 import com.alee.laf.optionpane.WebOptionPane;
-import com.alee.laf.panel.WebPanel;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
@@ -147,51 +146,10 @@ public class DebugFrame {
 		ac.install(console);
 		
 		
-		TableModel lightsTableModel = new AbstractTableModel() {
-
-			List<PointLight> lights = DeferredRenderer.pointLights;
-
-			public int getColumnCount() {
-				return 3;
-			}
-
-			public int getRowCount() {
-				return lights.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					PointLight light = lights.get(row);
-					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
-					
-				} else if (col == 1) {
-					return vectorToString(lights.get(row).getPosition());
-					
-				} else if (col == 2) {
-					return vectorToString(lights.get(row).getColor());
-					
-				}
-				return "";
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Name";
-				} else if (column == 1) {
-					return "Position";
-				} else if (column == 2) {
-					return "Color";
-				}
-				return "Null";
-			}
-		};
+		createLightsTab();
 
 		createMaterialPane(world);
 		
-		JTable lightsTable = new JTable(lightsTableModel);
-		
-		lightsPane  =  new JScrollPane(lightsTable);
-
 		addOctreeSceneObjects(world);
 		
 		addProbes(world);
@@ -404,6 +362,35 @@ public class DebugFrame {
 
         	menuEntity.add(entitiyAddMenuItem);
         }
+		WebMenu menuLight = new WebMenu("Light");
+        {
+        	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add" );
+        	lightAddMenuItem.addActionListener(e -> {
+        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getLightFactory().getPointLight();
+						return new Result() { @Override public boolean isSuccessful() { return true; } };
+					}});
+        		
+        		Result result = null;
+				try {
+					result = queue.poll(5, TimeUnit.MINUTES);
+				} catch (Exception e1) {
+					showError("Failed to add light");
+				}
+				
+				if (!result.isSuccessful()) {
+					showError("Failed to add light");
+				} else {
+					showSuccess("Added light");
+	        		refreshLightTab();
+				}
+        		
+        	});
+
+        	menuLight.add(lightAddMenuItem);
+        }
 
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
@@ -472,6 +459,7 @@ public class DebugFrame {
 
         menuBar.add(menuScene);
         menuBar.add(menuEntity);
+        menuBar.add(menuLight);
         menuBar.add(menuTextures);
         menuBar.add(runScriptMenuItem);
         mainFrame.setJMenuBar(menuBar);
@@ -491,6 +479,77 @@ public class DebugFrame {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
+	}
+
+	private void createLightsTab() {
+		TableModel lightsTableModel = new AbstractTableModel() {
+
+			List<PointLight> lights = DeferredRenderer.pointLights;
+
+			public int getColumnCount() {
+				return 3;
+			}
+
+			public int getRowCount() {
+				return lights.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					PointLight light = lights.get(row);
+					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
+					
+				} else if (col == 1) {
+					return vectorToString(lights.get(row).getPosition());
+					
+				} else if (col == 2) {
+					return vectorToString(lights.get(row).getColor());
+					
+				}
+				return "";
+			}
+
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Name";
+				} else if (column == 1) {
+					return "Position";
+				} else if (column == 2) {
+					return "Color";
+				}
+				return "Null";
+			}
+		};
+
+		
+		JTable lightsTable = new JTable(lightsTableModel);
+		
+		lightsPane  =  new JScrollPane(lightsTable);
+		ListSelectionModel cellSelectionModel = lightsTable.getSelectionModel();
+	    cellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		DebugFrame debugFrame = this;
+
+		cellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				PointLight selectedLight = null;
+
+				int[] selectedRow = lightsTable.getSelectedRows();
+				int[] selectedColumns = lightsTable
+						.getSelectedColumns();
+
+				for (int i = 0; i < selectedRow.length; i++) {
+					for (int j = 0; j < selectedColumns.length; j++) {
+						selectedLight = DeferredRenderer.pointLights.get(i);
+						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+						entityViewFrame.getContentPane().removeAll();
+						entityViewFrame.pack();
+						entityViewFrame.setSize(600, 600);
+						entityViewFrame.add(new LightView(world, debugFrame, (PointLight) selectedLight));
+						entityViewFrame.setVisible(true);
+					}
+				}
+			}
+		});
 	}
 
 	private void createMaterialPane(World world) {
@@ -549,7 +608,7 @@ public class DebugFrame {
 		JTable textureTable = new JTable(textureDataModel);
 		texturePane  =  new JScrollPane(textureTable);
 	}
-
+	
 	private AbstractTableModel createTextureDataModel(TextureFactory textureFactory) {
 		return new AbstractTableModel() {
 
@@ -704,6 +763,13 @@ public class DebugFrame {
 		tabbedPane.remove(materialPane);
 		createMaterialPane(world);
 		tabbedPane.addTab("Material", materialPane);
+	}
+
+	private void refreshLightTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(lightsPane);
+		createLightsTab();
+		tabbedPane.addTab("Lights", lightsPane);
 	}
 	
 	private void showSuccess(String content) {

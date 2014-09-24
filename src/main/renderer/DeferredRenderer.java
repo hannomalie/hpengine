@@ -154,8 +154,10 @@ public class DeferredRenderer implements Renderer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		
+//		_addPointLights();
+	}
+
+	private void _addPointLights() {
 		Random randomGenerator = new Random();
 		for (int i = 0; i < MAXLIGHTS; i++) {
 			Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
@@ -502,10 +504,11 @@ public class DeferredRenderer implements Renderer {
 		protected void compute() {
 			if ((end - start) < LIMIT) {
 				for (int i = start; i < end; i++) {
-					double x =  Math.sin(System.currentTimeMillis() / 1000);
-					double z =  Math.cos(System.currentTimeMillis() / 1000);
-					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
-					lights.get(i).update(1);
+//					double x =  Math.sin(System.currentTimeMillis() / 1000);
+//					double z =  Math.cos(System.currentTimeMillis() / 1000);
+//					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
+//					lights.get(i).update(1);
+					lights.get(i).update(seconds);
 				}
 			} else {
 				int mid = (start + end) / 2;

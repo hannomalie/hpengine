@@ -240,6 +240,7 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.setUniform("time", (int)System.currentTimeMillis());
 		
 		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+
 		getMaterial().setTexturesActive(this, currentProgram);
 		
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
@@ -299,7 +300,11 @@ public class Entity implements IEntity, Serializable {
 	}
 	@Override
 	public Material getMaterial() {
-		return materialFactory.get(materialName);
+		Material material = materialFactory.get(materialName);
+		if(material == null) {
+			return materialFactory.getDefaultMaterial();
+		}
+		return material;
 	}
 	@Override
 	public void setMaterial(String materialName) {

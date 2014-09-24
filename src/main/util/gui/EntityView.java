@@ -52,9 +52,7 @@ public class EntityView extends WebPanel {
 		this.setSize(600, 600);
 		setMargin(20);
 		
-		List<Component> panels = new ArrayList<>();
-		
-		addAttributesPanel(panels);
+		List<Component> panels = getPanels();
         
         Component[] components = new Component[panels.size()];
         panels.toArray(components);
@@ -62,8 +60,14 @@ public class EntityView extends WebPanel {
         
         this.add(new GridPanel ( components.length, 1, components));
 	}
+
+	protected List<Component> getPanels() {
+		List<Component> panels = new ArrayList<>();
+		addAttributesPanel(panels);
+		return panels;
+	}
 	
-	private void addAttributesPanel(List<Component> panels) {
+	protected void addAttributesPanel(List<Component> panels) {
 			
 			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
 	        webComponentPanel.setElementMargin ( 4 );
