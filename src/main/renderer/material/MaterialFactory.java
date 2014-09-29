@@ -31,9 +31,8 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		defaultMaterial = getMaterial(new HashMap<MAP,String>(){{
-			put(MAP.DIFFUSE,"assets/textures/default.dds");
-		}});
+		defaultMaterial = getMaterialWithoutRead(new MaterialInfo());
+		
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {

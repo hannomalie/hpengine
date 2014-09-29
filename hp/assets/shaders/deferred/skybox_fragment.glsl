@@ -238,6 +238,7 @@ vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
 		vec3 specularSample = texture2D(specularMap, UV).xyz;
 		specularColor = vec4(specularSample, materialSpecularCoefficient);
 #endif
-	out_specular = specularColor;
+	out_specular = out_color*5;
+	out_specular.a = 1;
 	
 }

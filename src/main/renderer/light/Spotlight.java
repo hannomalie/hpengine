@@ -22,6 +22,8 @@ import main.util.Util;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
@@ -83,7 +85,7 @@ public class Spotlight implements IEntity {
 
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		
-		renderTarget = new RenderTarget(2048, 2048, 1, 1, 1, 1);
+		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_LINEAR, 1);
 		this.camera = camera;
 		this.renderer = renderer;
 	}

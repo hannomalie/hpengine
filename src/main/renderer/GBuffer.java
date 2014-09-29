@@ -148,7 +148,7 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z);
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection().x, directionalLight.getViewDirection().y, directionalLight.getViewDirection().z);
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		GPUProfiler.end();
@@ -197,7 +197,6 @@ public class GBuffer {
 			secondPassPointProgram.setUniform("lightPosition", light.getPosition());
 			secondPassPointProgram.setUniform("lightRadius", lightRadius);
 			secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
-			secondPassPointProgram.setUniform("lightSpecular", light.getColor().x, light.getColor().y, light.getColor().z);
 			
 			if(firstLightDrawn) {
 				light.drawAgain(renderer, secondPassPointProgram);
@@ -218,8 +217,11 @@ public class GBuffer {
 
 	void combinePass(RenderTarget target, Spotlight light, Camera camera) {
 		combineProgram.use();
+		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		combineProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		combineProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("exposure", World.EXPOSURE);
 		

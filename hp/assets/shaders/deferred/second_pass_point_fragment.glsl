@@ -36,6 +36,7 @@ in vec4 position_view;
 //};
 
 out vec4 out_DiffuseSpecular;
+out vec4 out_AOReflection;
 
 #define kPI 3.1415926536f
 vec3 decodeNormal(vec2 enc) {
@@ -79,9 +80,10 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, v
   //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
   return vec4((vec4(lightDiffuse,1) * dot_prod * atten_factor).xyz, specular_factor * atten_factor);
 }
-vec4 cookTorrance(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = normalize(-position);
+	vec3 V = -normalize(position);
+	//vec3 V = -ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);
@@ -95,26 +97,35 @@ vec4 cookTorrance(in vec3 position, in vec3 normal, in vec4 color, in vec4 specu
     float NdotH = dot(N, H);
     float NdotV = dot(N, V);
     float NdotL = dot(N, L);
+    NdotL = max(NdotL, 0.0);
     float VdotH = dot(V, H);
     
-    // Schlick
-    float base = 1; base -= dot(V, H);
-	float exponential = pow(base, 5.0);
-	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	float F0 = 0.04;
-	float temp = 1.0; temp -= exponential;
-	float F = exponential; F += F0 * temp;
-	
-	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+    float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
 	float gaussConstant = 100.0;
-	float m = 1-roughness;
+	float m = roughness;
 	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+    
+    // Schlick
+	float F0 = 0.04;
+	float k = 0.2;
+    float fresnel = 1; fresnel -= dot(V, H);
+	fresnel = pow(fresnel, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
 	
-	return atten_factor*vec4(vec3(lightDiffuse.rgb), specular.r * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	//return vec4(lightDiffuse.rgb + specular.rgb * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
+	
+	float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	
+	return atten_factor*vec4(diff, k + (1-k) * specularAdjust * (roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
+	return atten_factor*vec4(diff, specularAdjust * (1-roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
+	//return atten_factor*vec4(lightDiffuse.rgb * roughness * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
 }
+
 void main(void) {
 	
 	vec2 st;
@@ -126,7 +137,13 @@ void main(void) {
 	vec3 color = texture2D(diffuseMap, st).xyz;
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
-	float roughness = texture2D(diffuseMap, st).w;
+	float roughness = texture2D(positionMap, st).w;
+	
+  	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
+  	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
+	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
+	dir.w = 0.0;
+	vec3 V = (inverse(viewMatrix) * dir).xyz;
 	
 	//skip background
 	if (positionView.z > -0.0001) {
@@ -140,7 +157,8 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
-	vec4 finalColor = cookTorrance(positionView, normalView, vec4(color,1), specular, probeColor, roughness);
+	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness);
 	
 	out_DiffuseSpecular = finalColor;
+	out_AOReflection = vec4(0,0,0,0);
 }

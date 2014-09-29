@@ -155,6 +155,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 //		_addPointLights();
+		_addPointLightsGrid();
 	}
 
 	private void _addPointLights() {
@@ -169,6 +170,26 @@ public class DeferredRenderer implements Renderer {
 			float range = MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat();
 			PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, range);
 			pointLights.add(pointLight);
+		}
+	}
+	
+	private void _addPointLightsGrid() {
+		Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
+			put(MAP.DIFFUSE,"assets/textures/default.dds");
+		}});
+		int size = 50;
+		int count = 100;
+		count = (int) Math.sqrt(count);
+		int maxXY = (int) (size*count*0.5);
+		int minXY = -maxXY;
+		int gap = 5;
+		for (int i = 0; i < count; i++) {
+			for (int z = 0; z < count; z++) {
+				Vector4f color = new Vector4f(0.3f,0.3f,0.3f,size);
+				Vector3f position = new Vector3f(minXY + i*2*size+gap, size/3, minXY + z*2*size+gap);
+				PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, size);
+				pointLights.add(pointLight);
+			}
 		}
 	}
 
@@ -357,7 +378,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

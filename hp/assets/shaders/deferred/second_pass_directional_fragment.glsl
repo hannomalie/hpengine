@@ -8,15 +8,6 @@ layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=5) uniform sampler2D probe;
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
 
-layout(binding=184) uniform samplerCube probe6;
-layout(binding=185) uniform samplerCube probe5;
-layout(binding=186) uniform samplerCube probe4;
-layout(binding=187) uniform samplerCube probe3;
-layout(binding=188) uniform samplerCube probe2;
-layout(binding=190) uniform samplerCube probe1;
-layout(binding=191) uniform samplerCube probe0;
-
-
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
@@ -29,7 +20,7 @@ uniform mat4 shadowMatrix;
 uniform vec3 eyePosition;
 uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
-uniform vec3 lightSpecular;
+uniform float scatterFactor = 2;
 
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
@@ -106,35 +97,44 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec
     return vec4(ambientLighting + diffuseReflection, clamp(length(specularReflection),0,1));
 }
 
-vec4 cookTorrance(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = normalize(-position);
+	vec3 V = -normalize(-position);
+	//vec3 V = ViewVector;
+	V = -normalize((viewMatrix*vec4(V, 0)).xyz);
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
-    vec3 N = normal;
+    vec3 N = normalize(normal);
     vec3 P = position;
-    float NdotH = dot(N, H);
-    float NdotV = dot(N, V);
-    float NdotL = dot(N, L);
-    float VdotH = dot(V, H);
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float VdotH = max(dot(V, H), 0.0);
     
-    // Schlick
-    float base = 1; base -= dot(V, H);
-	float exponential = pow(base, 5.0);
-	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	float F0 = 0.04;
-	float temp = 1.0; temp -= exponential;
-	float F = exponential; F += F0 * temp;
-	
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
 	float gaussConstant = 100.0;
-	float m = 1-roughness;
+	float m = roughness;
 	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+    
+    // Schlick
+	float F0 = 0.04;
+	float k = 0.2;
+    float fresnel = 1; fresnel -= dot(V, H);
+	fresnel = pow(fresnel, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
 	
-	return vec4(vec3(lightDiffuse.rgb), specular.r * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	//return vec4(lightDiffuse.rgb + specular.rgb * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
+	
+	float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	
+	return vec4(diff, k + (1-k) * specularAdjust * (roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
+	return vec4(diff, k + specularAdjust * (1-roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
+	//return vec4(lightDiffuse.rgb * roughness * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
 }
 
 ///////////////////// AO
@@ -173,18 +173,20 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	}
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
-	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/50).rg;
-	moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y/100).rg;
-	moments /= 2;
+	vec2 momentsUnblurred = moments;
+	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, 1/50).rg;
+	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, 1/100).rg;
+	//moments /= 2;
 	// Surface is fully lit. as the current fragment is before the light occluder
+	const float bias = 0.081;
 	if (dist < moments.x) {
 		return 1.0;
 	}
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
-	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.002);
+	float variance = momentsUnblurred.y - (moments.x*moments.x);
+	variance = max(variance,0.00012);
 
 	float d = dist - moments.x;
 	float p_max = variance / (variance + d*d);
@@ -263,13 +265,59 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 
 /////////////////////
 
+float ComputeScattering(float lightDotView)
+{
+	const float G_SCATTERING = 0.00005;
+	const float PI = 3.1415926536f;
+	float result = 1.0f - G_SCATTERING;
+	result *= result;
+	result /= (4.0f * PI * pow(1.0f + G_SCATTERING * G_SCATTERING - (2.0f * G_SCATTERING) * lightDotView, 1.5f));
+	return result;
+}
+
+vec3 scatter(vec3 worldPos, vec3 startPosition) {
+	const int NB_STEPS = 40;
+	 
+	vec3 rayVector = worldPos.xyz - startPosition;
+	 
+	float rayLength = length(rayVector);
+	vec3 rayDirection = rayVector / rayLength;
+	 
+	float stepLength = rayLength / NB_STEPS;
+	 
+	vec3 step = rayDirection * stepLength;
+	 
+	vec3 currentPosition = startPosition;
+	 
+	vec3 accumFog = vec3(0,0,0);
+	 
+	for (int i = 0; i < NB_STEPS; i++)
+	{
+		vec4 shadowPos = shadowMatrix * vec4(currentPosition, 1.0f);
+		vec4 worldInShadowCameraSpace = shadowPos;
+		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
+    	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
+    	
+		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
+		 
+		if (shadowMapValue > worldInShadowCameraSpace.z)
+		{
+			accumFog += ComputeScattering(dot(rayDirection, lightDirection)) * lightDiffuse;
+		}
+
+		currentPosition += step;
+	}
+	accumFog /= NB_STEPS;
+	return accumFog;
+}
+
 void main(void) {
 	
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	st /= secondPassScale;
-  
+  	
 	float depth = texture2D(normalMap, st).w;
 	vec3 positionView = texture2D(positionMap, st).xyz;
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
@@ -280,7 +328,13 @@ void main(void) {
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
 	float probeDepth = probeColorDepth.a;
-	float roughness = texture2D(diffuseMap, st).w;
+	float roughness = texture2D(positionMap, st).a;
+	
+  	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
+  	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
+	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
+	dir.w = 0.0;
+	vec3 V = (inverse(viewMatrix) * dir).xyz;
 	
 	// skip background
 	if (positionView.z > -0.0001) {
@@ -290,8 +344,10 @@ void main(void) {
 	//normalView = decodeNormal(normalView.xy);
 	
 	vec4 specular = texture2D(specularMap, st);
+	float metallic = specular.a;
+	specular.rgb = mix(vec3(1,1,1), color, metallic);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = cookTorrance(positionView, normalView, vec4(color,1), specular, probeColor, roughness);
+	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -363,7 +419,9 @@ void main(void) {
 		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
+	out_AOReflection.gba = scatterFactor * scatter(positionWorld, -eyePosition);
 	
+	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);
-	//out_DiffuseSpecular.rgb = vec3(ao,ao,ao);
+	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 }

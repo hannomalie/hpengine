@@ -7,16 +7,12 @@ layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform samplerCube environmentMap;
-
-//layout(binding=5) uniform sampler2D shadowMap;
-//layout(binding=6) uniform sampler2D depthMap;
+layout(binding=7) uniform sampler2D roughnessMap;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
-uniform float reflectiveness;
 
 uniform float normalMapWidth = 1;
-
 uniform float normalMapHeight = 1;
 
 uniform float diffuseMapWidth = 1;
@@ -29,9 +25,8 @@ uniform float specularMapHeight = 1;
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
-uniform float materialGlossiness = 0;
-//uniform vec3 materialAmbientColor = vec3(0,0,0);
-//uniform float materialTransparency = 1;
+uniform float materialRoughness = 0;
+uniform float materialMetallic = 0;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -100,6 +95,27 @@ vec2 encodeNormal(vec3 n) {
     return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
 }
 
+vec3 boxProjection(vec3 texCoords3d) {
+	vec3 nrdir = normalize(texCoords3d);
+	vec3 envMapMin = vec3(-300,-300,-300);
+	envMapMin = environmentMapMin;
+	vec3 envMapMax = vec3(300,300,300);
+	envMapMax = environmentMapMax;
+	
+	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+	vec3 rbminmax;
+	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+	vec3 posonbox = position_world.xyz + nrdir*fa;
+	
+	//texCoords3d = normalize(posonbox - vec3(0,0,0));
+	return normalize(posonbox - environmentMapWorldPosition.xyz);
+}
+
 void main(void) {
 	
 	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
@@ -116,12 +132,12 @@ void main(void) {
 		//UV = UV + time/2000.0;
 #endif
 
-vec2 uvParallax = vec2(0,0);
+	vec2 uvParallax = vec2(0,0);
 
 	if (useParallax) {
-		float height = (texture2D(normalMap, UV).rgb).g;//texture2D(heightMap, UV).r;
+		float height = (texture2D(normalMap, UV).rgb).y;//texture2D(heightMap, UV).r;
 		height = height * 2 - 1;
-		float v = height * 0.04 - 0.02;
+		float v = height * 0.014;
 		uvParallax = (V.xy * v);
 		UV = UV + uvParallax;
 	} else if (useSteepParallax) {
@@ -152,14 +168,13 @@ vec2 uvParallax = vec2(0,0);
 #endif
 	
 	out_position = viewMatrix * position_world;
-	out_position.w = materialGlossiness;
+	out_position.w = materialRoughness;
+	
 	float depth = (position_clip.z / position_clip.w);
 	
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
-	out_normal = vec4(-V.xyz, depth);
-	//out_normal = vec4(encodeNormal(V.xyz), environmentProbeIndex, depth);
-	//out_normal.z = environmentProbeIndex;
+	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 	//out_normal.z = environmentProbeIndex;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
@@ -174,19 +189,32 @@ vec2 uvParallax = vec2(0,0);
 		discard;
 	}
 #endif
-	out_color = color;
-	out_color.w = reflectiveness;
+	//out_color = color;
+  	out_color = color - color * materialMetallic;
 
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
+
+#ifdef use_roughnessMap
+	UV.x = texCoord.x * specularMapWidth;
+	UV.y = texCoord.y * specularMapHeight;
+	UV = texCoord + uvParallax;
+	float r = texture2D(roughnessMap, UV).x;
+	out_position.w *= r;
+	
+#endif
+
+//vec3 texCoords3d = eyeVec;
+//vec3 texCoords3d = PN_world;
 vec3 texCoords3d = normalize(reflect(V, PN_world));
-texCoords3d = V;
 
 ///////////////////////////////////////////////////////////////////////
-vec3 nrdir = normalize(texCoords3d);
-vec3 envMapMin = vec3(-10000,-10000,-10000);
-vec3 envMapMax = vec3(10000,10000,10000);
+/*vec3 nrdir = normalize(texCoords3d);
+vec3 envMapMin = vec3(-300,-300,-300);
+envMapMin = environmentMapMin;
+vec3 envMapMax = vec3(300,300,300);
+envMapMax = environmentMapMax;
 
 vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
 vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
@@ -199,7 +227,8 @@ float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 vec3 posonbox = position_world.xyz + nrdir*fa;
 
 //texCoords3d = normalize(posonbox - vec3(0,0,0));
-//texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);
+texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);*/
+texCoords3d = boxProjection(texCoords3d);
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
@@ -227,18 +256,30 @@ if (discrim > 0) {
 }*/
 ///////////////////////////////////////////////////////////////////////
 
-out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, 1);
-out_probe.rgb = texture(environmentMap, texCoords3d).rgb;
+//out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
+out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+//out_probe.rgba = textureLod(environmentMap, texCoords3d, materialRoughness).rgba;
 
-vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
+
+/*if (useParallax) {
+	texCoords3d -= texCoords3d * 0.0000001 * 0.0001 * texture(environmentMap, texCoords3d).a;
+	texCoords3d = boxProjection(texCoords3d);
+	out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+}*/
+
+	//vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
+	vec4 specularColor = vec4(color.rgb, materialMetallic);
+	
 #ifdef use_specularMap
-		UV.x = texCoord.x * specularMapWidth;
-		UV.y = texCoord.y * specularMapHeight;
-		UV = texCoord + uvParallax;
-		vec3 specularSample = texture2D(specularMap, UV).xyz;
-		specularColor = vec4(specularSample, materialSpecularCoefficient);
+	UV.x = texCoord.x * specularMapWidth;
+	UV.y = texCoord.y * specularMapHeight;
+	UV = texCoord + uvParallax;
+	vec3 specularSample = texture2D(specularMap, UV).xyz;
+	specularColor = vec4(specularSample, materialSpecularCoefficient);
+	out_position.w = (1-specularSample.x) * roughness;
 #endif
-	out_specular = out_color*5;
-	out_specular.a = 1;
+
+	//out_specular = specularColor;
+	out_specular.rgb = mix(specularColor.rgb, color.rgb, materialMetallic);
 	
 }

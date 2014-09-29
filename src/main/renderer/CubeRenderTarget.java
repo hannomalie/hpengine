@@ -61,7 +61,7 @@ public class CubeRenderTarget extends RenderTarget {
 	
 	public void setCubeMapFace(int index) {
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
 		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
 	}
 

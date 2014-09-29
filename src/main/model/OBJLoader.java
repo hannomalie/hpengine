@@ -247,6 +247,9 @@ public class OBJLoader {
 			    } else if (materialLine.startsWith("Kd ")) {
 			    	  String diffuse = materialLine;
 			    	  currentMaterialInfo.diffuse = parseVertex(diffuse);
+			    } else if (materialLine.startsWith("Kr ")) {
+			    	  String roughness = materialLine.replaceAll("rough ", "");
+			    	  currentMaterialInfo.roughness = parseFloat(roughness);
 			    } else if (materialLine.startsWith("Ks ")) {
 			    	  String specular = materialLine;
 			    	  //currentMaterialInfo.specular = parseVertex(specular);

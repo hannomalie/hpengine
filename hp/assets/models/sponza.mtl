@@ -263,7 +263,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_fabric_green_diff.png
 map_Kd textures\sponza_fabric_green_diff.png
-map_Ks textures\sponza_fabric_green_spec.png
 map_bump textures\sponza_fabric_green_normal.png
 bump textures\sponza_fabric_green_normal.png
 
@@ -280,7 +279,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_fabric_blue_diff.png
 map_Kd textures\sponza_fabric_blue_diff.png
-map_Ks textures\sponza_fabric_blue_spec.png
 map_bump textures\sponza_fabric_blue_normal.png
 bump textures\sponza_fabric_blue_normal.png
 
@@ -297,7 +295,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_fabric_diff.png
 map_Kd textures\sponza_fabric_diff.png
-map_Ks textures\sponza_fabric_spec.png
 map_bump textures\sponza_fabric_normal.png
 bump textures\sponza_fabric_normal.png
 
@@ -314,7 +311,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_curtain_blue_diff.png
 map_Kd textures\sponza_curtain_blue_diff.png
-map_Ks textures\sponza_curtain_blue_spec.png
 map_bump textures\sponza_curtain_blue_normal.png
 bump textures\sponza_curtain_blue_normal.png
 
@@ -331,7 +327,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_curtain_diff.png
 map_Kd textures\sponza_curtain_diff.png
-map_Ks textures\sponza_curtain_spec.png
 map_bump textures\sponza_curtain_normal.png
 bump textures\sponza_curtain_normal.png
 
@@ -348,7 +343,6 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka textures\sponza_curtain_green_diff.png
 map_Kd textures\sponza_curtain_green_diff.png
-map_Ks textures\sponza_curtain_green_spec.png
 map_bump textures\sponza_curtain_green_normal.png
 bump textures\sponza_curtain_green_normal.png
 

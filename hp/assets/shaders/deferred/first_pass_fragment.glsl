@@ -55,11 +55,11 @@ in vec3 eyePos_world;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
-layout(location=0)out vec4 out_position;
-layout(location=1)out vec4 out_normal;
-layout(location=2)out vec4 out_color;
+layout(location=0)out vec4 out_position; // position, roughness
+layout(location=1)out vec4 out_normal; // normal, depth
+layout(location=2)out vec4 out_color; // color, probeIndex
 layout(location=3)out vec4 out_specular;
-layout(location=4)out vec4 out_probe;
+layout(location=4)out vec4 out_probe; // probe color, depth
 
 float linearizeDepth(float z)
 {
@@ -190,18 +190,19 @@ void main(void) {
 	}
 #endif
 	//out_color = color;
-  	out_color = color - color * materialMetallic;
+  	out_color = color;
 
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
+	out_color.w = float(environmentProbeIndex);
 
 #ifdef use_roughnessMap
 	UV.x = texCoord.x * specularMapWidth;
 	UV.y = texCoord.y * specularMapHeight;
 	UV = texCoord + uvParallax;
 	float r = texture2D(roughnessMap, UV).x;
-	out_position.w *= 1-r;
+	out_position.w *= r;
 	
 #endif
 
@@ -257,7 +258,7 @@ if (discrim > 0) {
 ///////////////////////////////////////////////////////////////////////
 
 //out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
-out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+//out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
 //out_probe.rgba = textureLod(environmentMap, texCoords3d, materialRoughness).rgba;
 
 
@@ -276,10 +277,12 @@ out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
 	UV = texCoord + uvParallax;
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
 	specularColor = vec4(specularSample, materialSpecularCoefficient);
-	out_position.w = specularSample.x * roughness;
+	float glossiness = length(specularSample)/length(vec3(1,1,1)) * 0.5;
+	out_position.w = clamp(1-glossiness, 0, 1) * (materialRoughness);
+	//out_position.w *= 1 + out_position.w;
 #endif
 
-	//out_specular = specularColor;
-	out_specular.rgb = mix(specularColor.rgb, color.rgb, materialMetallic);
+	out_specular.rgb = specularColor.rgb;
+	out_specular.a = materialMetallic;
 	
 }

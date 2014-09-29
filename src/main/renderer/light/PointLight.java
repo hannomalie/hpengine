@@ -52,7 +52,7 @@ public class PointLight extends Entity {
 
 	@Override
 	public Material getMaterial() {
-		return null;
+		return materialFactory.getDefaultMaterial();
 	}
 
 	public void drawAsMesh(Renderer renderer, Camera camera) {
