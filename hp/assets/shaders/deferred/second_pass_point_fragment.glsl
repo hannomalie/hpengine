@@ -94,22 +94,24 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     vec3 H = normalize(L + V);
     vec3 N = normal;
     vec3 P = position;
-    float NdotH = dot(N, H);
-    float NdotV = dot(N, V);
-    float NdotL = dot(N, L);
-    NdotL = max(NdotL, 0.0);
-    float VdotH = dot(V, H);
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float VdotH = max(dot(V, H), 0.0);
     
     float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
-	float gaussConstant = 100.0;
+	float gaussConstant = 1.0;
 	float m = roughness;
 	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	D = (alpha*alpha)/(3.1415*pow((NdotH*NdotH*(alpha*alpha-1))+1, 2));
     
     // Schlick
 	float F0 = 0.04;
-	float k = 0.2;
+	F0 = max(F0, (1-roughness));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -118,12 +120,10 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float F = fresnel + F0;
 	
 	
-	float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
 	
-	return atten_factor*vec4(diff, k + (1-k) * specularAdjust * (roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	return atten_factor*vec4(diff, specularAdjust * (1-roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	//return atten_factor*vec4(lightDiffuse.rgb * roughness * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
+	return atten_factor* vec4((diff), (F*D*G/(NdotL*NdotV)));
 }
 
 void main(void) {

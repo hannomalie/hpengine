@@ -156,15 +156,16 @@ public class Material implements Serializable {
 					Optional<EnvironmentProbe> option = renderer.getEnvironmentProbeFactory().getProbeForEntity(entity);
 					if(option.isPresent()) {
 						EnvironmentProbe environmentProbe = option.get();
-						program.setUniform("environmentProbeIndex", renderer.getEnvironmentProbeFactory().getProbes().indexOf(environmentProbe.getCenter()));
-						program.setUniform("environmentMapWorldPosition", environmentProbe.getCenter());
-						program.setUniform("environmentMapMin", environmentProbe.getBox().getBottomLeftBackCorner());
-						program.setUniform("environmentMapMax", environmentProbe.getBox().getTopRightForeCorner());
+						int probeIndex = environmentProbe.getTextureUnitIndex();
+						program.setUniform("environmentProbeIndex", probeIndex);
+//						program.setUniform("environmentMapWorldPosition", environmentProbe.getCenter());
+//						program.setUniform("environmentMapMin", environmentProbe.getBox().getBottomLeftBackCorner());
+//						program.setUniform("environmentMapMax", environmentProbe.getBox().getTopRightForeCorner());
 //						System.out.println(environmentProbe.getBox().getBottomLeftBackCorner());
 //						System.out.println(environmentProbe.getCenter());
 //						System.out.println(environmentProbe.getBox().getTopRightForeCorner());
-						environmentProbe.getEnvironmentMap().bind();
 					} else {
+						program.setUniform("environmentProbeIndex", 0);
 						renderer.getEnvironmentMap().bind();
 					}
 				} else {

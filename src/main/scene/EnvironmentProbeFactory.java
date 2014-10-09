@@ -7,12 +7,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import main.World;
 import main.model.DataChannels;
 import main.model.IEntity;
 import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
+import main.renderer.light.Spotlight;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 
@@ -46,17 +48,17 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update) {
 		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update);
 		probes.add(probe);
-		probe.bind(probe.getTextureUnitIndex(renderer, probes.indexOf(probe)));
+		probe.bind(probe.getTextureUnitIndex());
 		return probe;
 	}
 	public EnvironmentProbe getProbe(Vector3f center, float size, Update update) {
 		return getProbe(center, new Vector3f(size, size, size), update);
 	}
 	
-	public void draw(Octree octree) {
+	public void draw(Octree octree, Spotlight light) {
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		for (EnvironmentProbe environmentProbe : dynamicProbes) {
-			environmentProbe.draw(octree);
+			environmentProbe.draw(octree, light);
 		}
 	}
 	
@@ -94,7 +96,7 @@ public class EnvironmentProbeFactory {
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).lengthSquared(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).lengthSquared()));
+				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).length(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).length()));
 			}
 		}).findFirst();
 		
@@ -114,7 +116,7 @@ public class EnvironmentProbeFactory {
 	public void drawInitial(Octree octree) {
 		List<EnvironmentProbe> staticProbes = probes.stream().filter(probe -> { return probe.update == Update.STATIC; }).collect(Collectors.toList());
 		for (EnvironmentProbe environmentProbe : staticProbes) {
-			environmentProbe.draw(octree);
+			environmentProbe.draw(octree, World.light);
 		}
 	}
 }

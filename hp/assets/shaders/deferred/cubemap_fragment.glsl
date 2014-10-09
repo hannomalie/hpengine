@@ -8,6 +8,9 @@ uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 
+uniform vec3 lightDirection;
+uniform vec3 lightDiffuse;
+
 in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
@@ -37,4 +40,9 @@ void main()
 	
 	float depth = (position_clip.z / position_clip.w);
     out_color = vec4(color.rgb, depth);
+    
+	vec3 PN_world = normalize(normal_world);
+	
+	out_color.rgb = color.rgb * vec3(1,1,1);
+	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0);
 }

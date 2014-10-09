@@ -33,6 +33,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.bulletphysics.dynamics.DynamicsWorld;
+import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
 
 public class GBuffer {
 
@@ -150,6 +151,7 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection().x, directionalLight.getViewDirection().y, directionalLight.getViewDirection().z);
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
+		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		GPUProfiler.end();
 		GPUProfiler.start("Draw fullscreen buffer");
@@ -224,6 +226,7 @@ public class GBuffer {
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("exposure", World.EXPOSURE);
+		bindEnvironmentProbePositions(combineProgram);
 		
 		if(target == null) {
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
@@ -244,10 +247,23 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(0)); // position, glossiness
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1)); // normal, depth
-		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		renderer.getEnvironmentMap().bind();
 		fullscreenBuffer.draw();
 
 //		GL11.glEnable(GL11.GL_DEPTH_TEST);
+	}
+	
+	private void bindEnvironmentProbePositions(Program program) {
+		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+			int probeIndex = probe.getTextureUnitIndex();
+			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
+			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
+//			System.out.println(String.format("environmentMapMin[%d] has %s", probeIndex, probe.getBox().getBottomLeftBackCorner()));
+//			System.out.println(String.format("environmentMapMax[%d] has %s", probeIndex, probe.getBox().getTopRightForeCorner()));
+		});
+		program.setUniform("environmentMapMin[0]", new Vector3f(-10000, -10000, -10000));
+		program.setUniform("environmentMapMax[0]", new Vector3f(10000, 10000, 10000));
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, CubeMap cubeMap) {

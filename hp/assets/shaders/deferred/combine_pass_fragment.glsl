@@ -6,6 +6,7 @@ layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
 layout(binding=3) uniform sampler2D specularMap; // specular color, metallic
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
+layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
 
 
 layout(binding=181) uniform samplerCube probe9;
@@ -30,6 +31,9 @@ uniform float secondPassScale = 1;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform int exposure = 4;
+
+uniform vec3 environmentMapMin[192];
+uniform vec3 environmentMapMax[192];
 
 in vec3 position;
 in vec2 texCoord;
@@ -78,7 +82,7 @@ samplerCube getProbeForIndex(int probeIndex) {
 	} else if(probeIndex == 188) {
 		return probe3;
 	} else {
-		return probe1;
+		return globalEnvironmentMap;
 	}
 }
 
@@ -151,6 +155,25 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 	return probeColor;
 }
 
+
+vec3 sslr(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
+	vec3 sum = rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView);
+	const float factor = 0.025;
+	vec3 offset0 = vec3(roughness,roughness,roughness) * factor;
+	vec3 offset1 = vec3(roughness,roughness,-roughness) * factor;
+	vec3 offset2 = vec3(roughness,-roughness,-roughness) * factor;
+	vec3 offset3 = vec3(-roughness,-roughness,-roughness) * factor;
+	vec3 offset4 = vec3(-roughness,-roughness,-roughness) * factor;
+	
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset0);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset1);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset2);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset3);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset4);
+	
+	return sum/5;
+}
+
 vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
 	vec3 nrdir = normalize(texCoords3d);
 	vec3 envMapMin = vec3(-300,-300,-300);
@@ -204,42 +227,56 @@ void main(void) {
   	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
+	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.000015);
 	float specularFactor = lightDiffuseSpecular.a;
 	
 	vec4 aoReflect = texture2D(aoReflection, st);
 	float ao = blurSample(aoReflection, st, 0.0025).r;
-	ao += blurSample(aoReflection, st, 0.000125).r;
+	ao += blurSample(aoReflection, st, 0.005).r;
 	ao /= 2;
 
 	
 	vec3 texCoords3d = normalize(reflect(V, normalWorld));
-	texCoords3d = boxProjection(positionWorld, texCoords3d, vec3(-300,-300,-300), vec3(300,300,300));
-	vec3 reflectedColor = blurSample(aoReflection, st, roughness/100).gba;
-	reflectedColor = texture(getProbeForIndex(probeIndex), texCoords3d).rgb;
-	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
+	texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
+	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
+	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
+	reflectedColor += rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
+	reflectedColor /= 2;
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
 	finalColor = mix(finalColor, (3*finalColor+specularColor)/4, metallic);
 	vec3 specularTerm = specularColor * max(specularFactor,0) + lightDiffuseSpecular.rgb;
 	
-	//finalColor.rgb = Uncharted2Tonemap(finalColor.rgb);
-	//vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
-	//finalColor.rgb = finalColor.rgb * whiteScale;
+	finalColor.rgb = Uncharted2Tonemap(finalColor.rgb);
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
+	finalColor.rgb = finalColor.rgb * whiteScale;
 	/////////////////////////////// GAMMA
 	//finalColor.r = pow(finalColor.r,1/2.2);
 	//finalColor.g = pow(finalColor.g,1/2.2);
 	//finalColor.b = pow(finalColor.b,1/2.2);
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
+	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
+	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
+	//ambientTerm = ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
 	ambientTerm *= ao;
-	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1) ;
+	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1);
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba);
 	out_color *= exposure/2;
 	
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = reflectedColor.rgb;
-	//out_color.rgb = ambientCubeColor.rgb;
+	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
+	//out_color.rgb = normalWorld.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
-	//out_color.rgb = vec3(colorProbeindex.w,colorProbeindex.w,colorProbeindex.w);
+	//out_color.rgb = specularTerm;
+	//out_color.rgb = vec3(ao,ao,ao);
+	/*if(probeIndex == 191) {
+		out_color.rgb = vec3(1,0,0);
+	} else if(probeIndex == 190) {
+		out_color.rgb = vec3(0,1,0);
+	} else if(probeIndex == 189) {
+		out_color.rgb = vec3(0,0,1);
+	}*/
 }

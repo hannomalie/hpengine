@@ -49,6 +49,8 @@ public class Spotlight implements IEntity {
 	private Program directionalShadowPassProgram;
 
 	private Renderer renderer;
+
+	private float scatterFactor;
 	
 	public Spotlight(boolean castsShadows) {
 		this.castsShadows = castsShadows;
@@ -207,6 +209,13 @@ public class Spotlight implements IEntity {
 
 	public FloatBuffer getLightMatrixAsBuffer() {
 		return getLightMatrix().asReadOnlyBuffer();
+	}
+
+	public float getScatterFactor() {
+		return scatterFactor;
+	}
+	public void setScatterFactor(float scatterFactor) {
+		this.scatterFactor = scatterFactor;
 	}
 
 }

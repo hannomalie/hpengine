@@ -116,6 +116,14 @@ public class DebugFrame {
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
 	WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
+	SliderInput scatteringSlider = new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
+		
+		@Override
+		public void onValueChange(int value, int delta) {
+			World.light.setScatterFactor((float)value);
+			
+		}
+	};
 
 
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
@@ -298,8 +306,8 @@ public class DebugFrame {
 		WebComponentPanel mainColorChooserGridPanelPanel = new WebComponentPanel();
 	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserLabel);
 	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserPanel);
-        
-		GroupPanel mainGroupPanel = new GroupPanel(buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel), new GridPanel(4,1,4,mainElementsArray));
+	    
+		GroupPanel mainGroupPanel = new GroupPanel(buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel, scatteringSlider), new GridPanel(4,1,4,mainElementsArray));
         mainPane = new WebScrollPane(mainGroupPanel);
         
 		WebMenuBar menuBar = new WebMenuBar ();
@@ -361,6 +369,19 @@ public class DebugFrame {
         	});
 
         	menuEntity.add(entitiyAddMenuItem);
+        }
+        {
+        	WebMenuItem entitiyLoadMenuItem = new WebMenuItem ( "Load" );
+        	entitiyLoadMenuItem.addActionListener(e -> {
+        		
+	    		addEntityFrame = new WebFrame("Load Entity");
+	    		addEntityFrame.setSize(600, 600);
+	    		addEntityFrame.add(new LoadEntitiyView(world, this));
+	    		addEntityFrame.setVisible(true);
+	    		
+        	});
+
+        	menuEntity.add(entitiyLoadMenuItem);
         }
 		WebMenu menuLight = new WebMenu("Light");
         {

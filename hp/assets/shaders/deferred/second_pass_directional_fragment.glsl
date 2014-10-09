@@ -20,7 +20,7 @@ uniform mat4 shadowMatrix;
 uniform vec3 eyePosition;
 uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
-uniform float scatterFactor = 2;
+uniform float scatterFactor = 1;
 
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
@@ -97,11 +97,11 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec
     return vec4(ambientLighting + diffuseReflection, clamp(length(specularReflection),0,1));
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = -normalize(-position);
+	vec3 V = normalize(-position);
 	//vec3 V = ViewVector;
-	V = -normalize((viewMatrix*vec4(V, 0)).xyz);
+	//V = -normalize((viewMatrix*vec4(V, 0)).xyz);
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -114,13 +114,16 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
-	float gaussConstant = 100.0;
+	float gaussConstant = 1.0;
 	float m = roughness;
 	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	D = (alpha*alpha)/(3.1415*pow((NdotH*NdotH*(alpha*alpha-1))+1, 2));
     
     // Schlick
 	float F0 = 0.04;
-	float k = 0.2;
+	F0 = max(F0, (1-roughness));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -128,13 +131,10 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	fresnel *= temp;
 	float F = fresnel + F0;
 	
-	
-	float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
 	
-	return vec4(diff, k + (1-k) * specularAdjust * (roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	return vec4(diff, k + specularAdjust * (1-roughness) * (F/3.1416) * (D*G/(NdotL/NdotV)));
-	//return vec4(lightDiffuse.rgb * roughness * (F/3.1416) * (D*G/(NdotL/NdotV)), 0);
+	return vec4((diff), (F*D*G/(NdotL*NdotV)));
 }
 
 ///////////////////// AO
@@ -142,7 +142,7 @@ uniform bool useAmbientOcclusion = false;
 uniform float ambientOcclusionRadius = 0.006;
 uniform float ambientOcclusionTotalStrength = 0.38;
 uniform float ambientOcclusionStrength = 0.7;
-uniform float ambientOcclusionFalloff = 0.0002;
+uniform float ambientOcclusionFalloff = 0.001;
 
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 float rand(vec2 co){
@@ -302,13 +302,13 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		 
 		if (shadowMapValue > worldInShadowCameraSpace.z)
 		{
-			accumFog += ComputeScattering(dot(rayDirection, lightDirection)) * lightDiffuse;
+			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
 		}
 
 		currentPosition += step;
 	}
 	accumFog /= NB_STEPS;
-	return accumFog;
+	return accumFog * lightDiffuse;
 }
 
 void main(void) {
@@ -347,7 +347,7 @@ void main(void) {
 	float metallic = specular.a;
 	specular.rgb = mix(vec3(1,1,1), color, metallic);
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness);
+	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -366,28 +366,28 @@ void main(void) {
 	vec3 ssdo = vec3(0,0,0);
 	if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
 		vec3 N = normalView;
-		float falloff = 0.000;//ambientOcclusionFalloff;
+		float falloff = ambientOcclusionFalloff;
 		const float samples = 16;
 		const float invSamples = 1/samples;
 		
 		vec3 fres = normalize(rand(color.rg)*2) - vec3(1.0, 1.0, 1.0);
 		vec3 ep = vec3(st, depth);
-		float rad = ambientOcclusionRadius;
-		float radD = rad*depth;
+		float rad = 1000*ambientOcclusionRadius;
+		float radD = rad*(1-depth);
 		float bl = 0.0f;
 		float occluderDepth, depthDifference, normDiff;
 		float totStrength = ambientOcclusionTotalStrength;
 		float strength = ambientOcclusionStrength;
 	
 		for(int i=0; i<samples;++i) {
-		  vec3 ray = (viewMatrix *vec4(radD*pSphere[i],0)).xyz;
+		  vec3 ray = (viewMatrix *vec4(radD*pSphere[i%16],0)).xyz;
 		  vec3 se = ep + sign(dot(ray,N) )*ray;
 		  vec4 occluderFragment = texture2D(normalMap,se.xy);
 		  vec3 occNorm = occluderFragment.xyz;
 		  //occNorm = decodeNormal(occNorm.xy);
 		
 		  // Wenn die Diff der beiden Punkte negativ ist, ist der Verdecker hinter dem aktuellen Bildpunkt
-		  depthDifference = depth-occluderFragment.w;
+		  depthDifference = (depth-occluderFragment.w);
 		
 		  // Berechne die Differenz der beiden Normalen als ein Gewicht
 		  float dotProd = dot(occNorm,N);
@@ -396,21 +396,21 @@ void main(void) {
 		  //////////
 		  vec3 occluderColor = texture2D(diffuseMap, se.xy).xyz;
 		  float dotProdSSDO = dot((viewMatrix * vec4(lightDirection, 0)).xyz, occNorm);
-		  vec3 occluderLit = occluderColor * dotProdSSDO * lightDiffuse;
+		  vec3 occluderLit = occluderColor * dotProdSSDO;
 		  ssdo += occluderLit * dotProd;
 		  //////////
 		  
 		  // the falloff equation, starts at falloff and is kind of 1/x^2 falling
 		  bl += normDiff*(1.0-smoothstep(falloff,strength,depthDifference));
-	
 	    }
 	    
 		ao = 1.0-totStrength*bl*invSamples;
-		ssdo *= 1-ao;
+		ssdo *= ao;
 	}
 	
 	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
+	//out_DiffuseSpecular.rgb = (ssdo);
 	
 	//if(roughness == 0) {
 	//	out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
@@ -419,7 +419,7 @@ void main(void) {
 		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 		out_AOReflection = vec4(ao, reflectedColor.rgb);
 	}
-	out_AOReflection.gba = scatterFactor * scatter(positionWorld, -eyePosition);
+	out_AOReflection.gba = scatterFactor * 0.5 * scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);

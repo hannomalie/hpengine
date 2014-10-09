@@ -118,7 +118,12 @@ public class Entity implements IEntity, Serializable {
 
 			for (int j = 0; j < 3; j++) {
 				Vector3f referencedVertex = verticesTemp.get(referencedVertices[j]-1);
-				Vector2f referencedTexcoord = texcoordsTemp.get(referencedTexcoords[j]-1);
+				Vector2f referencedTexcoord = new Vector2f(0,0);
+				try {
+					referencedTexcoord = texcoordsTemp.get(referencedTexcoords[j]-1);
+				} catch (Exception e) {
+					
+				}
 				Vector3f referencedNormal = normalsTemp.get(referencedNormals[j]-1);
 
 				values.add(referencedVertex.x);

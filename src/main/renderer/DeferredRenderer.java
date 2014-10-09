@@ -155,7 +155,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 //		_addPointLights();
-		_addPointLightsGrid();
+//		_addPointLightsGrid();
 	}
 
 	private void _addPointLights() {
@@ -349,7 +349,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		if(frameCount%1 == 0) {
 			GPUProfiler.start("Environment probes");
-			environmentProbeFactory.draw(octree);
+			environmentProbeFactory.draw(octree, light);
 			GPUProfiler.end();
 		}
 		

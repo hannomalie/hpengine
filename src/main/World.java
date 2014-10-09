@@ -92,8 +92,8 @@ public class World {
 			}
 		}
 
-//		world = new World(sceneName);
-		world = new World();
+		world = new World(sceneName);
+//		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {
@@ -144,6 +144,7 @@ public class World {
 		scene = Scene.read(renderer, sceneName);
 		scene.init(renderer);
 		camera = new Camera(renderer);
+		activeCamera = camera;
 		try {
 			light.init(renderer);
 		} catch (Exception e) {

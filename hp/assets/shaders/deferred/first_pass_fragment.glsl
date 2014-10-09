@@ -84,7 +84,7 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 }
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
-	vec3 map = (texture2D( normalMap, texcoord )).xyz;
+	vec3 map = (textureLod(normalMap, texcoord, 0)).xyz;
 	map = map * 2 - 1;
 	mat3 TBN = cotangent_frame( N, -V, texcoord );
 	return normalize( TBN * map );
@@ -163,7 +163,7 @@ void main(void) {
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 #ifdef use_normalMap
-	PN_world = normalize(perturb_normal(normal_world, V, UV));
+	PN_world = normalize(perturb_normal(PN_world, V, UV));
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
@@ -175,7 +175,6 @@ void main(void) {
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
-	//out_normal.z = environmentProbeIndex;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
 #ifdef use_diffuseMap
@@ -277,9 +276,9 @@ if (discrim > 0) {
 	UV = texCoord + uvParallax;
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
 	specularColor = vec4(specularSample, materialSpecularCoefficient);
-	float glossiness = length(specularSample)/length(vec3(1,1,1)) * 0.5;
-	out_position.w = clamp(1-glossiness, 0, 1) * (materialRoughness);
-	//out_position.w *= 1 + out_position.w;
+	float glossiness = length(specularSample)/length(vec3(1,1,1));
+	const float glossinessBias = 1.3;
+	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
 	out_specular.rgb = specularColor.rgb;

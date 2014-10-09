@@ -15,9 +15,11 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import main.World;
 import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Octree;
+import main.renderer.light.Spotlight;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
@@ -52,11 +54,11 @@ public class EnvironmentSampler {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
-	public CubeMap drawCubeMap(Octree octree) {
-		return drawCubeMapSides(octree);
+	public CubeMap drawCubeMap(Octree octree, Spotlight light) {
+		return drawCubeMapSides(octree, light);
 	}
 	
-	private CubeMap drawCubeMapSides(Octree octree) {
+	private CubeMap drawCubeMapSides(Octree octree, Spotlight light) {
 		GPUProfiler.start("Cube map render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
@@ -73,6 +75,8 @@ public class EnvironmentSampler {
 			GPUProfiler.start("Matrix uniforms");
 			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+			cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
+			cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());
 			cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 			cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
 			GPUProfiler.end();
@@ -93,10 +97,10 @@ public class EnvironmentSampler {
 		}
 
 		cubeMap.bind();
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
 //		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
 //		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_NEAREST);
 //		int errorValue = GL11.glGetError();
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);

@@ -107,7 +107,7 @@ public class ProbeView extends WebPanel {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
 		nameField.setValue(probe.getName());
-		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField );
+		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField, new WebLabel(String.format("Index: %d", probe.getTextureUnitIndex())));
 		
 		webComponentPanel.addElement(groupPanel);
 	}

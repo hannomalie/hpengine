@@ -100,11 +100,17 @@ public class OBJLoader {
 			parseInt(secondTriple[0]),
 			parseInt(thirdTriple[0]),
 		};
-		int[] texCoordsIndices = {
-			parseInt(firstTriple[1]),
-			parseInt(secondTriple[1]),
-			parseInt(thirdTriple[1]),
-			};
+		int[] texCoordsIndices;
+		try {
+			texCoordsIndices = new int[] {
+					parseInt(firstTriple[1]),
+					parseInt(secondTriple[1]),
+					parseInt(thirdTriple[1]),
+					};
+		} catch (Exception e) {
+			texCoordsIndices = new int[]{0,0,0};
+		}
+
 		int[] normalIndices = {
 			parseInt(firstTriple[2]),
 			parseInt(secondTriple[2]),

@@ -65,4 +65,21 @@ public class EntityFactory {
 		}
 		return null;
 	}
+    
+    public IEntity readWithoutInit(String resourceName) {
+		String fileName = FilenameUtils.getBaseName(resourceName);
+		FileInputStream fis = null;
+		ObjectInputStream in = null;
+		try {
+			fis = new FileInputStream(Entity.getDirectory() + fileName + ".hpentity");
+			in = new ObjectInputStream(fis);
+			Entity entity = (Entity) in.readObject();
+			in.close();
+			
+			return entity;
+		} catch (IOException | ClassNotFoundException e) {
+//			e.printStackTrace();
+		}
+		return null;
+	}
 }
