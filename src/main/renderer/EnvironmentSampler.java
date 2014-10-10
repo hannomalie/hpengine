@@ -47,11 +47,13 @@ public class EnvironmentSampler {
 		camera.rotate(new Vector4f(0,1,0,90));
 //		position.y = -position.y;
 		camera.setPosition(position.negate(null));
-		
+
+//		DeferredRenderer.exitOnGLError("EnvironmentSampler Before CubeRenderTarget");
 		this.cubeMapRenderTarget = new CubeRenderTarget(width, height, cubeMap);
+//		DeferredRenderer.exitOnGLError("EnvironmentSampler CubeRenderTarget");
 		
 		cubeMapDiffuseProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
-		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
+//		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
 	public CubeMap drawCubeMap(Octree octree, Spotlight light) {
@@ -62,6 +64,7 @@ public class EnvironmentSampler {
 		GPUProfiler.start("Cube map render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		cubeMapDiffuseProgram.use();
 		cubeMapRenderTarget.use(true);

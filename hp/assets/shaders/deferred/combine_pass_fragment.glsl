@@ -9,16 +9,17 @@ layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
 
 
-layout(binding=181) uniform samplerCube probe9;
-layout(binding=182) uniform samplerCube probe8;
-layout(binding=183) uniform samplerCube probe7;
-layout(binding=184) uniform samplerCube probe6;
-layout(binding=185) uniform samplerCube probe5;
-layout(binding=186) uniform samplerCube probe4;
-layout(binding=187) uniform samplerCube probe3;
-layout(binding=188) uniform samplerCube probe2;
-layout(binding=190) uniform samplerCube probe1;
-layout(binding=191) uniform samplerCube probe0;
+layout(binding=181) uniform samplerCube probe181;
+layout(binding=182) uniform samplerCube probe182;
+layout(binding=183) uniform samplerCube probe183;
+layout(binding=184) uniform samplerCube probe184;
+layout(binding=185) uniform samplerCube probe185;
+layout(binding=186) uniform samplerCube probe186;
+layout(binding=187) uniform samplerCube probe187;
+layout(binding=188) uniform samplerCube probe188;
+layout(binding=189) uniform samplerCube probe189;
+layout(binding=190) uniform samplerCube probe190;
+layout(binding=191) uniform samplerCube probe191;
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -73,14 +74,15 @@ float rand(vec2 co){
 }
 
 samplerCube getProbeForIndex(int probeIndex) {
+
 	if(probeIndex == 191) {
-		return probe0;
+		return probe191;
 	} else if(probeIndex == 190) {
-		return probe1;
+		return probe190;
 	} else if(probeIndex == 189) {
-		return probe2;
+		return probe189;
 	} else if(probeIndex == 188) {
-		return probe3;
+		return probe188;
 	} else {
 		return globalEnvironmentMap;
 	}
@@ -131,7 +133,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 		  	}
 		  	
   		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
-  			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
+  			//if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
@@ -235,17 +237,22 @@ void main(void) {
 	ao += blurSample(aoReflection, st, 0.005).r;
 	ao /= 2;
 
-	
 	vec3 texCoords3d = normalize(reflect(V, normalWorld));
 	texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
+	
+	// Try to parallax-correct
+	//texCoords3d -= texCoords3d * 0.00001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
+	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
+	
+	
 	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	reflectedColor += rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
-	reflectedColor /= 2;
+	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
+	//reflectedColor /= 2;
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
-	finalColor = mix(finalColor, (3*finalColor+specularColor)/4, metallic);
+	finalColor = mix(finalColor, (1*finalColor+2*specularColor)/3, metallic);
 	vec3 specularTerm = specularColor * max(specularFactor,0) + lightDiffuseSpecular.rgb;
 	
 	finalColor.rgb = Uncharted2Tonemap(finalColor.rgb);
@@ -266,7 +273,7 @@ void main(void) {
 	out_color *= exposure/2;
 	
 	//out_color.rgb *= aoReflect.gba;
-	//out_color.rgb = reflectedColor.rgb;
+	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
 	//out_color.rgb = normalWorld.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);

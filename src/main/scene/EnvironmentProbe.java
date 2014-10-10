@@ -148,11 +148,15 @@ public class EnvironmentProbe implements IEntity {
 	public void bind(int index) {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
 		sampler.getEnvironmentMap().bind();
-		System.out.println(String.format("Bound probe %d to index %d", renderer.getEnvironmentProbeFactory().getProbes().indexOf(this), index));
+//		System.out.println(String.format("Bound probe %d to index %d", renderer.getEnvironmentProbeFactory().getProbes().indexOf(this), index));
 	}
 
 	public int getTextureUnitIndex() {
-		int index = renderer.getEnvironmentProbeFactory().getProbes().indexOf(this);
+		int index = getIndex();
 		return renderer.getMaxTextureUnits() - index - 1;
+	}
+
+	public int getIndex() {
+		return renderer.getEnvironmentProbeFactory().getProbes().indexOf(this);
 	}
 }

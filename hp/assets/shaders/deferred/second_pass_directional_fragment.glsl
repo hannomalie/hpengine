@@ -123,7 +123,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
     // Schlick
 	float F0 = 0.04;
-	F0 = max(F0, (1-roughness));
+	F0 = max(F0, ((1-roughness)/2));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/

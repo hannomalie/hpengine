@@ -383,6 +383,35 @@ public class DebugFrame {
 
         	menuEntity.add(entitiyLoadMenuItem);
         }
+		WebMenu menuProbe = new WebMenu("Probe");
+        {
+        	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
+        	probeAddMenuItem.addActionListener(e -> {
+        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree(), World.light);
+						return new Result() { @Override public boolean isSuccessful() { return true; } };
+					}});
+        		
+        		Result result = null;
+				try {
+					result = queue.poll(5, TimeUnit.MINUTES);
+				} catch (Exception e1) {
+					showError("Failed to add probe");
+				}
+				
+				if (!result.isSuccessful()) {
+					showError("Failed to add probe");
+				} else {
+					showSuccess("Added probe");
+	        		refreshProbeTab();
+				}
+        	});
+
+        	menuProbe.add(probeAddMenuItem);
+        }
+        
 		WebMenu menuLight = new WebMenu("Light");
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add" );
@@ -480,6 +509,7 @@ public class DebugFrame {
 
         menuBar.add(menuScene);
         menuBar.add(menuEntity);
+        menuBar.add(menuProbe);
         menuBar.add(menuLight);
         menuBar.add(menuTextures);
         menuBar.add(runScriptMenuItem);
@@ -728,7 +758,7 @@ public class DebugFrame {
 
 		tabbedPane.remove(probesPane);
 		probesPane = new JScrollPane(this.probes);
-		tabbedPane.addTab("Scene", probesPane);
+		tabbedPane.addTab("Probes", probesPane);
 	}
 	
 	private void addOctreeSceneObjects(World world) {
@@ -791,6 +821,12 @@ public class DebugFrame {
 		tabbedPane.remove(lightsPane);
 		createLightsTab();
 		tabbedPane.addTab("Lights", lightsPane);
+	}
+	private void refreshProbeTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(probesPane);
+		addProbes(world);
+		tabbedPane.addTab("Probes", probesPane);
 	}
 	
 	private void showSuccess(String content) {

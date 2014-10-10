@@ -264,6 +264,7 @@ public class GBuffer {
 		});
 		program.setUniform("environmentMapMin[0]", new Vector3f(-10000, -10000, -10000));
 		program.setUniform("environmentMapMax[0]", new Vector3f(10000, 10000, 10000));
+		
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, CubeMap cubeMap) {

@@ -32,13 +32,13 @@ public abstract class WebFormattedVec3Field extends GroupPanel {
         
 
         inputX.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText()),Float.valueOf(inputY.getText()),Float.valueOf(inputZ.getText())));
+        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
         });
         inputY.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText()),Float.valueOf(inputY.getText()),Float.valueOf(inputZ.getText())));
+        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
         });
         inputZ.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText()),Float.valueOf(inputY.getText()),Float.valueOf(inputZ.getText())));
+        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
         });
         
         this.add(webLabel);

@@ -45,14 +45,21 @@ public class EnvironmentProbeFactory {
 		return getProbe(center, size, Update.STATIC);
 	}
 
+	public EnvironmentProbe getProbe(Vector3f center, float size, Update update) {
+		return getProbe(center, new Vector3f(size, size, size), update);
+	}
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update) {
 		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update);
 		probes.add(probe);
-		probe.bind(probe.getTextureUnitIndex());
+//		probe.bind(probe.getTextureUnitIndex());
+		renderer.getEnvironmentProbeFactory().bindProbes();
 		return probe;
 	}
-	public EnvironmentProbe getProbe(Vector3f center, float size, Update update) {
-		return getProbe(center, new Vector3f(size, size, size), update);
+	
+	public void bindProbes() {
+		for (EnvironmentProbe environmentProbe : probes) {
+			environmentProbe.bind(environmentProbe.getTextureUnitIndex());
+		}
 	}
 	
 	public void draw(Octree octree, Spotlight light) {
