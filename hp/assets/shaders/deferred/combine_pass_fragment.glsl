@@ -222,7 +222,7 @@ void main(void) {
   	vec3 specularColor = specularColorMetallic.xyz;
   	float metallic = specularColorMetallic.a;
   	
-	const float metalSpecularBoost = 1.5;
+	const float metalSpecularBoost = 1.0;
   	specularColor = mix(specularColor, metalSpecularBoost*colorProbeindex.rgb, metallic);
   	const float metalBias = 0.1;
   	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
@@ -246,29 +246,30 @@ void main(void) {
 	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
 	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
-	//reflectedColor /= 2;
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
 	finalColor = mix(finalColor, (1*finalColor+2*specularColor)/3, metallic);
 	vec3 specularTerm = specularColor * max(specularFactor,0) + lightDiffuseSpecular.rgb;
 	
-	finalColor.rgb = Uncharted2Tonemap(finalColor.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
-	finalColor.rgb = finalColor.rgb * whiteScale;
-	/////////////////////////////// GAMMA
-	//finalColor.r = pow(finalColor.r,1/2.2);
-	//finalColor.g = pow(finalColor.g,1/2.2);
-	//finalColor.b = pow(finalColor.b,1/2.2);
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	ambientTerm = ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+	ambientTerm = 0.5 * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+
 	ambientTerm *= ao;
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1);
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba);
 	out_color *= exposure/2;
+	
+	out_color.rgb = Uncharted2Tonemap(out_color.rgb);
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)* 0.25);
+	out_color.rgb = out_color.rgb * whiteScale;
+	/////////////////////////////// GAMMA
+	//finalColor.r = pow(finalColor.r,1/2.2);
+	//finalColor.g = pow(finalColor.g,1/2.2);
+	//finalColor.b = pow(finalColor.b,1/2.2);
 	
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = lightDiffuseSpecular.rgb;

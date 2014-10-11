@@ -34,7 +34,6 @@ public class Spotlight implements IEntity {
 	private boolean castsShadows = false;
 
 	private Camera camera;
-	private Transform transform = new Transform();
 
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
@@ -166,9 +165,12 @@ public class Spotlight implements IEntity {
 
 	public FloatBuffer getLightMatrix() {
 		Matrix4f.mul(camera.getProjectionMatrix(), camera.getViewMatrix(), null).store(buffer);
-//		camera.getViewMatrix().store(buffer);
 		buffer.flip();
 		return buffer;
+	}
+
+	public FloatBuffer getLightMatrixAsBuffer() {
+		return getLightMatrix().asReadOnlyBuffer();
 	}
 
 	@Override
@@ -208,10 +210,6 @@ public class Spotlight implements IEntity {
 	@Override
 	public void setTransform(Transform transform) {
 		camera.setTransform(transform);
-	}
-
-	public FloatBuffer getLightMatrixAsBuffer() {
-		return getLightMatrix().asReadOnlyBuffer();
 	}
 
 	public float getScatterFactor() {

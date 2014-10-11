@@ -177,19 +177,19 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
-	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, 1/50).rg;
-	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, 1/100).rg;
-	//moments /= 2;
+	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
+	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
+	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
+	//moments /= 3;
 	// Surface is fully lit. as the current fragment is before the light occluder
-	const float bias = 0.081;
 	if (dist < moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
-	float variance = momentsUnblurred.y - (moments.x*moments.x);
-	variance = max(variance,0.00012);
+	float variance = moments.y - (moments.x*moments.x);
+	variance = max(variance,0.000012);
 
 	float d = dist - moments.x;
 	float p_max = variance / (variance + d*d);

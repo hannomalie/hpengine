@@ -2,14 +2,17 @@
 
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
+layout(binding=6) uniform sampler2D shadowMap;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
+uniform mat4 shadowMatrix;
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 
 uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
+uniform vec3 lightAmbient;
 
 in vec4 color;
 in vec2 texCoord;
@@ -32,6 +35,16 @@ float linearizeDepth(float z)
   return (2.0 * n) / (f + n - z * (f - n));	
 }
 
+float evaluateVisibility(float depthInLightSpace, vec4 ShadowCoordPostW) {
+	
+	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
+	const float bias = 0.001;
+	if (depthInLightSpace < shadowMapSample.x + bias) {
+		return vec3(1.0,1.0,1.0);
+	}
+
+	return vec3(0.1,0.1,0.1);
+}
 void main()
 {
 	vec2 UV = texCoord;
@@ -43,6 +56,16 @@ void main()
     
 	vec3 PN_world = normalize(normal_world);
 	
-	out_color.rgb = color.rgb * vec3(1,1,1);
-	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0);
+	/////////////////// SHADOWMAP
+	float visibility = 1.0;
+	vec4 positionShadow = (shadowMatrix * vec4(position_world.xyz, 1));
+  	positionShadow.xyz /= positionShadow.w;
+  	float depthInLightSpace = positionShadow.z;
+    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+	visibility = clamp(evaluateVisibility(depthInLightSpace, positionShadow), 0, 1);
+	/////////////////// SHADOWMAP
+	
+	out_color.rgb = color.rgb * lightAmbient;
+	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
+	//out_color.rgb = vec3(visibility,visibility,visibility);
 }

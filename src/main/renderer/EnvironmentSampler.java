@@ -66,6 +66,9 @@ public class EnvironmentSampler {
 		Vector3f initialPosition = camera.getPosition();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
+		
 		cubeMapDiffuseProgram.use();
 		cubeMapRenderTarget.use(true);
 		for(int i = 0; i < 6; i++) {
@@ -80,8 +83,10 @@ public class EnvironmentSampler {
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 			cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
 			cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());
+			cubeMapDiffuseProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);
 			cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 			cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+			cubeMapDiffuseProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
 			GPUProfiler.end();
 
 			GPUProfiler.start("Draw entities");
