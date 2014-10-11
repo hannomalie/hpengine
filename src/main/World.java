@@ -325,10 +325,10 @@ public class World {
 			light.rotate(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.rotate(new Vector3f(0,1,0), camera.getRotationSpeed()/100);
+			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.rotate(new Vector3f(0,1,0), -camera.getRotationSpeed()/100);
+			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
 			light.move(new Vector3f(0,-1f,0));

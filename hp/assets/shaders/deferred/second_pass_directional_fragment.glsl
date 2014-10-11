@@ -7,6 +7,7 @@ layout(binding=3) uniform sampler2D specularMap;
 layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=5) uniform sampler2D probe;
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
+layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -25,6 +26,7 @@ uniform float scatterFactor = 1;
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;
+out vec4 out_DiffuseIndirect;
 
 float packColor(vec3 color) {
     return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
@@ -40,7 +42,7 @@ vec3 unpackColor(float f) {
 
 // http://aras-p.info/texts/CompactNormalStorage.html
 #define kPI 3.1415926536f
-vec3 decodeNormal(vec2 enc) {
+vec3 decode(vec2 enc) {
     vec2 ang = enc*2-1;
     vec2 scth;
     scth.x = sin(ang.x * kPI);
@@ -166,13 +168,14 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 	return result/9;
 
 }
-float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
+vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
-  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+  	/*if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
 		return 0;
-	}
+	}*/
 	// We retrive the two moments previously stored (depth and depth*depth)
-	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
+	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
+	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
 	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, 1/50).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, 1/100).rg;
@@ -180,7 +183,7 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// Surface is fully lit. as the current fragment is before the light occluder
 	const float bias = 0.081;
 	if (dist < moments.x) {
-		return 1.0;
+		return vec3(1.0,1.0,1.0);
 	}
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
@@ -191,7 +194,41 @@ float chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	float d = dist - moments.x;
 	float p_max = variance / (variance + d*d);
 
-	return p_max;
+	return vec3(p_max,p_max,p_max);
+}
+
+vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace) {
+//return vec3(0,0,0);
+	const float NUM_SAMPLES_FACTOR = 40;
+	const float DISTFLOAT = 0.5;
+	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT);
+	
+	vec3 shadowNormal = decode(texture(shadowMap, ShadowCoordPostW.xy).ba);
+	float sum = 0;//max(dot(normalWorld,shadowNormal), 0);
+	
+	for(int i = 1; i <= NUM_SAMPLES_FACTOR; i++) {
+		float tempSum = 0;
+		
+		for(int z = 0; z < 16; z++) {
+			vec2 coords = ShadowCoordPostW.xy + (i/NUM_SAMPLES_FACTOR)*pSphere[z].xy*DIST;
+			vec4 shadowMapSample = texture(shadowMap, coords);
+			vec4 shadowWorldPosition = texture(shadowMapWorldPosition, coords);
+			float shadowDepth = shadowMapSample.x;
+			shadowNormal = decode(shadowMapSample.ba);
+			float flux = 1;
+			flux *= max(0,dot(shadowNormal, -lightDirection));
+			flux *= max(0,dot(shadowNormal, (positionWorld - shadowWorldPosition.xyz)));
+			flux *= max(0,dot(normalWorld, (shadowWorldPosition.xyz - positionWorld)));
+			
+			tempSum += flux/pow(length(positionWorld - shadowWorldPosition.xyz),1);
+		}
+		//sum += tempSum/16;
+		sum += tempSum;
+	}
+
+	sum /= NUM_SAMPLES_FACTOR;
+	
+	return vec3(sum,sum,sum);
 }
 
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
@@ -359,6 +396,7 @@ void main(void) {
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1);
 
 	finalColor *= visibility;
+
 	//finalColor = vec4(visibility,visibility,visibility,visibility);
 	/////////////////// SHADOWMAP
 	
@@ -408,17 +446,15 @@ void main(void) {
 		ssdo *= ao;
 	}
 	
-	//vec4 ambientTerm = vec4((ambientColor * ao), 0);
 	out_DiffuseSpecular = finalColor;// + ambientTerm;
+	//vec3 indirectLight = lightDiffuse.rgb*getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace);
+	//out_DiffuseIndirect.rgb = indirectLight;
+	
 	//out_DiffuseSpecular.rgb = (ssdo);
 	
-	//if(roughness == 0) {
-	//	out_AOReflection = vec4(ao, out_DiffuseSpecular.rgb);
-	//} else
-	{
-		vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
-		out_AOReflection = vec4(ao, reflectedColor.rgb);
-	}
+	//vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
+	//out_AOReflection = vec4(ao, reflectedColor.rgb);
+	out_AOReflection.r = ao;
 	out_AOReflection.gba = scatterFactor * 0.5 * scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);

@@ -8,7 +8,6 @@ layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
 
-
 layout(binding=181) uniform samplerCube probe181;
 layout(binding=182) uniform samplerCube probe182;
 layout(binding=183) uniform samplerCube probe183;
@@ -229,7 +228,7 @@ void main(void) {
   	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
-	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.000015);
+	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.0015);
 	float specularFactor = lightDiffuseSpecular.a;
 	
 	vec4 aoReflect = texture2D(aoReflection, st);
@@ -243,7 +242,6 @@ void main(void) {
 	// Try to parallax-correct
 	//texCoords3d -= texCoords3d * 0.00001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
 	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
-	
 	
 	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
@@ -265,7 +263,7 @@ void main(void) {
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	//ambientTerm = ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+	ambientTerm = ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
 	ambientTerm *= ao;
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1);
 	out_color = lit;

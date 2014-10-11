@@ -55,10 +55,10 @@ void main(void) {
 	
 	normalVec = in_Normal;
 	normal_model = (vec4(in_Normal,0)).xyz;
-	//normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_world.x = dot(modelMatrix[0].xyz, normal_model);
     normal_world.y = dot(modelMatrix[1].xyz, normal_model);
     normal_world.z = dot(modelMatrix[2].xyz, normal_model);
+	//normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
 	
 	eyePos_world = ( vec4(eyePosition,1)).xyz;

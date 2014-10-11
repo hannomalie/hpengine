@@ -136,6 +136,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(4)); // probe color
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
 		GPUProfiler.end();
 		
 		GPUProfiler.start("Set uniforms");
