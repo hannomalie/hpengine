@@ -255,7 +255,7 @@ void main(void) {
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	ambientTerm = 0.5 * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+	ambientTerm = 0.5 * ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
 
 	ambientTerm *= ao;
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1);

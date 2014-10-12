@@ -93,30 +93,26 @@ public class GBuffer {
 //			entity.setMaterial(old.getName());			
 //		}
 		
-		
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (PointLight light : pointLights) {
 				if (!light.isInFrustum(camera)) { continue;}
 				light.drawAsMesh(renderer, camera);
 			}
 		}
-		
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
 	}
 
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, CubeMap cubeMap) {
 
 		GPUProfiler.start("Directional light");
+		GL11.glDepthMask(false);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
-		//GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE);
 
-//		finalTarget.use(true);
-		laBuffer.use(true);
-		GL11.glClearColor(0,0,0,0);
+		laBuffer.use(false);
+		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
+//		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		secondPassDirectionalProgram.use();
@@ -178,23 +174,22 @@ public class GBuffer {
 		boolean firstLightDrawn = false;
 		for (int i = 0 ; i < pointLights.size(); i++) {
 			PointLight light = pointLights.get(i);
-//			if(!light.isInFrustum(camera)) {
-//				continue;
-//			}
+			if(!light.isInFrustum(camera)) {
+				continue;
+			}
 			
 			Vector3f distance = new Vector3f();
-			Vector3f.sub(camera.getPosition(), light.getPosition(), distance);
+			Vector3f.sub(light.getPosition(), camera.getPosition().negate(null), distance); // <----- biggest Hack ever! TODO: Check where this fuckup with the cam goes on.... :(
 			float lightRadius = light.getRadius();
 			
-			//TODO: Check this....
-			// camera is inside light range
+			// camera is inside light
 			if (distance.length() < lightRadius) {
-				GL11.glDisable(GL11.GL_CULL_FACE);
 				GL11.glCullFace(GL11.GL_FRONT);
-			// camera is outside light range, cull back sides
+				GL11.glDepthFunc(GL11.GL_GEQUAL);
 			} else {
-				GL11.glDisable(GL11.GL_CULL_FACE);
+			// camera is outside light, cull back sides
 				GL11.glCullFace(GL11.GL_BACK);
+				GL11.glDepthFunc(GL11.GL_LEQUAL);
 			}
 
 //			secondPassPointProgram.setUniform("currentLightIndex", i);
@@ -210,10 +205,10 @@ public class GBuffer {
 			firstLightDrawn = true;
 		}
 		laBuffer.unuse();
-//		finalTarget.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
-		GL11.glEnable(GL11.GL_CULL_FACE);
+//		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glCullFace(GL11.GL_BACK);
+		GL11.glDepthFunc(GL11.GL_LESS);
 		GPUProfiler.end();
 		GPUProfiler.end();
 	}

@@ -155,7 +155,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 //		_addPointLights();
-//		_addPointLightsGrid();
+		_addPointLightsGrid();
 	}
 
 	private void _addPointLights() {
@@ -177,7 +177,7 @@ public class DeferredRenderer implements Renderer {
 		Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
 			put(MAP.DIFFUSE,"assets/textures/default.dds");
 		}});
-		int size = 50;
+		int size = 70;
 		int count = 100;
 		count = (int) Math.sqrt(count);
 		int maxXY = (int) (size*count*0.5);
@@ -345,8 +345,6 @@ public class DeferredRenderer implements Renderer {
 //			cubeMap = environmentSampler.getEnvironmentMap();
 //			GPUProfiler.end();
 //		}
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		if(frameCount%1 == 0) {
 			GPUProfiler.start("Environment probes");
 			environmentProbeFactory.draw(octree, light);
@@ -354,11 +352,7 @@ public class DeferredRenderer implements Renderer {
 		}
 		
 		GPUProfiler.start("Shadowmap pass");
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		light.drawShadowMap(octree);
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
