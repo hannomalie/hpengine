@@ -112,7 +112,7 @@ public class GBuffer {
 
 		laBuffer.use(false);
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
-//		GL11.glClearColor(0,0,0,0);
+		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		secondPassDirectionalProgram.use();
