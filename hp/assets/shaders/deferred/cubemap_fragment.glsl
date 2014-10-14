@@ -65,7 +65,7 @@ void main()
 	visibility = clamp(evaluateVisibility(depthInLightSpace, positionShadow), 0, 1);
 	/////////////////// SHADOWMAP
 	
-	out_color.rgb = color.rgb * lightAmbient;
+	out_color.rgb = color.rgb;// * lightAmbient;
 	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
 	//out_color.rgb = vec3(visibility,visibility,visibility);
 }

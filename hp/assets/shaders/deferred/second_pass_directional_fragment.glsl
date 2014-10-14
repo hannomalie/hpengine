@@ -113,19 +113,27 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float NdotL = max(dot(N, L), 0.0);
     float VdotH = max(dot(V, H), 0.0);
     
-	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
+	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
+	//alpha = pow(roughness*0.7, 6);
 	float gaussConstant = 1.0;
 	float m = roughness;
 	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
-	D = (alpha*alpha)/(3.1415*pow((NdotH*NdotH*(alpha*alpha-1))+1, 2));
+	D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
+	//float k = pow(0.8+0.5*alpha, 2)/2;
+	//G = NdotV / (NdotV*(1-k)+k);
     
     // Schlick
-	float F0 = 0.04;
-	F0 = max(F0, ((1-roughness)/2));
+	float F0 = 0.02;
+	// Specular in the range of 0.02 - 0.2
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	F0 = max(F0, ((1-roughness)*0.02));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -135,8 +143,11 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	diff = (diff.rgb/3.1416) * (1-F0);
 	
-	return vec4((diff), (F*D*G/(NdotL*NdotV)));
+	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
+	
+	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
 ///////////////////// AO
@@ -192,7 +203,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	variance = max(variance,0.000012);
 
 	float d = dist - moments.x;
-	float p_max = variance / (variance + d*d);
+	float p_max = (variance / (variance + d*d));
 
 	return vec3(p_max,p_max,p_max);
 }

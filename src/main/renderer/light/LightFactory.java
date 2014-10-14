@@ -22,6 +22,7 @@ public class LightFactory {
 	
 	private Renderer renderer;
 	private Model sphereModel;
+	private Model cubeModel;
 
 	public LightFactory(Renderer renderer) {
 		this.renderer = renderer;
@@ -29,6 +30,8 @@ public class LightFactory {
 		try {
 			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 			sphereModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
+			cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+			cubeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -59,5 +62,12 @@ public class LightFactory {
 
 	public PointLight getPointLight() {
 		return getPointLight(sphereModel);
+	}
+
+	public TubeLight getTubeLight() {
+		return getTubeLight(200.0f, 50.0f);
+	}
+	public TubeLight getTubeLight(float length, float radius) {
+		return new TubeLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
 	}
 }

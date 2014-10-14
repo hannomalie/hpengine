@@ -229,7 +229,7 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
 	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.0015);
-	float specularFactor = lightDiffuseSpecular.a;
+	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 	
 	vec4 aoReflect = texture2D(aoReflection, st);
 	float ao = blurSample(aoReflection, st, 0.0025).r;
@@ -250,7 +250,8 @@ void main(void) {
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
 	finalColor = mix(finalColor, (1*finalColor+2*specularColor)/3, metallic);
-	vec3 specularTerm = specularColor * max(specularFactor,0) + lightDiffuseSpecular.rgb;
+	vec3 specularTerm = 2*specularColor * specularFactor;
+	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor*(1-specularFactor);
 	
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
@@ -258,13 +259,13 @@ void main(void) {
 	ambientTerm = 0.5 * ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
 
 	ambientTerm *= ao;
-	vec4 lit = vec4(ambientTerm, 1) + ((vec4(lightDiffuseSpecular.rgb*finalColor, 1))) * vec4(specularTerm,1);
+	vec4 lit = vec4(ambientTerm, 1) + ((vec4(diffuseTerm, 1))) + vec4(specularTerm,1);
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba);
 	out_color *= exposure/2;
 	
 	out_color.rgb = Uncharted2Tonemap(out_color.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)* 0.25);
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)* 0.15);
 	out_color.rgb = out_color.rgb * whiteScale;
 	/////////////////////////////// GAMMA
 	//finalColor.r = pow(finalColor.r,1/2.2);
@@ -274,7 +275,7 @@ void main(void) {
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
-	//out_color.rgb = normalWorld.rgb;
+	//out_color.rgb = specularTerm.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);

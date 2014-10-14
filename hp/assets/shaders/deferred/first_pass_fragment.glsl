@@ -86,7 +86,7 @@ vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
 	vec3 map = (textureLod(normalMap, texcoord, 0)).xyz;
 	map = map * 2 - 1;
-	mat3 TBN = cotangent_frame( N, -V, texcoord );
+	mat3 TBN = cotangent_frame( N, V, texcoord );
 	return normalize( TBN * map );
 }
 
@@ -277,7 +277,7 @@ if (discrim > 0) {
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
 	specularColor = vec4(specularSample, materialSpecularCoefficient);
 	float glossiness = length(specularSample)/length(vec3(1,1,1));
-	const float glossinessBias = 1.3;
+	const float glossinessBias = 1.5;
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 

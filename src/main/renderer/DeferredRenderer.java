@@ -35,6 +35,7 @@ import main.renderer.command.Command;
 import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
+import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
@@ -106,6 +107,7 @@ public class DeferredRenderer implements Renderer {
 	private static float LIGHTRADIUSSCALE = 15f;
 	private static int MAXLIGHTS = 3;
 	public static List<PointLight> pointLights = new ArrayList<>();
+	public static List<TubeLight> tubeLights = new ArrayList<>();
 	
 	private IEntity sphere;
 
@@ -142,8 +144,8 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.STATIC);
-		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.STATIC);
+		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
+		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
 		
 		sphereModel = null;
 		try {
@@ -191,16 +193,19 @@ public class DeferredRenderer implements Renderer {
 				pointLights.add(pointLight);
 			}
 		}
+		
+		tubeLights.add(lightFactory.getTubeLight(400, 70));
 	}
 
 	private void setUpGBuffer() {
 
 		Program firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
 		Program secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		Program secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
 
-		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, combineProgram);
+		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, combineProgram);
 
 		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
@@ -276,6 +281,7 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE);
 		copyShaderIfNotExists("second_pass_directional_fragment.glsl");
 		copyShaderIfNotExists("second_pass_directional_vertex.glsl");
+		copyShaderIfNotExists("second_pass_tube_fragment.glsl");
 		copyShaderIfNotExists("second_pass_point_fragment.glsl");
 		copyShaderIfNotExists("second_pass_point_vertex.glsl");
 		copyShaderIfNotExists("combine_pass_vertex.glsl");
@@ -334,29 +340,24 @@ public class DeferredRenderer implements Renderer {
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
 
 		GPUProfiler.start("First pass");
-		gBuffer.drawFirstPass(camera, octree, pointLights);
+		gBuffer.drawFirstPass(camera, octree, pointLights, tubeLights);
 		GPUProfiler.end();
 
-//		if(frameCount%10 == 0) {
-//			GPUProfiler.start("Draw a cubemap");
-//			GL11.glDepthMask(true);
-//			GL11.glEnable(GL11.GL_DEPTH_TEST);
-//			environmentSampler.drawCubeMap(octree);
-//			cubeMap = environmentSampler.getEnvironmentMap();
+//		if(frameCount%1 == 0) {
+//			GPUProfiler.start("Environment probes");
+//			environmentProbeFactory.draw(octree, light);
 //			GPUProfiler.end();
 //		}
-		if(frameCount%1 == 0) {
-			GPUProfiler.start("Environment probes");
-			environmentProbeFactory.draw(octree, light);
-			GPUProfiler.end();
-		}
+
+		environmentProbeFactory.drawAlternating(octree, light, frameCount);
+		
 		
 		GPUProfiler.start("Shadowmap pass");
 		light.drawShadowMap(octree);
 		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
-		gBuffer.drawSecondPass(camera, light, pointLights, cubeMap);
+		gBuffer.drawSecondPass(camera, light, pointLights, tubeLights, cubeMap);
 		GPUProfiler.end();
 		
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
@@ -602,7 +603,7 @@ public class DeferredRenderer implements Renderer {
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities,
 			Spotlight light) {
 
-		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, pointLights, cubeMap);
+		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, pointLights, tubeLights, cubeMap);
 		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);

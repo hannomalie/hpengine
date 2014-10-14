@@ -10,9 +10,11 @@ import main.camera.Camera;
 import main.model.IEntity;
 import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
+import main.octree.Box;
 import main.octree.Octree;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
+import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.scene.EnvironmentProbe;
 import main.shader.Program;
@@ -31,6 +33,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
@@ -45,14 +48,16 @@ public class GBuffer {
 	private Program firstPassProgram;
 	private Program secondPassDirectionalProgram;
 	private Program secondPassPointProgram;
+	private Program secondPassTubeProgram;
 	private Program combineProgram;
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program combineProgram) {
+	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program combineProgram) {
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
 		this.secondPassPointProgram = secondPassPointProgram;
+		this.secondPassTubeProgram = secondPassTubeProgram;
 		this.combineProgram = combineProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
@@ -60,7 +65,7 @@ public class GBuffer {
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 	}
-	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights) {
+	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
 		GL11.glDepthMask(true);
@@ -98,15 +103,24 @@ public class GBuffer {
 				if (!light.isInFrustum(camera)) { continue;}
 				light.drawAsMesh(renderer, camera);
 			}
+			for (TubeLight light : tubeLights) {
+//				if (!light.isInFrustum(camera)) { continue;}
+				light.drawAsMesh(renderer, camera);
+			}
 		}
 	}
 
 
-	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, CubeMap cubeMap) {
+	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, CubeMap cubeMap) {
 
+		Vector3f camPosition = camera.getPosition().negate(null);
+		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
+		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
+		
 		GPUProfiler.start("Directional light");
 		GL11.glDepthMask(false);
 		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
@@ -144,10 +158,12 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
 		secondPassDirectionalProgram.setUniform("secondPassScale", secondPassScale);
-		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
+		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
+		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection().x, directionalLight.getViewDirection().y, directionalLight.getViewDirection().z);
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
@@ -166,8 +182,8 @@ public class GBuffer {
 		secondPassPointProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassPointProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
 		secondPassPointProgram.setUniform("secondPassScale", secondPassScale);
-		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GPUProfiler.end();
 
 		GPUProfiler.start("Draw lights");
@@ -179,7 +195,7 @@ public class GBuffer {
 			}
 			
 			Vector3f distance = new Vector3f();
-			Vector3f.sub(light.getPosition(), camera.getPosition().negate(null), distance); // <----- biggest Hack ever! TODO: Check where this fuckup with the cam goes on.... :(
+			Vector3f.sub(light.getPosition(), camPosition, distance); // <----- biggest Hack ever! TODO: Check where this fuckup with the cam goes on.... :(
 			float lightRadius = light.getRadius();
 			
 			// camera is inside light
@@ -204,6 +220,38 @@ public class GBuffer {
 			}
 			firstLightDrawn = true;
 		}
+		
+		secondPassTubeProgram.use();
+		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassTubeProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		for (TubeLight tubeLight : tubeLights) {
+			boolean camInsideLightVolume = new Box(tubeLight.getPosition(), tubeLight.getScale().x, tubeLight.getScale().y, tubeLight.getScale().z).contains(camPositionV4);
+			if (camInsideLightVolume) {
+				GL11.glCullFace(GL11.GL_FRONT);
+				GL11.glDepthFunc(GL11.GL_GEQUAL);
+			} else {
+				GL11.glCullFace(GL11.GL_BACK);
+				GL11.glDepthFunc(GL11.GL_LEQUAL);
+			}
+//			System.out.println("START " + tubeLight.getStart());
+//			System.out.println("AT " + tubeLight.getPosition());
+//			System.out.println("END " + tubeLight.getEnd());
+//			System.out.println("RADIUS " + tubeLight.getRadius());
+//			System.out.println("SCALE " + tubeLight.getScale());
+			secondPassTubeProgram.setUniform("lightPosition", tubeLight.getPosition());
+			secondPassTubeProgram.setUniform("lightStart", tubeLight.getStart());
+			secondPassTubeProgram.setUniform("lightEnd", tubeLight.getEnd());
+			secondPassTubeProgram.setUniform("lightOuterLeft", tubeLight.getOuterLeft());
+			secondPassTubeProgram.setUniform("lightOuterRight", tubeLight.getOuterRight());
+			secondPassTubeProgram.setUniform("lightRadius", tubeLight.getRadius());
+			secondPassTubeProgram.setUniform("lightLength", tubeLight.getLength());
+			secondPassTubeProgram.setUniform("lightDiffuse", tubeLight.getColor());
+			tubeLight.draw(renderer, secondPassTubeProgram);
+		}
+		
 		laBuffer.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
 //		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -264,7 +312,7 @@ public class GBuffer {
 		
 	}
 	
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, CubeMap cubeMap) {
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, List<TubeLight> tubeLights, CubeMap cubeMap) {
 		///////////// firstpass
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
@@ -307,6 +355,9 @@ public class GBuffer {
 			for (IEntity entity : pointLights) {
 				entity.drawDebug(firstPassProgram);
 			}	
+			for (IEntity entity : tubeLights) {
+				entity.drawDebug(firstPassProgram);
+			}	
 		}
 
 		if (Octree.DRAW_LINES) {
@@ -331,7 +382,7 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
 		
-		drawSecondPass(camera, light, pointLights, cubeMap);
+		drawSecondPass(camera, light, pointLights, tubeLights, cubeMap);
 		
 	}
 	public int getColorReflectivenessImage() {

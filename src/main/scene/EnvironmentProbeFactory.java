@@ -26,10 +26,12 @@ import org.lwjgl.util.vector.Vector3f;
 public class EnvironmentProbeFactory {
 	public static final int RESOLUTION = 512;
 	
+	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
+
 	private Renderer renderer;
 	
 	private List<EnvironmentProbe> probes = new ArrayList<>();
-
+	
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
 
@@ -42,7 +44,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public EnvironmentProbe getProbe(Vector3f center, float size) {
-		return getProbe(center, size, Update.STATIC);
+		return getProbe(center, size, DEFAULT_PROBE_UPDATE);
 	}
 
 	public EnvironmentProbe getProbe(Vector3f center, float size, Update update) {
@@ -66,6 +68,17 @@ public class EnvironmentProbeFactory {
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		for (EnvironmentProbe environmentProbe : dynamicProbes) {
 			environmentProbe.draw(octree, light);
+		}
+	}
+	
+	public void drawAlternating(Octree octree, Spotlight light, int frameCount) {
+		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
+		
+		for (int i = 1; i <= dynamicProbes.size(); i++) {
+			if(frameCount%i == 0) {
+				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
+				environmentProbe.draw(octree, light);
+			};
 		}
 	}
 	
