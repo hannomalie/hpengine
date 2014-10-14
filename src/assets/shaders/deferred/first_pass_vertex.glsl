@@ -37,7 +37,6 @@ out vec3 eyePos_world;
 void main(void) {
 
 	position_world = modelMatrix * vec4(in_Position.xyz,1);
-	position_world = position_world;
 	position_clip = (projectionMatrix * viewMatrix * position_world);
 	gl_Position = position_clip;
 	//position_clip_shadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * vec4(in_Position.xyz,1);
@@ -52,12 +51,17 @@ void main(void) {
 	
 	color = in_Color;
 	texCoord = in_TextureCoord;
+	texCoord.y = 1 - in_TextureCoord.y;
+	
 	normalVec = in_Normal;
 	normal_model = (vec4(in_Normal,0)).xyz;
-	normal_world = (transpose(inverse(modelMatrix)) * vec4(normal_model,0)).xyz;
+	normal_world.x = dot(modelMatrix[0].xyz, normal_model);
+    normal_world.y = dot(modelMatrix[1].xyz, normal_model);
+    normal_world.z = dot(modelMatrix[2].xyz, normal_model);
+	//normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
 	
 	eyePos_world = ( vec4(eyePosition,1)).xyz;
-	eyeVec = (eyePos_world+(vec4(position_world.xyz, 0)).xyz);
+	eyeVec = (position_world.xyz - eyePos_world);
 	
 }

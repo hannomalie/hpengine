@@ -42,6 +42,9 @@ public class TubeLight extends Entity {
 		this.color  = color;
 	}
 
+	public void setColor(Vector4f color) {
+		this.color  = new Vector3f(color.x, color.y, color.z);
+	}
 	public Vector3f getColor() {
 		return color;
 	}

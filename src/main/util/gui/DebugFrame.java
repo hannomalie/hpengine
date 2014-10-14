@@ -37,6 +37,7 @@ import main.renderer.command.AddTextureCommand;
 import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.command.Command;
 import main.renderer.light.PointLight;
+import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbe;
@@ -88,7 +89,8 @@ public class DebugFrame {
 	
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
-	private JScrollPane lightsPane = new JScrollPane();
+	private JScrollPane pointLightsPane = new JScrollPane();
+	private JScrollPane tubeLightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JScrollPane probesPane = new JScrollPane();
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
@@ -153,8 +155,9 @@ public class DebugFrame {
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
 		ac.install(console);
 		
-		
-		createLightsTab();
+
+		createPointLightsTab();
+		createTubeLightsTab();
 
 		createMaterialPane(world);
 		
@@ -414,7 +417,7 @@ public class DebugFrame {
         
 		WebMenu menuLight = new WebMenu("Light");
         {
-        	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add" );
+        	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
         		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 					@Override
@@ -434,7 +437,35 @@ public class DebugFrame {
 					showError("Failed to add light");
 				} else {
 					showSuccess("Added light");
-	        		refreshLightTab();
+	        		refreshPointLightsTab();
+				}
+        		
+        	});
+
+        	menuLight.add(lightAddMenuItem);
+        }
+        {
+        	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
+        	lightAddMenuItem.addActionListener(e -> {
+        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getLightFactory().getTubeLight();
+						return new Result() { @Override public boolean isSuccessful() { return true; } };
+					}});
+        		
+        		Result result = null;
+				try {
+					result = queue.poll(5, TimeUnit.MINUTES);
+				} catch (Exception e1) {
+					showError("Failed to add light");
+				}
+				
+				if (!result.isSuccessful()) {
+					showError("Failed to add light");
+				} else {
+					showSuccess("Added light");
+	        		refreshTubeLightsTab();
 				}
         		
         	});
@@ -523,7 +554,8 @@ public class DebugFrame {
 		createTexturePane(textureFactory);
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
-		tabbedPane.addTab("Light", lightsPane);
+		tabbedPane.addTab("PointLights", pointLightsPane);
+		tabbedPane.addTab("TubeLights", tubeLightsPane);
 		tabbedPane.addTab("Console", consolePane);
 		tabbedPane.addTab("Scripts", scriptsPane);
 		
@@ -532,8 +564,9 @@ public class DebugFrame {
 		mainFrame.setVisible(true);
 	}
 
-	private void createLightsTab() {
-		TableModel lightsTableModel = new AbstractTableModel() {
+	private void createPointLightsTab() {
+		DebugFrame debugFrame = this;
+		TableModel pointLightsTableModel = new AbstractTableModel() {
 
 			List<PointLight> lights = DeferredRenderer.pointLights;
 
@@ -572,30 +605,95 @@ public class DebugFrame {
 			}
 		};
 
+		JTable pointsLightsTable = new JTable(pointLightsTableModel);
 		
-		JTable lightsTable = new JTable(lightsTableModel);
-		
-		lightsPane  =  new JScrollPane(lightsTable);
-		ListSelectionModel cellSelectionModel = lightsTable.getSelectionModel();
-	    cellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		DebugFrame debugFrame = this;
+		pointLightsPane  =  new JScrollPane(pointsLightsTable);
+		ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();
+	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		cellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				PointLight selectedLight = null;
 
-				int[] selectedRow = lightsTable.getSelectedRows();
-				int[] selectedColumns = lightsTable
+				int[] selectedRow = pointsLightsTable.getSelectedRows();
+				int[] selectedColumns = pointsLightsTable
 						.getSelectedColumns();
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						selectedLight = DeferredRenderer.pointLights.get(i);
+						PointLight selectedLight = DeferredRenderer.pointLights.get(i);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(600, 600);
-						entityViewFrame.add(new LightView(world, debugFrame, (PointLight) selectedLight));
+						entityViewFrame.add(new PointLightView(world, debugFrame, (PointLight) selectedLight));
+						entityViewFrame.setVisible(true);
+					}
+				}
+			}
+		});
+	}
+
+	private void createTubeLightsTab() {
+		DebugFrame debugFrame = this;
+		TableModel tubeLightsTableModel = new AbstractTableModel() {
+
+			List<TubeLight> lights = DeferredRenderer.tubeLights;
+
+			public int getColumnCount() {
+				return 3;
+			}
+
+			public int getRowCount() {
+				return lights.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					TubeLight light = lights.get(row);
+					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
+					
+				} else if (col == 1) {
+					return vectorToString(lights.get(row).getPosition());
+					
+				} else if (col == 2) {
+					return vectorToString(lights.get(row).getColor());
+					
+				}
+				return "";
+			}
+
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Name";
+				} else if (column == 1) {
+					return "Position";
+				} else if (column == 2) {
+					return "Color";
+				}
+				return "Null";
+			}
+		};
+
+		JTable tubeLightsTable = new JTable(tubeLightsTableModel);
+		
+		tubeLightsPane  =  new JScrollPane(tubeLightsTable);
+		ListSelectionModel pointLightsCellSelectionModel = tubeLightsTable.getSelectionModel();
+	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+
+				int[] selectedRow = tubeLightsTable.getSelectedRows();
+				int[] selectedColumns = tubeLightsTable.getSelectedColumns();
+
+				for (int i = 0; i < selectedRow.length; i++) {
+					for (int j = 0; j < selectedColumns.length; j++) {
+						TubeLight selectedLight = DeferredRenderer.tubeLights.get(i);
+						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+						entityViewFrame.getContentPane().removeAll();
+						entityViewFrame.pack();
+						entityViewFrame.setSize(600, 600);
+						entityViewFrame.add(new TubeLightView(world, debugFrame, (TubeLight) selectedLight));
 						entityViewFrame.setVisible(true);
 					}
 				}
@@ -816,11 +914,17 @@ public class DebugFrame {
 		tabbedPane.addTab("Material", materialPane);
 	}
 
-	private void refreshLightTab() {
+	private void refreshPointLightsTab() {
 		System.out.println("Refreshing");
-		tabbedPane.remove(lightsPane);
-		createLightsTab();
-		tabbedPane.addTab("Lights", lightsPane);
+		tabbedPane.remove(pointLightsPane);
+		createPointLightsTab();
+		tabbedPane.addTab("PointLights", pointLightsPane);
+	}
+	private void refreshTubeLightsTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(tubeLightsPane);
+		createTubeLightsTab();
+		tabbedPane.addTab("TubeLights", tubeLightsPane);
 	}
 	private void refreshProbeTab() {
 		System.out.println("Refreshing");

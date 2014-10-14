@@ -67,7 +67,7 @@ public class EntityView extends WebPanel {
 		return panels;
 	}
 	
-	protected void addAttributesPanel(List<Component> panels) {
+	protected WebComponentPanel addAttributesPanel(List<Component> panels) {
 			
 			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
 	        webComponentPanel.setElementMargin ( 4 );
@@ -113,6 +113,8 @@ public class EntityView extends WebPanel {
 	        webComponentPanel.addElement(materialSelect);
 	        
 	        panels.add(webComponentPanel);
+	        
+	        return webComponentPanel;
 	}
 
 	private void addNamePanel(WebComponentPanel webComponentPanel) {

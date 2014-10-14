@@ -16,10 +16,10 @@ import org.lwjgl.util.vector.Vector4f;
 import com.alee.extended.panel.GridPanel;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 
-public class LightView extends EntityView {
+public class PointLightView extends EntityView {
 	private PointLight light;
 
-	public LightView(World world, DebugFrame debugFrame, PointLight light) {
+	public PointLightView(World world, DebugFrame debugFrame, PointLight light) {
 		super(world, debugFrame, light);
 		this.light = light;
 	}
@@ -40,7 +40,7 @@ public class LightView extends EntityView {
 			}
 		});
 		panels.add(lightColorChooserPanel);
-
+		
 		addAttributesPanel(panels);
 		return panels;
 	}

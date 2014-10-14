@@ -55,11 +55,11 @@ in vec3 eyePos_world;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
-layout(location=0)out vec4 out_position;
-layout(location=1)out vec4 out_normal;
-layout(location=2)out vec4 out_color;
+layout(location=0)out vec4 out_position; // position, roughness
+layout(location=1)out vec4 out_normal; // normal, depth
+layout(location=2)out vec4 out_color; // color, probeIndex
 layout(location=3)out vec4 out_specular;
-layout(location=4)out vec4 out_probe;
+layout(location=4)out vec4 out_probe; // probe color, depth
 
 float linearizeDepth(float z)
 {
@@ -84,9 +84,9 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 }
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
-	vec3 map = (texture2D( normalMap, texcoord )).xyz;
+	vec3 map = (textureLod(normalMap, texcoord, 0)).xyz;
 	map = map * 2 - 1;
-	mat3 TBN = cotangent_frame( N, -V, texcoord );
+	mat3 TBN = cotangent_frame( N, V, texcoord );
 	return normalize( TBN * map );
 }
 
@@ -163,7 +163,7 @@ void main(void) {
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 #ifdef use_normalMap
-	PN_world = normalize(perturb_normal(normal_world, V, UV));
+	PN_world = normalize(perturb_normal(PN_world, V, UV));
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
@@ -175,7 +175,6 @@ void main(void) {
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
-	//out_normal.z = environmentProbeIndex;
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
 #ifdef use_diffuseMap
@@ -190,11 +189,12 @@ void main(void) {
 	}
 #endif
 	//out_color = color;
-  	out_color = color - color * materialMetallic;
+  	out_color = color;
 
 #ifdef use_reflectionMap
 	out_color.w = length(texture2D(reflectionMap, UV));
 #endif
+	out_color.w = float(environmentProbeIndex);
 
 #ifdef use_roughnessMap
 	UV.x = texCoord.x * specularMapWidth;
@@ -257,7 +257,7 @@ if (discrim > 0) {
 ///////////////////////////////////////////////////////////////////////
 
 //out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
-out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
+//out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
 //out_probe.rgba = textureLod(environmentMap, texCoords3d, materialRoughness).rgba;
 
 
@@ -276,10 +276,12 @@ out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
 	UV = texCoord + uvParallax;
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
 	specularColor = vec4(specularSample, materialSpecularCoefficient);
-	out_position.w = (1-specularSample.x) * roughness;
+	float glossiness = length(specularSample)/length(vec3(1,1,1));
+	const float glossinessBias = 1.5;
+	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-	//out_specular = specularColor;
-	out_specular.rgb = mix(specularColor.rgb, color.rgb, materialMetallic);
+	out_specular.rgb = specularColor.rgb;
+	out_specular.a = materialMetallic;
 	
 }
