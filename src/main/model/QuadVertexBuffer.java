@@ -1,5 +1,6 @@
 package main.model;
 
+import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
 public class QuadVertexBuffer extends VertexBuffer{
@@ -9,7 +10,7 @@ public class QuadVertexBuffer extends VertexBuffer{
 	public QuadVertexBuffer(boolean fullscreen) {
 		super(getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	}
-	
+
 	static float[] getPositionsAndTexCoords(boolean fullscreen) {
 		if (fullscreen) {
 			return new float[] {
@@ -30,6 +31,5 @@ public class QuadVertexBuffer extends VertexBuffer{
 				    0f,  0f, 0.0f,    1.0f, 1.0f
 				};
 		}
-		
 	}
 }

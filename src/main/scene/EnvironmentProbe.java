@@ -6,7 +6,6 @@ import main.Transform;
 import main.World;
 import main.camera.Camera;
 import main.model.IEntity;
-import main.octree.Box;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.EnvironmentSampler;
@@ -31,14 +30,14 @@ public class EnvironmentProbe implements IEntity {
 	
 	private String name = "Probe_" + System.currentTimeMillis();
 	private Renderer renderer;
-	private Box box;
+	private AABB box;
 	private EnvironmentSampler sampler;
 	protected Update update;
 
 	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update) {
 		this.renderer = renderer;
 		this.update = update;
-		box = new Box(center, size.x, size.y, size.z);
+		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(renderer, center, resolution, resolution);
 	}
 	
@@ -118,7 +117,7 @@ public class EnvironmentProbe implements IEntity {
 		return sampler.getEnvironmentMap();
 	}
 
-	public Box getBox() {
+	public AABB getBox() {
 		return box;
 	}
 

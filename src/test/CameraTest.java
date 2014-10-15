@@ -3,10 +3,10 @@ package test;
 import junit.framework.Assert;
 import main.camera.Camera;
 import main.camera.Frustum;
-import main.octree.Box;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
+import main.scene.AABB;
 import main.util.Util;
 
 import org.junit.Before;
@@ -68,14 +68,14 @@ public class CameraTest {
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.sphereInFrustum(0, 0, 1, 1));
 		Assert.assertTrue(frustum.cubeInFrustum(new Vector3f(0, 0, 1), 1));
-		Assert.assertTrue(frustum.boxInFrustum(new Box(new Vector3f(0, 0, 1), 1)));
+		Assert.assertTrue(frustum.boxInFrustum(new AABB(new Vector3f(0, 0, 1), 1)));
 		
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, -1));
 		Assert.assertFalse(frustum.sphereInFrustum(0, 0, -2, 1));
 		Assert.assertFalse(frustum.cubeInFrustum(new Vector3f(0, 0, -2), 1));
-		Assert.assertFalse(frustum.boxInFrustum(new Box(new Vector3f(0, 0, -2), 1)));
-		Assert.assertFalse(new Box(new Vector3f(0, 0, -2), 1).isInFrustum(camera));
-		Assert.assertTrue(new Box(new Vector3f(0, 0, 0), 10).isInFrustum(camera));
+		Assert.assertFalse(frustum.boxInFrustum(new AABB(new Vector3f(0, 0, -2), 1)));
+		Assert.assertFalse(new AABB(new Vector3f(0, 0, -2), 1).isInFrustum(camera));
+		Assert.assertTrue(new AABB(new Vector3f(0, 0, 0), 10).isInFrustum(camera));
 		
 	}
 }

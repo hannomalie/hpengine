@@ -11,13 +11,13 @@ import junit.framework.Assert;
 import main.Transform;
 import main.camera.Camera;
 import main.model.IEntity;
-import main.octree.Box;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
+import main.scene.AABB;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public class OctreeTest {
 	
 	@Test
 	public void generatingBox() {
-		Box box = new Box(new Vector3f(), 10);
+		AABB box = new AABB(new Vector3f(), 10);
 		List<Vector3f> actual = box.getPoints();
 		
 		List<Vector3f> expected = new ArrayList<Vector3f>();
@@ -61,7 +61,7 @@ public class OctreeTest {
 
 	@Test
 	public void boxContains() {
-		Box box = new Box(new Vector3f(), 5);
+		AABB box = new AABB(new Vector3f(), 5);
 		Vector4f pointInBox = new Vector4f(0,0,0,0);
 		Vector4f pointInBox2 = new Vector4f(2.5f,0,0,0);
 		Vector4f pointInBox3 = new Vector4f(2.5f,-2.5f,0f,0f);

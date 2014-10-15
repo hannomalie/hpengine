@@ -16,30 +16,21 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 
-public class TubeLight extends Entity {
+public class AreaLight extends Entity {
 	
 	public static float DEFAULT_RANGE = 1f;
 	private static int counter = 0;
 	private Vector3f color;
-
-	protected TubeLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
-		super(materialFactory, position, generateName(), model, materialName);
-		setColor(colorIntensity);
-		counter++;
-		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
-	}
-	public TubeLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, float length, float radius) {
+	
+	protected AreaLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, Vector3f scale) {
 		super(materialFactory, position, generateName(), model, model.getMaterial().getName());
 		setColor(color);
-		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
+		setScale(scale);
+		counter++;
 	}
 	
-	private static String generateName() {
-		return String.format("TubeLight_%d", counter);
-	}
-
 	public void setColor(Vector3f color) {
-		this.color  = color;
+		this.color = color;
 	}
 
 	public void setColor(Vector4f color) {
@@ -47,6 +38,9 @@ public class TubeLight extends Entity {
 	}
 	public Vector3f getColor() {
 		return color;
+	}
+	private static String generateName() {
+		return String.format("AreaLight_%d", counter);
 	}
 
 	@Override
@@ -95,17 +89,13 @@ public class TubeLight extends Entity {
 		return temp;
 	}
 	
-	public float getRadius() {
-		return getTransform().getScale().y/2;
-	}
-	
-	public static float[] convert(List<TubeLight> list) {
+	public static float[] convert(List<AreaLight> list) {
 		final int elementsPerLight = 10;
 		int elementCount = list.size() * elementsPerLight;
 		float[] result = new float[elementCount];
 		
 		for(int i = 0; i < list.size(); i++) {
-			TubeLight light = list.get(i);
+			AreaLight light = list.get(i);
 			result[i] = light.getPosition().x;
 			result[i+1] = light.getPosition().y;
 			result[i+2] = light.getPosition().z;
@@ -123,34 +113,26 @@ public class TubeLight extends Entity {
 		return result;
 	}
 
+	public float getRange() {
+		return getScale().z/2;
+	}
+
+	public void setRange(float range) {
+		getScale().z = 2*range;
+	}
+	
 	@Override
 	public boolean isInFrustum(Camera camera) {
-		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z, getLength()/2)) {
+		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z,getRange()*2)) {
 			return true;
 		}
 		return false;
 	}
-	
-	private float getOffset() {
-		return (getLength()/2) - getRadius();
-	}
-	public Vector3f getStart() {
-		return Vector3f.sub(getPosition(), (Vector3f) getRightDirection().scale(getOffset()), null);
-	}
-	public Vector3f getEnd() {
-		return Vector3f.add(getPosition(), (Vector3f) getRightDirection().scale(getOffset()), null);
-	}
-	public Vector3f getOuterLeft() {
-		return Vector3f.sub(getPosition(), (Vector3f) getRightDirection().scale((getLength()/2)), null);
-	}
-	public Vector3f getOuterRight() {
-		return Vector3f.add(getPosition(), (Vector3f) getRightDirection().scale((getLength()/2)), null);
-	}
 
-	public float getLength() {
-		return getScale().x;
+	public float getWidth() {
+		return (getScale().x - 2*getRange());
 	}
-	public float setLength(float length) {
-		return getScale().x = length;
+	public float getHeight() {
+		return (getScale().y - 2*getRange());
 	}
 }

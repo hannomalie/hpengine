@@ -36,6 +36,7 @@ import main.renderer.command.AddCubeMapCommand;
 import main.renderer.command.AddTextureCommand;
 import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.command.Command;
+import main.renderer.light.AreaLight;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
@@ -91,6 +92,7 @@ public class DebugFrame {
 	private JScrollPane texturePane = new JScrollPane();
 	private JScrollPane pointLightsPane = new JScrollPane();
 	private JScrollPane tubeLightsPane = new JScrollPane();
+	private JScrollPane areaLightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JScrollPane probesPane = new JScrollPane();
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
@@ -158,6 +160,7 @@ public class DebugFrame {
 
 		createPointLightsTab();
 		createTubeLightsTab();
+		createAreaLightsTab();
 
 		createMaterialPane(world);
 		
@@ -472,6 +475,34 @@ public class DebugFrame {
 
         	menuLight.add(lightAddMenuItem);
         }
+        {
+        	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
+        	lightAddMenuItem.addActionListener(e -> {
+        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getLightFactory().getAreaLight(50,50,20);
+						return new Result() { @Override public boolean isSuccessful() { return true; } };
+					}});
+        		
+        		Result result = null;
+				try {
+					result = queue.poll(5, TimeUnit.MINUTES);
+				} catch (Exception e1) {
+					showError("Failed to add light");
+				}
+				
+				if (!result.isSuccessful()) {
+					showError("Failed to add light");
+				} else {
+					showSuccess("Added light");
+	        		refreshAreaLightsTab();
+				}
+        		
+        	});
+
+        	menuLight.add(lightAddMenuItem);
+        }
 
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
@@ -556,6 +587,7 @@ public class DebugFrame {
 		tabbedPane.addTab("Material", materialPane);
 		tabbedPane.addTab("PointLights", pointLightsPane);
 		tabbedPane.addTab("TubeLights", tubeLightsPane);
+		tabbedPane.addTab("AreaLights", areaLightsPane);
 		tabbedPane.addTab("Console", consolePane);
 		tabbedPane.addTab("Scripts", scriptsPane);
 		
@@ -694,6 +726,74 @@ public class DebugFrame {
 						entityViewFrame.pack();
 						entityViewFrame.setSize(600, 600);
 						entityViewFrame.add(new TubeLightView(world, debugFrame, (TubeLight) selectedLight));
+						entityViewFrame.setVisible(true);
+					}
+				}
+			}
+		});
+	}
+
+	private void createAreaLightsTab() {
+		DebugFrame debugFrame = this;
+		TableModel areaLightsTableModel = new AbstractTableModel() {
+
+			List<AreaLight> lights = DeferredRenderer.areaLights;
+
+			public int getColumnCount() {
+				return 3;
+			}
+
+			public int getRowCount() {
+				return lights.size();
+			}
+
+			public Object getValueAt(int row, int col) {
+				if (col == 0) {
+					AreaLight light = lights.get(row);
+					return String.format("%s (Range %f)", light.getName(), light.getScale().z);
+					
+				} else if (col == 1) {
+					return vectorToString(lights.get(row).getPosition());
+					
+				} else if (col == 2) {
+					return vectorToString(lights.get(row).getColor());
+					
+				}
+				return "";
+			}
+
+			public String getColumnName(int column) {
+				if (column == 0) {
+					return "Name";
+				} else if (column == 1) {
+					return "Position";
+				} else if (column == 2) {
+					return "Color";
+				}
+				return "Null";
+			}
+		};
+
+		JTable areaLightsTable = new JTable(areaLightsTableModel);
+		
+		areaLightsPane  =  new JScrollPane(areaLightsTable);
+		ListSelectionModel pointLightsCellSelectionModel = areaLightsTable.getSelectionModel();
+	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+
+				int[] selectedRow = areaLightsTable.getSelectedRows();
+				int[] selectedColumns = areaLightsTable.getSelectedColumns();
+
+				for (int i = 0; i < selectedRow.length; i++) {
+					for (int j = 0; j < selectedColumns.length; j++) {
+						AreaLight selectedLight = DeferredRenderer.areaLights.get(i);
+						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+						entityViewFrame.getContentPane().removeAll();
+						entityViewFrame.pack();
+						entityViewFrame.setSize(600, 600);
+						entityViewFrame.add(new AreaLightView(world, debugFrame, selectedLight));
 						entityViewFrame.setVisible(true);
 					}
 				}
@@ -925,6 +1025,12 @@ public class DebugFrame {
 		tabbedPane.remove(tubeLightsPane);
 		createTubeLightsTab();
 		tabbedPane.addTab("TubeLights", tubeLightsPane);
+	}
+	private void refreshAreaLightsTab() {
+		System.out.println("Refreshing");
+		tabbedPane.remove(areaLightsPane);
+		createAreaLightsTab();
+		tabbedPane.addTab("AreaLights", areaLightsPane);
 	}
 	private void refreshProbeTab() {
 		System.out.println("Refreshing");

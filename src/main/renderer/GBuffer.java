@@ -1,5 +1,6 @@
 package main.renderer;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,16 +11,18 @@ import main.camera.Camera;
 import main.model.IEntity;
 import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
-import main.octree.Box;
 import main.octree.Octree;
+import main.renderer.light.AreaLight;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
 import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
+import main.scene.AABB;
 import main.scene.EnvironmentProbe;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
+import main.texture.Texture;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.StopWatch;
@@ -49,15 +52,17 @@ public class GBuffer {
 	private Program secondPassDirectionalProgram;
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
+	private Program secondPassAreaLightProgram;
 	private Program combineProgram;
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program combineProgram) {
+	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram) {
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
 		this.secondPassPointProgram = secondPassPointProgram;
 		this.secondPassTubeProgram = secondPassTubeProgram;
+		this.secondPassAreaLightProgram = secondPassAreaLightProgram;
 		this.combineProgram = combineProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
@@ -65,7 +70,7 @@ public class GBuffer {
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 	}
-	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights) {
+	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
 		GL11.glDepthMask(true);
@@ -107,11 +112,15 @@ public class GBuffer {
 //				if (!light.isInFrustum(camera)) { continue;}
 				light.drawAsMesh(renderer, camera);
 			}
+			for (AreaLight light : areaLights) {
+//				if (!light.isInFrustum(camera)) { continue;}
+				light.drawAsMesh(renderer, camera);
+			}
 		}
 	}
 
 
-	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, CubeMap cubeMap) {
+	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
@@ -220,7 +229,7 @@ public class GBuffer {
 			}
 			firstLightDrawn = true;
 		}
-		
+
 		secondPassTubeProgram.use();
 		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -228,7 +237,7 @@ public class GBuffer {
 		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		for (TubeLight tubeLight : tubeLights) {
-			boolean camInsideLightVolume = new Box(tubeLight.getPosition(), tubeLight.getScale().x, tubeLight.getScale().y, tubeLight.getScale().z).contains(camPositionV4);
+			boolean camInsideLightVolume = new AABB(tubeLight.getPosition(), tubeLight.getScale().x, tubeLight.getScale().y, tubeLight.getScale().z).contains(camPositionV4);
 			if (camInsideLightVolume) {
 				GL11.glCullFace(GL11.GL_FRONT);
 				GL11.glDepthFunc(GL11.GL_GEQUAL);
@@ -251,6 +260,41 @@ public class GBuffer {
 			secondPassTubeProgram.setUniform("lightDiffuse", tubeLight.getColor());
 			tubeLight.draw(renderer, secondPassTubeProgram);
 		}
+		
+		secondPassAreaLightProgram.use();
+		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassAreaLightProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		for (AreaLight areaLight : areaLights) {
+			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
+//			if (camInsideLightVolume) {
+//				GL11.glCullFace(GL11.GL_FRONT);
+//				GL11.glDepthFunc(GL11.GL_GEQUAL);
+//			} else {
+//				GL11.glCullFace(GL11.GL_BACK);
+//				GL11.glDepthFunc(GL11.GL_LEQUAL);
+//			}
+			secondPassAreaLightProgram.setUniform("lightPosition", areaLight.getPosition());
+			secondPassAreaLightProgram.setUniform("lightRightDirection", areaLight.getRightDirection());
+			secondPassAreaLightProgram.setUniform("lightViewDirection", areaLight.getViewDirection());
+			secondPassAreaLightProgram.setUniform("lightUpDirection", areaLight.getUpDirection());
+			secondPassAreaLightProgram.setUniform("lightWidth", areaLight.getWidth());
+			secondPassAreaLightProgram.setUniform("lightHeight", areaLight.getHeight());
+			secondPassAreaLightProgram.setUniform("lightRange", areaLight.getRange());
+			secondPassAreaLightProgram.setUniform("lightDiffuse", areaLight.getColor());
+			try {
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+				Texture lightTexture = renderer.getTextureFactory().getTexture("brick.hptexture");
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureID());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			fullscreenBuffer.draw();
+//			areaLight.draw(renderer, secondPassAreaLightProgram);
+		}
+		
 		
 		laBuffer.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
@@ -312,7 +356,7 @@ public class GBuffer {
 		
 	}
 	
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, List<TubeLight> tubeLights, CubeMap cubeMap) {
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
@@ -382,7 +426,7 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
 		
-		drawSecondPass(camera, light, pointLights, tubeLights, cubeMap);
+		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
 		
 	}
 	public int getColorReflectivenessImage() {

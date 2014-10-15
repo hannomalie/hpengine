@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import main.octree.Box;
+import main.scene.AABB;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -267,7 +267,7 @@ public class Frustum {
 		return buffer;
 	}
 
-	public boolean boxInFrustum(Box aabb) {
+	public boolean boxInFrustum(AABB aabb) {
 		
 		return cubeInFrustum(aabb.getCenter(), Math.max(aabb.sizeX, Math.max(aabb.sizeY, aabb.sizeZ))/2f);
 //		return sphereInFrustum(aabb.center.x, aabb.center.y, aabb.center.z, aabb.size/2);

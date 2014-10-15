@@ -28,6 +28,7 @@ import main.model.VertexBuffer;
 import main.renderer.DeferredRenderer;
 import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
+import main.scene.AABB;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.util.stopwatch.StopWatch;
@@ -182,8 +183,8 @@ public class Octree {
 		public List<IEntity> entities = new ArrayList();
 		Vector3f center;
 		float size;
-		Box aabb;
-		Box looseAabb;
+		AABB aabb;
+		AABB looseAabb;
 		private int deepness;
 		private boolean hasChildren = false;
 
@@ -195,8 +196,8 @@ public class Octree {
 			if (octree.currentDeepness < deepness) {
 				octree.currentDeepness = deepness;
 			}
-			this.aabb = new Box(center, size);
-			this.looseAabb = new Box(center, 2*size);
+			this.aabb = new AABB(center, size);
+			this.looseAabb = new AABB(center, 2*size);
 
 //			LOGGER.log(Level.INFO, "Created " + this.toString() + " with " + this.aabb.toString());
 		}
