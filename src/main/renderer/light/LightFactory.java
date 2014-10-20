@@ -68,10 +68,12 @@ public class LightFactory {
 		return getTubeLight(200.0f, 50.0f);
 	}
 	public TubeLight getTubeLight(float length, float radius) {
-		return new TubeLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		TubeLight tubeLight = new TubeLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		DeferredRenderer.tubeLights.add(tubeLight);
+		return tubeLight;
 	}
 
 	public AreaLight getAreaLight(int width, int height, int range) {
-		return new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width+2*range, height+2*range, 2*range));
+		return new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
 	}
 }

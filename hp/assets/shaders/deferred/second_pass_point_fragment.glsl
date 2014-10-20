@@ -92,8 +92,8 @@ float calculateAttenuation(float dist) {
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = -normalize(position);
-	//vec3 V = -ViewVector;
+	vec3 V = normalize(-position);
+	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);

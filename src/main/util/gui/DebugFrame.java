@@ -709,10 +709,10 @@ public class DebugFrame {
 		JTable tubeLightsTable = new JTable(tubeLightsTableModel);
 		
 		tubeLightsPane  =  new JScrollPane(tubeLightsTable);
-		ListSelectionModel pointLightsCellSelectionModel = tubeLightsTable.getSelectionModel();
-	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		ListSelectionModel tubeLightsCellSelectionModel = tubeLightsTable.getSelectionModel();
+		tubeLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+		tubeLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 
 				int[] selectedRow = tubeLightsTable.getSelectedRows();

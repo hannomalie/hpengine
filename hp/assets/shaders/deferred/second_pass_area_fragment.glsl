@@ -27,6 +27,7 @@ uniform float lightRadius;
 uniform float lightRange;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
+uniform bool useTexture = false;
 
 in vec4 position_clip;
 in vec4 position_view;
@@ -104,15 +105,13 @@ vec3 linePlaneIntersect(in vec3 lp, in vec3 lv, in vec3 pc, in vec3 pn){
 
 float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRange);
-    float atten_factor = clamp(1.0f - (distDivRadius), 0.0, 1.0);
-    //atten_factor = pow(atten_factor, 2);
-    return atten_factor;
+    return clamp(1.0f - (distDivRadius), 0, 1);
 }
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = -normalize(position);
-	//vec3 V = -ViewVector;
+	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
 	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
 	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
@@ -152,31 +151,27 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         vec2 texCoords = vec2(0,0);
         vec3 diffuse = lightDiffuse.rgb;
         
-    	vec3 dirDiff = linePlaneIntersect(position, normalize(-position), light_position_eye, light_view_direction_eye) - light_position_eye;
-	    vec2 dirDiff2D = vec2(dot(dirDiff, light_right_direction_eye),dot(dirDiff, light_up_direction_eye));
-        vec2 nearestDiff2D = vec2(clamp(dirDiff2D.x, -width, width), clamp(dirDiff2D.y, -height, height));
-        texCoords = nearestDiff2D / vec2(width, height);
+        texCoords = nearest2D / vec2(width, height);
         texCoords += 1;
-        
-        if (specAngle > 0.0) {
+	    texCoords /=2;
+        float mipMap = (1-atten_factor) * (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;
+	    
+        /*if (specAngle > 0.0) {
 	    	vec3 dirSpec = E - light_position_eye;
     	    vec2 dirSpec2D = vec2(dot(dirSpec, light_right_direction_eye),dot(dirSpec, light_up_direction_eye));
             vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
     	    float specFactor = 1.0 - clamp(length(nearestSpec2D - dirSpec2D) * (1-roughness), 0.0, 1.0);
           	specular = atten_factor * specFactor * specAngle;
-          	
-		    texCoords = dirSpec2D / vec2(width, height);
-		    texCoords += 1;
+        }*/
+        if(useTexture) {
+        	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
-	  	//diffuse = vec3(texCoords, 0);
-	  	//diffuse = textureLod(lightTexture, texCoords, 0).rgb;
-        return atten_factor * vec4(diffuse.rgb * NdotL, specular);
-        
+	  	
 	    float NdotH = max(dot(normal, H), 0.0);
 	    float NdotV = max(dot(normal, V), 0.0);
     	float VdotH = max(dot(V, H), 0.0);
         
-        vec3 diff = lightDiffuse.rgb * atten_factor * NdotL;
+        vec3 diff = diffuse.rgb * atten_factor * NdotL;
         
         float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
@@ -198,7 +193,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		float F = fresnel + F0;
         
 		//diff = (diff.rgb/3.1416) * (1-F0);
-		float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
+		float specularAdjust = length(diffuse)/length(vec3(1,1,1));
         specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
         
         return atten_factor * vec4(diff, specular);

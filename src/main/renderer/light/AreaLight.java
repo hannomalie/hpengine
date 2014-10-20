@@ -114,11 +114,11 @@ public class AreaLight extends Entity {
 	}
 
 	public float getRange() {
-		return getScale().z/2;
+		return getScale().z;
 	}
 
 	public void setRange(float range) {
-		getScale().z = 2*range;
+		getScale().z = range;
 	}
 	
 	@Override
@@ -130,9 +130,9 @@ public class AreaLight extends Entity {
 	}
 
 	public float getWidth() {
-		return (getScale().x - 2*getRange());
+		return (getScale().x);
 	}
 	public float getHeight() {
-		return (getScale().y - 2*getRange());
+		return (getScale().y);
 	}
 }

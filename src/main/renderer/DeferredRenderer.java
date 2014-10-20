@@ -377,7 +377,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getColorReflectivenessImage(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

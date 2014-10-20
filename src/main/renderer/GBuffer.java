@@ -267,8 +267,10 @@ public class GBuffer {
 		secondPassAreaLightProgram.setUniform("secondPassScale", secondPassScale);
 		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		for (AreaLight areaLight : areaLights) {
-			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
+//			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
 //			if (camInsideLightVolume) {
 //				GL11.glCullFace(GL11.GL_FRONT);
 //				GL11.glDepthFunc(GL11.GL_GEQUAL);
@@ -292,7 +294,7 @@ public class GBuffer {
 				e.printStackTrace();
 			}
 			fullscreenBuffer.draw();
-//			areaLight.draw(renderer, secondPassAreaLightProgram);
+//			areaLight.getVertexBuffer().drawDebug();
 		}
 		
 		

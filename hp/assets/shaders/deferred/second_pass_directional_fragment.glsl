@@ -102,7 +102,7 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
-	//vec3 V = ViewVector;
+	//V = ViewVector;
 	//V = -normalize((viewMatrix*vec4(V, 0)).xyz);
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
