@@ -30,6 +30,7 @@ import main.renderer.material.Material;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
@@ -561,7 +562,7 @@ public class TextureFactory {
 
       return temp.asIntBuffer();
     }
-    
+
     private void generateMipMaps(Texture texture, boolean mipmap) {
         texture.bind();
     	if (mipmap) {
@@ -572,5 +573,17 @@ public class TextureFactory {
 
     	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
     	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+    }
+    public void generateMipMaps(int textureId) {
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+    }
+    
+    public ByteBuffer getTextureData(int textureId, int mipLevel, int width, int height, int format, ByteBuffer pixels) {
+    	GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
+		return pixels;
     }
 }

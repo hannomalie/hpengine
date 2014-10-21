@@ -652,7 +652,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						PointLight selectedLight = DeferredRenderer.pointLights.get(i);
+						PointLight selectedLight = DeferredRenderer.pointLights.get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
@@ -720,7 +720,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						TubeLight selectedLight = DeferredRenderer.tubeLights.get(i);
+						TubeLight selectedLight = DeferredRenderer.tubeLights.get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
@@ -777,10 +777,10 @@ public class DebugFrame {
 		JTable areaLightsTable = new JTable(areaLightsTableModel);
 		
 		areaLightsPane  =  new JScrollPane(areaLightsTable);
-		ListSelectionModel pointLightsCellSelectionModel = areaLightsTable.getSelectionModel();
-	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		ListSelectionModel areaLightsCellSelectionModel = areaLightsTable.getSelectionModel();
+		areaLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+		areaLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 
 				int[] selectedRow = areaLightsTable.getSelectedRows();
@@ -788,11 +788,14 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						AreaLight selectedLight = DeferredRenderer.areaLights.get(i);
+						AreaLight selectedLight = DeferredRenderer.areaLights.get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(600, 600);
+						System.out.println(selectedLight.getName());
+						System.out.println(selectedRow[0]);
+						System.out.println(DeferredRenderer.areaLights.size());
 						entityViewFrame.add(new AreaLightView(world, debugFrame, selectedLight));
 						entityViewFrame.setVisible(true);
 					}

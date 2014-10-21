@@ -10,6 +10,8 @@ in vec4 pass_WorldPosition;
 in vec3 normal_world;
 
 out vec4 out_Color;
+out vec4 out_Normal;
+out vec4 out_Position;
 
 float linearizeDepth(float z)
 {
@@ -46,7 +48,8 @@ void main()
 	float dx = dFdx(depth);
 	float dy = dFdy(depth);
 	moment2 += 0.25*(dx*dx+dy*dy) ;
-		
     out_Color = vec4(moment1,moment2,packColor(normal_world),1);
+    out_Normal = vec4(normal_world,1);
+    out_Position = vec4(pass_WorldPosition.xyz,1);
     //out_Color = vec4(moment1,moment2,encode(normal_world));
 }

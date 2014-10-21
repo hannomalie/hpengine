@@ -110,8 +110,8 @@ float calculateAttenuation(float dist) {
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = -normalize(position);
-	//V = ViewVector;
+	vec3 V = normalize(-position);
+	//V = -ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
 	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
 	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
@@ -119,7 +119,6 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);
     
-    //if(dist > lightRadius) {discard;}
     float width = lightWidth;
     float height = lightHeight;
     vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
@@ -137,9 +136,9 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
  	vec3 L = normalize(light_position_eye - position);
     vec3 H = normalize(L + V);
-    vec3 N = normalize(light_view_direction_eye);
+    vec3 N = normalize(normal);
     vec3 P = position;
-    float NdotL = max(dot(N, -L), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
     
     if (NdotL > 0.0 && sideOfPlane(position, light_position_eye, light_view_direction_eye) == 1) //looking at the plane
     {
@@ -167,8 +166,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
 	  	
-	    float NdotH = max(dot(normal, H), 0.0);
-	    float NdotV = max(dot(normal, V), 0.0);
+	    float NdotH = max(dot(N, H), 0.0);
+	    float NdotV = max(dot(N, V), 0.0);
     	float VdotH = max(dot(V, H), 0.0);
         
         vec3 diff = diffuse.rgb * atten_factor * NdotL;

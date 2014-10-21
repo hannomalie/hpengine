@@ -8,7 +8,7 @@ out vec4 out_color;
 
 void main()
 {
-	vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
+	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 0);
     
     out_color = in_color;
 }

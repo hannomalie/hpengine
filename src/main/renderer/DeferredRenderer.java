@@ -68,6 +68,7 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL21;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33;
@@ -110,6 +111,8 @@ public class DeferredRenderer implements Renderer {
 	public static List<PointLight> pointLights = new ArrayList<>();
 	public static List<TubeLight> tubeLights = new ArrayList<>();
 	public static List<AreaLight> areaLights = new ArrayList<>();
+	ByteBuffer normals = BufferUtils.createByteBuffer(2048*2048*4);
+	ByteBuffer positions = BufferUtils.createByteBuffer(2048*2048*4);
 	
 	private IEntity sphere;
 
@@ -146,7 +149,7 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
+//		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
 		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
 		
 		sphereModel = null;
@@ -159,7 +162,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 //		_addPointLights();
-		_addPointLightsGrid();
+//		_addPointLightsGrid();
 	}
 
 	private void _addPointLights() {
@@ -196,8 +199,12 @@ public class DeferredRenderer implements Renderer {
 			}
 		}
 
-//		tubeLights.add(lightFactory.getTubeLight(400, 70));
-		areaLights.add(lightFactory.getAreaLight(50,50,100));
+		tubeLights.add(lightFactory.getTubeLight(400, 70));
+//		areaLights.add(lightFactory.getAreaLight(50,50,100));
+//		int arealightSize = 2048/2/2/2/2/2/2/2;
+//		for (int i = 0; i < arealightSize*arealightSize; i++) {
+//			areaLights.add(lightFactory.getAreaLight(10,10,20));
+//		}
 	}
 
 	private void setUpGBuffer() {
@@ -358,6 +365,7 @@ public class DeferredRenderer implements Renderer {
 		
 		GPUProfiler.start("Shadowmap pass");
 		light.drawShadowMap(octree);
+//		doInstantRadiosity(light);
 		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
@@ -383,6 +391,37 @@ public class DeferredRenderer implements Renderer {
 		
 	}
 	
+	private void doInstantRadiosity(Spotlight light) {
+		int normalTexture = light.getRenderTarget().getRenderedTexture(1); // normal
+		int positionTexture = light.getRenderTarget().getRenderedTexture(2); // position
+
+		textureFactory.generateMipMaps(normalTexture);
+		textureFactory.generateMipMaps(positionTexture);
+		
+		int size = 2048/2/2/2/2/2/2/2;
+		textureFactory.getTextureData(normalTexture, 7, size, size, GL11.GL_RGBA, normals);
+		textureFactory.getTextureData(positionTexture, 7, size, size, GL11.GL_RGBA, positions);
+
+		normals.rewind();
+		positions.rewind();
+		byte[] normalValues = new byte[size*size*4];
+		byte[] positionValues = new byte[size*size*4];
+		normals.get(normalValues);
+		positions.get(positionValues);
+
+		int i = 0;
+		while(i < size*size*4 ) {
+			AreaLight radiosityLight = areaLights.get(i/4);
+			i+= 1;
+			Vector3f position = new Vector3f(positionValues[i++], positionValues[i++], positionValues[i++]);
+//			drawLine(new Vector3f(), position);
+			radiosityLight.setPosition(position);
+//			areaLights.add(radiosityLight);
+//			System.out.println(position);
+		}
+		
+	}
+
 	private void drawToQuad(int texture, VertexBuffer buffer) {
 		drawToQuad(texture, buffer, renderToQuadProgram);
 	}

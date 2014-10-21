@@ -103,7 +103,6 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	//V = ViewVector;
-	//V = -normalize((viewMatrix*vec4(V, 0)).xyz);
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -115,25 +114,19 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
 	
 	float alpha = acos(NdotH);
-	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
-	//alpha = pow(roughness*0.7, 6);
-	float gaussConstant = 1.0;
-	float m = roughness;
-	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
-	D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
 	
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
-	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
-	//float k = pow(0.8+0.5*alpha, 2)/2;
-	//G = NdotV / (NdotV*(1-k)+k);
     
     // Schlick
-	float F0 = 0.02;
+	float F0 = 0.04;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.02));
+	//F0 = max(F0, metallic);
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -143,7 +136,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = (diff.rgb/3.1416) * (1-F0);
+	//diff = (diff.rgb/3.1416) * (1-F0);
+	//diff *= (1/3.1416*alpha*alpha);
 	
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
 	
@@ -200,7 +194,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
 	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.000012);
+	variance = max(variance,0.00012);
 
 	float d = dist - moments.x;
 	float p_max = (variance / (variance + d*d));

@@ -3,19 +3,16 @@ package main.scene;
 import java.util.List;
 
 import main.Transform;
-import main.World;
 import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Octree;
-import main.renderer.DeferredRenderer;
 import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
+import main.renderer.light.AreaLight;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
-import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMap;
-import main.texture.Texture;
 
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
@@ -40,6 +37,7 @@ public class EnvironmentProbe implements IEntity {
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(renderer, center, resolution, resolution);
 	}
+
 	
 	public void draw(Octree octree, Spotlight light) {
 		sampler.drawCubeMap(octree, light);
@@ -72,14 +70,12 @@ public class EnvironmentProbe implements IEntity {
 	@Override
 	public void moveInWorld(Vector3f amount) {
 		box.move(amount);
-//		amount.y *= -1;
 		sampler.getCamera().moveInWorld(amount.negate(null));
 	}
 	
 	@Override
 	public void setPosition(Vector3f position) {
 		box.setCenter(position);
-//		position.y *= -1;
 		sampler.getCamera().setPosition(position.negate(null));
 	}
 

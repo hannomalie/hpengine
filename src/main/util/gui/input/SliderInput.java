@@ -18,6 +18,7 @@ public abstract class SliderInput extends GroupPanel {
 	public SliderInput(String labelString, int orientation, int min, int max, int value) {
 		label = new WebLabel(labelString);
 		slider = new WebSlider(orientation, min, max, value);
+		lastValue = value;
 		
 		slider.addChangeListener(new ChangeListener() {
 			

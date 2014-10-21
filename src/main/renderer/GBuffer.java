@@ -117,6 +117,9 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessImage());
 	}
 
 
@@ -439,6 +442,9 @@ public class GBuffer {
 	}
 	public int getNormalMap() {
 		return gBuffer.getRenderedTexture(1);
+	}
+	public int getPositionMap() {
+		return gBuffer.getRenderedTexture(0);
 	}
 	
 

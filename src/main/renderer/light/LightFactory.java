@@ -74,6 +74,8 @@ public class LightFactory {
 	}
 
 	public AreaLight getAreaLight(int width, int height, int range) {
-		return new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
+		DeferredRenderer.areaLights.add(areaLight);
+		return areaLight;
 	}
 }

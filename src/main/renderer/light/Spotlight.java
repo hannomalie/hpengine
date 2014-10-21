@@ -86,7 +86,7 @@ public class Spotlight implements IEntity {
 
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		
-		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_LINEAR, 2);
+		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_NEAREST, 3);
 		this.camera = camera;
 		this.renderer = renderer;
 	}

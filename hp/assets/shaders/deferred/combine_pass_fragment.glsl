@@ -94,7 +94,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
+vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
 
 //return color;
 //return probeColor;
@@ -136,7 +136,9 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 			{
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
-    			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
+    			float mipMapChoser = roughness * 9;
+    			mipMapChoser = max(mipMapChoser, screenEdgefactor * 5);
+    			vec3 reflectedColor =  textureLod(diffuseMap, resultCoords.xy, mipMapChoser).xyz;
     			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
     			//return vec3(screenEdgefactor, 0, 0);
     			
@@ -158,7 +160,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 
 
 vec3 sslr(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
-	vec3 sum = rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView);
+	vec3 sum = rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView, roughness);
 	const float factor = 0.025;
 	vec3 offset0 = vec3(roughness,roughness,roughness) * factor;
 	vec3 offset1 = vec3(roughness,roughness,-roughness) * factor;
@@ -166,11 +168,11 @@ vec3 sslr(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 
 	vec3 offset3 = vec3(-roughness,-roughness,-roughness) * factor;
 	vec3 offset4 = vec3(-roughness,-roughness,-roughness) * factor;
 	
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset0);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset1);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset2);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset3);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset4);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset0, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset1, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset2, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset3, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset4, roughness);
 	
 	return sum/5;
 }
@@ -202,7 +204,7 @@ void main(void) {
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	
-  	vec4 positionRoughness = texture2D(positionMap, st);
+  	vec4 positionRoughness = textureLod(positionMap, st, 0);
   	float roughness = positionRoughness.w;
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
@@ -224,7 +226,7 @@ void main(void) {
   	
 	const float metalSpecularBoost = 1.0;
   	specularColor = mix(specularColor, metalSpecularBoost*colorProbeindex.rgb, metallic);
-  	const float metalBias = 0.1;
+  	const float metalBias = 0.5;
   	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
@@ -245,11 +247,12 @@ void main(void) {
 	
 	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
+	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
+	reflectionMixer -= metallic*0.5;
+	reflectionMixer = clamp(reflectionMixer, 0, 1);
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
-	finalColor = mix(finalColor, (1*finalColor+2*specularColor)/3, metallic);
 	vec3 specularTerm = 2*specularColor * specularFactor;
 	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor*(1-specularFactor);
 	

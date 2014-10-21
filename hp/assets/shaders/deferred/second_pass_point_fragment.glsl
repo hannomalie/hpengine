@@ -98,7 +98,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);
     
-    if(dist > lightRadius) {discard;}
+	if(dist > lightRadius) {discard;}
     
     float atten_factor = calculateAttenuation(dist);
     
@@ -114,15 +114,17 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
     
     // Schlick
-	float F0 = 0.02;
+	float F0 = 0.04;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.02));
+	//F0 = max(F0, ((1-roughness)*0.02));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
