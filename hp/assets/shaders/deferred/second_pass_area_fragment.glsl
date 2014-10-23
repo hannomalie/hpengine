@@ -109,6 +109,7 @@ float calculateAttenuation(float dist) {
 }
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
+
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	//V = -ViewVector;
@@ -116,63 +117,61 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
 	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
 	vec3 light_right_direction_eye = (viewMatrix * vec4(lightRightDirection, 0)).xyz;
-    vec3 dist_to_light_eye = light_position_eye - position;
-	float dist = length (dist_to_light_eye);
-    
-    float width = lightWidth;
-    float height = lightHeight;
-    vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
-    vec3 dir = projection-light_position_eye;
-    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
-    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
-    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
-    dist = distance(position, nearestPointInside);
-    
-    if(dist > lightRange) {discard;}
-    
-    light_position_eye = nearestPointInside;
-    
-    float atten_factor = calculateAttenuation(dist);
-    
- 	vec3 L = normalize(light_position_eye - position);
-    vec3 H = normalize(L + V);
-    vec3 N = normalize(normal);
-    vec3 P = position;
-    float NdotL = max(dot(N, L), 0.0);
-    
-    if (NdotL > 0.0 && sideOfPlane(position, light_position_eye, light_view_direction_eye) == 1) //looking at the plane
-    {
+	
+	vec3 lVector[ 4 ];
+	vec3 leftUpper = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
+	vec3 rightUpper = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
+	vec3 leftBottom = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	vec3 rightBottom = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	
+	lVector[0] = normalize(leftUpper - position);
+	lVector[1] = normalize(rightUpper - position);
+	lVector[3] = normalize(leftBottom - position);
+	lVector[2] = normalize(rightBottom - position);
+	float tmp = dot( lVector[ 0 ], cross( ( leftBottom - leftUpper ).xyz, ( rightUpper - leftUpper ).xyz ) );
+	if ( tmp > 0.0 ) {
+		discard;
+	} else {
+		vec3 lightVec = vec3( 0.0 );
+		for( int i = 0; i < 4; i ++ ) {
+	
+			vec3 v0 = lVector[ i ];
+			vec3 v1 = lVector[ int( mod( float( i + 1 ), float( 4 ) ) ) ]; // ugh...
+			lightVec += acos( dot( v0, v1 ) ) * normalize( cross( v0, v1 ) );
+	
+		}
+		
+	 	vec3 L = lightVec;
+	    vec3 H = normalize(L + V);
+	    vec3 N = normalize(normal);
+	    vec3 P = position;
         vec3 R = reflect(normalize(-position), N);
         vec3 E = linePlaneIntersect(position, R, light_position_eye, light_view_direction_eye);
 
-        float specAngle = dot(R,light_view_direction_eye);
-        float specular = 0;
-        vec2 texCoords = vec2(0,0);
-        vec3 diffuse = lightDiffuse.rgb;
-        
-        texCoords = nearest2D / vec2(width, height);
+		float width = lightWidth;
+	    float height = lightHeight;
+	    vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
+	    vec3 dir = projection-light_position_eye;
+	    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
+	    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
+	    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
+	    //if(distance(P, nearestPointInside) > lightRange) { discard; }
+	    vec2 texCoords = nearest2D / vec2(width, height);
         texCoords += 1;
 	    texCoords /=2;
-        float mipMap = (1-atten_factor) * (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;
-	    
-        /*if (specAngle > 0.0) {
-	    	vec3 dirSpec = E - light_position_eye;
-    	    vec2 dirSpec2D = vec2(dot(dirSpec, light_right_direction_eye),dot(dirSpec, light_up_direction_eye));
-            vec2 nearestSpec2D = vec2(clamp(dirSpec2D.x, -width, width), clamp(dirSpec2D.y, -height, height));
-    	    float specFactor = 1.0 - clamp(length(nearestSpec2D - dirSpec2D) * (1-roughness), 0.0, 1.0);
-          	specular = atten_factor * specFactor * specAngle;
-        }*/
-        if(useTexture) {
-        	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
-        }
-	  	
+        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;        
+
+		float NdotL = max(dot(N, L), 0.0);
 	    float NdotH = max(dot(N, H), 0.0);
 	    float NdotV = max(dot(N, V), 0.0);
     	float VdotH = max(dot(V, H), 0.0);
-        
-        vec3 diff = diffuse.rgb * atten_factor * NdotL;
-        
-        float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+    	
+		// irradiance factor at point
+		float factor = NdotL / ( 2.0 * 3.14159265 );
+		// frag color
+		vec3 diffuse = lightRange*0.1*lightDiffuse * factor;
+		
+		float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 		float alpha = acos(NdotH);
 		// GGX
@@ -193,11 +192,15 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         
 		//diff = (diff.rgb/3.1416) * (1-F0);
 		float specularAdjust = length(diffuse)/length(vec3(1,1,1));
-        specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
+        float specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
         
-        return atten_factor * vec4(diff, specular);
-    }
-    discard;
+        
+        if(useTexture) {
+        	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
+        }
+        
+		return vec4(diffuse, specular);
+	}
 }
 
 void main(void) {

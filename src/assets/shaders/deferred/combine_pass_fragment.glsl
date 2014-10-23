@@ -224,7 +224,7 @@ void main(void) {
   	
 	const float metalSpecularBoost = 1.0;
   	specularColor = mix(specularColor, metalSpecularBoost*colorProbeindex.rgb, metallic);
-  	const float metalBias = 0.1;
+  	const float metalBias = 0.0;
   	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);

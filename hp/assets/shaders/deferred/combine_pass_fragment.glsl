@@ -245,9 +245,11 @@ void main(void) {
 	//texCoords3d -= texCoords3d * 0.00001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
 	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
-	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
+	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 8).rgb;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
+	if(roughness > 0.2) {
+		reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
+	}
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	reflectionMixer -= metallic*0.5;
@@ -259,7 +261,7 @@ void main(void) {
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	ambientTerm = 0.5 * ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+	ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
 
 	ambientTerm *= ao;
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(diffuseTerm, 1))) + vec4(specularTerm,1);

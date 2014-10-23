@@ -45,6 +45,8 @@ in vec3 normalVec;
 in vec3 normal_model;
 in vec3 normal_world;
 in vec3 normal_view;
+in vec3 tangent_world;
+in vec3 bitangent_world;
 in vec4 position_clip;
 //in vec4 position_clip_uv;
 //in vec4 position_clip_shadow;
@@ -52,6 +54,7 @@ in vec4 position_world;
 
 in vec3 eyeVec;
 in vec3 eyePos_world;
+//in mat3 TBN;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
@@ -159,11 +162,18 @@ void main(void) {
 		UV = t;
 	}
 	
+    mat3 TBN = transpose(mat3(
+        (vec4(normalize(tangent_world),0)).xyz,
+        (vec4(normalize(bitangent_world),0)).xyz,
+        normalize(normal_world)
+    ));
+	
 	// NORMAL
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 #ifdef use_normalMap
 	PN_world = normalize(perturb_normal(PN_world, V, UV));
+	//PN_world = inverse(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
@@ -172,8 +182,8 @@ void main(void) {
 	
 	float depth = (position_clip.z / position_clip.w);
 	
-	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	out_normal = vec4(PN_view, depth);
+	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);

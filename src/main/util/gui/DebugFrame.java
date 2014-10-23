@@ -108,6 +108,7 @@ public class DebugFrame {
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
+	private WebToggleButton toggleColorBleeding = new WebToggleButton("Color Bleeding", World.useColorBleeding);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
@@ -188,6 +189,10 @@ public class DebugFrame {
 		toggleAmbientOcclusion.addActionListener(e -> {
 			World.useAmbientOcclusion = !World.useAmbientOcclusion;
 			toggleAmbientOcclusion.setSelected(World.useAmbientOcclusion);
+		});
+		toggleColorBleeding.addActionListener(e -> {
+			World.useColorBleeding = !World.useColorBleeding;
+			toggleColorBleeding.setSelected(World.useColorBleeding);
 		});
 		
 		toggleFrustumCulling.addActionListener(e -> {
@@ -279,6 +284,7 @@ public class DebugFrame {
 		mainButtonElements.add(toggleParallax);
 		mainButtonElements.add(toggleSteepParallax);
 		mainButtonElements.add(toggleAmbientOcclusion);
+		mainButtonElements.add(toggleColorBleeding);
 		mainButtonElements.add(toggleFrustumCulling);
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);

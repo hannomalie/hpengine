@@ -43,6 +43,9 @@ public class Entity implements IEntity, Serializable {
 		DataChannels.POSITION3,
 		DataChannels.TEXCOORD,
 		DataChannels.NORMAL
+//		,
+//		DataChannels.TANGENT,
+//		DataChannels.BINORMAL
 	);
 	public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
 		DataChannels.POSITION3,
@@ -104,10 +107,11 @@ public class Entity implements IEntity, Serializable {
 		List<Vector2f> texcoordsTemp = model.getTexCoords();
 		List<Vector3f> normalsTemp = model.getNormals();
 		List<Face> facesTemp = model.getFaces();
-		
 //		LOGGER.log(Level.INFO, String.format("Faces: %d", facesTemp.size()));
 		
 		List<Float> values = new ArrayList<Float>();
+		
+		////////////// INDICES -1 BECAUSE OBJ STARTS WITH 1 INSTEAD OF ZERO
 		
 		for (int i = 0; i < facesTemp.size(); i++) {
 			Face face = facesTemp.get(i);
@@ -115,6 +119,10 @@ public class Entity implements IEntity, Serializable {
 			int[] referencedVertices = face.getVertexIndices();
 			int[] referencedNormals = face.getNormalIndices();
 			int[] referencedTexcoords = face.getTextureCoordinateIndices();
+			
+//			Vector3f[] tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
+//					texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
+//					normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
 
 			for (int j = 0; j < 3; j++) {
 				Vector3f referencedVertex = verticesTemp.get(referencedVertices[j]-1);
@@ -134,9 +142,17 @@ public class Entity implements IEntity, Serializable {
 				values.add(referencedNormal.x);
 				values.add(referencedNormal.y);
 				values.add(referencedNormal.z);
-			}
-		}
 
+//				values.add(tangentBitangent[2*j].x);
+//				values.add(tangentBitangent[2*j].y);
+//				values.add(tangentBitangent[2*j].z);
+//				values.add(tangentBitangent[2*j+1].x);
+//				values.add(tangentBitangent[2*j+1].y);
+//				values.add(tangentBitangent[2*j+1].z);
+			}
+
+		}
+		
 //		LOGGER.log(Level.INFO, String.format("Values: %d", values.size()));
 		
 		floatArray = new float[values.size()];
@@ -150,6 +166,38 @@ public class Entity implements IEntity, Serializable {
 		normalsTemp = null;
 		facesTemp = null;
 		System.gc();
+	}
+
+	private Vector3f[] calculateTangentBitangent(Vector3f v1, Vector3f v2, Vector3f v3, Vector2f w1, Vector2f w2, Vector2f w3, Vector3f n1, Vector3f n2, Vector3f n3) {
+		Vector3f tangent = new Vector3f();
+		Vector3f bitangent = new Vector3f();
+
+		Vector3f edge1 = Vector3f.sub(v2, v1, null);
+		Vector3f edge2 = Vector3f.sub(v3, v1, null);
+
+        Vector2f deltaUV1 = Vector2f.sub(w2, w1, null);
+        Vector2f deltaUV2 = Vector2f.sub(w3, w1, null);
+        float DeltaU1 = deltaUV1.x;
+        float DeltaV1 = deltaUV1.y;
+        float DeltaU2 = deltaUV2.x;
+        float DeltaV2 = deltaUV2.y;
+        
+        float f = 1.0F / (DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1);
+
+        tangent = Vector3f.sub((Vector3f) edge1.scale(DeltaV2), (Vector3f) edge2.scale(DeltaV1), null);
+        bitangent = Vector3f.sub((Vector3f) edge1.scale(-DeltaU2), (Vector3f) edge2.scale(DeltaU1), null);
+
+        tangent = (Vector3f) tangent.scale(f);
+        bitangent = (Vector3f) bitangent.scale(f);
+        
+        Vector3f[] result = new Vector3f[2*3];
+	    result[0] = tangent;
+	    result[1] = bitangent;
+	    result[2] = tangent;
+	    result[3] = bitangent;
+	    result[4] = tangent;
+	    result[5] = bitangent;
+		return result;
 	}
 	
 	public void createVertexBuffer() {

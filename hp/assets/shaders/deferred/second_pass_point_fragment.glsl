@@ -38,6 +38,13 @@ in vec4 position_view;
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;
 
+vec4 getViewPosInTextureSpace(vec3 viewPosition) {
+	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
+    projectedCoord.xy /= projectedCoord.w;
+    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+    return projectedCoord;
+}
+
 #define kPI 3.1415926536f
 vec3 decodeNormal(vec2 enc) {
     vec2 ang = enc*2-1;
@@ -81,7 +88,6 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, v
   //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
   return vec4((vec4(lightDiffuse,1) * dot_prod * atten_factor).xyz, specular_factor * atten_factor);
 }
-
 
 float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);

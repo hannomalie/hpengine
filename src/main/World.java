@@ -65,6 +65,7 @@ public class World {
 	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;
+	public static volatile boolean useColorBleeding = false;
 	public static volatile boolean useFrustumCulling = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DRAWSCENE_ENABLED = true;
@@ -92,8 +93,8 @@ public class World {
 			}
 		}
 
-		world = new World(sceneName);
-//		world = new World();
+//		world = new World(sceneName);
+		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {

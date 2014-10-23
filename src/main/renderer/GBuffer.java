@@ -165,6 +165,7 @@ public class GBuffer {
 		GPUProfiler.start("Set uniforms");
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		secondPassDirectionalProgram.setUniform("useColorBleeding", World.useColorBleeding);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) Renderer.WIDTH);

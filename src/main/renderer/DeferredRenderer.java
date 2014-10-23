@@ -2,6 +2,7 @@ package main.renderer;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -48,6 +49,7 @@ import main.shader.ProgramFactory;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
 import main.texture.TextureFactory;
+import main.util.Util;
 import main.util.ressources.FileMonitor;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.GPUTaskProfile;
@@ -111,8 +113,9 @@ public class DeferredRenderer implements Renderer {
 	public static List<PointLight> pointLights = new ArrayList<>();
 	public static List<TubeLight> tubeLights = new ArrayList<>();
 	public static List<AreaLight> areaLights = new ArrayList<>();
-	ByteBuffer normals = BufferUtils.createByteBuffer(2048*2048*4);
-	ByteBuffer positions = BufferUtils.createByteBuffer(2048*2048*4);
+	
+	ByteBuffer normals = BufferUtils.createByteBuffer(2048*2048);
+	ByteBuffer positions = BufferUtils.createByteBuffer(2048*2048);
 	
 	private IEntity sphere;
 
@@ -149,8 +152,9 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-//		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
+		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
 		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
+		environmentProbeFactory.getProbe(new Vector3f(), 600, Update.DYNAMIC);
 		
 		sphereModel = null;
 		try {
@@ -202,7 +206,7 @@ public class DeferredRenderer implements Renderer {
 		tubeLights.add(lightFactory.getTubeLight(400, 70));
 //		areaLights.add(lightFactory.getAreaLight(50,50,100));
 //		int arealightSize = 2048/2/2/2/2/2/2/2;
-//		for (int i = 0; i < arealightSize*arealightSize; i++) {
+//		for (int i = 0; i < rsmSize*rsmSize; i++) {
 //			areaLights.add(lightFactory.getAreaLight(10,10,20));
 //		}
 	}
@@ -385,7 +389,7 @@ public class DeferredRenderer implements Renderer {
 
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getColorReflectivenessImage(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -398,26 +402,36 @@ public class DeferredRenderer implements Renderer {
 		textureFactory.generateMipMaps(normalTexture);
 		textureFactory.generateMipMaps(positionTexture);
 		
-		int size = 2048/2/2/2/2/2/2/2;
-		textureFactory.getTextureData(normalTexture, 7, size, size, GL11.GL_RGBA, normals);
-		textureFactory.getTextureData(positionTexture, 7, size, size, GL11.GL_RGBA, positions);
+		textureFactory.getTextureData(normalTexture, 7, rsmSize, rsmSize, GL11.GL_RGB, normals);
+		textureFactory.getTextureData(positionTexture, 7, rsmSize, rsmSize, GL11.GL_RGB, positions);
 
 		normals.rewind();
 		positions.rewind();
-		byte[] normalValues = new byte[size*size*4];
-		byte[] positionValues = new byte[size*size*4];
-		normals.get(normalValues);
-		positions.get(positionValues);
+//		byte[] normalValues = new byte[size*size*4];
+		int[] positionValues = new int[rsmSize*rsmSize];
+		for (int i=0; i < positionValues.length; i++) {
+            int index = i * 3;
+            positionValues[i] =
+                ((positions.get(index) << 16))  +
+                ((positions.get(index+1) << 8))  +
+                ((positions.get(index+2) << 0));
+        }
+//		normals.get(normalValues);
+//		positions.get(positionValues);
+		
+//		if((System.currentTimeMillis()/1000)%2 == 0) {
+//			Util.saveImage(Util.toImage(positions, rsmSize,rsmSize), "" + System.currentTimeMillis() + ".png");	
+//		}
+//		System.exit(-1);
 
 		int i = 0;
-		while(i < size*size*4 ) {
-			AreaLight radiosityLight = areaLights.get(i/4);
-			i+= 1;
-			Vector3f position = new Vector3f(positionValues[i++], positionValues[i++], positionValues[i++]);
-//			drawLine(new Vector3f(), position);
-			radiosityLight.setPosition(position);
+		while(i < rsmSize*rsmSize/3 ) {
+//			AreaLight radiosityLight = areaLights.get(i/4);
+			Vector3f position = (Vector3f) new Vector3f(positionValues[i++], positionValues[i++], positionValues[i++]).scale(1);
+			drawLine(new Vector3f(), position);
+//			radiosityLight.setPosition(position);
 //			areaLights.add(radiosityLight);
-//			System.out.println(position);
+			System.out.println(position);
 		}
 		
 	}
@@ -531,6 +545,7 @@ public class DeferredRenderer implements Renderer {
 
 	private List<Vector3f> linePoints = new ArrayList<>();
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
+	private int rsmSize = 2048/2/2/2/2/2/2/2;
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {

@@ -65,6 +65,8 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void draw(Octree octree, Spotlight light) {
+		if(!World.DRAW_PROBES) { return; }
+		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		for (EnvironmentProbe environmentProbe : dynamicProbes) {
 			environmentProbe.draw(octree, light);
@@ -72,6 +74,8 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void drawAlternating(Octree octree, Spotlight light, int frameCount) {
+		if(!World.DRAW_PROBES) { return; }
+		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
