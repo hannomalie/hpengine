@@ -138,9 +138,9 @@ void main(void) {
 	vec2 uvParallax = vec2(0,0);
 
 	if (useParallax) {
-		float height = (texture2D(normalMap, UV).rgb).y;//texture2D(heightMap, UV).r;
+		float height = (textureLod(normalMap, UV,0).rgb).y;//texture2D(heightMap, UV).r;
 		height = height * 2 - 1;
-		float v = height * 0.014;
+		float v = height * 0.4;
 		uvParallax = (V.xy * v);
 		UV = UV + uvParallax;
 	} else if (useSteepParallax) {

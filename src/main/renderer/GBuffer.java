@@ -47,6 +47,7 @@ public class GBuffer {
 	private float secondPassScale = 1f;
 	private RenderTarget gBuffer;
 	private RenderTarget laBuffer;
+	private RenderTarget finalBuffer;
 	private VertexBuffer fullscreenBuffer;
 	private Program firstPassProgram;
 	private Program secondPassDirectionalProgram;
@@ -54,9 +55,10 @@ public class GBuffer {
 	private Program secondPassTubeProgram;
 	private Program secondPassAreaLightProgram;
 	private Program combineProgram;
+	private Program postProcessProgram;
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram) {
+	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram, Program postProcessProgram) {
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
@@ -64,9 +66,11 @@ public class GBuffer {
 		this.secondPassTubeProgram = secondPassTubeProgram;
 		this.secondPassAreaLightProgram = secondPassAreaLightProgram;
 		this.combineProgram = combineProgram;
+		this.postProcessProgram = postProcessProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
+		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 	}
@@ -328,6 +332,7 @@ public class GBuffer {
 		} else {
 			target.use(true);
 		}
+		finalBuffer.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -346,6 +351,19 @@ public class GBuffer {
 		renderer.getEnvironmentMap().bind();
 		fullscreenBuffer.draw();
 
+		if(target == null) {
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		} else {
+			target.use(true);
+		}
+		
+		postProcessProgram.use();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1));
+		fullscreenBuffer.draw();
+		
 //		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	

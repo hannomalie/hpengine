@@ -102,10 +102,14 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = normalize(reflect(eyeToSurfaceView, targetNormalView));
 	
-	vec3 viewRay = 10*normalize(reflectionVecView);
+	int STEPRAYLENGTH = 10;
+	vec3 viewRay = STEPRAYLENGTH*normalize(reflectionVecView);
 	
 	vec3 currentViewPos = targetPosView;
-	for (int i = 0; i < 25; i++) {
+	
+	const int STEPS_1 = 20;
+	const int STEPS_2 = 10;
+	for (int i = 0; i < STEPS_1; i++) {
 	
 		  currentViewPos += viewRay;
 		  
@@ -116,27 +120,25 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 		  	
 		  	currentViewPos -= viewRay;
 		  	
-		  	for(int x = 0; x < 10; x++) {
-		 		currentViewPos += viewRay/10;
+		  	for(int x = 0; x < STEPS_2; x++) {
+		 		currentViewPos += viewRay/STEPS_2;
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
-				  difference = currentViewPos.z - currentPosSample.z;
-				  //if (difference < 0 && difference > -2) {
-				  if (abs(difference) > 2) {
-				  	//float temp = currentPosSample - targetPosView; 
-				  	//if(abs(temp) > 2)
-				  	{
-	  		  		  break;
-				  	}
+				  float absDifference = distance(currentViewPos.z, currentPosSample.z);
+				  if (absDifference < 0.01) {
+  		  		  	break;
 				  }
 		  	}
 		  	
   		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
   			//if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
+				float distanceInWorld = distance(currentPosSample, targetPosView);
+				float mipMapLevelFromWorldDistance = clamp(distanceInWorld/20, 0, 5); // every 30 units, the next mipmap level is chosen
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			float mipMapChoser = roughness * 9;
+    			mipMapChoser = max(mipMapChoser, mipMapLevelFromWorldDistance);
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 5);
     			vec3 reflectedColor =  textureLod(diffuseMap, resultCoords.xy, mipMapChoser).xyz;
     			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
@@ -147,6 +149,8 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
     			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
     			//return vec3(screenEdgefactor, 0, 0);
     			
+    			reflectedColor += 2*texture2D(lightAccumulationMap, resultCoords.xy).rgb; // since no specular and ambient termn, approximate it with a factor of two
+    			//reflectedColor += reflectedColor * 0.5 * ambientColor;
 				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
 		  	}
 		  	//return vec3(1,0,0);

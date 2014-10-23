@@ -116,8 +116,8 @@ public class Spotlight implements IEntity {
 		directionalShadowPassProgram.use();
 		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		directionalShadowPassProgram.setUniform("near", camera.getNear());
-		directionalShadowPassProgram.setUniform("far", camera.getFar());
+//		directionalShadowPassProgram.setUniform("near", camera.getNear());
+//		directionalShadowPassProgram.setUniform("far", camera.getFar());
 		
 		for (IEntity e : visibles) {
 			entityBuffer.rewind();

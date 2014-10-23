@@ -121,7 +121,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	float alpha = acos(NdotH);
 	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
-	alpha = roughness*roughness;
+	//alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));

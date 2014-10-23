@@ -219,9 +219,10 @@ public class DeferredRenderer implements Renderer {
 		Program secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
+		Program postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", RENDERTOQUAD, false);
 
-		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram);
-
+		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram);
+		
 		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
 		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
@@ -303,6 +304,7 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("combine_pass_fragment.glsl");
 		copyShaderIfNotExists("passthrough_vertex.glsl");
 		copyShaderIfNotExists("simpletexture_fragment.glsl");
+		copyShaderIfNotExists("postprocess_fragment.glsl");
 		copyShaderIfNotExists("shadowmap_fragment.glsl");
 		copyShaderIfNotExists("mvp_vertex.glsl");
 		
@@ -386,7 +388,6 @@ public class DeferredRenderer implements Renderer {
 		gBuffer.combinePass(target, light, camera);
 		GPUProfiler.end();
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
-
 		
 		if (World.DEBUGFRAME_ENABLED) {
 			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
@@ -445,6 +446,8 @@ public class DeferredRenderer implements Renderer {
 
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}

@@ -132,6 +132,7 @@ public class OBJLoader {
         ArrayList<Vector3f> normals = new ArrayList<>();
         
         String line;
+        Material currentMaterial = null;
         while ((line = reader.readLine()) != null) {
 //            if (line.startsWith("#")) {
 //                continue;
@@ -141,19 +142,20 @@ public class OBJLoader {
             	renderer.getMaterialFactory().putAll(parseMaterialLib(line, f));
             } else if (line.startsWith("usemtl ")) {
 		    	  String materialName = line.replaceAll("usemtl ", "");
-		    	  Material material = renderer.getMaterialFactory().get(materialName);
-		    	  if(material == null) {
+		    	  currentMaterial = renderer.getMaterialFactory().get(materialName);
+		    	  if(currentMaterial == null) {
 		    		  LOGGER.log(Level.INFO, "No material found!!!");
+		    		  currentMaterial = renderer.getMaterialFactory().getDefaultMaterial();
 		    	  }
 		    	  if(currentState != State.READING_FACE) {
-			    	  model.setMaterial(material);
+		    		  model.setMaterial(currentMaterial);  
 		    	  } else {
 		    		  model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
-			    	  model.setMaterial(material);
+			    	  model.setMaterial(currentMaterial);
 		    	  }
 //	    		  LOGGER.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
-		    } else if (line.startsWith("o ") || line.startsWith("# object ")) {
-            	model = newModelHelper(models, vertices, texCoords, normals, line, line.replaceAll("o ", ""));
+		    } else if (line.startsWith("o ") || line.startsWith("g ") || line.startsWith("# object ")) {
+            	model = newModelHelper(models, vertices, texCoords, normals, line, line.replaceAll("o ", "").replaceAll("# object ", "").replaceAll("g ", ""));
             } else if (line.startsWith("v ")) {
             	setCurrentState(State.READING_VERTEX);
             	vertices.add(parseVertex(line));
@@ -260,9 +262,10 @@ public class OBJLoader {
 			    	  String specular = materialLine;
 			    	  //currentMaterialInfo.specular = parseVertex(specular);
 			    	  // Physically based tmaterials translate specular to roughness
-			    	  currentMaterialInfo.roughness = 1-parseVertex(specular).x;
+//			    	  currentMaterialInfo.roughness = 1-parseVertex(specular).x;
 			    } else if (materialLine.startsWith("Ns ")) {
 			    	  String specularCoefficient = materialLine.replaceAll("Ns ", "");
+//			    	  currentMaterialInfo.roughness = 1-(parseFloat(specularCoefficient)/1000 + 1);
 //			    	  currentMaterialInfo.specularCoefficient = parseFloat(specularCoefficient);
 			    }
 			    // TODO: TRANSPARENCY with "d" and "Tr"

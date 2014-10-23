@@ -93,8 +93,8 @@ public class World {
 			}
 		}
 
-//		world = new World(sceneName);
-		world = new World();
+		world = new World(sceneName);
+//		world = new World();
 		
 		WebLookAndFeel.install();
 		if(debug) {
