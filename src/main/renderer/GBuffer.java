@@ -68,7 +68,7 @@ public class GBuffer {
 		this.combineProgram = combineProgram;
 		this.postProcessProgram = postProcessProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
+		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
 		new Matrix4f().store(identityMatrixBuffer);
@@ -123,7 +123,8 @@ public class GBuffer {
 		}
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessImage());
+		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
+		camera.saveViewMatrixAsLastViewMatrix();
 	}
 
 
@@ -149,17 +150,15 @@ public class GBuffer {
 
 		GPUProfiler.start("Activate GBuffer textures");
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(0)); // position
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getPositionMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1)); // normal, depth
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(2)); // color, reflectiveness
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getColorReflectivenessMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(3)); // specular
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		cubeMap.bind();
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(4)); // probe color
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
@@ -325,6 +324,7 @@ public class GBuffer {
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("exposure", World.EXPOSURE);
+		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 		bindEnvironmentProbePositions(combineProgram);
 		
 		if(target == null) {
@@ -336,17 +336,17 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(2)); // color, reflectiveness
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getColorReflectivenessMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, laBuffer.getRenderedTexture(0)); // light accumulation
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getLightAccumulationMapOneId());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, laBuffer.getRenderedTexture(1)); // ao, reflection
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(3)); // specular
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap()); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(0)); // position, glossiness
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getPositionMap()); // position, glossiness
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1)); // normal, depth
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap()); // normal, depth
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
 		fullscreenBuffer.draw();
@@ -362,6 +362,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1));
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
 		
 //		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -453,7 +455,7 @@ public class GBuffer {
 		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
 		
 	}
-	public int getColorReflectivenessImage() {
+	public int getColorReflectivenessMap() {
 		return gBuffer.getRenderedTexture(2);
 	}
 	public int getLightAccumulationMapOneId() {
@@ -465,6 +467,8 @@ public class GBuffer {
 	public int getPositionMap() {
 		return gBuffer.getRenderedTexture(0);
 	}
-	
+	public int getMotionMap() {
+		return gBuffer.getRenderedTexture(3);
+	}
 
 }

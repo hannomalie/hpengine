@@ -2,10 +2,14 @@
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
+layout(binding=3) uniform sampler2D motionMap; // motionVec
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
+float calculateMotionBlur(vec2 uv) {
+	return length(texture2D(motionMap, uv).xy);
+}
 
 ///////////////////////////////////////
 // http://facepunch.com/showthread.php?t=1401594
@@ -268,6 +272,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 		blur = abs(a-b)*c;
 	}
 	
+	blur += calculateMotionBlur(uv);
 	blur = clamp(blur, 0, 1);
 	
 	// calculation of pattern for ditering

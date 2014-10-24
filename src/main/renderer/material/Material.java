@@ -151,37 +151,10 @@ public class Material implements Serializable {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
-			if(map.equals(MAP.ENVIRONMENT)) {
-				if(materialInfo.environmentMapType == ENVIRONMENTMAPTYPE.GENERATED && entity != null) {
-					Optional<EnvironmentProbe> option = renderer.getEnvironmentProbeFactory().getProbeForEntity(entity);
-					if(option.isPresent()) {
-						EnvironmentProbe environmentProbe = option.get();
-						int probeIndex = environmentProbe.getTextureUnitIndex();
-						program.setUniform("environmentProbeIndex", probeIndex);
-//						program.setUniform("environmentMapWorldPosition", environmentProbe.getCenter());
-//						program.setUniform("environmentMapMin", environmentProbe.getBox().getBottomLeftBackCorner());
-//						program.setUniform("environmentMapMax", environmentProbe.getBox().getTopRightForeCorner());
-//						System.out.println(environmentProbe.getBox().getBottomLeftBackCorner());
-//						System.out.println(environmentProbe.getCenter());
-//						System.out.println(environmentProbe.getBox().getTopRightForeCorner());
-					} else {
-						program.setUniform("environmentProbeIndex", 0);
-						renderer.getEnvironmentMap().bind();
-					}
-				} else {
-					if (texture != null) {
-						texture.bind();
-					} else {
-						renderer.getEnvironmentMap().bind();
-					}
-				}
-			} else {
-				texture.bind();	
-			}
+			texture.bind();
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
-
 		}
 	}
 

@@ -2,6 +2,7 @@
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
+uniform mat4 lastViewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
@@ -28,6 +29,7 @@ out vec3 normal_view;
 out vec3 tangent_world;
 out vec3 bitangent_world;
 out vec4 position_clip;
+out vec4 position_clip_last;
 out vec4 position_clip_uv;
 out vec4 position_world;
 //out vec4 position_clip_shadow;
@@ -43,6 +45,7 @@ void main(void) {
 
 	position_world = modelMatrix * vec4(in_Position.xyz,1);
 	position_clip = (projectionMatrix * viewMatrix * position_world);
+	position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 	gl_Position = position_clip;
 	//position_clip_shadow = projectionMatrixShadow * viewMatrixShadow * modelMatrix * vec4(in_Position.xyz,1);
 	//position_clip_shadow.xyz /= position_clip_shadow.w;

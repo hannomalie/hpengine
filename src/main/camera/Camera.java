@@ -25,6 +25,7 @@ public class Camera implements IEntity {
 
 	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	
 	Transform transform = new Transform();
 	private float rotationDelta = 45f;
@@ -143,9 +144,18 @@ public class Camera implements IEntity {
 		setViewMatrix(calculateCurrentViewMatrix());
 		return viewMatrix;
 	}
+	public FloatBuffer getLastViewMatrixAsBuffer() {
+		return lastViewMatrixBuffer;
+	}
 
 	public void setViewMatrix(Matrix4f viewMatrix) {
 		this.viewMatrix = viewMatrix;
+	}
+	
+	public void saveViewMatrixAsLastViewMatrix() {
+		lastViewMatrixBuffer.rewind();
+		lastViewMatrixBuffer.put(getViewMatrixAsBuffer());
+		lastViewMatrixBuffer.rewind();
 	}
 
 	public FloatBuffer getProjectionMatrixAsBuffer() {

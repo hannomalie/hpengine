@@ -1,9 +1,9 @@
 #version 420
 
-layout(binding=0) uniform sampler2D diffuseMap; // diffuse, reflectiveness 
+layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
 layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
-layout(binding=3) uniform sampler2D specularMap; // specular color, metallic
+layout(binding=3) uniform sampler2D motionMap; // motionVec
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
@@ -32,6 +32,7 @@ uniform float secondPassScale = 1;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform int exposure = 4;
 
+uniform int activeProbeCount;
 uniform vec3 environmentMapMin[192];
 uniform vec3 environmentMapMax[192];
 
@@ -202,6 +203,54 @@ vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin
 	vec3 environmentMapWorldPosition = (envMapMax + envMapMin)/2;
 	return normalize(posonbox - environmentMapWorldPosition.xyz);
 }
+vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+	vec3 nrdir = normalize(texCoords3d);
+	vec3 envMapMin = vec3(-300,-300,-300);
+	envMapMin = environmentMapMin;
+	vec3 envMapMax = vec3(300,300,300);
+	envMapMax = environmentMapMax;
+	
+	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+	vec3 rbminmax;
+	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+	vec3 posonbox = position_world.xyz + nrdir*fa;
+	
+	return posonbox; 
+}
+
+bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
+	return(position.x >= minPosition.x && position.y >= minPosition.y && position.z >= minPosition.z && position.x <= maxPosition.x && position.y <= maxPosition.y && position.z <= maxPosition.z);
+}
+
+int getProbeIndexForPosition(vec3 position, vec3 normal) {
+	
+	vec3 currentEnvironmentMapMin = environmentMapMin[191];
+	vec3 currentEnvironmentMapMax = environmentMapMin[191];
+	vec3 currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
+	float minDist = distance(currentIntersectionPoint, position);
+	int iForNearest = 0;
+	if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { minDist = 1000000; }
+	
+	for(int i = 1; i < activeProbeCount; i++) {
+		currentEnvironmentMapMin = environmentMapMin[191- i];
+		currentEnvironmentMapMax = environmentMapMax[191 -i];
+		currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
+		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
+		
+		float currentDist = distance(currentIntersectionPoint, position);
+		if(currentDist < minDist) {
+			minDist = currentDist;
+			iForNearest = i;
+		}
+	}
+	
+	return 191-iForNearest;
+}
 
 void main(void) {
 	vec2 st;
@@ -221,17 +270,16 @@ void main(void) {
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
   	
-  	vec4 colorProbeindex = texture2D(diffuseMap, st);
-  	int probeIndex = int(colorProbeindex.w);
+  	vec2 motionVec = texture2D(motionMap, st).xy;
+  	vec4 colorMetallic = texture2D(diffuseMap, st);
+	int probeIndex = getProbeIndexForPosition(positionWorld, normalWorld);
   	
-  	vec4 specularColorMetallic = texture2D(specularMap, st);
-  	vec3 specularColor = specularColorMetallic.xyz;
-  	float metallic = specularColorMetallic.a;
+  	float metallic = colorMetallic.a;
   	
 	const float metalSpecularBoost = 1.0;
-  	specularColor = mix(specularColor, metalSpecularBoost*colorProbeindex.rgb, metallic);
+  	vec3 specularColor = mix(vec3(1,1,1), metalSpecularBoost*colorMetallic.rgb, metallic);
   	const float metalBias = 0.5;
-  	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
+  	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
 	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.0015);
@@ -246,7 +294,7 @@ void main(void) {
 	texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
 	// Try to parallax-correct
-	//texCoords3d -= texCoords3d * 0.00001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
+	//texCoords3d -= texCoords3d * 0.0000001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
 	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
 	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 8).rgb;
@@ -284,6 +332,7 @@ void main(void) {
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
+	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = specularTerm.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;

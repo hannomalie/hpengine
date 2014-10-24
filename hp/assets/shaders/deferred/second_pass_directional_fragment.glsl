@@ -3,9 +3,9 @@
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
-layout(binding=3) uniform sampler2D specularMap;
+layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
-layout(binding=5) uniform sampler2D probe;
+
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
 layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position
 
@@ -367,9 +367,6 @@ void main(void) {
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
-	vec4 probeColorDepth = texture2D(probe, st);
-	vec3 probeColor = probeColorDepth.rgb;
-	float probeDepth = probeColorDepth.a;
 	float roughness = texture2D(positionMap, st).a;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
@@ -385,9 +382,7 @@ void main(void) {
 	vec3 normalView = texture2D(normalMap, st).xyz;
 	//normalView = decodeNormal(normalView.xy);
 	
-	vec4 specular = texture2D(specularMap, st);
-	float metallic = specular.a;
-	specular.rgb = mix(vec3(1,1,1), color, metallic);
+	float metallic = texture2D(diffuseMap, st).a;
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
 	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	

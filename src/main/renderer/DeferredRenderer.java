@@ -390,7 +390,7 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(gBuffer.getMotionMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -670,7 +670,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 	    
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		drawToQuad(gBuffer.getColorReflectivenessImage(), fullscreenBuffer);
+		drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 

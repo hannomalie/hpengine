@@ -21,7 +21,6 @@ uniform float diffuseMapHeight = 1;
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
 
-
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
@@ -31,11 +30,6 @@ uniform float materialMetallic = 0;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
-
-uniform int environmentProbeIndex = 0;
-uniform vec3 environmentMapWorldPosition = vec3(0,0,0);
-uniform vec3 environmentMapMin = vec3(-1,-1,-1);
-uniform vec3 environmentMapMax = vec3(1,1,1);
 
 uniform float time = 0;
 
@@ -48,6 +42,7 @@ in vec3 normal_view;
 in vec3 tangent_world;
 in vec3 bitangent_world;
 in vec4 position_clip;
+in vec4 position_clip_last;
 //in vec4 position_clip_uv;
 //in vec4 position_clip_shadow;
 in vec4 position_world;
@@ -60,16 +55,9 @@ uniform float far = 100.0;
 
 layout(location=0)out vec4 out_position; // position, roughness
 layout(location=1)out vec4 out_normal; // normal, depth
-layout(location=2)out vec4 out_color; // color, probeIndex
-layout(location=3)out vec4 out_specular;
-layout(location=4)out vec4 out_probe; // probe color, depth
+layout(location=2)out vec4 out_color; // color, metallic
+layout(location=3)out vec4 out_motion; // motion
 
-float linearizeDepth(float z)
-{
-  float n = near; // camera z near
-  float f = far; // camera z far
-  return (2.0 * n) / (f + n - z * (f - n));	
-}
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
 	vec3 dp1 = dFdx( p );
@@ -98,33 +86,14 @@ vec2 encodeNormal(vec3 n) {
     return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
 }
 
-vec3 boxProjection(vec3 texCoords3d) {
-	vec3 nrdir = normalize(texCoords3d);
-	vec3 envMapMin = vec3(-300,-300,-300);
-	envMapMin = environmentMapMin;
-	vec3 envMapMax = vec3(300,300,300);
-	envMapMax = environmentMapMax;
-	
-	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
-	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
-	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
-	vec3 rbminmax;
-	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
-	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
-	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
-	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
-	vec3 posonbox = position_world.xyz + nrdir*fa;
-	
-	//texCoords3d = normalize(posonbox - vec3(0,0,0));
-	return normalize(posonbox - environmentMapWorldPosition.xyz);
-}
-
 void main(void) {
 	
 	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
 	vec2 UV = texCoord;
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
+	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
+	vec2 blurVec = position_clip_post_w.xy - position_clip_last_post_w.xy;
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
@@ -178,7 +147,6 @@ void main(void) {
 #endif
 	
 	out_position = viewMatrix * position_world;
-	out_position.w = materialRoughness;
 	
 	float depth = (position_clip.z / position_clip.w);
 	
@@ -198,100 +166,29 @@ void main(void) {
 		discard;
 	}
 #endif
-	//out_color = color;
   	out_color = color;
+  	out_color.w = materialMetallic;
 
-#ifdef use_reflectionMap
-	out_color.w = length(texture2D(reflectionMap, UV));
-#endif
-	out_color.w = float(environmentProbeIndex);
-
+	out_position.w = materialRoughness;
 #ifdef use_roughnessMap
-	UV.x = texCoord.x * specularMapWidth;
-	UV.y = texCoord.y * specularMapHeight;
+	UV.x = texCoord.x * roughnessMapWidth;
+	UV.y = texCoord.y * roughnessMapHeight;
 	UV = texCoord + uvParallax;
 	float r = texture2D(roughnessMap, UV).x;
 	out_position.w *= r;
-	
 #endif
 
-//vec3 texCoords3d = eyeVec;
-//vec3 texCoords3d = PN_world;
-vec3 texCoords3d = normalize(reflect(V, PN_world));
-
-///////////////////////////////////////////////////////////////////////
-/*vec3 nrdir = normalize(texCoords3d);
-vec3 envMapMin = vec3(-300,-300,-300);
-envMapMin = environmentMapMin;
-vec3 envMapMax = vec3(300,300,300);
-envMapMax = environmentMapMax;
-
-vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
-vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
-//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
-vec3 rbminmax;
-rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
-rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
-rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
-float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
-vec3 posonbox = position_world.xyz + nrdir*fa;
-
-//texCoords3d = normalize(posonbox - vec3(0,0,0));
-texCoords3d = normalize(posonbox - environmentMapWorldPosition.xyz);*/
-texCoords3d = boxProjection(texCoords3d);
-///////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////
-// http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
-/*float a = dot(nrdir,nrdir);
-float b = 2.0 * dot(nrdir, position_world.xyz - environmentMapWorldPosition);
-float c = dot(position_world.xyz, environmentMapWorldPosition) - environmentMapSize*environmentMapSize;
-float discrim = b * b - 4.0 * a * c;
-float q;
-vec4 reflColor = vec4(1, 0, 0, 0);
-if (discrim > 0) {
-  q = ((abs(sqrt(discrim) - b) / 2.0));
-  float t0 = q / a;
-  float t1 = c / q;
-    if (t0 > t1)
-	{
-	    float temp = t0;
-	    t0 = t1;
-	    t1 = temp;
-	}
-    if (t0 < 0)
-    {
-        texCoords3d = t1 * nrdir - position_world.xyz;
-        texCoords3d.y = -texCoords3d.y;
-    }
-}*/
-///////////////////////////////////////////////////////////////////////
-
-//out_color.rgb = mix(out_color.rgb, texture(environmentMap, texCoords3d).rgb, reflectiveness);
-//out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
-//out_probe.rgba = textureLod(environmentMap, texCoords3d, materialRoughness).rgba;
-
-
-/*if (useParallax) {
-	texCoords3d -= texCoords3d * 0.0000001 * 0.0001 * texture(environmentMap, texCoords3d).a;
-	texCoords3d = boxProjection(texCoords3d);
-	out_probe.rgba = texture(environmentMap, texCoords3d).rgba;
-}*/
-
-	//vec4 specularColor = vec4(materialSpecularColor, materialSpecularCoefficient);
-	vec4 specularColor = vec4(color.rgb, materialMetallic);
 	
 #ifdef use_specularMap
 	UV.x = texCoord.x * specularMapWidth;
 	UV.y = texCoord.y * specularMapHeight;
 	UV = texCoord + uvParallax;
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
-	specularColor = vec4(specularSample, materialSpecularCoefficient);
 	float glossiness = length(specularSample)/length(vec3(1,1,1));
 	const float glossinessBias = 1.5;
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-	out_specular.rgb = specularColor.rgb;
-	out_specular.a = materialMetallic;
+  	out_motion = vec4(blurVec,0,0);
 	
 }
