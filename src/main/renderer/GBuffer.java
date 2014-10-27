@@ -304,6 +304,10 @@ public class GBuffer {
 //			areaLight.getVertexBuffer().drawDebug();
 		}
 		
+
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		renderer.getTextureFactory().generateMipMaps(getLightAccumulationMapOneId());
+		renderer.getTextureFactory().generateMipMaps(getAmbientOcclusionMapId());
 		
 		laBuffer.unuse();
 		GL11.glDisable(GL11.GL_BLEND);
@@ -460,6 +464,9 @@ public class GBuffer {
 	}
 	public int getLightAccumulationMapOneId() {
 		return laBuffer.getRenderedTexture(0);
+	}
+	public int getAmbientOcclusionMapId() {
+		return laBuffer.getRenderedTexture(1);
 	}
 	public int getNormalMap() {
 		return gBuffer.getRenderedTexture(1);

@@ -272,7 +272,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 		blur = abs(a-b)*c;
 	}
 	
-	blur += calculateMotionBlur(uv);
+	blur = max(calculateMotionBlur(uv), blur);
 	blur = clamp(blur, 0, 1);
 	
 	// calculation of pattern for ditering

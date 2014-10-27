@@ -481,7 +481,7 @@ void main(void) {
 			      //if there is coherence, calculate occlusion:
 			      if (coherence2 > 0){
 			          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
-			          sum += clamp(pformfactor2*0.1,0.0,1.0);//ao intensity; 
+			          sum += clamp(pformfactor2*0.2,0.0,1.0);//ao intensity; 
 			      }
 			
 			      //COLOR BLEEDING:
@@ -510,16 +510,16 @@ void main(void) {
 	ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
 	ssdo = (ssdo/NUM_SAMPLES)*0.5;
 	
-	out_DiffuseSpecular = finalColor + vec4(ssdo,0);// + ambientTerm;
-	//vec3 indirectLight = lightDiffuse.rgb*getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace);
-	//out_DiffuseIndirect.rgb = indirectLight;
+	out_DiffuseSpecular = finalColor + length(finalColor.rgb) * vec4(ssdo,0);// + ambientTerm;
+	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace);
+	//out_DiffuseSpecular.rgb += indirectLight;
 	
 	//out_DiffuseSpecular.rgb = (ssdo);
 	
 	//vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 	//out_AOReflection = vec4(ao, reflectedColor.rgb);
 	out_AOReflection.r = ao;
-	out_AOReflection.gba = scatterFactor * 0.5 * scatter(positionWorld, -eyePosition);
+	out_AOReflection.gba = scatterFactor *  scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);
