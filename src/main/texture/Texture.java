@@ -284,6 +284,7 @@ public class Texture implements Serializable {
 		} finally {
 			try {
 				out.close();
+				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import main.World;
 import main.model.IEntity;
 import main.renderer.Result;
+import main.renderer.command.Command;
+import main.renderer.command.RemoveEntityCommand;
 import main.renderer.material.Material;
 import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
 import main.scene.EnvironmentProbe;
@@ -73,6 +75,36 @@ public class ProbeView extends WebPanel {
 
 	        addNamePanel(webComponentPanel);
 
+	        WebButton removeProbeButton = new WebButton("Remove Probe");
+    		removeProbeButton.addActionListener(e -> {
+	        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getEnvironmentProbeFactory().remove(probe);
+						return new Result() {
+							@Override public boolean isSuccessful() { return true; }
+						};
+					}
+	        	});
+	    		
+	    		Result result = null;
+	    		try {
+	    			result = queue.poll(1, TimeUnit.MINUTES);
+	    		} catch (Exception e1) {
+	    			e1.printStackTrace();
+	    			showNotification(NotificationIcon.error, "Not able to remove probe");
+	    		}
+	    		
+	    		if (!result.isSuccessful()) {
+	    			showNotification(NotificationIcon.error, "Not able to remove probe");
+	    		} else {
+	    			showNotification(NotificationIcon.plus, "Probe removed");
+	    			if(debugFrame != null) { debugFrame.refreshProbeTab(); }
+	    		}
+	        });
+
+	        webComponentPanel.addElement(removeProbeButton);
 	        webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
 	        	world.setActiveCamera(probe.getCamera());
 	        });}});

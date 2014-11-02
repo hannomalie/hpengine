@@ -108,6 +108,7 @@ public class CubeMap extends Texture implements Serializable {
 		} finally {
 			try {
 				out.close();
+				fos.close();
 				return true;
 			} catch (IOException e) {
 				e.printStackTrace();

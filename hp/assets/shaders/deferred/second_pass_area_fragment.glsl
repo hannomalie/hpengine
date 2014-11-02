@@ -191,13 +191,13 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		float F = fresnel + F0;
         
 		//diff = (diff.rgb/3.1416) * (1-F0);
-		float specularAdjust = length(diffuse)/length(vec3(1,1,1));
-        float specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
-        
         
         if(useTexture) {
         	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
+        
+		float specularAdjust = length(diffuse)/length(vec3(1,1,1));
+        float specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
         
 		return vec4(diffuse, specular);
 	}

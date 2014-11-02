@@ -330,11 +330,11 @@ public class DebugFrame {
 	        sceneSaveMenuItem.addActionListener(e -> {
 	        	Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
 	        	if(selection != null) {
-	        		world.getScene().write(selection.toString());
+	        		boolean success = world.getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 	                notificationPopup.setIcon(NotificationIcon.clock);
 	                notificationPopup.setDisplayTime( 2000 );
-	                notificationPopup.setContent(new WebLabel("Saved scene as " + selection));
+	                notificationPopup.setContent(new WebLabel(success + ": Saved scene as " + selection));
 	                NotificationManager.showNotification(notificationPopup);
 	        	}
 	        });
@@ -870,11 +870,6 @@ public class DebugFrame {
 	private AbstractTableModel createTextureDataModel(TextureFactory textureFactory) {
 		return new AbstractTableModel() {
 
-			List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
-					.toArray());
-			List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
-					.toArray());
-
 			public int getColumnCount() {
 				return 2;
 			}
@@ -885,8 +880,12 @@ public class DebugFrame {
 
 			public Object getValueAt(int row, int col) {
 				if (col == 0) {
+					List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
+							.toArray());
 					return paths.get(row);
 				}
+				List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
+						.toArray());
 				main.texture.Texture texture = (main.texture.Texture) textures.get(row);
 				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
 			}
@@ -1041,7 +1040,7 @@ public class DebugFrame {
 		createAreaLightsTab();
 		tabbedPane.addTab("AreaLights", areaLightsPane);
 	}
-	private void refreshProbeTab() {
+	public void refreshProbeTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(probesPane);
 		addProbes(world);

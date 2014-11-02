@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -156,6 +157,12 @@ public class Material implements Serializable {
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
 		}
+		
+		if(entity == null) { return; }
+		
+		List<EnvironmentProbe> surroundingProbes = renderer.getEnvironmentProbeFactory().getProbesForEntity(entity);
+		program.setUniform("probeIndex1", surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : 0);
+		program.setUniform("probeIndex2", surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : 0);
 	}
 
 	public void setTexturesInactive() {
@@ -262,6 +269,7 @@ public class Material implements Serializable {
 		} finally {
 			try {
 				out.close();
+				fos.close();
 				return true;
 			} catch (IOException e) {
 				e.printStackTrace();

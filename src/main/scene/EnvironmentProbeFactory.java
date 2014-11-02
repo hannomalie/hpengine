@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import main.World;
 import main.model.DataChannels;
+import main.model.Entity;
 import main.model.IEntity;
 import main.model.VertexBuffer;
 import main.octree.Octree;
@@ -17,10 +18,8 @@ import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
+import main.texture.CubeMapArray;
 
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Vector3f;
 
 public class EnvironmentProbeFactory {
@@ -32,8 +31,11 @@ public class EnvironmentProbeFactory {
 	
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 	
+	private CubeMapArray environmentMapsArray;
+
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
+		this.environmentMapsArray = new CubeMapArray(renderer, 192);
 
 //		int cubeMapArray = GL11.glGenTextures();
 //		GL11.glBindTexture(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, cubeMapArray);
@@ -82,6 +84,7 @@ public class EnvironmentProbeFactory {
 			if(frameCount%i == 0) {
 				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 				environmentProbe.draw(octree, light);
+//				environmentMapsArray.copyCubeMapIntoIndex(environmentProbe.getEnvironmentMap().getTextureID(), i-1);
 			};
 		}
 	}
@@ -142,5 +145,24 @@ public class EnvironmentProbeFactory {
 		for (EnvironmentProbe environmentProbe : staticProbes) {
 			environmentProbe.draw(octree, World.light);
 		}
+	}
+	
+	public CubeMapArray getEnvironmentMapsArray() {
+		return environmentMapsArray;
+	}
+
+	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
+		return probes.stream().filter(probe -> {
+			return probe.contains(entity.getMinMaxWorld());
+		}).sorted(new Comparator<EnvironmentProbe>() {
+			@Override
+			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
+				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).length(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).length()));
+			}
+		}).collect(Collectors.toList());
+	}
+
+	public void remove(EnvironmentProbe probe) {
+		probes.remove(probe);
 	}
 }

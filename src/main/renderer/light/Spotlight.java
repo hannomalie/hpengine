@@ -124,6 +124,7 @@ public class Spotlight implements IEntity {
 			e.getModelMatrix().store(entityBuffer);
 			entityBuffer.rewind();
 			directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 			e.getVertexBuffer().draw();
 		}
 	}
@@ -132,9 +133,12 @@ public class Spotlight implements IEntity {
 		return renderTarget.getRenderedTexture();
 	}
 	public int getShadowMapWorldPositionId() {
+		return renderTarget.getRenderedTexture(2);
+	}
+	public int getShadowMapColorMapId() {
 		return renderTarget.getRenderedTexture(1);
 	}
-
+	
 	public Camera getCamera() {
 		return camera;
 	}

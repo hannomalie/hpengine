@@ -26,6 +26,8 @@ uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
 uniform float materialRoughness = 0;
 uniform float materialMetallic = 0;
+uniform int probeIndex1 = 0;
+uniform int probeIndex2 = 0;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -56,7 +58,7 @@ uniform float far = 100.0;
 layout(location=0)out vec4 out_position; // position, roughness
 layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
-layout(location=3)out vec4 out_motion; // motion
+layout(location=3)out vec4 out_motion; // motion, probeIndices
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -189,6 +191,5 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(blurVec,0,0);
-	
+  	out_motion = vec4(blurVec,probeIndex1,probeIndex2);
 }

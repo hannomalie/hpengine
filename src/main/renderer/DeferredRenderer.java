@@ -152,9 +152,8 @@ public class DeferredRenderer implements Renderer {
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
-		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
-		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
-		environmentProbeFactory.getProbe(new Vector3f(), 600, Update.DYNAMIC);
+//		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
+//		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
 		
 		sphereModel = null;
 		try {
@@ -167,6 +166,7 @@ public class DeferredRenderer implements Renderer {
 		}
 //		_addPointLights();
 //		_addPointLightsGrid();
+//		_addEnvironmentPorbesGrid();
 	}
 
 	private void _addPointLights() {
@@ -183,13 +183,24 @@ public class DeferredRenderer implements Renderer {
 			pointLights.add(pointLight);
 		}
 	}
-	
+
+	private void _addEnvironmentPorbesGrid() {
+		int size = 60;
+		int count = 64;
+		count = (int) Math.sqrt(count);
+		int maxXY = (int) (size*count*0.5);
+		int minXY = -maxXY;
+		int gap = -20;
+		for (int i = 0; i < count; i++) {
+			for (int z = 0; z < count; z++) {
+				Vector3f position = new Vector3f(minXY + i*size+gap, 0, minXY + z*size+gap);
+				environmentProbeFactory.getProbe(position, size, Update.DYNAMIC);
+			}
+		}
+	}
 	private void _addPointLightsGrid() {
-		Material white = materialFactory.getMaterial(new HashMap<MAP,String>(){{
-			put(MAP.DIFFUSE,"assets/textures/default.dds");
-		}});
-		int size = 70;
-		int count = 100;
+		int size = 140;
+		int count = 40;
 		count = (int) Math.sqrt(count);
 		int maxXY = (int) (size*count*0.5);
 		int minXY = -maxXY;
@@ -390,7 +401,7 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getMotionMap(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

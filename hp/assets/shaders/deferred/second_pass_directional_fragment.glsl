@@ -6,8 +6,9 @@ layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
 
-layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
-layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position
+layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
+layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position, 
+layout(binding=8) uniform sampler2D shadowMapDiffuseColor; // color
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -175,9 +176,9 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 }
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
-  	/*if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-		return 0;
-	}*/
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return vec3(0,0,0);
+	}
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
@@ -202,30 +203,43 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	return vec3(p_max,p_max,p_max);
 }
 
-vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace) {
+vec4 getViewPosInTextureSpace(vec3 viewPosition) {
+	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
+    projectedCoord.xy /= projectedCoord.w;
+    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+    return projectedCoord;
+}
+
+vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace, vec2 uv) {
 //return vec3(0,0,0);
-	const float NUM_SAMPLES_FACTOR = 40;
+	const float NUM_SAMPLES_FACTOR = 10;
 	const float DISTFLOAT = 0.5;
-	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT);
+	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT)*(16/9);
 	
 	vec3 shadowNormal = decode(texture(shadowMap, ShadowCoordPostW.xy).ba);
-	float sum = 0;//max(dot(normalWorld,shadowNormal), 0);
+	vec3 sum = vec3(0,0,0);
 	
 	for(int i = 1; i <= NUM_SAMPLES_FACTOR; i++) {
-		float tempSum = 0;
+		vec3 tempSum = vec3(0,0,0);
 		
 		for(int z = 0; z < 16; z++) {
 			vec2 coords = ShadowCoordPostW.xy + (i/NUM_SAMPLES_FACTOR)*pSphere[z].xy*DIST;
+		  	if (coords.x < 0 || coords.x > 1 || coords.y < 0 || coords.y > 1) {
+				//continue;
+			}
 			vec4 shadowMapSample = texture(shadowMap, coords);
 			vec4 shadowWorldPosition = texture(shadowMapWorldPosition, coords);
+			vec4 shadowDiffuseMapSample = texture(shadowMapDiffuseColor, coords);
 			float shadowDepth = shadowMapSample.x;
 			shadowNormal = decode(shadowMapSample.ba);
+			shadowNormal = shadowNormal * 2 - 1;
+			shadowNormal = normalize(shadowNormal);
 			float flux = 1;
 			flux *= max(0,dot(shadowNormal, -lightDirection));
 			flux *= max(0,dot(shadowNormal, (positionWorld - shadowWorldPosition.xyz)));
 			flux *= max(0,dot(normalWorld, (shadowWorldPosition.xyz - positionWorld)));
 			
-			tempSum += flux/pow(length(positionWorld - shadowWorldPosition.xyz),1);
+			tempSum += lightDiffuse.rgb*(flux/pow(length(positionWorld - shadowWorldPosition.xyz),2));
 		}
 		//sum += tempSum/16;
 		sum += tempSum;
@@ -233,15 +247,9 @@ vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionW
 
 	sum /= NUM_SAMPLES_FACTOR;
 	
-	return vec3(sum,sum,sum);
+	return sum;
 }
 
-vec4 getViewPosInTextureSpace(vec3 viewPosition) {
-	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
-    projectedCoord.xy /= projectedCoord.w;
-    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
-    return projectedCoord;
-}
 
 vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
 
@@ -339,7 +347,9 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		vec4 worldInShadowCameraSpace = shadowPos;
 		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
     	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
-    	
+	  	/*if (shadowmapTexCoord.x < 0 || shadowmapTexCoord.x > 1 || shadowmapTexCoord.y < 0 || shadowmapTexCoord.y > 1) {
+			continue;
+		}*/
 		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
 		 
 		if (shadowMapValue > worldInShadowCameraSpace.z)
@@ -511,8 +521,8 @@ void main(void) {
 	ssdo = (ssdo/NUM_SAMPLES)*0.5;
 	
 	out_DiffuseSpecular = finalColor + length(finalColor.rgb) * vec4(ssdo,0);// + ambientTerm;
-	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace);
-	//out_DiffuseSpecular.rgb += indirectLight;
+	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace, st);
+	//out_DiffuseSpecular.rgb += lightDiffuse.rgb * indirectLight;
 	
 	//out_DiffuseSpecular.rgb = (ssdo);
 	

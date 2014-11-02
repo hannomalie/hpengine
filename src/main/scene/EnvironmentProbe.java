@@ -1,5 +1,6 @@
 package main.scene;
 
+import java.io.Serializable;
 import java.util.List;
 
 import main.Transform;
@@ -11,6 +12,7 @@ import main.renderer.Renderer;
 import main.renderer.light.AreaLight;
 import main.renderer.light.Spotlight;
 import main.renderer.material.Material;
+import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMap;
 

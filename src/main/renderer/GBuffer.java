@@ -163,6 +163,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
 		GPUProfiler.end();
 		
 		GPUProfiler.start("Set uniforms");
@@ -353,6 +355,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap()); // normal, depth
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		fullscreenBuffer.draw();
 
 		if(target == null) {
@@ -360,6 +364,9 @@ public class GBuffer {
 		} else {
 			target.use(true);
 		}
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture());
 		
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -369,8 +376,6 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
-		
-//		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 	
 	private void bindEnvironmentProbePositions(Program program) {

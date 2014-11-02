@@ -48,7 +48,7 @@ public class CameraTest {
 	public void inFrustum() {
 		Matrix4f projectionMatrix = Util.createPerpective(60, 16/9, 0.1f, 100f);
 		Camera camera = new Camera(renderer, projectionMatrix, 0.1f, 100f);
-		Assert.assertEquals(new Vector3f(0,0,1), ((Vector3f)(camera.getViewDirection().negate())));
+		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(camera.getViewDirection())));
 		
 		Frustum frustum = camera.getFrustum();
 
