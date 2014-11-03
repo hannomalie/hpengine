@@ -59,7 +59,8 @@ public class GBuffer {
 	private Program instantRadiosityProgram;
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
+	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
+					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
@@ -169,7 +170,6 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
 		GPUProfiler.end();
 		
-		GPUProfiler.start("Set uniforms");
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		secondPassDirectionalProgram.setUniform("useColorBleeding", World.useColorBleeding);
@@ -187,12 +187,37 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
-		GPUProfiler.end();
 		GPUProfiler.start("Draw fullscreen buffer");
 		fullscreenBuffer.draw();
 		GPUProfiler.end();
 
 		GPUProfiler.end();
+		
+		doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
+
+		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
+
+		doAreaLights(areaLights, viewMatrix, projectionMatrix);
+		
+		doInstantRadiosity(directionalLight, viewMatrix, projectionMatrix);
+		
+
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		renderer.getTextureFactory().generateMipMaps(getLightAccumulationMapOneId());
+		renderer.getTextureFactory().generateMipMaps(getAmbientOcclusionMapId());
+		
+		laBuffer.unuse();
+		GL11.glDisable(GL11.GL_BLEND);
+//		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_BACK);
+		GL11.glDepthFunc(GL11.GL_LESS);
+		GPUProfiler.end();
+		GPUProfiler.end();
+	}
+	
+	private void doPointLights(Camera camera, List<PointLight> pointLights,
+			Vector3f camPosition, FloatBuffer viewMatrix,
+			FloatBuffer projectionMatrix) {
 		GPUProfiler.start("Pointlights");
 		secondPassPointProgram.use();
 
@@ -240,7 +265,10 @@ public class GBuffer {
 			}
 			firstLightDrawn = true;
 		}
-
+	}
+	private void doTubeLights(List<TubeLight> tubeLights,
+			Vector4f camPositionV4, FloatBuffer viewMatrix,
+			FloatBuffer projectionMatrix) {
 		secondPassTubeProgram.use();
 		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -271,7 +299,10 @@ public class GBuffer {
 			secondPassTubeProgram.setUniform("lightDiffuse", tubeLight.getColor());
 			tubeLight.draw(renderer, secondPassTubeProgram);
 		}
-
+	}
+	
+	private void doAreaLights(List<AreaLight> areaLights,
+			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		secondPassAreaLightProgram.use();
 		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -307,8 +338,10 @@ public class GBuffer {
 			fullscreenBuffer.draw();
 //			areaLight.getVertexBuffer().drawDebug();
 		}
-		
-		
+	}
+	
+	private void doInstantRadiosity(Spotlight directionalLight,
+			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		if(World.useInstantRadiosity) {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
@@ -327,18 +360,6 @@ public class GBuffer {
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			fullscreenBuffer.draw();
 		}
-
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		renderer.getTextureFactory().generateMipMaps(getLightAccumulationMapOneId());
-		renderer.getTextureFactory().generateMipMaps(getAmbientOcclusionMapId());
-		
-		laBuffer.unuse();
-		GL11.glDisable(GL11.GL_BLEND);
-//		GL11.glEnable(GL11.GL_CULL_FACE);
-		GL11.glCullFace(GL11.GL_BACK);
-		GL11.glDepthFunc(GL11.GL_LESS);
-		GPUProfiler.end();
-		GPUProfiler.end();
 	}
 
 

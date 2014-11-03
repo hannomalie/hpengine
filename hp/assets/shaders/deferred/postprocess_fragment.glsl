@@ -21,7 +21,7 @@ float calculateMotionBlur(vec2 uv) {
 //uniform variables from external script
 const float focalDepth = 10;  //focal distance value in meters, but you may use autofocus option below
 const float focalLength = 12.0; //focal length in mm
-const float fstop = 0.8;//1.4; //f-stop value
+const float fstop = 1.1;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
@@ -338,7 +338,7 @@ void main()
 {
 	vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
 	float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
-    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.005,0.005), renderedTexture);
+    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
     
     out_color = in_color;
     //out_color.rgb = vec3(depth, depth, depth);

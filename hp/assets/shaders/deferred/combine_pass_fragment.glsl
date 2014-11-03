@@ -504,7 +504,8 @@ void main(void) {
 	//texCoords3d -= texCoords3d * 0.0000001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
 	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
-	vec3 reflectedColor = getProbeColor(positionWorld, V, normalWorld, roughness, st);//textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 8).rgb;
+	vec3 reflectedColor = getProbeColor(positionWorld, V, normalWorld, roughness, st);
+	vec3 environmentColor = reflectedColor;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
 	if(roughness > 0.2) {
 		reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
@@ -523,33 +524,11 @@ void main(void) {
 	
 	vec3 ambientDiffuse = vec3(0,0,0);
 	vec3 ambientSpecular = vec3(0,0,0);
-	vec3 currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(0,0,-1), 1, st);
-	vec4 ambientFromEnvironment = cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(0,0,1), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
-	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(0,-1,0), 1, st);
-	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(0,1,0), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
-	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(-1,0,0), 1, st);
-	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(1,0,0), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
-	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(0,0,1), 1, st);
-	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(0,0,-1), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
-	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(0,1,0), 1, st);
-	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(0,-1,0), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
-	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(1,0,0), 1, st);
-	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(-1,0,0), currentEnvironmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	
+	vec4 ambientFromEnvironment = cookTorrance(V, positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor);
+	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * environmentColor;
 	
 	//ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
-	//ambientTerm = 2 * ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * clamp(ambientSpecular, vec3(0,0,0), vec3(0.5,0.5,0.5));
+	ambientTerm = 2 * ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * clamp(ambientSpecular, vec3(0,0,0), vec3(0.5,0.5,0.5));
 
 
 	ambientTerm *= clamp(ao,0,1);

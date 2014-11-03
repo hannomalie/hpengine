@@ -72,10 +72,8 @@ public class Scene implements Serializable {
 			for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
 				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getUpdate());
 				if(probes.contains(probeData)) { continue; }
-				System.out.println("Added probe to output");
 				probes.add(probeData);
 			}
-			System.out.println("probes count before write is " + probes.size());
 			out.writeObject(this);
 
 		} catch (Exception e) {

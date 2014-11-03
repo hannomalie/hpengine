@@ -334,7 +334,7 @@ public class DebugFrame {
         {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
-	        	Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
+	        	Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, scene.getName() != "" ? scene.getName() : "default" );
 	        	if(selection != null) {
 	        		boolean success = world.getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();

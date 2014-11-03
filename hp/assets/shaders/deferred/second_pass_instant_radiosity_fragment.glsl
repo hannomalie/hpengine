@@ -240,7 +240,7 @@ void main(void) {
 			vec4 shadowDiffuseColor = vec4((texture(shadowMapDiffuseColor, coords).rgb), 0);
 			shadowWorldPosition += shadowWorldNormal;
 		
-			//finalColor += cookTorrance(V, positionView, normalView, roughness, (viewMatrix * shadowWorldPosition).xyz, (viewMatrix * shadowWorldNormal).xyz, vec3(0,1,0), vec3(1,0,0), 10, 10, 150);
+			//finalColor += cookTorrance(V, positionView, normalView, roughness, (viewMatrix * shadowWorldPosition).xyz, (viewMatrix * shadowWorldNormal).xyz, vec3(0,1,0), vec3(1,0,0), 20, 20, 150);
 			finalColor += shadowDiffuseColor * cookTorrance(V, positionView, normalView, roughness, shadowWorldPosition.xyz, 140);
 		}
 	}
