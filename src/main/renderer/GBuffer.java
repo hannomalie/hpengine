@@ -43,8 +43,9 @@ import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
 
 public class GBuffer {
 
+	public static float SECONDPASSSCALE = 1f;
+	
 	private Renderer renderer;
-	private float secondPassScale = 1f;
 	private RenderTarget gBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
@@ -72,7 +73,7 @@ public class GBuffer {
 		this.instantRadiosityProgram = instantRadiosityProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
-		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
+		laBuffer = new RenderTarget((int) (Renderer.WIDTH * SECONDPASSSCALE) , (int) (Renderer.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
@@ -177,7 +178,7 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-		secondPassDirectionalProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassDirectionalProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
@@ -226,7 +227,7 @@ public class GBuffer {
 //		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
 		secondPassPointProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassPointProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-		secondPassPointProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassPointProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GPUProfiler.end();
@@ -272,7 +273,7 @@ public class GBuffer {
 		secondPassTubeProgram.use();
 		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-		secondPassTubeProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassTubeProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		for (TubeLight tubeLight : tubeLights) {
@@ -306,7 +307,7 @@ public class GBuffer {
 		secondPassAreaLightProgram.use();
 		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-		secondPassAreaLightProgram.setUniform("secondPassScale", secondPassScale);
+		secondPassAreaLightProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GL11.glDisable(GL11.GL_CULL_FACE);
@@ -352,7 +353,7 @@ public class GBuffer {
 			instantRadiosityProgram.use();
 			instantRadiosityProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 			instantRadiosityProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-			instantRadiosityProgram.setUniform("secondPassScale", secondPassScale);
+			instantRadiosityProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 			instantRadiosityProgram.setUniform("lightDiffuse", directionalLight.getColor());
 			instantRadiosityProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			instantRadiosityProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);

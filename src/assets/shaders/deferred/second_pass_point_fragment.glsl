@@ -38,6 +38,13 @@ in vec4 position_view;
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;
 
+vec4 getViewPosInTextureSpace(vec3 viewPosition) {
+	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
+    projectedCoord.xy /= projectedCoord.w;
+    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+    return projectedCoord;
+}
+
 #define kPI 3.1415926536f
 vec3 decodeNormal(vec2 enc) {
     vec2 ang = enc*2-1;
@@ -82,7 +89,6 @@ vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, v
   return vec4((vec4(lightDiffuse,1) * dot_prod * atten_factor).xyz, specular_factor * atten_factor);
 }
 
-
 float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
@@ -92,13 +98,13 @@ float calculateAttenuation(float dist) {
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = -normalize(position);
-	//vec3 V = -ViewVector;
+	vec3 V = normalize(-position);
+	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);
     
-    if(dist > lightRadius) {discard;}
+	if(dist > lightRadius) {discard;}
     
     float atten_factor = calculateAttenuation(dist);
     
@@ -114,15 +120,17 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
 	float alpha = acos(NdotH);
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	//alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
     
     // Schlick
-	float F0 = 0.02;
+	float F0 = 0.04;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.02));
+	//F0 = max(F0, ((1-roughness)*0.02));
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -133,7 +141,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = (diff.rgb/3.1416) * (1-F0);
+	//diff = (diff.rgb/3.1416) * (1-F0);
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
 	
 	return atten_factor* vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));

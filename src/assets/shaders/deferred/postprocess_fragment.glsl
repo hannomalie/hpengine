@@ -2,10 +2,14 @@
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
+layout(binding=3) uniform sampler2D motionMap; // motionVec
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
+float calculateMotionBlur(vec2 uv) {
+	return length(texture2D(motionMap, uv).xy);
+}
 
 ///////////////////////////////////////
 // http://facepunch.com/showthread.php?t=1401594
@@ -17,7 +21,7 @@ out vec4 out_color;
 //uniform variables from external script
 const float focalDepth = 10;  //focal distance value in meters, but you may use autofocus option below
 const float focalLength = 12.0; //focal length in mm
-const float fstop = 0.8;//1.4; //f-stop value
+const float fstop = 1.1;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
@@ -268,6 +272,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 		blur = abs(a-b)*c;
 	}
 	
+	blur = max(calculateMotionBlur(uv), blur);
 	blur = clamp(blur, 0, 1);
 	
 	// calculation of pattern for ditering

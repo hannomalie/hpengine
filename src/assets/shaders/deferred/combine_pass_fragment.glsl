@@ -1,13 +1,27 @@
 #version 420
 
-layout(binding=0) uniform sampler2D diffuseMap; // diffuse, reflectiveness 
+layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
 layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
-layout(binding=3) uniform sampler2D specularMap; // specular color, metallic
+layout(binding=3) uniform sampler2D motionMap; // motionVec
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
+layout(binding=7) uniform samplerCubeArray probes;
 
+
+
+layout(binding=170) uniform samplerCube probe170;
+layout(binding=171) uniform samplerCube probe171;
+layout(binding=172) uniform samplerCube probe172;
+layout(binding=173) uniform samplerCube probe173;
+layout(binding=174) uniform samplerCube probe174;
+layout(binding=175) uniform samplerCube probe175;
+layout(binding=176) uniform samplerCube probe176;
+layout(binding=177) uniform samplerCube probe177;
+layout(binding=178) uniform samplerCube probe178;
+layout(binding=179) uniform samplerCube probe179;
+layout(binding=180) uniform samplerCube probe180;
 layout(binding=181) uniform samplerCube probe181;
 layout(binding=182) uniform samplerCube probe182;
 layout(binding=183) uniform samplerCube probe183;
@@ -32,6 +46,7 @@ uniform float secondPassScale = 1;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform int exposure = 4;
 
+uniform int activeProbeCount;
 uniform vec3 environmentMapMin[192];
 uniform vec3 environmentMapMax[192];
 
@@ -73,18 +88,28 @@ float rand(vec2 co){
 }
 
 samplerCube getProbeForIndex(int probeIndex) {
-
-	if(probeIndex == 191) {
-		return probe191;
-	} else if(probeIndex == 190) {
-		return probe190;
-	} else if(probeIndex == 189) {
-		return probe189;
-	} else if(probeIndex == 188) {
-		return probe188;
-	} else {
-		return globalEnvironmentMap;
-	}
+	if(probeIndex == 191) { return probe191; }
+	else if(probeIndex == 190) { return probe190; }
+	else if(probeIndex == 189) { return probe189; }
+	else if(probeIndex == 188) { return probe188; }
+	else if(probeIndex == 187) { return probe187; }
+	else if(probeIndex == 186) { return probe186; }
+	else if(probeIndex == 185) { return probe185; }
+	else if(probeIndex == 184) { return probe184; }
+	else if(probeIndex == 183) { return probe183; }
+	else if(probeIndex == 182) { return probe182; }
+	else if(probeIndex == 181) { return probe181; }
+	else if(probeIndex == 180) { return probe180; }
+	else if(probeIndex == 179) { return probe179; }
+	else if(probeIndex == 178) { return probe178; }
+	else if(probeIndex == 177) { return probe177; }
+	else if(probeIndex == 176) { return probe176; }
+	else if(probeIndex == 175) { return probe175; }
+	else if(probeIndex == 174) { return probe174; }
+	else if(probeIndex == 173) { return probe173; }
+	else if(probeIndex == 172) { return probe172; }
+	else if(probeIndex == 171) { return probe171; }
+	else { return globalEnvironmentMap; }
 }
 
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
@@ -94,7 +119,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
+vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
 
 //return color;
 //return probeColor;
@@ -102,10 +127,14 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 	vec3 eyeToSurfaceView = targetPosView;
 	vec3 reflectionVecView = normalize(reflect(eyeToSurfaceView, targetNormalView));
 	
-	vec3 viewRay = 10*normalize(reflectionVecView);
+	int STEPRAYLENGTH = 10;
+	vec3 viewRay = STEPRAYLENGTH*normalize(reflectionVecView);
 	
 	vec3 currentViewPos = targetPosView;
-	for (int i = 0; i < 25; i++) {
+	
+	const int STEPS_1 = 20;
+	const int STEPS_2 = 10;
+	for (int i = 0; i < STEPS_1; i++) {
 	
 		  currentViewPos += viewRay;
 		  
@@ -116,27 +145,27 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 		  	
 		  	currentViewPos -= viewRay;
 		  	
-		  	for(int x = 0; x < 10; x++) {
-		 		currentViewPos += viewRay/10;
+		  	for(int x = 0; x < STEPS_2; x++) {
+		 		currentViewPos += viewRay/STEPS_2;
 		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
-				  difference = currentViewPos.z - currentPosSample.z;
-				  //if (difference < 0 && difference > -2) {
-				  if (abs(difference) > 2) {
-				  	//float temp = currentPosSample - targetPosView; 
-				  	//if(abs(temp) > 2)
-				  	{
-	  		  		  break;
-				  	}
+				  float absDifference = distance(currentViewPos.z, currentPosSample.z);
+				  if (absDifference < 0.01) {
+  		  		  	break;
 				  }
 		  	}
 		  	
   		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
   			//if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
+				float distanceInWorld = distance(currentPosSample, targetPosView);
+				float mipMapLevelFromWorldDistance = clamp(distanceInWorld/20, 0, 5); // every 30 units, the next mipmap level is chosen
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
-    			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
+    			float mipMapChoser = roughness * 9;
+    			mipMapChoser = max(mipMapChoser, mipMapLevelFromWorldDistance);
+    			mipMapChoser = max(mipMapChoser, screenEdgefactor * 5);
+    			vec3 reflectedColor =  textureLod(diffuseMap, resultCoords.xy, mipMapChoser).xyz;
     			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
     			//return vec3(screenEdgefactor, 0, 0);
     			
@@ -145,6 +174,8 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
     			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
     			//return vec3(screenEdgefactor, 0, 0);
     			
+    			reflectedColor += 2*texture2D(lightAccumulationMap, resultCoords.xy).rgb; // since no specular and ambient termn, approximate it with a factor of two
+    			//reflectedColor += reflectedColor * 0.5 * ambientColor;
 				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
 		  	}
 		  	//return vec3(1,0,0);
@@ -158,7 +189,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 
 
 vec3 sslr(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
-	vec3 sum = rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView);
+	vec3 sum = rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView, roughness);
 	const float factor = 0.025;
 	vec3 offset0 = vec3(roughness,roughness,roughness) * factor;
 	vec3 offset1 = vec3(roughness,roughness,-roughness) * factor;
@@ -166,16 +197,16 @@ vec3 sslr(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 
 	vec3 offset3 = vec3(-roughness,-roughness,-roughness) * factor;
 	vec3 offset4 = vec3(-roughness,-roughness,-roughness) * factor;
 	
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset0);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset1);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset2);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset3);
-	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset4);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset0, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset1, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset2, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset3, roughness);
+	sum += rayCastReflect(color, probeColor, screenPos, targetPosView, targetNormalView+offset4, roughness);
 	
 	return sum/5;
 }
 
-vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
 	vec3 nrdir = normalize(texCoords3d);
 	vec3 envMapMin = vec3(-300,-300,-300);
 	envMapMin = environmentMapMin;
@@ -192,18 +223,245 @@ vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin
 	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
 	vec3 posonbox = position_world.xyz + nrdir*fa;
 	
+	return posonbox; 
+}
+
+vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+	
 	//texCoords3d = normalize(posonbox - vec3(0,0,0));
-	vec3 environmentMapWorldPosition = (envMapMax + envMapMin)/2;
+	vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
 	return normalize(posonbox - environmentMapWorldPosition.xyz);
 }
+bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
+	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
+	//return(position.x >= minPosition.x && position.y >= minPosition.y && position.z >= minPosition.z && position.x <= maxPosition.x && position.y <= maxPosition.y && position.z <= maxPosition.z);
+}
+
+int getProbeIndexForPosition(vec3 position, vec3 normal) {
+	
+	vec3 currentEnvironmentMapMin = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax = environmentMapMax[0];
+	vec3 currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
+	float minDist = distance(currentIntersectionPoint, position);
+	int iForNearest = 191;
+	
+	for(int i = 0; i < activeProbeCount; i++) {
+		currentEnvironmentMapMin = environmentMapMin[191- i];
+		currentEnvironmentMapMax = environmentMapMax[191 -i];
+		currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
+		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
+		
+		float currentDist = distance(currentIntersectionPoint, position);
+		if(currentDist < minDist) {
+			minDist = currentDist;
+			iForNearest = i;
+		}
+	}
+	
+	return 191-iForNearest;
+}
+
+vec4[2] getTwoProbeIndicesForPosition(vec3 position, vec3 normal, vec2 uv) {
+	vec4[2] result;
+	
+	// Only if two indices can be precalculated, we skip the intersection test. one index is not enough to avoid flickering on moving objects
+	vec2 precalculatedIndices = texture(motionMap, uv).ba;
+	if(precalculatedIndices.x != 0) {
+		vec3 mini = environmentMapMin[int(precalculatedIndices.x)];
+		vec3 maxi = environmentMapMax[int(precalculatedIndices.x)];
+		result[0] = vec4(getIntersectionPoint(position, normal, mini, maxi), precalculatedIndices.x);
+		if(precalculatedIndices.y != 0) {
+			result[1] = vec4(getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]), precalculatedIndices.y);
+			return result;
+		}
+	}
+	
+	vec3 currentEnvironmentMapMin1 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax1 = environmentMapMax[0];
+	vec3 currentEnvironmentMapMin2 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax2 = environmentMapMax[0];
+	vec3 intersectionPoint1 = getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
+	vec3 intersectionPoint2 = intersectionPoint1;
+	float minDist1 = distance(intersectionPoint1, position);
+	int iForNearest1 = 191;
+	float minDist2 = minDist1;
+	int iForNearest2 = 191;
+	///////////
+	//result[0] = vec4(intersectionPoint1, 191-iForNearest1);
+	//result[1] = vec4(intersectionPoint2, 191-iForNearest2);
+	//return result;
+	///////////
+	
+	for(int i = 0; i < activeProbeCount; i++) {
+		vec3 currentEnvironmentMapMin = environmentMapMin[191- i];
+		vec3 currentEnvironmentMapMax = environmentMapMax[191 -i];
+		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
+		vec3 currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
+		
+		float currentDist = distance(currentIntersectionPoint, position);
+		if(currentDist < minDist1) {
+			minDist2 = minDist1;
+			iForNearest2 = iForNearest1;
+			intersectionPoint2 = intersectionPoint1;
+			
+			minDist1 = currentDist;
+			iForNearest1 = i;
+			intersectionPoint1 = currentIntersectionPoint;
+			
+		} else if(currentDist < minDist2) {
+			minDist2 = currentDist;
+			iForNearest2 = i;
+			intersectionPoint2 = currentIntersectionPoint;
+			
+		}
+	}
+	
+	result[0] = vec4(intersectionPoint1, 191-iForNearest1);
+	result[1] = vec4(intersectionPoint2, 191-iForNearest2);
+	return result;
+}
+
+vec4[2] getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3 normal) {
+	
+	vec4[2] result;
+	vec3 currentEnvironmentMapMin1 = environmentMapMin[191];
+	vec3 currentEnvironmentMapMax1 = environmentMapMax[191];
+	vec3 currentEnvironmentMapMin2 = environmentMapMin[191];
+	vec3 currentEnvironmentMapMax2 = environmentMapMax[191];
+	vec3 currentCenter1 = currentEnvironmentMapMin1 + distance(currentEnvironmentMapMin1, currentEnvironmentMapMax1)/2;
+	vec3 currentCenter2 = currentEnvironmentMapMin1 + distance(currentEnvironmentMapMin1, currentEnvironmentMapMax1)/2;
+	float minDist1 = distance(currentCenter1, position);
+	int iForNearest1 = 0;
+	float minDist2 = distance(currentCenter1, position);
+	int iForNearest2 = 0;
+	
+	if(!isInside(position, currentEnvironmentMapMin1, currentEnvironmentMapMax1)) { minDist1 = 1000000;minDist2 = 1000000; }
+	
+	for(int i = 1; i < activeProbeCount; i++) {
+		vec3 currentEnvironmentMapMin = environmentMapMin[191- i];
+		vec3 currentEnvironmentMapMax = environmentMapMax[191 -i];
+		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
+		vec3 currentCenter = currentEnvironmentMapMin + distance(currentEnvironmentMapMin, currentEnvironmentMapMax)/2;
+		
+		float currentDist = distance(currentCenter, position);
+		if(currentDist < minDist1) {
+			minDist2 = minDist1;
+			iForNearest2 = iForNearest1;
+			
+			minDist1 = currentDist;
+			iForNearest1 = i;
+		} else if(currentDist < minDist2){
+			minDist2 = currentDist;
+			iForNearest2 = i;
+		}
+	}
+	
+	result[0] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1), 191-iForNearest1);
+	result[1] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin2, currentEnvironmentMapMax2), 191-iForNearest2);
+	return result;
+}
+
+float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum) {
+	vec3 halfSize = (maximum - minimum)/2;
+	vec3 halfSizeInner = 0.8 * halfSize;
+	
+	vec3 center = minimum + halfSize;
+	vec3 positionInBoxSpace = positionWorld - center;
+	positionInBoxSpace = vec3(abs(positionInBoxSpace.x), abs(positionInBoxSpace.y), abs(positionInBoxSpace.z)); // work in the positive quarter of the cube
+	
+	//vec3 overhead = (positionInBoxSpace - halfSizeInner) / (halfSize - halfSizeInner);
+	vec3 overhead = (positionInBoxSpace - halfSizeInner);
+	overhead.x = clamp(overhead.x, 0, overhead.x);
+	overhead.y = clamp(overhead.y, 0, overhead.y);
+	overhead.z = clamp(overhead.z, 0, overhead.z);
+	overhead /= (halfSize - halfSizeInner);
+	
+	return max(overhead.x, max(overhead.y, overhead.z));
+}
+
+vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, vec2 uv) {
+	const float MAX_MIPMAPLEVEL = 9;
+	float mipMapLevel = roughness * MAX_MIPMAPLEVEL;
+	
+	vec4[2] twoIntersectionsAndIndices = getTwoProbeIndicesForPosition(positionWorld, normalWorld, uv);
+	//vec4[2] twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, normalWorld);
+	int probeIndexNearest = int(twoIntersectionsAndIndices[0].w);
+	int probeIndexSecondNearest = int(twoIntersectionsAndIndices[1].w);
+	
+	vec3 intersectionNearest = twoIntersectionsAndIndices[0].xyz;
+	vec3 intersectionSecondNearest = twoIntersectionsAndIndices[1].xyz;
+	
+	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
+	//return vec3(mixer, mixer, mixer);
+	
+	vec3 texCoords3d = normalize(reflect(V, normalWorld));
+	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
+	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
+	
+	vec3 colorNearest = textureLod(getProbeForIndex(probeIndexNearest), boxProjectedNearest, mipMapLevel).rgb;
+	vec3 colorSecondNearest = textureLod(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, mipMapLevel).rgb;
+	
+	float distanceToNearestIntersection = distance(positionWorld, twoIntersectionsAndIndices[0].xyz);
+	float distanceToSecondNearestIntersection = distance(positionWorld, twoIntersectionsAndIndices[1].xyz);
+	
+	return mix(colorNearest, colorSecondNearest, mixer);
+}
+
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor) {
+//http://renderman.pixar.com/view/cook-torrance-shader
+	vec3 V = normalize(-position);
+	V = ViewVector;
+ 	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+    vec3 H = normalize(L + V);
+    vec3 N = normalize(normal);
+    vec3 P = position;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float VdotH = max(dot(V, H), 0.0);
+    
+	
+	float alpha = acos(NdotH);
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	alpha = roughness*roughness;
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+    
+    // Schlick
+	float F0 = 0.04;
+	// Specular in the range of 0.02 - 0.2
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	//F0 = max(F0, metallic);
+    float fresnel = 1; fresnel -= dot(V, H);
+	fresnel = pow(fresnel, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
+	
+	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	vec3 diff = vec3(lightColor.rgb) * NdotL;
+	//diff = (diff.rgb/3.1416) * (1-F0);
+	//diff *= (1/3.1416*alpha*alpha);
+	
+	float specularAdjust = length(lightColor.rgb)/length(vec3(1,1,1));
+	
+	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
+}
+
 
 void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
   	
-  	vec4 positionRoughness = texture2D(positionMap, st);
+  	vec4 positionRoughness = textureLod(positionMap, st, 0);
   	float roughness = positionRoughness.w;
+  	//roughness = 0;
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
   	vec4 normalView = vec4(texture2D(normalMap,st).rgb, 0);
@@ -215,50 +473,65 @@ void main(void) {
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
   	
-  	vec4 colorProbeindex = texture2D(diffuseMap, st);
-  	int probeIndex = int(colorProbeindex.w);
+  	vec4 motionVecProbeIndices = texture2D(motionMap, st); 
+  	vec2 motionVec = motionVecProbeIndices.xy;
+  	vec4 colorMetallic = texture2D(diffuseMap, st);
+	//int probeIndex = getProbeIndexForPosition(positionWorld, normalWorld);
+	int probeIndex = int(motionVecProbeIndices.b);
+	probeIndex = probeIndex == 0 ? getProbeIndexForPosition(positionWorld, normalWorld) : probeIndex;
   	
-  	vec4 specularColorMetallic = texture2D(specularMap, st);
-  	vec3 specularColor = specularColorMetallic.xyz;
-  	float metallic = specularColorMetallic.a;
+  	float metallic = colorMetallic.a;
   	
 	const float metalSpecularBoost = 1.0;
-  	specularColor = mix(specularColor, metalSpecularBoost*colorProbeindex.rgb, metallic);
-  	const float metalBias = 0.0;
-  	vec3 color = mix(colorProbeindex.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
+  	vec3 specularColor = mix(vec3(1,1,1), metalSpecularBoost*colorMetallic.rgb, metallic);
+  	const float metalBias = 0.25;
+  	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
-	vec4 lightDiffuseSpecular = texture2D(lightAccumulationMap, st);
-	//lightDiffuseSpecular = blurSample(lightAccumulationMap, st, 0.0015);
+	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
+	//lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 4*length(lightDiffuseSpecular)/length(vec4(1,1,1,1)));
 	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 	
-	vec4 aoReflect = texture2D(aoReflection, st);
-	float ao = blurSample(aoReflection, st, 0.0025).r;
-	ao += blurSample(aoReflection, st, 0.005).r;
-	ao /= 2;
+	vec4 aoReflect = textureLod(aoReflection, st, 3);
+	float ao = textureLod(aoReflection, st, 1).r;
+	//float ao = blurSample(aoReflection, st, 0.0025).r;
+	//ao += blurSample(aoReflection, st, 0.005).r;
+	//ao /= 2;
 
 	vec3 texCoords3d = normalize(reflect(V, normalWorld));
 	texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
 	// Try to parallax-correct
-	//texCoords3d -= texCoords3d * 0.00001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
+	//texCoords3d -= texCoords3d * 0.0000001 * texture(getProbeForIndex(probeIndex), texCoords3d).a;
 	//texCoords3d = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	
-	vec3 reflectedColor = textureLod(getProbeForIndex(probeIndex), texCoords3d, roughness * 9).rgb;
+	vec3 reflectedColor = getProbeColor(positionWorld, V, normalWorld, roughness, st);
+	vec3 environmentColor = reflectedColor;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb);
+	if(roughness > 0.2) {
+		reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
+	}
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
+	reflectionMixer -= metallic*0.5; // metallic reflections should be tinted
+	reflectionMixer = clamp(reflectionMixer, 0, 1);
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
-	finalColor = mix(finalColor, (1*finalColor+2*specularColor)/3, metallic);
 	vec3 specularTerm = 2*specularColor * specularFactor;
 	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor*(1-specularFactor);
 	
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	ambientTerm = 0.5 * ambientColor * finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb;
+	
+	vec3 ambientDiffuse = vec3(0,0,0);
+	vec3 ambientSpecular = vec3(0,0,0);
+	vec4 ambientFromEnvironment = cookTorrance(V, positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor);
+	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * environmentColor;
+	
+	//ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
+	ambientTerm = 2 * ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * clamp(ambientSpecular, vec3(0,0,0), vec3(0.5,0.5,0.5));
 
-	ambientTerm *= ao;
+
+	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(diffuseTerm, 1))) + vec4(specularTerm,1);
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba);
@@ -275,15 +548,19 @@ void main(void) {
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
+	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = specularTerm.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
-	/*if(probeIndex == 191) {
+	//out_color.rgb = ambientFromEnvironment.rgb;
+	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);
 	} else if(probeIndex == 190) {
 		out_color.rgb = vec3(0,1,0);
 	} else if(probeIndex == 189) {
 		out_color.rgb = vec3(0,0,1);
-	}*/
+	} else if(probeIndex == 0) {
+		out_color.rgb = vec3(1,0,1);
+	} */
 }

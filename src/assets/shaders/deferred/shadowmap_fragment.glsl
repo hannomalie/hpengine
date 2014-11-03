@@ -1,15 +1,23 @@
-#version 420
+#version 430
 
-//out float out_Color;
+layout(binding=0) uniform sampler2D diffuseMap;
 
 uniform float near = 0.1;
 uniform float far = 100.0;
+uniform vec3 color = vec3(0,0,0);
+uniform bool hasDiffuseMap;
+
+uniform float diffuseMapWidth = 1;
+uniform float diffuseMapHeight = 1;
 
 in vec4 pass_Position;
 in vec4 pass_WorldPosition;
 in vec3 normal_world;
+in vec2 texCoord;
 
 out vec4 out_Color;
+out vec4 out_Diffuse;
+out vec4 out_Position;
 
 float linearizeDepth(float z)
 {
@@ -46,7 +54,17 @@ void main()
 	float dx = dFdx(depth);
 	float dy = dFdy(depth);
 	moment2 += 0.25*(dx*dx+dy*dy) ;
-		
-    out_Color = vec4(moment1,moment2,packColor(normal_world),1);
+    //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
+    out_Color = vec4(moment1,moment2,encode(normal_world));
+    //out_Diffuse = vec4(normal_world,1);
+    vec3 diffuse = color;
+    if(hasDiffuseMap) {
+    	vec2 UV;
+		UV.x = texCoord.x * diffuseMapWidth;
+		UV.y = texCoord.y * diffuseMapHeight;
+    	diffuse = texture(diffuseMap, UV).rgb;
+    }
+    out_Diffuse = vec4(diffuse,1);
+    out_Position = vec4(pass_WorldPosition.xyz, 0);
     //out_Color = vec4(moment1,moment2,encode(normal_world));
 }

@@ -3,11 +3,12 @@
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
-layout(binding=3) uniform sampler2D specularMap;
+layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
-layout(binding=5) uniform sampler2D probe;
-layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2
-layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position
+
+layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
+layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position, 
+layout(binding=8) uniform sampler2D shadowMapDiffuseColor; // color
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -26,7 +27,6 @@ uniform float scatterFactor = 1;
 in vec2 pass_TextureCoord;
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;
-out vec4 out_DiffuseIndirect;
 
 float packColor(vec3 color) {
     return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
@@ -102,8 +102,7 @@ vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
-	//vec3 V = ViewVector;
-	//V = -normalize((viewMatrix*vec4(V, 0)).xyz);
+	//V = ViewVector;
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -115,25 +114,19 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
 	
 	float alpha = acos(NdotH);
-	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
-	//alpha = pow(roughness*0.7, 6);
-	float gaussConstant = 1.0;
-	float m = roughness;
-	float D = gaussConstant*exp(-(alpha*alpha)/(m*m));
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
-	D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
 	
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
-	//http://www.crytek.com/download/2014_03_25_CRYENGINE_GDC_Schultz.pdf
-	//float k = pow(0.8+0.5*alpha, 2)/2;
-	//G = NdotV / (NdotV*(1-k)+k);
     
     // Schlick
-	float F0 = 0.02;
+	float F0 = 0.04;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.02));
+	//F0 = max(F0, metallic);
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -143,7 +136,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = (diff.rgb/3.1416) * (1-F0);
+	//diff = (diff.rgb/3.1416) * (1-F0);
+	//diff *= (1/3.1416*alpha*alpha);
 	
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
 	
@@ -152,6 +146,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 
 ///////////////////// AO
 uniform bool useAmbientOcclusion = false;
+uniform bool useColorBleeding = false;
 uniform float ambientOcclusionRadius = 0.006;
 uniform float ambientOcclusionTotalStrength = 0.38;
 uniform float ambientOcclusionStrength = 0.7;
@@ -159,7 +154,7 @@ uniform float ambientOcclusionFalloff = 0.001;
 
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
 
 vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
@@ -181,14 +176,15 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 }
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
-  	/*if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-		return 0;
-	}*/
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return vec3(0,0,0);
+	}
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
-	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
+	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
+	moments = textureLod(shadowMap, ShadowCoordPostW.xy, 1).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
 	//moments /= 3;
@@ -200,46 +196,12 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
 	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.000012);
+	variance = max(variance,0.00012);
 
 	float d = dist - moments.x;
 	float p_max = (variance / (variance + d*d));
 
 	return vec3(p_max,p_max,p_max);
-}
-
-vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace) {
-//return vec3(0,0,0);
-	const float NUM_SAMPLES_FACTOR = 40;
-	const float DISTFLOAT = 0.5;
-	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT);
-	
-	vec3 shadowNormal = decode(texture(shadowMap, ShadowCoordPostW.xy).ba);
-	float sum = 0;//max(dot(normalWorld,shadowNormal), 0);
-	
-	for(int i = 1; i <= NUM_SAMPLES_FACTOR; i++) {
-		float tempSum = 0;
-		
-		for(int z = 0; z < 16; z++) {
-			vec2 coords = ShadowCoordPostW.xy + (i/NUM_SAMPLES_FACTOR)*pSphere[z].xy*DIST;
-			vec4 shadowMapSample = texture(shadowMap, coords);
-			vec4 shadowWorldPosition = texture(shadowMapWorldPosition, coords);
-			float shadowDepth = shadowMapSample.x;
-			shadowNormal = decode(shadowMapSample.ba);
-			float flux = 1;
-			flux *= max(0,dot(shadowNormal, -lightDirection));
-			flux *= max(0,dot(shadowNormal, (positionWorld - shadowWorldPosition.xyz)));
-			flux *= max(0,dot(normalWorld, (shadowWorldPosition.xyz - positionWorld)));
-			
-			tempSum += flux/pow(length(positionWorld - shadowWorldPosition.xyz),1);
-		}
-		//sum += tempSum/16;
-		sum += tempSum;
-	}
-
-	sum /= NUM_SAMPLES_FACTOR;
-	
-	return vec3(sum,sum,sum);
 }
 
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
@@ -248,6 +210,47 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
     return projectedCoord;
 }
+
+vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace, vec2 uv) {
+//return vec3(0,0,0);
+	const float NUM_SAMPLES_FACTOR = 10;
+	const float DISTFLOAT = 0.5;
+	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT)*(16/9);
+	
+	vec3 shadowNormal = decode(texture(shadowMap, ShadowCoordPostW.xy).ba);
+	vec3 sum = vec3(0,0,0);
+	
+	for(int i = 1; i <= NUM_SAMPLES_FACTOR; i++) {
+		vec3 tempSum = vec3(0,0,0);
+		
+		for(int z = 0; z < 16; z++) {
+			vec2 coords = ShadowCoordPostW.xy + (i/NUM_SAMPLES_FACTOR)*pSphere[z].xy*DIST;
+		  	if (coords.x < 0 || coords.x > 1 || coords.y < 0 || coords.y > 1) {
+				//continue;
+			}
+			vec4 shadowMapSample = texture(shadowMap, coords);
+			vec4 shadowWorldPosition = texture(shadowMapWorldPosition, coords);
+			vec4 shadowDiffuseMapSample = texture(shadowMapDiffuseColor, coords);
+			float shadowDepth = shadowMapSample.x;
+			shadowNormal = decode(shadowMapSample.ba);
+			shadowNormal = shadowNormal * 2 - 1;
+			shadowNormal = normalize(shadowNormal);
+			float flux = 1;
+			flux *= max(0,dot(shadowNormal, -lightDirection));
+			flux *= max(0,dot(shadowNormal, (positionWorld - shadowWorldPosition.xyz)));
+			flux *= max(0,dot(normalWorld, (shadowWorldPosition.xyz - positionWorld)));
+			
+			tempSum += lightDiffuse.rgb*(flux/pow(length(positionWorld - shadowWorldPosition.xyz),2));
+		}
+		//sum += tempSum/16;
+		sum += tempSum;
+	}
+
+	sum /= NUM_SAMPLES_FACTOR;
+	
+	return sum;
+}
+
 
 vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
 
@@ -345,7 +348,9 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		vec4 worldInShadowCameraSpace = shadowPos;
 		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
     	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
-    	
+	  	/*if (shadowmapTexCoord.x < 0 || shadowmapTexCoord.x > 1 || shadowmapTexCoord.y < 0 || shadowmapTexCoord.y > 1) {
+			continue;
+		}*/
 		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
 		 
 		if (shadowMapValue > worldInShadowCameraSpace.z)
@@ -373,9 +378,6 @@ void main(void) {
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 color = texture2D(diffuseMap, st).xyz;
-	vec4 probeColorDepth = texture2D(probe, st);
-	vec3 probeColor = probeColorDepth.rgb;
-	float probeDepth = probeColorDepth.a;
 	float roughness = texture2D(positionMap, st).a;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
@@ -391,9 +393,7 @@ void main(void) {
 	vec3 normalView = texture2D(normalMap, st).xyz;
 	//normalView = decodeNormal(normalView.xy);
 	
-	vec4 specular = texture2D(specularMap, st);
-	float metallic = specular.a;
-	specular.rgb = mix(vec3(1,1,1), color, metallic);
+	float metallic = texture2D(diffuseMap, st).a;
 	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
 	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	
@@ -413,7 +413,7 @@ void main(void) {
 	
 	float ao = 1;
 	vec3 ssdo = vec3(0,0,0);
-	if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
+	/*if (useAmbientOcclusion && ambientOcclusionTotalStrength != 0) {
 		vec3 N = normalView;
 		float falloff = ambientOcclusionFalloff;
 		const float samples = 16;
@@ -455,18 +455,82 @@ void main(void) {
 	    
 		ao = 1.0-totStrength*bl*invSamples;
 		ssdo *= ao;
+	}*/
+	
+	float sum = 0.0;
+	float prof = texture(normalMap, st.xy).w;
+	vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
+	const int NUM_SAMPLES = 4;
+	int hf = NUM_SAMPLES/2;
+	
+	//calculate sampling rates:
+	float ratex = (1.0/800.0);
+	float ratey = (1.0/600.0);
+	float incx = ratex*30;//gi radius
+	float incy = ratey*30;
+	float incx2 = ratex*8;//ao radius
+	float incy2 = ratey*8;
+	if (useAmbientOcclusion) {
+		for(int i=-hf; i < hf; i++){
+		      for(int j=-hf; j < hf; j++){
+		 
+		      if (i != 0 || j!= 0) {
+	 
+			      vec2 coords = vec2(i*incx,j*incy)/prof;
+			      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
+			
+			      float prof2 = texture2D(normalMap,st.xy+coords*rand(st.xy)).w;
+			      float prof2g = texture2D(normalMap,st.xy+coords2*rand(st.xy)).w;
+			      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
+			      vec3 dcolor2 = texture2D(diffuseMap, st.xy+coords*rand(st.xy)).rgb;
+			
+			      //OCCLUSION:
+			      //calculate approximate pixel distance:
+			      vec3 dist2 = vec3(coords2,prof-prof2g);
+			      //calculate normal and sampling direction coherence:
+			      float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
+			      //if there is coherence, calculate occlusion:
+			      if (coherence2 > 0){
+			          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
+			          sum += clamp(pformfactor2*0.2,0.0,1.0);//ao intensity; 
+			      }
+			
+			      //COLOR BLEEDING:
+				if(useColorBleeding) {
+		     		if (length(dcolor2)>0.3){//color threshold
+				           vec3 norm2 = normalize(vec3(texture2D(normalMap,st.xy+coords*rand(st.xy)).xyz)*2.0-vec3(1.0)); 
+				           
+				           //calculate approximate pixel distance:
+				           vec3 dist = vec3(coords,abs(prof-prof2));
+				
+				           //calculate normal and sampling direction coherence:
+				           float coherence = dot(normalize(-coords),normalize(vec2(norm2.xy)));
+				
+				           //if there is coherence, calculate bleeding:
+				           if (coherence > 0){
+				              float pformfactor = ((1.0-dot(norm,norm2)))/(3.1416*pow(abs(length(dist*2)),2.0)+0.5);//el 4: depthscale
+				              ssdo += dcolor2*(clamp(pformfactor,0.0,1.0));
+				           }
+				        }
+			        }			
+				}
+		   }
+		}
 	}
 	
-	out_DiffuseSpecular = finalColor;// + ambientTerm;
-	//vec3 indirectLight = lightDiffuse.rgb*getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace);
-	//out_DiffuseIndirect.rgb = indirectLight;
+	ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
+	ssdo = (ssdo/NUM_SAMPLES)*0.5;
+	
+	out_DiffuseSpecular = finalColor + length(finalColor.rgb) * vec4(ssdo,0);// + ambientTerm;
+	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace, st);
+	//out_DiffuseSpecular.rgb += lightDiffuse.rgb * indirectLight;
 	
 	//out_DiffuseSpecular.rgb = (ssdo);
 	
 	//vec4 reflectedColor = vec4(rayCastReflect(color.xyz, probeColor.xyz, st, positionView, normalView), 0);
 	//out_AOReflection = vec4(ao, reflectedColor.rgb);
 	out_AOReflection.r = ao;
-	out_AOReflection.gba = scatterFactor * 0.5 * scatter(positionWorld, -eyePosition);
+	out_AOReflection.gba = scatterFactor *  scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);

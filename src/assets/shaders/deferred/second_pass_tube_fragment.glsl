@@ -157,7 +157,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	float F0 = 0.04;
 	F0 = max(F0, ((1-roughness)/2));
-	diff = (diff.rgb/3.1416) * (1-F0);
+	//diff = (diff.rgb/3.1416) * (1-F0);
     
     light_position_eye = closestPointAttenuation.xyz;
 	

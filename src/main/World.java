@@ -18,6 +18,7 @@ import main.model.IEntity;
 import main.model.Model;
 import main.physic.PhysicsFactory;
 import main.renderer.DeferredRenderer;
+import main.renderer.GBuffer;
 import main.renderer.Renderer;
 import main.renderer.light.PointLight;
 import main.renderer.light.Spotlight;
@@ -64,10 +65,10 @@ public class World {
 	public static Spotlight light= new Spotlight(true);
 	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallax = false;
-	public static volatile boolean useAmbientOcclusion = true;
+	public static volatile boolean useAmbientOcclusion = false;
 	public static volatile boolean useColorBleeding = false;
-	public static volatile boolean useFrustumCulling = false;
-	public static volatile boolean useInstantRadiosity = false;
+	public static volatile boolean useFrustumCulling = true;
+	public static volatile boolean useInstantRadiosity = true;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DRAWSCENE_ENABLED = true;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
@@ -88,6 +89,8 @@ public class World {
 		for (String string : args) {
 			if("debug=false".equals(string)) {
 				debug = false;
+			} else if("secondpassscale=0.5".equals(string)){
+				GBuffer.SECONDPASSSCALE = 0.5f;
 			} else {
 				sceneName = string;
 				break;
