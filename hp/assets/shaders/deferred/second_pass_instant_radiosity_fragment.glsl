@@ -129,7 +129,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		float factor = NdotL / ( 2.0 * 3.14159265 );
 		// frag color
 		vec3 lightDiffuse = vec3(1,0,1);
-		vec3 diffuse = lightRange*0.1*lightDiffuse * factor;
+		vec3 diffuse = lightRange*lightDiffuse * factor;
 		
 		float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
@@ -191,7 +191,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	vec3 diff = lightDiffuse * NdotL;
 	//diff = (diff.rgb/3.1416) * (1-F0);
 	
-	return atten_factor* vec4((diff), 0);
+	return atten_factor * vec4((diff), 0);
 	//return atten_factor* vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
@@ -241,7 +241,7 @@ void main(void) {
 			shadowWorldPosition += shadowWorldNormal;
 		
 			//finalColor += cookTorrance(V, positionView, normalView, roughness, (viewMatrix * shadowWorldPosition).xyz, (viewMatrix * shadowWorldNormal).xyz, vec3(0,1,0), vec3(1,0,0), 20, 20, 150);
-			finalColor += shadowDiffuseColor * cookTorrance(V, positionView, normalView, roughness, shadowWorldPosition.xyz, 140);
+			finalColor += 4*shadowDiffuseColor * cookTorrance(V, positionView, normalView, roughness, shadowWorldPosition.xyz, 140);
 		}
 	}
 	

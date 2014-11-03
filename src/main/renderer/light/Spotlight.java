@@ -84,7 +84,7 @@ public class Spotlight implements IEntity {
 		}
 		
 
-		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.DEFAULTCHANNELS, true);
 		
 		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_NEAREST, 3);
 		this.camera = camera;
@@ -124,7 +124,10 @@ public class Spotlight implements IEntity {
 			e.getModelMatrix().store(entityBuffer);
 			entityBuffer.rewind();
 			directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			e.getMaterial().setTexturesActive((Entity) e, directionalShadowPassProgram);
+			directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
 			directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
+
 			e.getVertexBuffer().draw();
 		}
 	}

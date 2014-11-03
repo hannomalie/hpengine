@@ -155,7 +155,7 @@ public class Material implements Serializable {
 			texture.bind();
 			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
-//			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
+//			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), program.getId(), map.textureSlot));
 		}
 		
 		if(entity == null) { return; }

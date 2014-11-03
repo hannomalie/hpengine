@@ -183,7 +183,8 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
-	moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
+	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
+	moments = textureLod(shadowMap, ShadowCoordPostW.xy, 1).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
 	//moments /= 3;
