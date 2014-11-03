@@ -229,10 +229,12 @@ public class DeferredRenderer implements Renderer {
 		Program secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		Program secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		Program instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		
 		Program combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		Program postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", RENDERTOQUAD, false);
 
-		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram);
+		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram, instantRadiosityProgram);
 		
 		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
@@ -290,6 +292,8 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 		try {
 			cubeMap = textureFactory.getCubeMap("assets/textures/skybox.png");
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
 //			cubeMap = new DynamicCubeMap(1024, 1024);
 //			DeferredRenderer.exitOnGLError("setup cubemap");
 		} catch (IOException e) {
@@ -309,6 +313,7 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("second_pass_directional_fragment.glsl");
 		copyShaderIfNotExists("second_pass_directional_vertex.glsl");
 		copyShaderIfNotExists("second_pass_tube_fragment.glsl");
+		copyShaderIfNotExists("second_pass_instant_radiosity_fragment.glsl");
 		copyShaderIfNotExists("second_pass_point_fragment.glsl");
 		copyShaderIfNotExists("second_pass_point_vertex.glsl");
 		copyShaderIfNotExists("combine_pass_vertex.glsl");
@@ -401,7 +406,8 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+			//drawToQuad(gBuffer.getPositionMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

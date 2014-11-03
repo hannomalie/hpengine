@@ -51,6 +51,7 @@ void main()
 	moment2 += 0.25*(dx*dx+dy*dy) ;
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
     out_Color = vec4(moment1,moment2,encode(normal_world));
+    //out_Diffuse = vec4(normal_world,1);
     out_Diffuse = vec4(color,1);
     out_Position = vec4(pass_WorldPosition.xyz, 0);
     //out_Color = vec4(moment1,moment2,encode(normal_world));

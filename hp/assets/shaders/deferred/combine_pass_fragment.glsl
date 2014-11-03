@@ -520,7 +520,7 @@ void main(void) {
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
 	//float attenuation = 1-min(distance(positionWorld,environmentMapMin[probeIndex]), distance(positionWorld,environmentMapMax[probeIndex]))/(distance(environmentMapMin[probeIndex], environmentMapMax[probeIndex]/2));
-	/*
+	
 	vec3 ambientDiffuse = vec3(0,0,0);
 	vec3 ambientSpecular = vec3(0,0,0);
 	vec3 currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(0,0,-1), 1, st);
@@ -546,7 +546,7 @@ void main(void) {
 	currentEnvironmentColor = getProbeColor(positionWorld, V, vec3(1,0,0), 1, st);
 	ambientFromEnvironment += cookTorrance(V, positionView, normalView.xyz, roughness, metallic, vec3(-1,0,0), currentEnvironmentColor);
 	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * currentEnvironmentColor;
-	*/
+	
 	
 	//ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
 	//ambientTerm = 2 * ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * clamp(ambientSpecular, vec3(0,0,0), vec3(0.5,0.5,0.5));
@@ -574,6 +574,7 @@ void main(void) {
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
+	//out_color.rgb = ambientFromEnvironment.rgb;
 	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);
 	} else if(probeIndex == 190) {

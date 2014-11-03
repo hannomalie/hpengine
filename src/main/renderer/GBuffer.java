@@ -56,9 +56,10 @@ public class GBuffer {
 	private Program secondPassAreaLightProgram;
 	private Program combineProgram;
 	private Program postProcessProgram;
+	private Program instantRadiosityProgram;
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram, Program postProcessProgram) {
+	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram, Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
@@ -67,6 +68,7 @@ public class GBuffer {
 		this.secondPassAreaLightProgram = secondPassAreaLightProgram;
 		this.combineProgram = combineProgram;
 		this.postProcessProgram = postProcessProgram;
+		this.instantRadiosityProgram = instantRadiosityProgram;
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * secondPassScale) , (int) (Renderer.HEIGHT * secondPassScale), GL30.GL_RGBA16F, 2);
@@ -269,7 +271,7 @@ public class GBuffer {
 			secondPassTubeProgram.setUniform("lightDiffuse", tubeLight.getColor());
 			tubeLight.draw(renderer, secondPassTubeProgram);
 		}
-		
+
 		secondPassAreaLightProgram.use();
 		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -306,6 +308,25 @@ public class GBuffer {
 //			areaLight.getVertexBuffer().drawDebug();
 		}
 		
+		
+		if(World.useInstantRadiosity) {
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
+			instantRadiosityProgram.use();
+			instantRadiosityProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+			instantRadiosityProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			instantRadiosityProgram.setUniform("secondPassScale", secondPassScale);
+			instantRadiosityProgram.setUniform("lightDiffuse", directionalLight.getColor());
+			instantRadiosityProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+			instantRadiosityProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+			GL11.glDisable(GL11.GL_CULL_FACE);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			fullscreenBuffer.draw();
+		}
 
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getLightAccumulationMapOneId());

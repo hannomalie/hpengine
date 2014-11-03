@@ -338,7 +338,7 @@ void main()
 {
 	vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
 	float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
-    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
+    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.005,0.005), renderedTexture);
     
     out_color = in_color;
     //out_color.rgb = vec3(depth, depth, depth);

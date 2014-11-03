@@ -110,6 +110,7 @@ public class DebugFrame {
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
 	private WebToggleButton toggleColorBleeding = new WebToggleButton("Color Bleeding", World.useColorBleeding);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
+	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", World.useInstantRadiosity);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
@@ -194,10 +195,14 @@ public class DebugFrame {
 			World.useColorBleeding = !World.useColorBleeding;
 			toggleColorBleeding.setSelected(World.useColorBleeding);
 		});
-		
+
 		toggleFrustumCulling.addActionListener(e -> {
 			World.useFrustumCulling = !World.useFrustumCulling;
 			toggleFrustumCulling.setSelected(World.useFrustumCulling);
+		});
+		toggleInstantRadiosity.addActionListener(e -> {
+			World.useInstantRadiosity = !World.useInstantRadiosity;
+			toggleInstantRadiosity.setSelected(World.useInstantRadiosity);
 		});
 
 		toggleDrawLines.addActionListener(e -> {
@@ -286,6 +291,7 @@ public class DebugFrame {
 		mainButtonElements.add(toggleAmbientOcclusion);
 		mainButtonElements.add(toggleColorBleeding);
 		mainButtonElements.add(toggleFrustumCulling);
+		mainButtonElements.add(toggleInstantRadiosity);
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);
         GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length, 1, 5, mainButtonsElementsArray);

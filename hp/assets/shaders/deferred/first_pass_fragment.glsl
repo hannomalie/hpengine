@@ -110,15 +110,25 @@ void main(void) {
 
 	if (useParallax) {
 		float height = (textureLod(normalMap, UV,0).rgb).y;//texture2D(heightMap, UV).r;
-		height = height * 2 - 1;
-		float v = height * 0.4;
-		uvParallax = (V.xy * v);
+		//height = height * 2 - 1;
+		height -= 0.5;
+		height = clamp(height, 0, 1);
+		
+#ifdef use_heightMap
+		height = (textureLod(heightMap, UV,0).rgb).r;
+#endif
+		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
+		vec3 viewVectorTangentSpace = (inverse(TBN)) * V;
+		float v = height * 0.05;
+		uvParallax = (viewVectorTangentSpace.xy * v) / viewVectorTangentSpace.z;
 		UV = UV + uvParallax;
 	} else if (useSteepParallax) {
+		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
 		float n = 20;
-		float bumpScale = 0.02;
+		float bumpScale = 2;
 		float step = 1/n;
-		vec2 dt = V.xy * bumpScale / (n * V.z);
+		vec3 viewVectorTangentSpace = (transpose(TBN)) * V;
+		vec2 dt = viewVectorTangentSpace.xy * bumpScale / (n * viewVectorTangentSpace.z);
 		
 		float height = 1;
 		vec2 t = UV;

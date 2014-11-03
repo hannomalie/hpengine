@@ -582,6 +582,11 @@ public class TextureFactory {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
     }
+    public void generateMipMapsCubeMap(int textureId) {
+        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, textureId); 
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+    }
     
     public ByteBuffer getTextureData(int textureId, int mipLevel, int width, int height, int format, ByteBuffer pixels) {
     	GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
