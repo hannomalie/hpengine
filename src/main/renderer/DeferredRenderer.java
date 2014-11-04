@@ -76,6 +76,7 @@ import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -102,6 +103,7 @@ public class DeferredRenderer implements Renderer {
 
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private static Program renderToQuadProgram;
+	private static Program blurProgram;
 	private Program lastUsedProgram = null;
 	
 	private VertexBuffer fullscreenBuffer;
@@ -135,6 +137,7 @@ public class DeferredRenderer implements Renderer {
 	private FloatBuffer identityMatrix44Buffer;
 
 	private GBuffer gBuffer;
+	private RenderTarget fullScreenTarget;
 
 	private Program cubeMapDiffuseProgram;
 	private int maxTextureUnits;
@@ -147,6 +150,7 @@ public class DeferredRenderer implements Renderer {
 		programFactory = new ProgramFactory(this);
 		setupShaders();
 		setUpGBuffer();
+		fullScreenTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA8);
 		materialFactory = new MaterialFactory(this);
 		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
@@ -303,6 +307,7 @@ public class DeferredRenderer implements Renderer {
 		copyDefaultShaders();
 
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
+		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
 
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
@@ -412,47 +417,6 @@ public class DeferredRenderer implements Renderer {
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
 	}
-	
-	private void doInstantRadiosity(Spotlight light) {
-		int normalTexture = light.getRenderTarget().getRenderedTexture(1); // normal
-		int positionTexture = light.getRenderTarget().getRenderedTexture(2); // position
-
-		textureFactory.generateMipMaps(normalTexture);
-		textureFactory.generateMipMaps(positionTexture);
-		
-		textureFactory.getTextureData(normalTexture, 7, rsmSize, rsmSize, GL11.GL_RGB, normals);
-		textureFactory.getTextureData(positionTexture, 7, rsmSize, rsmSize, GL11.GL_RGB, positions);
-
-		normals.rewind();
-		positions.rewind();
-//		byte[] normalValues = new byte[size*size*4];
-		int[] positionValues = new int[rsmSize*rsmSize];
-		for (int i=0; i < positionValues.length; i++) {
-            int index = i * 3;
-            positionValues[i] =
-                ((positions.get(index) << 16))  +
-                ((positions.get(index+1) << 8))  +
-                ((positions.get(index+2) << 0));
-        }
-//		normals.get(normalValues);
-//		positions.get(positionValues);
-		
-//		if((System.currentTimeMillis()/1000)%2 == 0) {
-//			Util.saveImage(Util.toImage(positions, rsmSize,rsmSize), "" + System.currentTimeMillis() + ".png");	
-//		}
-//		System.exit(-1);
-
-		int i = 0;
-		while(i < rsmSize*rsmSize/3 ) {
-//			AreaLight radiosityLight = areaLights.get(i/4);
-			Vector3f position = (Vector3f) new Vector3f(positionValues[i++], positionValues[i++], positionValues[i++]).scale(1);
-			drawLine(new Vector3f(), position);
-//			radiosityLight.setPosition(position);
-//			areaLights.add(radiosityLight);
-			System.out.println(position);
-		}
-		
-	}
 
 	private void drawToQuad(int texture, VertexBuffer buffer) {
 		drawToQuad(texture, buffer, renderToQuadProgram);
@@ -467,6 +431,33 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
+	}
+
+	@Override
+	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, int blurTimes) {
+		int copyTextureId = GL11.glGenTextures();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		
+		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				width, height, 1);
+
+		fullScreenTarget.use(true);
+		fullScreenTarget.setTargetTeture(sourceTextureId, 0);
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+
+		blurProgram.use();
+		blurProgram.setUniform("scaleX", (float) (Renderer.WIDTH / width));
+		blurProgram.setUniform("scaleY", (float) (Renderer.HEIGHT / height));
+		fullscreenBuffer.draw();
+		fullScreenTarget.unuse();
+		GL11.glDeleteTextures(copyTextureId);
 	}
 
 	public void destroy() {

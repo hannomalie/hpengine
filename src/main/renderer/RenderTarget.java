@@ -117,6 +117,10 @@ public class RenderTarget {
 		}
 		GPUProfiler.end();
 	}
+
+	public void setTargetTeture(int textureID, int index) {
+		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, textureID, 0);
+	}
 	
 	public void unuse() {
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);

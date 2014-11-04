@@ -44,7 +44,6 @@ public class Scene implements Serializable {
 		octree = new Octree(renderer, new Vector3f(), 600, 5);
 		entitieNames.forEach(name -> {entities .add(renderer.getEntityFactory().read(name));});
 		octree.insert(entities);
-		System.out.println("Probes count " + probes.size());
 		for (ProbeData data : probes) {
 			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate());	
 		}

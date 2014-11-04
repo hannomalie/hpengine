@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javafx.scene.effect.BlurType;
 import main.World;
 import main.camera.Camera;
 import main.model.IEntity;
@@ -78,6 +79,7 @@ public class GBuffer {
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 	}
+	
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		firstPassProgram.use();
@@ -214,6 +216,8 @@ public class GBuffer {
 		GL11.glDepthFunc(GL11.GL_LESS);
 		GPUProfiler.end();
 		GPUProfiler.end();
+
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, 1);
 	}
 	
 	private void doPointLights(Camera camera, List<PointLight> pointLights,
