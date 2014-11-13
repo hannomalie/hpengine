@@ -14,6 +14,12 @@ uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
 uniform vec3 lightAmbient;
 
+uniform bool hasDiffuseMap;
+uniform float diffuseMapWidth = 1;
+uniform float diffuseMapHeight = 1;
+uniform float metallic = 0;
+uniform float roughness = 1;
+
 in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
@@ -49,8 +55,13 @@ void main()
 {
 	vec2 UV = texCoord;
 	vec4 color = vec4(materialDiffuseColor, 1);
-	color = texture2D(diffuseMap, UV);
-	
+    if(hasDiffuseMap) {
+    	vec2 UV;
+		UV.x = texCoord.x * diffuseMapWidth;
+		UV.y = texCoord.y * diffuseMapHeight;
+		color = texture2D(diffuseMap, UV);
+    }
+
 	float depth = (position_clip.z / position_clip.w);
     out_color = vec4(color.rgb, depth);
     
@@ -65,7 +76,9 @@ void main()
 	visibility = clamp(evaluateVisibility(depthInLightSpace, positionShadow), 0, 1);
 	/////////////////// SHADOWMAP
 	
-	out_color.rgb = 2 * lightAmbient * color.rgb;// since probes are used for ambient lighting, they have to be biased;
-	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
-	//out_color.rgb = vec3(visibility,visibility,visibility);
+	//out_color.rgb = 2 * lightAmbient * color.rgb;// since probes are used for ambient lighting, they have to be biased;
+	float metalFactor = 1 - clamp((metallic - 0.5), 0, 1);
+	out_color.rgb += (1-roughness) * color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
+	out_color.rgb *= metalFactor;
+	//out_color.rgb = vec3(metallic,metallic,metallic);
 }

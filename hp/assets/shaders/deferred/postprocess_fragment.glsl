@@ -341,6 +341,6 @@ void main()
     in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
     
     out_color = in_color;
-    //out_color.rgb = vec3(depth, depth, depth);
+    //out_color.rgb = in_color.rgb;
     out_color.a =1;
 }

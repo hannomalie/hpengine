@@ -67,6 +67,7 @@ public interface Renderer {
 	public void setEnvironmentMap(DynamicCubeMap environmentMap);
 	public void init(Octree octree);
 	public int getMaxTextureUnits();
-	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, int blurTimes);
+	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
+	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 
 }

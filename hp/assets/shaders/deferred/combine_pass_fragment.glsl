@@ -159,12 +159,12 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
   			//if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
 				float distanceInWorld = distance(currentPosSample, targetPosView);
-				float mipMapLevelFromWorldDistance = clamp(distanceInWorld/20, 0, 5); // every 30 units, the next mipmap level is chosen
+				float mipMapLevelFromWorldDistance = clamp(distanceInWorld/10, 0, 5); // every 10 units, the next mipmap level is chosen
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
-    			float mipMapChoser = roughness * 9;
+    			float mipMapChoser = roughness * 9 + 1;
     			mipMapChoser = max(mipMapChoser, mipMapLevelFromWorldDistance);
-    			mipMapChoser = max(mipMapChoser, screenEdgefactor * 5);
+    			mipMapChoser = max(mipMapChoser, screenEdgefactor * 1);
     			vec3 reflectedColor =  textureLod(diffuseMap, resultCoords.xy, mipMapChoser).xyz;
     			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
     			//return vec3(screenEdgefactor, 0, 0);
@@ -174,8 +174,8 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
     			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
     			//return vec3(screenEdgefactor, 0, 0);
     			
-    			reflectedColor += 2*texture2D(lightAccumulationMap, resultCoords.xy).rgb; // since no specular and ambient termn, approximate it with a factor of two
-    			//reflectedColor += reflectedColor * 0.5 * ambientColor;
+    			reflectedColor += reflectedColor * ambientColor;
+    			reflectedColor += reflectedColor * textureLod(lightAccumulationMap, resultCoords.xy, 0).rgb; // since no specular and ambient termn, approximate it with a factor of two
 				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
 		  	}
 		  	//return vec3(1,0,0);
@@ -381,8 +381,9 @@ float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum) {
 }
 
 vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, vec2 uv) {
-	const float MAX_MIPMAPLEVEL = 9;
+	const float MAX_MIPMAPLEVEL = 8;
 	float mipMapLevel = roughness * MAX_MIPMAPLEVEL;
+	float mipMapLevelSecond = mipMapLevel;
 	
 	vec4[2] twoIntersectionsAndIndices = getTwoProbeIndicesForPosition(positionWorld, normalWorld, uv);
 	//vec4[2] twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, normalWorld);
@@ -399,8 +400,10 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
+	mipMapLevel *= roughness * distance(positionWorld, boxProjectedNearest)/20;
+	mipMapLevelSecond *= roughness * distance(positionWorld, boxProjectedSecondNearest)/20;
 	vec3 colorNearest = textureLod(getProbeForIndex(probeIndexNearest), boxProjectedNearest, mipMapLevel).rgb;
-	vec3 colorSecondNearest = textureLod(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, mipMapLevel).rgb;
+	vec3 colorSecondNearest = textureLod(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, mipMapLevelSecond).rgb;
 	
 	float distanceToNearestIntersection = distance(positionWorld, twoIntersectionsAndIndices[0].xyz);
 	float distanceToSecondNearestIntersection = distance(positionWorld, twoIntersectionsAndIndices[1].xyz);
@@ -424,7 +427,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	float alpha = acos(NdotH);
 	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
-	alpha = roughness*roughness;
+	//alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
@@ -432,13 +435,13 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
     
     // Schlick
-	float F0 = 0.04;
+	float F0 = 0.02;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	//F0 = max(F0, metallic);
+	F0 = max(F0, ((1-roughness)*0.2));
+	//F0 = max(F0, metallic*0.2);
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
-	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
 	float temp = 1.0; temp -= F0;
 	fresnel *= temp;
 	float F = fresnel + F0;
@@ -482,16 +485,17 @@ void main(void) {
   	
   	float metallic = colorMetallic.a;
   	
-	const float metalSpecularBoost = 1.0;
+	const float metalSpecularBoost = 1.4;
   	vec3 specularColor = mix(vec3(1,1,1), metalSpecularBoost*colorMetallic.rgb, metallic);
-  	const float metalBias = 0.25;
+  	specularColor = mix(vec3(0.04,0.04,0.04), colorMetallic.rgb, metallic);
+  	const float metalBias = 0.1;
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
-	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
+	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
 	//lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 4*length(lightDiffuseSpecular)/length(vec4(1,1,1,1)));
 	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 	
-	vec4 aoReflect = textureLod(aoReflection, st, 3);
+	vec4 aoReflect = textureLod(aoReflection, st, 1);
 	float ao = textureLod(aoReflection, st, 1).r;
 	//float ao = blurSample(aoReflection, st, 0.0025).r;
 	//ao += blurSample(aoReflection, st, 0.005).r;
@@ -507,16 +511,17 @@ void main(void) {
 	vec3 reflectedColor = getProbeColor(positionWorld, V, normalWorld, roughness, st);
 	vec3 environmentColor = reflectedColor;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	if(roughness > 0.2) {
+	//if(roughness > 0.2)
+	{
 		reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
 	}
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
-	reflectionMixer -= metallic*0.5; // metallic reflections should be tinted
+	reflectionMixer -= (metallic); // metallic reflections should be tinted
 	reflectionMixer = clamp(reflectionMixer, 0, 1);
 	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
 	vec3 specularTerm = 2*specularColor * specularFactor;
-	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor*(1-specularFactor);
+	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor;
 	
 	vec3 ambientTerm = ambientColor * finalColor.rgb;// + 0.1* reflectedColor;
 	vec3 normalBoxProjected = boxProjection(positionWorld, normalWorld, environmentMapMin[probeIndex], environmentMapMax[probeIndex]);
@@ -524,15 +529,15 @@ void main(void) {
 	
 	vec3 ambientDiffuse = vec3(0,0,0);
 	vec3 ambientSpecular = vec3(0,0,0);
-	vec4 ambientFromEnvironment = cookTorrance(V, positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor);
-	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * environmentColor;
+	vec4 ambientFromEnvironment = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor);
+	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * getProbeColor(positionWorld, V, reflect(V, normalWorld), roughness, st);
 	
 	//ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
-	ambientTerm = 2 * ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * clamp(ambientSpecular, vec3(0,0,0), vec3(0.5,0.5,0.5));
-
+	ambientTerm = ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * ambientSpecular;
 
 	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(diffuseTerm, 1))) + vec4(specularTerm,1);
+	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba);
 	out_color *= exposure/2;
@@ -546,8 +551,10 @@ void main(void) {
 	//finalColor.b = pow(finalColor.b,1/2.2);
 	
 	//out_color.rgb *= aoReflect.gba;
-	//out_color.rgb = lightDiffuseSpecular.rgb;
+	//out_color.rgb = texture(lightAccumulationMap, st).rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
+	//out_color.rgb = finalColor;
+	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = specularTerm.rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);

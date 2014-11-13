@@ -87,10 +87,10 @@ vec4 calculateClosestPointAndAttenuation(vec3 light_position_eye, vec3 light_sta
 	return vec4(closestPoint, clamp(attenuation,0,1));	
 }
 
-float evaluateCookTorranceForLightPosition(vec3 V, vec3 light_position_eye, vec3 position, vec3 normal, float roughness) {
+float evaluateCookTorranceForLightPosition(vec3 V, vec3 light_position_eye, vec3 position, vec3 normal, float roughness, float metallic) {
  	vec3 L = normalize(light_position_eye - position);
     vec3 H = normalize(L + V);
-    vec3 N = normal;
+    vec3 N = normalize(normal);
     vec3 P = position;
     float NdotH = max(dot(N, H), 0.0);
     float NdotV = max(dot(N, V), 0.0);
@@ -131,7 +131,7 @@ float evaluateDiffuseFactor(vec3 light_position_eye, vec3 position, vec3 normal)
     return NdotL;
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = -normalize(position);
 	//vec3 V = -ViewVector;
@@ -148,15 +148,18 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     //float specularAtStart = evaluateCookTorranceForLightPosition(V, light_start_eye, position, normal, roughness);
     //float specularAtEnd = evaluateCookTorranceForLightPosition(V, light_end_eye, position, normal, roughness);
 	//float specularResult = mix(specularAtStart, specularAtEnd, blender);
-	float specularResult = evaluateCookTorranceForLightPosition(V, closestPointAttenuation.xyz, position, normal, roughness);
+	float specularResult = evaluateCookTorranceForLightPosition(V, closestPointAttenuation.xyz, position, normal, roughness, metallic);
 	
 	//float diffuseFactorAtStart = evaluateDiffuseFactor(light_start_eye, position, normal);
 	//float diffuseFactorAtEnd = evaluateDiffuseFactor(light_end_eye, position, normal);
 	//vec3 diff = mix(diffuseFactorAtStart, diffuseFactorAtEnd, blender) * lightDiffuse.rgb;
 	vec3 diff = evaluateDiffuseFactor(closestPointAttenuation.xyz, position, normal) * lightDiffuse.rgb;
 	
-	float F0 = 0.04;
-	F0 = max(F0, ((1-roughness)/2));
+    float F0 = 0.02;
+	// Specular in the range of 0.02 - 0.2
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	F0 = max(F0, ((1-roughness)*0.2));
+	//F0 = max(F0, metallic*0.2);
 	//diff = (diff.rgb/3.1416) * (1-F0);
     
     light_position_eye = closestPointAttenuation.xyz;
@@ -181,6 +184,7 @@ void main(void) {
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
+	float metallic = texture2D(diffuseMap, st).w;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -198,7 +202,7 @@ void main(void) {
 	
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness);
+	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	
 	out_DiffuseSpecular = finalColor;
 	//out_DiffuseSpecular.rgba = vec4(roughness,roughness,roughness,roughness);

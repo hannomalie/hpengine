@@ -17,6 +17,7 @@ import org.lwjgl.util.vector.Vector4f;
 
 import main.World;
 import main.camera.Camera;
+import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.renderer.light.Spotlight;
@@ -96,6 +97,11 @@ public class EnvironmentSampler {
 				e.getModelMatrix().store(entityBuffer);
 				entityBuffer.rewind();
 				cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+				e.getMaterial().setTexturesActive((Entity) e, cubeMapDiffuseProgram);
+				cubeMapDiffuseProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+				cubeMapDiffuseProgram.setUniform("color", e.getMaterial().getDiffuse());
+				cubeMapDiffuseProgram.setUniform("metallic", e.getMaterial().getMetallic());
+				cubeMapDiffuseProgram.setUniform("roughness", e.getMaterial().getRoughness());
 				e.getMaterial().setTexturesActive(null, cubeMapDiffuseProgram);
 				
 				e.getVertexBuffer().draw();

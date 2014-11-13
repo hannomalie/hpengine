@@ -104,6 +104,7 @@ public class DeferredRenderer implements Renderer {
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private static Program renderToQuadProgram;
 	private static Program blurProgram;
+	private static Program bilateralBlurProgram;
 	private Program lastUsedProgram = null;
 	
 	private VertexBuffer fullscreenBuffer;
@@ -308,6 +309,7 @@ public class DeferredRenderer implements Renderer {
 
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
 		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
+		bilateralBlurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
 
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
@@ -434,10 +436,11 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, int blurTimes) {
+	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
 		int copyTextureId = GL11.glGenTextures();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+		
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -445,21 +448,69 @@ public class DeferredRenderer implements Renderer {
 		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
+		
+		float scaleForShaderX = (float) (Renderer.WIDTH / width);
+		float scaleForShaderY = (float) (Renderer.HEIGHT / height);
+		// TODO: Reset texture sizes after upscaling!!!
+		if(upscaleToFullscreen) {
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTextureId);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			scaleForShaderX = 1;
+			scaleForShaderY = 1;
+		}
 
-		fullScreenTarget.use(true);
-		fullScreenTarget.setTargetTeture(sourceTextureId, 0);
+		fullScreenTarget.use(false);
+		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
 
 		blurProgram.use();
-		blurProgram.setUniform("scaleX", (float) (Renderer.WIDTH / width));
-		blurProgram.setUniform("scaleY", (float) (Renderer.HEIGHT / height));
+		blurProgram.setUniform("scaleX", scaleForShaderX);
+		blurProgram.setUniform("scaleY", scaleForShaderY);
 		fullscreenBuffer.draw();
 		fullScreenTarget.unuse();
 		GL11.glDeleteTextures(copyTextureId);
 	}
+	@Override
+	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
+		int copyTextureId = GL11.glGenTextures();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+		
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		
+		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				width, height, 1);
+		
+		float scaleForShaderX = (float) (Renderer.WIDTH / width);
+		float scaleForShaderY = (float) (Renderer.HEIGHT / height);
+		if(upscaleToFullscreen) {
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTextureId);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			scaleForShaderX = 1;
+			scaleForShaderY = 1;
+		}
 
+		fullScreenTarget.use(false);
+		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+
+		bilateralBlurProgram.use();
+		bilateralBlurProgram.setUniform("scaleX", scaleForShaderX);
+		bilateralBlurProgram.setUniform("scaleY", scaleForShaderY);
+		fullscreenBuffer.draw();
+		fullScreenTarget.unuse();
+		GL11.glDeleteTextures(copyTextureId);
+	}
+	
 	public void destroy() {
 		destroyOpenGL();
 	}

@@ -148,6 +148,7 @@ public class GBuffer {
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
 		laBuffer.use(false);
+//		laBuffer.resizeTextures();
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
@@ -214,15 +215,22 @@ public class GBuffer {
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glCullFace(GL11.GL_BACK);
 		GL11.glDepthFunc(GL11.GL_LESS);
-		GPUProfiler.end();
-		GPUProfiler.end();
 
-//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, 1);
+		GPUProfiler.start("Blurring");
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+		renderer.blur2DTexture(getAmbientOcclusionMapId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+
+//		renderer.blur2DTextureBilateral(getLightAccumulationMapOneId(), 0, (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+		GPUProfiler.end();
 	}
 	
 	private void doPointLights(Camera camera, List<PointLight> pointLights,
 			Vector3f camPosition, FloatBuffer viewMatrix,
 			FloatBuffer projectionMatrix) {
+		
+		if(pointLights.isEmpty()) { return; }
+		
 		GPUProfiler.start("Pointlights");
 		secondPassPointProgram.use();
 
@@ -270,10 +278,15 @@ public class GBuffer {
 			}
 			firstLightDrawn = true;
 		}
+		GPUProfiler.end();
 	}
 	private void doTubeLights(List<TubeLight> tubeLights,
 			Vector4f camPositionV4, FloatBuffer viewMatrix,
 			FloatBuffer projectionMatrix) {
+
+		
+		if(tubeLights.isEmpty()) { return; }
+		
 		secondPassTubeProgram.use();
 		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -308,6 +321,10 @@ public class GBuffer {
 	
 	private void doAreaLights(List<AreaLight> areaLights,
 			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+		
+
+		if(areaLights.isEmpty()) { return; }
+		
 		secondPassAreaLightProgram.use();
 		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
@@ -348,6 +365,7 @@ public class GBuffer {
 	private void doInstantRadiosity(Spotlight directionalLight,
 			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		if(World.useInstantRadiosity) {
+			GPUProfiler.start("Instant Radiosity");
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
@@ -364,6 +382,7 @@ public class GBuffer {
 			GL11.glDisable(GL11.GL_CULL_FACE);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			fullscreenBuffer.draw();
+			GPUProfiler.end();
 		}
 	}
 

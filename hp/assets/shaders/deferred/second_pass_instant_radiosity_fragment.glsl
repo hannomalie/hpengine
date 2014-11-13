@@ -74,7 +74,7 @@ float calculateAttenuation(float dist, float lightRange) {
     return clamp(1.0f - (distDivRadius), 0, 1);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, vec3 lightPosition, vec3 lightViewDirection, vec3 lightUpDirection, vec3 lightRightDirection, float lightWidth, float lightHeight, float lightRange) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, vec3 lightPosition, vec3 lightViewDirection, vec3 lightUpDirection, vec3 lightRightDirection, float lightWidth, float lightHeight, float lightRange, float metallic) {
 
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
@@ -176,7 +176,7 @@ float calculateAttenuationPoint(float dist, float lightRadius) {
     atten_factor = pow(atten_factor, 2);
     return atten_factor;
 }
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, vec3 lightPosition, float lightRadius) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, vec3 lightPosition, float lightRadius, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	//V = ViewVector; 
@@ -192,7 +192,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
  	vec3 L = normalize(light_position_eye - position);
     vec3 H = normalize(L + V);
-    vec3 N = normal;
+    vec3 N = normalize(normal);
     vec3 P = position;
     float NdotH = max(dot(N, H), 0.0);
     float NdotV = max(dot(N, V), 0.0);
@@ -212,7 +212,9 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float F0 = 0.04;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	//F0 = max(F0, ((1-roughness)*0.02));
+	F0 = max(F0, ((1-roughness)*0.2));
+	//F0 = max(F0, metallic*0.2);
+	
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -241,6 +243,7 @@ void main(void) {
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
+	float metallic = texture2D(diffuseMap, st).w;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -263,7 +266,7 @@ void main(void) {
 	
 	vec4 finalColor = vec4(0,0,0,0);
 	
-	const int SAMPLES = 16;
+	const int SAMPLES = 20;
 	for(int x = 0; x < SAMPLES; x++) {
 		for(int y = 0; y < SAMPLES; y++) {
 		
@@ -274,10 +277,11 @@ void main(void) {
 			shadowWorldPosition += shadowWorldNormal;
 		
 			//finalColor += cookTorrance(V, positionView, normalView, roughness, (viewMatrix * shadowWorldPosition).xyz, (viewMatrix * shadowWorldNormal).xyz, vec3(0,1,0), vec3(1,0,0), 20, 20, 150);
-			finalColor += 4*shadowDiffuseColor * cookTorrance(V, positionView, normalView, roughness, shadowWorldPosition.xyz, 140);
+			finalColor += 0.5 * shadowDiffuseColor * cookTorrance(V, positionView, normalView, roughness, shadowWorldPosition.xyz, 80, metallic);
 		}
 	}
 	
-	out_DiffuseSpecular = finalColor/(SAMPLES);
+	float maxIndirectLight = 0.1;
+	out_DiffuseSpecular = clamp(finalColor, vec4(0,0,0,0), vec4(maxIndirectLight,maxIndirectLight,maxIndirectLight,0));
 	out_AOReflection = vec4(0,0,0,0);
 }

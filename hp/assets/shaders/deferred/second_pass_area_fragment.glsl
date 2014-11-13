@@ -108,7 +108,7 @@ float calculateAttenuation(float dist) {
     return clamp(1.0f - (distDivRadius), 0, 1);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness) {
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
@@ -127,7 +127,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	lVector[0] = normalize(leftUpper - position);
 	lVector[1] = normalize(rightUpper - position);
 	lVector[3] = normalize(leftBottom - position);
-	lVector[2] = normalize(rightBottom - position);
+	lVector[2] = normalize(rightBottom - position); // clockwise oriented all the lights rectangle points
 	float tmp = dot( lVector[ 0 ], cross( ( leftBottom - leftUpper ).xyz, ( rightUpper - leftUpper ).xyz ) );
 	if ( tmp > 0.0 ) {
 		discard;
@@ -143,9 +143,9 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		
 	 	vec3 L = lightVec;
 	    vec3 H = normalize(L + V);
-	    vec3 N = normalize(normal);
+    	vec3 N = normal;
 	    vec3 P = position;
-        vec3 R = reflect(normalize(-position), N);
+        vec3 R = reflect(V, N);
         vec3 E = linePlaneIntersect(position, R, light_position_eye, light_view_direction_eye);
 
 		float width = lightWidth;
@@ -169,7 +169,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		// irradiance factor at point
 		float factor = NdotL / ( 2.0 * 3.14159265 );
 		// frag color
-		vec3 diffuse = lightRange*0.1*lightDiffuse * factor;
+		vec3 diffuse = 2*lightDiffuse * factor;
 		
 		float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	
@@ -182,7 +182,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		float F0 = 0.02;
 		// Specular in the range of 0.02 - 0.2
 		// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-		F0 = max(F0, ((1-roughness)*0.02));
+		F0 = max(F0, ((1-roughness)*0.2));
+		//F0 = max(F0, metallic*0.2);
 	    float fresnel = 1; fresnel -= dot(V, H);
 		fresnel = pow(fresnel, 5.0);
 		//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -192,7 +193,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         
 		//diff = (diff.rgb/3.1416) * (1-F0);
         
-        if(useTexture) {
+        if(useTexture) 
+        {
         	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
         
@@ -215,6 +217,7 @@ void main(void) {
 	vec4 probeColorDepth = texture2D(probe, st);
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
+	float metallic = texture2D(diffuseMap, st).w;
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -234,7 +237,7 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness);
+	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	
 	out_DiffuseSpecular = finalColor;
 	out_AOReflection = vec4(0,0,0,0);

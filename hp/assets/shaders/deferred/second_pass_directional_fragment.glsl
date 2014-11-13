@@ -123,10 +123,11 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
     
     // Schlick
-	float F0 = 0.04;
+    float F0 = 0.02;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	//F0 = max(F0, metallic);
+	F0 = max(F0, ((1-roughness)*0.2));
+	//F0 = max(F0, metallic*0.2);
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
@@ -157,23 +158,29 @@ float rand(vec2 co){
 	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
 
-vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
+const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
+				2.0/16.0, 4.0/16.0, 2.0/16.0,
+				1.0/16.0, 2.0/16.0, 1.0/16.0 };
+				
 
-	vec4 result = texture2D(sampler, texCoord);
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
+	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[2] * texture(sampler, texCoords + vec2(blurDistance, -blurDistance));
 	
-	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y + dist));
-	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y));
-	result += texture2D(sampler, vec2(texCoord.x + dist, texCoord.y - dist));
-	result += texture2D(sampler, vec2(texCoord.x, texCoord.y - dist));
+	result += kernel[3] * texture(sampler, texCoords + vec2(-blurDistance));
+	result += kernel[4] * texture(sampler, texCoords + vec2(0, 0));
+	result += kernel[5] * texture(sampler, texCoords + vec2(blurDistance, 0));
 	
-	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y + dist));
-	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y));
-	result += texture2D(sampler, vec2(texCoord.x - dist, texCoord.y - dist));
-	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
+	result += kernel[6] * texture(sampler, texCoords + vec2(-blurDistance, blurDistance));
+	result += kernel[7] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[8] * texture(sampler, texCoords + vec2(blurDistance, blurDistance));
 	
-	return result/9;
-
+	return result;
 }
+
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -183,8 +190,8 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
-	//moments = blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.001).rg;
-	moments = textureLod(shadowMap, ShadowCoordPostW.xy, 1).rg;
+	moments = blur(shadowMap, ShadowCoordPostW.xy, moments.y).rg;
+	//moments = textureLod(shadowMap, ShadowCoordPostW.xy, 0).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
 	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
 	//moments /= 3;
@@ -318,7 +325,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 
 float ComputeScattering(float lightDotView)
 {
-	const float G_SCATTERING = 0.00005;
+	const float G_SCATTERING = 0.000005;
 	const float PI = 3.1415926536f;
 	float result = 1.0f - G_SCATTERING;
 	result *= result;

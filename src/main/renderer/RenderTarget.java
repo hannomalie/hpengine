@@ -11,7 +11,6 @@ import main.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
@@ -26,6 +25,8 @@ public class RenderTarget {
 	protected float clearG;
 	protected float clearB;
 	protected float clearA;
+	private int internalFormat;
+	private int textureFilter;
 
 	protected RenderTarget() {}
 	
@@ -50,44 +51,17 @@ public class RenderTarget {
 		this.clearG = clearG;
 		this.clearB = clearB;
 		this.clearA = clearA;
+		this.internalFormat = internalFormat;
+		this.textureFilter = textureFilter;
 		
 		renderedTextures = new int[colorBufferCount];
 		
 		// create a frame and color buffer
 		framebufferLocation = GL30.glGenFramebuffers();
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		depthbufferLocation = GL30.glGenRenderbuffers();
-		
-		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
-		for (int i = 0; i < colorBufferCount; i++) {
-			int renderedTextureTemp = GL11.glGenTextures();
-			
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, BufferUtils.createFloatBuffer(width * height));
 
-			if (textureFilter ==  GL11.GL_NEAREST_MIPMAP_LINEAR ||
-				textureFilter ==  GL11.GL_NEAREST_MIPMAP_NEAREST ||
-				textureFilter ==  GL11.GL_LINEAR_MIPMAP_LINEAR ||
-				textureFilter ==  GL11.GL_LINEAR_MIPMAP_NEAREST	) {
-				GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-			}
-			
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureFilter);
-
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-			FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
-			float[] borderColors = new float[] {0,0,0,1};
-			borderColorBuffer.put(borderColors);
-			borderColorBuffer.rewind();
-			GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
-			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
-//			GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0 + i);
-		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
-			renderedTextures[i] = renderedTextureTemp;
-		}
-	    GL20.glDrawBuffers(scratchBuffer);
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+		initColorAttachments(width, height, internalFormat, textureFilter, colorBufferCount);
 		
 		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
@@ -104,6 +78,31 @@ public class RenderTarget {
 		}
 		GL11.glClearColor(clearR,clearG,clearB,clearA);
 	}
+
+	private void initColorAttachments(int width, int height, int internalFormat, int textureFilter, int colorBufferCount) {
+		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
+		for (int i = 0; i < colorBufferCount; i++) {
+			int renderedTextureTemp = GL11.glGenTextures();
+			
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureFilter);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+			FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
+			float[] borderColors = new float[] {0,0,0,1};
+			borderColorBuffer.put(borderColors);
+			borderColorBuffer.rewind();
+			GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
+			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
+		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+			renderedTextures[i] = renderedTextureTemp;
+		}
+	    GL20.glDrawBuffers(scratchBuffer);
+	}
 	
 	public void use(boolean clear) {
 		GPUProfiler.start("Bind framebuffer");
@@ -118,7 +117,7 @@ public class RenderTarget {
 		GPUProfiler.end();
 	}
 
-	public void setTargetTeture(int textureID, int index) {
+	public void setTargetTexture(int textureID, int index) {
 		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, textureID, 0);
 	}
 	
@@ -170,7 +169,7 @@ public class RenderTarget {
 		return width;
 	}
 
-	private void setWidth(int width) {
+	public void setWidth(int width) {
 		this.width = width;
 	}
 
@@ -178,10 +177,37 @@ public class RenderTarget {
 		return height;
 	}
 
-	private void setHeight(int height) {
+	public void setHeight(int height) {
 		this.height = height;
 	}
 	public int getRenderedTexture() {
 		return getRenderedTexture(0);
+	}
+
+	public void resizeTextures() {
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+		
+		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(renderedTextures.length);
+		for (int i = 0; i < renderedTextures.length; i++) {
+			int renderedTextureTemp = renderedTextures[i];
+			
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureFilter);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+			FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
+			float[] borderColors = new float[] {0,0,0,1};
+			borderColorBuffer.put(borderColors);
+			borderColorBuffer.rewind();
+			GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
+			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
+		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+			renderedTextures[i] = renderedTextureTemp;
+		}
+	    GL20.glDrawBuffers(scratchBuffer);
 	}
 }
