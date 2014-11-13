@@ -24,6 +24,11 @@ public class Transform implements Serializable {
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
 	private Quaternion orientation = new Quaternion();
+
+	transient private boolean isDirty = true;
+	transient private boolean hasMoved = true;
+	transient Matrix4f translationRotation = new Matrix4f();
+	transient Matrix4f transformation = new Matrix4f();
 	
 //	public Transform() {
 //		position = new Vector3f(0, 0, 0);
@@ -32,25 +37,32 @@ public class Transform implements Serializable {
 //	}
 	
 	public Vector3f getPosition() {
+		recalculateIfDirty();
 		return position;
 	}
 	public void setPosition(Vector3f position) {
 		this.position = position;
+		setDirty(true);
 	}
 	public Vector3f getScale() {
+		recalculateIfDirty();
 		return scale;
 	}
 	public void setScale(Vector3f scale) {
 		this.scale = scale;
+		setDirty(true);
 	}
 	public void setScale(float scale) {
 		setScale(new Vector3f(scale, scale, scale));
+		setDirty(true);
 	}
 	public Quaternion getOrientation() {
+		recalculateIfDirty();
 		return orientation;
 	}
 	public void setOrientation(Quaternion orientation) {
 		this.orientation = orientation;
+		setDirty(true);
 	}
 	public Vector3f getViewDirection() {
 		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation().negate(null)), WORLD_VIEW_V4, null);
@@ -66,17 +78,21 @@ public class Transform implements Serializable {
 	}
 	public void rotate(Vector3f axis, float angleInDegrees) {
 		rotate(new Vector4f(axis.x, axis.y, axis.z, angleInDegrees));
+		setDirty(true);
 	}
 	public void rotate(Vector4f axisAngle) {
 		rotateWorld(localDirectionToWorld(new Vector3f(axisAngle.x, axisAngle.y, axisAngle.z)), axisAngle.w);
+		setDirty(true);
 	}
 	public void rotateWorld(Vector3f axis, float angleInDegrees) {
 		Quaternion temp = new Quaternion();
 		temp.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(angleInDegrees)));
 		setOrientation(Quaternion.mul(getOrientation(), temp, null));
+		setDirty(true);
 	}
 	public void rotateWorld(Vector4f axisAngle) {
 		rotateWorld(new Vector3f(axisAngle.x,  axisAngle.y, axisAngle.z), axisAngle.w);
+		setDirty(true);
 	}
 	public void move(Vector3f amount) {
 //		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation()), new Vector4f(amount.x, amount.y, amount.z, 0), null);
@@ -85,9 +101,11 @@ public class Transform implements Serializable {
 		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-amount.z), combined); // We need the BACK direction here since that is our pos z!
 //		moveInWorld(new Vector3f(temp.x, temp.y, temp.z));
 		moveInWorld(combined);
+		setDirty(true);
 	}
 	public void moveInWorld(Vector3f amount) {
-		setPosition(Vector3f.add(getPosition(), amount, null));
+		setPosition(Vector3f.add(position, amount, null));
+		setDirty(true);
 	}
 
 	public Vector3f localPositionToWorld(Vector3f localPosition) {
@@ -110,21 +128,55 @@ public class Transform implements Serializable {
 	}
 
 	public Matrix4f getTranslationRotation() {
+		recalculateIfDirty();
+		return translationRotation;
+	}
+	private Matrix4f calculateTranslationRotation() {
 		Matrix4f temp = new Matrix4f();
 		temp.setIdentity();
 //		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
-		temp.rotate(getOrientation().w, new Vector3f(getOrientation().x,getOrientation().y, getOrientation().z), temp);
-		Matrix4f.translate(getPosition(), temp, temp);
+		temp.rotate(orientation.w, new Vector3f(orientation.x,orientation.y, orientation.z), temp);
+		Matrix4f.translate(position, temp, temp);
+		setDirty(false);
 		return temp;
 	}
 	
 	public Matrix4f getTransformation() {
+		recalculateIfDirty();
+		return transformation;
+	}
+	private void recalculateIfDirty() {
+		if(isDirty() || translationRotation == null || transformation == null) {
+			recalculate();
+		}
+	}
+	public void recalculate() {
+		translationRotation = calculateTranslationRotation();
+		transformation = calculateTransformation();
+		hasMoved = true;
+	}
+	private Matrix4f calculateTransformation() {
 		Matrix4f temp = new Matrix4f();
 		temp.setIdentity();
-		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
-		Matrix4f.translate(getPosition(), temp, temp);
-		temp.scale(getScale());
+		Matrix4f.mul(temp, Util.toMatrix(orientation), temp);
+		Matrix4f.translate(position, temp, temp);
+		temp.scale(scale);
+		setDirty(false);
 		return temp;
+	}
+	
+	public boolean isDirty() {
+		return isDirty;
+	}
+	public void setDirty(boolean isDirty) {
+		this.isDirty = isDirty;
+	}
+
+	public boolean isHasMoved() {
+		return hasMoved;
+	}
+	public void setHasMoved(boolean hasMoved) {
+		this.hasMoved = hasMoved;
 	}
 	
 	@Override

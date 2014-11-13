@@ -430,6 +430,7 @@ public class World {
 //		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
+		scene.endFrame();
 		
 //		Renderer.exitOnGLError("loopCycle");
 	}

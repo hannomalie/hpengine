@@ -37,6 +37,7 @@ public class EnvironmentSampler {
 	private Program cubeMapDiffuseProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
+	transient private boolean drawnOnce = false;
 
 	public EnvironmentSampler(Renderer renderer, Vector3f position, int width, int height) {
 		this.renderer = renderer;
@@ -71,10 +72,13 @@ public class EnvironmentSampler {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 		
 		cubeMapDiffuseProgram.use();
-		cubeMapRenderTarget.use(true);
+		cubeMapRenderTarget.use(false);
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
+			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
+			boolean noNeedToRedraw = (movedVisibles.isEmpty() && drawnOnce) && !light.hasMoved();
+			if(noNeedToRedraw) { continue; } // early exit if only static objects visible
 			GPUProfiler.start("side " + i);
 			GPUProfiler.start("Switch attachment");
 			cubeMapRenderTarget.setCubeMapFace(i);
@@ -108,6 +112,7 @@ public class EnvironmentSampler {
 			}
 			GPUProfiler.end();
 			GPUProfiler.end();
+			drawnOnce = true;
 		}
 
 		cubeMap.bind();

@@ -123,6 +123,12 @@ public class Scene implements Serializable {
 			entity.update(seconds);
 		}
 	}
+	public void endFrame() {
+		for (IEntity entity : octree.getEntities()) {
+			entity.setHasMoved(false);
+		}
+		World.light.setHasMoved(false);
+	}
 	public Octree getOctree() {
 		return octree;
 	}

@@ -41,4 +41,7 @@ public interface IEntity extends ITransformable {
 	public default void destroy() {}
 
 	public default HashMap<ComponentIdentifier, IGameComponent> getComponents() { return new HashMap<>(); }
+
+	public default boolean hasMoved() { return getTransform().isHasMoved(); }
+	public default void setHasMoved(boolean hasMoved) { getTransform().setHasMoved(hasMoved); }
 }

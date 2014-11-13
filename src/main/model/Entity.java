@@ -505,4 +505,8 @@ public class Entity implements IEntity, Serializable {
 //		GL30.glDeleteVertexArrays(vaoId);
 //		
 	}
+
+	public boolean isHasMoved() {
+		return transform.isDirty();
+	}
 }
