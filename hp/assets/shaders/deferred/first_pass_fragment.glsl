@@ -59,6 +59,7 @@ layout(location=0)out vec4 out_position; // position, roughness
 layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
 layout(location=3)out vec4 out_motion; // motion, probeIndices
+layout(location=4)out vec4 out_visibility; // visibility
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -202,4 +203,5 @@ void main(void) {
 #endif
 
   	out_motion = vec4(blurVec,probeIndex1,probeIndex2);
+  	out_visibility = vec4(1,depth,depth,0);
 }

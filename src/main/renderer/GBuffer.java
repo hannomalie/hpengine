@@ -31,10 +31,12 @@ import main.util.stopwatch.StopWatch;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -50,7 +52,9 @@ public class GBuffer {
 	private RenderTarget gBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
+	
 	private VertexBuffer fullscreenBuffer;
+	
 	private Program firstPassProgram;
 	private Program secondPassDirectionalProgram;
 	private Program secondPassPointProgram;
@@ -59,7 +63,13 @@ public class GBuffer {
 	private Program combineProgram;
 	private Program postProcessProgram;
 	private Program instantRadiosityProgram;
+
+	private Program highZProgram;
+	private Program preIntegrationProgram;
+	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
+
+	private int fullScreenMipmapCount;
 
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
@@ -72,12 +82,22 @@ public class GBuffer {
 		this.combineProgram = combineProgram;
 		this.postProcessProgram = postProcessProgram;
 		this.instantRadiosityProgram = instantRadiosityProgram;
-		fullscreenBuffer = new QuadVertexBuffer( true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
+
+		this.highZProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
+		this.preIntegrationProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "preIntegration_fragment.glsl");
+		
+		fullscreenBuffer = new QuadVertexBuffer(true).upload();
+		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * SECONDPASSSCALE) , (int) (Renderer.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
+
+		int maxLength = Math.max(renderer.WIDTH, renderer.HEIGHT);
+		while(maxLength > 1) {
+			fullScreenMipmapCount++;
+			maxLength /= 2;
+		}
 	}
 	
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
@@ -127,15 +147,49 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
+
+		drawHighZMap();
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
+		
 		camera.saveViewMatrixAsLastViewMatrix();
 	}
 
 
-	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	private void drawHighZMap() {
+		gBuffer.use(false);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
 
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+//		renderer.getTextureFactory().generateMipMaps(getPositionMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		renderer.getTextureFactory().generateMipMaps(getNormalMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		renderer.getTextureFactory().generateMipMaps(getVisibilityMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
+		
+		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
+			
+			int currentMipMapLevel = i+1;
+			highZProgram.use();
+			gBuffer.setTargetTexture(getVisibilityMap(), 2, currentMipMapLevel);
+			highZProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
+			fullscreenBuffer.draw();
+
+//			preIntegrationProgram.use();
+//			preIntegrationProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
+//			fullscreenBuffer.draw();
+
+		}
+
+		gBuffer.setTargetTexture(getPositionMap(), 0);
+		gBuffer.setTargetTexture(getNormalMap(), 1);
+		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2);
+	}
+
+	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+		
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -168,10 +222,10 @@ public class GBuffer {
 		cubeMap.bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
 		GPUProfiler.end();
 		
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
@@ -396,6 +450,7 @@ public class GBuffer {
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("exposure", World.EXPOSURE);
+		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 		bindEnvironmentProbePositions(combineProgram);
 		
@@ -530,23 +585,26 @@ public class GBuffer {
 		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
 		
 	}
-	public int getColorReflectivenessMap() {
-		return gBuffer.getRenderedTexture(2);
-	}
 	public int getLightAccumulationMapOneId() {
 		return laBuffer.getRenderedTexture(0);
 	}
 	public int getAmbientOcclusionMapId() {
 		return laBuffer.getRenderedTexture(1);
 	}
-	public int getNormalMap() {
-		return gBuffer.getRenderedTexture(1);
-	}
 	public int getPositionMap() {
 		return gBuffer.getRenderedTexture(0);
 	}
+	public int getNormalMap() {
+		return gBuffer.getRenderedTexture(1);
+	}
+	public int getColorReflectivenessMap() {
+		return gBuffer.getRenderedTexture(2);
+	}
 	public int getMotionMap() {
 		return gBuffer.getRenderedTexture(3);
+	}
+	public int getVisibilityMap() {
+		return gBuffer.getRenderedTexture(4);
 	}
 
 }

@@ -113,6 +113,9 @@ public class Spotlight implements IEntity {
 	}
 
 	public void drawShadowMap(Octree octree) {
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
 		List<IEntity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
 		directionalShadowPassProgram.use();

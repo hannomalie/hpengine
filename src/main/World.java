@@ -65,7 +65,7 @@ public class World {
 	public static Spotlight light= new Spotlight(true);
 	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallax = false;
-	public static volatile boolean useAmbientOcclusion = false;
+	public static volatile boolean useAmbientOcclusion = true;
 	public static volatile boolean useColorBleeding = false;
 	public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = true;

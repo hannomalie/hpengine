@@ -4,6 +4,8 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
+uniform bool usePostProcessing = false;
+
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
@@ -336,11 +338,15 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 
 void main()
 {
-	vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
-	float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
-    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
-    
-    out_color = in_color;
-    //out_color.rgb = in_color.rgb;
-    out_color.a =1;
+	if (usePostProcessing) {
+		vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
+		float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
+	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
+	    
+	    out_color = in_color;
+	    //out_color.rgb = in_color.rgb;
+	    out_color.a =1;
+	} else {
+		out_color = texture2D(renderedTexture, pass_TextureCoord);
+	}
 }

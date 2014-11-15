@@ -568,20 +568,32 @@ public class TextureFactory {
     private void generateMipMaps(Texture texture, boolean mipmap) {
         texture.bind();
     	if (mipmap) {
-    		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
     		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+    		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     	}
 
     	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
     	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
     }
     public void generateMipMaps(int textureId) {
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
-		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        generateMipMaps(textureId, GL11.GL_LINEAR_MIPMAP_LINEAR);
     }
+    public void generateMipMaps(int textureId, int textureMinFilter) {
+        generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
+    }
+    public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+    }
+    public void enableMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
+    }
+    
     public void generateMipMapsCubeMap(int textureId) {
         GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, textureId); 
 		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);

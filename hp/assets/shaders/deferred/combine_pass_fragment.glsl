@@ -8,7 +8,7 @@ layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
 layout(binding=7) uniform samplerCubeArray probes;
-
+layout(binding=8) uniform sampler2D visibilityMap;
 
 
 layout(binding=170) uniform samplerCube probe170;
@@ -45,6 +45,8 @@ uniform float secondPassScale = 1;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform int exposure = 4;
+
+uniform int fullScreenMipmapCount = 10;
 
 uniform int activeProbeCount;
 uniform vec3 environmentMapMin[192];
@@ -162,7 +164,7 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 				float mipMapLevelFromWorldDistance = clamp(distanceInWorld/10, 0, 5); // every 10 units, the next mipmap level is chosen
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
-    			float mipMapChoser = roughness * 9 + 1;
+    			float mipMapChoser = roughness * 8;
     			mipMapChoser = max(mipMapChoser, mipMapLevelFromWorldDistance);
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 1);
     			vec3 reflectedColor =  textureLod(diffuseMap, resultCoords.xy, mipMapChoser).xyz;
@@ -332,13 +334,13 @@ vec4[2] getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3
 	vec3 currentCenter1 = currentEnvironmentMapMin1 + distance(currentEnvironmentMapMin1, currentEnvironmentMapMax1)/2;
 	vec3 currentCenter2 = currentEnvironmentMapMin1 + distance(currentEnvironmentMapMin1, currentEnvironmentMapMax1)/2;
 	float minDist1 = distance(currentCenter1, position);
-	int iForNearest1 = 0;
-	float minDist2 = distance(currentCenter1, position);
-	int iForNearest2 = 0;
+	int iForNearest1 = 191;
+	float minDist2 = minDist1;
+	int iForNearest2 = 191;
 	
-	if(!isInside(position, currentEnvironmentMapMin1, currentEnvironmentMapMax1)) { minDist1 = 1000000;minDist2 = 1000000; }
+	if(!isInside(position, currentEnvironmentMapMin1, currentEnvironmentMapMax1)) { minDist1 = 10000;minDist2 = 10000; }
 	
-	for(int i = 1; i < activeProbeCount; i++) {
+	for(int i = 0; i < activeProbeCount; i++) {
 		vec3 currentEnvironmentMapMin = environmentMapMin[191- i];
 		vec3 currentEnvironmentMapMax = environmentMapMax[191 -i];
 		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
@@ -380,8 +382,10 @@ float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum) {
 	return max(overhead.x, max(overhead.y, overhead.z));
 }
 
+const bool NO_INTERPOLATION_IF_ONE_PROBE_GIVEN = true;
+
 vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, vec2 uv) {
-	const float MAX_MIPMAPLEVEL = 8;
+	const float MAX_MIPMAPLEVEL = 10;
 	float mipMapLevel = roughness * MAX_MIPMAPLEVEL;
 	float mipMapLevelSecond = mipMapLevel;
 	
@@ -389,6 +393,17 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	//vec4[2] twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, normalWorld);
 	int probeIndexNearest = int(twoIntersectionsAndIndices[0].w);
 	int probeIndexSecondNearest = int(twoIntersectionsAndIndices[1].w);
+	
+	if(probeIndexNearest == 0) {
+		return texture(globalEnvironmentMap, normalWorld, mipMapLevel).rgb;
+	} else if(probeIndexSecondNearest == 0) {
+		vec3 t3d = normalize(reflect(V, normalWorld));
+		vec3 t3d_bp = boxProjection(positionWorld, t3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
+		vec3 c = textureLod(getProbeForIndex(probeIndexNearest), t3d_bp, mipMapLevel).rgb;
+		if(NO_INTERPOLATION_IF_ONE_PROBE_GIVEN) {
+			return c;
+		}
+	}
 	
 	vec3 intersectionNearest = twoIntersectionsAndIndices[0].xyz;
 	vec3 intersectionSecondNearest = twoIntersectionsAndIndices[1].xyz;
@@ -400,8 +415,8 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
-	mipMapLevel *= roughness * distance(positionWorld, boxProjectedNearest)/20;
-	mipMapLevelSecond *= roughness * distance(positionWorld, boxProjectedSecondNearest)/20;
+	mipMapLevel *= clamp(distance(positionWorld, boxProjectedNearest)/50, 0, 1);
+	mipMapLevelSecond *= clamp(distance(positionWorld, boxProjectedSecondNearest)/50, 0, 1);
 	vec3 colorNearest = textureLod(getProbeForIndex(probeIndexNearest), boxProjectedNearest, mipMapLevel).rgb;
 	vec3 colorSecondNearest = textureLod(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, mipMapLevelSecond).rgb;
 	
@@ -409,6 +424,17 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	float distanceToSecondNearestIntersection = distance(positionWorld, twoIntersectionsAndIndices[1].xyz);
 	
 	return mix(colorNearest, colorSecondNearest, mixer);
+}
+
+vec3 highZTrace(vec3 p, vec3 v) {
+
+	float rootLevel = fullScreenMipmapCount - 1;
+	const float HIZ_START_LEVEL = 2;
+	float level = HIZ_START_LEVEL;
+	float iterations = 0.0f;
+	
+	vec2 crossStep, crossOffset;
+	return vec3(0,0,0);
 }
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor) {
@@ -464,7 +490,7 @@ void main(void) {
   	
   	vec4 positionRoughness = textureLod(positionMap, st, 0);
   	float roughness = positionRoughness.w;
-  	//roughness = 0;
+  	//roughness = 0.0;
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
   	vec4 normalView = vec4(texture2D(normalMap,st).rgb, 0);
@@ -511,9 +537,10 @@ void main(void) {
 	vec3 reflectedColor = getProbeColor(positionWorld, V, normalWorld, roughness, st);
 	vec3 environmentColor = reflectedColor;
 	//reflectedColor = sslr(color, reflectedColor, st, positionView, normalView.rgb, roughness);
-	//if(roughness > 0.2)
+	//if(roughness > 0.1)
 	{
-		reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
+		//reflectedColor = vec3(1,0,0);
+		//reflectedColor = rayCastReflect(color, reflectedColor, st, positionView, normalView.rgb, roughness);
 	}
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
@@ -561,6 +588,11 @@ void main(void) {
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = ambientFromEnvironment.rgb;
+	
+	//out_color.rgb = textureLod(visibilityMap, st, 1).rgb;
+	//float temp =  textureLod(visibilityMap, st, 0).r;
+	//out_color.rgb = vec3(temp,temp,temp);
+	
 	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);
 	} else if(probeIndex == 190) {

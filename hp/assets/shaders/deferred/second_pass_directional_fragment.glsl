@@ -526,9 +526,9 @@ void main(void) {
 	}
 	
 	ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
-	ssdo = (ssdo/NUM_SAMPLES)*0.5;
+	ssdo = (ssdo/NUM_SAMPLES)*2;
 	
-	out_DiffuseSpecular = finalColor + length(finalColor.rgb) * vec4(ssdo,0);// + ambientTerm;
+	out_DiffuseSpecular = finalColor + 0.1*vec4(ssdo,0);// + ambientTerm;
 	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace, st);
 	//out_DiffuseSpecular.rgb += lightDiffuse.rgb * indirectLight;
 	

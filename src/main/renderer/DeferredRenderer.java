@@ -330,6 +330,8 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("postprocess_fragment.glsl");
 		copyShaderIfNotExists("shadowmap_fragment.glsl");
 		copyShaderIfNotExists("mvp_vertex.glsl");
+		copyShaderIfNotExists("highZ_fragment.glsl");
+		copyShaderIfNotExists("preIntegration_fragment.glsl");
 		
 	}
 
@@ -413,8 +415,8 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			//drawToQuad(gBuffer.getPositionMap(), debugBuffer);
+			//drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+			drawToQuad(gBuffer.getVisibilityMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

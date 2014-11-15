@@ -118,7 +118,10 @@ public class RenderTarget {
 	}
 
 	public void setTargetTexture(int textureID, int index) {
-		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, textureID, 0);
+		setTargetTexture(textureID, index, 0);
+	}
+	public void setTargetTexture(int textureID, int index, int mipMapLevel) {
+		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, textureID, mipMapLevel);
 	}
 	
 	public void unuse() {
