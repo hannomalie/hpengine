@@ -50,5 +50,7 @@ void main()
     float[2] minMax = getMinimumMaximumByW(visibilityMap, baseCoords, mipLevelToSampleFrom);
     out_visibility.g = minMax[0];
     out_visibility.b = minMax[1];
+    
+    //out_visibility = vec4(1,0,0,1);
     //out_visibility = texture(normalMap, baseCoords, mipLevelToSampleFrom);
 }

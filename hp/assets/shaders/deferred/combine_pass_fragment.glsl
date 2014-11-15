@@ -580,7 +580,7 @@ void main(void) {
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = texture(lightAccumulationMap, st).rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
-	//out_color.rgb = finalColor;
+	//out_color.rgb = normalView.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = specularTerm.rgb;

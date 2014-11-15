@@ -148,14 +148,13 @@ public class GBuffer {
 			}
 		}
 
-		drawHighZMap();
+		drawHighZMap();	
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
 		
 		camera.saveViewMatrixAsLastViewMatrix();
 	}
-
 
 	private void drawHighZMap() {
 		gBuffer.use(false);
@@ -165,9 +164,12 @@ public class GBuffer {
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 //		renderer.getTextureFactory().generateMipMaps(getPositionMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		renderer.getTextureFactory().generateMipMaps(getNormalMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
+		
+//		renderer.getTextureFactory().generateMipMaps(getNormalMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		renderer.getTextureFactory().generateMipMaps(getVisibilityMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
+
 		
 		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
 			
@@ -183,9 +185,9 @@ public class GBuffer {
 
 		}
 
-		gBuffer.setTargetTexture(getPositionMap(), 0);
-		gBuffer.setTargetTexture(getNormalMap(), 1);
-		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2);
+//		gBuffer.setTargetTexture(getPositionMap(), 0);
+//		gBuffer.setTargetTexture(getNormalMap(), 1);
+		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2, 0);
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {

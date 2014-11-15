@@ -20,6 +20,7 @@ import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMapArray;
 
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 
 public class EnvironmentProbeFactory {
@@ -77,6 +78,9 @@ public class EnvironmentProbeFactory {
 	
 	public void drawAlternating(Octree octree, Spotlight light, int frameCount) {
 		if(!World.DRAW_PROBES) { return; }
+
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		
