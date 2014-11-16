@@ -46,6 +46,7 @@ import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.SliderInput;
 import main.util.script.ScriptManager;
+import main.util.stopwatch.GPUProfiler;
 
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -105,6 +106,7 @@ public class DebugFrame {
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
 	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
+	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", false);
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
@@ -169,12 +171,38 @@ public class DebugFrame {
 		addOctreeSceneObjects(world);
 		
 		addProbes(world);
-		
+
 		toggleFileReload.addActionListener( e -> {
 			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
 			toggleFileReload.setSelected(World.RELOAD_ON_FILE_CHANGE);
 		});
-		
+		toggleProfiler.addActionListener( e -> {
+			
+			toggleProfiler.setEnabled(false);
+			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+
+				@Override
+				public Result execute(World world) {
+					GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
+					return new Result() { @Override public boolean isSuccessful() { return true; } };
+				}
+			});
+			Result result = null;
+			try {
+				result = queue.poll(5, TimeUnit.MINUTES);
+				if (!result.isSuccessful()) {
+					showError("Profiling can't be switched");
+					toggleProfiler.setEnabled(true);
+				} else {
+					showSuccess("Profiling switched");
+					toggleProfiler.setEnabled(true);
+				}
+			} catch (Exception e1) {
+				showError("Profiling can't be switched");
+				toggleProfiler.setEnabled(true);
+			}
+			
+		});
 		toggleParallax.addActionListener( e -> {
 			World.useParallax = !World.useParallax;
 			World.useSteepParallax = false;
@@ -286,6 +314,7 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDebugFrame);
 	    mainButtonElements.add(toggleDrawLights);
 		mainButtonElements.add(toggleFileReload);
+		mainButtonElements.add(toggleProfiler);
 		mainButtonElements.add(toggleParallax);
 		mainButtonElements.add(toggleSteepParallax);
 		mainButtonElements.add(toggleAmbientOcclusion);

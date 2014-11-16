@@ -158,7 +158,7 @@ public class GBuffer {
 	}
 
 	private void drawHighZMap() {
-		gBuffer.use(false);
+//		gBuffer.use(false);
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 
