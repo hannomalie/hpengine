@@ -36,7 +36,6 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -147,11 +146,13 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
-
-		drawHighZMap();	
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
+
+		GPUProfiler.start("High Z pass");
+		drawHighZMap();
+		GPUProfiler.end();
 		
 		camera.saveViewMatrixAsLastViewMatrix();
 	}
@@ -163,21 +164,29 @@ public class GBuffer {
 
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 //		renderer.getTextureFactory().generateMipMaps(getPositionMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
-		
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+//      GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
 //		renderer.getTextureFactory().generateMipMaps(getNormalMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		renderer.getTextureFactory().generateMipMaps(getVisibilityMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 
+		gBuffer.setTargetTexture(0, 0, 0);
+		gBuffer.setTargetTexture(0, 1, 0);
+		gBuffer.setTargetTexture(0, 2, 0);
+		gBuffer.setTargetTexture(0, 3, 0);
+		gBuffer.setTargetTexture(0, 4, 0);
 		
 		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
 			
 			int currentMipMapLevel = i+1;
 			highZProgram.use();
-			gBuffer.setTargetTexture(getVisibilityMap(), 2, currentMipMapLevel);
+			gBuffer.setTargetTexture(getVisibilityMap(), 4, currentMipMapLevel);
 			highZProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
-			fullscreenBuffer.draw();
+			if(i == 0) {
+				fullscreenBuffer.draw();
+			} else {
+				fullscreenBuffer.drawAgain();
+			}
 
 //			preIntegrationProgram.use();
 //			preIntegrationProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
@@ -185,9 +194,11 @@ public class GBuffer {
 
 		}
 
-//		gBuffer.setTargetTexture(getPositionMap(), 0);
-//		gBuffer.setTargetTexture(getNormalMap(), 1);
+		gBuffer.setTargetTexture(getPositionMap(), 0);
+		gBuffer.setTargetTexture(getNormalMap(), 1);
 		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2, 0);
+		gBuffer.setTargetTexture(getMotionMap(), 3, 0);
+		gBuffer.setTargetTexture(getVisibilityMap(), 4, 0);
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -203,7 +214,7 @@ public class GBuffer {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
-		laBuffer.use(false);
+		laBuffer.use(true);
 //		laBuffer.resizeTextures();
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
 		GL11.glClearColor(0,0,0,0);
@@ -226,8 +237,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
 		GPUProfiler.end();
 		
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
@@ -480,6 +491,8 @@ public class GBuffer {
 		renderer.getEnvironmentMap().bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
 		fullscreenBuffer.draw();
 
 		if(target == null) {

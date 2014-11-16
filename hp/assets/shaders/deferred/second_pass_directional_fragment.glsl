@@ -7,8 +7,6 @@ layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
-layout(binding=7) uniform sampler2D shadowMapWorldPosition; // world position, 
-layout(binding=8) uniform sampler2D shadowMapDiffuseColor; // color
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -217,47 +215,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
     return projectedCoord;
 }
-
-vec3 getIndirectLight(vec4 ShadowCoordPostW, vec3 positionShadow, vec3 positionWorld, vec3 normalWorld, float depthInLightSpace, vec2 uv) {
-//return vec3(0,0,0);
-	const float NUM_SAMPLES_FACTOR = 10;
-	const float DISTFLOAT = 0.5;
-	const vec2 DIST = vec2(DISTFLOAT,DISTFLOAT)*(16/9);
-	
-	vec3 shadowNormal = decode(texture(shadowMap, ShadowCoordPostW.xy).ba);
-	vec3 sum = vec3(0,0,0);
-	
-	for(int i = 1; i <= NUM_SAMPLES_FACTOR; i++) {
-		vec3 tempSum = vec3(0,0,0);
-		
-		for(int z = 0; z < 16; z++) {
-			vec2 coords = ShadowCoordPostW.xy + (i/NUM_SAMPLES_FACTOR)*pSphere[z].xy*DIST;
-		  	if (coords.x < 0 || coords.x > 1 || coords.y < 0 || coords.y > 1) {
-				//continue;
-			}
-			vec4 shadowMapSample = texture(shadowMap, coords);
-			vec4 shadowWorldPosition = texture(shadowMapWorldPosition, coords);
-			vec4 shadowDiffuseMapSample = texture(shadowMapDiffuseColor, coords);
-			float shadowDepth = shadowMapSample.x;
-			shadowNormal = decode(shadowMapSample.ba);
-			shadowNormal = shadowNormal * 2 - 1;
-			shadowNormal = normalize(shadowNormal);
-			float flux = 1;
-			flux *= max(0,dot(shadowNormal, -lightDirection));
-			flux *= max(0,dot(shadowNormal, (positionWorld - shadowWorldPosition.xyz)));
-			flux *= max(0,dot(normalWorld, (shadowWorldPosition.xyz - positionWorld)));
-			
-			tempSum += lightDiffuse.rgb*(flux/pow(length(positionWorld - shadowWorldPosition.xyz),2));
-		}
-		//sum += tempSum/16;
-		sum += tempSum;
-	}
-
-	sum /= NUM_SAMPLES_FACTOR;
-	
-	return sum;
-}
-
 
 vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
 
@@ -529,8 +486,6 @@ void main(void) {
 	ssdo = (ssdo/NUM_SAMPLES)*2;
 	
 	out_DiffuseSpecular = finalColor + 0.1*vec4(ssdo,0);// + ambientTerm;
-	//vec3 indirectLight = getIndirectLight(positionShadow, (shadowMatrix * vec4(positionWorld.xyz, 1)).rgb, positionWorld, (inverse(viewMatrix) * vec4(normalView,0)).xyz, depthInLightSpace, st);
-	//out_DiffuseSpecular.rgb += lightDiffuse.rgb * indirectLight;
 	
 	//out_DiffuseSpecular.rgb = (ssdo);
 	

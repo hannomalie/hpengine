@@ -7,7 +7,7 @@ uniform int currentMipMapLevel = 1; // this is the miplevel we are targeting rig
 
 in vec2 pass_TextureCoord;
 
-layout(location=2)out vec4 out_visibility;
+layout(location=4)out vec4 out_visibility; // visibility
 
 float linearizeDepth(in float depth)
 {
@@ -51,6 +51,6 @@ void main()
     out_visibility.g = minMax[0];
     out_visibility.b = minMax[1];
     
-    //out_visibility = vec4(1,0,0,1);
+    //out_visibility = vec4(1,1,1,1);
     //out_visibility = texture(normalMap, baseCoords, mipLevelToSampleFrom);
 }

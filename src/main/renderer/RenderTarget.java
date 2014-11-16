@@ -67,7 +67,7 @@ public class RenderTarget {
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
 		
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		
 		//TODO: Make this more pretty
 		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);

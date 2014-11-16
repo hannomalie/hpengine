@@ -573,14 +573,14 @@ void main(void) {
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)* 0.15);
 	out_color.rgb = out_color.rgb * whiteScale;
 	/////////////////////////////// GAMMA
-	//finalColor.r = pow(finalColor.r,1/2.2);
-	//finalColor.g = pow(finalColor.g,1/2.2);
-	//finalColor.b = pow(finalColor.b,1/2.2);
+	//out_color.r = pow(out_color.r,1/2.2);
+	//out_color.g = pow(out_color.g,1/2.2);
+	//out_color.b = pow(out_color.b,1/2.2);
 	
 	//out_color.rgb *= aoReflect.gba;
-	//out_color.rgb = texture(lightAccumulationMap, st).rgb;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
 	//out_color.rgb = normalView.xyz;
+	//out_color.rgb = color.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = specularTerm.rgb;
@@ -589,8 +589,8 @@ void main(void) {
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = ambientFromEnvironment.rgb;
 	
-	//out_color.rgb = textureLod(visibilityMap, st, 1).rgb;
-	//float temp =  textureLod(visibilityMap, st, 0).r;
+	//out_color.rgb = textureLod(normalMap, st, 0).rgb;
+	//float temp =  10*textureLod(visibilityMap, st, 3).b;
 	//out_color.rgb = vec3(temp,temp,temp);
 	
 	/* if(probeIndex == 191) {
