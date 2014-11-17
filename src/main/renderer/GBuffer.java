@@ -158,15 +158,9 @@ public class GBuffer {
 	}
 
 	private void drawHighZMap() {
-//		gBuffer.use(false);
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//		renderer.getTextureFactory().generateMipMaps(getPositionMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-//      GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
-//		renderer.getTextureFactory().generateMipMaps(getNormalMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		renderer.getTextureFactory().generateMipMaps(getVisibilityMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
 
@@ -175,9 +169,14 @@ public class GBuffer {
 		gBuffer.setTargetTexture(0, 2, 0);
 		gBuffer.setTargetTexture(0, 3, 0);
 		gBuffer.setTargetTexture(0, 4, 0);
-		
+
+		int currentWidth = Renderer.WIDTH;
+		int currentHeight = Renderer.HEIGHT;
+
 		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
-			
+			currentWidth /= 2;
+			currentHeight /= 2;
+			GL11.glViewport(0, 0, currentWidth, currentHeight);
 			int currentMipMapLevel = i+1;
 			highZProgram.use();
 			gBuffer.setTargetTexture(getVisibilityMap(), 4, currentMipMapLevel);
@@ -187,13 +186,26 @@ public class GBuffer {
 			} else {
 				fullscreenBuffer.drawAgain();
 			}
-
-//			preIntegrationProgram.use();
-//			preIntegrationProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
-//			fullscreenBuffer.draw();
-
 		}
+		
+////////// CAN BE DONE IN THE PREVIOUS PASS.....
+//		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
+//		currentWidth = Renderer.WIDTH;
+//		currentHeight = Renderer.HEIGHT;
+//		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
+//
+//			currentWidth /= 2;
+//			currentHeight /= 2;
+//			GL11.glViewport(0, 0, currentWidth, currentHeight);
+//			int currentMipMapLevel = i+1;
+//
+//			preIntegrationProgram.use();
+//			gBuffer.setTargetTexture(getVisibilityMap(), 4, currentMipMapLevel);
+//			preIntegrationProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
+//			fullscreenBuffer.drawAgain();
+//		}
 
+		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
 		gBuffer.setTargetTexture(getPositionMap(), 0);
 		gBuffer.setTargetTexture(getNormalMap(), 1);
 		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2, 0);
@@ -209,8 +221,8 @@ public class GBuffer {
 		
 		GPUProfiler.start("Directional light");
 		GL11.glDepthMask(false);
-		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_BLEND);
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 

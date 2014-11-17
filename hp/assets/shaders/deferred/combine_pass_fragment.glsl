@@ -67,7 +67,7 @@ vec3 Uncharted2Tonemap(vec3 x)
 
     return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
-vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
+vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) { // TODO: MAKE THIS GAUSS..........
 
 	vec4 result = texture2D(sampler, texCoord);
 	
@@ -82,6 +82,13 @@ vec4 blurSample(sampler2D sampler, vec2 texCoord, float dist) {
 	result += texture2D(sampler, vec2(texCoord.x, texCoord.y + dist));
 	
 	return result/9;
+}
+
+float linearizeDepth(in float depth)
+{
+    float zNear = 0.1;
+    float zFar  = 5000;
+    return (2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear));
 }
 
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
@@ -426,16 +433,116 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	return mix(colorNearest, colorSecondNearest, mixer);
 }
 
-vec3 highZTrace(vec3 p, vec3 v) {
+///////////////////////////////// HI-Z /////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+const vec2 hiZSize = vec2(1280,720); // not sure if correct - this is mip level 0 size
+const vec2 cb_screenSize = hiZSize;
 
+vec3 intersectDepthPlane(vec3 o, vec3 d, float t)
+{
+	return o + d * t;
+}
+
+vec2 getCell(vec2 ray, vec2 cellCount)
+{
+	return floor(ray * cellCount);
+}
+
+vec3 intersectCellBoundary(vec3 o, vec3 d, vec2 cellIndex, vec2 cellCount, vec2 crossStep, vec2 crossOffset)
+{
+	vec2 index = cellIndex + crossStep;
+	index /= cellCount;
+	index += crossOffset;
+	vec2 delta = index - o.xy;
+	delta /= d.xy;
+	float t = min(delta.x, delta.y);
+	return intersectDepthPlane(o, d, t);
+}
+
+float getMinimumDepthPlane(vec2 ray, float level, float rootLevel)
+{
+	return texture(visibilityMap, ray.xy, level).g;
+	//return hiZBuffer.SampleLevel(sampPointClamp, ray.xy, level).r;
+}
+
+vec2 getCellCount(float level, float rootLevel)
+{
+	float div = level == 0.0f ? 1.0f : exp2(level);
+	return cb_screenSize / vec2(div,div);
+}
+
+bool crossedCellBoundary(vec2 cellIdxOne, vec2 cellIdxTwo)
+{
+	return cellIdxOne.x != cellIdxTwo.x || cellIdxOne.y != cellIdxTwo.y;
+}
+
+vec3 highZTrace(vec3 p, vec3 v) {
 	float rootLevel = fullScreenMipmapCount - 1;
-	const float HIZ_START_LEVEL = 2;
+	const float HIZ_START_LEVEL = 6;
+	const float HIZ_STOP_LEVEL = 1;
+	const int MAX_ITERATIONS = 64;
+	const float HIZ_MAX_LEVEL = float(fullScreenMipmapCount);
+	const float HIZ_CROSS_EPSILON = vec2(1/1280, 1/720); // mip level 0 texel size, TODO: Make not hardcoded
+	
 	float level = HIZ_START_LEVEL;
 	float iterations = 0.0f;
 	
-	vec2 crossStep, crossOffset;
-	return vec3(0,0,0);
+	// get the cell cross direction and a small offset to enter the next cell when doing cell crossing
+	vec2 crossStep = vec2(v.x >= 0.0f ? 1.0f : -1.0f, v.y >= 0.0f ? 1.0f : -1.0f);
+	vec2 crossOffset = (crossStep * HIZ_CROSS_EPSILON);
+	crossStep.x = clamp(crossStep.x, 0, 1);
+	crossStep.y = clamp(crossStep.y, 0, 1);
+	
+	// set current ray to original screen coordinate and depth
+	vec3 ray = p.xyz;
+	
+	// scale vector such that z is 1.0f (maximum depth)
+	vec3 d = v.xyz / v.z;
+	
+	// set starting point to the point where z equals 0.0f (minimum depth)
+	vec3 o = intersectDepthPlane(p, d, -p.z);
+	
+	// cross to next cell to avoid immediate self-intersection
+	vec2 rayCell = getCell(ray.xy, hiZSize.xy);
+	ray = intersectCellBoundary(o, d, rayCell.xy, hiZSize.xy, crossStep.xy, crossOffset.xy);
+	
+	while(level >= HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS)
+	{
+		// get the minimum depth plane in which the current ray resides
+		float minZ = getMinimumDepthPlane(ray.xy, level, rootLevel);
+		
+		// get the cell number of the current ray
+		const vec2 cellCount = getCellCount(level, rootLevel);
+		const vec2 oldCellIdx = getCell(ray.xy, cellCount);
+
+		// intersect only if ray depth is below the minimum depth plane
+		vec3 tmpRay = intersectDepthPlane(o, d, max(ray.z, minZ));
+
+		// get the new cell number as well
+		const vec2 newCellIdx = getCell(tmpRay.xy, cellCount);
+
+		// if the new cell number is different from the old cell number, a cell was crossed
+		if(crossedCellBoundary(oldCellIdx, newCellIdx))
+		{
+			// intersect the boundary of that cell instead, and go up a level for taking a larger step next iteration
+			tmpRay = intersectCellBoundary(o, d, oldCellIdx, cellCount.xy, crossStep.xy, crossOffset.xy);
+			level = min(HIZ_MAX_LEVEL, level + 2.0f);
+		}
+
+		ray.xyz = tmpRay.xyz;
+
+		// go down a level in the hi-z buffer
+		--level;
+
+		++iterations;
+		
+		//if(iterations == 3) { return vec3(minZ,minZ,minZ); }
+	}
+
+	return ray;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
@@ -589,9 +696,32 @@ void main(void) {
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = ambientFromEnvironment.rgb;
 	
-	//out_color.rgb = textureLod(normalMap, st, 0).rgb;
-	//float temp =  10*textureLod(visibilityMap, st, 3).b;
-	//out_color.rgb = vec3(temp,temp,temp);
+	vec2 positionScreenSpaceXY = (st*2)-1;
+	vec3 positionScreenSpace = vec3(positionScreenSpaceXY, (normalView.w));
+	
+	vec3 reflectionWorldSpace = (reflect(V, normalWorld));
+	vec3 secondPointWorldSpace = positionWorld + reflectionWorldSpace;
+	vec4 secondPointScreenSpace = (projectionMatrix * viewMatrix * vec4(secondPointWorldSpace,1));
+	secondPointScreenSpace /= secondPointScreenSpace.w;
+	secondPointScreenSpace.xy *= vec2(0.5, -0.5);
+	secondPointScreenSpace.xy += vec2(0.5, 0.5);
+	vec3 reflectionVectorScreenSpace = secondPointScreenSpace.xyz - positionScreenSpace;
+	
+	if(st.x < 0.5) {
+		out_color.rgb = highZTrace(positionScreenSpace, reflectionVectorScreenSpace.xyz).xyz; // highz result used as uv into the colorbuffer is like cone tracing perfect reflection
+		out_color.rgb = textureLod(diffuseMap, out_color.rg, 0).rgb;
+	}
+	
+	/* if(st.x < 0.5) {
+		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 2).g);
+		out_color.rgb = vec3(temp,temp,temp);
+	} else if (st.y < 0.5) {
+		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 3).b);
+		out_color.rgb = vec3(temp,temp,temp);
+	} else {
+		float temp = (textureLod(visibilityMap, st, 3).r);
+		out_color.rgb = vec3(temp,temp,temp);
+	}*/
 	
 	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);
