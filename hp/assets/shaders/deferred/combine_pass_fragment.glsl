@@ -8,7 +8,6 @@ layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap; // normal, depth
 layout(binding=7) uniform samplerCubeArray probes;
-layout(binding=8) uniform sampler2D visibilityMap;
 
 
 layout(binding=170) uniform samplerCube probe170;
@@ -433,120 +432,6 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	return mix(colorNearest, colorSecondNearest, mixer);
 }
 
-///////////////////////////////// HI-Z /////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-const vec2 cb_screenSize = vec2(1280,720);
-const vec2 hiZSize = vec2(1280,720)/1; // not sure if correct - this is mip level 0 size
-const float rootLevel = fullScreenMipmapCount - 1;
-const float HIZ_START_LEVEL = 6;
-const float HIZ_STOP_LEVEL = 2;
-const int MAX_ITERATIONS = 64;
-const float HIZ_MAX_LEVEL = float(fullScreenMipmapCount);
-const float HIZ_CROSS_EPSILON = 1*vec2(1/1280, 1/720); // mip level 0 texel size, TODO: Make not hardcoded
-
-vec3 intersectDepthPlane(vec3 o, vec3 d, float t)
-{
-	return o + d * t;
-}
-
-vec2 getCell(vec2 ray, vec2 cellCount)
-{
-	return floor(ray * cellCount);
-}
-
-vec3 intersectCellBoundary(vec3 o, vec3 d, vec2 cellIndex, vec2 cellCount, vec2 crossStep, vec2 crossOffset)
-{
-	vec2 index = cellIndex + crossStep;
-	index /= cellCount;
-	index += crossOffset;
-	vec2 delta = index - o.xy;
-	delta /= d.xy;
-	float t = min(delta.x, delta.y);
-	return intersectDepthPlane(o, d, t);
-}
-
-float getMinimumDepthPlane(vec2 ray, float level, float rootLevel)
-{
-	//ray.y = 1-ray.y;
-	return texture(visibilityMap, ray.xy, level).g;
-	//return hiZBuffer.SampleLevel(sampPointClamp, ray.xy, level).r;
-}
-
-vec2 getCellCount(float level, float rootLevel)
-{
-	float div = level == 0.0f ? 1.0f : exp2(level);
-	return cb_screenSize / vec2(div,div);
-}
-
-bool crossedCellBoundary(vec2 cellIdxOne, vec2 cellIdxTwo)
-{
-	return cellIdxOne.x != cellIdxTwo.x || cellIdxOne.y != cellIdxTwo.y;
-}
-
-vec3 highZTrace(vec3 p, vec3 v) {
-	
-	float level = HIZ_START_LEVEL;
-	float iterations = 0.0f;
-	
-	// get the cell cross direction and a small offset to enter the next cell when doing cell crossing
-	vec2 crossStep = vec2(v.x >= 0.0f ? 1.0f : -1.0f, v.y >= 0.0f ? 1.0f : -1.0f);
-	vec2 crossOffset = (crossStep * HIZ_CROSS_EPSILON);
-	crossStep.x = clamp(crossStep.x, 0, 1);
-	crossStep.y = clamp(crossStep.y, 0, 1);
-	
-	// set current ray to original screen coordinate and depth
-	vec3 ray = p.xyz;
-	
-	// scale vector such that z is 1.0f (maximum depth)
-	vec3 d = v.xyz / v.z;
-	
-	// set starting point to the point where z equals 0.0f (minimum depth)
-	vec3 o = intersectDepthPlane(p, d, -p.z);
-	
-	// cross to next cell to avoid immediate self-intersection
-	vec2 rayCell = getCell(ray.xy, hiZSize.xy);
-	ray = intersectCellBoundary(o, d, rayCell.xy, hiZSize.xy, crossStep.xy, crossOffset.xy);
-	
-	while(level >= HIZ_STOP_LEVEL && iterations < MAX_ITERATIONS)
-	{
-		// get the minimum depth plane in which the current ray resides
-		float minZ = getMinimumDepthPlane(ray.xy, level, rootLevel);
-		
-		// get the cell number of the current ray
-		const vec2 cellCount = getCellCount(level, rootLevel);
-		const vec2 oldCellIdx = getCell(ray.xy, cellCount);
-
-		// intersect only if ray depth is below the minimum depth plane
-		vec3 tmpRay = intersectDepthPlane(o, d, max(ray.z, minZ));
-
-		// get the new cell number as well
-		const vec2 newCellIdx = getCell(tmpRay.xy, cellCount);
-
-		// if the new cell number is different from the old cell number, a cell was crossed
-		if(crossedCellBoundary(oldCellIdx, newCellIdx))
-		{
-			// intersect the boundary of that cell instead, and go up a level for taking a larger step next iteration
-			tmpRay = intersectCellBoundary(o, d, oldCellIdx, cellCount.xy, crossStep.xy, crossOffset.xy);
-			level = min(HIZ_MAX_LEVEL, level + 2.0f);
-		}
-
-		ray.xyz = tmpRay.xyz;
-
-		// go down a level in the hi-z buffer
-		--level;
-
-		++iterations;
-		
-		//if(iterations == 7) { return (ray); }
-	}
-	
-	float temp = iterations/64;
-	return vec3(temp,temp,temp);
-	return ray;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
@@ -698,39 +583,6 @@ void main(void) {
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = ambientFromEnvironment.rgb;
-	
-	/* vec2 positionScreenSpaceXY = st;
-	vec3 positionScreenSpace = vec3(positionScreenSpaceXY, (normalView.w));
-	
-	vec3 reflectionWorldSpace = normalize(reflect(normalize(V), normalize(normalWorld)));
-	//reflectionWorldSpace = vec3(0,1,0);
-	vec3 secondPointWorldSpace = positionWorld + reflectionWorldSpace;
-	vec4 secondPointScreenSpace = (projectionMatrix * viewMatrix * vec4(secondPointWorldSpace,1));
-	secondPointScreenSpace /= secondPointScreenSpace.w;
-	// secondPoint now in normalized screen device coordinates
-	//secondPointScreenSpace.xy *= vec2(0.5, -0.5);
-	secondPointScreenSpace.xy *= vec2(0.5, 0.5);
-	secondPointScreenSpace.xy += vec2(0.5, 0.5);
-	
-	vec3 reflectionVectorScreenSpace = secondPointScreenSpace.xyz - positionScreenSpace;
-	
-	if(st.x < 0.5) {
-		out_color.rgb = highZTrace(positionScreenSpace, reflectionVectorScreenSpace.xyz).xyz; // highz result used as uv into the colorbuffer is like cone tracing perfect reflection
-		//out_color.g = 1-out_color.g;
-		//out_color.rgb = textureLod(diffuseMap, (out_color.xy), 0).rgb;
-	}*/
-	
-	/*if(st.x < 0.5) {
-		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 2).b);
-		out_color.rgb = vec3(temp,temp,temp);
-	} else  {
-		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 3).b);
-		out_color.rgb = vec3(temp,temp,temp);
-	}*/
-	/* else {
-		float temp = (textureLod(visibilityMap, st, 2).r);
-		out_color.rgb = vec3(temp,temp,temp);
-	}*/
 	
 	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);

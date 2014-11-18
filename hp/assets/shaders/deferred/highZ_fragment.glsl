@@ -36,28 +36,6 @@ float[2] getMinimumMaximumByW(sampler2D sampler, vec2 baseCoords, int mipLevelTo
 	return minMax;
 }
 
-float getVisibility(sampler2D sampler, vec2 baseCoords, int mipLevelToSampleFrom, float minimum, float maximum) {
-	
-	vec4 fineZ;
-	fineZ.x = linearizeDepth(textureOffset(sampler, baseCoords, ivec2(0,0), mipLevelToSampleFrom).g);
-	fineZ.y = linearizeDepth(textureOffset(sampler, baseCoords, ivec2(0,-1), mipLevelToSampleFrom).g);
-	fineZ.z = linearizeDepth(textureOffset(sampler, baseCoords, ivec2(-1,0), mipLevelToSampleFrom).g);
-	fineZ.w = linearizeDepth(textureOffset(sampler, baseCoords, ivec2(-1,-1), mipLevelToSampleFrom).g);
-	
-	float coarseVolume = 1 / (maximum - minimum);
-	vec4 visibility;
-	visibility.x = (textureOffset(sampler, baseCoords, ivec2(0,0), mipLevelToSampleFrom).r); // r is visibility
-	visibility.y = (textureOffset(sampler, baseCoords, ivec2(0,-1), mipLevelToSampleFrom).r);
-	visibility.z = (textureOffset(sampler, baseCoords, ivec2(-1,0), mipLevelToSampleFrom).r);
-	visibility.w = (textureOffset(sampler, baseCoords, ivec2(-1,-1), mipLevelToSampleFrom).r);
-	
-	vec4 integration = fineZ * abs(coarseVolume) * visibility;
-	float coarseIntegration = dot(vec4(0.25f,0.25f,0.25f,0.25f), integration);
-	
-	return 0.001*abs(coarseVolume);
-	return coarseIntegration;
-}
-
 void main()
 {
 	// when target mipmap is 1, we have to divide the tex coords by 1, because we sample the fullscreen texture
@@ -70,7 +48,6 @@ void main()
     float[2] minMax = getMinimumMaximumByW(visibilityMap, pass_TextureCoord, mipLevelToSampleFrom);
     out_visibility.g = minMax[0];
     out_visibility.b = minMax[1];
-    out_visibility.r = getVisibility(visibilityMap, pass_TextureCoord, mipLevelToSampleFrom, linearizeDepth(minMax[0]), linearizeDepth(minMax[1]));
     
     //out_visibility = vec4(1,1,1,1);
 }

@@ -332,7 +332,6 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("shadowmap_fragment.glsl");
 		copyShaderIfNotExists("mvp_vertex.glsl");
 		copyShaderIfNotExists("highZ_fragment.glsl");
-		copyShaderIfNotExists("preIntegration_fragment.glsl");
 		
 	}
 
@@ -417,7 +416,7 @@ public class DeferredRenderer implements Renderer {
 		
 		if (World.DEBUGFRAME_ENABLED) {
 			//drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			drawToQuad(gBuffer.getVisibilityMap(), debugBuffer);
+			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		

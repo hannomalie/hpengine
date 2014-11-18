@@ -64,7 +64,6 @@ public class GBuffer {
 	private Program instantRadiosityProgram;
 
 	private Program highZProgram;
-	private Program preIntegrationProgram;
 	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -83,10 +82,9 @@ public class GBuffer {
 		this.instantRadiosityProgram = instantRadiosityProgram;
 
 		this.highZProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
-		this.preIntegrationProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "preIntegration_fragment.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 5);
+		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * SECONDPASSSCALE) , (int) (Renderer.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
 		new Matrix4f().store(identityMatrixBuffer);
@@ -149,68 +147,8 @@ public class GBuffer {
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
-
-		GPUProfiler.start("High Z pass");
-		drawHighZMap();
-		GPUProfiler.end();
 		
 		camera.saveViewMatrixAsLastViewMatrix();
-	}
-
-	private void drawHighZMap() {
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-		renderer.getTextureFactory().generateMipMaps(getVisibilityMap(), GL11.GL_NEAREST_MIPMAP_NEAREST, GL11.GL_NEAREST);
-
-		gBuffer.setTargetTexture(0, 0, 0);
-		gBuffer.setTargetTexture(0, 1, 0);
-		gBuffer.setTargetTexture(0, 2, 0);
-		gBuffer.setTargetTexture(0, 3, 0);
-		gBuffer.setTargetTexture(0, 4, 0);
-
-		int currentWidth = Renderer.WIDTH;
-		int currentHeight = Renderer.HEIGHT;
-
-		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
-			currentWidth /= 2;
-			currentHeight /= 2;
-			GL11.glViewport(0, 0, currentWidth, currentHeight);
-			int currentMipMapLevel = i+1;
-			highZProgram.use();
-			gBuffer.setTargetTexture(getVisibilityMap(), 4, currentMipMapLevel);
-			highZProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
-			if(i == 0) {
-				fullscreenBuffer.draw();
-			} else {
-				fullscreenBuffer.drawAgain();
-			}
-		}
-		
-////////// CAN BE DONE IN THE PREVIOUS PASS.....
-//		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
-//		currentWidth = Renderer.WIDTH;
-//		currentHeight = Renderer.HEIGHT;
-//		for(int i = 0; i < fullScreenMipmapCount; i++) { // level 0 is no mipmap but our depth buffer...
-//
-//			currentWidth /= 2;
-//			currentHeight /= 2;
-//			GL11.glViewport(0, 0, currentWidth, currentHeight);
-//			int currentMipMapLevel = i+1;
-//
-//			preIntegrationProgram.use();
-//			gBuffer.setTargetTexture(getVisibilityMap(), 4, currentMipMapLevel);
-//			preIntegrationProgram.setUniform("currentMipMapLevel", currentMipMapLevel);
-//			fullscreenBuffer.drawAgain();
-//		}
-
-		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
-		gBuffer.setTargetTexture(getPositionMap(), 0);
-		gBuffer.setTargetTexture(getNormalMap(), 1);
-		gBuffer.setTargetTexture(getColorReflectivenessMap(), 2, 0);
-		gBuffer.setTargetTexture(getMotionMap(), 3, 0);
-		gBuffer.setTargetTexture(getVisibilityMap(), 4, 0);
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -502,8 +440,6 @@ public class GBuffer {
 		renderer.getEnvironmentMap().bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
 		fullscreenBuffer.draw();
 
 		if(target == null) {
@@ -611,6 +547,7 @@ public class GBuffer {
 		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
 		
 	}
+
 	public int getLightAccumulationMapOneId() {
 		return laBuffer.getRenderedTexture(0);
 	}
@@ -628,9 +565,6 @@ public class GBuffer {
 	}
 	public int getMotionMap() {
 		return gBuffer.getRenderedTexture(3);
-	}
-	public int getVisibilityMap() {
-		return gBuffer.getRenderedTexture(4);
 	}
 
 }
