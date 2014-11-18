@@ -435,8 +435,14 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 
 ///////////////////////////////// HI-Z /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
-const vec2 hiZSize = vec2(1280,720); // not sure if correct - this is mip level 0 size
-const vec2 cb_screenSize = hiZSize;
+const vec2 cb_screenSize = vec2(1280,720);
+const vec2 hiZSize = vec2(1280,720)/1; // not sure if correct - this is mip level 0 size
+const float rootLevel = fullScreenMipmapCount - 1;
+const float HIZ_START_LEVEL = 6;
+const float HIZ_STOP_LEVEL = 2;
+const int MAX_ITERATIONS = 64;
+const float HIZ_MAX_LEVEL = float(fullScreenMipmapCount);
+const float HIZ_CROSS_EPSILON = 1*vec2(1/1280, 1/720); // mip level 0 texel size, TODO: Make not hardcoded
 
 vec3 intersectDepthPlane(vec3 o, vec3 d, float t)
 {
@@ -461,6 +467,7 @@ vec3 intersectCellBoundary(vec3 o, vec3 d, vec2 cellIndex, vec2 cellCount, vec2 
 
 float getMinimumDepthPlane(vec2 ray, float level, float rootLevel)
 {
+	//ray.y = 1-ray.y;
 	return texture(visibilityMap, ray.xy, level).g;
 	//return hiZBuffer.SampleLevel(sampPointClamp, ray.xy, level).r;
 }
@@ -477,12 +484,6 @@ bool crossedCellBoundary(vec2 cellIdxOne, vec2 cellIdxTwo)
 }
 
 vec3 highZTrace(vec3 p, vec3 v) {
-	float rootLevel = fullScreenMipmapCount - 1;
-	const float HIZ_START_LEVEL = 6;
-	const float HIZ_STOP_LEVEL = 1;
-	const int MAX_ITERATIONS = 64;
-	const float HIZ_MAX_LEVEL = float(fullScreenMipmapCount);
-	const float HIZ_CROSS_EPSILON = vec2(1/1280, 1/720); // mip level 0 texel size, TODO: Make not hardcoded
 	
 	float level = HIZ_START_LEVEL;
 	float iterations = 0.0f;
@@ -536,9 +537,11 @@ vec3 highZTrace(vec3 p, vec3 v) {
 
 		++iterations;
 		
-		//if(iterations == 3) { return vec3(minZ,minZ,minZ); }
+		//if(iterations == 7) { return (ray); }
 	}
-
+	
+	float temp = iterations/64;
+	return vec3(temp,temp,temp);
 	return ray;
 }
 
@@ -696,30 +699,36 @@ void main(void) {
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = ambientFromEnvironment.rgb;
 	
-	vec2 positionScreenSpaceXY = (st*2)-1;
+	/* vec2 positionScreenSpaceXY = st;
 	vec3 positionScreenSpace = vec3(positionScreenSpaceXY, (normalView.w));
 	
-	vec3 reflectionWorldSpace = (reflect(V, normalWorld));
+	vec3 reflectionWorldSpace = normalize(reflect(normalize(V), normalize(normalWorld)));
+	//reflectionWorldSpace = vec3(0,1,0);
 	vec3 secondPointWorldSpace = positionWorld + reflectionWorldSpace;
 	vec4 secondPointScreenSpace = (projectionMatrix * viewMatrix * vec4(secondPointWorldSpace,1));
 	secondPointScreenSpace /= secondPointScreenSpace.w;
-	secondPointScreenSpace.xy *= vec2(0.5, -0.5);
+	// secondPoint now in normalized screen device coordinates
+	//secondPointScreenSpace.xy *= vec2(0.5, -0.5);
+	secondPointScreenSpace.xy *= vec2(0.5, 0.5);
 	secondPointScreenSpace.xy += vec2(0.5, 0.5);
+	
 	vec3 reflectionVectorScreenSpace = secondPointScreenSpace.xyz - positionScreenSpace;
 	
 	if(st.x < 0.5) {
 		out_color.rgb = highZTrace(positionScreenSpace, reflectionVectorScreenSpace.xyz).xyz; // highz result used as uv into the colorbuffer is like cone tracing perfect reflection
-		out_color.rgb = textureLod(diffuseMap, out_color.rg, 0).rgb;
-	}
+		//out_color.g = 1-out_color.g;
+		//out_color.rgb = textureLod(diffuseMap, (out_color.xy), 0).rgb;
+	}*/
 	
-	/* if(st.x < 0.5) {
-		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 2).g);
+	/*if(st.x < 0.5) {
+		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 2).b);
 		out_color.rgb = vec3(temp,temp,temp);
-	} else if (st.y < 0.5) {
+	} else  {
 		float temp = 4*linearizeDepth(textureLod(visibilityMap, st, 3).b);
 		out_color.rgb = vec3(temp,temp,temp);
-	} else {
-		float temp = (textureLod(visibilityMap, st, 3).r);
+	}*/
+	/* else {
+		float temp = (textureLod(visibilityMap, st, 2).r);
 		out_color.rgb = vec3(temp,temp,temp);
 	}*/
 	

@@ -214,7 +214,7 @@ public class GBuffer {
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-		
+
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -441,8 +441,7 @@ public class GBuffer {
 		}
 	}
 	
-	private void doInstantRadiosity(Spotlight directionalLight,
-			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+	private void doInstantRadiosity(Spotlight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		if(World.useInstantRadiosity) {
 			GPUProfiler.start("Instant Radiosity");
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
