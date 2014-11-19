@@ -41,6 +41,7 @@ import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
+import main.renderer.rendertarget.RenderTarget;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbe.Update;
 import main.scene.EnvironmentProbeFactory;
@@ -139,6 +140,7 @@ public class DeferredRenderer implements Renderer {
 
 	private GBuffer gBuffer;
 	private RenderTarget fullScreenTarget;
+	private RenderTarget halfScreenTarget;
 
 	private Program cubeMapDiffuseProgram;
 	private int maxTextureUnits;
@@ -416,7 +418,7 @@ public class DeferredRenderer implements Renderer {
 		
 		if (World.DEBUGFRAME_ENABLED) {
 			//drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -742,6 +744,10 @@ public class DeferredRenderer implements Renderer {
 
 	private void setMaxTextureUnits(int maxTextureUnits) {
 		this.maxTextureUnits = maxTextureUnits;
+	}
+
+	public RenderTarget getHalfScreenTarget() {
+		return halfScreenTarget;
 	}
 
 }

@@ -38,7 +38,7 @@ vec4 bilateralBlur(sampler2D sampler, vec2 texCoords) {
 		float closeness = distance(currentSample.rgb, centerSample.rgb) / length(vec3(1,1,1));
 		float sampleWeight = kernel[i] * closeness;
 		result += sampleWeight * currentSample;
-		normalization += sampleWeight;
+		normalization += (1-closeness)*kernel[i];
 	}
 	
 	return result + normalization * centerSample;

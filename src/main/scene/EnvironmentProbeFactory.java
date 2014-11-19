@@ -16,6 +16,7 @@ import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.Spotlight;
+import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMapArray;
@@ -37,6 +38,7 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
 		this.environmentMapsArray = new CubeMapArray(renderer, 192);
+		
 
 //		int cubeMapArray = GL11.glGenTextures();
 //		GL11.glBindTexture(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, cubeMapArray);

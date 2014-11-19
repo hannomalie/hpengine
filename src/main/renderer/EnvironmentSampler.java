@@ -21,6 +21,7 @@ import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.renderer.light.Spotlight;
+import main.renderer.rendertarget.CubeRenderTarget;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;

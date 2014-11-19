@@ -1,4 +1,4 @@
-package main.renderer;
+package main.renderer.rendertarget;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;

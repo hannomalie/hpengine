@@ -4,7 +4,7 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = false;
+uniform bool usePostProcessing = true;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
@@ -22,15 +22,15 @@ float calculateMotionBlur(vec2 uv) {
 #define PI  3.14159265
 //uniform variables from external script
 const float focalDepth = 10;  //focal distance value in meters, but you may use autofocus option below
-const float focalLength = 12.0; //focal length in mm
-const float fstop = 1.1;//1.4; //f-stop value
+const float focalLength = 52.0; //focal length in mm
+const float fstop = 1.4;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
 make sure that these two values are the same for your camera, otherwise distances will be wrong.
 */
 
-const float znear = 0; //camera clipping start
+const float znear = 0.1; //camera clipping start
 const float zfar = 5000; //camera clipping end
 const float zScaleLinear = znear / zfar;
 const float zScaleLinearRev = zfar / znear;
@@ -47,7 +47,7 @@ const float ndofdist = 128.0; //near dof blur falloff distance
 const float fdofstart = 128.0; //far dof blur start
 const float fdofdist = 512.0; //far dof blur falloff distance
 
-const float CoC = 0.02;//circle of confusion size in mm (35mm film = 0.03mm)
+const float CoC = 0.01;//circle of confusion size in mm (35mm film = 0.03mm)
 
 const bool vignetting = false; //use optical lens vignetting?
 const float vignout = 1.5; //vignetting outer border
@@ -56,9 +56,9 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.0; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 1.5; //clamp value of max blur (0.0 = no blur,1.0 default)
 
-const float threshold = 0.9; //highlight threshold;
+const float threshold = 0.95; //highlight threshold;
 const float gain = 64.0; //highlight gain;
 
 const float bias = 0.8; //bokeh edge bias
@@ -218,10 +218,8 @@ vec3 debugFocus(vec3 col, float blur, float depth)
 float linearize(float depth)
 {
 	// the provided texture is already linear, I'm so bad...
-	return depth;
-	//return -zfar * znear / (depth * (zfar - znear) - zfar);
+	return -zfar * znear / (depth * (zfar - znear) - zfar);
 }
-
 float vignette(vec2 uv)
 {
 	float dist = distance(uv, vec2(0.5,0.5));
@@ -341,7 +339,7 @@ void main()
 	if (usePostProcessing) {
 		vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
 		float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
-	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(0.025,0.025), renderedTexture);
+	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/1280,1/720), renderedTexture);
 	    
 	    out_color = in_color;
 	    //out_color.rgb = in_color.rgb;

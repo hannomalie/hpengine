@@ -13,10 +13,10 @@ import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
 import main.octree.Octree;
-import main.renderer.RenderTarget;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+import main.renderer.rendertarget.RenderTarget;
 import main.shader.Program;
 import main.util.Util;
 
