@@ -26,7 +26,6 @@ import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import main.World;
-import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
@@ -53,6 +52,7 @@ import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
@@ -78,6 +78,7 @@ import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+
 
 
 public class DebugFrame {
@@ -119,6 +120,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
+	private WebToggleButton toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
 
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
@@ -254,6 +256,21 @@ public class DebugFrame {
 		toggleDrawLights.addActionListener(e -> {
 			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
 		});
+		toggleVSync.addActionListener(e -> {
+			World.VSYNC_ENABLED = !World.VSYNC_ENABLED;
+			world.getRenderer().addCommand(new Command<Result>() {
+
+				@Override
+				public Result execute(World world) {
+					Display.setVSyncEnabled(World.VSYNC_ENABLED);
+					return new Result() {
+						public boolean isSuccessful() {
+							return true;
+						}
+					};
+				}
+			});
+		});
 
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
 	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
@@ -320,6 +337,7 @@ public class DebugFrame {
 		mainButtonElements.add(toggleAmbientOcclusion);
 		mainButtonElements.add(toggleColorBleeding);
 		mainButtonElements.add(toggleFrustumCulling);
+		mainButtonElements.add(toggleVSync);
 		mainButtonElements.add(toggleInstantRadiosity);
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);

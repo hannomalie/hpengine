@@ -74,6 +74,7 @@ public class World {
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	public static volatile boolean DRAW_PROBES = true;
+	public static volatile boolean VSYNC_ENABLED = false;
 
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;

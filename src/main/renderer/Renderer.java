@@ -3,6 +3,8 @@ package main.renderer;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 
+import javax.swing.Icon;
+
 import main.World;
 import main.camera.Camera;
 import main.model.EntityFactory;

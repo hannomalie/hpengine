@@ -1,11 +1,14 @@
 package main.texture;
 
-import main.renderer.DeferredRenderer;
+import java.nio.ByteBuffer;
+
 import main.renderer.Renderer;
 import main.scene.EnvironmentProbeFactory;
 
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
@@ -19,7 +22,9 @@ public class CubeMapArray {
 		bind();
 
 		GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, 9, GL11.GL_RGBA8, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, layerCount);// 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-
+//		for(int i = 0; i < layerCount; i++) {
+			 
+//		}
 //		for ( int i = 0; i < TEXTURE_NUM; i++ )
 //		{
 //		    char fileName[32];
@@ -35,8 +40,10 @@ public class CubeMapArray {
 	}
 	
 	public void copyCubeMapIntoIndex(int cubeMapId, int index) {
-		GL43.glCopyImageSubData(cubeMapId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
-			textureId, GL40.GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, index, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 0);
+//		for(int i = 0; i < 6; i++) {
+			GL43.glCopyImageSubData(cubeMapId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, index,
+				textureId, GL40.GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, index, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 6);	
+//		}
 	}
 
 	public void bind() {

@@ -56,6 +56,7 @@ public class GBuffer {
 
 	private Program highZProgram;
 	private Program reflectionProgram;
+	private Program linesProgram;
 	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -75,6 +76,7 @@ public class GBuffer {
 
 		this.highZProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
 		this.reflectionProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
+		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
@@ -142,11 +144,7 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
-		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
-		
-		camera.saveViewMatrixAsLastViewMatrix();
+
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -512,21 +510,23 @@ public class GBuffer {
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
-		GL11.glEnable(GL11.GL_CULL_FACE);
-		firstPassProgram.use();
-		GL11.glDepthMask(true);
+//		GL11.glEnable(GL11.GL_CULL_FACE);
+//		GL11.glDepthMask(true);
 		gBuffer.use(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glClearColor(1, 1, 1, 1);
+//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-		firstPassProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		firstPassProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-		firstPassProgram.setUniform("useParallax", World.useParallax);
-		firstPassProgram.setUniform("useSteepParallax", World.useSteepParallax);
-		firstPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		firstPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		firstPassProgram.setUniform("eyePosition", camera.getPosition());
+
+		linesProgram.use();
+		linesProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+		linesProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		linesProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+		linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		linesProgram.setUniform("eyePosition", camera.getPosition());
 		
 		if(World.DRAWSCENE_ENABLED) {
+			linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
 			List<IEntity> visibleEntities = new ArrayList<>();
 			if (World.useFrustumCulling) {
 				visibleEntities.addAll(octree.getVisible(camera));
@@ -541,30 +541,33 @@ public class GBuffer {
 			}
 			
 			for (IEntity entity : visibleEntities) {
-				entity.drawDebug(firstPassProgram);
+				entity.drawDebug(linesProgram);
 				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getViewDirection(), null).scale(10));
 				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getUpDirection(), null).scale(10));
 				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getRightDirection(), null).scale(10));
 			}
 		}
 
-//		firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+		linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
 		if (World.DRAWLIGHTS_ENABLED) {
+			linesProgram.setUniform("diffuseColor", new Vector3f(0,1,1));
 			for (IEntity entity : pointLights) {
-				entity.drawDebug(firstPassProgram);
+				entity.drawDebug(linesProgram);
 			}	
 			for (IEntity entity : tubeLights) {
-				entity.drawDebug(firstPassProgram);
+				entity.drawDebug(linesProgram);
 			}	
 		}
 
 		if (Octree.DRAW_LINES) {
-			octree.drawDebug(renderer, camera, firstPassProgram);
+			linesProgram.setUniform("diffuseColor", new Vector3f(1,1,1));
+			octree.drawDebug(renderer, camera, linesProgram);
 		}
 		
 		if (World.DRAW_PROBES) {
-			firstPassProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-			renderer.getEnvironmentProbeFactory().drawDebug(firstPassProgram, octree);
+			linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
+			linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+			renderer.getEnvironmentProbeFactory().drawDebug(linesProgram, octree);
 		}
 
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
@@ -574,14 +577,13 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 //	    dynamicsWorld.debugDrawWorld();
-	    renderer.drawLines(firstPassProgram);
+	    renderer.drawLines(linesProgram);
 		
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
-		
+
 		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
-		
 	}
 
 	public int getLightAccumulationMapOneId() {
@@ -601,6 +603,10 @@ public class GBuffer {
 	}
 	public int getMotionMap() {
 		return gBuffer.getRenderedTexture(3);
+	}
+
+	public int getFinalMap() {
+		return finalBuffer.getRenderedTexture(0);
 	}
 
 }

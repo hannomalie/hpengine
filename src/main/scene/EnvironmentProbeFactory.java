@@ -20,12 +20,15 @@ import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMapArray;
+import main.texture.DynamicCubeMap;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 
 public class EnvironmentProbeFactory {
 	public static final int RESOLUTION = 512;
+	
+	public static final int MAX_PROBES_PER_FRAME_DRAW_COUNT = 3;
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
 
@@ -34,11 +37,14 @@ public class EnvironmentProbeFactory {
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 	
 	private CubeMapArray environmentMapsArray;
+	private CubeRenderTarget cubeMapRenderTarget;
 
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
 		this.environmentMapsArray = new CubeMapArray(renderer, 192);
-		
+
+		DynamicCubeMap cubeMap = new DynamicCubeMap(RESOLUTION, RESOLUTION);
+		this.cubeMapRenderTarget = new CubeRenderTarget(RESOLUTION, RESOLUTION, cubeMap);
 
 //		int cubeMapArray = GL11.glGenTextures();
 //		GL11.glBindTexture(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, cubeMapArray);
@@ -83,15 +89,18 @@ public class EnvironmentProbeFactory {
 
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		cubeMapRenderTarget.use(false);
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
 		
+		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			if(frameCount%i == 0) {
+//				if (counter > MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 				environmentProbe.draw(octree, light);
-//				environmentMapsArray.copyCubeMapIntoIndex(environmentProbe.getEnvironmentMap().getTextureID(), i-1);
 			};
+//			environmentMapsArray.copyCubeMapIntoIndex(dynamicProbes.get(i-1).getEnvironmentMap().getTextureID(), i-1);
 		}
 	}
 	
@@ -170,5 +179,13 @@ public class EnvironmentProbeFactory {
 
 	public void remove(EnvironmentProbe probe) {
 		probes.remove(probe);
+	}
+
+	public CubeRenderTarget getCubeMapRenderTarget() {
+		return cubeMapRenderTarget;
+	}
+
+	public void setCubeMapRenderTarget(CubeRenderTarget cubeMapRenderTarget) {
+		this.cubeMapRenderTarget = cubeMapRenderTarget;
 	}
 }

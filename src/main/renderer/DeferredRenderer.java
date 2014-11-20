@@ -244,7 +244,7 @@ public class DeferredRenderer implements Renderer {
 
 		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram, instantRadiosityProgram);
 
-		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
+//		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
 		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -417,8 +417,8 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			//drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+			//drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		
@@ -733,6 +733,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 	    
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 		drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}

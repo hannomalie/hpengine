@@ -40,6 +40,19 @@ float linearizeDepth(float z)
   float f = 500; // camera z far
   return (2.0 * n) / (f + n - z * (f - n));	
 }
+#define kPI 3.1415926536f
+vec3 decode(vec2 enc) {
+    vec2 ang = enc*2-1;
+    vec2 scth;
+    scth.x = sin(ang.x * kPI);
+    scth.y = cos(ang.x * kPI);
+    vec2 scphi = vec2(sqrt(1.0 - ang.y*ang.y), ang.y);
+    return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
+}
+vec2 encode(vec3 n) {
+	//n = vec3(n*0.5+0.5);
+    return (vec2((atan(n.x, n.y)/kPI), n.z)+vec2(1,1))*0.5;
+}
 
 float evaluateVisibility(float depthInLightSpace, vec4 ShadowCoordPostW) {
 	
@@ -51,6 +64,8 @@ float evaluateVisibility(float depthInLightSpace, vec4 ShadowCoordPostW) {
 
 	return vec3(0.1,0.1,0.1);
 }
+
+
 void main()
 {
 	vec2 UV = texCoord;
@@ -76,9 +91,9 @@ void main()
 	visibility = clamp(evaluateVisibility(depthInLightSpace, positionShadow), 0, 1);
 	/////////////////// SHADOWMAP
 	
-	//out_color.rgb = 2 * lightAmbient * color.rgb;// since probes are used for ambient lighting, they have to be biased;
 	float metalFactor = 1 - clamp((metallic - 0.5), 0, 1);
-	out_color.rgb += (1-roughness) * color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
+	out_color.rgb = 0.1 * color.rgb;// since probes are used for ambient lighting, they have to be biased;
+	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
 	out_color.rgb *= metalFactor;
 	//out_color.rgb = vec3(metallic,metallic,metallic);
 }

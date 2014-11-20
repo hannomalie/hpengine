@@ -18,7 +18,7 @@ import org.lwjgl.opengl.GL30;
 public class CubeRenderTarget extends RenderTarget {
 
 	private CubeMap cubeMap;
-	
+
 	public CubeRenderTarget(int width, int height, CubeMap cubeMap) {
 		this.width = width;
 		this.height = height;
@@ -94,5 +94,13 @@ public class CubeRenderTarget extends RenderTarget {
 
 	public int getRenderedTexture() {
 		return cubeMap.getTextureID();
+	}
+	
+	public CubeMap getCubeMap() {
+		return cubeMap;
+	}
+
+	public void setCubeMap(CubeMap cubeMap) {
+		this.cubeMap = cubeMap;
 	}
 }

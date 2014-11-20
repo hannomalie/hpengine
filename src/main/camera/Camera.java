@@ -85,7 +85,7 @@ public class Camera implements IEntity {
 	public void updateControls(float seconds) {
 		
 		float turbo = 1f;
-		if(Keyboard.isKeyDown(Keyboard.KEY_CAPITAL)) {
+		if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
 			turbo = 3f;
 		}
 		

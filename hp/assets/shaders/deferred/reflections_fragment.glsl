@@ -397,21 +397,20 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	if(probeIndexNearest == 0) {
 		return texture(globalEnvironmentMap, normalWorld, mipMapLevel).rgb;
 	} else if(probeIndexSecondNearest == 0) {
-		vec3 t3d = normalize(reflect(V, normalWorld));
+		vec3 t3d = normalize(normalWorld);//reflect(V, normalWorld));
 		vec3 t3d_bp = boxProjection(positionWorld, t3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 		vec3 c = textureLod(getProbeForIndex(probeIndexNearest), t3d_bp, mipMapLevel).rgb;
 		if(NO_INTERPOLATION_IF_ONE_PROBE_GIVEN) {
 			return c;
 		}
 	}
-	
 	vec3 intersectionNearest = twoIntersectionsAndIndices[0].xyz;
 	vec3 intersectionSecondNearest = twoIntersectionsAndIndices[1].xyz;
 	
 	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	//return vec3(mixer, mixer, mixer);
 	
-	vec3 texCoords3d = normalize(reflect(V, normalWorld));
+	vec3 texCoords3d = normalize(normalWorld);//normalize(reflect(V, normalWorld));
 	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
@@ -433,18 +432,19 @@ void main()
 	vec3 positionView = positionViewRoughness.rgb;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
 	vec3 normalView = textureLod(normalMap, st, 0).rgb;
-  	vec3 normalWorld = (inverse(viewMatrix) * vec4(normalView,0)).xyz;
+  	vec3 normalWorld = normalize(inverse(viewMatrix) * vec4(normalView,0)).xyz;
 	vec4 position_clip = (projectionMatrix * viewMatrix * vec4(positionWorld,1));
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
-	vec3 V = (inverse(viewMatrix) * dir).xyz;
+	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
 	vec3 color = textureLod(diffuseMap, st, 0).rgb;
 	float roughness = positionViewRoughness.a;
   	//roughness = 0.0;
 	
 	out_diffuseEnvironment.rgb = getProbeColor(positionWorld, V, normalWorld, roughness, st);
 	out_diffuseEnvironment.a = getAmbientOcclusion(st);
-	//out_diffuseEnvironment.rgb = rayCastReflect(color, out_diffuseEnvironment.rgb, st, positionView, normalView.rgb, roughness);
 	out_specularEnvironment.rgb = getProbeColor(positionWorld, V, reflect(V, normalWorld), roughness, st);
+	//out_specularEnvironment.rgb = rayCastReflect(color, out_diffuseEnvironment.rgb, st, positionView, normalView.rgb, roughness);
+	
 }

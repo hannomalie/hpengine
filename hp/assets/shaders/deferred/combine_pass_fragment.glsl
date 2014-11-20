@@ -191,7 +191,7 @@ void main(void) {
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
   	vec4 normalView = vec4(texture2D(normalMap,st).rgb, 0);
-  	vec3 normalWorld = (inverse(viewMatrix) * normalView).xyz;
+  	vec3 normalWorld = normalize(inverse(viewMatrix) * normalView).xyz;
 	vec3 V = -normalize((positionWorld.xyz - camPosition.xyz).xyz);
 	vec4 position_clip = (projectionMatrix * viewMatrix * vec4(positionWorld,1));
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
@@ -218,13 +218,13 @@ void main(void) {
 	vec4 environmentColorAO = textureLod(diffuseEnvironment, st, 0).rgba;
 	environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	vec3 environmentColor = environmentColorAO.rgb;
-	float ao = blur(diffuseEnvironment, st).a;
+	float ao = environmentColorAO.a;
 	vec3 reflectedColor = textureLod(specularEnvironment, st, 0).rgb;
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	reflectionMixer -= (metallic); // metallic reflections should be tinted
 	reflectionMixer = clamp(reflectionMixer, 0, 1);
-	vec3 finalColor = mix(color, environmentColor, reflectionMixer);
+	vec3 finalColor = mix(color, reflectedColor, reflectionMixer);
 	vec3 specularTerm = 2*specularColor * specularFactor;
 	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*finalColor;
 	
@@ -235,7 +235,7 @@ void main(void) {
 	ambientSpecular += clamp(ambientFromEnvironment.w, 0, 1) * reflectedColor;
 	
 	//ambientTerm = 0.5 * ambientColor * (finalColor.rgb * textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb * max(dot(normalWorld, normalBoxProjected), 0.0) + textureLod(getProbeForIndex(probeIndex), normalBoxProjected,9).rgb*max(dot(reflect(V, normalWorld), -normalBoxProjected), 0.0));
-	ambientTerm = ambientColor * finalColor * ambientFromEnvironment.xyz + ambientColor * specularColor * ambientSpecular;
+	ambientTerm = 2*ambientColor * finalColor * ambientFromEnvironment.xyz + 2*ambientColor * specularColor * ambientSpecular;
 
 	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + ((vec4(diffuseTerm, 1))) + vec4(specularTerm,1);
@@ -262,8 +262,9 @@ void main(void) {
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
-	//out_color.rgb = ambientFromEnvironment.rgb;
+	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = reflectedColor;
+	//out_color.rgb = texture(probes, vec4(normalWorld, 1), 0).rgb;
 	
 	/* if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);

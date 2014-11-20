@@ -23,17 +23,17 @@ uniform vec3 lightSpecular;
 in vec4 position_clip;
 in vec4 position_view;
 
-//struct Pointlight {
-	//vec3 _position;
-	//float _radius;
-	//vec3 _diffuse;
-	//vec3 _specular;
-//};
+struct Pointlight {
+	vec3 _position;
+	float _radius;
+	vec3 _diffuse;
+	vec3 _specular;
+};
 //uniform int lightCount;
-//uniform int currentLightIndex;
-//layout(std140) uniform pointlights {
-	//Pointlight lights[1000];
-//};
+uniform int currentLightIndex;
+layout(std140) uniform pointlights {
+	Pointlight lights[1000];
+};
 
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;

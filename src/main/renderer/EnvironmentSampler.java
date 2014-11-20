@@ -52,7 +52,7 @@ public class EnvironmentSampler {
 		camera.setPosition(position.negate(null));
 
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler Before CubeRenderTarget");
-		this.cubeMapRenderTarget = new CubeRenderTarget(width, height, cubeMap);
+		this.cubeMapRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapRenderTarget();//new CubeRenderTarget(width, height, cubeMap);
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler CubeRenderTarget");
 		
 		cubeMapDiffuseProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
@@ -73,13 +73,17 @@ public class EnvironmentSampler {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 		
 		cubeMapDiffuseProgram.use();
-		cubeMapRenderTarget.use(false);
+//		cubeMapRenderTarget.use(false);
+		cubeMapRenderTarget.setCubeMap(cubeMap);
+		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
 			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
 			boolean noNeedToRedraw = (movedVisibles.isEmpty() && drawnOnce) && !light.hasMoved();
 			if(noNeedToRedraw) { continue; } // early exit if only static objects visible
+			
+			filteringRequired = true;
 			GPUProfiler.start("side " + i);
 			GPUProfiler.start("Switch attachment");
 			cubeMapRenderTarget.setCubeMapFace(i);
@@ -115,16 +119,19 @@ public class EnvironmentSampler {
 			GPUProfiler.end();
 			drawnOnce = true;
 		}
-
-		cubeMap.bind();
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
-//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-//		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//		int errorValue = GL11.glGetError();
+		if (filteringRequired) {
+			cubeMap.bind();
+			GPUProfiler.start("MipMap generation");
+			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+			GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+			GPUProfiler.end();
+//			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+//			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+//			int errorValue = GL11.glGetError();
+			
+		}
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);
-		
 		GPUProfiler.end();
 		return cubeMap;
 	}
