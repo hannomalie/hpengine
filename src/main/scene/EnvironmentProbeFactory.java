@@ -118,8 +118,6 @@ public class EnvironmentProbeFactory {
 			renderer.drawLine(clipStart, clipEnd);
 		}
 		program.setUniform("diffuseColor", new Vector3f(1, 0, 0));
-		renderer.drawLines(program);
-		program.setUniform("diffuseColor", new Vector3f(0, 1, 0));
 		
 		// 72 floats per array
 		float[] points = new float[arrays.size() * 72];
