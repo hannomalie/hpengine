@@ -79,7 +79,7 @@ void main()
 
 	float depth = (position_clip.z / position_clip.w);
     out_color = vec4(color.rgb, depth);
-    
+    out_color.a = 1;
 	vec3 PN_world = normalize(normal_world);
 	
 	/////////////////// SHADOWMAP

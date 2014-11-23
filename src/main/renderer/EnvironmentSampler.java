@@ -11,6 +11,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.util.glu.MipMap;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -22,6 +23,8 @@ import main.model.IEntity;
 import main.octree.Octree;
 import main.renderer.light.Spotlight;
 import main.renderer.rendertarget.CubeRenderTarget;
+import main.scene.EnvironmentProbe;
+import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
@@ -39,11 +42,16 @@ public class EnvironmentSampler {
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
 	transient private boolean drawnOnce = false;
+	transient private EnvironmentProbe probe;
 
-	public EnvironmentSampler(Renderer renderer, Vector3f position, int width, int height) {
+	public EnvironmentSampler(Renderer renderer, EnvironmentProbe probe, Vector3f position, int width, int height) {
 		this.renderer = renderer;
 		this.cubeMap = new DynamicCubeMap(width, height);
-		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 20f, 5000f), 20f, 5000f);
+		this.probe = probe;
+		float far = 5000f;
+		float near = 20f;
+		float fov = 90f;
+		this.camera = new Camera(renderer, Util.createPerpective(fov, 1, near, far), near, far, fov, 1);
 		Quaternion cubeMapCamInitialOrientation = new Quaternion();
 		Quaternion.setIdentity(cubeMapCamInitialOrientation);
 		camera.setOrientation(cubeMapCamInitialOrientation);
@@ -123,10 +131,11 @@ public class EnvironmentSampler {
 			cubeMap.bind();
 			GPUProfiler.start("MipMap generation");
 			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_MAX_LEVEL, EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT);
 			GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
 			GPUProfiler.end();
 //			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-//			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 //			int errorValue = GL11.glGetError();
 			
 		}
@@ -137,25 +146,42 @@ public class EnvironmentSampler {
 	}
 	
 	private void rotateForIndex(int i, Camera camera) {
+		float deltaNear = 0.0f;
+		float deltaFar = 1.2f;
+		float halfSizeX = probe.getSize().x/2;
+		float halfSizeY = probe.getSize().y/2;
+		float halfSizeZ = probe.getSize().z/2;
 		switch (i) {
 		case 0:
 			camera.rotate(new Vector4f(0,0,1, -180));
+//			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
+			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 1:
 			camera.rotate(new Vector4f(0,1,0, -180));
+//			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
+			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 2:
 			camera.rotate(new Vector4f(0,1,0, 90));
 			camera.rotate(new Vector4f(1,0,0, 90));
+//			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
+			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 3:
 			camera.rotate(new Vector4f(1,0,0, -180));
+//			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
+			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 4:
 			camera.rotate(new Vector4f(1,0,0, 90));
+//			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
+			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
 		case 5:
 			camera.rotate(new Vector4f(0,1,0, -180));
+//			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
+			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
 		default:
 			break;

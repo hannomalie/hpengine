@@ -20,6 +20,7 @@ import main.scene.AABB;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
+import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
@@ -86,15 +87,7 @@ public class GBuffer {
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
-		calculateFullScreenMipMapCount(renderer);
-	}
-
-	private void calculateFullScreenMipMapCount(Renderer renderer) {
-		int maxLength = Math.max(renderer.WIDTH, renderer.HEIGHT);
-		while(maxLength > 1) {
-			fullScreenMipmapCount++;
-			maxLength /= 2;
-		}
+		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Renderer.WIDTH, Renderer.HEIGHT));
 	}
 	
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
@@ -145,6 +138,8 @@ public class GBuffer {
 			}
 		}
 
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
 	}
 
 	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -217,9 +212,11 @@ public class GBuffer {
 		doInstantRadiosity(directionalLight, viewMatrix, projectionMatrix);
 		
 
+		GPUProfiler.start("MipMap generation AO and light buffer");
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getLightAccumulationMapOneId());
 		renderer.getTextureFactory().generateMipMaps(getAmbientOcclusionMapId());
+		GPUProfiler.end();
 		
 		GL11.glDisable(GL11.GL_BLEND);
 //		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -366,11 +363,12 @@ public class GBuffer {
 		}
 	}
 	
-	private void doAreaLights(List<AreaLight> areaLights,
-			FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+	private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		
 
 		if(areaLights.isEmpty()) { return; }
+		
+		GPUProfiler.start("Area lights: " + areaLights.size());
 		
 		secondPassAreaLightProgram.use();
 		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
@@ -407,6 +405,8 @@ public class GBuffer {
 			fullscreenBuffer.draw();
 //			areaLight.getVertexBuffer().drawDebug();
 		}
+		
+		GPUProfiler.end();
 	}
 	
 	private void doInstantRadiosity(Spotlight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {

@@ -21,12 +21,14 @@ import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
 import main.texture.CubeMapArray;
 import main.texture.DynamicCubeMap;
+import main.util.Util;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 
 public class EnvironmentProbeFactory {
 	public static final int RESOLUTION = 512;
+	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
 	
 	public static final int MAX_PROBES_PER_FRAME_DRAW_COUNT = 3;
 	
@@ -110,7 +112,14 @@ public class EnvironmentProbeFactory {
 		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
 //			probe.drawDebug(program);
 			arrays.add(probe.getBox().getPointsAsArray());
+
+			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
+			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
+			renderer.drawLine(clipStart, clipEnd);
 		}
+		program.setUniform("diffuseColor", new Vector3f(1, 0, 0));
+		renderer.drawLines(program);
+		program.setUniform("diffuseColor", new Vector3f(0, 1, 0));
 		
 		// 72 floats per array
 		float[] points = new float[arrays.size() * 72];
@@ -123,7 +132,6 @@ public class EnvironmentProbeFactory {
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
 		program.setUniform("materialDiffuseColor", new Vector3f(0,1,0));
 		buffer.drawDebug();
-		
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {

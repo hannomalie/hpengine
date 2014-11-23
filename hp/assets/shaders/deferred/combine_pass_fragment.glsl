@@ -263,7 +263,7 @@ void main(void) {
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = environmentColor.rgb;
-	//out_color.rgb = reflectedColor;
+	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = texture(probes, vec4(normalWorld, 1), 0).rgb;
 	
 	/* if(probeIndex == 191) {

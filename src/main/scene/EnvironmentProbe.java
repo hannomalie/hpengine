@@ -37,7 +37,7 @@ public class EnvironmentProbe implements IEntity {
 		this.renderer = renderer;
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(renderer, center, resolution, resolution);
+		sampler = new EnvironmentSampler(renderer, this, center, resolution, resolution);
 	}
 	
 	public void draw(Octree octree, Spotlight light) {
