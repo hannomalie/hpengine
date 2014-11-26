@@ -43,7 +43,7 @@ public class EnvironmentProbeFactory {
 
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
-		this.environmentMapsArray = new CubeMapArray(renderer, 192);
+		this.environmentMapsArray = new CubeMapArray(renderer, 90);
 
 		DynamicCubeMap cubeMap = new DynamicCubeMap(RESOLUTION, RESOLUTION);
 		this.cubeMapRenderTarget = new CubeRenderTarget(RESOLUTION, RESOLUTION, cubeMap);

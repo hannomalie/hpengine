@@ -55,40 +55,6 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
-//////////////////////
-  //Pointlight currentLight = lights[currentLightIndex];
-  //vec3 lightPosition = currentLight._position;
-  //vec3 lightDiffuse = currentLight._diffuse;
-  //vec3 lightSpecular = currentLight._specular;
-  //float lightRadius = currentLight._specular;
-//////////////////////
-  vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
-  vec3 dist_to_light_eye = light_position_eye - position;
-  vec3 direction_to_light_eye = normalize (dist_to_light_eye);
-  
-  // standard diffuse light
-  float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
-  
-  // standard specular light
-  vec3 reflection_eye = reflect (-(vec4(direction_to_light_eye, 0)).xyz, (vec4(normal, 0)).xyz);
-  vec3 surface_to_viewer_eye = normalize(-position);//normalize (-(viewMatrix * vec4(normal, 0)).xyz);
-  float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
-  dot_prod_specular = max (dot_prod_specular, 0.0);
-  int specularPower = int(2048 * (1-roughness) + 1); //specular.a
-  float specular_factor = clamp(pow (dot_prod_specular, (specularPower)), 0, 1);
-  
-  // attenuation (fade out to sphere edges)
-  float dist = length (dist_to_light_eye);
-  float distDivRadius = (dist / lightRadius);
-  if(dist > lightRadius) {discard;}
-  float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
-  atten_factor = pow(atten_factor, 2);
-  //float atten_factor = -log (min (1.0, distDivRadius));
-  //return vec4(atten_factor,atten_factor,atten_factor,atten_factor);
-  return vec4((vec4(lightDiffuse,1) * dot_prod * atten_factor).xyz, specular_factor * atten_factor);
-}
-
 float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);

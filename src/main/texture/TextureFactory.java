@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector2f;
 
 /**
@@ -604,5 +606,25 @@ public class TextureFactory {
     	GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;
+    }
+    
+    public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
+    	int copyTextureId = GL11.glGenTextures();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, copyTextureId);
+		
+		GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		
+		GL43.glCopyImageSubData(sourceTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				copyTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
+				width, height, 6);
+		
+		return copyTextureId;
+    }
+    
+    public static void deleteTexture(int id) {
+		GL11.glDeleteTextures(id);
     }
 }

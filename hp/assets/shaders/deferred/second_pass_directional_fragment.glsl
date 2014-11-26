@@ -49,74 +49,27 @@ vec3 decode(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-vec4 phong (in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
-  vec3 direction_to_light_eye = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
-  
-  // standard diffuse light
-  float dot_prod = max (dot (direction_to_light_eye,  normal), 0.0);
-  
-  // standard specular light
-  vec3 reflection_eye = reflect (-direction_to_light_eye, normal);
-  vec3 surface_to_viewer_eye = normalize (-position);
-  float dot_prod_specular = dot (reflection_eye, surface_to_viewer_eye);
-  dot_prod_specular = max (dot_prod_specular, 0.0);
-  int specularPower = int(2048 * (1-roughness) + 1); //specular.a
-  float specular_factor = clamp(pow (dot_prod_specular, (specularPower)), 0, 1);
-  
-  vec3 environmentSample = texture(environmentMap, normal).rgb;
-  //return vec4((vec4(environmentSample,1) * dot_prod).xyz, specular_factor);
-  vec3 lightColor = lightDiffuse;
-  return vec4((vec4(lightColor,1) * dot_prod).xyz, specular_factor);
-}
-
-vec4 brdf(in vec3 position, in vec3 normal, in vec4 color, in vec4 specular, vec3 probeColor, float roughness) {
-//http://en.wikibooks.org/wiki/GLSL_Programming/Unity/Specular_Highlights_at_Silhouettes
-	vec3 normalDirection = normalize(normal);
- 
-    vec3 viewDirection = normalize(-position);
-    vec3 ambientLighting = vec3(0,0,0);
- 
- 	vec3 lightDir = normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
-    vec3 environmentSample = texture(environmentMap, normalDirection).rgb;
-    vec3 diffuseReflection = lightDiffuse * max(0.0, dot(normalDirection, lightDir));
- 
-    vec3 specularReflection;
-    if (dot(normalDirection, lightDir) < 0.0) {
-       specularReflection = vec3(0.0, 0.0, 0.0); 
-    } else {
-       vec3 halfwayDirection = normalize(lightDir + viewDirection);
-       //float w = pow(1.0 - max(0.0,  dot(halfwayDirection, viewDirection)), 5.0);
-       //specularReflection = lightDiffuse.rgb
-       //   * mix(specular.rgb, vec3(1.0), w) 
-       //   * pow(max(0.0, dot(reflect(lightDir, normalDirection), viewDirection)), specular.a);
-       int specularPower = int(2048 * (1-roughness) + 1); //specular.a
-       specularReflection = lightDiffuse.rgb * pow(max(0.0, dot(halfwayDirection, viewDirection)), specularPower);
-    }
- 
-    //return vec4(ambientLighting + diffuseReflection + specularReflection, 1.0);
-    return vec4(ambientLighting + diffuseReflection, clamp(length(specularReflection),0,1));
-}
-
 vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
 //http://renderman.pixar.com/view/cook-torrance-shader
+//http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-position);
 	//V = ViewVector;
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
     vec3 P = position;
-    float NdotH = max(dot(N, H), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotL = max(dot(N, L), 0.0);
-    float VdotH = max(dot(V, H), 0.0);
-    
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    float NdotL = clamp(dot(N, L), 0.0, 1.0);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
 	
-	float alpha = acos(NdotH);
 	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
-	alpha = roughness*roughness;
+	float alpha = roughness*roughness;
+	float alphaSquare = alpha*alpha;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
-	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	float denom = (NdotH*NdotH*(alphaSquare-1))+1;
+	float D = alphaSquare/(3.1416*denom*denom);
 	
 	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
     
@@ -126,7 +79,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
 	F0 = max(F0, ((1-roughness)*0.2));
 	//F0 = max(F0, metallic*0.2);
-    float fresnel = 1; fresnel -= dot(V, H);
+    float fresnel = 1; fresnel -= dot(L, H);
 	fresnel = pow(fresnel, 5.0);
 	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
 	float temp = 1.0; temp -= F0;
@@ -135,7 +88,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	//diff = (diff.rgb/3.1416) * (1-F0);
+	//diff = (diff.rgb) * (1-F0);
 	//diff *= (1/3.1416*alpha*alpha);
 	
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));

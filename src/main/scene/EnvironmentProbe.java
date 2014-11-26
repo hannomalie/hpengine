@@ -136,11 +136,14 @@ public class EnvironmentProbe implements IEntity {
 	public Vector3f getSize() {
 		return new Vector3f(box.sizeX, box.sizeY, box.sizeZ);
 	}
-	
+
 	public Camera getCamera(){
 		return sampler.getCamera();
 	}
-
+	public void setCamera(Camera camera){
+		sampler.setCamera(camera);
+	}
+	
 	public void bind(int index) {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
 		sampler.getEnvironmentMap().bind();

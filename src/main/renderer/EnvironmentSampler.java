@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.util.glu.MipMap;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -28,6 +29,7 @@ import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.DynamicCubeMap;
+import main.texture.TextureFactory;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.StopWatch;
@@ -51,7 +53,9 @@ public class EnvironmentSampler {
 		float far = 5000f;
 		float near = 20f;
 		float fov = 90f;
-		this.camera = new Camera(renderer, Util.createPerpective(fov, 1, near, far), near, far, fov, 1);
+		Matrix4f projectionMatrix = Util.createPerpective(fov, 1, near, far);
+//		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
+		this.camera = new Camera(renderer, projectionMatrix, near, far, fov, 1);
 		Quaternion cubeMapCamInitialOrientation = new Quaternion();
 		Quaternion.setIdentity(cubeMapCamInitialOrientation);
 		camera.setOrientation(cubeMapCamInitialOrientation);
@@ -89,60 +93,69 @@ public class EnvironmentSampler {
 			List<IEntity> visibles = octree.getVisible(camera);
 			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
 			boolean noNeedToRedraw = (movedVisibles.isEmpty() && drawnOnce) && !light.hasMoved();
-			if(noNeedToRedraw) { continue; } // early exit if only static objects visible
-			
+			if(noNeedToRedraw) { continue; } // early exit if only static objects visible and light didn't change
 			filteringRequired = true;
+			
 			GPUProfiler.start("side " + i);
 			GPUProfiler.start("Switch attachment");
 			cubeMapRenderTarget.setCubeMapFace(i);
 			GPUProfiler.end();
-			GPUProfiler.start("Matrix uniforms");
 			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
-			cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
-			cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());
-			cubeMapDiffuseProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);
-			cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-			cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-			cubeMapDiffuseProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
-			GPUProfiler.end();
-
-			GPUProfiler.start("Draw entities");
-			for (IEntity e : visibles) {
-//				if(!e.isInFrustum(camera)) { continue; }
-				entityBuffer.rewind();
-				e.getModelMatrix().store(entityBuffer);
-				entityBuffer.rewind();
-				cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
-				e.getMaterial().setTexturesActive((Entity) e, cubeMapDiffuseProgram);
-				cubeMapDiffuseProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
-				cubeMapDiffuseProgram.setUniform("color", e.getMaterial().getDiffuse());
-				cubeMapDiffuseProgram.setUniform("metallic", e.getMaterial().getMetallic());
-				cubeMapDiffuseProgram.setUniform("roughness", e.getMaterial().getRoughness());
-				e.getMaterial().setTexturesActive(null, cubeMapDiffuseProgram);
-				
-				e.getVertexBuffer().draw();
-			}
-			GPUProfiler.end();
-			GPUProfiler.end();
+			
+			drawEntities(light, visibles, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+			
 			drawnOnce = true;
 		}
 		if (filteringRequired) {
-			cubeMap.bind();
-			GPUProfiler.start("MipMap generation");
-			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_MAX_LEVEL, EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT);
-			GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
-			GPUProfiler.end();
-//			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-			GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-//			int errorValue = GL11.glGetError();
+			generateCubeMapMipMaps();
 			
 		}
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);
 		GPUProfiler.end();
 		return cubeMap;
+	}
+
+	private void drawEntities(Spotlight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+		GPUProfiler.start("Matrix uniforms");
+		cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
+		cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());
+		cubeMapDiffuseProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);
+		cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+		cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+		cubeMapDiffuseProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
+		GPUProfiler.end();
+
+		GPUProfiler.start("Draw entities");
+		for (IEntity e : visibles) {
+//				if(!e.isInFrustum(camera)) { continue; }
+			entityBuffer.rewind();
+			e.getModelMatrix().store(entityBuffer);
+			entityBuffer.rewind();
+			cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			e.getMaterial().setTexturesActive((Entity) e, cubeMapDiffuseProgram);
+			cubeMapDiffuseProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+			cubeMapDiffuseProgram.setUniform("hasNormalMap", e.getMaterial().hasNormalMap());
+			cubeMapDiffuseProgram.setUniform("color", e.getMaterial().getDiffuse());
+			cubeMapDiffuseProgram.setUniform("metallic", e.getMaterial().getMetallic());
+			cubeMapDiffuseProgram.setUniform("roughness", e.getMaterial().getRoughness());
+			e.getMaterial().setTexturesActive(null, cubeMapDiffuseProgram);
+			
+			e.getVertexBuffer().draw();
+		}
+		GPUProfiler.end();
+		GPUProfiler.end();
+	}
+
+	private void generateCubeMapMipMaps() {
+		cubeMap.bind();
+		GPUProfiler.start("MipMap generation");
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_MAX_LEVEL, EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT);
+		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+		GPUProfiler.end();
+		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 	}
 	
 	private void rotateForIndex(int i, Camera camera) {
@@ -151,6 +164,12 @@ public class EnvironmentSampler {
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;
+		Vector3f position = getCamera().getPosition().negate(null);
+		float width = probe.getSize().x;
+		float height = probe.getSize().y;
+//		Matrix4f projectionMatrix = Util.createOrthogonal(position .x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, getCamera().getNear(), getCamera().getFar());
+//		camera = new Camera(renderer, projectionMatrix, getCamera().getNear(), getCamera().getFar(), 90, 1);
+		this.probe.setCamera(camera);
 		switch (i) {
 		case 0:
 			camera.rotate(new Vector4f(0,0,1, -180));
@@ -200,5 +219,9 @@ public class EnvironmentSampler {
 	
 	public Camera getCamera() {
 		return camera;
+	}
+
+	public void setCamera(Camera camera) {
+		this.camera = camera;
 	}
 }

@@ -216,10 +216,10 @@ void main(void) {
 	vec4 aoReflect = textureLod(aoReflection, st, 1);
 
 	vec4 environmentColorAO = textureLod(diffuseEnvironment, st, 0).rgba;
-	environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
-	vec3 environmentColor = environmentColorAO.rgb;
+	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
+	vec3 environmentColor = clamp(environmentColorAO.rgb, vec3(0,0,0), vec3(1,1,1));
 	float ao = environmentColorAO.a;
-	vec3 reflectedColor = textureLod(specularEnvironment, st, 0).rgb;
+	vec3 reflectedColor = clamp(textureLod(specularEnvironment, st, 0).rgb, vec3(0,0,0), vec3(1,1,1));
 	
 	float reflectionMixer = (1-roughness); // the glossier, the more reflecting
 	reflectionMixer -= (metallic); // metallic reflections should be tinted
@@ -263,10 +263,11 @@ void main(void) {
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = environmentColor.rgb;
-	//out_color.rgb = environmentColor.rgb;
-	//out_color.rgb = texture(probes, vec4(normalWorld, 1), 0).rgb;
+	//out_color.rgb = reflectedColor.rgb;
+	//out_color.rgb = texture(probes, vec4(normalWorld, 0), 0).rgb;
 	
-	/* if(probeIndex == 191) {
+	/*int probeIndex = int(textureLod(motionMap, st, 0).x);
+	if(probeIndex == 191) {
 		out_color.rgb = vec3(1,0,0);
 	} else if(probeIndex == 190) {
 		out_color.rgb = vec3(0,1,0);
@@ -274,5 +275,5 @@ void main(void) {
 		out_color.rgb = vec3(0,0,1);
 	} else if(probeIndex == 0) {
 		out_color.rgb = vec3(1,0,1);
-	} */
+	}*/
 }
