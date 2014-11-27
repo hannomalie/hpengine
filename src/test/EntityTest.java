@@ -8,7 +8,7 @@ import main.model.Entity;
 import main.model.IEntity;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.util.stopwatch.StopWatch;
 
 import org.junit.Assert;
@@ -21,7 +21,7 @@ public class EntityTest {
 
 	@BeforeClass
 	public static void init() {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 
 	@Test

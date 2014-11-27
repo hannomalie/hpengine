@@ -14,7 +14,7 @@ import main.model.OBJLoader;
 import main.octree.Octree;
 import main.renderer.command.Command;
 import main.renderer.light.LightFactory;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
@@ -48,10 +48,10 @@ public interface Renderer {
 		}
 	}
 	public void destroy();
-	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light);
+	public void draw(Camera camera, Octree octree, List<IEntity> entities, DirectionalLight light);
 	public void update(World world, float seconds);
 	public float getElapsedSeconds();
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light);
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light);
 	public Program getLastUsedProgram();
 	public void setLastUsedProgram(Program firstPassProgram);
 	public CubeMap getEnvironmentMap();

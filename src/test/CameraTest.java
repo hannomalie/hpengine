@@ -5,7 +5,7 @@ import main.camera.Camera;
 import main.camera.Frustum;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.scene.AABB;
 import main.util.Util;
 
@@ -20,7 +20,7 @@ public class CameraTest {
 	
 	@Before
 	public void init() {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 	
 	@Test

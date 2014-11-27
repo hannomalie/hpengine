@@ -5,7 +5,7 @@ import main.Transform;
 import main.model.IEntity;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbe.Update;
@@ -20,7 +20,7 @@ public class ProbeTest {
 	
 	@BeforeClass
 	public static void init() {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 	
 	@Test

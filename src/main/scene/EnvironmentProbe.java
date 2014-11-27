@@ -10,7 +10,7 @@ import main.octree.Octree;
 import main.renderer.EnvironmentSampler;
 import main.renderer.Renderer;
 import main.renderer.light.AreaLight;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
@@ -40,7 +40,7 @@ public class EnvironmentProbe implements IEntity {
 		sampler = new EnvironmentSampler(renderer, this, center, resolution, resolution);
 	}
 	
-	public void draw(Octree octree, Spotlight light) {
+	public void draw(Octree octree, DirectionalLight light) {
 		sampler.drawCubeMap(octree, light);
 	};
 	
@@ -50,7 +50,21 @@ public class EnvironmentProbe implements IEntity {
 		for (int i = 0; i < points.size() - 1; i++) {
 			renderer.drawLine(points.get(i), points.get(i+1));
 		}
-		renderer.drawLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
+
+		renderer.drawLine(points.get(3), points.get(0));
+		renderer.drawLine(points.get(7), points.get(4));
+
+		renderer.drawLine(points.get(0), points.get(6));
+		renderer.drawLine(points.get(1), points.get(7));
+		renderer.drawLine(points.get(2), points.get(4));
+		renderer.drawLine(points.get(3), points.get(5));
+		
+		float temp = (float)getIndex()/10;
+		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
+	    renderer.drawLines(program);
+		
+//		renderer.drawLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
+		
 	}
 	
 	@Override

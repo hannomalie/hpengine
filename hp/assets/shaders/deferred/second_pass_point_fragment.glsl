@@ -96,8 +96,9 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float F0 = 0.02;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.2));
-	//F0 = max(F0, metallic*0.2);
+	float glossiness = (1-roughness);
+	float maxSpecular = mix(0.2, 1.0, metallic);
+	F0 = max(F0, (glossiness*maxSpecular));
 	
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);

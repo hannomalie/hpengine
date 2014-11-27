@@ -12,7 +12,7 @@ import main.model.OBJLoader;
 import main.model.VertexBuffer;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -26,7 +26,7 @@ public class ModelTest {
 	
 	@BeforeClass
 	public static void init() {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 	
 	@Test

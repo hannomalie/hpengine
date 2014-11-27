@@ -15,7 +15,7 @@ import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe.Update;
 import main.shader.Program;
@@ -77,7 +77,7 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void draw(Octree octree, Spotlight light) {
+	public void draw(Octree octree, DirectionalLight light) {
 		if(!World.DRAW_PROBES) { return; }
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
@@ -86,7 +86,7 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void drawAlternating(Octree octree, Spotlight light, int frameCount) {
+	public void drawAlternating(Octree octree, DirectionalLight light, int frameCount) {
 		if(!World.DRAW_PROBES) { return; }
 
 		GL11.glDepthMask(true);
@@ -110,14 +110,16 @@ public class EnvironmentProbeFactory {
 		List<float[]> arrays = new ArrayList<>();
 		
 		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
-//			probe.drawDebug(program);
-			arrays.add(probe.getBox().getPointsAsArray());
+			probe.drawDebug(program);
+//			arrays.add(probe.getBox().getPointsAsArray());
 
 			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
 			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
 			renderer.drawLine(clipStart, clipEnd);
+
+			program.setUniform("diffuseColor", new Vector3f(0,1,1));
+		    renderer.drawLines(program);
 		}
-		program.setUniform("diffuseColor", new Vector3f(1, 0, 0));
 		
 		// 72 floats per array
 		float[] points = new float[arrays.size() * 72];
@@ -128,7 +130,7 @@ public class EnvironmentProbeFactory {
 			}
 		};
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
-		program.setUniform("materialDiffuseColor", new Vector3f(0,1,0));
+		program.setUniform("diffuseColor", new Vector3f(0,1,0));
 		buffer.drawDebug();
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);

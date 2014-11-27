@@ -4,7 +4,7 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = true;
+uniform bool usePostProcessing = false;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;

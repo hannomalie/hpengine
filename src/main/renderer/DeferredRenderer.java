@@ -36,7 +36,7 @@ import main.renderer.command.Command;
 import main.renderer.light.AreaLight;
 import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
@@ -146,7 +146,7 @@ public class DeferredRenderer implements Renderer {
 	private int maxTextureUnits;
 	
 
-	public DeferredRenderer(Spotlight light) {
+	public DeferredRenderer(DirectionalLight light) {
 		setupOpenGL();
 		textureFactory = new TextureFactory();
 		DeferredRenderer.exitOnGLError("After TextureFactory");
@@ -369,7 +369,7 @@ public class DeferredRenderer implements Renderer {
 	
 	
 
-	public void draw(Camera camera, Octree octree, List<IEntity> entities, Spotlight light) {
+	public void draw(Camera camera, Octree octree, List<IEntity> entities, DirectionalLight light) {
 		GPUProfiler.startFrame();
 		draw(null, octree, camera, entities, light);
 	    GPUProfiler.endFrame();
@@ -381,7 +381,7 @@ public class DeferredRenderer implements Renderer {
 	    frameCount++;
 	}
 	
-	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, Spotlight light) {
+	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, DirectionalLight light) {
 
 		GPUProfiler.start("First pass");
 		gBuffer.drawFirstPass(camera, octree, pointLights, tubeLights, areaLights);
@@ -568,7 +568,7 @@ public class DeferredRenderer implements Renderer {
 	public void drawLines(Program program) {
 
 //		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
+//		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
@@ -725,7 +725,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	@Override
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities,
-			Spotlight light) {
+			DirectionalLight light) {
 
 		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, pointLights, tubeLights, areaLights, cubeMap);
 		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
@@ -734,7 +734,7 @@ public class DeferredRenderer implements Renderer {
 	    
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-		drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
+		drawToQuad(gBuffer.getPositionMap(), fullscreenBuffer); // the first color attachment
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
 

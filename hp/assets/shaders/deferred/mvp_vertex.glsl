@@ -26,7 +26,7 @@ void main()
 	normal_world.x = dot(modelMatrix[0].xyz, in_Normal);
     normal_world.y = dot(modelMatrix[1].xyz, in_Normal);
     normal_world.z = dot(modelMatrix[2].xyz, in_Normal);
-	//normal_world = (inverse(transpose(modelMatrix)) * vec4(in_Normal,0)).xyz;
+	normal_world = (inverse(transpose(modelMatrix)) * vec4(in_Normal,0)).xyz;
 	//normal_world = modelMatrix * vec4(in_Normal,0)).xyz;
 	
 	texCoord = in_TextureCoord;

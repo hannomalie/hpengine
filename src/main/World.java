@@ -21,7 +21,7 @@ import main.renderer.DeferredRenderer;
 import main.renderer.GBuffer;
 import main.renderer.Renderer;
 import main.renderer.light.PointLight;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.scene.Scene;
@@ -62,7 +62,7 @@ public class World {
 	
 	private OpenGLStopWatch glWatch;
 
-	public static Spotlight light= new Spotlight(true);
+	public static DirectionalLight light= new DirectionalLight(true);
 	public static volatile boolean useParallax = false;
 	public static volatile boolean useSteepParallax = false;
 	public static volatile boolean useAmbientOcclusion = true;

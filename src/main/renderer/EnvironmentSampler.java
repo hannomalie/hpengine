@@ -22,7 +22,7 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbeFactory;
@@ -71,11 +71,11 @@ public class EnvironmentSampler {
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
-	public CubeMap drawCubeMap(Octree octree, Spotlight light) {
+	public CubeMap drawCubeMap(Octree octree, DirectionalLight light) {
 		return drawCubeMapSides(octree, light);
 	}
 	
-	private CubeMap drawCubeMapSides(Octree octree, Spotlight light) {
+	private CubeMap drawCubeMapSides(Octree octree, DirectionalLight light) {
 		GPUProfiler.start("Cube map render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
@@ -117,7 +117,7 @@ public class EnvironmentSampler {
 		return cubeMap;
 	}
 
-	private void drawEntities(Spotlight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+	private void drawEntities(DirectionalLight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
 		cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());

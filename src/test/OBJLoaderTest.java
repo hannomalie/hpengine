@@ -10,7 +10,7 @@ import main.model.Model;
 import main.model.OBJLoader;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.util.Util;
 import main.util.stopwatch.StopWatch;
 
@@ -32,7 +32,7 @@ public class OBJLoaderTest {
 	
 	@BeforeClass
 	public static void setupOpenGLContext() throws LWJGLException {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 
 	@Test

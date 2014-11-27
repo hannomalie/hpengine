@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.texture.CubeMap;
 import main.texture.Texture;
@@ -21,7 +21,7 @@ public class MaterialTest {
 
 	@BeforeClass
 	public static void init() {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 	}
 
 	@Test

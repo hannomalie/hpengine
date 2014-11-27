@@ -12,8 +12,8 @@ import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.light.AreaLight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.light.PointLight;
-import main.renderer.light.Spotlight;
 import main.renderer.light.TubeLight;
 import main.renderer.rendertarget.RenderTarget;
 import main.scene.AABB;
@@ -142,7 +142,7 @@ public class GBuffer {
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
 	}
 
-	void drawSecondPass(Camera camera, Spotlight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
@@ -409,7 +409,7 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 	
-	private void doInstantRadiosity(Spotlight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+	private void doInstantRadiosity(DirectionalLight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		if(World.useInstantRadiosity) {
 			GPUProfiler.start("Instant Radiosity");
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
@@ -433,7 +433,7 @@ public class GBuffer {
 	}
 
 
-	void combinePass(RenderTarget target, Spotlight light, Camera camera) {
+	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
 		combineProgram.use();
 		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
@@ -508,7 +508,7 @@ public class GBuffer {
 		
 	}
 	
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, Spotlight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDepthMask(true);

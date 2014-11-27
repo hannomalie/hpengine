@@ -81,15 +81,83 @@ vec2 encode(vec3 n) {
     return (vec2((atan(n.x, n.y)/kPI), n.z)+vec2(1,1))*0.5;
 }
 
-float evaluateVisibility(float depthInLightSpace, vec4 ShadowCoordPostW) {
-	
+vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
+{
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return vec3(0,0,0);
+	}
+	// We retrive the two moments previously stored (depth and depth*depth)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
-	const float bias = 0.001;
-	if (depthInLightSpace < shadowMapSample.x + bias) {
+	vec2 moments = shadowMapSample.rg;
+	vec2 momentsUnblurred = moments;
+	//moments = blur(shadowMap, ShadowCoordPostW.xy, moments.y).rg;
+	//moments = textureLod(shadowMap, ShadowCoordPostW.xy, 0).rg;
+	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
+	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
+	//moments /= 3;
+	// Surface is fully lit. as the current fragment is before the light occluder
+	if (dist < moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
 
-	return vec3(0.1,0.1,0.1);
+	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
+	// How likely this pixel is to be lit (p_max)
+	float variance = moments.y - (moments.x*moments.x);
+	variance = max(variance,0.00012);
+
+	float d = dist - moments.x;
+	float p_max = (variance / (variance + d*d));
+
+	return vec3(p_max,p_max,p_max);
+}
+
+vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+//http://renderman.pixar.com/view/cook-torrance-shader
+//http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
+	vec3 V = normalize(-position);
+	//V = ViewVector;
+ 	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
+    vec3 H = normalize(L + V);
+    vec3 N = normalize(normal);
+    vec3 P = position;
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    float NdotL = clamp(dot(N, L), 0.0, 1.0);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+	
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	float alpha = roughness*roughness;
+	float alphaSquare = alpha*alpha;
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	float denom = (NdotH*NdotH*(alphaSquare-1))+1;
+	float D = alphaSquare/(3.1416*denom*denom);
+	
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+    
+    // Schlick
+    float F0 = 0.02;
+	// Specular in the range of 0.02 - 0.2, electrics up to 1 and mostly above 0.5
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float glossiness = (1-roughness);
+	float maxSpecular = mix(0.2, 1.0, metallic);
+	F0 = max(F0, (glossiness*maxSpecular));
+	//F0 = max(F0, metallic*0.2);
+    float fresnel = 1; fresnel -= dot(L, H);
+	fresnel = pow(fresnel, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
+	
+	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	//diff = (diff.rgb) * (1-F0);
+	//diff *= (1/3.1416*alpha*alpha);
+	
+	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
+	
+	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
 
@@ -112,6 +180,8 @@ void main()
 	float depth = (position_clip.z / position_clip.w);
     out_color = vec4(color.rgb, depth);
     out_color.a = 1;
+    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic/2); // biased, since specular term is only vali at POI of the probe...mäh
+    vec3 specularColor = mix(vec3(0.04,0.04,0.04), color.rgb, metallic);
     
 	vec3 PN_world = normalize(normal_world);
     if(hasNormalMap) {
@@ -122,17 +192,19 @@ void main()
     }
 	
 	/////////////////// SHADOWMAP
-	float visibility = 1.0;
+	vec3 visibility = vec3(1,1,1);
 	vec4 positionShadow = (shadowMatrix * vec4(position_world.xyz, 1));
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(evaluateVisibility(depthInLightSpace, positionShadow), 0, 1);
+	visibility = chebyshevUpperBound(depthInLightSpace, positionShadow);
 	/////////////////// SHADOWMAP
 	
-	float metalFactor = 1 - clamp((metallic - 0.5), 0, 1);
-	out_color.rgb = 0.1 * color.rgb;// since probes are used for ambient lighting, they have to be biased;
-	out_color.rgb += color.rgb * lightDiffuse * max(dot(-lightDirection, PN_world), 0) * visibility;
-	out_color.rgb *= metalFactor;
+	vec4 lightDiffuseSpecular = cookTorrance(V, position_world.xyz, PN_world.xyz, roughness, metallic);
+	out_color.rgb = 0.1 * diffuseColor.rgb;// since probes are used for ambient lighting, but don't receive ambient, they have to be biased;
+	out_color.rgb += color.rgb * lightDiffuseSpecular.rgb * visibility;
+	out_color.rgb += specularColor.rgb * lightDiffuseSpecular.a * visibility;
+	
+	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);
 }

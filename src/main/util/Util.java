@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -364,6 +365,17 @@ public class Util {
 			maxLength /= 2;
 		}
 		return count;
+	}
+	
+	public static void printFloatBuffer(FloatBuffer buffer) {
+		buffer.rewind();
+		StringBuilder builder = new StringBuilder();
+		while (buffer.hasRemaining()) {
+			builder.append(buffer.get());
+			builder.append(" ");
+		}
+		buffer.rewind();
+		System.out.println(builder.toString());
 	}
 
 }

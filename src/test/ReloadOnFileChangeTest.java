@@ -8,7 +8,7 @@ import junit.framework.Assert;
 import main.World;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.Spotlight;
+import main.renderer.light.DirectionalLight;
 import main.util.ressources.FileMonitor;
 import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
@@ -24,7 +24,7 @@ public class ReloadOnFileChangeTest {
 
 	@BeforeClass
 	public static void init() throws IOException {
-		renderer = new DeferredRenderer(new Spotlight(true));
+		renderer = new DeferredRenderer(new DirectionalLight(true));
 		
 		simpleFile = new File("testfolder/test.file");
 		FileUtils.writeStringToFile(simpleFile, "xxx");

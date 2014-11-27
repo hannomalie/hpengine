@@ -84,11 +84,13 @@ public class DirectionalLight implements IEntity {
 		}
 		
 
-		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.DEFAULTCHANNELS, true);
 		
-		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_LINEAR, 3);
+		renderTarget = new RenderTarget(1024, 1024, GL30.GL_RGBA16F, 1f, 1f, 1f, 1f, GL11.GL_NEAREST, 3);
 		this.camera = camera;
 		this.renderer = renderer;
+		this.color = new Vector3f(1f, 0.76f, 0.49f);
+		setScatterFactor(7f);
 	}
 
 	public void init(Renderer renderer) throws Exception {
@@ -97,7 +99,7 @@ public class DirectionalLight implements IEntity {
 		Matrix4f viewMatrix = Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0));
 		camera =  new Camera(renderer, projectionMatrix, viewMatrix, 0.1f, 500f, 60, 16/9);
 		setPosition(new Vector3f(12f,80f,2f));
-		Quaternion quat = new Quaternion(0.44122884f, 0.5492834f, 0.5371881f, 0.46371746f);
+		Quaternion quat = new Quaternion(0.77555925f, 0.22686659f, 0.36588323f, 0.46171495f);
 //		quat.setFromAxisAngle(new Vector4f(0,-1,0,0));
 		setOrientation(quat);
 		init(renderer, camera);
@@ -113,19 +115,26 @@ public class DirectionalLight implements IEntity {
 	}
 
 	public void drawShadowMap(Octree octree) {
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
 		List<IEntity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
 		directionalShadowPassProgram.use();
 		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		directionalShadowPassProgram.setUniform("near", camera.getNear());
-		directionalShadowPassProgram.setUniform("far", camera.getFar());
+//		directionalShadowPassProgram.setUniform("near", camera.getNear());
+//		directionalShadowPassProgram.setUniform("far", camera.getFar());
 		
 		for (IEntity e : visibles) {
 			entityBuffer.rewind();
 			e.getModelMatrix().store(entityBuffer);
 			entityBuffer.rewind();
 			directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			e.getMaterial().setTexturesActive((Entity) e, directionalShadowPassProgram);
+			directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+			directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
+
 			e.getVertexBuffer().draw();
 		}
 	}
@@ -134,9 +143,12 @@ public class DirectionalLight implements IEntity {
 		return renderTarget.getRenderedTexture();
 	}
 	public int getShadowMapWorldPositionId() {
+		return renderTarget.getRenderedTexture(2);
+	}
+	public int getShadowMapColorMapId() {
 		return renderTarget.getRenderedTexture(1);
 	}
-
+	
 	public Camera getCamera() {
 		return camera;
 	}
@@ -213,7 +225,7 @@ public class DirectionalLight implements IEntity {
 	public void setTransform(Transform transform) {
 		camera.setTransform(transform);
 	}
-
+	
 	public float getScatterFactor() {
 		return scatterFactor;
 	}
