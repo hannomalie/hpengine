@@ -4,7 +4,7 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = false;
+uniform bool usePostProcessing = true;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
@@ -56,7 +56,7 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.5; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 1.7; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 const float threshold = 0.95; //highlight threshold;
 const float gain = 64.0; //highlight gain;
@@ -67,7 +67,7 @@ const float fringe = 0.7; //bokeh chromatic aberration/fringing
 const bool noise = false; //use noise instead of pattern for sample dithering
 const float namount = 0.0004; //dither amount
 
-const bool depthblur = false; //blur the depth buffer?
+const bool depthblur = true; //blur the depth buffer?
 const float dbsize = 1; //depthblursize
 
 const float exponential = 7.0;
@@ -217,6 +217,7 @@ vec3 debugFocus(vec3 col, float blur, float depth)
 
 float linearize(float depth)
 {
+	//return depth;
 	// the provided texture is already linear, I'm so bad...
 	return -zfar * znear / (depth * (zfar - znear) - zfar);
 }
@@ -343,7 +344,7 @@ void main()
 	    
 	    out_color = in_color;
 	    //out_color.rgb = in_color.rgb;
-	    out_color.a =1;
+	    out_color.a = 1;
 	} else {
 		out_color = texture2D(renderedTexture, pass_TextureCoord);
 	}

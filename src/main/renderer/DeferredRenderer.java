@@ -334,6 +334,8 @@ public class DeferredRenderer implements Renderer {
 		copyShaderIfNotExists("shadowmap_fragment.glsl");
 		copyShaderIfNotExists("mvp_vertex.glsl");
 		copyShaderIfNotExists("highZ_fragment.glsl");
+		copyShaderIfNotExists("cubemap_fragment.glsl");
+		copyShaderIfNotExists("cubemap_lighting_fragment.glsl");
 		
 	}
 

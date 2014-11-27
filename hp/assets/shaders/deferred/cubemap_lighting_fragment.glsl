@@ -201,7 +201,7 @@ void main()
 	/////////////////// SHADOWMAP
 	
 	vec4 lightDiffuseSpecular = cookTorrance(V, position_world.xyz, PN_world.xyz, roughness, metallic);
-	out_color.rgb = 0.1 * color.rgb;// since probes are used for ambient lighting, but don't receive ambient, they have to be biased;
+	out_color.rgb = 0.1 * diffuseColor.rgb;// since probes are used for ambient lighting, but don't receive ambient, they have to be biased;
 	out_color.rgb += color.rgb * lightDiffuseSpecular.rgb * visibility;
 	out_color.rgb += specularColor.rgb * lightDiffuseSpecular.a * visibility;
 	

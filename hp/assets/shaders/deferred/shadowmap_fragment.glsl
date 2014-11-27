@@ -48,8 +48,8 @@ void main()
 {
 	float depth = pass_Position.z/pass_Position.w;//(gl_FragCoord.z);
 	
-	float moment1 = depth;
-	float moment2 = depth * depth;
+	float moment1 = (depth);
+	float moment2 = moment1 * moment1;
 	
 	float dx = dFdx(depth);
 	float dy = dFdy(depth);

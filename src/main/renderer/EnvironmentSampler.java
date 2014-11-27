@@ -40,7 +40,8 @@ public class EnvironmentSampler {
 	private DynamicCubeMap cubeMap;
 	
 	private Camera camera;
-	private Program cubeMapDiffuseProgram;
+	private Program cubeMapProgram;
+	private Program cubeMapLightingProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
 	transient private boolean drawnOnce = false;
@@ -66,8 +67,9 @@ public class EnvironmentSampler {
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler Before CubeRenderTarget");
 		this.cubeMapRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapRenderTarget();//new CubeRenderTarget(width, height, cubeMap);
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler CubeRenderTarget");
-		
-		cubeMapDiffuseProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+
+		cubeMapProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
@@ -84,7 +86,7 @@ public class EnvironmentSampler {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 		
-		cubeMapDiffuseProgram.use();
+		cubeMapProgram.use();
 //		cubeMapRenderTarget.use(false);
 		cubeMapRenderTarget.setCubeMap(cubeMap);
 		boolean filteringRequired = false;
@@ -92,8 +94,17 @@ public class EnvironmentSampler {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
 			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
-			boolean noNeedToRedraw = (movedVisibles.isEmpty() && drawnOnce) && !light.hasMoved();
-			if(noNeedToRedraw) { continue; } // early exit if only static objects visible and light didn't change
+			boolean fullRerenderRequired = !movedVisibles.isEmpty() || !drawnOnce;
+			boolean rerenderLightingRequired = light.hasMoved();
+			boolean noNeedToRedraw = !fullRerenderRequired && !rerenderLightingRequired;
+			
+			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
+				continue;
+			} else if(rerenderLightingRequired) {
+				cubeMapLightingProgram.use();
+			} else if(fullRerenderRequired) {
+				cubeMapProgram.use();
+			}
 			filteringRequired = true;
 			
 			GPUProfiler.start("side " + i);
@@ -119,12 +130,12 @@ public class EnvironmentSampler {
 
 	private void drawEntities(DirectionalLight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		cubeMapDiffuseProgram.setUniform("lightDirection", light.getViewDirection());
-		cubeMapDiffuseProgram.setUniform("lightDiffuse", light.getColor());
-		cubeMapDiffuseProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);
-		cubeMapDiffuseProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-		cubeMapDiffuseProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-		cubeMapDiffuseProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
+		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
+		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
+		cubeMapProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);
+		cubeMapProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+		cubeMapProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
 		GPUProfiler.end();
 
 		GPUProfiler.start("Draw entities");
@@ -133,14 +144,14 @@ public class EnvironmentSampler {
 			entityBuffer.rewind();
 			e.getModelMatrix().store(entityBuffer);
 			entityBuffer.rewind();
-			cubeMapDiffuseProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
-			e.getMaterial().setTexturesActive((Entity) e, cubeMapDiffuseProgram);
-			cubeMapDiffuseProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
-			cubeMapDiffuseProgram.setUniform("hasNormalMap", e.getMaterial().hasNormalMap());
-			cubeMapDiffuseProgram.setUniform("color", e.getMaterial().getDiffuse());
-			cubeMapDiffuseProgram.setUniform("metallic", e.getMaterial().getMetallic());
-			cubeMapDiffuseProgram.setUniform("roughness", e.getMaterial().getRoughness());
-			e.getMaterial().setTexturesActive(null, cubeMapDiffuseProgram);
+			cubeMapProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			e.getMaterial().setTexturesActive((Entity) e, cubeMapProgram);
+			cubeMapProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+			cubeMapProgram.setUniform("hasNormalMap", e.getMaterial().hasNormalMap());
+			cubeMapProgram.setUniform("color", e.getMaterial().getDiffuse());
+			cubeMapProgram.setUniform("metallic", e.getMaterial().getMetallic());
+			cubeMapProgram.setUniform("roughness", e.getMaterial().getRoughness());
+			e.getMaterial().setTexturesActive(null, cubeMapProgram);
 			
 			e.getVertexBuffer().draw();
 		}
@@ -160,7 +171,7 @@ public class EnvironmentSampler {
 	
 	private void rotateForIndex(int i, Camera camera) {
 		float deltaNear = 0.0f;
-		float deltaFar = 1.2f;
+		float deltaFar = 1.3f;
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;

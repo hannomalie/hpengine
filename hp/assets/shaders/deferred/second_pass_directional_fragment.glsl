@@ -134,6 +134,28 @@ vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
 	return result;
 }
 
+float maxDepth(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
+	
+	float result = texture(sampler, texCoords + vec2(-blurDistance, -blurDistance)).r;
+	result = max(result, texture(sampler, texCoords + vec2(0, -blurDistance)).r);
+	result = max(result, texture(sampler, texCoords + vec2(blurDistance, -blurDistance)).r);
+	
+	result = max(result, texture(sampler, texCoords + vec2(-blurDistance)).r);
+	result = max(result, texture(sampler, texCoords + vec2(0, 0)).r);
+	result = max(result, texture(sampler, texCoords + vec2(blurDistance, 0)).r);
+	
+	result = max(result, texture(sampler, texCoords + vec2(-blurDistance, blurDistance)).r);
+	result = max(result, texture(sampler, texCoords + vec2(0, -blurDistance)).r);
+	result = max(result, texture(sampler, texCoords + vec2(blurDistance, blurDistance)).r);
+	
+	return result;
+}
+
+float linstep(float low, float high, float v){
+    return clamp((v-low)/(high-low), 0.0, 1.0);
+}
+
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -143,16 +165,26 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
-	moments = blur(shadowMap, ShadowCoordPostW.xy, moments.y).rg;
-	//moments = textureLod(shadowMap, ShadowCoordPostW.xy, 0).rg;
-	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.002).rg;
-	//moments += blurSample(shadowMap, ShadowCoordPostW.xy, moments.y * 0.005).rg;
-	//moments /= 3;
+	
+	const bool AVOID_LIGHT_BLEEDING = true;
+	if(AVOID_LIGHT_BLEEDING) {
+		float envelopeMaxDepth = maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0025);
+		envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0017);
+		envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.00125);
+		envelopeMaxDepth /= 3;
+		if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
+	}
+	
+	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0025).rg;
+	moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
+	moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
+	moments /= 3;
+	
 	// Surface is fully lit. as the current fragment is before the light occluder
-	if (dist < moments.x) {
+	if (dist <= moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
-
+	
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
 	float variance = moments.y - (moments.x*moments.x);
@@ -160,6 +192,8 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	float d = dist - moments.x;
 	float p_max = (variance / (variance + d*d));
+	
+	p_max = linstep(0.2, 1.0, p_max);
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -169,68 +203,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     projectedCoord.xy /= projectedCoord.w;
     projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
     return projectedCoord;
-}
-
-vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView) {
-
-//return color;
-//return probeColor;
-
-	vec3 eyeToSurfaceView = targetPosView;
-	vec3 reflectionVecView = normalize(reflect(eyeToSurfaceView, targetNormalView));
-	
-	vec3 viewRay = 10*normalize(reflectionVecView);
-	
-	vec3 currentViewPos = targetPosView;
-	for (int i = 0; i < 25; i++) {
-	
-		  currentViewPos += viewRay;
-		  
-		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
-		  
-		  float difference = currentViewPos.z - currentPosSample.z;
-		  if (difference < 0) {
-		  	
-		  	currentViewPos -= viewRay;
-		  	
-		  	for(int x = 0; x < 10; x++) {
-		 		currentViewPos += viewRay/10;
-		  		currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
-		  
-				  difference = currentViewPos.z - currentPosSample.z;
-				  //if (difference < 0 && difference > -2) {
-				  if (abs(difference) > 2) {
-				  	//float temp = currentPosSample - targetPosView; 
-				  	//if(abs(temp) > 2)
-				  	{
-	  		  		  break;
-				  	}
-				  }
-		  	}
-		  	
-  		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
-  			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
-			{
-    			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
-    			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
-    			vec3 reflectedColor =  texture2D(diffuseMap, resultCoords.xy).xyz;
-    			//vec3 reflectedColor =  blurSample(diffuseMap, resultCoords.xy, 0.05).rgb;
-    			//return vec3(screenEdgefactor, 0, 0);
-    			
-    			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
-    			float screenEdgefactorY = clamp(abs(resultCoords.y) - 0.95, 0, 1);
-    			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
-    			//return vec3(screenEdgefactor, 0, 0);
-    			
-				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
-		  	}
-		  	//return vec3(1,0,0);
-		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
-			return probeColor;
-		  }
-	}
-	
-	return probeColor;
 }
 
 /////////////////////
@@ -322,9 +294,9 @@ void main(void) {
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1);
-
+	///////////////////
+	
 	finalColor *= visibility;
 
 	//finalColor = vec4(visibility,visibility,visibility,visibility);
