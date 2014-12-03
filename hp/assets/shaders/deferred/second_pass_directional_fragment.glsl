@@ -166,7 +166,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
 	
-	const bool AVOID_LIGHT_BLEEDING = true;
+	const bool AVOID_LIGHT_BLEEDING = false;
 	if(AVOID_LIGHT_BLEEDING) {
 		float envelopeMaxDepth = maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0025);
 		envelopeMaxDepth += maxDepth(shadowMap, ShadowCoordPostW.xy, 0.0017);

@@ -161,9 +161,9 @@ public class Material implements Serializable {
 		if(entity == null) { return; }
 		
 		List<EnvironmentProbe> surroundingProbes = renderer.getEnvironmentProbeFactory().getProbesForEntity(entity);
-		int probeIndex1 = surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : 0;
+		int probeIndex1 = surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : -1;
 		program.setUniform("probeIndex1", probeIndex1);
-		int probeIndex2 = surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : 0;
+		int probeIndex2 = surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : -1;
 		program.setUniform("probeIndex2", probeIndex2);
 	}
 

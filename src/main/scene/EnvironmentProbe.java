@@ -124,10 +124,6 @@ public class EnvironmentProbe implements IEntity {
 		return contains(minMaxWorld[0], minMaxWorld[1]);
 	}
 
-	public CubeMap getEnvironmentMap() {
-		return sampler.getEnvironmentMap();
-	}
-
 	public AABB getBox() {
 		return box;
 	}
@@ -158,12 +154,6 @@ public class EnvironmentProbe implements IEntity {
 		sampler.setCamera(camera);
 	}
 	
-	public void bind(int index) {
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + index);
-		sampler.getEnvironmentMap().bind();
-//		System.out.println(String.format("Bound probe %d to index %d", renderer.getEnvironmentProbeFactory().getProbes().indexOf(this), index));
-	}
-
 	public int getTextureUnitIndex() {
 		int index = getIndex();
 		return renderer.getMaxTextureUnits() - index - 1;

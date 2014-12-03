@@ -256,7 +256,7 @@ public class DeferredRenderer implements Renderer {
 		try {
 			PixelFormat pixelFormat = new PixelFormat();
 			ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
-				.withProfileCompatibility(true);
+				.withProfileCompatibility(true).withDebug(false);
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
@@ -602,11 +602,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public CubeMap getEnvironmentMap() {
 		return cubeMap;
-	}
-
-	@Override
-	public void setEnvironmentMap(DynamicCubeMap environmentMap) {
-		environmentSampler.setCubeMap(environmentMap);
 	}
 
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);

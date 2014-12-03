@@ -27,7 +27,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -444,7 +446,7 @@ public class GBuffer {
 		combineProgram.setUniform("exposure", World.EXPOSURE);
 		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
-		bindEnvironmentProbePositions(combineProgram);
+//		bindEnvironmentProbePositions(combineProgram);
 		
 		if(target == null) {
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
@@ -474,6 +476,7 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(0));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(1));
+		
 		fullscreenBuffer.draw();
 
 		if(target == null) {
@@ -497,15 +500,12 @@ public class GBuffer {
 	
 	private void bindEnvironmentProbePositions(Program program) {
 		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
-			int probeIndex = probe.getTextureUnitIndex();
+			int probeIndex = probe.getIndex();
 			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
 			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
 //			System.out.println(String.format("environmentMapMin[%d] has %s", probeIndex, probe.getBox().getBottomLeftBackCorner()));
 //			System.out.println(String.format("environmentMapMax[%d] has %s", probeIndex, probe.getBox().getTopRightForeCorner()));
 		});
-		program.setUniform("environmentMapMin[0]", new Vector3f(-10000, -10000, -10000));
-		program.setUniform("environmentMapMax[0]", new Vector3f(10000, 10000, 10000));
-		
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {

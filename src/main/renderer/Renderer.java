@@ -66,7 +66,6 @@ public interface Renderer {
 	public ProgramFactory getProgramFactory();
 	public LightFactory getLightFactory();
 	public EnvironmentProbeFactory getEnvironmentProbeFactory();
-	public void setEnvironmentMap(DynamicCubeMap environmentMap);
 	public void init(Octree octree);
 	public int getMaxTextureUnits();
 	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);

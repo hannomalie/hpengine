@@ -11,30 +11,6 @@ layout(binding=7) uniform samplerCubeArray probes;
 layout(binding=8) uniform sampler2D diffuseEnvironment; // probe sample, ambient occlusion
 layout(binding=9) uniform sampler2D specularEnvironment; // reflection
 
-
-layout(binding=170) uniform samplerCube probe170;
-layout(binding=171) uniform samplerCube probe171;
-layout(binding=172) uniform samplerCube probe172;
-layout(binding=173) uniform samplerCube probe173;
-layout(binding=174) uniform samplerCube probe174;
-layout(binding=175) uniform samplerCube probe175;
-layout(binding=176) uniform samplerCube probe176;
-layout(binding=177) uniform samplerCube probe177;
-layout(binding=178) uniform samplerCube probe178;
-layout(binding=179) uniform samplerCube probe179;
-layout(binding=180) uniform samplerCube probe180;
-layout(binding=181) uniform samplerCube probe181;
-layout(binding=182) uniform samplerCube probe182;
-layout(binding=183) uniform samplerCube probe183;
-layout(binding=184) uniform samplerCube probe184;
-layout(binding=185) uniform samplerCube probe185;
-layout(binding=186) uniform samplerCube probe186;
-layout(binding=187) uniform samplerCube probe187;
-layout(binding=188) uniform samplerCube probe188;
-layout(binding=189) uniform samplerCube probe189;
-layout(binding=190) uniform samplerCube probe190;
-layout(binding=191) uniform samplerCube probe191;
-
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 projectionMatrix;
@@ -261,8 +237,9 @@ void main(void) {
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = environmentColor.rgb;
-	//out_color.rgb = ambientSpecular.rgb;
+	//out_color.rgb = reflectedColor.rgb;
 	//out_color.rgb = texture(probes, vec4(normalWorld, 0), 0).rgb;
+	//out_color.rgb = texture(globalEnvironmentMap, normalWorld, 0).rgb;
 	
 	/*int probeIndex = int(textureLod(motionMap, st, 0).x);
 	if(probeIndex == 191) {

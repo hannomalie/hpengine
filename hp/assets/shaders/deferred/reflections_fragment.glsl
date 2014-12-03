@@ -7,6 +7,7 @@ layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform sampler2D lightAccumulationMap; // diffuse, specular
 
 layout(binding=6) uniform samplerCube globalEnvironmentMap;
+layout(binding=7) uniform samplerCubeArray probes;
 
 layout(binding=170) uniform samplerCube probe170;
 layout(binding=171) uniform samplerCube probe171;
@@ -40,8 +41,8 @@ uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform bool useAmbientOcclusion = true;
 
 uniform int activeProbeCount;
-uniform vec3 environmentMapMin[192];
-uniform vec3 environmentMapMax[192];
+uniform vec3 environmentMapMin[100];
+uniform vec3 environmentMapMax[100];
 
 in vec2 pass_TextureCoord;
 
@@ -82,8 +83,8 @@ mat3 createOrthonormalBasis(vec3 n) {
 }
 
 // https://www.opengl.org/discussion_boards/showthread.php/164815-Taking-multiple-samples-in-cubemap-shadowmaps
-vec4 sampleCubeMap(samplerCube sampler, vec3 n, float roughness) {
-	const int NUM_SAMPLES = 8;
+vec4 sampleCubeMap(int index, vec3 n, float roughness) {
+	const int NUM_SAMPLES = 12;
 	
 	vec2 poissonDisk[64];
 	poissonDisk[0] = vec2(-0.613392, 0.617481);
@@ -153,7 +154,7 @@ vec4 sampleCubeMap(samplerCube sampler, vec3 n, float roughness) {
 	
 	mat3 basis = createOrthonormalBasis(n);
 	
-	vec4 result = texture(sampler, n);
+	vec4 result = textureLod(probes, vec4(n, index), 0);
 
 	float glossiness = (1-roughness);
 	float roughnessMapping = 6 +  glossiness * glossiness * 100;
@@ -161,7 +162,7 @@ vec4 sampleCubeMap(samplerCube sampler, vec3 n, float roughness) {
 		vec2 sample_2d = poissonDisk[i]/roughnessMapping;
 		vec3 sample_3d = vec3(sample_2d.x, 1 - sqrt(length(sample_2d)), sample_2d.y);
 		vec3 transformed_sample = inverse(basis) * sample_3d;
-		result += texture(sampler, normalize(transformed_sample));
+		result += textureLod(probes, vec4(normalize(transformed_sample), index), 0);
 	}
 	
 	return result / (NUM_SAMPLES + 1);
@@ -212,30 +213,6 @@ float getAmbientOcclusion(vec2 st) {
 	return ao;
 }
 
-samplerCube getProbeForIndex(int probeIndex) {
-	if(probeIndex == 191) { return probe191; }
-	else if(probeIndex == 190) { return probe190; }
-	else if(probeIndex == 189) { return probe189; }
-	else if(probeIndex == 188) { return probe188; }
-	else if(probeIndex == 187) { return probe187; }
-	else if(probeIndex == 186) { return probe186; }
-	else if(probeIndex == 185) { return probe185; }
-	else if(probeIndex == 184) { return probe184; }
-	else if(probeIndex == 183) { return probe183; }
-	else if(probeIndex == 182) { return probe182; }
-	else if(probeIndex == 181) { return probe181; }
-	else if(probeIndex == 180) { return probe180; }
-	else if(probeIndex == 179) { return probe179; }
-	else if(probeIndex == 178) { return probe178; }
-	else if(probeIndex == 177) { return probe177; }
-	else if(probeIndex == 176) { return probe176; }
-	else if(probeIndex == 175) { return probe175; }
-	else if(probeIndex == 174) { return probe174; }
-	else if(probeIndex == 173) { return probe173; }
-	else if(probeIndex == 172) { return probe172; }
-	else if(probeIndex == 171) { return probe171; }
-	else { return globalEnvironmentMap; }
-}
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
     projectedCoord.xy /= projectedCoord.w;
@@ -347,61 +324,35 @@ bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
 	//return(position.x >= minPosition.x && position.y >= minPosition.y && position.z >= minPosition.z && position.x <= maxPosition.x && position.y <= maxPosition.y && position.z <= maxPosition.z);
 }
 
-int getProbeIndexForPosition(vec3 position, vec3 normal) {
-	
-	vec3 currentEnvironmentMapMin = environmentMapMin[0];
-	vec3 currentEnvironmentMapMax = environmentMapMax[0];
-	vec3 currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
-	float minDist = distance(currentIntersectionPoint, position);
-	int iForNearest = 191;
-	
-	for(int i = 0; i < activeProbeCount; i++) {
-		currentEnvironmentMapMin = environmentMapMin[191- i];
-		currentEnvironmentMapMax = environmentMapMax[191 -i];
-		currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
-		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
-		
-		float currentDist = distance(currentIntersectionPoint, position);
-		if(currentDist < minDist) {
-			minDist = currentDist;
-			iForNearest = i;
-		}
-	}
-	
-	return 191-iForNearest;
-}
-
 vec4[2] getTwoNearestProbeIndicesAndIntersectionsForIntersection(vec3 position, vec3 normal, vec2 uv) {
 	vec4[2] result;
 	
 	// Only if two indices can be precalculated, we skip the intersection test. one index is not enough to avoid flickering on moving objects
 	vec2 precalculatedIndices = texture(motionMap, uv).ba;
-	if(precalculatedIndices.x != 0) {
+	if(precalculatedIndices.x != -1) {
 		vec3 mini = environmentMapMin[int(precalculatedIndices.x)];
 		vec3 maxi = environmentMapMax[int(precalculatedIndices.x)];
 		result[0] = vec4(getIntersectionPoint(position, normal, mini, maxi), precalculatedIndices.x);
-		if(precalculatedIndices.y != 0) {
+		if(precalculatedIndices.y != -1) {
 			result[1] = vec4(getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]), precalculatedIndices.y);
 			return result;
 		}
 	}
 	
-	vec3 currentEnvironmentMapMin1 = environmentMapMin[191];
-	vec3 currentEnvironmentMapMax1 = environmentMapMax[191];
-	vec3 currentEnvironmentMapMin2 = environmentMapMin[191];
-	vec3 currentEnvironmentMapMax2 = environmentMapMax[191];
+	vec3 currentEnvironmentMapMin1 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax1 = environmentMapMax[0];
+	vec3 currentEnvironmentMapMin2 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax2 = environmentMapMax[0];
 	vec3 intersectionPoint1 = getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
 	vec3 intersectionPoint2 = intersectionPoint1;
-	float minDist1 = distance(intersectionPoint1, position);
-	int iForNearest1 = 191;
+	float minDist1 = 10000;
+	int iForNearest1 = -1;
 	float minDist2 = minDist1;
-	int iForNearest2 = 191;
-	
-	if(!isInside(position, currentEnvironmentMapMin1, currentEnvironmentMapMax1)) { minDist1 = 10000;minDist2 = 10000; }
+	int iForNearest2 = -1;
 	
 	for(int i = 0; i < activeProbeCount; i++) {
-		vec3 currentEnvironmentMapMin = environmentMapMin[191- i];
-		vec3 currentEnvironmentMapMax = environmentMapMax[191 -i];
+		vec3 currentEnvironmentMapMin = environmentMapMin[i];
+		vec3 currentEnvironmentMapMax = environmentMapMax[i];
 		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
 		vec3 currentIntersectionPoint = getIntersectionPoint(position, normal, currentEnvironmentMapMin, currentEnvironmentMapMax);
 		
@@ -423,8 +374,8 @@ vec4[2] getTwoNearestProbeIndicesAndIntersectionsForIntersection(vec3 position, 
 		}
 	}
 	
-	result[0] = vec4(intersectionPoint1, 191-iForNearest1);
-	result[1] = vec4(intersectionPoint2, 191-iForNearest2);
+	result[0] = vec4(intersectionPoint1, iForNearest1);
+	result[1] = vec4(intersectionPoint2, iForNearest2);
 	return result;
 }
 
@@ -432,33 +383,31 @@ vec4[2] getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3
 	vec4[2] result;
 	
 	ivec2 precalculatedIndices = ivec2(texture(motionMap, uv).ba);
-	if(precalculatedIndices.x != 0) {
+	if(precalculatedIndices.x != -1) {
 		vec3 mini = environmentMapMin[precalculatedIndices.x];
 		vec3 maxi = environmentMapMax[precalculatedIndices.x];
 		result[0] = vec4(getIntersectionPoint(position, normal, mini, maxi), precalculatedIndices.x);
 
-		if(precalculatedIndices.y != 0) {
+		if(precalculatedIndices.y != -1) {
 			result[1] = vec4(getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]), precalculatedIndices.y);
 			return result;
 		}
 	}
 	
-	vec3 currentEnvironmentMapMin1 = environmentMapMin[191];
-	vec3 currentEnvironmentMapMax1 = environmentMapMax[191];
-	vec3 currentEnvironmentMapMin2 = environmentMapMin[191];
-	vec3 currentEnvironmentMapMax2 = environmentMapMax[191];
+	vec3 currentEnvironmentMapMin1 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax1 = environmentMapMax[0];
+	vec3 currentEnvironmentMapMin2 = environmentMapMin[0];
+	vec3 currentEnvironmentMapMax2 = environmentMapMax[0];
 	vec3 currentCenter1 = currentEnvironmentMapMin1 + distance(currentEnvironmentMapMin1, currentEnvironmentMapMax1)/2;
 	vec3 currentCenter2 = currentCenter1;
-	float minDist1 = distance(currentCenter1, position);
-	int iForNearest1 = 191;
+	float minDist1 = 10000;
+	int iForNearest1 = -1;
 	float minDist2 = minDist1;
-	int iForNearest2 = 191;
-	
-	if(!isInside(position, currentEnvironmentMapMin1, currentEnvironmentMapMax1)) { minDist1 = 10000;minDist2 = 10000; }
+	int iForNearest2 = -1;
 	
 	for(int i = 0; i < activeProbeCount; i++) {
-		vec3 currentEnvironmentMapMin = environmentMapMin[191- i];
-		vec3 currentEnvironmentMapMax = environmentMapMax[191 -i];
+		vec3 currentEnvironmentMapMin = environmentMapMin[i];
+		vec3 currentEnvironmentMapMax = environmentMapMax[i];
 		if(!isInside(position, currentEnvironmentMapMin, currentEnvironmentMapMax)) { continue; }
 		vec3 distVectorHalf = vec3(distance(currentEnvironmentMapMin.x, currentEnvironmentMapMax.x), distance(currentEnvironmentMapMin.y, currentEnvironmentMapMax.y), distance(currentEnvironmentMapMin.z, currentEnvironmentMapMax.z))/2;
 		vec3 currentCenter = currentEnvironmentMapMin + distVectorHalf;
@@ -476,8 +425,8 @@ vec4[2] getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3
 		}
 	}
 	
-	result[0] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1), 191-iForNearest1);
-	result[1] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin2, currentEnvironmentMapMax2), 191-iForNearest2);
+	result[0] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1), iForNearest1);
+	result[1] = vec4(getIntersectionPoint(position, normal, currentEnvironmentMapMin2, currentEnvironmentMapMax2), iForNearest2);
 	return result;
 }
 
@@ -511,15 +460,15 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	int probeIndexNearest = int(twoIntersectionsAndIndices[0].w);
 	int probeIndexSecondNearest = int(twoIntersectionsAndIndices[1].w);
 	
-	if(probeIndexNearest == 0) {
+	if(probeIndexNearest == -1) {
 		vec4 c = texture(globalEnvironmentMap, normalWorld, mipMapLevel).rgba;
 		return c.rgb;
-	} else if(probeIndexSecondNearest == 0) {
+	} else if(probeIndexSecondNearest == -1) {
 		vec3 t3d = normalize(normalWorld);
 		vec3 t3d_bp = boxProjection(positionWorld, t3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
-		vec4 c = textureLod(getProbeForIndex(probeIndexNearest), t3d_bp, mipMapLevel);
+		vec4 c = textureLod(probes, vec4(t3d_bp, probeIndexNearest), mipMapLevel);
 		if(DONT_USE_PROBES_MIPMAPS) {
-			c = sampleCubeMap(getProbeForIndex(probeIndexNearest), t3d_bp, roughness);
+			c = sampleCubeMap(probeIndexNearest, t3d_bp, roughness);
 		}
 		if (NO_INTERPOLATION_IF_ONE_PROBE_GIVEN) {
 			if (c.a == 0) {
@@ -541,15 +490,15 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	
 	mipMapLevel *= clamp(distance(positionWorld, boxProjectedNearest)/50, 0, 1);
 	mipMapLevelSecond *= clamp(distance(positionWorld, boxProjectedSecondNearest)/50, 0, 1);
-	vec4 colorVisibilityNearest = textureLod(getProbeForIndex(probeIndexNearest), boxProjectedNearest, mipMapLevel);
+	vec4 colorVisibilityNearest = textureLod(probes, vec4(boxProjectedNearest, probeIndexNearest), mipMapLevel);
 	if(DONT_USE_PROBES_MIPMAPS) {
-		colorVisibilityNearest = sampleCubeMap(getProbeForIndex(probeIndexNearest), boxProjectedNearest, roughness);
+		colorVisibilityNearest = sampleCubeMap(probeIndexNearest, boxProjectedNearest, roughness);
 	}
 	vec3 colorNearest = colorVisibilityNearest.rgb;
 	
-	vec4 colorVisibilitySecondNearest = textureLod(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, mipMapLevelSecond);
+	vec4 colorVisibilitySecondNearest = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond);
 	if(DONT_USE_PROBES_MIPMAPS) {
-		colorVisibilitySecondNearest = sampleCubeMap(getProbeForIndex(probeIndexSecondNearest), boxProjectedSecondNearest, roughness);
+		colorVisibilitySecondNearest = sampleCubeMap(probeIndexSecondNearest, boxProjectedSecondNearest, roughness);
 	}
 	vec3 colorSecondNearest = colorVisibilitySecondNearest.rgb;
 
