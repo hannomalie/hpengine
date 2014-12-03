@@ -6,6 +6,7 @@ import main.scene.EnvironmentProbeFactory;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
@@ -29,6 +30,10 @@ public class CubeMapArray {
 		mipMapCount = renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT;
 		internalFormat = GL11.GL_RGBA8;
 		GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, textureCount*6);
+
+		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
 	}
 	
 	/**

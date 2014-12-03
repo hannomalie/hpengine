@@ -115,7 +115,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-position);
-	//V = ViewVector;
+	V = ViewVector;
  	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -178,9 +178,9 @@ void main()
     }
 
 	float depth = (position_clip.z / position_clip.w);
-    out_color = vec4(color.rgb, depth);
+    //out_color = vec4(color.rgb, depth);
     out_color.a = 1;
-    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic/2); // biased, since specular term is only vali at POI of the probe...mäh
+    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic/2); // biased, since specular term is only valid at POI of the probe...mäh
     vec3 specularColor = mix(vec3(0.04,0.04,0.04), color.rgb, metallic);
     
 	vec3 PN_world = normalize(normal_world);
@@ -201,9 +201,16 @@ void main()
 	/////////////////// SHADOWMAP
 	
 	vec4 lightDiffuseSpecular = cookTorrance(V, position_world.xyz, PN_world.xyz, roughness, metallic);
-	out_color.rgb = 0.1 * color.rgb;// since probes are used for ambient lighting, but don't receive ambient, they have to be biased;
+	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
+
+	// since probes are used for ambient lighting, but don't receive ambient, they have to be biased with some ambient light
+	out_color.rgb = 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(-lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,lightDirection.y,-lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += 0.1 * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);
+	
 	out_color.rgb += color.rgb * lightDiffuseSpecular.rgb * visibility;
-	out_color.rgb += specularColor.rgb * lightDiffuseSpecular.a * visibility;
+	out_color.rgb += specularColor.rgb * specularFactor * visibility;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

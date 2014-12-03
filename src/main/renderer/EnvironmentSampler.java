@@ -103,7 +103,7 @@ public class EnvironmentSampler {
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
 				continue;
 			} else if(rerenderLightingRequired) {
-				cubeMapLightingProgram.use();
+//				cubeMapLightingProgram.use();
 			} else if(fullRerenderRequired) {
 				cubeMapProgram.use();
 			}
@@ -163,23 +163,22 @@ public class EnvironmentSampler {
 
 		GPUProfiler.start("MipMap generation");
 		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-
-		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, 0);
 		int cubeMapView = GL11.glGenTextures();
 		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray().getTextureID(), GL11.GL_RGBA8, 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMapView);
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+		renderer.getTextureFactory().generateMipMapsCubeMap(cubeMapView);
 		GL11.glDeleteTextures(cubeMapView);
 		
+		int errorValue = GL11.glGetError();
+		if (errorValue != GL11.GL_NO_ERROR) {
+			String errorString = GLU.gluErrorString(errorValue);
+			System.err.println("ERROR: " + errorString);
+		}
 		GPUProfiler.end();
 	}
 	
 	private void rotateForIndex(int i, Camera camera) {
 		float deltaNear = 0.0f;
-		float deltaFar = 1.3f;
+		float deltaFar = 100.1f;
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;
