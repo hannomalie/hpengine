@@ -204,10 +204,11 @@ void main()
 	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 
 	// since probes are used for ambient lighting, but don't receive ambient, they have to be biased with some ambient light
-	out_color.rgb = 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(-lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
-	out_color.rgb += 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
-	out_color.rgb += 0.1 * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,lightDirection.y,-lightDirection.z), PN_world), 0.0, 1.0);
-	out_color.rgb += 0.1 * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);
+	float quarterAmbientStrength = 0.05;
+	out_color.rgb = quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(-lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,lightDirection.y,-lightDirection.z), PN_world), 0.0, 1.0);
+	out_color.rgb += quarterAmbientStrength * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);
 	
 	out_color.rgb += color.rgb * lightDiffuseSpecular.rgb * visibility;
 	out_color.rgb += specularColor.rgb * specularFactor * visibility;

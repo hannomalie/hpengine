@@ -90,12 +90,13 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	//diff = (diff.rgb) * (1-F0);
-	//diff *= (1/3.1416*alpha*alpha);
+	diff = diff * (1-F0); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
 	
-	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
+	
+	return vec4((diff), cookTorrance);
 }
 
 ///////////////////// AO

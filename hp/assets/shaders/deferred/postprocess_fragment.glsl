@@ -47,7 +47,7 @@ const float ndofdist = 128.0; //near dof blur falloff distance
 const float fdofstart = 128.0; //far dof blur start
 const float fdofdist = 512.0; //far dof blur falloff distance
 
-const float CoC = 0.01;//circle of confusion size in mm (35mm film = 0.03mm)
+const float CoC = 0.08;//circle of confusion size in mm (35mm film = 0.03mm)
 
 const bool vignetting = false; //use optical lens vignetting?
 const float vignout = 1.5; //vignetting outer border
@@ -56,7 +56,7 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.7; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 3.0; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 const float threshold = 0.95; //highlight threshold;
 const float gain = 64.0; //highlight gain;
@@ -67,7 +67,7 @@ const float fringe = 0.7; //bokeh chromatic aberration/fringing
 const bool noise = false; //use noise instead of pattern for sample dithering
 const float namount = 0.0004; //dither amount
 
-const bool depthblur = true; //blur the depth buffer?
+const bool depthblur = false; //blur the depth buffer?
 const float dbsize = 1; //depthblursize
 
 const float exponential = 7.0;

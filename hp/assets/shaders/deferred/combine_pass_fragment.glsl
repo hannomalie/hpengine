@@ -62,21 +62,22 @@ const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
 					vec2(blurDistance, blurDistance)
 };
 
+const float scaleX = 1;
+const float scaleY = 0.56;
+const vec2 ratio = vec2(scaleX, scaleY);
 vec4 blur(sampler2D sampler, vec2 texCoords) {
 	vec4 result = vec4(0,0,0,0);
-	const float scaleX = 1;
-	const float scaleY = 1;
-	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
-	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));
-	result += kernel[2] * texture(sampler, texCoords + vec2(blurDistance, -blurDistance));
+	result += kernel[0] * texture(sampler, texCoords + offsets[0]);
+	result += kernel[1] * texture(sampler, texCoords + offsets[1]);
+	result += kernel[2] * texture(sampler, texCoords + offsets[2]);
 	
-	result += kernel[3] * texture(sampler, texCoords + vec2(-blurDistance));
-	result += kernel[4] * texture(sampler, texCoords + vec2(0, 0));
-	result += kernel[5] * texture(sampler, texCoords + vec2(blurDistance, 0));
+	result += kernel[3] * texture(sampler, texCoords + offsets[3]);
+	result += kernel[4] * texture(sampler, texCoords + offsets[4]);
+	result += kernel[5] * texture(sampler, texCoords + offsets[5]);
 	
-	result += kernel[6] * texture(sampler, texCoords + vec2(-blurDistance, blurDistance));
-	result += kernel[7] * texture(sampler, texCoords + vec2(0, -blurDistance));
-	result += kernel[8] * texture(sampler, texCoords + vec2(blurDistance, blurDistance));
+	result += kernel[6] * texture(sampler, texCoords + offsets[6]);
+	result += kernel[7] * texture(sampler, texCoords + offsets[7]);
+	result += kernel[8] * texture(sampler, texCoords + offsets[8]);
 	
 	return result;
 }
@@ -96,7 +97,44 @@ vec4 bilateralBlur(sampler2D sampler, vec2 texCoords) {
 		vec4 currentSample = textureLod(sampler, texCoords + offsets[i], 0);
 		float currentSampleDepth = textureLod(normalMap, texCoords + offsets[i], 0).a;
 		
-		float closeness = distance(currentSampleDepth, centerSampleDepth);
+		float closeness = 1-distance(currentSampleDepth, centerSampleDepth);
+		float sampleWeight = kernel[i] * closeness;
+		result += sampleWeight * currentSample;
+		
+		normalization += (1-closeness)*kernel[i]; // this is the amount we have lost.
+	}
+	
+	return result + normalization * centerSample;
+}
+vec4 bilateralBlurReflection(sampler2D sampler, vec2 texCoords) {
+
+	const float blurDistance = 0.0025;
+	const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
+						vec2(0, -blurDistance),
+						vec2(blurDistance, -blurDistance),
+						vec2(-blurDistance, 0),
+						vec2(0, 0),
+						vec2(blurDistance, 0),
+						vec2(-blurDistance, blurDistance),
+						vec2(0, blurDistance),
+						vec2(blurDistance, blurDistance)
+	};
+	vec4 result = vec4(0,0,0,0);
+	float normalization = 0;
+	
+	vec4 centerSample = textureLod(sampler, texCoords + offsets[4], 0);
+	float centerSampleDepth = textureLod(normalMap, texCoords + offsets[4], 0).a;
+	float centerSampleRoughness = textureLod(positionMap, texCoords + offsets[4], 0).a;
+	result += kernel[4] * centerSample;
+	
+	for(int i = 0; i < 9; i++) {
+		if(i == 4) { continue; }
+		
+		vec4 currentSample = textureLod(sampler, texCoords + offsets[i], 0);
+		float currentSampleDepth = textureLod(normalMap, texCoords + offsets[i], 0).a;
+		float currentSampleRoughness = textureLod(positionMap, texCoords + offsets[i], 0).a;
+		
+		float closeness = 1-(distance(currentSampleRoughness, centerSampleRoughness) + distance(currentSampleDepth, centerSampleDepth))/2;
 		float sampleWeight = kernel[i] * closeness;
 		result += sampleWeight * currentSample;
 		
@@ -106,13 +144,103 @@ vec4 bilateralBlur(sampler2D sampler, vec2 texCoords) {
 	return result + normalization * centerSample;
 }
 
+vec4 imageSpaceGatherReflection(sampler2D sampler, vec2 texCoords, float roughness) {
+	vec2 poissonDisk[64];
+	poissonDisk[0] = vec2(-0.613392, 0.617481);
+	poissonDisk[1] = vec2(0.170019, -0.040254);
+	poissonDisk[2] = vec2(-0.299417, 0.791925);
+	poissonDisk[3] = vec2(0.645680, 0.493210);
+	poissonDisk[4] = vec2(-0.651784, 0.717887);
+	poissonDisk[5] = vec2(0.421003, 0.027070);
+	poissonDisk[6] = vec2(-0.817194, -0.271096);
+	poissonDisk[7] = vec2(-0.705374, -0.668203);
+	poissonDisk[8] = vec2(0.977050, -0.108615);
+	poissonDisk[9] = vec2(0.063326, 0.142369);
+	poissonDisk[10] = vec2(0.203528, 0.214331);
+	poissonDisk[11] = vec2(-0.667531, 0.326090);
+	poissonDisk[12] = vec2(-0.098422, -0.295755);
+	poissonDisk[13] = vec2(-0.885922, 0.215369);
+	poissonDisk[14] = vec2(0.566637, 0.605213);
+	poissonDisk[15] = vec2(0.039766, -0.396100);
+	poissonDisk[16] = vec2(0.751946, 0.453352);
+	poissonDisk[17] = vec2(0.078707, -0.715323);
+	poissonDisk[18] = vec2(-0.075838, -0.529344);
+	poissonDisk[19] = vec2(0.724479, -0.580798);
+	poissonDisk[20] = vec2(0.222999, -0.215125);
+	poissonDisk[21] = vec2(-0.467574, -0.405438);
+	poissonDisk[22] = vec2(-0.248268, -0.814753);
+	poissonDisk[23] = vec2(0.354411, -0.887570);
+	poissonDisk[24] = vec2(0.175817, 0.382366);
+	poissonDisk[25] = vec2(0.487472, -0.063082);
+	poissonDisk[26] = vec2(-0.084078, 0.898312);
+	poissonDisk[27] = vec2(0.488876, -0.783441);
+	poissonDisk[28] = vec2(0.470016, 0.217933);
+	poissonDisk[29] = vec2(-0.696890, -0.549791);
+	poissonDisk[30] = vec2(-0.149693, 0.605762);
+	poissonDisk[31] = vec2(0.034211, 0.979980);
+	poissonDisk[32] = vec2(0.503098, -0.308878);
+	poissonDisk[33] = vec2(-0.016205, -0.872921);
+	poissonDisk[34] = vec2(0.385784, -0.393902);
+	poissonDisk[35] = vec2(-0.146886, -0.859249);
+	poissonDisk[36] = vec2(0.643361, 0.164098);
+	poissonDisk[37] = vec2(0.634388, -0.049471);
+	poissonDisk[38] = vec2(-0.688894, 0.007843);
+	poissonDisk[39] = vec2(0.464034, -0.188818);
+	poissonDisk[40] = vec2(-0.440840, 0.137486);
+	poissonDisk[41] = vec2(0.364483, 0.511704);
+	poissonDisk[42] = vec2(0.034028, 0.325968);
+	poissonDisk[43] = vec2(0.099094, -0.308023);
+	poissonDisk[44] = vec2(0.693960, -0.366253);
+	poissonDisk[45] = vec2(0.678884, -0.204688);
+	poissonDisk[46] = vec2(0.001801, 0.780328);
+	poissonDisk[47] = vec2(0.145177, -0.898984);
+	poissonDisk[48] = vec2(0.062655, -0.611866);
+	poissonDisk[49] = vec2(0.315226, -0.604297);
+	poissonDisk[50] = vec2(-0.780145, 0.486251);
+	poissonDisk[51] = vec2(-0.371868, 0.882138);
+	poissonDisk[52] = vec2(0.200476, 0.494430);
+	poissonDisk[53] = vec2(-0.494552, -0.711051);
+	poissonDisk[54] = vec2(0.612476, 0.705252);
+	poissonDisk[55] = vec2(-0.578845, -0.768792);
+	poissonDisk[56] = vec2(-0.772454, -0.090976);
+	poissonDisk[57] = vec2(0.504440, 0.372295);
+	poissonDisk[58] = vec2(0.155736, 0.065157);
+	poissonDisk[59] = vec2(0.391522, 0.849605);
+	poissonDisk[60] = vec2(-0.620106, -0.328104);
+	poissonDisk[61] = vec2(0.789239, -0.419965);
+	poissonDisk[62] = vec2(-0.545396, 0.538133);
+	poissonDisk[63] = vec2(-0.178564, -0.596057);
+	
+	vec4 result = textureLod(sampler, texCoords, 0).rgba;
+	
+	vec4 centerSample = result;
+	float centerSampleDepth = textureLod(normalMap, texCoords, 0).a;
+	
+	const float NUM_SAMPLES = 16;
+	float radiusFactor = roughness * 0.05;
+	float normalization = 0.0;
+	for(int i = 0; i < NUM_SAMPLES; i++) {
+		vec4 currentSample = textureLod(sampler, texCoords + radiusFactor * poissonDisk[i], 0);
+		float currentSampleDepth = textureLod(normalMap, texCoords + poissonDisk[i], 0).a;
+		
+		float closeness = 1-distance(currentSampleDepth, centerSampleDepth);
+		closeness *= closeness;
+		float sampleWeight = closeness;
+		result += sampleWeight * currentSample;
+		
+		normalization += (1-closeness); // this is the amount we have lost.
+	}
+	
+	return (result + normalization*centerSample) / (NUM_SAMPLES+1);
+}
+
 
 const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13790712, 0.24864247, 0.44301823),vec3(0.33715037, 0.56794053, -0.005789503),vec3(-0.6999805, -0.04511441, -0.0019965635),vec3(0.06896307, -0.15983082, -0.85477847),vec3(0.056099437, 0.006954967, -0.1843352),vec3(-0.014653638, 0.14027752, 0.0762037),vec3(0.010019933, -0.1924225, -0.034443386),vec3(-0.35775623, -0.5301969, -0.43581226),vec3(-0.3169221, 0.106360726, 0.015860917),vec3(0.010350345, -0.58698344, 0.0046293875),vec3(-0.08972908, -0.49408212, 0.3287904),vec3(0.7119986, -0.0154690035, -0.09183723),vec3(-0.053382345, 0.059675813, -0.5411899),vec3(0.035267662, -0.063188605, 0.54602677),vec3(-0.47761092, 0.2847911, -0.0271716));
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor, vec3 reflectedColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	V = ViewVector;
@@ -139,7 +267,9 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float F0 = 0.02;
 	// Specular in the range of 0.02 - 0.2
 	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
-	F0 = max(F0, ((1-roughness)*0.2));
+	float glossiness = (1-roughness);
+	float maxSpecular = mix(0.2, 1.0, metallic);
+	F0 = max(F0, (glossiness*maxSpecular));
 	//F0 = max(F0, metallic*0.2);
     float fresnel = 1; fresnel -= dot(V, H);
 	fresnel = pow(fresnel, 5.0);
@@ -149,12 +279,15 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightColor.rgb) * NdotL;
-	//diff = (diff.rgb/3.1416) * (1-F0);
-	//diff *= (1/3.1416*alpha*alpha);
+	diff = diff * (1-F0); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	
 	
 	float specularAdjust = length(lightColor.rgb)/length(vec3(1,1,1));
 	
-	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
+	
+	return diff + reflectedColor *cookTorrance;
+	//return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
 void main(void) {
@@ -195,20 +328,22 @@ void main(void) {
 	vec4 environmentColorAO = textureLod(diffuseEnvironment, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	vec3 environmentColor = clamp(environmentColorAO.rgb, vec3(0,0,0), vec3(1,1,1));
+	environmentColor = bilateralBlurReflection(diffuseEnvironment, st).rgb;
+	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	float ao = environmentColorAO.a;
 	vec3 reflectedColor = clamp(textureLod(specularEnvironment, st, 0).rgb, vec3(0,0,0), vec3(1,1,1));
+	reflectedColor = bilateralBlurReflection(specularEnvironment, st).rgb;
+	//reflectedColor = imageSpaceGatherReflection(specularEnvironment, st, roughness).rgb;
 	
 	float reflectionMixer = glossiness; // the glossier, the more reflecting, so glossiness is our mixer
 	vec3 specularTerm = 2*specularColor * specularFactor;
 	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*color;
 	
-	vec3 ambientTerm = ambientColor * color.rgb;// + 0.1* reflectedColor;
+	vec3 ambientTerm = ambientColor * mix(color.rgb, reflectedColor.rgb, reflectionMixer);
 	
-	vec4 ambientDiffuseSpecular = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor);
-	vec3 ambientDiffuse = ambientDiffuseSpecular.rgb;
-	vec3 ambientSpecular = clamp(ambientDiffuseSpecular.w, 0, 1) * reflectedColor;
+	vec3 ambientDiffuseSpecular = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor, specularColor * reflectedColor);
 	
-	ambientTerm = 2*ambientColor * color * ambientDiffuse + 2*vec3(1,1,1) * specularColor * ambientSpecular;
+	ambientTerm = 2*ambientColor*ambientDiffuseSpecular * color.rgb;
 
 	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + vec4(diffuseTerm, 1) + vec4(specularTerm,1);

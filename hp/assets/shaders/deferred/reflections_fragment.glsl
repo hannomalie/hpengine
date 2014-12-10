@@ -62,7 +62,7 @@ mat3 createOrthonormalBasis(vec3 n) {
 
 // https://www.opengl.org/discussion_boards/showthread.php/164815-Taking-multiple-samples-in-cubemap-shadowmaps
 vec4 sampleCubeMap(int index, vec3 n, float roughness) {
-	const int NUM_SAMPLES = 12;
+	const int NUM_SAMPLES = 10;
 	
 	vec2 poissonDisk[64];
 	poissonDisk[0] = vec2(-0.613392, 0.617481);
@@ -138,9 +138,10 @@ vec4 sampleCubeMap(int index, vec3 n, float roughness) {
 	float roughnessMapping = 6 +  glossiness * glossiness * 100;
 	for(int i = 0; i < NUM_SAMPLES; i++) {
 		vec2 sample_2d = poissonDisk[i]/roughnessMapping;
+		//vec2 sample_2d = poissonDisk[i];
 		vec3 sample_3d = vec3(sample_2d.x, 1 - sqrt(length(sample_2d)), sample_2d.y);
 		vec3 transformed_sample = inverse(basis) * sample_3d;
-		result += textureLod(probes, vec4(normalize(transformed_sample), index), 0);
+		result += textureLod(probes, vec4(normalize(transformed_sample), index), 0);// * clamp(dot(sample_3d, -n),0,1);
 	}
 	
 	return result / (NUM_SAMPLES + 1);
@@ -254,10 +255,11 @@ vec3 rayCastReflect(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosV
 				const float metalSpecularBoost = 1.4;
     			vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost*diffuseColorMetallic.rgb, diffuseColorMetallic.a);
 			  	const float metalBias = 0.1;
+			  	vec3 ambientDiffuseColor = diffuseColor;
 			  	diffuseColor = mix(diffuseColorMetallic.xyz, vec3(0,0,0), clamp(diffuseColorMetallic.a - metalBias, 0, 1));
     			
     			vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, resultCoords.xy, mipMapChoser-2);
-    			vec3 reflectedColor = diffuseColor.rgb * lightDiffuseSpecular.rgb; // since no specular and ambient termn, approximate it with a factor of two
+    			vec3 reflectedColor = (0.4 * ambientColor) * ambientDiffuseColor + diffuseColor.rgb * lightDiffuseSpecular.rgb; // since no specular and ambient termn, approximate it with a factor of two
     			reflectedColor += clamp(lightDiffuseSpecular.a, 0, 1) * specularColor;
 				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
 		  	}
@@ -426,7 +428,7 @@ float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum) {
 	return max(overhead.x, max(overhead.y, overhead.z));
 }
 const bool NO_INTERPOLATION_IF_ONE_PROBE_GIVEN = true;
-const bool DONT_USE_PROBES_MIPMAPS = false;
+const bool MULTIPLE_SAMPLES = false;
 
 vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, vec2 uv) {
 	const float MAX_MIPMAPLEVEL = 11;
@@ -445,12 +447,12 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 		vec3 t3d = normalize(normalWorld);
 		vec3 t3d_bp = boxProjection(positionWorld, t3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 		vec4 c = textureLod(probes, vec4(t3d_bp, probeIndexNearest), mipMapLevel);
-		if(DONT_USE_PROBES_MIPMAPS) {
+		if(MULTIPLE_SAMPLES) {
 			c = sampleCubeMap(probeIndexNearest, t3d_bp, roughness);
 		}
 		if (NO_INTERPOLATION_IF_ONE_PROBE_GIVEN) {
 			if (c.a == 0) {
-				//return c.rgb;
+				return c.rgb;
 				return textureLod(globalEnvironmentMap, normalWorld, mipMapLevel).rgb;
 			} else {
 				return c.rgb;
@@ -469,13 +471,13 @@ vec3 getProbeColor(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness
 	mipMapLevel *= clamp(distance(positionWorld, boxProjectedNearest)/50, 0, 1);
 	mipMapLevelSecond *= clamp(distance(positionWorld, boxProjectedSecondNearest)/50, 0, 1);
 	vec4 colorVisibilityNearest = textureLod(probes, vec4(boxProjectedNearest, probeIndexNearest), mipMapLevel);
-	if(DONT_USE_PROBES_MIPMAPS) {
+	if(MULTIPLE_SAMPLES) {
 		colorVisibilityNearest = sampleCubeMap(probeIndexNearest, boxProjectedNearest, roughness);
 	}
 	vec3 colorNearest = colorVisibilityNearest.rgb;
 	
 	vec4 colorVisibilitySecondNearest = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond);
-	if(DONT_USE_PROBES_MIPMAPS) {
+	if(MULTIPLE_SAMPLES) {
 		colorVisibilitySecondNearest = sampleCubeMap(probeIndexSecondNearest, boxProjectedSecondNearest, roughness);
 	}
 	vec3 colorSecondNearest = colorVisibilitySecondNearest.rgb;
@@ -503,9 +505,10 @@ void main()
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
 	vec3 color = textureLod(diffuseMap, st, 0).rgb;
 	float roughness = positionViewRoughness.a;
+	//roughness = 0;
 	
 	out_diffuseEnvironment.rgb = getProbeColor(positionWorld, V, normalWorld, roughness, st);
 	out_diffuseEnvironment.a = getAmbientOcclusion(st);
 	out_specularEnvironment.rgb = getProbeColor(positionWorld, V, normalize(reflect(V, normalWorld)), roughness, st);
-	//out_specularEnvironment.rgb = rayCastReflect(color, out_specularEnvironment.rgb, st, positionView, normalView.rgb, roughness);
+	out_specularEnvironment.rgb = rayCastReflect(color, out_specularEnvironment.rgb, st, positionView, normalView.rgb, roughness);
 }

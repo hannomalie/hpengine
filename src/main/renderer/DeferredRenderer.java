@@ -389,14 +389,7 @@ public class DeferredRenderer implements Renderer {
 		gBuffer.drawFirstPass(camera, octree, pointLights, tubeLights, areaLights);
 		GPUProfiler.end();
 
-//		if(frameCount%1 == 0) {
-//			GPUProfiler.start("Environment probes");
-//			environmentProbeFactory.draw(octree, light);
-//			GPUProfiler.end();
-//		}
-
-		environmentProbeFactory.drawAlternating(octree, light, frameCount);
-		
+		environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
 		
 		GPUProfiler.start("Shadowmap pass");
 		light.drawShadowMap(octree);

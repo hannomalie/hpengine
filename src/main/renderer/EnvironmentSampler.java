@@ -178,7 +178,7 @@ public class EnvironmentSampler {
 	
 	private void rotateForIndex(int i, Camera camera) {
 		float deltaNear = 0.0f;
-		float deltaFar = 100.1f;
+		float deltaFar = 100.8f;
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;

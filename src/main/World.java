@@ -34,6 +34,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.laf.WebLookAndFeel;
 import com.bulletphysics.collision.broadphase.BroadphaseInterface;
@@ -130,6 +131,8 @@ public class World {
 		scene = new Scene(renderer);
 		camera = new Camera(renderer);
 		activeCamera = camera;
+		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
+		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 		try {
 			light.init(renderer);
 		} catch (Exception e) {
@@ -151,6 +154,8 @@ public class World {
 		scene.init(renderer);
 		camera = new Camera(renderer);
 		activeCamera = camera;
+		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
+		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 		try {
 			light.init(renderer);
 		} catch (Exception e) {

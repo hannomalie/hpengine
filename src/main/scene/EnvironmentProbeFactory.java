@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import main.World;
+import main.camera.Camera;
 import main.model.DataChannels;
 import main.model.Entity;
 import main.model.IEntity;
@@ -72,25 +73,43 @@ public class EnvironmentProbeFactory {
 	public void draw(Octree octree, DirectionalLight light) {
 		if(!World.DRAW_PROBES) { return; }
 		
-		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
-		for (EnvironmentProbe environmentProbe : dynamicProbes) {
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		cubeMapArrayRenderTarget.use(false);
+		
+		List<EnvironmentProbe> dynamicProbes = probes.stream().
+				filter(probe -> { return probe.update == Update.DYNAMIC; }).
+				collect(Collectors.toList());
+		
+		int counter = 0;
+		for (int i = 1; i <= dynamicProbes.size(); i++) {
+			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 			environmentProbe.draw(octree, light);
 		}
 	}
 	
-	public void drawAlternating(Octree octree, DirectionalLight light, int frameCount) {
+	public void drawAlternating(Octree octree, Camera camera, DirectionalLight light, int frameCount) {
 		if(!World.DRAW_PROBES) { return; }
 
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		cubeMapArrayRenderTarget.use(false);
 		
-		List<EnvironmentProbe> dynamicProbes = probes.stream().filter(probe -> { return probe.update == Update.DYNAMIC; }).collect(Collectors.toList());
+		List<EnvironmentProbe> dynamicProbes = probes.stream().
+				filter(probe -> { return probe.update == Update.DYNAMIC; }).
+				sorted(new Comparator<EnvironmentProbe>() {
+
+					@Override
+					public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
+						return Float.compare(Vector3f.sub(o1.getCenter(), camera.getPosition().negate(null), null).lengthSquared(), Vector3f.sub(o2.getCenter(), camera.getPosition().negate(null), null).lengthSquared());
+					}
+				}).
+				collect(Collectors.toList());
 		
 		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			if(frameCount%i == 0) {
-//				if (counter > MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
+				if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 				environmentProbe.draw(octree, light);
 			};
@@ -104,9 +123,9 @@ public class EnvironmentProbeFactory {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
-			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
-			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
-			renderer.drawLine(clipStart, clipEnd);
+//			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
+//			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
+//			renderer.drawLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
 		    renderer.drawLines(program);
@@ -155,10 +174,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void drawInitial(Octree octree) {
-		List<EnvironmentProbe> staticProbes = probes.stream().filter(probe -> { return probe.update == Update.STATIC; }).collect(Collectors.toList());
-		for (EnvironmentProbe environmentProbe : staticProbes) {
-			environmentProbe.draw(octree, World.light);
-		}
+		draw(octree, World.light);
 	}
 	
 	public CubeMapArray getEnvironmentMapsArray() {
