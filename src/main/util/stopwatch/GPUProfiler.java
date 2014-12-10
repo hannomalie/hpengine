@@ -1,9 +1,14 @@
 package main.util.stopwatch;
 
-import java.util.ArrayList;
+import static org.lwjgl.opengl.GL15.glGenQueries;
+import static org.lwjgl.opengl.GL33.GL_TIMESTAMP;
+import static org.lwjgl.opengl.GL33.glQueryCounter;
 
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL33.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Vector;
 
 public class GPUProfiler {
 
@@ -16,11 +21,13 @@ public class GPUProfiler {
 	private static GPUTaskProfile currentTask;
 
 	private static ArrayList<GPUTaskProfile> completedFrames;
+	private static ArrayList<Record> collectedTimes;
 
 	static {
 		queryObjects = new ArrayList<>();
 		frameCounter = 0;
 		completedFrames = new ArrayList<>();
+		collectedTimes = new ArrayList<>();
 	}
 
 	public static void startFrame() {
@@ -72,6 +79,9 @@ public class GPUProfiler {
 
 		GPUTaskProfile frame = completedFrames.get(0);
 		if (frame.resultsAvailable()) {
+			for (Entry<String, Long> entrySet : frame.getTimesTaken().entrySet()) {
+				collectedTimes.add(new Record(entrySet.getKey(), entrySet.getValue()));
+			}
 			return completedFrames.remove(0);
 		} else {
 			return null;
@@ -89,5 +99,54 @@ public class GPUProfiler {
 		glQueryCounter(query, GL_TIMESTAMP);
 
 		return query;
+	}
+	
+	public static void dumpAverages() {
+		dumpAverages(Integer.MAX_VALUE);
+	}	
+	
+	public static void dumpAverages(int sampleCount) {
+		
+		Map<String, AverageHelper> averages = new HashMap<>();
+		
+		//for (Record record : collectedTimes) {
+		for(int i = collectedTimes.size(); i > 0; i--) {
+			Record record = collectedTimes.get(i-1);
+			AverageHelper averageHelper = averages.get(record.name);
+			if(averageHelper == null) {
+				averageHelper = new AverageHelper();
+				averages.put(record.name, averageHelper);
+			}
+			if(averageHelper.count < sampleCount) {
+				averageHelper.count++;
+				averageHelper.summedTime += record.time;
+			}
+		}
+		
+		if(averages.isEmpty()) { return; }
+		System.out.println("##########################################");
+		System.out.println("name\t\t\t\t|  time in ms\t|\tsamples");
+		averages.entrySet().stream().forEach(s -> {
+			String name = s.getKey();
+			while(name.length() < 30) {
+				name += " ";
+			}
+			System.out.println(String.format("%s\t|  %.5f\t|\t%s", name.substring(0, Math.min(name.length(), 30)), (s.getValue().summedTime / s.getValue().count) / 1000 / 1000f, s.getValue().count));
+		});
+	}
+
+	public static class Record {
+		public String name = "";
+		public Long time = new Long(0);
+		
+		public Record(String name, long time) {
+			this.name = name;
+			this.time = time;
+		}
+		private Record() {}
+	}
+	public static class AverageHelper {
+		public Integer count = new Integer(0);
+		public Long summedTime = new Long(0);
 	}
 }

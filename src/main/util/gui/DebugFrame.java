@@ -2,6 +2,7 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -12,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -25,6 +27,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+
 import main.World;
 import main.model.IEntity;
 import main.octree.Octree;
@@ -35,6 +38,7 @@ import main.renderer.command.AddCubeMapCommand;
 import main.renderer.command.AddTextureCommand;
 import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.command.Command;
+import main.renderer.command.DumpAveragesCommand;
 import main.renderer.light.AreaLight;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
@@ -47,6 +51,7 @@ import main.util.gui.input.SliderInput;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
+
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -54,6 +59,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
@@ -63,6 +69,7 @@ import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
 import com.alee.extended.tree.WebCheckBoxTree;
+import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.filechooser.WebFileChooser;
@@ -78,7 +85,6 @@ import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-
 
 
 public class DebugFrame {
@@ -108,6 +114,7 @@ public class DebugFrame {
 
 	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", false);
+	private WebButton dumpAverages = new WebButton("Dump Averages");
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
@@ -205,6 +212,11 @@ public class DebugFrame {
 			}
 			
 		});
+		
+		dumpAverages.addActionListener(e -> {
+			world.getRenderer().addCommand(new DumpAveragesCommand(1000));
+		});
+		
 		toggleParallax.addActionListener( e -> {
 			World.useParallax = !World.useParallax;
 			World.useSteepParallax = false;
@@ -332,6 +344,7 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDrawLights);
 		mainButtonElements.add(toggleFileReload);
 		mainButtonElements.add(toggleProfiler);
+		mainButtonElements.add(dumpAverages);
 		mainButtonElements.add(toggleParallax);
 		mainButtonElements.add(toggleSteepParallax);
 		mainButtonElements.add(toggleAmbientOcclusion);

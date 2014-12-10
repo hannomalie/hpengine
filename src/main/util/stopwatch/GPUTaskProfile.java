@@ -1,10 +1,14 @@
 package main.util.stopwatch;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.opengl.GL11.GL_TRUE;
+import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT;
+import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT_AVAILABLE;
+import static org.lwjgl.opengl.GL15.glGetQueryObjectui;
+import static org.lwjgl.opengl.GL33.glGetQueryObjectui64;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class GPUTaskProfile {
 
@@ -91,9 +95,24 @@ public class GPUTaskProfile {
 		for (int i = 0; i < indentation; i++) {
 			System.out.print("    ");
 		}
-		System.out.println(name + " : " + getTimeTaken() / 1000 / 1000f + "ms");
+		System.out.println(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));
 		for (int i = 0; i < children.size(); i++) {
 			children.get(i).dump(indentation + 1);
 		}
+	}
+	
+	public Map<String, Long> getTimesTaken() {
+		Map<String, Long> result = new HashMap();
+		
+		if(!name.startsWith("Frame")) {
+			result.put(name, getTimeTaken());
+		} else {
+			result.put("Frame", getTimeTaken());
+		}
+		for (GPUTaskProfile gpuTaskProfile : children) {
+			result.putAll(gpuTaskProfile.getTimesTaken());
+		}	
+		
+		return result;
 	}
 }

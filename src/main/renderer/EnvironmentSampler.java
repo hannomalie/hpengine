@@ -117,6 +117,7 @@ public class EnvironmentSampler {
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 			
 			drawEntities(light, visibles, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+			GPUProfiler.end();
 			
 			drawnOnce = true;
 		}
@@ -155,7 +156,6 @@ public class EnvironmentSampler {
 			
 			e.getVertexBuffer().draw();
 		}
-		GPUProfiler.end();
 		GPUProfiler.end();
 	}
 
