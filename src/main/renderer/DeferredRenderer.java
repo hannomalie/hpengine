@@ -412,11 +412,10 @@ public class DeferredRenderer implements Renderer {
 //		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			//drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		
 	}
 
 	private void drawToQuad(int texture, VertexBuffer buffer) {

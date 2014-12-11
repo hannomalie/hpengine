@@ -2,7 +2,6 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -14,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -26,7 +25,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
-
 
 import main.World;
 import main.model.IEntity;
@@ -51,7 +49,6 @@ import main.util.gui.input.SliderInput;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
-
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -60,10 +57,8 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
-
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
-import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
@@ -139,6 +134,13 @@ public class DebugFrame {
 		public void onValueChange(int value, int delta) {
 			World.light.setScatterFactor((float)value);
 			
+		}
+	};
+	SliderInput rainEffectSlider = new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
+		
+		@Override
+		public void onValueChange(int value, int delta) {
+			World.RAINEFFECT = (float) value/100;
 		}
 	};
 
@@ -321,20 +323,6 @@ public class DebugFrame {
 		});
 
 ////////////////
-	    List<Component> mainElements = new ArrayList<>();
-		mainElements.add(new WebLabel("Ambient Occlusion Radius"));
-		mainElements.add(ambientOcclusionRadiusSlider);
-		mainElements.add(new WebLabel("Ambient Occlusion Strength"));
-		mainElements.add(ambientOcclusionTotalStrengthSlider);
-		mainElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, World.EXPOSURE) {
-			@Override
-			public void onValueChange(int value, int delta) {
-				World.EXPOSURE = value;
-			}
-		});
-        Component[] mainElementsArray = new Component[mainElements.size()];
-        mainElements.toArray(mainElementsArray);
-////////////////
 	    List<Component> mainButtonElements = new ArrayList<>();
 	    mainButtonElements.add(toggleDrawLines);
 	    mainButtonElements.add(toggleDrawScene);
@@ -352,6 +340,14 @@ public class DebugFrame {
 		mainButtonElements.add(toggleFrustumCulling);
 		mainButtonElements.add(toggleVSync);
 		mainButtonElements.add(toggleInstantRadiosity);
+		mainButtonElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, World.EXPOSURE) {
+			@Override
+			public void onValueChange(int value, int delta) {
+				World.EXPOSURE = value;
+			}
+		});
+		mainButtonElements.add(scatteringSlider);
+		mainButtonElements.add(rainEffectSlider);
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);
         GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length, 1, 5, mainButtonsElementsArray);
@@ -385,7 +381,7 @@ public class DebugFrame {
 	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserLabel);
 	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserPanel);
 	    
-		GroupPanel mainGroupPanel = new GroupPanel(buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel, scatteringSlider), new GridPanel(4,1,4,mainElementsArray));
+	    GridPanel mainGroupPanel = new GridPanel(1, 2, 4, buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel));
         mainPane = new WebScrollPane(mainGroupPanel);
         
 		WebMenuBar menuBar = new WebMenuBar ();

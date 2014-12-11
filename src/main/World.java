@@ -77,6 +77,7 @@ public class World {
 	public static volatile boolean DRAW_PROBES = true;
 	public static volatile boolean VSYNC_ENABLED = false;
 
+	public static float RAINEFFECT = 0.0f;
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	public static int EXPOSURE = 4;

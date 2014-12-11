@@ -247,6 +247,8 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.use();
 		currentProgram.setUniform("useParallax", World.useParallax);
 		currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
+		currentProgram.setUniform("useRainEffect", World.RAINEFFECT == 0.0 ? false : true);
+		currentProgram.setUniform("rainEffect", World.RAINEFFECT);
 		currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());

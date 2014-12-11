@@ -33,6 +33,7 @@ in vec3 position;
 in vec2 texCoord;
 
 out vec4 out_color;
+
 vec3 Uncharted2Tonemap(vec3 x)
 {
     float A = 0.15;
@@ -240,10 +241,10 @@ float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 lightColor, vec3 reflectedColor) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 diffuseColor, vec3 reflectedColor, vec3 albedo, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
-	V = ViewVector;
+	V = normalize(ViewVector);
  	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -278,15 +279,12 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float F = fresnel + F0;
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
-	vec3 diff = vec3(lightColor.rgb) * NdotL;
-	diff = diff * (1-F0); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
-	
-	
-	float specularAdjust = length(lightColor.rgb)/length(vec3(1,1,1));
+	vec3 diff = diffuseColor * albedo;
+	diff = diff * clamp(1-fresnel, 0.0, 1.0); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
-	return diff + reflectedColor *cookTorrance;
+	return diff + reflectedColor * specularColor * cookTorrance;
 	//return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
@@ -317,7 +315,7 @@ void main(void) {
   	
 	const float metalSpecularBoost = 1.0;
   	vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost*colorMetallic.rgb, metallic);
-  	const float metalBias = 0.1;
+  	const float metalBias = 0.0;
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
@@ -341,9 +339,9 @@ void main(void) {
 	
 	vec3 ambientTerm = ambientColor * mix(color.rgb, reflectedColor.rgb, reflectionMixer);
 	
-	vec3 ambientDiffuseSpecular = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor, specularColor * reflectedColor);
+	vec3 ambientDiffuseSpecular = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor, reflectedColor, color, specularColor);
 	
-	ambientTerm = 2*ambientColor*ambientDiffuseSpecular * color.rgb;
+	ambientTerm = 2*ambientColor*ambientDiffuseSpecular;
 
 	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + vec4(diffuseTerm, 1) + vec4(specularTerm,1);
@@ -375,15 +373,4 @@ void main(void) {
 	//out_color.rgb = reflectedColor.rgb;
 	//out_color.rgb = texture(probes, vec4(normalWorld, 0), 0).rgb;
 	//out_color.rgb = texture(globalEnvironmentMap, normalWorld, 0).rgb;
-	
-	/*int probeIndex = int(textureLod(motionMap, st, 0).x);
-	if(probeIndex == 191) {
-		out_color.rgb = vec3(1,0,0);
-	} else if(probeIndex == 190) {
-		out_color.rgb = vec3(0,1,0);
-	} else if(probeIndex == 189) {
-		out_color.rgb = vec3(0,0,1);
-	} else if(probeIndex == 0) {
-		out_color.rgb = vec3(1,0,1);
-	}*/
 }
