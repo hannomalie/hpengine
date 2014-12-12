@@ -40,6 +40,10 @@ public class Uniform {
 //		if(location == -1) { return; };
 		GL20.glUniformMatrix4(location, false, values);
 	}
+
+	public void putVectorArrayAsFloatBuffer(FloatBuffer values) {
+		GL20.glUniform3(location, values);
+	}
 	
 	public Uniform setLocationIfAbsent() {
 		if (location == -1) {

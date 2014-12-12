@@ -259,6 +259,11 @@ public class Program implements Reloadable {
 		putInMapIfAbsent(name);
 		uniforms.get(name).set(vec.x, vec.y, vec.z);
 	}
+
+	public void setUniformVector3ArrayAsFloatBuffer(String name, FloatBuffer values) {
+		putInMapIfAbsent(name);
+		uniforms.get(name).putVectorArrayAsFloatBuffer(values);
+	}
 	
 	public void setUniformAsBlock(String name, float[] fs) {
 		putBlockInMapIfAbsent(name);
@@ -294,4 +299,5 @@ public class Program implements Reloadable {
 	public static String getDirectory() {
 		return World.WORKDIR_NAME + "/assets/shaders/deferred/";
 	}
+
 }

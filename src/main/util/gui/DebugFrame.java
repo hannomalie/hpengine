@@ -6,17 +6,22 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import javax.script.ScriptException;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -49,6 +54,7 @@ import main.util.gui.input.SliderInput;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -80,6 +86,9 @@ import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.sun.corba.se.spi.orbutil.fsm.Action;
+import com.sun.corba.se.spi.orbutil.fsm.FSM;
+import com.sun.corba.se.spi.orbutil.fsm.Input;
 
 
 public class DebugFrame {
@@ -167,6 +176,11 @@ public class DebugFrame {
 		mainFrame.getContentPane().removeAll();
 		mainFrame.setLayout(new BorderLayout(5,5));
 
+		try {
+			console.setText(FileUtils.readFileToString(new File("hp/assets/scripts/console.js")));
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
 		console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
 		console.setCodeFoldingEnabled(true);
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
@@ -576,7 +590,18 @@ public class DebugFrame {
         runScriptMenuItem.addActionListener(e -> {
 			try {
 				scriptManager.eval(console.getText());
-			} catch (Exception e1) {
+			} catch (ScriptException e1) {
+				showError("Line " + e1.getLineNumber() + " contains errors.");
+				e1.printStackTrace();
+			}
+		});
+        
+        WebMenuItem saveScriptMenuItem = new WebMenuItem("Save Script");
+        saveScriptMenuItem.addActionListener(e -> {
+			try {
+				FileUtils.writeStringToFile(new File("hp/assets/scripts/console.js"), console.getText());
+			} catch (IOException e1) {
+				showError(e1.toString());
 				e1.printStackTrace();
 			}
 		});
@@ -643,6 +668,7 @@ public class DebugFrame {
         menuBar.add(menuLight);
         menuBar.add(menuTextures);
         menuBar.add(runScriptMenuItem);
+        menuBar.add(saveScriptMenuItem);
         mainFrame.setJMenuBar(menuBar);
         
 		mainFrame.add(tabbedPane);

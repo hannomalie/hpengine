@@ -1,5 +1,6 @@
 package main.scene;
 
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -26,11 +27,13 @@ import main.texture.DynamicCubeMap;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentProbeFactory {
 	public static final int MAX_PROBES = 100;
@@ -47,6 +50,9 @@ public class EnvironmentProbeFactory {
 	
 	private CubeMapArray environmentMapsArray;
 	private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
+
+	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
+	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
@@ -67,7 +73,39 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update) {
 		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update);
 		probes.add(probe);
+		updateBuffers();
 		return probe;
+	}
+	
+	private void updateBuffers() {
+		minPositions = BufferUtils.createFloatBuffer(100*3);
+		maxPositions = BufferUtils.createFloatBuffer(100*3);
+		float[] srcMinPositions = new float[100*3];
+		float[] srcMaxPositions = new float[100*3];
+		
+		for(int i = 0; i < probes.size(); i++) {
+			Vector3f min = probes.get(i).getBox().getBottomLeftBackCorner();
+			Vector3f max = probes.get(i).getBox().getTopRightForeCorner();
+			srcMinPositions[3*i] = min.x;
+			srcMinPositions[3*i+1] = min.y;
+			srcMinPositions[3*i+2] = min.z;
+			
+			srcMaxPositions[3*i] = max.x;
+			srcMaxPositions[3*i+1] = max.y;
+			srcMaxPositions[3*i+2] = max.z;
+		}
+		
+		minPositions.put(srcMinPositions);
+		maxPositions.put(srcMaxPositions);
+		minPositions.rewind();
+		maxPositions.rewind();
+	}
+
+	public FloatBuffer getMinPositions() {
+		return minPositions;
+	}
+	public FloatBuffer getMaxPositions() {
+		return maxPositions;
 	}
 	
 	public void draw(Octree octree, DirectionalLight light) {

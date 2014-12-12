@@ -13,6 +13,7 @@ import java.util.Vector;
 public class GPUProfiler {
 
 	public static boolean PROFILING_ENABLED = false;
+	public static boolean PRINTING_ENABLED = true;
 
 	private static ArrayList<GPUTaskProfile> tasks = new ArrayList<>();
 	private static ArrayList<Integer> queryObjects = new ArrayList<>();
@@ -99,6 +100,10 @@ public class GPUProfiler {
 		glQueryCounter(query, GL_TIMESTAMP);
 
 		return query;
+	}
+	
+	public static void resetCollectedTimes() {
+		collectedTimes.clear();
 	}
 	
 	public static void dumpAverages() {

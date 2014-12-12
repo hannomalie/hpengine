@@ -28,6 +28,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -500,13 +501,15 @@ public class GBuffer {
 	}
 	
 	private void bindEnvironmentProbePositions(Program program) {
-		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
-			int probeIndex = probe.getIndex();
-			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
-			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
-//			System.out.println(String.format("environmentMapMin[%d] has %s", probeIndex, probe.getBox().getBottomLeftBackCorner()));
-//			System.out.println(String.format("environmentMapMax[%d] has %s", probeIndex, probe.getBox().getTopRightForeCorner()));
-		});
+
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
+		
+//		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+//			int probeIndex = probe.getIndex();
+//			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
+//			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
+//		});
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {

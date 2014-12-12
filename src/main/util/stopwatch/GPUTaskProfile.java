@@ -92,10 +92,12 @@ public class GPUTaskProfile {
 	}
 
 	private void dump(int indentation) {
-		for (int i = 0; i < indentation; i++) {
-			System.out.print("    ");
+		if(GPUProfiler.PRINTING_ENABLED) {
+			for (int i = 0; i < indentation; i++) {
+				System.out.print("    ");
+			}
+			System.out.println(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));	
 		}
-		System.out.println(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));
 		for (int i = 0; i < children.size(); i++) {
 			children.get(i).dump(indentation + 1);
 		}
