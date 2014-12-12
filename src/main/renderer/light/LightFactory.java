@@ -1,29 +1,31 @@
 package main.renderer.light;
 
-import java.awt.Color;
-import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
-
-import com.sun.javafx.geom.Vec4f;
-
 import main.World;
 import main.model.Model;
-import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class LightFactory {
 	
 
 	private List<PointLight> pointLights = new ArrayList<>();
+	private int pointLightsForwardMaxCount = 20;
+	private FloatBuffer pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
+	private FloatBuffer pointLightColors = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
+	private FloatBuffer pointLightRadiuses = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount);
+	
 	private List<TubeLight> tubeLights = new ArrayList<>();
 	private List<AreaLight> areaLights = new ArrayList<>();
 	
@@ -57,6 +59,10 @@ public class LightFactory {
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity) {
 		return getPointLight(position, model, colorIntensity, PointLight.DEFAULT_RANGE);
 	}
+
+	public PointLight getPointLight() {
+		return getPointLight(sphereModel);
+	}
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
     		put(MAP.DIFFUSE,"assets/textures/default.dds");
@@ -64,11 +70,47 @@ public class LightFactory {
 		
 		PointLight light = new PointLight(renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
 		pointLights.add(light);
+		updatePointLightArrays();
 		return light;
 	}
+	private void updatePointLightArrays() {
+		float[] positions = new float[pointLightsForwardMaxCount*3];
+		float[] colors = new float[pointLightsForwardMaxCount*3];
+		float[] radiuses = new float[pointLightsForwardMaxCount];
+		
+		for(int i = 0; i < pointLights.size(); i++) {
+			PointLight light = pointLights.get(i);
+			positions[3*i] = light.getPosition().x;
+			positions[3*i+1] = light.getPosition().y;
+			positions[3*i+2] = light.getPosition().z;
+			
+			colors[3*i] = light.getColor().x;
+			colors[3*i+1] = light.getColor().y;
+			colors[3*i+2] = light.getColor().z;
+			
+			radiuses[i] = light.getRadius();
+		}
 
-	public PointLight getPointLight() {
-		return getPointLight(sphereModel);
+		pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount*3);
+		pointLightPositions.put(positions);
+		pointLightPositions.rewind();
+		pointLightColors = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount*3);
+		pointLightColors.put(colors);
+		pointLightColors.rewind();
+		pointLightRadiuses = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount);
+		pointLightRadiuses.put(radiuses);
+		pointLightRadiuses.rewind();
+	}
+
+	public FloatBuffer getPointLightPositions() {
+		updatePointLightArrays();
+		return pointLightPositions;
+	}
+	public FloatBuffer getPointLightColors() {
+		return pointLightColors;
+	}
+	public FloatBuffer getPointLightRadiuses() {
+		return pointLightRadiuses;
 	}
 
 	public TubeLight getTubeLight() {

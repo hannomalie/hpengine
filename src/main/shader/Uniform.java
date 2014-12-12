@@ -41,8 +41,11 @@ public class Uniform {
 		GL20.glUniformMatrix4(location, false, values);
 	}
 
-	public void putVectorArrayAsFloatBuffer(FloatBuffer values) {
+	public void setVec3ArrayAsFloatBuffer(FloatBuffer values) {
 		GL20.glUniform3(location, values);
+	}
+	public void setFloatArrayAsFloatBuffer(FloatBuffer values) {
+		GL20.glUniform1(location, values);
 	}
 	
 	public Uniform setLocationIfAbsent() {

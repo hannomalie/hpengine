@@ -228,6 +228,7 @@ public class GBuffer {
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glCullFace(GL11.GL_BACK);
 		renderReflectionsAndAO(viewMatrix, projectionMatrix);
 
 		GPUProfiler.start("Blurring");

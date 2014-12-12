@@ -262,7 +262,12 @@ public class Program implements Reloadable {
 
 	public void setUniformVector3ArrayAsFloatBuffer(String name, FloatBuffer values) {
 		putInMapIfAbsent(name);
-		uniforms.get(name).putVectorArrayAsFloatBuffer(values);
+		uniforms.get(name).setVec3ArrayAsFloatBuffer(values);
+	}
+
+	public void setUniformFloatArrayAsFloatBuffer(String name, FloatBuffer values) {
+		putInMapIfAbsent(name);
+		uniforms.get(name).setFloatArrayAsFloatBuffer(values);
 	}
 	
 	public void setUniformAsBlock(String name, float[] fs) {

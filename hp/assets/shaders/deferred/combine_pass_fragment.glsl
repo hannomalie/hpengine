@@ -307,7 +307,7 @@ void main(void) {
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
   	
-  	vec4 motionVecProbeIndices = texture2D(motionMap, st); 
+  	vec4 motionVecProbeIndices = texture2D(motionMap, st);
   	vec2 motionVec = motionVecProbeIndices.xy;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
   	

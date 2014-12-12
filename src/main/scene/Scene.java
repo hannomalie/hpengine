@@ -16,7 +16,6 @@ import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.renderer.Renderer;
-import main.scene.EnvironmentProbe.Update;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -125,6 +124,9 @@ public class Scene implements Serializable {
 	}
 	public void endFrame() {
 		for (IEntity entity : octree.getEntities()) {
+			entity.setHasMoved(false);
+		}
+		for (IEntity entity : renderer.getLightFactory().getPointLights()) {
 			entity.setHasMoved(false);
 		}
 		World.light.setHasMoved(false);

@@ -110,7 +110,8 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	//diff = (diff.rgb/3.1416) * (1-F0);
+	diff = diff * (1-fresnel);
+	
 	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
 	
 	return atten_factor* vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));

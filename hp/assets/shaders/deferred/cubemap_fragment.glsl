@@ -24,6 +24,11 @@ uniform float normalMapHeight = 1;
 uniform float metallic = 0;
 uniform float roughness = 1;
 
+uniform vec3[20] pointLightPositions;
+uniform vec3[20] pointLightColors;
+uniform float[20] pointLightRadiuses;
+
+
 in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
@@ -160,6 +165,61 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
+float calculateAttenuation(float dist, float lightRadius) {
+    float distDivRadius = (dist / lightRadius);
+    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+    atten_factor = pow(atten_factor, 2);
+    return atten_factor;
+}
+
+vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,
+							   vec3 lightPosition, float lightRadius, float dist, vec3 diffuseColor, vec3 specularColor) {
+//http://renderman.pixar.com/view/cook-torrance-shader
+//http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
+	vec3 V = normalize(-position);
+	V = ViewVector;
+ 	vec3 L = normalize(lightPosition-position);
+    vec3 H = normalize(L + V);
+    vec3 N = normalize(normal);
+    vec3 P = position;
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    float NdotL = clamp(dot(N, L), 0.0, 1.0);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+	
+	float alpha = acos(NdotH);
+	float alphaSquare = alpha*alpha;
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+    
+    // Schlick
+	float F0 = 0.02;
+	// Specular in the range of 0.02 - 0.2
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float glossiness = (1-roughness);
+	float maxSpecular = mix(0.2, 1.0, metallic);
+	F0 = max(F0, (glossiness*maxSpecular));
+	//F0 = max(F0, metallic*0.2);
+    float fresnel = 1; fresnel -= dot(V, H);
+	fresnel = pow(fresnel, 5.0);
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
+	
+	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
+	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	diff = (diff.rgb) * (1-F0) * diffuseColor;
+	
+
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
+	float attenuation = calculateAttenuation(dist, lightRadius);
+	
+	return attenuation*(diff + specularColor * cookTorrance);
+}
+
 
 void main()
 {
@@ -180,7 +240,7 @@ void main()
 	float depth = (position_clip.z / position_clip.w);
     //out_color = vec4(color.rgb, depth);
     out_color.a = 1;
-    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic/2); // biased, since specular term is only valid at POI of the probe...mäh
+    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic); // biased, since specular term is only valid at POI of the probe...mäh
     vec3 specularColor = mix(vec3(0.04,0.04,0.04), color.rgb, metallic);
     
 	vec3 PN_world = normalize(normal_world);
@@ -204,14 +264,22 @@ void main()
 	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 
 	// since probes are used for ambient lighting, but don't receive ambient, they have to be biased with some ambient light
-	float quarterAmbientStrength = 0.05;
+	float quarterAmbientStrength = 0.00;
 	out_color.rgb = quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(-lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
 	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
 	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,lightDirection.y,-lightDirection.z), PN_world), 0.0, 1.0);
 	out_color.rgb += quarterAmbientStrength * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);
 	
-	out_color.rgb += color.rgb * lightDiffuseSpecular.rgb * visibility;
+	out_color.rgb += diffuseColor.rgb * lightDiffuseSpecular.rgb * visibility;
 	out_color.rgb += specularColor.rgb * specularFactor * visibility;
+	
+	for(int i = 0; i < 20; i++) {
+		
+		float dist = distance(position_world.xyz, pointLightPositions[i]);
+		if(dist > pointLightRadiuses[i]) { continue; }
+		
+		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
+	}
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

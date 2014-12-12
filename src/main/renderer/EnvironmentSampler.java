@@ -91,13 +91,18 @@ public class EnvironmentSampler {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 		
 		cubeMapProgram.use();
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
+		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
+		
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
 			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
 			boolean fullRerenderRequired = !movedVisibles.isEmpty() || !drawnOnce;
-			boolean rerenderLightingRequired = light.hasMoved();
+			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved;
 			boolean noNeedToRedraw = !fullRerenderRequired && !rerenderLightingRequired;
 			
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
@@ -105,7 +110,7 @@ public class EnvironmentSampler {
 			} else if(rerenderLightingRequired) {
 //				cubeMapLightingProgram.use();
 			} else if(fullRerenderRequired) {
-				cubeMapProgram.use();
+//				cubeMapProgram.use();
 			}
 			filteringRequired = true;
 			
