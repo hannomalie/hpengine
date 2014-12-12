@@ -4,7 +4,9 @@ import java.awt.Color;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -20,10 +22,15 @@ import main.renderer.material.Material.MAP;
 
 public class LightFactory {
 	
+
+	private List<PointLight> pointLights = new ArrayList<>();
+	private List<TubeLight> tubeLights = new ArrayList<>();
+	private List<AreaLight> areaLights = new ArrayList<>();
+	
 	private Renderer renderer;
 	private Model sphereModel;
 	private Model cubeModel;
-
+	
 	public LightFactory(Renderer renderer) {
 		this.renderer = renderer;
 		sphereModel = null;
@@ -56,7 +63,7 @@ public class LightFactory {
 		}});
 		
 		PointLight light = new PointLight(renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
-		DeferredRenderer.pointLights.add(light);
+		pointLights.add(light);
 		return light;
 	}
 
@@ -69,13 +76,37 @@ public class LightFactory {
 	}
 	public TubeLight getTubeLight(float length, float radius) {
 		TubeLight tubeLight = new TubeLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
-		DeferredRenderer.tubeLights.add(tubeLight);
+		tubeLights.add(tubeLight);
 		return tubeLight;
 	}
 
 	public AreaLight getAreaLight(int width, int height, int range) {
 		AreaLight areaLight = new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
-		DeferredRenderer.areaLights.add(areaLight);
+		areaLights.add(areaLight);
 		return areaLight;
+	}
+
+	public List<PointLight> getPointLights() {
+		return pointLights;
+	}
+
+	public void setPointLights(List<PointLight> pointLights) {
+		this.pointLights = pointLights;
+	}
+
+	public List<TubeLight> getTubeLights() {
+		return tubeLights;
+	}
+
+	public void setTubeLights(List<TubeLight> tubeLights) {
+		this.tubeLights = tubeLights;
+	}
+
+	public List<AreaLight> getAreaLights() {
+		return areaLights;
+	}
+
+	public void setAreaLights(List<AreaLight> areaLights) {
+		this.areaLights = areaLights;
 	}
 }

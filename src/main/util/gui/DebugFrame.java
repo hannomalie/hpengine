@@ -694,7 +694,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel pointLightsTableModel = new AbstractTableModel() {
 
-			List<PointLight> lights = DeferredRenderer.pointLights;
+			List<PointLight> lights = world.getRenderer().getLightFactory().getPointLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -746,7 +746,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						PointLight selectedLight = DeferredRenderer.pointLights.get(selectedRow[i]);
+						PointLight selectedLight = world.getRenderer().getLightFactory().getPointLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
@@ -763,7 +763,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel tubeLightsTableModel = new AbstractTableModel() {
 
-			List<TubeLight> lights = DeferredRenderer.tubeLights;
+			List<TubeLight> lights = world.getRenderer().getLightFactory().getTubeLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -814,7 +814,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						TubeLight selectedLight = DeferredRenderer.tubeLights.get(selectedRow[i]);
+						TubeLight selectedLight = world.getRenderer().getLightFactory().getTubeLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
@@ -831,7 +831,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel areaLightsTableModel = new AbstractTableModel() {
 
-			List<AreaLight> lights = DeferredRenderer.areaLights;
+			List<AreaLight> lights = world.getRenderer().getLightFactory().getAreaLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -882,14 +882,14 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						AreaLight selectedLight = DeferredRenderer.areaLights.get(selectedRow[i]);
+						AreaLight selectedLight = world.getRenderer().getLightFactory().getAreaLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(600, 600);
 						System.out.println(selectedLight.getName());
 						System.out.println(selectedRow[0]);
-						System.out.println(DeferredRenderer.areaLights.size());
+						System.out.println(world.getRenderer().getLightFactory().getAreaLights().size());
 						entityViewFrame.add(new AreaLightView(world, debugFrame, selectedLight));
 						entityViewFrame.setVisible(true);
 					}

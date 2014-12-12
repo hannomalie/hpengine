@@ -114,12 +114,6 @@ public class DeferredRenderer implements Renderer {
 	private static float MINLIGHTRADIUS = 64.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
 	private static int MAXLIGHTS = 3;
-	public static List<PointLight> pointLights = new ArrayList<>();
-	public static List<TubeLight> tubeLights = new ArrayList<>();
-	public static List<AreaLight> areaLights = new ArrayList<>();
-	
-	ByteBuffer normals = BufferUtils.createByteBuffer(2048*2048);
-	ByteBuffer positions = BufferUtils.createByteBuffer(2048*2048);
 	
 	private IEntity sphere;
 
@@ -187,7 +181,6 @@ public class DeferredRenderer implements Renderer {
 			Vector3f position = new Vector3f(i*randomGenerator.nextFloat()*2,randomGenerator.nextFloat(),i*randomGenerator.nextFloat());
 			float range = MINLIGHTRADIUS + LIGHTRADIUSSCALE* randomGenerator.nextFloat();
 			PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, range);
-			pointLights.add(pointLight);
 		}
 	}
 
@@ -217,11 +210,10 @@ public class DeferredRenderer implements Renderer {
 				Vector4f color = new Vector4f(0.3f,0.3f,0.3f,size);
 				Vector3f position = new Vector3f(minXY + i*2*size+gap, size/3, minXY + z*2*size+gap);
 				PointLight pointLight = lightFactory.getPointLight(position, sphereModel, color, size);
-				pointLights.add(pointLight);
 			}
 		}
 
-		tubeLights.add(lightFactory.getTubeLight(400, 70));
+		lightFactory.getTubeLight(400, 70);
 //		areaLights.add(lightFactory.getAreaLight(50,50,100));
 //		int arealightSize = 2048/2/2/2/2/2/2/2;
 //		for (int i = 0; i < rsmSize*rsmSize; i++) {
@@ -386,7 +378,7 @@ public class DeferredRenderer implements Renderer {
 	private void draw(RenderTarget target, Octree octree, Camera camera, List<IEntity> entities, DirectionalLight light) {
 
 		GPUProfiler.start("First pass");
-		gBuffer.drawFirstPass(camera, octree, pointLights, tubeLights, areaLights);
+		gBuffer.drawFirstPass(camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights());
 		GPUProfiler.end();
 
 		environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
@@ -397,7 +389,7 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 
 		GPUProfiler.start("Second pass");
-		gBuffer.drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
+		gBuffer.drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
 		GPUProfiler.end();
 		
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
@@ -609,7 +601,7 @@ public class DeferredRenderer implements Renderer {
 //			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
 //			light.update();
 //		}
-		 RecursiveAction task = new RecursiveUpdate(pointLights, 0, pointLights.size(), seconds);
+		 RecursiveAction task = new RecursiveUpdate(lightFactory.getPointLights(), 0, lightFactory.getPointLights().size(), seconds);
 //         long start = System.currentTimeMillis();
          fjpool.invoke(task);
 //         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
@@ -716,7 +708,7 @@ public class DeferredRenderer implements Renderer {
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities,
 			DirectionalLight light) {
 
-		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, pointLights, tubeLights, areaLights, cubeMap);
+		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
 		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
