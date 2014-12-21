@@ -1,5 +1,6 @@
 package main.util.gui;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -139,9 +140,15 @@ public class ProbeView extends WebPanel {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
 		nameField.setValue(probe.getName());
-		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField, new WebLabel(String.format("ProbesArrayIndex: %d TexUnitIndex: %d", probe.getIndex(), probe.getTextureUnitIndex())));
+		
+		WebLabel colorPanel = new WebLabel(" ");
+		colorPanel.setBackground(new Color((int)(probe.getDebugColor().x * 255f), (int)(probe.getDebugColor().y * 255f), (int)(probe.getDebugColor().z * 255f)));
+		colorPanel.setOpaque(true);
+		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField,
+				new WebLabel(String.format("ProbesArrayIndex: %d TexUnitIndex: %d", probe.getIndex(), probe.getTextureUnitIndex())));
 		
 		webComponentPanel.addElement(groupPanel);
+		webComponentPanel.addElement(colorPanel);
 	}
 	
 	private void showNotification(NotificationIcon icon, String text) {

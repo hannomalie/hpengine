@@ -72,6 +72,8 @@ public class World {
 	public static volatile boolean useInstantRadiosity = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DRAWSCENE_ENABLED = true;
+	public static volatile boolean DEBUGDRAW_PROBES = false;
+	public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	public static volatile boolean DRAW_PROBES = true;
@@ -331,16 +333,16 @@ public class World {
 //		}
 		
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.rotate(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
+			light.rotateWorld(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.rotate(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
+			light.rotateWorld(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.rotate(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
+			light.rotateWorld(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.rotate(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
+			light.rotateWorld(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
 			light.move(new Vector3f(0,-1f,0));

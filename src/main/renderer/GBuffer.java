@@ -1,13 +1,17 @@
 package main.renderer;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import main.Transform;
 import main.World;
 import main.camera.Camera;
+import main.model.Entity;
 import main.model.IEntity;
+import main.model.Model;
 import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
 import main.octree.Octree;
@@ -15,8 +19,10 @@ import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
+import main.renderer.material.Material;
 import main.renderer.rendertarget.RenderTarget;
 import main.scene.AABB;
+import main.scene.EnvironmentProbe;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
@@ -34,6 +40,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.bulletphysics.dynamics.DynamicsWorld;
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 public class GBuffer {
 
@@ -59,10 +66,14 @@ public class GBuffer {
 	private Program highZProgram;
 	private Program reflectionProgram;
 	private Program linesProgram;
+	private Program probeFirstpassProgram;
 	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	private int fullScreenMipmapCount;
+
+	private Model probeBox;
+	private IEntity probeBoxEntity;
 
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
@@ -79,6 +90,7 @@ public class GBuffer {
 		this.highZProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
 		this.reflectionProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
 		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+		this.probeFirstpassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
@@ -89,6 +101,22 @@ public class GBuffer {
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Renderer.WIDTH, Renderer.HEIGHT));
+		
+	}
+	
+	public void init(Renderer renderer) {
+		probeBox = null;
+		try {
+			probeBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
+			Material probeBoxMaterial = renderer.getMaterialFactory().getDefaultMaterial();
+			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
+			probeBox.setMaterial(probeBoxMaterial);
+			probeBoxEntity = renderer.getEntityFactory().getEntity(probeBox, probeBoxMaterial);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
@@ -113,8 +141,10 @@ public class GBuffer {
 			entities = (octree.getEntities());
 		}
 
-		for (IEntity entity : entities) {
-			entity.draw(renderer, camera);
+		if(World.DRAWSCENE_ENABLED) {
+			for (IEntity entity : entities) {
+				entity.draw(renderer, camera);
+			}
 		}
 		
 //		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
@@ -138,9 +168,39 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
+		
+//		linesProgram.use();
+//		GL11.glDisable(GL11.GL_CULL_FACE);
+		if(World.DEBUGDRAW_PROBES) {
+			debugDrawProbes(camera);
+			renderer.getEnvironmentProbeFactory().draw(octree, World.light);
+		}
+		GL11.glEnable(GL11.GL_CULL_FACE);
 
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
+	}
+
+	private void debugDrawProbes(Camera camera) {
+		
+		probeFirstpassProgram.use();
+		bindEnvironmentProbePositions(probeFirstpassProgram);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
+		
+		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
+			Transform transform = new Transform();
+			transform.setPosition(probe.getCenter());
+			transform.setScale(probe.getSize());
+			Vector3f colorHelper = probe.getDebugColor();
+			probeBoxEntity.getMaterial().setDiffuse(colorHelper);
+			probeBoxEntity.setTransform(transform);
+			probeBoxEntity.update(0);
+			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
+			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
+			probeBoxEntity.draw(renderer, camera, probeFirstpassProgram);
+		}
 	}
 
 	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -262,6 +322,7 @@ public class GBuffer {
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
+		
 		reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
 		reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);

@@ -12,6 +12,7 @@ import java.util.zip.DataFormatException;
 
 import main.World;
 import main.util.CompressionUtils;
+import main.util.stopwatch.StopWatch;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.ARBES3Compatibility;
@@ -256,6 +257,7 @@ public class Texture implements Serializable {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
+
 		try {
 			fis = new FileInputStream(getDirectory() + fileName + ".hptexture");
 			in = new ObjectInputStream(fis);
@@ -267,6 +269,7 @@ public class Texture implements Serializable {
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+		
 		return null;
 	}
 	
@@ -294,8 +297,10 @@ public class Texture implements Serializable {
 	
 
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+//		long start = System.currentTimeMillis();
 	    in.defaultReadObject();
 	    decompress();
+//		System.out.println("TEXTURE READ IN " +  (System.currentTimeMillis() - start) + " ms");
 	}
 
 	

@@ -74,7 +74,7 @@ float calculateAttenuation(float dist) {
     return clamp(1.0f - (distDivRadius), 0, 1);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
@@ -120,12 +120,19 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	    vec3 dir = projection-light_position_eye;
 	    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
 	    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
+	    
+	    // this is the amount of space the projected point is away from the border of the area light.
+	    // if the term is positive, the trace is besides the broder. Up to 5 units linear fading the specular, so that
+	    // we have glossy specular on rough surfaces
+	    vec2 overheadVec2 = (vec2(abs(diagonal.x)-width, abs(diagonal.y)-height) / 5);
+	    float overhead = clamp(max(overheadVec2.x, overheadVec2.y), 0.0, 1.0);
+	    
 	    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
 	    //if(distance(P, nearestPointInside) > lightRange) { discard; }
 	    vec2 texCoords = nearest2D / vec2(width, height);
         texCoords += 1;
 	    texCoords /=2;
-        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;        
+        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;
 
 		float NdotL = max(dot(N, L), 0.0);
 	    float NdotH = max(dot(N, H), 0.0);
@@ -154,22 +161,20 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 		//F0 = max(F0, metallic*0.2);
 	    float fresnel = 1; fresnel -= dot(V, H);
 		fresnel = pow(fresnel, 5.0);
-		//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
 		float temp = 1.0; temp -= F0;
 		fresnel *= temp;
 		float F = fresnel + F0;
         
-		//diff = (diff.rgb/3.1416) * (1-F0);
+		//diffuse = diffuse * (1-fresnel);
         
         if(useTexture) 
         {
         	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
         
-		float specularAdjust = length(diffuse)/length(vec3(1,1,1));
-        float specular = specularAdjust*(F*D*G/(4*(NdotL*NdotV)));
+        float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
         
-		return vec4(diffuse, specular);
+		return diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0);
 	}
 }
 
@@ -186,6 +191,8 @@ void main(void) {
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
 	float metallic = texture2D(diffuseMap, st).w;
+  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -205,8 +212,8 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
+	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
-	out_DiffuseSpecular = finalColor;
+	out_DiffuseSpecular.rgb = finalColor;
 	out_AOReflection = vec4(0,0,0,0);
 }

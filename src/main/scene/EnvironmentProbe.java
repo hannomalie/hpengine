@@ -2,6 +2,7 @@ package main.scene;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Random;
 
 import main.Transform;
 import main.camera.Camera;
@@ -32,6 +33,7 @@ public class EnvironmentProbe implements IEntity {
 	private AABB box;
 	private EnvironmentSampler sampler;
 	protected Update update;
+	
 
 	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update) {
 		this.renderer = renderer;
@@ -161,5 +163,13 @@ public class EnvironmentProbe implements IEntity {
 
 	public int getIndex() {
 		return renderer.getEnvironmentProbeFactory().getProbes().indexOf(this);
+	}
+
+	public Vector3f getDebugColor() {
+		float colorHelper = (float)getIndex()/(float)renderer.getEnvironmentProbeFactory().getProbes().size();
+		Random randomGenerator = new Random();
+		randomGenerator.setSeed((long)colorHelper);
+		float random = randomGenerator.nextFloat();
+		return new Vector3f(1- colorHelper * colorHelper, (1-colorHelper) * (1 - colorHelper), colorHelper*colorHelper);
 	}
 }

@@ -27,6 +27,7 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import main.Transform;
 import main.World;
 import main.camera.Camera;
 import main.model.Entity;
@@ -89,11 +90,15 @@ public class EnvironmentSampler {
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		
 		cubeMapProgram.use();
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
+		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
 		
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
@@ -117,6 +122,7 @@ public class EnvironmentSampler {
 			GPUProfiler.start("side " + i);
 			GPUProfiler.start("Switch attachment");
 			renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(probe.getIndex(), i);
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 			GPUProfiler.end();
 			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
@@ -167,32 +173,48 @@ public class EnvironmentSampler {
 	private void generateCubeMapMipMaps() {
 
 		GPUProfiler.start("MipMap generation");
-		
-		int cubeMapView = GL11.glGenTextures();
-		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray().getTextureID(), GL11.GL_RGBA8, 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-		renderer.getTextureFactory().generateMipMapsCubeMap(cubeMapView);
-		GL11.glDeleteTextures(cubeMapView);
-		
-		int errorValue = GL11.glGetError();
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR: " + errorString);
+
+		boolean use2DMipMapping = false;
+		if (use2DMipMapping ) {
+			for (int i = 0; i < 6; i++) {
+				int cubeMapFaceView = GL11.glGenTextures();
+				GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray().getTextureID(), GL11.GL_RGBA8, 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6 * probe.getIndex() + i, 1);
+				renderer.getTextureFactory().generateMipMaps(cubeMapFaceView, GL11.GL_NEAREST, GL11.GL_NEAREST);
+				GL11.glDeleteTextures(cubeMapFaceView);
+			}
+			
+		} else {
+			int cubeMapView = GL11.glGenTextures();
+			GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray().getTextureID(), GL11.GL_RGBA8, 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+			renderer.getTextureFactory().generateMipMapsCubeMap(cubeMapView);
+			GL11.glDeleteTextures(cubeMapView);
 		}
+		//		
+//		int errorValue = GL11.glGetError();
+//		if (errorValue != GL11.GL_NO_ERROR) {
+//			String errorString = GLU.gluErrorString(errorValue);
+//			System.err.println("ERROR: " + errorString);
+//		}
 		GPUProfiler.end();
 	}
 	
 	private void rotateForIndex(int i, Camera camera) {
 		float deltaNear = 0.0f;
-		float deltaFar = 100.8f;
+		float deltaFar = 100.0f;
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;
 		Vector3f position = getCamera().getPosition().negate(null); // TODO: AHHhhhh, kill this hack
 		float width = probe.getSize().x;
 		float height = probe.getSize().y;
-//		Matrix4f projectionMatrix = Util.createOrthogonal(position .x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, getCamera().getNear(), getCamera().getFar());
+//		Matrix4f projectionMatrix = Util.createOrthogonal(position.z-width/2, position.z+width/2, position.y+height/2, position.y-height/2, getCamera().getNear(), getCamera().getFar());
+//		Transform oldTransform = camera.getTransform();
 //		camera = new Camera(renderer, projectionMatrix, getCamera().getNear(), getCamera().getFar(), 90, 1);
+//		camera.setPerspective(false);
+//		camera.setTransform(oldTransform);
+//		camera.updateShadow();
 		this.probe.setCamera(camera);
+		
 		switch (i) {
 		case 0:
 			camera.rotate(new Vector4f(0,0,1, -180));

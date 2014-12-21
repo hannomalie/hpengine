@@ -273,12 +273,14 @@ public class TextureFactory {
         // bind this texture 
         texture.bind();
         
+//        long start = System.currentTimeMillis();
+        
         BufferedImage bufferedImage = null;
         if (asStream) {
             bufferedImage = loadImageAsStream(resourceName);
         } else {
             bufferedImage = loadImage(resourceName);	
-        } 
+        }
         texture.setWidth(bufferedImage.getWidth());
         texture.setHeight(bufferedImage.getHeight());
         texture.setMinFilter(minFilter);
@@ -297,7 +299,7 @@ public class TextureFactory {
         ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
         
         texture.upload(textureBuffer);
-        
+//        System.out.println("TEXTURE READ NEW IN " + (System.currentTimeMillis() - start + " ms"));
         generateMipMaps(texture, Material.MIPMAP_DEFAULT);
         
         return texture; 

@@ -32,11 +32,12 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
+import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentProbeFactory {
-	public static final int MAX_PROBES = 100;
+	public static final int MAX_PROBES = 50;
 	public static final int RESOLUTION = 512;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
 	
@@ -47,7 +48,7 @@ public class EnvironmentProbeFactory {
 	private Renderer renderer;
 	
 	private List<EnvironmentProbe> probes = new ArrayList<>();
-	
+
 	private CubeMapArray environmentMapsArray;
 	private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
 
@@ -57,6 +58,13 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
 		this.environmentMapsArray = new CubeMapArray(renderer, MAX_PROBES);
+
+		int errorValue = GL11.glGetError();
+		if (errorValue != GL11.GL_NO_ERROR) {
+			String errorString = GLU.gluErrorString(errorValue);
+			System.err.println("ERROR: " + errorString);
+		}
+		GPUProfiler.end();
 
 		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, environmentMapsArray);
 
@@ -214,7 +222,7 @@ public class EnvironmentProbeFactory {
 	public void drawInitial(Octree octree) {
 		draw(octree, World.light);
 	}
-	
+
 	public CubeMapArray getEnvironmentMapsArray() {
 		return environmentMapsArray;
 	}

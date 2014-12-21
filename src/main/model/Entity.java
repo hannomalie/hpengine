@@ -229,11 +229,14 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void draw(Renderer renderer, Camera camera) {
+		draw(renderer, camera, getMaterial().getFirstPassProgram());
+	}
+	@Override
+	public void draw(Renderer renderer, Camera camera, Program firstPassProgram) {
 		if(!isVisible()) {
 			return;
 		}
 		
-		Program firstPassProgram = getMaterial().getFirstPassProgram();
 		if (firstPassProgram == null) {
 			return;
 		}

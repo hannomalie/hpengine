@@ -74,5 +74,5 @@ function benchmark() {
 	setTimeout(rotateLight, finishBenchmark, 10, 9000, eventLoop2);
 }
 
-benchmark();
+//benchmark();
 

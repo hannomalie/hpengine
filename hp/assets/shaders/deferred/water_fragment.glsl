@@ -278,7 +278,7 @@ void main(void) {
 	out_normal = vec4(PN_view, depth);
 	float n = surface3(vec3(UV, int(time)%1000000 * 0.0001));
 	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 2);
-	out_normal.rgb = normalize(viewMatrix * vec4(normalize(vec3(0,0.7,0) + vec3(n*n2,1-n*n2,n*n)), 0)).rgb;
+	out_normal.rgb = normalize(viewMatrix * vec4(normalize(vec3(0,1,0) + vec3(n*n2,1-n*n2,n*n)), 0)).rgb;
 	//out_normal.rgb = viewMatrix * vec4(vec3(0,1,0), 0).rgb;
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
@@ -295,7 +295,7 @@ void main(void) {
 		discard;
 	}
 #endif
-  	out_color = color * vec4(1,1,1+(n2/8)-n/8, 1);
+  	out_color = color * vec4(1,1,1+(n2/4)-n/8, 1);
   	out_color.w = materialMetallic;
 
 	out_position.w = materialRoughness;

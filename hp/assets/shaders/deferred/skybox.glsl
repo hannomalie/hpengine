@@ -107,14 +107,14 @@ void main(void) {
 	vec3 PN_view = normalize(viewMatrix * vec4(PN_world,0)).xyz;
 	
 	out_position = viewMatrix * position_world;
-	
+	out_position.w = 1;
 	float depth = (position_clip.z / position_clip.w);
 	
 	out_normal = vec4(PN_view, depth);
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 	
-	vec4 color = vec4(materialDiffuseColor, 1);
+	vec4 color = vec4(1,1,1,1);
 #ifdef use_diffuseMap
 	UV = texCoord;
 	UV.x = texCoord.x * diffuseMapWidth;
@@ -127,9 +127,9 @@ void main(void) {
 	}
 #endif
   	out_color = texture(environmentMap, PN_world);
-  	out_color.w = 0;
+  	out_color.w = 1;
 
 	out_position.w = 1;
 
-  	out_motion = vec4(blurVec,0,0);
+  	out_motion = vec4(0,0,0,0);
 }

@@ -62,7 +62,7 @@ float calculateAttenuation(float dist) {
     return atten_factor;
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
 	//V = ViewVector;
@@ -109,12 +109,12 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
-	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
+	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
 	diff = diff * (1-fresnel);
 	
-	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
-	return atten_factor* vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
+	return atten_factor * (diff + cookTorrance * lightDiffuse.rgb * specularColor);
 }
 
 void main(void) {
@@ -130,6 +130,8 @@ void main(void) {
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
 	float metallic = texture2D(diffuseMap, st).w;
+  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
@@ -149,8 +151,8 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	//vec4 finalColor = vec4(albedo,1) * vec4(phong(position.xyz, normalize(normal).xyz), 1);
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
+	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
-	out_DiffuseSpecular = finalColor;
+	out_DiffuseSpecular.rgb = finalColor;
 	out_AOReflection = vec4(0,0,0,0);
 }

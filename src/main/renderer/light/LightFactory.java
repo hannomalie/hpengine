@@ -63,6 +63,9 @@ public class LightFactory {
 	public PointLight getPointLight() {
 		return getPointLight(sphereModel);
 	}
+	public PointLight getPointLight(float range) {
+		return getPointLight(new Vector3f(), sphereModel, new Vector4f(1,1,1,1), range);
+	}
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
     		put(MAP.DIFFUSE,"assets/textures/default.dds");

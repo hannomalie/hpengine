@@ -18,6 +18,8 @@ public class CubeMapArray {
 	private int textureId;
 	private int mipMapCount;
 	private int internalFormat;
+	
+	transient Renderer renderer;
 
 	/**
 	 * @param renderer
@@ -27,6 +29,7 @@ public class CubeMapArray {
 		textureId = GL11.glGenTextures();
 		bind();
 
+		this.renderer = renderer;
 		mipMapCount = renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT;
 		internalFormat = GL11.GL_RGBA8;
 		GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, textureCount*6);

@@ -49,7 +49,7 @@ vec3 decode(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-position);
@@ -88,15 +88,29 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	fresnel *= temp;
 	float F = fresnel + F0;
 	
-	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
-	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
 	
-	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
+	/////////////////////////
+	// OREN-NAYAR
+	{
+		float angleVN = acos(NdotV);
+	    float angleLN = acos(NdotL);
+	    float alpha = max(angleVN, angleLN);
+	    float beta = min(angleVN, angleLN);
+	    float gamma = dot(V - N * dot(V, L), L - N * NdotL);
+	    float roughnessSquared = alpha;
+	    float A = 1.0 - 0.5 * (roughnessSquared / (roughnessSquared + 0.57));
+	    float B = 0.45 * (roughnessSquared / (roughnessSquared + 0.09));
+	    float C = sin(alpha) * tan(beta);
+	    diff *= (A + B * max(0.0, gamma) * C);
+    }
+	/////////////////////////
+	
+	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
-	return vec4((diff), cookTorrance);
+	return diff + cookTorrance * lightDiffuse.rgb * specularColor;
 }
 
 ///////////////////// AO
@@ -176,10 +190,10 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 		if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
 	}
 	
-	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0025).rg;
-	moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
-	moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
-	moments /= 3;
+	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
+	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
+	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
+	//moments /= 3;
 	
 	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist <= moments.x) {
@@ -194,7 +208,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	float d = dist - moments.x;
 	float p_max = (variance / (variance + d*d));
 	
-	p_max = linstep(0.2, 1.0, p_max);
+	//p_max = linstep(0.2, 1.0, p_max);
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -218,6 +232,11 @@ float ComputeScattering(float lightDotView)
 	return result;
 }
 
+float[16] ditherPattern = { 0.0f, 0.5f, 0.125f, 0.625f,
+							0.75f, 0.22f, 0.875f, 0.375f,
+							0.1875f, 0.6875f, 0.0625f, 0.5625,
+							0.9375f, 0.4375f, 0.8125f, 0.3125};
+
 vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	const int NB_STEPS = 40;
 	 
@@ -240,12 +259,15 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		vec4 worldInShadowCameraSpace = shadowPos;
 		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
     	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
+    	
+    	float ditherValue = ditherPattern[int(gl_FragCoord.x) % 4 + int(gl_FragCoord.y) % 4];
+    	
 	  	/*if (shadowmapTexCoord.x < 0 || shadowmapTexCoord.x > 1 || shadowmapTexCoord.y < 0 || shadowmapTexCoord.y > 1) {
 			continue;
 		}*/
 		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
 		 
-		if (shadowMapValue > worldInShadowCameraSpace.z)
+		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
 			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
 		}
@@ -286,8 +308,9 @@ void main(void) {
 	//normalView = decodeNormal(normalView.xy);
 	
 	float metallic = texture2D(diffuseMap, st).a;
-	//vec4 finalColor = vec4(albedo,1) * ( vec4(phong(position.xyz, normalize(normal).xyz), 1));
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
+  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
+	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -303,9 +326,9 @@ void main(void) {
 	//finalColor = vec4(visibility,visibility,visibility,visibility);
 	/////////////////// SHADOWMAP
 	
-	out_DiffuseSpecular = finalColor;
-	out_AOReflection.gba = vec3(0,0,0);
-	out_AOReflection.gba = scatterFactor * scatter(positionWorld, -eyePosition);
+	out_DiffuseSpecular.rgb = finalColor;
+	//out_AOReflection.gba = vec3(0,0,0);
+	out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);

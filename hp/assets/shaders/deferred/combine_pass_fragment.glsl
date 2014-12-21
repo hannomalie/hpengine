@@ -107,7 +107,7 @@ vec4 bilateralBlur(sampler2D sampler, vec2 texCoords) {
 	
 	return result + normalization * centerSample;
 }
-vec4 bilateralBlurReflection(sampler2D sampler, vec2 texCoords) {
+vec4 bilateralBlurReflection(sampler2D sampler, vec2 texCoords, float roughness) {
 
 	const float blurDistance = 0.0025;
 	const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
@@ -127,15 +127,17 @@ vec4 bilateralBlurReflection(sampler2D sampler, vec2 texCoords) {
 	float centerSampleDepth = textureLod(normalMap, texCoords + offsets[4], 0).a;
 	float centerSampleRoughness = textureLod(positionMap, texCoords + offsets[4], 0).a;
 	result += kernel[4] * centerSample;
+	float radiusFactor = roughness;
 	
 	for(int i = 0; i < 9; i++) {
 		if(i == 4) { continue; }
 		
-		vec4 currentSample = textureLod(sampler, texCoords + offsets[i], 0);
-		float currentSampleDepth = textureLod(normalMap, texCoords + offsets[i], 0).a;
-		float currentSampleRoughness = textureLod(positionMap, texCoords + offsets[i], 0).a;
+		vec4 currentSample = textureLod(sampler, texCoords + radiusFactor*offsets[i], 0);
+		float currentSampleDepth = textureLod(normalMap, texCoords + radiusFactor*offsets[i], 0).a;
+		float currentSampleRoughness = textureLod(positionMap, texCoords + radiusFactor*offsets[i], 0).a;
 		
 		float closeness = 1-(distance(currentSampleRoughness, centerSampleRoughness) + distance(currentSampleDepth, centerSampleDepth))/2;
+		closeness = 1-(distance(currentSampleRoughness, centerSampleRoughness));
 		float sampleWeight = kernel[i] * closeness;
 		result += sampleWeight * currentSample;
 		
@@ -215,16 +217,18 @@ vec4 imageSpaceGatherReflection(sampler2D sampler, vec2 texCoords, float roughne
 	vec4 result = textureLod(sampler, texCoords, 0).rgba;
 	
 	vec4 centerSample = result;
+	float centerSampleRoughness = roughness;
 	float centerSampleDepth = textureLod(normalMap, texCoords, 0).a;
 	
-	const float NUM_SAMPLES = 16;
-	float radiusFactor = roughness * 0.05;
+	const float NUM_SAMPLES = 32;
+	float radiusFactor = roughness * (centerSampleDepth) * 0.1;
 	float normalization = 0.0;
 	for(int i = 0; i < NUM_SAMPLES; i++) {
 		vec4 currentSample = textureLod(sampler, texCoords + radiusFactor * poissonDisk[i], 0);
-		float currentSampleDepth = textureLod(normalMap, texCoords + poissonDisk[i], 0).a;
+		float currentSampleRoughness = textureLod(positionMap, texCoords + radiusFactor * poissonDisk[i], 0).a;
+		float currentSampleDepth = textureLod(normalMap, texCoords + radiusFactor * poissonDisk[i], 0).a;
 		
-		float closeness = 1-distance(currentSampleDepth, centerSampleDepth);
+		float closeness = 1-(distance(currentSampleRoughness, centerSampleRoughness) + distance(currentSampleDepth, centerSampleDepth));
 		closeness *= closeness;
 		float sampleWeight = closeness;
 		result += sampleWeight * currentSample;
@@ -244,10 +248,9 @@ float rand(vec2 co){
 vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDirection, vec3 diffuseColor, vec3 reflectedColor, vec3 albedo, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
-	V = normalize(ViewVector);
- 	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+ 	vec3 L = -lightDirection;
     vec3 H = normalize(L + V);
-    vec3 N = normalize(normal);
+    vec3 N = normal;
     vec3 P = position;
     float NdotH = max(dot(N, H), 0.0);
     float NdotV = max(dot(N, V), 0.0);
@@ -257,7 +260,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	float alpha = acos(NdotH);
 	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
-	//alpha = roughness*roughness;
+	alpha = roughness*roughness;
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
@@ -278,14 +281,29 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	fresnel *= temp;
 	float F = fresnel + F0;
 	
-	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = diffuseColor * albedo;
-	diff = diff * clamp(1-fresnel, 0.0, 1.0); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	
+	/////////////////////////
+	// OREN-NAYAR
+	{
+		float angleVN = acos(NdotV);
+	    float angleLN = acos(NdotL);
+	    float alpha = max(angleVN, angleLN);
+	    float beta = min(angleVN, angleLN);
+	    float gamma = dot(V - N * dot(V, L), L - N * NdotL);
+	    float roughnessSquared = alpha;
+	    float A = 1.0 - 0.5 * (roughnessSquared / (roughnessSquared + 0.57));
+	    float B = 0.45 * (roughnessSquared / (roughnessSquared + 0.09));
+	    float C = sin(alpha) * tan(beta);
+	    diff *= (A + B * max(0.0, gamma) * C);
+    }
+	/////////////////////////
+	
+	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
 	return diff + reflectedColor * specularColor * cookTorrance;
-	//return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
 }
 
 void main(void) {
@@ -298,7 +316,7 @@ void main(void) {
   	float glossiness = (1-roughness);
   	vec3 positionView = positionRoughness.xyz;
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
-  	vec4 normalView = vec4(texture2D(normalMap,st).rgb, 0);
+  	vec4 normalView = vec4(textureLod(normalMap,st, 0).rgb, 0);
   	vec3 normalWorld = normalize(inverse(viewMatrix) * normalView).xyz;
 	vec3 V = -normalize((positionWorld.xyz - camPosition.xyz).xyz);
 	vec4 position_clip = (projectionMatrix * viewMatrix * vec4(positionWorld,1));
@@ -319,32 +337,38 @@ void main(void) {
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
-	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
 	
 	vec4 aoReflect = textureLod(aoReflection, st, 1);
 
 	vec4 environmentColorAO = textureLod(diffuseEnvironment, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	vec3 environmentColor = clamp(environmentColorAO.rgb, vec3(0,0,0), vec3(1,1,1));
-	environmentColor = bilateralBlurReflection(diffuseEnvironment, st).rgb;
+	environmentColor = bilateralBlurReflection(diffuseEnvironment, st, roughness).rgb;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	float ao = environmentColorAO.a;
 	vec3 reflectedColor = clamp(textureLod(specularEnvironment, st, 0).rgb, vec3(0,0,0), vec3(1,1,1));
-	reflectedColor = bilateralBlurReflection(specularEnvironment, st).rgb;
-	//reflectedColor = imageSpaceGatherReflection(specularEnvironment, st, roughness).rgb;
+	
+	/*if(st.x < 0.5) {
+		reflectedColor = imageSpaceGatherReflection(specularEnvironment, st, roughness).rgb;
+		environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
+	} else if(st.x >= 0.5 && st.x < 0.5025) {
+		reflectedColor = vec3(1,0,0);
+		environmentColor = vec3(1,0,0);
+	} else {
+		//reflectedColor = bilateralBlurReflection(specularEnvironment, st, roughness).rgb;
+		//environmentColor = bilateralBlurReflection(diffuseEnvironment, st, roughness).rgb;
+	}*/
 	
 	float reflectionMixer = glossiness; // the glossier, the more reflecting, so glossiness is our mixer
-	vec3 specularTerm = 2*specularColor * specularFactor;
-	vec3 diffuseTerm = 2*lightDiffuseSpecular.rgb*color;
 	
 	vec3 ambientTerm = ambientColor * mix(color.rgb, reflectedColor.rgb, reflectionMixer);
 	
-	vec3 ambientDiffuseSpecular = cookTorrance(-normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalWorld.xyz, environmentColor, reflectedColor, color, specularColor);
+	vec3 ambientDiffuseSpecular = cookTorrance(normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalView.xyz, environmentColor, reflectedColor, color, specularColor);
 	
 	ambientTerm = 2*ambientColor*ambientDiffuseSpecular;
 
 	ambientTerm *= clamp(ao,0,1);
-	vec4 lit = vec4(ambientTerm, 1) + vec4(diffuseTerm, 1) + vec4(specularTerm,1);
+	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	out_color.rgb += (aoReflect.gba); //scattering

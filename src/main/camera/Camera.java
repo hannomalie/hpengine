@@ -46,6 +46,8 @@ public class Camera implements IEntity {
 	private float far;
 	private float fov = 60;
 	private float ratio = (float)Renderer.WIDTH / (float)Renderer.HEIGHT;
+
+	private boolean isPerspective = true;
 	
 	public Camera(Renderer renderer) {
 		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT);
@@ -232,8 +234,24 @@ public class Camera implements IEntity {
 		return far;
 	}
 
+	public boolean isPerspective() {
+		return isPerspective;
+	}
+
+	public void setPerspective(boolean isPerspective) {
+		this.isPerspective = isPerspective;
+	}
+
 	private void calculateProjectionMatrix() {
-		projectionMatrix = Util.createPerpective(fov, ratio, near, far);
+		if(isPerspective) {
+			projectionMatrix = Util.createPerpective(fov, ratio, near, far);	
+		} else {
+			// TODO: IMPLEMENT ME!
+		}
+	}
+
+	public void setRatio(float ratio) {
+		this.ratio = ratio;
 	}
 
 }

@@ -142,6 +142,7 @@ public class DeferredRenderer implements Renderer {
 
 	public DeferredRenderer(DirectionalLight light) {
 		setupOpenGL();
+		objLoader = new OBJLoader(this);
 		textureFactory = new TextureFactory();
 		DeferredRenderer.exitOnGLError("After TextureFactory");
 		programFactory = new ProgramFactory(this);
@@ -149,12 +150,12 @@ public class DeferredRenderer implements Renderer {
 		setUpGBuffer();
 		fullScreenTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA8);
 		materialFactory = new MaterialFactory(this);
-		objLoader = new OBJLoader(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
 //		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
 //		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
+		gBuffer.init(this);
 		
 		sphereModel = null;
 		try {
@@ -381,31 +382,40 @@ public class DeferredRenderer implements Renderer {
 		gBuffer.drawFirstPass(camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights());
 		GPUProfiler.end();
 
-		environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
-		
-		GPUProfiler.start("Shadowmap pass");
-		light.drawShadowMap(octree);
-//		doInstantRadiosity(light);
-		GPUProfiler.end();
-
-		GPUProfiler.start("Second pass");
-		gBuffer.drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
-		GPUProfiler.end();
-		
-		GL11.glViewport(0, 0, WIDTH, HEIGHT);
-		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-
-		GPUProfiler.start("Combine pass");
-		gBuffer.combinePass(target, light, camera);
-		GPUProfiler.end();
-//		drawToQuad(secondPassTarget.getRenderedTexture(), fullscreenBuffer);
+		if (!World.DEBUGDRAW_PROBES) {
+			environmentProbeFactory.drawAlternating(octree, camera, light,
+					frameCount);
+			GPUProfiler.start("Shadowmap pass");
+			light.drawShadowMap(octree);
+			//		doInstantRadiosity(light);
+			GPUProfiler.end();
+			GPUProfiler.start("Second pass");
+			gBuffer.drawSecondPass(camera, light,
+					lightFactory.getPointLights(),
+					lightFactory.getTubeLights(), lightFactory.getAreaLights(),
+					cubeMap);
+			GPUProfiler.end();
+			GL11.glViewport(0, 0, WIDTH, HEIGHT);
+			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GPUProfiler.start("Combine pass");
+			gBuffer.combinePass(target, light, camera);
+			GPUProfiler.end();
+		} else {
+			GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
+			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+		    
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+			drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer); // the first color attachment
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+		}
 		
 		if (World.DEBUGFRAME_ENABLED) {
-//			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+//			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}

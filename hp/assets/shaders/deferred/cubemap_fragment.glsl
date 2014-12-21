@@ -28,6 +28,9 @@ uniform vec3[20] pointLightPositions;
 uniform vec3[20] pointLightColors;
 uniform float[20] pointLightRadiuses;
 
+uniform int probeIndex = 0;
+uniform vec3 environmentMapMin[100];
+uniform vec3 environmentMapMax[100];
 
 in vec4 color;
 in vec2 texCoord;
@@ -116,7 +119,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	return vec3(p_max,p_max,p_max);
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-position);
@@ -157,12 +160,10 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	//diff = (diff.rgb) * (1-F0);
-	//diff *= (1/3.1416*alpha*alpha);
+	diff = (diff.rgb) * (1-F0);
 	
-	float specularAdjust = length(lightDiffuse.rgb)/length(vec3(1,1,1));
-	
-	return vec4((diff), specularAdjust*(F*D*G/(4*(NdotL*NdotV))));
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
+	return diff + lightDiffuse.rgb * specularColor * cookTorrance;
 }
 
 float calculateAttenuation(float dist, float lightRadius) {
@@ -211,13 +212,13 @@ vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = (diff.rgb) * (1-F0) * diffuseColor;
+	diff = (diff.rgb) * (1-fresnel) * diffuseColor;
 	
 
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	float attenuation = calculateAttenuation(dist, lightRadius);
 	
-	return attenuation*(diff + specularColor * cookTorrance);
+	return attenuation*(diff + lightDiffuse.rgb * specularColor * cookTorrance);
 }
 
 
@@ -260,18 +261,18 @@ void main()
 	visibility = chebyshevUpperBound(depthInLightSpace, positionShadow);
 	/////////////////// SHADOWMAP
 	
-	vec4 lightDiffuseSpecular = cookTorrance(V, position_world.xyz, PN_world.xyz, roughness, metallic);
-	float specularFactor = clamp(lightDiffuseSpecular.a, 0, 1);
+	vec3 lightDiffuseSpecular = cookTorrance(V, position_world.xyz, PN_world.xyz, roughness, metallic, diffuseColor, specularColor);
 
 	// since probes are used for ambient lighting, but don't receive ambient, they have to be biased with some ambient light
-	float quarterAmbientStrength = 0.00;
+	/*float quarterAmbientStrength = 0.05;
 	out_color.rgb = quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(-lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
 	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,-lightDirection.y,lightDirection.z), PN_world), 0.0, 1.0);
 	out_color.rgb += quarterAmbientStrength * lightDiffuse.rgb * color.rgb * clamp(dot(vec3(lightDirection.x,lightDirection.y,-lightDirection.z), PN_world), 0.0, 1.0);
-	out_color.rgb += quarterAmbientStrength * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);
+	out_color.rgb += quarterAmbientStrength * color.rgb * clamp(dot(lightDirection, PN_world), 0.0, 1.0);*/
+
+	vec3 directLight = diffuseColor.rgb * lightDiffuseSpecular.rgb * visibility;
 	
-	out_color.rgb += diffuseColor.rgb * lightDiffuseSpecular.rgb * visibility;
-	out_color.rgb += specularColor.rgb * specularFactor * visibility;
+	out_color.rgb = directLight.rgb;
 	
 	for(int i = 0; i < 20; i++) {
 		
@@ -280,6 +281,8 @@ void main()
 		
 		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
 	}
+	
+	out_color.rgb += 0.025 * color.rgb;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

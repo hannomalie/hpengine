@@ -203,7 +203,7 @@ vec2 encodeNormal(vec3 n) {
 }
 
 void main(void) {
-	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
+	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
 	vec2 UV = texCoord;
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 

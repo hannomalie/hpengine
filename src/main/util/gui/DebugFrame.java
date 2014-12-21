@@ -65,6 +65,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
+import com.alee.extended.panel.WebButtonGroup;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
@@ -129,6 +130,8 @@ public class DebugFrame {
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
 	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
+	private WebToggleButton toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", World.DEBUGDRAW_PROBES);
+	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", World.DEBUGDRAW_PROBES_WITH_CONTENT);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
@@ -276,6 +279,12 @@ public class DebugFrame {
 		toggleDrawProbes.addActionListener(e -> {
 			World.DRAW_PROBES = !World.DRAW_PROBES;
 		});
+		toggleDebugDrawProbes.addActionListener(e -> {
+			World.DEBUGDRAW_PROBES = !World.DEBUGDRAW_PROBES;
+		});
+		toggleDebugDrawProbesWithContent.addActionListener(e -> {
+			World.DEBUGDRAW_PROBES_WITH_CONTENT = !World.DEBUGDRAW_PROBES_WITH_CONTENT;
+		});
 
 		toggleDebugFrame.addActionListener(e -> {
 			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
@@ -342,6 +351,8 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDrawScene);
 	    mainButtonElements.add(toggleDrawOctree);
 	    mainButtonElements.add(toggleDrawProbes);
+	    mainButtonElements.add(toggleDebugDrawProbes);
+	    mainButtonElements.add(toggleDebugDrawProbesWithContent);
 	    mainButtonElements.add(toggleDebugFrame);
 	    mainButtonElements.add(toggleDrawLights);
 		mainButtonElements.add(toggleFileReload);
@@ -507,7 +518,7 @@ public class DebugFrame {
         		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(World world) {
-						world.getRenderer().getLightFactory().getPointLight();
+						world.getRenderer().getLightFactory().getPointLight(50);
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
         		

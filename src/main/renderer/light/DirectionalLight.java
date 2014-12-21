@@ -95,7 +95,7 @@ public class DirectionalLight implements IEntity {
 
 	public void init(Renderer renderer) throws Exception {
 //		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
-		Matrix4f projectionMatrix = Util.createOrthogonal(-200f, 200f, 200f, -200f, -500f, 500f);
+		Matrix4f projectionMatrix = Util.createOrthogonal(-300f, 300f, 300f, -300f, -500f, 500f);
 		Matrix4f viewMatrix = Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0));
 		camera =  new Camera(renderer, projectionMatrix, viewMatrix, 0.1f, 500f, 60, 16/9);
 		setPosition(new Vector3f(12f,80f,2f));

@@ -21,6 +21,7 @@ public interface IEntity extends ITransformable {
 	default public void update(float seconds) {};
 
 	default public void draw(Renderer renderer, Camera camera) {};
+	public default void draw(Renderer renderer, Camera camera, Program program) {};
 	default public void draw(Renderer renderer, Camera camera, CubeMap environmentMap) {};
 	default public void drawDebug(Program program) {};
 
