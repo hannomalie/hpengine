@@ -19,6 +19,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.SynchronousQueue;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import main.World;
@@ -33,6 +34,8 @@ import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.command.Command;
+import main.renderer.command.RenderProbeCommand;
+import main.renderer.command.RenderProbeCommandQueue;
 import main.renderer.light.AreaLight;
 import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
@@ -84,6 +87,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import sun.java2d.pipe.RenderingEngine;
+
 import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class DeferredRenderer implements Renderer {
@@ -94,6 +99,8 @@ public class DeferredRenderer implements Renderer {
 	
 	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
 	private Map<Command, SynchronousQueue<Result>> commandQueueMap = new ConcurrentHashMap<Command, SynchronousQueue<Result>>();
+	
+	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
 
 	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
 			DataChannels.POSITION3,
@@ -353,6 +360,7 @@ public class DeferredRenderer implements Renderer {
 	public void update(World world, float seconds) {
 		try {
 			executeCommands(world);
+//			executeRenderProbeCommands(world.getScene().getOctree(), World.light);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -384,6 +392,7 @@ public class DeferredRenderer implements Renderer {
 
 		if (!World.DEBUGDRAW_PROBES) {
 			environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
+			executeRenderProbeCommands(octree, World.light);
 			GPUProfiler.start("Shadowmap pass");
 			light.drawShadowMap(octree);
 			//		doInstantRadiosity(light);
@@ -699,6 +708,26 @@ public class DeferredRenderer implements Renderer {
             queue.offer(result);
         	command = workQueue.poll();
         }
+	}
+	
+	private void executeRenderProbeCommands(Octree octree, DirectionalLight light) {
+//		environmentProbeFactory.prepareProbeRendering();
+		int counter = 0;
+		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
+			renderProbeCommandQueue.take().ifPresent(new Consumer<RenderProbeCommand>() {
+				@Override
+				public void accept(RenderProbeCommand command) {
+					command.getProbe().draw(octree, light);
+				}
+			});
+			counter++;
+		}
+		counter = 0;
+	}
+	
+	@Override
+	public void addRenderProbeCommand(EnvironmentProbe probe) {
+		renderProbeCommandQueue.addProbeRenderCommand(probe);
 	}
 
 	@Override

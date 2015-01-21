@@ -187,20 +187,20 @@ public class GBuffer {
 		bindEnvironmentProbePositions(probeFirstpassProgram);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
-		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
-		
-		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
-			Transform transform = new Transform();
-			transform.setPosition(probe.getCenter());
-			transform.setScale(probe.getSize());
-			Vector3f colorHelper = probe.getDebugColor();
-			probeBoxEntity.getMaterial().setDiffuse(colorHelper);
-			probeBoxEntity.setTransform(transform);
-			probeBoxEntity.update(0);
-			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
-			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
-			probeBoxEntity.draw(renderer, camera, probeFirstpassProgram);
-		}
+//		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
+//		
+//		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
+//			Transform transform = new Transform();
+//			transform.setPosition(probe.getCenter());
+//			transform.setScale(probe.getSize());
+//			Vector3f colorHelper = probe.getDebugColor();
+//			probeBoxEntity.getMaterial().setDiffuse(colorHelper);
+//			probeBoxEntity.setTransform(transform);
+//			probeBoxEntity.update(0);
+//			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
+//			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
+//			probeBoxEntity.draw(renderer, camera, probeFirstpassProgram);
+//		}
 	}
 
 	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -322,6 +322,9 @@ public class GBuffer {
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
+
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		
 		reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);

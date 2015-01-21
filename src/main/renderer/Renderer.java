@@ -16,6 +16,7 @@ import main.renderer.command.Command;
 import main.renderer.light.LightFactory;
 import main.renderer.light.DirectionalLight;
 import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
@@ -70,5 +71,6 @@ public interface Renderer {
 	public int getMaxTextureUnits();
 	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
+	public void addRenderProbeCommand(EnvironmentProbe probe);
 
 }

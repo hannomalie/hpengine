@@ -5,7 +5,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.stream.Collectors;
 
 import main.World;
@@ -17,6 +22,8 @@ import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
+import main.renderer.Result;
+import main.renderer.command.Command;
 import main.renderer.light.DirectionalLight;
 import main.renderer.rendertarget.CubeMapArrayRenderTarget;
 import main.renderer.rendertarget.CubeRenderTarget;
@@ -119,27 +126,23 @@ public class EnvironmentProbeFactory {
 	public void draw(Octree octree, DirectionalLight light) {
 		if(!World.DRAW_PROBES) { return; }
 		
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		cubeMapArrayRenderTarget.use(false);
+		prepareProbeRendering();
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
 				filter(probe -> { return probe.update == Update.DYNAMIC; }).
 				collect(Collectors.toList());
 		
-		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-			environmentProbe.draw(octree, light);
+			//environmentProbe.draw(octree, light);
+			renderer.addRenderProbeCommand(environmentProbe);
 		}
 	}
 	
 	public void drawAlternating(Octree octree, Camera camera, DirectionalLight light, int frameCount) {
 		if(!World.DRAW_PROBES) { return; }
 
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		cubeMapArrayRenderTarget.use(false);
+		prepareProbeRendering();
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
 				filter(probe -> { return probe.update == Update.DYNAMIC; }).
@@ -152,14 +155,19 @@ public class EnvironmentProbeFactory {
 				}).
 				collect(Collectors.toList());
 		
-		int counter = 0;
+//		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
-//			if(frameCount%i == 0) {
-				if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
-				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-				environmentProbe.draw(octree, light);
-//			};
+//			if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
+			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
+//			environmentProbe.draw(octree, light);
+			renderer.addRenderProbeCommand(environmentProbe);
 		}
+	}
+
+	public void prepareProbeRendering() {
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		cubeMapArrayRenderTarget.use(false);
 	}
 	
 	public void drawDebug(Program program, Octree octree) {
