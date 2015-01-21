@@ -212,7 +212,7 @@ vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal
 	
 	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = vec3(lightDiffuse.rgb) * NdotL;
-	diff = (diff.rgb) * (1-fresnel) * diffuseColor;
+	diff = (diff.rgb) * diffuseColor;
 	
 
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
@@ -282,7 +282,7 @@ void main()
 		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
 	}
 	
-	out_color.rgb += 0.025 * color.rgb;
+	out_color.rgb += 0.0125 * color.rgb;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

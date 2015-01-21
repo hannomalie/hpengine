@@ -106,7 +106,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     }
 	/////////////////////////
 	
-	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	//diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	

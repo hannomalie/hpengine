@@ -383,17 +383,13 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.end();
 
 		if (!World.DEBUGDRAW_PROBES) {
-			environmentProbeFactory.drawAlternating(octree, camera, light,
-					frameCount);
+			environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
 			GPUProfiler.start("Shadowmap pass");
 			light.drawShadowMap(octree);
 			//		doInstantRadiosity(light);
 			GPUProfiler.end();
 			GPUProfiler.start("Second pass");
-			gBuffer.drawSecondPass(camera, light,
-					lightFactory.getPointLights(),
-					lightFactory.getTubeLights(), lightFactory.getAreaLights(),
-					cubeMap);
+			gBuffer.drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
 			GPUProfiler.end();
 			GL11.glViewport(0, 0, WIDTH, HEIGHT);
 			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);

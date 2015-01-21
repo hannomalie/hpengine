@@ -108,9 +108,8 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float F = fresnel + F0;
 	
 	
-	//float specularAdjust = length(lightDiffuse)/length(vec3(1,1,1));
 	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
-	diff = diff * (1-fresnel);
+	//diff = diff * (1-fresnel);
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	

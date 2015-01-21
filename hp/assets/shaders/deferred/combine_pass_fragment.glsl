@@ -302,7 +302,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
-	
+	cookTorrance = 1; // TODO: Fix this in the reflections shader
 	return diff + reflectedColor * specularColor * cookTorrance;
 }
 
@@ -363,7 +363,9 @@ void main(void) {
 	
 	vec3 ambientTerm = ambientColor * mix(color.rgb, reflectedColor.rgb, reflectionMixer);
 	
-	vec3 ambientDiffuseSpecular = cookTorrance(normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalView.xyz, environmentColor, reflectedColor, color, specularColor);
+	//vec3 ambientDiffuseSpecular = cookTorrance(normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalView.xyz, environmentColor, reflectedColor, color, specularColor);
+	//vec3 ambientDiffuseSpecular = environmentColor + reflectedColor;
+	vec3 ambientDiffuseSpecular = reflectedColor;
 	
 	ambientTerm = 2*ambientColor*ambientDiffuseSpecular;
 

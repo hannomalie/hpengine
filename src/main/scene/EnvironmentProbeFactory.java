@@ -154,11 +154,11 @@ public class EnvironmentProbeFactory {
 		
 		int counter = 0;
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
-			if(frameCount%i == 0) {
+//			if(frameCount%i == 0) {
 				if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 				EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 				environmentProbe.draw(octree, light);
-			};
+//			};
 		}
 	}
 	

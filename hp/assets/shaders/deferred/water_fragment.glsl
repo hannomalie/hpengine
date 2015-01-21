@@ -277,7 +277,7 @@ void main(void) {
 	
 	out_normal = vec4(PN_view, depth);
 	float n = surface3(vec3(UV, int(time)%1000000 * 0.0001));
-	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 2);
+	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 8);
 	out_normal.rgb = normalize(viewMatrix * vec4(normalize(vec3(0,1,0) + vec3(n*n2,1-n*n2,n*n)), 0)).rgb;
 	//out_normal.rgb = viewMatrix * vec4(vec3(0,1,0), 0).rgb;
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
@@ -300,6 +300,7 @@ void main(void) {
 
 	out_position.w = materialRoughness;
 	out_position.w = clamp(materialRoughness * (1-n2/2), 0.0, 1.0);
+	
 #ifdef use_roughnessMap
 	UV.x = texCoord.x * roughnessMapWidth;
 	UV.y = texCoord.y * roughnessMapHeight;
