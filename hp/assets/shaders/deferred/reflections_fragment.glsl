@@ -27,6 +27,12 @@ in vec2 pass_TextureCoord;
 out vec4 out_diffuseEnvironment;
 out vec4 out_specularEnvironment;
 
+
+struct ProbeSample {
+	vec3 diffuseColor;
+	vec3 specularColor;
+};
+
 float rand(vec2 co){
 	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
@@ -149,18 +155,16 @@ float p(vec2 spherical_coords, float roughness) {
 	return result;
 }
  
-vec4[2] diffuseSpecularImportanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
-  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+ProbeSample importanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
+  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
   vec3 V = -v;
   const int N = 32;
-  vec4 result = vec4(0,0,0,0);
   vec4 resultDiffuse = vec4(0,0,0,0);
+  vec4 resultSpecular = vec4(0,0,0,0);
   float energyConservation = 0;
   vec3 n = reflected;
   
-  //return textureLod(probes, vec4(reflected, index), 0);
-	
   for (int k = 0; k < N; k++) {
     vec2 xi = hammersley2d(k, N);
     vec3 H = ImportanceSampleGGX(xi, roughness, n);
@@ -203,7 +207,7 @@ vec4[2] diffuseSpecularImportanceSampleCubeMap(int index, vec3 normal, vec3 refl
     	
 		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
 		energyConservation += fresnel;
-		result.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
+		resultSpecular.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
 		
 		// TODO: Multiple samples for diffuse
 		//H = hemisphereSample_uniform(xi.x, xi.y, normal);
@@ -212,17 +216,16 @@ vec4[2] diffuseSpecularImportanceSampleCubeMap(int index, vec3 normal, vec3 refl
 	}
   }
   
-  result = result/(N);
+  resultSpecular = resultSpecular/(N);
   //resultDiffuse = resultDiffuse/(N);
   energyConservation = clamp(1 - (energyConservation/N), 0, 1);
   
   resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   
-  vec4[2] resultArray;
-  resultArray[0] = resultDiffuse;
-  resultArray[1] = result;
-  return resultArray;
-
+  ProbeSample result;
+  result.diffuseColor = resultDiffuse.rgb;
+  result.specularColor = resultSpecular.rgb;
+  return result;
 }
 
 float getAmbientOcclusion(vec2 st) {
@@ -532,7 +535,8 @@ vec3 findMainAxis(vec3 input) {
 	} else {
 		return vec3(0,0,1);
 	}
-		
+	
+	// y shouldn't be the main axis ever, I guess
 	/*if(abs(input.x) > abs(input.y)) {
 		if(abs(input.x) > abs(input.z)) {
 			return vec3(1,0,0);
@@ -580,7 +584,6 @@ float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minim
 	percent.z = abs(percent.z); // now contains values between 0 and 1 for each axis
 	
 	float result;
-	//result = min(percent.x, max(percent.y, percent.z));
 	if(interpolationMainAxis.x > 0) {
 		result = min(percent.x, min(1-percent.y, 1-percent.z));
 		result = percent.x;
@@ -593,11 +596,8 @@ float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minim
 	return result;
 }
 
-
-const bool MULTIPLE_SAMPLES = true;
-
-vec3[2] getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, float metallic, vec2 uv, vec3 color) {
-	vec3[2] result;
+ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float roughness, float metallic, vec2 uv, vec3 color) {
+	ProbeSample result;
 	
 	float mipMapLevel = roughness * MAX_MIPMAPLEVEL;
 	float mipMapLevelSecond = mipMapLevel;
@@ -605,7 +605,6 @@ vec3[2] getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float rough
 	BoxProjectionIntersectionResult twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, V, normalWorld, uv);
 	int probeIndexNearest = twoIntersectionsAndIndices.indexNearest;
 	int probeIndexSecondNearest = twoIntersectionsAndIndices.indexSecondNearest;
-	
 	vec3 intersectionNearest = twoIntersectionsAndIndices.intersectionNormalNearest;
 	vec3 intersectionSecondNearest = twoIntersectionsAndIndices.intersectionNormalSecondNearest;
 	
@@ -614,56 +613,41 @@ vec3[2] getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float rough
 	
 	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
-
 	vec3 boxProjectedNearestSpecular = boxProjection(positionWorld, texCoords3dSpecular, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
 	vec3 boxProjectedSecondNearestSpecular = boxProjection(positionWorld, texCoords3dSpecular, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
-	
 	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest],
-								environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
+									 environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
-	// Wenn erste probe gefunden und zweite probe nicht
-	if((probeIndexNearest != -1 && probeIndexSecondNearest == -1) || probeIndexNearest == probeIndexSecondNearest) {
-		result[0] = textureLod(probes, vec4(boxProjectedNearest, probeIndexNearest), mipMapLevel).rgb;
-		result[1] = textureLod(probes, vec4(boxProjectedNearestSpecular, probeIndexNearest), mipMapLevel).rgb;
-		if(MULTIPLE_SAMPLES) {
-			vec4[2] diffuseSpecular = diffuseSpecularImportanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
-			result[0] = diffuseSpecular[0].rgb;
-			result[1] = diffuseSpecular[1].rgb;
-		}
-		return result;
-	} else if(probeIndexNearest == -1 && probeIndexSecondNearest == -1) {
-		// Wenn garkeine Probe gefunden....
-		vec4 temp = textureLod(globalEnvironmentMap, normalWorld, mipMapLevel);
-		temp.rgb = vec3(0,0,0);
-		result[0] = temp.rgb;
-		result[1] = temp.rgb;
+	bool onlyFirstProbeFound = (probeIndexNearest != -1 && probeIndexSecondNearest == -1) || probeIndexNearest == probeIndexSecondNearest;
+	bool noProbeFound = probeIndexNearest == -1 && probeIndexSecondNearest == -1;
+	
+	// early out
+	if(onlyFirstProbeFound) {
+		return importanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
+	} else if(noProbeFound) {
+		//vec4 tempDiffuse = textureLod(globalEnvironmentMap, texCoords3d, mipMapLevel);
+		//vec4 tempSpecular = textureLod(globalEnvironmentMap, texCoords3dSpecular, mipMapLevel);
+		result.diffuseColor = vec3(0,0,0);
+		result.specularColor = vec3(0,0,0);
 		return result;
 	}
 	
 	mipMapLevel *= clamp(distance(positionWorld, intersectionNearest)/10, 0, 1);
 	mipMapLevelSecond *= clamp(distance(positionWorld, intersectionSecondNearest)/10, 0, 1);
+	vec3 diffuseNearest;// = textureLod(probes, vec4(boxProjectedNearest, probeIndexNearest), mipMapLevel).rgb;
+	vec3 specularNearest;// = textureLod(probes, vec4(boxProjectedNearestSpecular, probeIndexNearest), mipMapLevel).rgb;
+	vec3 diffuseSecondNearest;// = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond).rgb;
+	vec3 specularSecondNearest;// = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond).rgb;
 	
-	vec4 colorVisibilityNearest = textureLod(probes, vec4(boxProjectedNearest, probeIndexNearest), mipMapLevel);
-	vec4 colorSpecularVisibilityNearest = textureLod(probes, vec4(boxProjectedNearestSpecular, probeIndexNearest), mipMapLevel);
-	if(MULTIPLE_SAMPLES) {
-		vec4[2] diffuseSpecular = diffuseSpecularImportanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
-		colorVisibilityNearest = diffuseSpecular[0];
-		colorSpecularVisibilityNearest = diffuseSpecular[1];
-	}
-	vec3 colorNearest = colorVisibilityNearest.rgb;
-	vec3 colorSpecularNearest = colorSpecularVisibilityNearest.rgb;
-	
-	vec4 colorVisibilitySecondNearest = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond);
-	vec4 colorSpecularVisibilitySecondNearest = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond);
-	if(MULTIPLE_SAMPLES) {
-		vec4[2] diffuseSpecular = diffuseSpecularImportanceSampleCubeMap(probeIndexSecondNearest, boxProjectedSecondNearest, boxProjectedSecondNearestSpecular, V, roughness, metallic, color);
-		colorVisibilitySecondNearest = diffuseSpecular[0];
-		colorSpecularVisibilitySecondNearest = diffuseSpecular[1];
-	}
-	vec3 colorSecondNearest = colorVisibilitySecondNearest.rgb;
-	vec3 colorSpecularSecondNearest = colorSpecularVisibilitySecondNearest.rgb;
+	ProbeSample s = importanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
+	diffuseNearest = s.diffuseColor;
+	specularNearest = s.specularColor;
 
+	s = importanceSampleCubeMap(probeIndexSecondNearest, boxProjectedSecondNearest, boxProjectedSecondNearestSpecular, V, roughness, metallic, color);
+	diffuseSecondNearest = s.diffuseColor;
+	specularSecondNearest = s.specularColor;
+	
 	float distanceToNearestIntersection = distance(positionWorld, intersectionNearest);
 	float distanceToSecondNearestIntersection = distance(positionWorld, intersectionSecondNearest);
 	
@@ -680,8 +664,9 @@ vec3[2] getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float rough
 	//////////// THIRD BOUNCE
 	vec3 thirdBounceColor = textureLod(probes, vec4(-boxNormal, probeIndexNearest), max(mipMapLevel*4, MAX_MIPMAPLEVEL)).rgb;
 	//////////////////////////
-	result[0] = mix(colorNearest, colorSecondNearest, mixer);
-	result[1] = mix(colorSpecularNearest, colorSpecularSecondNearest, mixer);
+	
+	result.diffuseColor = mix(diffuseNearest, diffuseSecondNearest, mixer);
+	result.specularColor = mix(specularNearest, specularSecondNearest, mixer);
 	//result[0] = vec3(mixer, 0, 0);
 	//result[1] = vec3(mixer, 0, 0);
 	return result;
@@ -706,20 +691,15 @@ void main()
 	float roughness = positionViewRoughness.a;
 	float metallic = colorMetallic.a;
 	
-	/*if(st.x < 0.5) {
-		roughness = 0;
-	}*/
-	//roughness = 0;
-	
-	vec3[2] probeColorsDiffuseSpecular = getProbeColors(positionWorld, V, normalWorld, roughness, metallic, st, color);
+	ProbeSample probeColorsDiffuseSpecular = getProbeColors(positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
 	//out_diffuseEnvironment.rgb = probeColorsDiffuseSpecular[0];
 	out_diffuseEnvironment.a = getAmbientOcclusion(st);
 	
-	if(roughness < 0.2) {
+	/*if(roughness < 0.2) {
 		vec3 tempSSLR = rayCast(color, out_specularEnvironment.rgb, st, positionView, normalView.rgb, roughness);
-		probeColorsDiffuseSpecular[1] = tempSSLR;
-	}
+		probeColorsDiffuseSpecular.specularColor = tempSSLR;
+	}*/
 	
-	out_specularEnvironment.rgb = probeColorsDiffuseSpecular[0] + probeColorsDiffuseSpecular[1];
+	out_specularEnvironment.rgb = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 }
