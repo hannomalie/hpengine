@@ -37,6 +37,70 @@ float rand(vec2 co){
 	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
 
+vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+	vec3 nrdir = normalize(texCoords3d);
+	vec3 envMapMin = vec3(-300,-300,-300);
+	envMapMin = environmentMapMin;
+	vec3 envMapMax = vec3(300,300,300);
+	envMapMax = environmentMapMax;
+	
+	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+	vec3 rbminmax;
+	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+	
+	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+	vec3 posonbox = position_world.xyz + nrdir*fa;
+	
+	return posonbox; 
+}
+
+//https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
+vec3 ______boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
+	vec3 environmentMapMin = environmentMapMin[probeIndex];
+	vec3 environmentMapMax = environmentMapMax[probeIndex];
+	vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
+	
+	vec3 DirectionWS = texCoords3d;
+	
+	vec3 FirstPlaneIntersect = (environmentMapMax - position_world) / DirectionWS;
+	vec3 SecondPlaneIntersect = (environmentMapMin - position_world) / DirectionWS;
+	vec3 FurthestPlane = max(FirstPlaneIntersect, SecondPlaneIntersect);
+	float Distance = min(min(FurthestPlane.x, FurthestPlane.y), FurthestPlane.z);
+	
+	vec3 IntersectPositionWS = position_world + DirectionWS * Distance;
+	DirectionWS = IntersectPositionWS - environmentMapWorldPosition;
+	return DirectionWS;
+}
+
+vec3[2] boxProjectionAndIntersection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
+	vec3 environmentMapMin = environmentMapMin[probeIndex];
+	vec3 environmentMapMax = environmentMapMax[probeIndex];
+	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+	
+	//vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
+	vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+	
+	vec3 projectedVector = normalize(posonbox - environmentMapWorldPosition.xyz);
+	vec3[2] result;
+	result[0] = projectedVector;
+	result[1] = posonbox;
+	return result;
+}
+vec3 boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
+	vec3 environmentMapMin = environmentMapMin[probeIndex];
+	vec3 environmentMapMax = environmentMapMax[probeIndex];
+	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+	
+	//vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
+	vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+	
+	return normalize(posonbox - environmentMapWorldPosition.xyz);
+}
+
 mat3 createOrthonormalBasis(vec3 n) {
 
 	vec3 x;
@@ -154,25 +218,48 @@ float p(vec2 spherical_coords, float roughness) {
 	float result = (a2 * cos(spherical_coords.y) * sin(spherical_coords.y)) / (PI * pow((pow(cos(a2 - 1), 2)) + 1, 2));
 	return result;
 }
- 
-ProbeSample importanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
+
+float chiGGX(float v)
+{
+    return v > 0 ? 1 : 0;
+}
+
+float GGX_PartialGeometryTerm(vec3 v, vec3 n, vec3 h, float alpha)
+{
+    float VoH2 = clamp(dot(v,h), 0, 1);
+    float chi = chiGGX( VoH2 / clamp(dot(v,n), 0, 1) );
+    VoH2 = VoH2 * VoH2;
+    float tan2 = ( 1 - VoH2 ) / VoH2;
+    return (chi * 2) / ( 1 + sqrt( 1 + alpha * alpha * tan2 ) );
+}
+
+ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
   vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
-  vec3 V = -v;
-  const int N = 32;
+  
+  ProbeSample result;
+  //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
+  //return result;
+  
+  vec3 V = -v; // our V has to be from point to viewer
+  const int N = 16;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
-  float energyConservation = 0;
+  float ks = 0;
   vec3 n = reflected;
+  float NoV = clamp(dot(n, V), 0.0, 1.0);
   
   for (int k = 0; k < N; k++) {
     vec2 xi = hammersley2d(k, N);
     vec3 H = ImportanceSampleGGX(xi, roughness, n);
     //H = hemisphereSample_uniform(xi.x, xi.y, n);
+    vec3[2] projectedVectorAndIntersection = boxProjectionAndIntersection(positionWorld, H, index);
+    float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
+    H = normalize(projectedVectorAndIntersection[0]);
+    
     vec2 spherical_coords = cartesianToSpherical(H);
     vec3 L = 2 * dot( V, H ) * H - V;
     
-    float NoV = clamp(dot(n, V), 0.0, 1.0);
 	float NoL = clamp(dot(n, L), 0.0, 1.0);
 	float NoH = clamp(dot(n, H), 0.0, 1.0);
 	float VoH = clamp(dot(V, H), 0.0, 1.0);
@@ -181,9 +268,12 @@ ProbeSample importanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3
 	
 	//if( NoL > 0 )
 	{
-		float G = min(1, min((2*NoH*NoV/VoH), (2*NoH*NoL/VoH)));
-		float F0 = 0.02;
+		vec3 halfVector = normalize(H + v);
+		
+		float G = GGX_PartialGeometryTerm(v, n, halfVector, alpha) * GGX_PartialGeometryTerm(H, n, halfVector, alpha);
+		
 		float glossiness = (1-roughness);
+		float F0 = 0.02;
 		float maxSpecular = mix(0.2, 1.0, metallic);
 		F0 = max(F0, (glossiness*maxSpecular));
 	    float fresnel = 1; fresnel -= dot(L, H);
@@ -198,15 +288,16 @@ ProbeSample importanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3
 	    float pdf = p(spherical_coords, roughness);
 	    //pdf = (alpha2/(3.1416*pow(((NoH*NoH*((alpha2)-1))+1), 2))) * NoH / (4 * VoH);
 	    float lod = 1.0 / (float(N)*pdf);
-	    // TODO: Figure this shit about the pdf out...
+	    // TODO: Figure this shit about the pdf out and do distance based glossiness...
 	    lod = (1-pdf) * 0.5 * MAX_MIPMAPLEVEL;
 	    lod = roughness * (1+roughness) * MAX_MIPMAPLEVEL;
+	    lod *= pow(1+clamp(distToIntersection/500.0, 0, 1), 4);
 	    
-    	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
+    	vec4 SampleColor = textureLod(probes, vec4(H, index), 1+lod);
     	float mipmapLevel = clamp((1/N)*MAX_MIPMAPLEVEL, 1.0, MAX_MIPMAPLEVEL);
     	
 		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
-		energyConservation += fresnel;
+		ks += fresnel;
 		resultSpecular.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
 		
 		// TODO: Multiple samples for diffuse
@@ -218,11 +309,12 @@ ProbeSample importanceSampleCubeMap(int index, vec3 normal, vec3 reflected, vec3
   
   resultSpecular = resultSpecular/(N);
   //resultDiffuse = resultDiffuse/(N);
-  energyConservation = clamp(1 - (energyConservation/N), 0, 1);
+  ks = clamp(ks/N, 0, 1);
+  float kd = (1 - ks) * (1 - metallic);
   
+  normal = boxProjection(positionWorld, normal, index);
   resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   
-  ProbeSample result;
   result.diffuseColor = resultDiffuse.rgb;
   result.specularColor = resultSpecular.rgb;
   return result;
@@ -359,33 +451,6 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 	return probeColor;
 }
 
-vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
-	vec3 nrdir = normalize(texCoords3d);
-	vec3 envMapMin = vec3(-300,-300,-300);
-	envMapMin = environmentMapMin;
-	vec3 envMapMax = vec3(300,300,300);
-	envMapMax = environmentMapMax;
-	
-	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
-	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
-	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
-	vec3 rbminmax;
-	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
-	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
-	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
-	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
-	vec3 posonbox = position_world.xyz + nrdir*fa;
-	
-	return posonbox; 
-}
-
-vec3 boxProjection(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
-	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
-	
-	//texCoords3d = normalize(posonbox - vec3(0,0,0));
-	vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
-	return normalize(posonbox - environmentMapWorldPosition.xyz);
-}
 bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
 	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
 }
@@ -448,7 +513,7 @@ vec4[2] getTwoNearestProbeIndicesAndIntersectionsForIntersection(vec3 position, 
 const bool NO_INTERPOLATION_IF_ONE_PROBE_CACHED = true;
 const bool USE_CACHED_RPROBES = false;
 
-struct BoxProjectionIntersectionResult {
+struct BoxIntersectionResult {
 	int indexNearest;
 	int indexSecondNearest;
 	
@@ -459,8 +524,8 @@ struct BoxProjectionIntersectionResult {
 	vec3 intersectionReflectedSecondNearest;
 };
 
-BoxProjectionIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3 V, vec3 normal, vec2 uv) {
-	BoxProjectionIntersectionResult result;
+BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 position, vec3 V, vec3 normal, vec2 uv) {
+	BoxIntersectionResult result;
 	result.indexNearest = -1;
 	result.indexSecondNearest = -1;
 	
@@ -522,7 +587,7 @@ BoxProjectionIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosi
 	result.intersectionReflectedNearest = getIntersectionPoint(position, reflectionVector, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
 	
 	result.indexSecondNearest = iForNearest2;
-	result.intersectionReflectedNearest = getIntersectionPoint(position, normal, currentEnvironmentMapMin2, currentEnvironmentMapMax2);
+	result.intersectionNormalSecondNearest = getIntersectionPoint(position, normal, currentEnvironmentMapMin2, currentEnvironmentMapMax2);
 	result.intersectionReflectedSecondNearest = getIntersectionPoint(position, reflectionVector, currentEnvironmentMapMin2, currentEnvironmentMapMax2);
 	
 	return result;
@@ -602,29 +667,24 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	float mipMapLevel = roughness * MAX_MIPMAPLEVEL;
 	float mipMapLevelSecond = mipMapLevel;
 	
-	BoxProjectionIntersectionResult twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, V, normalWorld, uv);
+	BoxIntersectionResult twoIntersectionsAndIndices = getTwoNearestProbeIndicesAndIntersectionsForPosition(positionWorld, V, normalWorld, uv);
 	int probeIndexNearest = twoIntersectionsAndIndices.indexNearest;
 	int probeIndexSecondNearest = twoIntersectionsAndIndices.indexSecondNearest;
 	vec3 intersectionNearest = twoIntersectionsAndIndices.intersectionNormalNearest;
 	vec3 intersectionSecondNearest = twoIntersectionsAndIndices.intersectionNormalSecondNearest;
 	
-	vec3 texCoords3d = normalize(normalWorld);
-	vec3 texCoords3dSpecular = normalize(reflect(V, normalWorld));
-	
-	vec3 boxProjectedNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
-	vec3 boxProjectedSecondNearest = boxProjection(positionWorld, texCoords3d, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
-	vec3 boxProjectedNearestSpecular = boxProjection(positionWorld, texCoords3dSpecular, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
-	vec3 boxProjectedSecondNearestSpecular = boxProjection(positionWorld, texCoords3dSpecular, environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
+	vec3 normal = normalize(normalWorld);
+	vec3 reflected = normalize(reflect(V, normalWorld));
 	
 	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest],
 									 environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	
-	bool onlyFirstProbeFound = (probeIndexNearest != -1 && probeIndexSecondNearest == -1) || probeIndexNearest == probeIndexSecondNearest;
+	bool onlyFirstProbeFound = (probeIndexNearest != -1 && probeIndexSecondNearest == -1) || (probeIndexNearest != -1 && probeIndexNearest == probeIndexSecondNearest);
 	bool noProbeFound = probeIndexNearest == -1 && probeIndexSecondNearest == -1;
 	
 	// early out
 	if(onlyFirstProbeFound) {
-		return importanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
+		return importanceSampleProjectedCubeMap(probeIndexNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
 	} else if(noProbeFound) {
 		//vec4 tempDiffuse = textureLod(globalEnvironmentMap, texCoords3d, mipMapLevel);
 		//vec4 tempSpecular = textureLod(globalEnvironmentMap, texCoords3dSpecular, mipMapLevel);
@@ -640,20 +700,16 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	vec3 diffuseSecondNearest;// = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond).rgb;
 	vec3 specularSecondNearest;// = textureLod(probes, vec4(boxProjectedSecondNearest, probeIndexSecondNearest), mipMapLevelSecond).rgb;
 	
-	ProbeSample s = importanceSampleCubeMap(probeIndexNearest, boxProjectedNearest, boxProjectedNearestSpecular, V, roughness, metallic, color);
+	ProbeSample s = importanceSampleProjectedCubeMap(probeIndexNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
 	diffuseNearest = s.diffuseColor;
 	specularNearest = s.specularColor;
 
-	s = importanceSampleCubeMap(probeIndexSecondNearest, boxProjectedSecondNearest, boxProjectedSecondNearestSpecular, V, roughness, metallic, color);
+	s = importanceSampleProjectedCubeMap(probeIndexSecondNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
 	diffuseSecondNearest = s.diffuseColor;
 	specularSecondNearest = s.specularColor;
 	
-	float distanceToNearestIntersection = distance(positionWorld, intersectionNearest);
-	float distanceToSecondNearestIntersection = distance(positionWorld, intersectionSecondNearest);
-	
-	
 	// TODO: CHECK Y THIS ISNT WORKING
-	//////////// SECOND BOUNCE
+	/* //////////// SECOND BOUNCE
 	vec3 boxNormalMainAxis = findMainAxis(boxProjectedNearest);
 	vec3 boxNormal = -normalize(vec3(boxProjectedNearest.x > 0.0 ? 1 : -1, boxProjectedNearest.y > 0.0 ? 1 : -1, boxProjectedNearest.z > 0.0 ? 1 : -1));
 	boxNormal *= boxNormalMainAxis;
@@ -663,7 +719,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	vec3 secondBounceColor = textureLod(probes, vec4(secondBounceSampleNormal, probeIndexNearest), max(mipMapLevel*2, MAX_MIPMAPLEVEL)).rgb;
 	//////////// THIRD BOUNCE
 	vec3 thirdBounceColor = textureLod(probes, vec4(-boxNormal, probeIndexNearest), max(mipMapLevel*4, MAX_MIPMAPLEVEL)).rgb;
-	//////////////////////////
+	*/ //////////////////////////
 	
 	result.diffuseColor = mix(diffuseNearest, diffuseSecondNearest, mixer);
 	result.specularColor = mix(specularNearest, specularSecondNearest, mixer);

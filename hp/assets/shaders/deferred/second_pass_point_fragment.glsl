@@ -62,6 +62,21 @@ float calculateAttenuation(float dist) {
     return atten_factor;
 }
 
+
+float chiGGX(float v)
+{
+    return v > 0 ? 1 : 0;
+}
+
+float GGX_PartialGeometryTerm(vec3 v, vec3 n, vec3 h, float alpha)
+{
+    float VoH2 = clamp(dot(v,h), 0, 1);
+    float chi = chiGGX( VoH2 / clamp(dot(v,n), 0, 1) );
+    VoH2 = VoH2 * VoH2;
+    float tan2 = ( 1 - VoH2 ) / VoH2;
+    return (chi * 2) / ( 1 + sqrt( 1 + alpha * alpha * tan2 ) );
+}
+
 vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
@@ -82,12 +97,15 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
     float VdotH = max(dot(V, H), 0.0);
+	vec3 halfVector = normalize(H + V);
     
-    float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
-	
+    
 	float alpha = acos(NdotH);
-	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
-	//alpha = roughness*roughness;
+	alpha = roughness*roughness;
+	
+    float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+	//G = GGX_PartialGeometryTerm(V, N, halfVector, alpha) * GGX_PartialGeometryTerm(-L, N, halfVector, alpha);
+	
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
