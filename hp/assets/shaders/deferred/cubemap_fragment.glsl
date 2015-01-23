@@ -4,6 +4,8 @@ layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=6) uniform sampler2D shadowMap;
 
+const float pointLightRadius = 20.0;
+
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
@@ -309,7 +311,13 @@ vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(-position);
 	V = ViewVector;
- 	vec3 L = normalize(lightPosition-position);
+	
+	// make every pointlight a sphere light for better highlights, thanks Unreal Engine
+ 	vec3 r = reflect(V, normal);
+    vec3 centerToRay = (lightPosition - position) * clamp(dot((lightPosition - position), r),0,1) * r;
+    vec3 light_position = (lightPosition) + centerToRay*clamp(pointLightRadius/length(centerToRay),0,1);
+    
+ 	vec3 L = normalize(light_position-position);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
     vec3 P = position;
@@ -320,6 +328,9 @@ vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal
 	
 	float alpha = acos(NdotH);
 	float alphaSquare = alpha*alpha;
+	// adjust distribution for sphere light
+	alpha = clamp(alpha+(pointLightRadius/(3*dist)),0,1);
+	
 	// GGX
 	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));

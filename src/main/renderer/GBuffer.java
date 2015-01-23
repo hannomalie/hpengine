@@ -392,6 +392,7 @@ public class GBuffer {
 			firstLightDrawn = true;
 		}
 		GPUProfiler.end();
+		GPUProfiler.end();
 	}
 	private void doTubeLights(List<TubeLight> tubeLights,
 			Vector4f camPositionV4, FloatBuffer viewMatrix,

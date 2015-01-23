@@ -71,7 +71,6 @@ public class EnvironmentProbeFactory {
 			String errorString = GLU.gluErrorString(errorValue);
 			System.err.println("ERROR: " + errorString);
 		}
-		GPUProfiler.end();
 
 		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, environmentMapsArray);
 

@@ -46,6 +46,8 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 #define kPI 3.1415926536f
+const float pointLightRadius = 20.0;
+
 vec3 decodeNormal(vec2 enc) {
     vec2 ang = enc*2-1;
     vec2 scth;
@@ -82,6 +84,12 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	vec3 V = normalize(-position);
 	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
+	
+	// make every pointlight a sphere light for better highlights, thanks Unreal Engine
+ 	vec3 r = reflect(V, normal);
+    vec3 centerToRay = (light_position_eye - position) * clamp(dot((light_position_eye - position), r),0,1) * r;
+    light_position_eye = (light_position_eye) + centerToRay*clamp(pointLightRadius/length(centerToRay),0,1);
+    
     vec3 dist_to_light_eye = light_position_eye - position;
 	float dist = length (dist_to_light_eye);
     
@@ -102,6 +110,8 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
 	float alpha = acos(NdotH);
 	alpha = roughness*roughness;
+	// adjust distribution for sphere light
+	alpha = clamp(alpha+(pointLightRadius/(3*dist)),0,1);
 	
     float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	//G = GGX_PartialGeometryTerm(V, N, halfVector, alpha) * GGX_PartialGeometryTerm(-L, N, halfVector, alpha);
@@ -124,7 +134,6 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float temp = 1.0; temp -= F0;
 	fresnel *= temp;
 	float F = fresnel + F0;
-	
 	
 	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
 	//diff = diff * (1-fresnel);
