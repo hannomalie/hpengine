@@ -24,9 +24,20 @@ uniform float normalMapHeight = 1;
 uniform float metallic = 0;
 uniform float roughness = 1;
 
-uniform vec3[20] pointLightPositions;
-uniform vec3[20] pointLightColors;
-uniform float[20] pointLightRadiuses;
+const int pointLightMaxCount = 20;
+uniform int activePointLightCount = 0;
+uniform vec3[pointLightMaxCount] pointLightPositions;
+uniform vec3[pointLightMaxCount] pointLightColors;
+uniform float[pointLightMaxCount] pointLightRadiuses;
+
+const int areaLightMaxCount = 5;
+uniform int activeAreaLightCount = 0;
+uniform vec3[areaLightMaxCount] areaLightPositions;
+uniform vec3[areaLightMaxCount] areaLightColors;
+uniform vec3[areaLightMaxCount] areaLightWidthHeightRanges;
+uniform vec3[areaLightMaxCount] areaLightViewDirections;
+uniform vec3[areaLightMaxCount] areaLightUpDirections;
+uniform vec3[areaLightMaxCount] areaLightRightDirections;
 
 uniform int probeIndex = 0;
 uniform vec3 environmentMapMin[100];
@@ -89,6 +100,17 @@ vec2 encode(vec3 n) {
     return (vec2((atan(n.x, n.y)/kPI), n.z)+vec2(1,1))*0.5;
 }
 
+vec3 projectOnPlane(in vec3 p, in vec3 pc, in vec3 pn)
+{
+    float distance = dot(pn, p-pc);
+    return p - distance*pn;
+}
+int sideOfPlane(in vec3 p, in vec3 pc, in vec3 pn){
+   if (dot(p-pc,pn)>=0.0) return 1; else return 0;
+}
+vec3 linePlaneIntersect(in vec3 lp, in vec3 lv, in vec3 pc, in vec3 pn){
+   return lp+lv*(dot(pn,pc-lp)/dot(pn,lv));
+}
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -173,6 +195,114 @@ float calculateAttenuation(float dist, float lightRadius) {
     return atten_factor;
 }
 
+vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,
+							   vec3 lightPosition, int index, vec3 diffuseColor, vec3 specularColor) {
+
+//http://renderman.pixar.com/view/cook-torrance-shader
+	vec3 V = normalize(-position);
+	//V = -ViewVector;
+	
+	vec3 lightViewDirection = areaLightViewDirections[index];
+	vec3 lightUpDirection = areaLightUpDirections[index];
+	vec3 lightRightDirection = areaLightRightDirections[index];
+	vec3 lightWidhtHeightRange = areaLightWidthHeightRanges[index];
+	float lightWidth = lightWidhtHeightRange.x;
+	float lightHeight = lightWidhtHeightRange.y;
+	float lightRange = lightWidhtHeightRange.z;
+	
+	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
+	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
+	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
+	vec3 light_right_direction_eye = (viewMatrix * vec4(lightRightDirection, 0)).xyz;
+	
+	vec3 lVector[ 4 ];
+	vec3 leftUpper = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
+	vec3 rightUpper = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
+	vec3 leftBottom = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	vec3 rightBottom = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	
+	lVector[0] = normalize(leftUpper - position);
+	lVector[1] = normalize(rightUpper - position);
+	lVector[3] = normalize(leftBottom - position);
+	lVector[2] = normalize(rightBottom - position); // clockwise oriented all the lights rectangle points
+	float tmp = dot( lVector[ 0 ], cross( ( leftBottom - leftUpper ).xyz, ( rightUpper - leftUpper ).xyz ) );
+	if ( tmp > 0.0 ) {
+		return vec3(0,0,0);
+	} else {
+		vec3 lightVec = vec3( 0.0 );
+		for( int i = 0; i < 4; i ++ ) {
+	
+			vec3 v0 = lVector[ i ];
+			vec3 v1 = lVector[ int( mod( float( i + 1 ), float( 4 ) ) ) ]; // ugh...
+			lightVec += acos( dot( v0, v1 ) ) * normalize( cross( v0, v1 ) );
+	
+		}
+		
+	 	vec3 L = lightVec;
+	    vec3 H = normalize(L + V);
+    	vec3 N = normal;
+	    vec3 P = position;
+        vec3 R = reflect(V, N);
+        vec3 E = linePlaneIntersect(position, R, light_position_eye, light_view_direction_eye);
+
+		float width = lightWidth;
+	    float height = lightHeight;
+	    vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
+	    vec3 dir = projection-light_position_eye;
+	    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
+	    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
+	    
+	    // this is the amount of space the projected point is away from the border of the area light.
+	    // if the term is positive, the trace is besides the broder. Up to 5 units linear fading the specular, so that
+	    // we have glossy specular on rough surfaces
+	    vec2 overheadVec2 = (vec2(abs(diagonal.x)-width, abs(diagonal.y)-height) / 5);
+	    float overhead = clamp(max(overheadVec2.x, overheadVec2.y), 0.0, 1.0);
+	    
+	    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
+	    //if(distance(P, nearestPointInside) > lightRange) { discard; }
+	    vec2 texCoords = nearest2D / vec2(width, height);
+        texCoords += 1;
+	    texCoords /=2;
+        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;
+
+		float NdotL = max(dot(N, L), 0.0);
+	    float NdotH = max(dot(N, H), 0.0);
+	    float NdotV = max(dot(N, V), 0.0);
+    	float VdotH = max(dot(V, H), 0.0);
+    	
+		// irradiance factor at point
+		float factor = NdotL / ( 2.0 * 3.14159265 );
+		// frag color
+		vec3 diffuse = 2*lightDiffuse * factor;
+		
+		float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+	
+		float alpha = acos(NdotH);
+		// GGX
+		//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+		float D = (alpha*alpha)/(3.1416*pow(((NdotH*NdotH*((alpha*alpha)-1))+1), 2));
+	    
+	    // Schlick
+		float F0 = 0.02;
+		// Specular in the range of 0.02 - 0.2
+		// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+		float glossiness = (1-roughness);
+		float maxSpecular = mix(0.2, 1.0, metallic);
+		F0 = max(F0, (glossiness*maxSpecular));
+		//F0 = max(F0, metallic*0.2);
+	    float fresnel = 1; fresnel -= dot(V, H);
+		fresnel = pow(fresnel, 5.0);
+		float temp = 1.0; temp -= F0;
+		fresnel *= temp;
+		float F = fresnel + F0;
+        
+		//diffuse = diffuse * (1-fresnel);
+        
+        float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
+        
+		return diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0);
+	}
+}
 vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,
 							   vec3 lightPosition, float lightRadius, float dist, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
@@ -274,12 +404,17 @@ void main()
 	
 	out_color.rgb = directLight.rgb;
 	
-	for(int i = 0; i < 20; i++) {
+	for(int i = 0; i < max(pointLightMaxCount, activePointLightCount); i++) {
 		
 		float dist = distance(position_world.xyz, pointLightPositions[i]);
 		if(dist > pointLightRadiuses[i]) { continue; }
 		
 		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
+	}
+	
+	for(int i = 0; i < max(areaLightMaxCount, activeAreaLightCount); i++) {
+		
+		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
 	}
 	
 	out_color.rgb += 0.0125 * color.rgb;

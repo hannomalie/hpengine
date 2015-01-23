@@ -129,6 +129,9 @@ public class Scene implements Serializable {
 		for (IEntity entity : renderer.getLightFactory().getPointLights()) {
 			entity.setHasMoved(false);
 		}
+		for (IEntity entity : renderer.getLightFactory().getAreaLights()) {
+			entity.setHasMoved(false);
+		}
 		World.light.setHasMoved(false);
 	}
 	public Octree getOctree() {

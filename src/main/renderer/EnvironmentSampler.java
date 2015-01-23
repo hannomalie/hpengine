@@ -93,9 +93,19 @@ public class EnvironmentSampler {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		
 		cubeMapProgram.use();
+		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
+		
+		cubeMapProgram.setUniform("activeAreaLightCount", renderer.getLightFactory().getAreaLights().size());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", renderer.getLightFactory().getAreaLightPositions());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", renderer.getLightFactory().getAreaLightColors());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", renderer.getLightFactory().getAreaLightWidthHeightRanges());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", renderer.getLightFactory().getAreaLightViewDirections());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", renderer.getLightFactory().getAreaLightUpDirections());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
+		
 		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
@@ -107,7 +117,8 @@ public class EnvironmentSampler {
 			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
 			boolean fullRerenderRequired = !movedVisibles.isEmpty() || !drawnOnce;
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
-			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved;
+			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !fullRerenderRequired && !rerenderLightingRequired;
 			
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
