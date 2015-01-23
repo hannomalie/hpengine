@@ -6,8 +6,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,11 +15,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import javax.script.ScriptException;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -35,7 +31,6 @@ import main.World;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
-import main.renderer.DeferredRenderer;
 import main.renderer.Result;
 import main.renderer.command.AddCubeMapCommand;
 import main.renderer.command.AddTextureCommand;
@@ -60,12 +55,16 @@ import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.StandardChartTheme;
+import org.jfree.data.general.DefaultPieDataset;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
-import com.alee.extended.panel.WebButtonGroup;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
@@ -87,9 +86,6 @@ import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import com.sun.corba.se.spi.orbutil.fsm.Action;
-import com.sun.corba.se.spi.orbutil.fsm.FSM;
-import com.sun.corba.se.spi.orbutil.fsm.Input;
 
 
 public class DebugFrame {
@@ -189,7 +185,7 @@ public class DebugFrame {
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
 		ac.install(console);
 		
-
+		initPerformanceChart();
 		createPointLightsTab();
 		createTubeLightsTab();
 		createAreaLightsTab();
@@ -699,6 +695,10 @@ public class DebugFrame {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
+	}
+
+	private void initPerformanceChart() {
+		new PerformanceMonitor(world.getRenderer());
 	}
 
 	private void createPointLightsTab() {

@@ -766,5 +766,10 @@ public class DeferredRenderer implements Renderer {
 	public RenderTarget getHalfScreenTarget() {
 		return halfScreenTarget;
 	}
+	
+	public float getCurrentFPS() {
+		return fpsCounter.getFPS();
+	}
+	
 
 }
