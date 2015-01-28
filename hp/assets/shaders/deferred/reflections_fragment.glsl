@@ -131,9 +131,9 @@ mat3 createOrthonormalBasis(vec3 n) {
 }
 
 const float PI = 3.1415926536;
-const float MAX_MIPMAPLEVEL = 8;//11;
+const float MAX_MIPMAPLEVEL = 8;//11; HEMISPHERE is half the cubemap
 
-vec2 cartesianToSpherical(vec3 cartCoords){
+vec2 _cartesianToSpherical(vec3 cartCoords){
     float outPolar;
     float outElevation;
     
@@ -150,8 +150,14 @@ vec2 cartesianToSpherical(vec3 cartCoords){
     
     return vec2(outPolar, outElevation);
 }
+
+vec2 cartesianToSpherical(vec3 cartCoords){
+	float a = atan(cartCoords.y/cartCoords.x);
+	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
+	return vec2(a, b);
+}
     
-vec3 sphericalToCartesian(vec2 input){
+vec3 _sphericalToCartesian(vec2 input){
 	vec3 outCart;
     outCart.x = cos(input.x) * sin(input.y);
     outCart.y = sin(input.x) * sin(input.y);
@@ -173,29 +179,20 @@ vec2 hammersley2d(uint i, int N) {
 	return vec2(float(i)/float(N), radicalInverse_VdC(i));
 }
 
-vec3 ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
-	float a = Roughness * Roughness;
-	float Phi = 2 * PI * Xi.x;
-	float CosTheta = sqrt( (1 - Xi.y) / ( 1 + (a*a - 1) * Xi.y ) );
-	float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+// http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
+float p(vec2 spherical_coords, float roughness) {
+	float a = roughness*roughness;
+	float a2 = a*a;
 	
-	vec3 H;
-	H.x = SinTheta * cos( Phi );
-	H.y = SinTheta * sin( Phi );
-	H.z = CosTheta;
-	
-	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-	vec3 TangentX = normalize( cross( UpVector, N ) );
-	vec3 TangentY = cross( N, TangentX );
-	// Tangent to world space
-	vec3 result = TangentX * H.x + TangentY * H.y + N * H.z;
+	float result = (a2 * cos(spherical_coords.x) * sin(spherical_coords.x)) /
+					(PI * pow((pow(cos(spherical_coords.x), 2) * (a2 - 1)) + 1, 2));
 	return result;
 }
 
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
-     float phi = v * 2.0 * PI;
-     float cosTheta = 1.0 - u;
+     float phi = u * 2.0 * PI;
+     float cosTheta = 1.0 - v;
      float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
      vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
      
@@ -210,13 +207,32 @@ vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
      return result;
 }
 
-// http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
-float p(vec2 spherical_coords, float roughness) {
-	float a = roughness*roughness;
-	float a2 = a*a;
+vec3[2] ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
+	float a = Roughness * Roughness;
+	float Phi = 2 * PI * Xi.x;
+	float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )+0.000001) );
+	float SinTheta = sqrt( 1 - CosTheta * CosTheta );
 	
-	float result = (a2 * cos(spherical_coords.y) * sin(spherical_coords.y)) / (PI * pow((pow(cos(a2 - 1), 2)) + 1, 2));
-	return result;
+	vec3 H;
+	H.x = SinTheta * cos( Phi );
+	H.y = SinTheta * sin( Phi );
+	H.z = CosTheta;
+	
+	vec2 sphericalCoords = cartesianToSpherical(H);
+	float pdf = p(vec2(acos(CosTheta), Phi), Roughness);
+	
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	// Tangent to world space
+	vec3 result0 = normalize(TangentX * H.x + TangentY * H.y + N * H.z);
+	//sphericalCoords = cartesianToSpherical(result0);
+	vec3 result1 = vec3(sphericalCoords, pdf);
+	
+	vec3[2] resultArray;
+	resultArray[0] = result0;
+	resultArray[1] = result1;
+	return resultArray;
 }
 
 float chiGGX(float v)
@@ -241,28 +257,31 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
   //return result;
   
-  vec3 V = -v; // our V has to be from point to viewer
-  const int N = 16;
+  vec3 V = v;
+  vec3 n = normal;
+  vec3 R = reflected;
+  const int N = 32;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
+  float pdfSum = 0;
   float ks = 0;
-  vec3 n = reflected;
   float NoV = clamp(dot(n, V), 0.0, 1.0);
   
   for (int k = 0; k < N; k++) {
     vec2 xi = hammersley2d(k, N);
-    vec3 H = ImportanceSampleGGX(xi, roughness, n);
+    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, R);
+    vec3 H = importanceSampleResult[0];
+    vec2 sphericalCoordsTangentSpace = importanceSampleResult[1].xy;
     //H = hemisphereSample_uniform(xi.x, xi.y, n);
     vec3[2] projectedVectorAndIntersection = boxProjectionAndIntersection(positionWorld, H, index);
     float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
     H = normalize(projectedVectorAndIntersection[0]);
     
-    vec2 spherical_coords = cartesianToSpherical(H);
     vec3 L = 2 * dot( V, H ) * H - V;
     
 	float NoL = clamp(dot(n, L), 0.0, 1.0);
 	float NoH = clamp(dot(n, H), 0.0, 1.0);
-	float VoH = clamp(dot(V, H), 0.0, 1.0);
+	float VoH = clamp(dot(v, H), 0.0, 1.0);
 	float alpha = roughness*roughness;
 	float alpha2 = alpha * alpha;
 	
@@ -285,26 +304,35 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		// Incident light = SampleColor * NoL
 		// Microfacet specular = D*G*F / (4*NoL*NoV)
 		// pdf = D * NoH / (4 * VoH)
-	    float pdf = p(spherical_coords, roughness);
-	    //pdf = (alpha2/(3.1416*pow(((NoH*NoH*((alpha2)-1))+1), 2))) * NoH / (4 * VoH);
-	    float lod = 1.0 / (float(N)*pdf);
-	    // TODO: Figure this shit about the pdf out and do distance based glossiness...
-	    lod = (1-pdf) * 0.5 * MAX_MIPMAPLEVEL;
-	    lod = roughness * (1+roughness) * MAX_MIPMAPLEVEL;
-	    lod *= pow(1+clamp(distToIntersection/500.0, 0, 1), 4);
+	    float pdf = importanceSampleResult[1].z;
+    	//float denom = (NoH*NoH*(alpha2-1))+1;
+		//float D = alpha2/(3.1416*denom*denom);
+	    //pdf = D * NoH / (4 * VoH);
+	    //pdf = ((alpha2)/(3.1416*pow(((NoH*NoH*((alpha2)-1))+1), 2))) * NoH / (4 * VoH);
+	    pdfSum += pdf;
+	    float solidAngle = 1/(pdf * N); // contains the solid angle
+	    //http://www.eecis.udel.edu/~xyu/publications/glossy_pg08.pdf
+	    float crossSectionArea = (distToIntersection*distToIntersection*solidAngle)/cos(sphericalCoordsTangentSpace.x);
+	    float areaPerPixel = 0.25;
+	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
+	    //lod = MAX_MIPMAPLEVEL * pdf;
+	    //lod = clamp(lod, 0, MAX_MIPMAPLEVEL);
+	    //lod *= MAX_MIPMAPLEVEL;
+	    //lod *= distToIntersection*roughness;
+	    //lod = roughness * (1+roughness) * MAX_MIPMAPLEVEL;
+	    //lod *= pow(1+clamp(distToIntersection/500.0, 0, 1), 4);
 	    
-    	vec4 SampleColor = textureLod(probes, vec4(H, index), 1+lod);
-    	float mipmapLevel = clamp((1/N)*MAX_MIPMAPLEVEL, 1.0, MAX_MIPMAPLEVEL);
+    	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
     	
 		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
 		ks += fresnel;
 		resultSpecular.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
-		
-		// TODO: Multiple samples for diffuse
-		//H = hemisphereSample_uniform(xi.x, xi.y, normal);
-    	//vec4 SampleColorDiffuse = textureLod(probes, vec4(H, index), mipmapLevel);
-		//resultDiffuse.rgb += diffuseColor * SampleColorDiffuse.rgb * clamp(dot(normal, L), 0.0, 1.0);
 	}
+  }
+  
+  if(pdfSum < 0.9){
+  	result.diffuseColor = vec3(1,0,0);
+  	//return result;
   }
   
   resultSpecular = resultSpecular/(N);
@@ -741,7 +769,7 @@ void main()
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
-	//V = normalize(inverse(viewMatrix) * vec4(positionView,0)).xyz;
+	V = normalize(inverse(viewMatrix) * vec4(positionView,0)).xyz;
 	vec4 colorMetallic = textureLod(diffuseMap, st, 0);
 	vec3 color = colorMetallic.rgb;
 	float roughness = positionViewRoughness.a;
