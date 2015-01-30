@@ -4,6 +4,8 @@ layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=6) uniform sampler2D shadowMap;
 
+layout(binding=8) uniform samplerCubeArray probes;
+
 const float pointLightRadius = 20.0;
 
 uniform mat4 viewMatrix;
@@ -58,6 +60,9 @@ in vec3 eyeVec;
 in vec3 eyePos_world;
 
 layout(location=0)out vec4 out_color;
+
+const float PI = 3.1415926536;
+const float MAX_MIPMAPLEVEL = 8;//11; HEMISPHERE is half the cubemap
 
 mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 {
@@ -363,6 +368,224 @@ vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal
 }
 
 
+vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
+	vec3 nrdir = normalize(texCoords3d);
+	vec3 envMapMin = vec3(-300,-300,-300);
+	envMapMin = environmentMapMin;
+	vec3 envMapMax = vec3(300,300,300);
+	envMapMax = environmentMapMax;
+	
+	vec3 rbmax = (envMapMax - position_world.xyz)/nrdir;
+	vec3 rbmin = (envMapMin - position_world.xyz)/nrdir;
+	//vec3 rbminmax = (nrdir.x > 0 && nrdir.y > 0 && nrdir.z > 0) ? rbmax : rbmin;
+	vec3 rbminmax;
+	rbminmax.x = (nrdir.x>0.0)?rbmax.x:rbmin.x;
+	rbminmax.y = (nrdir.y>0.0)?rbmax.y:rbmin.y;
+	rbminmax.z = (nrdir.z>0.0)?rbmax.z:rbmin.z;
+	
+	float fa = min(min(rbminmax.x, rbminmax.y), rbminmax.z);
+	vec3 posonbox = position_world.xyz + nrdir*fa;
+	
+	return posonbox; 
+}
+vec3 boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
+	vec3 environmentMapMin = environmentMapMin[probeIndex];
+	vec3 environmentMapMax = environmentMapMax[probeIndex];
+	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+	
+	//vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
+	vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+	
+	return normalize(posonbox - environmentMapWorldPosition.xyz);
+}
+
+vec3[2] boxProjectionAndIntersection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
+	vec3 environmentMapMin = environmentMapMin[probeIndex];
+	vec3 environmentMapMax = environmentMapMax[probeIndex];
+	vec3 posonbox = getIntersectionPoint(position_world, texCoords3d, environmentMapMin, environmentMapMax);
+	
+	//vec3 environmentMapWorldPosition = (environmentMapMax + environmentMapMin)/2;
+	vec3 environmentMapWorldPosition = environmentMapMin + (environmentMapMax - environmentMapMin)/2.0;
+	
+	vec3 projectedVector = normalize(posonbox - environmentMapWorldPosition.xyz);
+	vec3[2] result;
+	result[0] = projectedVector;
+	result[1] = posonbox;
+	return result;
+}
+
+struct ProbeSample {
+	vec3 diffuseColor;
+	vec3 specularColor;
+};
+
+vec2 cartesianToSpherical(vec3 cartCoords){
+	float a = atan(cartCoords.y/cartCoords.x);
+	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
+	return vec2(a, b);
+}
+
+float radicalInverse_VdC(uint bits) {
+     bits = (bits << 16u) | (bits >> 16u);
+     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+     
+     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+vec2 hammersley2d(uint i, int N) {
+	return vec2(float(i)/float(N), radicalInverse_VdC(i));
+}
+float p(vec2 spherical_coords, float roughness) {
+	float a = roughness*roughness;
+	float a2 = a*a;
+	
+	float result = (a2 * cos(spherical_coords.x) * sin(spherical_coords.x)) /
+					(PI * pow((pow(cos(spherical_coords.x), 2) * (a2 - 1)) + 1, 2));
+	return result;
+}
+vec3[2] ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
+	float a = Roughness * Roughness;
+	float Phi = 2 * PI * Xi.x;
+	float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )+0.000001) );
+	float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+	
+	vec3 H;
+	H.x = SinTheta * cos( Phi );
+	H.y = SinTheta * sin( Phi );
+	H.z = CosTheta;
+	
+	vec2 sphericalCoords = cartesianToSpherical(H);
+	float pdf = p(vec2(acos(CosTheta), Phi), Roughness);
+	
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	// Tangent to world space
+	vec3 result0 = normalize(TangentX * H.x + TangentY * H.y + N * H.z);
+	//sphericalCoords = cartesianToSpherical(result0);
+	vec3 result1 = vec3(sphericalCoords, pdf);
+	
+	vec3[2] resultArray;
+	resultArray[0] = result0;
+	resultArray[1] = result1;
+	return resultArray;
+}
+
+float chiGGX(float v)
+{
+    return v > 0 ? 1 : 0;
+}
+
+float GGX_PartialGeometryTerm(vec3 v, vec3 n, vec3 h, float alpha)
+{
+    float VoH2 = clamp(dot(v,h), 0, 1);
+    float chi = chiGGX( VoH2 / clamp(dot(v,n), 0, 1) );
+    VoH2 = VoH2 * VoH2;
+    float tan2 = ( 1 - VoH2 ) / VoH2;
+    return (chi * 2) / ( 1 + sqrt( 1 + alpha * alpha * tan2 ) );
+}
+
+ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
+  vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
+  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  
+  ProbeSample result;
+  //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
+  //return result;
+  
+  vec3 V = v;
+  vec3 n = normal;
+  vec3 R = reflected;
+  const int N = 4;
+  vec4 resultDiffuse = vec4(0,0,0,0);
+  vec4 resultSpecular = vec4(0,0,0,0);
+  float pdfSum = 0;
+  float ks = 0;
+  float NoV = clamp(dot(n, V), 0.0, 1.0);
+  
+  for (int k = 0; k < N; k++) {
+    vec2 xi = hammersley2d(k, N);
+    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, R);
+    vec3 H = importanceSampleResult[0];
+    vec2 sphericalCoordsTangentSpace = importanceSampleResult[1].xy;
+    //H = hemisphereSample_uniform(xi.x, xi.y, n);
+    vec3[2] projectedVectorAndIntersection = boxProjectionAndIntersection(positionWorld, H, index);
+    float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
+    H = normalize(projectedVectorAndIntersection[0]);
+    
+    vec3 L = 2 * dot( V, H ) * H - V;
+    
+	float NoL = clamp(dot(n, L), 0.0, 1.0);
+	float NoH = clamp(dot(n, H), 0.0, 1.0);
+	float VoH = clamp(dot(v, H), 0.0, 1.0);
+	float alpha = roughness*roughness;
+	float alpha2 = alpha * alpha;
+	
+	//if( NoL > 0 )
+	{
+		vec3 halfVector = normalize(H + v);
+		
+		float G = GGX_PartialGeometryTerm(v, n, halfVector, alpha) * GGX_PartialGeometryTerm(H, n, halfVector, alpha);
+		
+		float glossiness = (1-roughness);
+		float F0 = 0.02;
+		float maxSpecular = mix(0.2, 1.0, metallic);
+		F0 = max(F0, (glossiness*maxSpecular));
+	    float fresnel = 1; fresnel -= dot(L, H);
+		fresnel = pow(fresnel, 5.0);
+		float temp = 1.0; temp -= F0;
+		fresnel *= temp;
+		float F = fresnel + F0;
+		
+		// Incident light = SampleColor * NoL
+		// Microfacet specular = D*G*F / (4*NoL*NoV)
+		// pdf = D * NoH / (4 * VoH)
+	    float pdf = importanceSampleResult[1].z;
+    	//float denom = (NoH*NoH*(alpha2-1))+1;
+		//float D = alpha2/(3.1416*denom*denom);
+	    //pdf = D * NoH / (4 * VoH);
+	    //pdf = ((alpha2)/(3.1416*pow(((NoH*NoH*((alpha2)-1))+1), 2))) * NoH / (4 * VoH);
+	    pdfSum += pdf;
+	    float solidAngle = 1/(pdf * N); // contains the solid angle
+	    //http://www.eecis.udel.edu/~xyu/publications/glossy_pg08.pdf
+	    float crossSectionArea = (distToIntersection*distToIntersection*solidAngle)/cos(sphericalCoordsTangentSpace.x);
+	    float areaPerPixel = 0.25;
+	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
+	    //lod = MAX_MIPMAPLEVEL * pdf;
+	    //lod = clamp(lod, 0, MAX_MIPMAPLEVEL);
+	    //lod *= MAX_MIPMAPLEVEL;
+	    //lod *= distToIntersection*roughness;
+	    //lod = roughness * (1+roughness) * MAX_MIPMAPLEVEL;
+	    //lod *= pow(1+clamp(distToIntersection/500.0, 0, 1), 4);
+	    
+    	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
+    	
+		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
+		ks += fresnel;
+		resultSpecular.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
+	}
+  }
+  
+  if(pdfSum < 0.9){
+  	result.diffuseColor = vec3(1,0,0);
+  	//return result;
+  }
+  
+  resultSpecular = resultSpecular/(N);
+  //resultDiffuse = resultDiffuse/(N);
+  ks = clamp(ks/N, 0, 1);
+  float kd = (1 - ks) * (1 - metallic);
+  
+  normal = boxProjection(positionWorld, normal, index);
+  resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  
+  result.diffuseColor = resultDiffuse.rgb;
+  result.specularColor = resultSpecular.rgb;
+  return result;
+}
+
 void main()
 {
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
@@ -428,7 +651,14 @@ void main()
 		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
 	}
 	
-	out_color.rgb += 0.0125 * color.rgb;
+	vec3 boxProjectedNormal = boxProjection(position_world.xyz, PN_world, probeIndex);
+	vec3 sampleFromLastFrameAsSecondBounce = textureLod(probes, vec4(boxProjectedNormal, probeIndex), 1 + 8*roughness).rgb;
+	ProbeSample probeSample = importanceSampleProjectedCubeMap(probeIndex, position_world.xyz, PN_world.xyz, reflect(-V, PN_world.xyz), -V, roughness, metallic, color.rgb);
+	sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
+	out_color.rgb = 2*mix(out_color.rgb, sampleFromLastFrameAsSecondBounce, 0.5);
+	
+	// Fake the other missing bounces with some ambient light...
+	out_color.rgb += 0.025 * color.rgb;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

@@ -129,6 +129,11 @@ public class AABB {
 		return false;
 	}
 
+	public boolean contains(Vector3f position) {
+		Vector4f point = new Vector4f(position.x, position.y, position.z, 0);
+		return contains(point);
+	}
+
 	@Override
 	public String toString() {
 		return String.format("Box (%f %f %f) @ (%.2f, %.2f, %.2f)", sizeX, sizeY, sizeZ, center.x, center.y, center.z);
@@ -210,5 +215,4 @@ public class AABB {
 		this.center = center;
 		calculateCorners();
 	}
-
 }

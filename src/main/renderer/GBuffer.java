@@ -184,7 +184,7 @@ public class GBuffer {
 	private void debugDrawProbes(Camera camera) {
 		
 		probeFirstpassProgram.use();
-		bindEnvironmentProbePositions(probeFirstpassProgram);
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(probeFirstpassProgram);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
@@ -331,7 +331,7 @@ public class GBuffer {
 		reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
 		reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-		bindEnvironmentProbePositions(reflectionProgram);
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
 		reflectionProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 		fullscreenBuffer.draw();
 		halfScreenTarget.unuse();
@@ -564,18 +564,6 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
-	}
-	
-	private void bindEnvironmentProbePositions(Program program) {
-
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
-		
-//		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
-//			int probeIndex = probe.getIndex();
-//			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
-//			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
-//		});
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {

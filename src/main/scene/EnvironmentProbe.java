@@ -140,9 +140,11 @@ public class EnvironmentProbe implements IEntity {
 
 	public void setSize(float size) {
 		box.setSize(size);
+		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
 		box.setSize(sizeX, sizeY, sizeZ);
+		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 
 	public Vector3f getSize() {

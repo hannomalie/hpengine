@@ -260,7 +260,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 32;
+  const int N = 16;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;
@@ -570,7 +570,7 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 
 	
 			if(precalculatedIndices.y != -1) {
 				result.indexSecondNearest = precalculatedIndices.y;
-				result.intersectionReflectedNearest = getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]);
+				result.intersectionNormalSecondNearest = getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]);
 				result.intersectionReflectedSecondNearest = getIntersectionPoint(position, reflectionVector, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]);
 				return result;
 			} else if(NO_INTERPOLATION_IF_ONE_PROBE_CACHED) {
@@ -712,7 +712,9 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	
 	// early out
 	if(onlyFirstProbeFound) {
-		return importanceSampleProjectedCubeMap(probeIndexNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
+		result = importanceSampleProjectedCubeMap(probeIndexNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
+		//result.diffuseColor += SECONDBOUNCEFACTOR*textureLod(probes, vec4(vec3(1,0,0), probeIndexNearest), MAX_MIPMAPLEVEL+1).rgb; 
+		return result;
 	} else if(noProbeFound) {
 		//vec4 tempDiffuse = textureLod(globalEnvironmentMap, texCoords3d, mipMapLevel);
 		//vec4 tempSpecular = textureLod(globalEnvironmentMap, texCoords3dSpecular, mipMapLevel);
@@ -735,19 +737,6 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	s = importanceSampleProjectedCubeMap(probeIndexSecondNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
 	diffuseSecondNearest = s.diffuseColor;
 	specularSecondNearest = s.specularColor;
-	
-	// TODO: CHECK Y THIS ISNT WORKING
-	/* //////////// SECOND BOUNCE
-	vec3 boxNormalMainAxis = findMainAxis(boxProjectedNearest);
-	vec3 boxNormal = -normalize(vec3(boxProjectedNearest.x > 0.0 ? 1 : -1, boxProjectedNearest.y > 0.0 ? 1 : -1, boxProjectedNearest.z > 0.0 ? 1 : -1));
-	boxNormal *= boxNormalMainAxis;
-	vec3 reflectedProjected = reflect(boxProjectedNearest, boxNormal);
-	vec3 biasedIntersection = intersectionNearest - (intersectionNearest-positionWorld)*0.1;
-	vec3 secondBounceSampleNormal = boxProjection(intersectionNearest, reflectedProjected, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest]);
-	vec3 secondBounceColor = textureLod(probes, vec4(secondBounceSampleNormal, probeIndexNearest), max(mipMapLevel*2, MAX_MIPMAPLEVEL)).rgb;
-	//////////// THIRD BOUNCE
-	vec3 thirdBounceColor = textureLod(probes, vec4(-boxNormal, probeIndexNearest), max(mipMapLevel*4, MAX_MIPMAPLEVEL)).rgb;
-	*/ //////////////////////////
 	
 	result.diffuseColor = mix(diffuseNearest, diffuseSecondNearest, mixer);
 	result.specularColor = mix(specularNearest, specularSecondNearest, mixer);

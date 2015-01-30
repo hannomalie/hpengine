@@ -90,7 +90,9 @@ public class EnvironmentSampler {
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		
 		cubeMapProgram.use();
 		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
@@ -107,8 +109,7 @@ public class EnvironmentSampler {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
 		
 		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubeMapProgram);
 		
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {

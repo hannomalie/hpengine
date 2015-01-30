@@ -91,15 +91,16 @@ public class EnvironmentProbeFactory {
 		return probe;
 	}
 	
-	private void updateBuffers() {
+	public void updateBuffers() {
 		minPositions = BufferUtils.createFloatBuffer(100*3);
 		maxPositions = BufferUtils.createFloatBuffer(100*3);
 		float[] srcMinPositions = new float[100*3];
 		float[] srcMaxPositions = new float[100*3];
 		
 		for(int i = 0; i < probes.size(); i++) {
-			Vector3f min = probes.get(i).getBox().getBottomLeftBackCorner();
-			Vector3f max = probes.get(i).getBox().getTopRightForeCorner();
+			AABB box = probes.get(i).getBox();
+			Vector3f min = box.getBottomLeftBackCorner();
+			Vector3f max = box.getTopRightForeCorner();
 			srcMinPositions[3*i] = min.x;
 			srcMinPositions[3*i+1] = min.y;
 			srcMinPositions[3*i+2] = min.z;
@@ -251,5 +252,17 @@ public class EnvironmentProbeFactory {
 
 	public CubeMapArrayRenderTarget getCubeMapArrayRenderTarget() {
 		return cubeMapArrayRenderTarget;
+	}
+
+	public void bindEnvironmentProbePositions(Program program) {
+
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
+		
+//		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+//			int probeIndex = probe.getIndex();
+//			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
+//			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
+//		});
 	}
 }

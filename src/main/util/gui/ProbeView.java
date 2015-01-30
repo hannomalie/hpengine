@@ -83,9 +83,7 @@ public class ProbeView extends WebPanel {
 					@Override
 					public Result execute(World world) {
 						world.getRenderer().getEnvironmentProbeFactory().remove(probe);
-						return new Result() {
-							@Override public boolean isSuccessful() { return true; }
-						};
+						return new Result();
 					}
 	        	});
 	    		

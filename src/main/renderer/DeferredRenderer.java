@@ -12,6 +12,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.SynchronousQueue;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import main.World;
 import main.camera.Camera;
@@ -392,9 +394,11 @@ public class DeferredRenderer implements Renderer {
 
 		if (!World.DEBUGDRAW_PROBES) {
 			environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
-			executeRenderProbeCommands(octree, World.light);
+			executeRenderProbeCommands(octree, camera, World.light);
 			GPUProfiler.start("Shadowmap pass");
-			light.drawShadowMap(octree);
+			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) {
+				light.drawShadowMap(octree);
+			}
 			//		doInstantRadiosity(light);
 			GPUProfiler.end();
 			GPUProfiler.start("Second pass");
@@ -710,9 +714,19 @@ public class DeferredRenderer implements Renderer {
         }
 	}
 	
-	private void executeRenderProbeCommands(Octree octree, DirectionalLight light) {
+	private void executeRenderProbeCommands(Octree octree, Camera camera, DirectionalLight light) {
 //		environmentProbeFactory.prepareProbeRendering();
 		int counter = 0;
+		
+		renderProbeCommandQueue.takeNearest(camera).ifPresent(new Consumer<RenderProbeCommand>() {
+			@Override
+			public void accept(RenderProbeCommand command) {
+				command.getProbe().draw(octree, light);
+			}
+		});
+		counter++;
+
+		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(new Consumer<RenderProbeCommand>() {
 				@Override

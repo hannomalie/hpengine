@@ -1,7 +1,7 @@
 package main.renderer;
 
-public abstract class Result {
+public class Result {
 	
-	public abstract boolean isSuccessful();
+	public boolean isSuccessful() { return true; };
 
 }

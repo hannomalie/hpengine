@@ -1,10 +1,12 @@
 package main.renderer.command;
 
+import main.Transform;
 import main.World;
+import main.model.ITransformable;
 import main.renderer.Result;
 import main.scene.EnvironmentProbe;
 
-public class RenderProbeCommand implements Command<Result> {
+public class RenderProbeCommand implements Command<Result>, ITransformable {
 
 	EnvironmentProbe probe;
 	
@@ -28,5 +30,13 @@ public class RenderProbeCommand implements Command<Result> {
 	public EnvironmentProbe getProbe() {
 		return probe;
 	}
+
+	@Override
+	public Transform getTransform() {
+		return probe.getTransform();
+	}
+
+	@Override
+	public void setTransform(Transform transform) { }
 
 }

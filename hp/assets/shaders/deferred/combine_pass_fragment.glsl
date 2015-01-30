@@ -367,7 +367,7 @@ void main(void) {
 	//vec3 ambientDiffuseSpecular = environmentColor + reflectedColor;
 	vec3 ambientDiffuseSpecular = reflectedColor;
 	
-	ambientTerm = 2*ambientColor*ambientDiffuseSpecular;
+	ambientTerm = ambientColor*ambientDiffuseSpecular;
 
 	ambientTerm *= clamp(ao,0,1);
 	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
