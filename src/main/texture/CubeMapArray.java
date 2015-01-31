@@ -80,4 +80,8 @@ public class CubeMapArray {
 		return textureId;
 	}
 
+	public int getInternalFormat() {
+		return internalFormat;
+	}
+
 }

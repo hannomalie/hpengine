@@ -37,6 +37,29 @@ float rand(vec2 co){
 	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
 
+// if a direction is very strong, it is taken unless it is the world y axis. Vertical interpolation doesnt work well.
+vec3 findMainAxis(vec3 input) {
+	if(abs(input.x) > abs(input.z)) {
+		return vec3(1,0,0);
+	} else {
+		return vec3(0,0,1);
+	}
+	
+	// y shouldn't be the main axis ever, I guess
+	/*if(abs(input.x) > abs(input.y)) {
+		if(abs(input.x) > abs(input.z)) {
+			return vec3(1,0,0);
+		} else {
+			return vec3(0,0,1);
+		}
+	} else { // y is greater than x
+		if(abs(input.y) > abs(input.z)) {
+			return vec3(0,1,0);
+		} else {
+			return vec3(0,0,1);
+		}
+	}*/
+}
 vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
 	vec3 nrdir = normalize(texCoords3d);
 	vec3 envMapMin = vec3(-300,-300,-300);
@@ -209,8 +232,9 @@ vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
 
 vec3[2] ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
 	float a = Roughness * Roughness;
+	a = max(a, 0.001); // WHAT THE F***, How can a^2 appear as a divisor?! -> would cause too high mipmap levels....
 	float Phi = 2 * PI * Xi.x;
-	float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )+0.000001) );
+	float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
 	float SinTheta = sqrt( 1 - CosTheta * CosTheta );
 	
 	vec3 H;
@@ -249,6 +273,24 @@ float GGX_PartialGeometryTerm(vec3 v, vec3 n, vec3 h, float alpha)
     return (chi * 2) / ( 1 + sqrt( 1 + alpha * alpha * tan2 ) );
 }
 
+// This method adjusts the pixel per world area value. This is nessecary because of the non uniform extends of
+// a probe, the projected area at the intersection point would be stretched more in a direction in which the pobe
+// has a larger extend.
+float getAreaPerPixel(int index, vec3 normal) {
+	vec3 mini = environmentMapMin[index];
+	vec3 maxi = environmentMapMax[index];
+	vec3 extents = maxi - mini;
+	
+	vec3 mainAxis = findMainAxis(normal);
+	if(mainAxis.x > 0) {
+		return max(extents.y, extents.z) / 512; // TODO: NO HARDCODED RESOLUTION VALUES
+	} else if(mainAxis.y > 0) {
+		return max(extents.x, extents.z) / 512;
+	} else {
+		return max(extents.x, extents.y) / 512;
+	}
+}
+
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
   vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
@@ -260,7 +302,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 16;
+  const int N = 32;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;
@@ -314,6 +356,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    //http://www.eecis.udel.edu/~xyu/publications/glossy_pg08.pdf
 	    float crossSectionArea = (distToIntersection*distToIntersection*solidAngle)/cos(sphericalCoordsTangentSpace.x);
 	    float areaPerPixel = 0.25;
+	    areaPerPixel = getAreaPerPixel(index, normal);
 	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
 	    //lod = MAX_MIPMAPLEVEL * pdf;
 	    //lod = clamp(lod, 0, MAX_MIPMAPLEVEL);
@@ -619,30 +662,6 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(vec3 
 	result.intersectionReflectedSecondNearest = getIntersectionPoint(position, reflectionVector, currentEnvironmentMapMin2, currentEnvironmentMapMax2);
 	
 	return result;
-}
-
-// if a direction is very strong, it is taken unless it is the world y axis. Vertical interpolation doesnt work well.
-vec3 findMainAxis(vec3 input) {
-	if(abs(input.x) > abs(input.z)) {
-		return vec3(1,0,0);
-	} else {
-		return vec3(0,0,1);
-	}
-	
-	// y shouldn't be the main axis ever, I guess
-	/*if(abs(input.x) > abs(input.y)) {
-		if(abs(input.x) > abs(input.z)) {
-			return vec3(1,0,0);
-		} else {
-			return vec3(0,0,1);
-		}
-	} else { // y is greater than x
-		if(abs(input.y) > abs(input.z)) {
-			return vec3(0,1,0);
-		} else {
-			return vec3(0,0,1);
-		}
-	}*/
 }
 
 float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {

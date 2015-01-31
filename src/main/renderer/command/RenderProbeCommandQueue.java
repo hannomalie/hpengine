@@ -5,6 +5,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+
 import main.camera.Camera;
 import main.model.ITransformable;
 import main.scene.EnvironmentProbe;
@@ -39,7 +42,7 @@ public class RenderProbeCommandQueue {
 
 	public Optional<RenderProbeCommand> takeNearest(Camera camera) {
 		TransformDistanceComparator<ITransformable> comparator = new TransformDistanceComparator<ITransformable>(camera);
-		Optional<RenderProbeCommand> result = workQueue.stream().filter(command -> { return command.getProbe().getBox().contains(camera.getPosition()); }).sorted(comparator).findFirst();
+		Optional<RenderProbeCommand> result = workQueue.stream().filter(command -> { return command.getProbe().getBox().contains(camera.getPosition().negate(null)); }).sorted(comparator).findFirst();
 		if(!result.isPresent()) {
 			result = workQueue.stream().sorted(comparator).findFirst();
 		}

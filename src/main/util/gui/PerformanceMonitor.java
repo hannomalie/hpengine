@@ -78,7 +78,7 @@ public class PerformanceMonitor {
 		chartPanel.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder(4, 4, 4, 4),
 				BorderFactory.createLineBorder(Color.black)));
-		JFrame frame = new JFrame();
+		JFrame frame = new JFrame("FPS");
 		frame.getContentPane().add(chartPanel);
 		frame.pack();
 		frame.setVisible(true);

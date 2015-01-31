@@ -185,7 +185,6 @@ public class DebugFrame {
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
 		ac.install(console);
 		
-		initPerformanceChart();
 		createPointLightsTab();
 		createTubeLightsTab();
 		createAreaLightsTab();
@@ -695,6 +694,7 @@ public class DebugFrame {
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
+		initPerformanceChart();
 	}
 
 	private void initPerformanceChart() {

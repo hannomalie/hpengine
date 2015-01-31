@@ -6,7 +6,7 @@ layout(binding=6) uniform sampler2D shadowMap;
 
 layout(binding=8) uniform samplerCubeArray probes;
 
-const float pointLightRadius = 20.0;
+const float pointLightRadius = 5.0;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -28,13 +28,13 @@ uniform float normalMapHeight = 1;
 uniform float metallic = 0;
 uniform float roughness = 1;
 
-const int pointLightMaxCount = 20;
+const int pointLightMaxCount = 5;
 uniform int activePointLightCount = 0;
 uniform vec3[pointLightMaxCount] pointLightPositions;
 uniform vec3[pointLightMaxCount] pointLightColors;
 uniform float[pointLightMaxCount] pointLightRadiuses;
 
-const int areaLightMaxCount = 5;
+const int areaLightMaxCount = 2;
 uniform int activeAreaLightCount = 0;
 uniform vec3[areaLightMaxCount] areaLightPositions;
 uniform vec3[areaLightMaxCount] areaLightColors;
