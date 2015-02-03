@@ -207,8 +207,7 @@ vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal,
 
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = normalize(-position);
-	//V = -ViewVector;
-	
+	V = ViewVector;
 	vec3 lightViewDirection = areaLightViewDirections[index];
 	vec3 lightUpDirection = areaLightUpDirections[index];
 	vec3 lightRightDirection = areaLightRightDirections[index];
@@ -217,16 +216,11 @@ vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal,
 	float lightHeight = lightWidhtHeightRange.y;
 	float lightRange = lightWidhtHeightRange.z;
 	
-	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
-	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
-	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;
-	vec3 light_right_direction_eye = (viewMatrix * vec4(lightRightDirection, 0)).xyz;
-	
 	vec3 lVector[ 4 ];
-	vec3 leftUpper = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
-	vec3 rightUpper = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(light_up_direction_eye);
-	vec3 leftBottom = light_position_eye + (lightWidth/2)*(-light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
-	vec3 rightBottom = light_position_eye + (lightWidth/2)*(light_right_direction_eye) + (lightHeight/2)*(-light_up_direction_eye);
+	vec3 leftUpper = lightPosition + (lightWidth/2)*(-lightRightDirection) + (lightHeight/2)*(lightUpDirection);
+	vec3 rightUpper = lightPosition + (lightWidth/2)*(lightRightDirection) + (lightHeight/2)*(lightUpDirection);
+	vec3 leftBottom = lightPosition + (lightWidth/2)*(-lightRightDirection) + (lightHeight/2)*(-lightUpDirection);
+	vec3 rightBottom = lightPosition + (lightWidth/2)*(lightRightDirection) + (lightHeight/2)*(-lightUpDirection);
 	
 	lVector[0] = normalize(leftUpper - position);
 	lVector[1] = normalize(rightUpper - position);
@@ -250,13 +244,13 @@ vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal,
     	vec3 N = normal;
 	    vec3 P = position;
         vec3 R = reflect(V, N);
-        vec3 E = linePlaneIntersect(position, R, light_position_eye, light_view_direction_eye);
+        vec3 E = linePlaneIntersect(position, R, lightPosition, lightViewDirection);
 
 		float width = lightWidth;
 	    float height = lightHeight;
-	    vec3 projection = projectOnPlane(position, light_position_eye, light_view_direction_eye);
-	    vec3 dir = projection-light_position_eye;
-	    vec2 diagonal = vec2(dot(dir,light_right_direction_eye),dot(dir,light_up_direction_eye));
+	    vec3 projection = projectOnPlane(position, lightPosition, lightViewDirection);
+	    vec3 dir = projection-lightPosition;
+	    vec2 diagonal = vec2(dot(dir,lightRightDirection),dot(dir,lightUpDirection));
 	    vec2 nearest2D = vec2(clamp(diagonal.x, -width, width),clamp(diagonal.y, -height, height));
 	    
 	    // this is the amount of space the projected point is away from the border of the area light.
@@ -265,7 +259,7 @@ vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal,
 	    vec2 overheadVec2 = (vec2(abs(diagonal.x)-width, abs(diagonal.y)-height) / 5);
 	    float overhead = clamp(max(overheadVec2.x, overheadVec2.y), 0.0, 1.0);
 	    
-	    vec3 nearestPointInside = light_position_eye + (light_right_direction_eye * nearest2D.x + light_up_direction_eye * nearest2D.y);
+	    vec3 nearestPointInside = lightPosition + (lightRightDirection * nearest2D.x + lightUpDirection * nearest2D.y);
 	    //if(distance(P, nearestPointInside) > lightRange) { discard; }
 	    vec2 texCoords = nearest2D / vec2(width, height);
         texCoords += 1;

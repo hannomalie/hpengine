@@ -2,14 +2,14 @@
 
 layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
-layout(binding=2) uniform sampler2D aoReflection; // ao, reflectedColor
+layout(binding=2) uniform sampler2D scatteringMap; // ao, reflectedColor
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap;
 layout(binding=7) uniform samplerCubeArray probes;
-layout(binding=8) uniform sampler2D diffuseEnvironment; // probe sample, ambient occlusion
-layout(binding=9) uniform sampler2D specularEnvironment; // reflection
+layout(binding=8) uniform sampler2D environment; // reflection
+layout(binding=9) uniform sampler2D refractedMap; // probe sample, ambient occlusion
 
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
@@ -326,7 +326,7 @@ void main(void) {
 	V = (inverse(viewMatrix) * dir).xyz;
   	
   	vec4 motionVecProbeIndices = texture2D(motionMap, st);
-  	vec2 motionVec = motionVecProbeIndices.xy;
+  	float motion = motionVecProbeIndices.x;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
   	
   	float metallic = colorMetallic.a;
@@ -338,42 +338,25 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
 	
-	vec4 aoReflect = textureLod(aoReflection, st, 1);
+	vec4 scattering = textureLod(scatteringMap, st, 1);
 
-	vec4 environmentColorAO = textureLod(diffuseEnvironment, st, 0).rgba;
+	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
+	float refraction = motionVecProbeIndices.g;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
-	vec3 environmentColor = clamp(environmentColorAO.rgb, vec3(0,0,0), vec3(1,1,1));
-	environmentColor = bilateralBlurReflection(diffuseEnvironment, st, roughness).rgb;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
-	float ao = environmentColorAO.a;
-	vec3 reflectedColor = clamp(textureLod(specularEnvironment, st, 0).rgb, vec3(0,0,0), vec3(1,1,1));
+	vec4 environmentLightAO = textureLod(environment, st, 0);
+	vec3 environmentLight = environmentLightAO.rgb;
+	float ao = environmentLightAO.a;
+	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
-	/*if(st.x < 0.5) {
-		reflectedColor = imageSpaceGatherReflection(specularEnvironment, st, roughness).rgb;
-		environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
-	} else if(st.x >= 0.5 && st.x < 0.5025) {
-		reflectedColor = vec3(1,0,0);
-		environmentColor = vec3(1,0,0);
-	} else {
-		//reflectedColor = bilateralBlurReflection(specularEnvironment, st, roughness).rgb;
-		//environmentColor = bilateralBlurReflection(diffuseEnvironment, st, roughness).rgb;
-	}*/
-	
-	float reflectionMixer = glossiness; // the glossier, the more reflecting, so glossiness is our mixer
-	
-	vec3 ambientTerm = ambientColor * mix(color.rgb, reflectedColor.rgb, reflectionMixer);
-	
-	//vec3 ambientDiffuseSpecular = cookTorrance(normalize(positionView), positionView, normalView.xyz, roughness, metallic, -normalView.xyz, environmentColor, reflectedColor, color, specularColor);
-	//vec3 ambientDiffuseSpecular = environmentColor + reflectedColor;
-	vec3 ambientDiffuseSpecular = reflectedColor;
-	
-	ambientTerm = ambientColor*ambientDiffuseSpecular;
-
+	vec3 ambientTerm = ambientColor*environmentLight;
 	ambientTerm *= clamp(ao,0,1);
+	
 	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
-	out_color.rgb += (aoReflect.gba); //scattering
+	//out_color = mix(out_color, refracted, refraction);
+	out_color.rgb += (scattering.gba); //scattering
 	
 	out_color *= exposure/2;
 	
@@ -391,12 +374,14 @@ void main(void) {
 	//out_color.rgb = specularColor.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
-	//out_color.rgb = ambientTerm.rgb;
+	//out_color.rgb = environmentLight;
+	//out_color.rgb = textureLod(refractedMap, st, 0.0).rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = reflectedColor.rgb;
 	//out_color.rgb = texture(probes, vec4(normalWorld, 0), 0).rgb;
-	//out_color.rgb = texture(globalEnvironmentMap, normalWorld, 0).rgb;
+	//float motion = textureLod(motionMap, st, 0).r;
+	//out_color.rgb = vec3(motion,motion,motion);
 }

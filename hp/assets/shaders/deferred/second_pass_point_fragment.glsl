@@ -46,7 +46,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 #define kPI 3.1415926536f
-const float pointLightRadius = 20.0;
+const float pointLightRadius = 10.0;
 
 vec3 decodeNormal(vec2 enc) {
     vec2 ang = enc*2-1;
@@ -84,18 +84,27 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	vec3 V = normalize(-position);
 	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
+	float distTemp = length (light_position_eye - position);
 	
 	// make every pointlight a sphere light for better highlights, thanks Unreal Engine
- 	vec3 r = reflect(V, normal);
-    vec3 centerToRay = (light_position_eye - position) * clamp(dot((light_position_eye - position), r),0,1) * r;
-    light_position_eye = (light_position_eye) + centerToRay*clamp(pointLightRadius/length(centerToRay),0,1);
+ 	//vec3 r = reflect(V, normal);
+    //vec3 centerToRay = (light_position_eye - position) * clamp(dot((light_position_eye - position), r),0,1) * r;
+    //light_position_eye = (light_position_eye - position) + centerToRay*clamp(pointLightRadius/length(centerToRay),0,1);
+    float pointLightSphereRadius = length(light_position_eye - position)/15;
+    if(distTemp > pointLightSphereRadius) {
+    	light_position_eye += normalize(position - light_position_eye) * pointLightSphereRadius;
+    }
+    
     
     vec3 dist_to_light_eye = light_position_eye - position;
-	float dist = length (dist_to_light_eye);
+	float dist = length(dist_to_light_eye);
     
 	if(dist > lightRadius) {discard;}
     
     float atten_factor = calculateAttenuation(dist);
+    if(distTemp < pointLightSphereRadius) {
+    	atten_factor = 1;
+    }
     
  	vec3 L = normalize(light_position_eye - position);
     vec3 H = normalize(L + V);
@@ -111,7 +120,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	float alpha = acos(NdotH);
 	alpha = roughness*roughness;
 	// adjust distribution for sphere light
-	alpha = clamp(alpha+(pointLightRadius/(3*dist)),0,1);
+	alpha = clamp(alpha+(pointLightRadius/(3*distTemp)),0,1);
 	
     float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
 	//G = GGX_PartialGeometryTerm(V, N, halfVector, alpha) * GGX_PartialGeometryTerm(-L, N, halfVector, alpha);
@@ -157,6 +166,9 @@ void main(void) {
 	float roughness = texture2D(positionMap, st).w;
 	float metallic = texture2D(diffuseMap, st).w;
   	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  	float glossiness = (1-roughness);
+	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), vec3(1.0,1.0,1.0), metallic);
+	specularColor = max(specularColor, (glossiness*maxSpecular));
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));

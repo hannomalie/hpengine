@@ -319,6 +319,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap()); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getLightAccumulationMapOneId());
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(0));
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
@@ -516,11 +518,6 @@ public class GBuffer {
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 //		bindEnvironmentProbePositions(combineProgram);
 		
-		if(target == null) {
-			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-		} else {
-			target.use(true);
-		}
 		finalBuffer.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		
@@ -552,9 +549,6 @@ public class GBuffer {
 		} else {
 			target.use(true);
 		}
-		
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture());
 		
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);

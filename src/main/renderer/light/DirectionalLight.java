@@ -90,7 +90,7 @@ public class DirectionalLight implements IEntity {
 		this.camera = camera;
 		this.renderer = renderer;
 		this.color = new Vector3f(1f, 0.76f, 0.49f);
-		setScatterFactor(4f);
+		setScatterFactor(1f);
 	}
 
 	public void init(Renderer renderer) throws Exception {

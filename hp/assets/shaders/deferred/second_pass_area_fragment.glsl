@@ -132,7 +132,8 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	    vec2 texCoords = nearest2D / vec2(width, height);
         texCoords += 1;
 	    texCoords /=2;
-        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7;
+        float mipMap = (2*(distance(texCoords,vec2(0.5,0.5)))) * 7; // TODO: No hardcoded values!
+        mipMap = max(0, mipMap*roughness * 7);
 
 		float NdotL = max(dot(N, L), 0.0);
 	    float NdotH = max(dot(N, H), 0.0);

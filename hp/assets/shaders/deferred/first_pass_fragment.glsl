@@ -316,7 +316,7 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(blurVec,probeIndex1,probeIndex2);
+  	out_motion = vec4(length(blurVec), 0,probeIndex1,probeIndex2);
   	out_visibility = vec4(1,depth,depth,0);
   	
   	//if(useRainEffect) {
@@ -329,4 +329,5 @@ void main(void) {
 		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
 		out_color.w = waterEffect2;
   	}
+  		
 }

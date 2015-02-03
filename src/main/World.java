@@ -82,9 +82,9 @@ public class World {
 	public static float RAINEFFECT = 0.0f;
 	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;
-	public static int EXPOSURE = 4;
+	public static int EXPOSURE = 8;
 
-	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f,0.1f);
+	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
 	public static void main(String[] args) {
 		final World world;

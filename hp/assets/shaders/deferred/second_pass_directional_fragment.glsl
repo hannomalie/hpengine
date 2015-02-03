@@ -64,6 +64,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     float VdotH = clamp(dot(V, H), 0.0, 1.0);
 	
 	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	//roughness = (roughness+1)/2;
 	float alpha = roughness*roughness;
 	float alphaSquare = alpha*alpha;
 	// GGX

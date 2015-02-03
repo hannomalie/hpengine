@@ -24,13 +24,14 @@ uniform vec3 environmentMapMax[100];
 
 in vec2 pass_TextureCoord;
 
-out vec4 out_diffuseEnvironment;
-out vec4 out_specularEnvironment;
+layout(location=0)out vec4 out_environment;
+layout(location=1)out vec4 out_refracted;
 
 
 struct ProbeSample {
 	vec3 diffuseColor;
 	vec3 specularColor;
+	vec3 refractedColor;
 };
 
 float rand(vec2 co){
@@ -204,6 +205,7 @@ vec2 hammersley2d(uint i, int N) {
 
 // http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
 float p(vec2 spherical_coords, float roughness) {
+
 	float a = roughness*roughness;
 	float a2 = a*a;
 	
@@ -299,6 +301,14 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
   //return result;
   
+  if(roughness < 0.01) {
+  	reflected = boxProjection(positionWorld, reflected, index);
+    result.specularColor = SpecularColor * textureLod(probes, vec4(reflected, index), 1).rgb;
+  	normal = boxProjection(positionWorld, normal, index);
+  	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  	return result;
+  }
+  
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
@@ -358,12 +368,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    float areaPerPixel = 0.25;
 	    areaPerPixel = getAreaPerPixel(index, normal);
 	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
-	    //lod = MAX_MIPMAPLEVEL * pdf;
-	    //lod = clamp(lod, 0, MAX_MIPMAPLEVEL);
-	    //lod *= MAX_MIPMAPLEVEL;
-	    //lod *= distToIntersection*roughness;
-	    //lod = roughness * (1+roughness) * MAX_MIPMAPLEVEL;
-	    //lod *= pow(1+clamp(distToIntersection/500.0, 0, 1), 4);
 	    
     	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
     	
@@ -444,7 +448,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness) {
+vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness, float metallic) {
 
 //return color;
 //return probeColor;
@@ -498,20 +502,19 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
     			//return vec3(screenEdgefactor, 0, 0);
     			
-    			vec4 diffuseColorMetallic = textureLod(diffuseMap, resultCoords.xy, mipMapChoser);
+    			vec4 diffuseColorMetallic = textureLod(diffuseMap, screenPos.xy, mipMapChoser);
     			vec3 diffuseColor = diffuseColorMetallic.xyz;
-				const float metalSpecularBoost = 1.4;
-    			vec3 specularColor = mix(vec3(0.04,0.04,0.04), metalSpecularBoost*diffuseColorMetallic.rgb, diffuseColorMetallic.a);
-			  	const float metalBias = 0.1;
+    			vec3 specularColor = mix(vec3(0.04,0.04,0.04), diffuseColorMetallic.rgb, diffuseColorMetallic.a);
 			  	vec3 ambientDiffuseColor = diffuseColor;
-			  	diffuseColor = mix(diffuseColorMetallic.xyz, vec3(0,0,0), clamp(diffuseColorMetallic.a - metalBias, 0, 1));
+			  	diffuseColor = mix(diffuseColorMetallic.xyz, vec3(0,0,0), clamp(diffuseColorMetallic.a, 0, 1));
     			
     			vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, resultCoords.xy, mipMapChoser);
     			vec3 reflectedColor = lightDiffuseSpecular.rgb;
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
     			
-				return mix(probeColor, reflectedColor, 1-screenEdgefactor);
+    			vec3 result = specularColor*mix(probeColor, max(reflectedColor, probeColor), 1-screenEdgefactor); 
+				return result;
 		  	}
 		  	//return vec3(1,0,0);
 		  	//color = texture(environmentMap, normalize(normalize((inverse(viewMatrix) * vec4(reflectionVecView,0)).xyz))).rgb;
@@ -722,6 +725,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	
 	vec3 normal = normalize(normalWorld);
 	vec3 reflected = normalize(reflect(V, normalWorld));
+	vec3 boxProjectedRefractedNearest = boxProjection(positionWorld, refract(V, normalWorld, 1), 0);
 	
 	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest],
 									 environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
@@ -732,7 +736,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	// early out
 	if(onlyFirstProbeFound) {
 		result = importanceSampleProjectedCubeMap(probeIndexNearest, positionWorld, normal, reflected, V, roughness, metallic, color);
-		//result.diffuseColor += SECONDBOUNCEFACTOR*textureLod(probes, vec4(vec3(1,0,0), probeIndexNearest), MAX_MIPMAPLEVEL+1).rgb; 
+		//result.refractedColor = textureLod(probes, vec4(boxProjectedRefractedNearest, probeIndexNearest), roughness).rgb;
 		return result;
 	} else if(noProbeFound) {
 		//vec4 tempDiffuse = textureLod(globalEnvironmentMap, texCoords3d, mipMapLevel);
@@ -761,6 +765,8 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	result.specularColor = mix(specularNearest, specularSecondNearest, mixer);
 	//result[0] = vec3(mixer, 0, 0);
 	//result[1] = vec3(mixer, 0, 0);
+	
+	//result.refractedColor = textureLod(probes, vec4(boxProjectedRefractedNearest, probeIndexNearest), roughness).rgb;
 	return result;
 }
 
@@ -785,13 +791,14 @@ void main()
 	
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	//out_diffuseEnvironment.rgb = probeColorsDiffuseSpecular[0];
-	out_diffuseEnvironment.a = getAmbientOcclusion(st);
 	
-	/*if(roughness < 0.2) {
-		vec3 tempSSLR = rayCast(color, out_specularEnvironment.rgb, st, positionView, normalView.rgb, roughness);
+	if(roughness < 0.4)
+	{
+		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
 		probeColorsDiffuseSpecular.specularColor = tempSSLR;
-	}*/
+	}
 	
-	out_specularEnvironment.rgb = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
+	out_environment.rgb = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
+	out_environment.a = getAmbientOcclusion(st);
+	out_refracted.rgb = probeColorsDiffuseSpecular.refractedColor;
 }
