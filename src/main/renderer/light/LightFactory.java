@@ -6,20 +6,46 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import main.World;
+import main.camera.Camera;
+import main.model.Entity;
+import main.model.IEntity;
 import main.model.Model;
+import main.octree.Octree;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+import main.renderer.rendertarget.RenderTarget;
+import main.shader.Program;
+import main.texture.Texture;
+import main.texture.TextureFactory;
+import main.util.Util;
+import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class LightFactory {
-	
 
+	public static int MAX_AREALIGHT_SHADOWMAPS = 2;
+	public static int AREALIGHT_SHADOWMAP_RESOLUTION = 512;
+	private RenderTarget renderTarget;
+	private List<Integer> areaLightDepthMaps = new ArrayList<>();
+	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
+	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+	private Program areaShadowPassProgram;
+	private Camera camera;
+	
 	private List<PointLight> pointLights = new ArrayList<>();
 	private List<TubeLight> tubeLights = new ArrayList<>();
 	private List<AreaLight> areaLights = new ArrayList<>();
@@ -53,6 +79,24 @@ public class LightFactory {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+
+		this.renderTarget = new RenderTarget(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION);
+		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.DEFAULTCHANNELS, true);
+		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
+
+		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
+			int renderedTextureTemp = GL11.glGenTextures();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, AREALIGHT_SHADOWMAP_RESOLUTION, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+
+			
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+			areaLightDepthMaps.add(renderedTextureTemp);
 		}
 	}
 	
@@ -158,7 +202,7 @@ public class LightFactory {
 	}
 
 	public AreaLight getAreaLight(int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(renderer, new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
 		areaLights.add(areaLight);
 		return areaLight;
 	}
@@ -241,5 +285,83 @@ public class LightFactory {
 	public void setAreaLights(List<AreaLight> areaLights) {
 		this.areaLights = areaLights;
 	}
+	
+	public void renderAreaLightShadowMaps(Octree octree) {
+		GPUProfiler.start("Arealight shadowmaps");
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		renderTarget.use(true);
+		
+		for(int i = 0; i < Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size()); i++) {
 
+			renderTarget.setTargetTexture(areaLightDepthMaps.get(i), 0);
+
+			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+			
+			AreaLight light = areaLights.get(i);
+			camera.setPosition(light.getPosition().negate(null));
+			camera.setOrientation(light.getOrientation());
+			camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
+			camera.updateShadow();
+			
+			List<IEntity> visibles = octree.getVisible(camera);
+//			if(visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) { continue; }
+//			if(!light.hasMoved()) { continue; }
+			areaShadowPassProgram.use();
+			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+//			directionalShadowPassProgram.setUniform("near", camera.getNear());
+//			directionalShadowPassProgram.setUniform("far", camera.getFar());
+			
+			for (IEntity e : visibles) {
+				entityBuffer.rewind();
+				e.getModelMatrix().store(entityBuffer);
+				entityBuffer.rewind();
+				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+				e.getMaterial().setTexturesActive((Entity) e, areaShadowPassProgram);
+				areaShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+				areaShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
+
+				e.getVertexBuffer().draw();
+			}
+		}
+		GPUProfiler.end();
+	}
+	
+	public int getDepthMapForAreaLight(AreaLight light) {
+		int index = areaLights.indexOf(light);
+		if(index > MAX_AREALIGHT_SHADOWMAPS) {return -1;}
+		
+		return areaLightDepthMaps.get(index);
+	}
+
+	public Camera getCameraForAreaLight(AreaLight light) {
+		camera.setPosition(light.getPosition().negate(null));
+//		camera.getOrientation().x = -light.getOrientation().x;
+//		camera.getOrientation().y = -light.getOrientation().y;
+//		camera.getOrientation().z = -light.getOrientation().z;
+//		camera.getOrientation().w = -light.getOrientation().w;
+//		camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
+		camera.updateShadow();
+		return camera;
+	}
+
+	public FloatBuffer getShadowMatrixForAreaLight(AreaLight light) {
+		Camera c = getCameraForAreaLight(light);
+//		c.getOrientation().x = light.getOrientation().negate(null).x;
+//		c.getOrientation().y = light.getOrientation().negate(null).y;
+//		c.getOrientation().z = light.getOrientation().negate(null).z;
+//		c.getOrientation().w = light.getOrientation().negate(null).w;
+//		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
+
+//		Vector3f newPosition = new Vector3f(-light.getPosition().x, -light.getPosition().y, -light.getPosition().y);
+//		newPosition = new Vector3f(0, 0, 10);
+//		c.setPosition(newPosition);
+//		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
+//		c.updateShadow();
+		Matrix4f.mul(c.getProjectionMatrix(), c.getViewMatrix().negate(null), null).store(buffer);
+		buffer.flip();
+		return buffer;
+	}
 }

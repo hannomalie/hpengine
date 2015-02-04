@@ -6,6 +6,12 @@ layout(binding=6) uniform sampler2D shadowMap;
 
 layout(binding=8) uniform samplerCubeArray probes;
 
+layout(binding=9) uniform sampler2D shadowMapArealight0;
+layout(binding=10) uniform sampler2D shadowMapArealight1;
+layout(binding=11) uniform sampler2D shadowMapArealight2;
+layout(binding=12) uniform sampler2D shadowMapArealight3;
+layout(binding=13) uniform sampler2D shadowMapArealight4;
+
 const float pointLightRadius = 5.0;
 
 uniform mat4 viewMatrix;
@@ -42,6 +48,7 @@ uniform vec3[areaLightMaxCount] areaLightWidthHeightRanges;
 uniform vec3[areaLightMaxCount] areaLightViewDirections;
 uniform vec3[areaLightMaxCount] areaLightUpDirections;
 uniform vec3[areaLightMaxCount] areaLightRightDirections;
+uniform mat4[areaLightMaxCount] areaLightShadowMatrices;
 
 uniform int probeIndex = 0;
 uniform vec3 environmentMapMin[100];
@@ -202,6 +209,35 @@ float calculateAttenuation(float dist, float lightRadius) {
     return atten_factor;
 }
 
+sampler2D getAreaLightShadowmapSampler(int index) {
+	if(index == 0) {
+		return shadowMapArealight0;
+	} else if(index == 1) {
+		return shadowMapArealight1;
+	} else if(index == 2) {
+		return shadowMapArealight2;
+	} else if(index == 3) {
+		return shadowMapArealight3;
+	} else {
+		return shadowMapArealight4;
+	}
+}
+
+vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, int index)
+{
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return vec3(0,0,0);
+	}
+	
+	vec4 shadowMapSample = texture2D(getAreaLightShadowmapSampler(index), ShadowCoordPostW.xy);
+	vec2 moments = shadowMapSample.rg;
+	
+	float bias = 0.003;
+	if (dist <= moments.x + bias) {
+		return vec3(1.0,1.0,1.0);
+	} else { return vec3(0,0,0); }
+}
+
 vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,
 							   vec3 lightPosition, int index, vec3 diffuseColor, vec3 specularColor) {
 
@@ -296,12 +332,18 @@ vec3 cookTorranceAreaLight(in vec3 ViewVector, in vec3 position, in vec3 normal,
 		float temp = 1.0; temp -= F0;
 		fresnel *= temp;
 		float F = fresnel + F0;
+
+		vec4 positionShadow = (areaLightShadowMatrices[index] * vec4(position, 1));
+	  	positionShadow.xyz /= positionShadow.w;
+	  	float depthInLightSpace = positionShadow.z;
+	    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+		vec3 visibility = getVisibility(depthInLightSpace, positionShadow, texCoords, index);
         
 		//diffuse = diffuse * (1-fresnel);
         
         float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
         
-		return diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0);
+		return visibility * diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0);
 	}
 }
 vec3 cookTorrancePointLight(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 lightDiffuse,

@@ -397,8 +397,11 @@ public class DeferredRenderer implements Renderer {
 			executeRenderProbeCommands(octree, camera, World.light);
 			GPUProfiler.start("Shadowmap pass");
 			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) {
+				GPUProfiler.start("Directional shadowmap");
 				light.drawShadowMap(octree);
+				GPUProfiler.end();
 			}
+			lightFactory.renderAreaLightShadowMaps(octree);
 			//		doInstantRadiosity(light);
 			GPUProfiler.end();
 			GPUProfiler.start("Second pass");
@@ -423,7 +426,8 @@ public class DeferredRenderer implements Renderer {
 		}
 		
 		if (World.DEBUGFRAME_ENABLED) {
-			drawToQuad(light.getShadowMapColorMapId(), debugBuffer);
+//			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
+			drawToQuad(light.getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);

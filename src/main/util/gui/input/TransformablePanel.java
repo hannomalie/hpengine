@@ -33,19 +33,19 @@ public class TransformablePanel<T extends ITransformable> extends WebComponentPa
         this.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new Vector4f(1, 0, 0, delta));
+				transformable.rotateWorld(new Vector4f(1, 0, 0, delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new Vector4f(0, 1, 0, delta));
+				transformable.rotateWorld(new Vector4f(0, 1, 0, delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new Vector4f(0, 0, 1, delta));
+				transformable.rotateWorld(new Vector4f(0, 0, 1, delta));
 			}
 		});
         
@@ -53,7 +53,8 @@ public class TransformablePanel<T extends ITransformable> extends WebComponentPa
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = transformable.getRightDirection();
-				transformable.move((Vector3f) axis.scale(delta));
+				axis = new Vector3f(1, 0, 0);
+				transformable.moveInWorld((Vector3f) axis.scale(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});
@@ -61,7 +62,8 @@ public class TransformablePanel<T extends ITransformable> extends WebComponentPa
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = transformable.getUpDirection();
-				transformable.move((Vector3f) axis.scale(delta));
+				axis = new Vector3f(0, 1, 0);
+				transformable.moveInWorld((Vector3f) axis.scale(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});
@@ -69,7 +71,8 @@ public class TransformablePanel<T extends ITransformable> extends WebComponentPa
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = transformable.getViewDirection().negate(null);
-				transformable.move((Vector3f) axis.scale(delta));
+				axis = new Vector3f(0, 0, -1);
+				transformable.moveInWorld((Vector3f) axis.scale(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});

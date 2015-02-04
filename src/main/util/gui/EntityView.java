@@ -40,9 +40,9 @@ import com.alee.managers.notification.WebNotificationPopup;
 public class EntityView extends WebPanel {
 
 	private Entity entity;
-	private World world;
+	protected World world;
 	private WebFormattedTextField nameField;
-	private DebugFrame debugFrame;
+	protected DebugFrame debugFrame;
 
 	public EntityView(World world, DebugFrame debugFrame, Entity entity) {
 		this.entity = entity;

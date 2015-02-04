@@ -8,6 +8,7 @@ layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=5) uniform sampler2D probe;
 
 layout(binding=8) uniform sampler2D lightTexture;
+layout(binding=9) uniform sampler2D shadowMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -16,6 +17,7 @@ uniform float secondPassScale = 1;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+uniform mat4 shadowMatrix;
 
 uniform vec3 lightPosition;
 uniform vec3 lightRightDirection;
@@ -72,6 +74,61 @@ vec3 linePlaneIntersect(in vec3 lp, in vec3 lv, in vec3 pc, in vec3 pn){
 float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRange);
     return clamp(1.0f - (distDivRadius), 0, 1);
+}
+
+float linearizeDepth(float z)
+{
+  float n = 0.1; // camera z near
+  float f = 500; // camera z far
+  return (2.0 * n) / (f + n - z * (f - n));	
+}
+const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
+				2.0/16.0, 4.0/16.0, 2.0/16.0,
+				1.0/16.0, 2.0/16.0, 1.0/16.0 };
+	
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
+	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[2] * texture(sampler, texCoords + vec2(blurDistance, -blurDistance));
+	
+	result += kernel[3] * texture(sampler, texCoords + vec2(-blurDistance));
+	result += kernel[4] * texture(sampler, texCoords + vec2(0, 0));
+	result += kernel[5] * texture(sampler, texCoords + vec2(blurDistance, 0));
+	
+	result += kernel[6] * texture(sampler, texCoords + vec2(-blurDistance, blurDistance));
+	result += kernel[7] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[8] * texture(sampler, texCoords + vec2(blurDistance, blurDistance));
+	
+	return result;
+}
+vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
+{
+  	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+		return vec3(0,0,0);
+	}
+	
+	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
+	vec2 moments = shadowMapSample.rg;
+	vec2 momentsUnblurred = moments;
+	
+	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
+	
+	float bias = 0.003;
+	if (dist <= momentsUnblurred.x + bias) {
+		return vec3(1.0,1.0,1.0);
+	} else { return vec3(0,0,0); }
+	
+	float variance = moments.y - (moments.x*moments.x);
+	variance = max(variance,0.00012);
+
+	float d = dist - moments.x;
+	float p_max = (variance / (variance + d*d));
+	
+	//p_max = linstep(0.2, 1.0, p_max);
+
+	return vec3(p_max,p_max,p_max);
 }
 
 vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
@@ -173,9 +230,20 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
         	diffuse *= textureLod(lightTexture, texCoords, mipMap).rgb;
         }
         
+        
+    	vec3 positionWorld = (inverse(viewMatrix) * vec4(position.xyz, 1)).xyz;
+		vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
+	  	positionShadow.xyz /= positionShadow.w;
+	  	float depthInLightSpace = positionShadow.z;
+	    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
+	    vec2 shadowMapTexCoords = nearest2D / vec2(512, 512); // TODO: NO HARDCODED VALUES, DAMMIT
+        shadowMapTexCoords += 1;
+	    shadowMapTexCoords /=2;
+		vec3 visibility = getVisibility(depthInLightSpace, positionShadow, texCoords);
+        
         float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
         
-		return diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0);
+		return visibility * (diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0));
 	}
 }
 

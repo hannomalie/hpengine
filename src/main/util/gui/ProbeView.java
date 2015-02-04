@@ -71,67 +71,67 @@ public class ProbeView extends WebPanel {
 	
 	private void addAttributesPanel(List<Component> panels) {
 			
-			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
-	        webComponentPanel.setElementMargin ( 4 );
+		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
+        webComponentPanel.setElementMargin ( 4 );
 
-	        addNamePanel(webComponentPanel);
+        addNamePanel(webComponentPanel);
 
-	        WebButton removeProbeButton = new WebButton("Remove Probe");
-    		removeProbeButton.addActionListener(e -> {
-	        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        WebButton removeProbeButton = new WebButton("Remove Probe");
+		removeProbeButton.addActionListener(e -> {
+        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 
-					@Override
-					public Result execute(World world) {
-						world.getRenderer().getEnvironmentProbeFactory().remove(probe);
-						return new Result();
-					}
-	        	});
-	    		
-	    		Result result = null;
-	    		try {
-	    			result = queue.poll(1, TimeUnit.MINUTES);
-	    		} catch (Exception e1) {
-	    			e1.printStackTrace();
-	    			showNotification(NotificationIcon.error, "Not able to remove probe");
-	    		}
-	    		
-	    		if (!result.isSuccessful()) {
-	    			showNotification(NotificationIcon.error, "Not able to remove probe");
-	    		} else {
-	    			showNotification(NotificationIcon.plus, "Probe removed");
-	    			if(debugFrame != null) { debugFrame.refreshProbeTab(); }
-	    		}
-	        });
-
-	        webComponentPanel.addElement(removeProbeButton);
-	        webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-	        	world.setActiveCamera(probe.getCamera());
-	        });}});
-	        webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-	        	world.setActiveCamera(world.getCamera());
-	        });}});
-
-	        webComponentPanel.addElement(new MovablePanel<IEntity>(probe));
-
-	        webComponentPanel.addElement(new WebFormattedVec3Field("Size", probe.getSize()) {
 				@Override
-				public void onValueChange(Vector3f current) {
-					probe.setSize(current.x, current.y, current.z);
+				public Result execute(World world) {
+					world.getRenderer().getEnvironmentProbeFactory().remove(probe);
+					return new Result();
 				}
-			});
-	        
-	        {
-	            WebComboBox updateSelection = new WebComboBox((EnumSet.allOf(Update.class)).toArray());
-	            updateSelection.addActionListener(e -> {
-	            	Update selected = (Update) updateSelection.getSelectedItem();
-	            	probe.setUpdate(selected);
-	            });
-	            updateSelection.setSelectedItem(probe.getUpdate());
-	            GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Update type"), updateSelection );
-	            webComponentPanel.addElement(groupPanelEnironmentMapType);
-	        }
-	        
-	        panels.add(webComponentPanel);
+        	});
+    		
+    		Result result = null;
+    		try {
+    			result = queue.poll(1, TimeUnit.MINUTES);
+    		} catch (Exception e1) {
+    			e1.printStackTrace();
+    			showNotification(NotificationIcon.error, "Not able to remove probe");
+    		}
+    		
+    		if (!result.isSuccessful()) {
+    			showNotification(NotificationIcon.error, "Not able to remove probe");
+    		} else {
+    			showNotification(NotificationIcon.plus, "Probe removed");
+    			if(debugFrame != null) { debugFrame.refreshProbeTab(); }
+    		}
+        });
+
+        webComponentPanel.addElement(removeProbeButton);
+        webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
+        	world.setActiveCamera(probe.getCamera());
+        });}});
+        webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
+        	world.setActiveCamera(world.getCamera());
+        });}});
+
+        webComponentPanel.addElement(new MovablePanel<IEntity>(probe));
+
+        webComponentPanel.addElement(new WebFormattedVec3Field("Size", probe.getSize()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				probe.setSize(current.x, current.y, current.z);
+			}
+		});
+        
+        {
+            WebComboBox updateSelection = new WebComboBox((EnumSet.allOf(Update.class)).toArray());
+            updateSelection.addActionListener(e -> {
+            	Update selected = (Update) updateSelection.getSelectedItem();
+            	probe.setUpdate(selected);
+            });
+            updateSelection.setSelectedItem(probe.getUpdate());
+            GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Update type"), updateSelection );
+            webComponentPanel.addElement(groupPanelEnironmentMapType);
+        }
+        
+        panels.add(webComponentPanel);
 	}
 
 	private void addNamePanel(WebComponentPanel webComponentPanel) {

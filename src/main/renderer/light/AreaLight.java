@@ -8,6 +8,7 @@ import main.model.Model;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
+import main.renderer.rendertarget.RenderTarget;
 import main.shader.Program;
 import main.util.Util;
 
@@ -21,9 +22,10 @@ public class AreaLight extends Entity {
 	public static float DEFAULT_RANGE = 1f;
 	private static int counter = 0;
 	private Vector3f color;
+	private RenderTarget renderTarget;
 	
-	protected AreaLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(materialFactory, position, generateName(), model, model.getMaterial().getName());
+	protected AreaLight(Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
+		super(renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
 		setColor(color);
 		setScale(scale);
 		counter++;

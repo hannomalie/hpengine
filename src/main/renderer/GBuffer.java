@@ -17,6 +17,7 @@ import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
+import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
@@ -467,6 +468,8 @@ public class GBuffer {
 			secondPassAreaLightProgram.setUniform("lightHeight", areaLight.getHeight());
 			secondPassAreaLightProgram.setUniform("lightRange", areaLight.getRange());
 			secondPassAreaLightProgram.setUniform("lightDiffuse", areaLight.getColor());
+			secondPassAreaLightProgram.setUniformAsMatrix4("shadowMatrix", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
+
 			try {
 				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 				Texture lightTexture = renderer.getTextureFactory().getTexture("brick.hptexture");
@@ -474,6 +477,8 @@ public class GBuffer {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
 			fullscreenBuffer.draw();
 //			areaLight.getVertexBuffer().drawDebug();
 		}

@@ -1120,20 +1120,20 @@ public class DebugFrame {
 		createMaterialPane(world);
 		tabbedPane.addTab("Material", materialPane);
 	}
-
-	private void refreshPointLightsTab() {
+	
+	public void refreshPointLightsTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(pointLightsPane);
 		createPointLightsTab();
 		tabbedPane.addTab("PointLights", pointLightsPane);
 	}
-	private void refreshTubeLightsTab() {
+	public void refreshTubeLightsTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(tubeLightsPane);
 		createTubeLightsTab();
 		tabbedPane.addTab("TubeLights", tubeLightsPane);
 	}
-	private void refreshAreaLightsTab() {
+	public void refreshAreaLightsTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(areaLightsPane);
 		createAreaLightsTab();
@@ -1161,4 +1161,5 @@ public class DebugFrame {
 		notificationPopup.setContent(new WebLabel(content));
 		NotificationManager.showNotification(notificationPopup);
 	}
+
 }

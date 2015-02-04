@@ -33,7 +33,9 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
+import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
+import main.renderer.light.LightFactory;
 import main.renderer.rendertarget.CubeMapArrayRenderTarget;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe;
@@ -107,6 +109,13 @@ public class EnvironmentSampler {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", renderer.getLightFactory().getAreaLightViewDirections());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", renderer.getLightFactory().getAreaLightUpDirections());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
+		
+		for(int i = 0; i < Math.min(renderer.getLightFactory().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight = renderer.getLightFactory().getAreaLights().get(i);
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9 + i);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
+			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
+		}
 		
 		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubeMapProgram);
