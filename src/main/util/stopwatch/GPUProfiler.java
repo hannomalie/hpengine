@@ -15,8 +15,8 @@ public class GPUProfiler {
 	public static boolean PROFILING_ENABLED = false;
 	public static boolean PRINTING_ENABLED = true;
 
-	private static ArrayList<GPUTaskProfile> tasks = new ArrayList<>();
-	private static ArrayList<Integer> queryObjects = new ArrayList<>();
+	private static ArrayList<GPUTaskProfile> tasks;
+	private static ArrayList<Integer> queryObjects;
 
 	private static int frameCounter;
 	private static GPUTaskProfile currentTask;
@@ -25,10 +25,16 @@ public class GPUProfiler {
 	private static ArrayList<Record> collectedTimes;
 
 	static {
+		init();
+	}
+
+	private static void init() {
+		tasks = new ArrayList<>();
 		queryObjects = new ArrayList<>();
 		frameCounter = 0;
 		completedFrames = new ArrayList<>();
 		collectedTimes = new ArrayList<>();
+		currentTask = null;
 	}
 
 	public static void startFrame() {
@@ -142,6 +148,10 @@ public class GPUProfiler {
 			}
 		}
 		return averages;
+	}
+	
+	public static void reset() {
+		init();
 	}
 
 	public static class Record {

@@ -601,7 +601,7 @@ public class DebugFrame {
 				e1.printStackTrace();
 			}
 		});
-        
+
         WebMenuItem saveScriptMenuItem = new WebMenuItem("Save Script");
         saveScriptMenuItem.addActionListener(e -> {
 			try {
@@ -611,6 +611,30 @@ public class DebugFrame {
 				e1.printStackTrace();
 			}
 		});
+        
+        WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
+        resetProfiling.addActionListener(e -> {
+    		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+				@Override
+				public Result execute(World world) {
+					GPUProfiler.reset();
+					return new Result();
+				}});
+    		
+    		Result result = null;
+			try {
+				result = queue.poll(5, TimeUnit.MINUTES);
+			} catch (Exception e1) {
+				showError("Failed to reset profiler");
+			}
+			
+			if (!result.isSuccessful()) {
+				showError("Failed to reset profiler");
+			} else {
+				showSuccess("Reset profiler");
+			}
+    		
+    	});
 
 		WebMenu menuTextures = new WebMenu("Texture");
         {
@@ -675,6 +699,7 @@ public class DebugFrame {
         menuBar.add(menuTextures);
         menuBar.add(runScriptMenuItem);
         menuBar.add(saveScriptMenuItem);
+        menuBar.add(resetProfiling);
         mainFrame.setJMenuBar(menuBar);
         
 		mainFrame.add(tabbedPane);
