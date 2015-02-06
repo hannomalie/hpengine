@@ -3,22 +3,37 @@ package main.util.gui;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
 import main.renderer.Renderer;
+import main.util.stopwatch.GPUProfiler;
+import main.util.stopwatch.GPUProfiler.AverageHelper;
 
+import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.NumberTickUnit;
+import org.jfree.chart.axis.TickUnits;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.labels.StandardCategoryItemLabelGenerator;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
@@ -37,16 +52,36 @@ public class PerformanceMonitor {
 	private TimeSeries sixtyFPS;
 	private TimeSeries actualMS;
 
+	private DefaultCategoryDataset breakdownDataset;
+
 	 public PerformanceMonitor(Renderer myRenderer) {
-		 this.myRenderer = myRenderer;
+		this.myRenderer = myRenderer;
 		long maxAge = 10000;
 
-		this.thirtyFPS = new TimeSeries("33 FPS", Millisecond.class);
+
+		JFrame frame = new JFrame("FPS");
+		int rows = 0;
+		
+		this.thirtyFPS = new TimeSeries("30 FPS", Millisecond.class);
 		this.thirtyFPS.setMaximumItemAge(maxAge);
-		this.sixtyFPS = new TimeSeries("66 FPS", Millisecond.class);
+		this.sixtyFPS = new TimeSeries("60 FPS", Millisecond.class);
 		this.sixtyFPS.setMaximumItemAge(maxAge);
 		this.actualMS = new TimeSeries("Current FPS", Millisecond.class);
 		this.actualMS.setMaximumItemAge(maxAge);
+		ChartPanel chartPanel = addFPSChart(myRenderer);
+		rows++;
+		
+//		ChartPanel waterfallChartPanel = addBreakdownChart(myRenderer);
+//		rows++;
+
+		frame.setLayout(new GridLayout(rows, 1));
+		frame.add(chartPanel);
+//		frame.add(waterfallChartPanel);
+		frame.pack();
+		frame.setVisible(true);
+	}
+
+	private ChartPanel addFPSChart(Renderer myRenderer) {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
 		dataset.addSeries(this.thirtyFPS);
 		dataset.addSeries(this.sixtyFPS);
@@ -78,11 +113,47 @@ public class PerformanceMonitor {
 		chartPanel.setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder(4, 4, 4, 4),
 				BorderFactory.createLineBorder(Color.black)));
-		JFrame frame = new JFrame("FPS");
-		frame.getContentPane().add(chartPanel);
-		frame.pack();
-		frame.setVisible(true);
 		new DataGenerator(100, myRenderer).start();
+		return chartPanel;
+	}
+
+	private ChartPanel addBreakdownChart(Renderer myRenderer) {
+		// Code from https://code.google.com/p/swing-ui-hxzon/source/browse/trunk/jfreechart/org/jfree/chart/demo/WaterfallChartDemo1.java?spec=svn65&r=62
+		breakdownDataset = new DefaultCategoryDataset();
+        JFreeChart jfreechart = ChartFactory.createWaterfallChart("Frame Breakdown", "part", "ms", breakdownDataset, PlotOrientation.VERTICAL, false, true, false);
+		jfreechart.setBackgroundPaint(Color.white);
+        CategoryPlot categoryplot = (CategoryPlot) jfreechart.getPlot();
+        categoryplot.setBackgroundPaint(Color.lightGray);
+        categoryplot.setRangeGridlinePaint(Color.white);
+        categoryplot.setRangeGridlinesVisible(true);
+        categoryplot.setAxisOffset(new RectangleInsets(5D, 5D, 5D, 5D));
+        ValueAxis valueaxis = categoryplot.getRangeAxis();
+        DecimalFormat decimalformat = new DecimalFormat("##,#");
+//        decimalformat.setNegativePrefix("(");
+//        decimalformat.setNegativeSuffix(")");
+        TickUnits tickunits = new TickUnits();
+        tickunits.add(new NumberTickUnit(5D, decimalformat));
+        tickunits.add(new NumberTickUnit(10D, decimalformat));
+        tickunits.add(new NumberTickUnit(20D, decimalformat));
+        tickunits.add(new NumberTickUnit(50D, decimalformat));
+        tickunits.add(new NumberTickUnit(100D, decimalformat));
+        tickunits.add(new NumberTickUnit(200D, decimalformat));
+        tickunits.add(new NumberTickUnit(500D, decimalformat));
+        tickunits.add(new NumberTickUnit(1000D, decimalformat));
+        tickunits.add(new NumberTickUnit(2000D, decimalformat));
+        tickunits.add(new NumberTickUnit(5000D, decimalformat));
+        valueaxis.setStandardTickUnits(tickunits);
+        BarRenderer barrenderer = (BarRenderer) categoryplot.getRenderer();
+        barrenderer.setDrawBarOutline(false);
+        barrenderer.setBase(5D);
+        DecimalFormat decimalformat1 = new DecimalFormat("$##,#");
+//        decimalformat1.setNegativePrefix("(");
+//        decimalformat1.setNegativeSuffix(")");
+        barrenderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator("{1}", decimalformat1));
+        barrenderer.setBaseItemLabelsVisible(true);
+        ChartPanel waterfallChartPanel = new ChartPanel(jfreechart);
+		new BreakdownDataGenerator(100, myRenderer).start();
+		return waterfallChartPanel;
 	}
 
 	private void thirtyFPS(double y) {
@@ -112,6 +183,43 @@ public class PerformanceMonitor {
 			sixtyFPS(60);
 			actualFPS(actualFpsMSValue);
 		}
+	}
+	
+	class BreakdownDataGenerator extends Timer implements ActionListener {
+		private Renderer renderer;
 
+		BreakdownDataGenerator(int interval, Renderer renderer) {
+			super(interval, null);
+			addActionListener(this);
+			this.renderer = renderer;
+		}
+
+		public void actionPerformed(ActionEvent event) {
+			Map<String, AverageHelper> averages = GPUProfiler.calculateAverages(1000);
+			actualizeBreakdownDataset(averages);
+		}
+
+		private void actualizeBreakdownDataset(
+				Map<String, AverageHelper> averages) {
+			AverageHelper frameAverage = averages.get("Frame");
+			if(frameAverage != null) { averages.remove(frameAverage); }
+			
+			if(breakdownDataset.getColumnKeys().contains("Frame")) {breakdownDataset.removeColumn("Frame");}
+			List<String> columnKeys = breakdownDataset.getColumnKeys();
+			
+			for (String name : averages.keySet()) {
+				AverageHelper average = averages.get(name);
+				Long averageValue = average.getAverageInMS();
+				if(averageValue < 2) { continue; }
+				
+				if(columnKeys.contains(name)) {
+					breakdownDataset.setValue(averageValue, "", name);
+				} else {
+			        breakdownDataset.addValue(averageValue, "", name);	
+				}
+			}
+
+			if(frameAverage != null) { breakdownDataset.addValue(frameAverage.getAverageInMS(), "", "Frame"); }
+		}
 	}
 }

@@ -112,9 +112,23 @@ public class GPUProfiler {
 	
 	public static void dumpAverages(int sampleCount) {
 		
+		Map<String, AverageHelper> averages = calculateAverages(sampleCount);
+		
+		if(averages.isEmpty()) { return; }
+		System.out.println("##########################################");
+		System.out.println("name\t\t\t\t|  time in ms\t|\tsamples");
+		averages.entrySet().stream().forEach(s -> {
+			String name = s.getKey();
+			while(name.length() < 30) {
+				name += " ";
+			}
+			System.out.println(String.format("%s\t|  %.5f\t|\t%s", name.substring(0, Math.min(name.length(), 30)), (s.getValue().summedTime / s.getValue().count) / 1000 / 1000f, s.getValue().count));
+		});
+	}
+
+	public static Map<String, AverageHelper> calculateAverages(int sampleCount) {
 		Map<String, AverageHelper> averages = new HashMap<>();
 		
-		//for (Record record : collectedTimes) {
 		for(int i = collectedTimes.size(); i > 0; i--) {
 			Record record = collectedTimes.get(i-1);
 			AverageHelper averageHelper = averages.get(record.name);
@@ -127,17 +141,7 @@ public class GPUProfiler {
 				averageHelper.summedTime += record.time;
 			}
 		}
-		
-		if(averages.isEmpty()) { return; }
-		System.out.println("##########################################");
-		System.out.println("name\t\t\t\t|  time in ms\t|\tsamples");
-		averages.entrySet().stream().forEach(s -> {
-			String name = s.getKey();
-			while(name.length() < 30) {
-				name += " ";
-			}
-			System.out.println(String.format("%s\t|  %.5f\t|\t%s", name.substring(0, Math.min(name.length(), 30)), (s.getValue().summedTime / s.getValue().count) / 1000 / 1000f, s.getValue().count));
-		});
+		return averages;
 	}
 
 	public static class Record {
@@ -153,5 +157,6 @@ public class GPUProfiler {
 	public static class AverageHelper {
 		public Integer count = new Integer(0);
 		public Long summedTime = new Long(0);
+		public Long getAverageInMS() { return (summedTime / count) / 1000 / 1000; }
 	}
 }
