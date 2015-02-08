@@ -63,17 +63,7 @@ public class CubeMapArray {
 	}
 	public void bind(int layer, int unit, int level) {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit);
-//		System.out.println("glBindImageTexture " + textureId + " to " + "unit " + unit + " layer " + layer);
 		GL42.glBindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
-		
-//		System.out.println("Currently bound image name: " + GL11.glGetInteger(GL42.GL_IMAGE_BINDING_NAME));
-//		System.out.println("Currently bound image layer: " + GL11.glGetInteger(GL42.GL_IMAGE_BINDING_LAYER));
-//		System.out.println("Currently bound image is layered: " + GL11.glGetBoolean(GL42.GL_IMAGE_BINDING_LAYERED));
-
-//		System.out.println("Currently bound tex2D map: " + GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D));
-//		System.out.println("Currently bound cube map: " + GL11.glGetInteger(GL13.GL_TEXTURE_BINDING_CUBE_MAP));
-//		System.out.println("Currently bound cube map array: " + GL11.glGetInteger(GL40.GL_TEXTURE_BINDING_CUBE_MAP_ARRAY));
-		
 	}
 
 	public int getTextureID() {

@@ -123,7 +123,8 @@ public class DebugFrame {
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
 //	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", FileMonitor.getInstance().running);
-	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", false);
+	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
+	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
 	private WebButton dumpAverages = new WebButton("Dump Averages");
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
@@ -232,6 +233,33 @@ public class DebugFrame {
 			} catch (Exception e1) {
 				showError("Profiling can't be switched");
 				toggleProfiler.setEnabled(true);
+			}
+			
+		});
+		toggleProfilerPrint.addActionListener( e -> {
+			
+			toggleProfilerPrint.setEnabled(false);
+			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+
+				@Override
+				public Result execute(World world) {
+					GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+					return new Result();
+				}
+			});
+			Result result = null;
+			try {
+				result = queue.poll(5, TimeUnit.MINUTES);
+				if (!result.isSuccessful()) {
+					showError("Printing can't be switched");
+					toggleProfilerPrint.setEnabled(GPUProfiler.PRINTING_ENABLED);
+				} else {
+					showSuccess("Printing switched");
+					toggleProfilerPrint.setEnabled(GPUProfiler.PRINTING_ENABLED);
+				}
+			} catch (Exception e1) {
+				showError("Profiling can't be switched");
+				toggleProfilerPrint.setEnabled(true);
 			}
 			
 		});
@@ -361,6 +389,7 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDrawLights);
 //		mainButtonElements.add(toggleFileReload);
 		mainButtonElements.add(toggleProfiler);
+		mainButtonElements.add(toggleProfilerPrint);
 		mainButtonElements.add(dumpAverages);
 		mainButtonElements.add(toggleParallax);
 		mainButtonElements.add(toggleSteepParallax);

@@ -13,7 +13,7 @@ import java.util.Vector;
 public class GPUProfiler {
 
 	public static boolean PROFILING_ENABLED = false;
-	public static boolean PRINTING_ENABLED = true;
+	public static boolean PRINTING_ENABLED = false;
 
 	private static ArrayList<GPUTaskProfile> tasks;
 	private static ArrayList<Integer> queryObjects;
