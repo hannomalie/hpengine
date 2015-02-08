@@ -1,4 +1,3 @@
-#version 420
 uniform sampler2D renderedTexture;
 in vec2 pass_TextureCoord;
 

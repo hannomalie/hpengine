@@ -1,4 +1,3 @@
-#version 420
 
 uniform sampler2D renderedTexture;
 uniform vec3 diffuseColor = vec3(1,0,0);

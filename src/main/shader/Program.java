@@ -228,10 +228,8 @@ public class Program implements Reloadable {
 		String shaderSource;
 		int shaderID = 0;
 		
-		shaderSource = mapDefinesString;
-		if (shaderSource == null) {
-			shaderSource = "";
-		}
+		shaderSource = "#version 420\n" + mapDefinesString;
+
 		try {
 			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);
 		} catch (IOException e) {

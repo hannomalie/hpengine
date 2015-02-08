@@ -1,4 +1,3 @@
-#version 420
 
 uniform sampler2D renderedTexture;
 
@@ -16,7 +15,8 @@ float linearizeDepth(in float depth)
 void main()
 {
 	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 1);
-	//float temp = 0.1*(in_color.r);
+	//float temp = 0.5*(in_color.r);
+	//temp *= temp;
 	//float temp = 50*(in_color.g);
 	//in_color = vec4(temp,temp,temp,1);
     

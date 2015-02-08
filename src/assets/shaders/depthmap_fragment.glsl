@@ -1,4 +1,3 @@
-#version 420
 
 out vec4 out_Color;
 in vec4 pass_Position;

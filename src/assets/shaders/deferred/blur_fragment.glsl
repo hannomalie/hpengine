@@ -1,4 +1,3 @@
-#version 420
 
 layout(binding=0) uniform sampler2D renderedTexture;
 uniform float blurDistance = 0.0025;

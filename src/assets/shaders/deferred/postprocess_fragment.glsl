@@ -1,4 +1,3 @@
-#version 420
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;

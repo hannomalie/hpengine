@@ -1,4 +1,3 @@
-#version 420
 
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
@@ -312,7 +311,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 32;
+  const int N = 12;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;

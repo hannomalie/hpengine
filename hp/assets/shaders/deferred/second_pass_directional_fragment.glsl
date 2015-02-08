@@ -1,4 +1,3 @@
-#version 420
 
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
@@ -329,7 +328,7 @@ void main(void) {
 	
 	out_DiffuseSpecular.rgb = finalColor;
 	//out_AOReflection.gba = vec3(0,0,0);
-	out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
+	//out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	
 	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
 	//out_DiffuseSpecular = vec4(ssdo,1);

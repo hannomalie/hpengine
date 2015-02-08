@@ -1,16 +1,15 @@
-#version 420
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = true;
+uniform bool usePostProcessing = false;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
 float calculateMotionBlur(vec2 uv) {
-	return length(texture2D(motionMap, uv).xy);
+	return 100*(texture2D(motionMap, uv).x);
 }
 
 ///////////////////////////////////////
@@ -23,7 +22,7 @@ float calculateMotionBlur(vec2 uv) {
 //uniform variables from external script
 const float focalDepth = 10;  //focal distance value in meters, but you may use autofocus option below
 const float focalLength = 52.0; //focal length in mm
-const float fstop = 1.4;//1.4; //f-stop value
+const float fstop = 0.7;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
@@ -47,7 +46,7 @@ const float ndofdist = 128.0; //near dof blur falloff distance
 const float fdofstart = 128.0; //far dof blur start
 const float fdofdist = 512.0; //far dof blur falloff distance
 
-const float CoC = 0.08;//circle of confusion size in mm (35mm film = 0.03mm)
+const float CoC = 0.068;//circle of confusion size in mm (35mm film = 0.03mm)
 
 const bool vignetting = false; //use optical lens vignetting?
 const float vignout = 1.5; //vignetting outer border
@@ -58,8 +57,8 @@ const bool autofocus = true; //use autofocus in shader? disable if you use exter
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
 const float maxblur = 3.0; //clamp value of max blur (0.0 = no blur,1.0 default)
 
-const float threshold = 0.95; //highlight threshold;
-const float gain = 64.0; //highlight gain;
+const float threshold = 0.7595; //highlight threshold;
+const float gain = 44.0; //highlight gain;
 
 const float bias = 0.8; //bokeh edge bias
 const float fringe = 0.7; //bokeh chromatic aberration/fringing
