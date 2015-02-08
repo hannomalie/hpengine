@@ -3,6 +3,8 @@ package main.shader;
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.io.FileUtils;
 
@@ -15,21 +17,29 @@ public class ProgramFactory {
 	public static String FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE = "first_pass_fragment.glsl";
 	
 	private Renderer renderer;
+	
+	public static List<Program> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
 	public ProgramFactory(Renderer renderer) {
 		this.renderer = renderer;
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) {
-		return new Program(null, vertexShaderFilename, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
+		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
+		LOADED_PROGRAMS.add(program);
+		return program;
 	}
 	
 	public Program getProgram(String defines) {
-		return new Program(null, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
+		Program program = new Program(renderer, null, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
+		LOADED_PROGRAMS.add(program);
+		return program;
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		return new Program(null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
+		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
+		LOADED_PROGRAMS.add(program);
+		return program;
 	}
 
 	public void copyDefaultFragmentShaderToFile(String name) throws IOException {

@@ -33,3 +33,7 @@ task copyNatives(type: Copy) {
     from 'libs/lwjgl-2.9.2/native/windows'
     into 'build/libs'
 }
+task copyNativesLinux(type: Copy) {
+    from 'libs/lwjgl-2.9.2/native/linux'
+    into 'build/libs'
+}

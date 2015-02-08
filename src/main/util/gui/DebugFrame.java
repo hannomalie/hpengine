@@ -6,8 +6,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,13 +21,21 @@ import javax.script.ScriptException;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.Document;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import main.World;
@@ -55,11 +66,6 @@ import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartFrame;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.StandardChartTheme;
-import org.jfree.data.general.DefaultPieDataset;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -104,6 +110,9 @@ public class DebugFrame {
 	private JScrollPane areaLightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JScrollPane probesPane = new JScrollPane();
+	private JTextPane output = new JTextPane();
+	private JScrollPane outputPane = new JScrollPane(output);
+	
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
@@ -113,7 +122,7 @@ public class DebugFrame {
 	"}");
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
-	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", World.RELOAD_ON_FILE_CHANGE);
+//	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", FileMonitor.getInstance().running);
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", false);
 	private WebButton dumpAverages = new WebButton("Dump Averages");
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
@@ -195,10 +204,10 @@ public class DebugFrame {
 		
 		addProbes(world);
 
-		toggleFileReload.addActionListener( e -> {
-			World.RELOAD_ON_FILE_CHANGE = !World.RELOAD_ON_FILE_CHANGE;
-			toggleFileReload.setSelected(World.RELOAD_ON_FILE_CHANGE);
-		});
+//		toggleFileReload.addActionListener( e -> {
+//			FileMonitor.getInstance().running = !FileMonitor.getInstance().running;
+//			toggleFileReload.setSelected(FileMonitor.getInstance().running);
+//		});
 		toggleProfiler.addActionListener( e -> {
 			
 			toggleProfiler.setEnabled(false);
@@ -350,7 +359,7 @@ public class DebugFrame {
 	    mainButtonElements.add(toggleDebugDrawProbesWithContent);
 	    mainButtonElements.add(toggleDebugFrame);
 	    mainButtonElements.add(toggleDrawLights);
-		mainButtonElements.add(toggleFileReload);
+//		mainButtonElements.add(toggleFileReload);
 		mainButtonElements.add(toggleProfiler);
 		mainButtonElements.add(dumpAverages);
 		mainButtonElements.add(toggleParallax);
@@ -715,16 +724,95 @@ public class DebugFrame {
 		tabbedPane.addTab("AreaLights", areaLightsPane);
 		tabbedPane.addTab("Console", consolePane);
 		tabbedPane.addTab("Scripts", scriptsPane);
+		tabbedPane.addTab("Output", outputPane);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
 		mainFrame.setVisible(true);
 		initPerformanceChart();
+		redirectSystemStreams();
 	}
 
 	private void initPerformanceChart() {
 		new PerformanceMonitor(world.getRenderer());
 	}
+	
+	private void redirectSystemStreams() {
+		outputPane.setBorder(new LineBorder(Color.black, 1));
+		DefaultCaret caret = (DefaultCaret) output.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		output.setEditable(false);
+		output.setBackground(Color.BLACK);
+		output.setForeground(Color.WHITE);
+		final Font currFont = consolePane.getFont();
+		output.setFont(new Font("Courier New", currFont.getStyle(), currFont.getSize()));
+		
+		  OutputStream out = new OutputStream() {
+			  StyleContext sc = StyleContext.getDefaultStyleContext();
+			    javax.swing.text.AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.GREEN);
+
+			    
+			    @Override
+			    public void write(int b) throws IOException {
+
+			    	Document doc = output.getDocument();
+			    	try {
+						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
+					} catch (BadLocationException e) {
+						e.printStackTrace();
+					}
+			    }
+			 
+			    @Override
+			    public void write(byte[] b, int off, int len) throws IOException {
+			    	Document doc = output.getDocument();
+			    	try {
+						doc.insertString(doc.getLength(), new String(b, off, len), aset);
+					} catch (BadLocationException e) {
+						e.printStackTrace();
+					}
+			    }
+			 
+			    @Override
+			    public void write(byte[] b) throws IOException {
+			      write(b, 0, b.length);
+			    }
+			  };
+		  
+		  OutputStream outErr = new OutputStream() {
+			  StyleContext sc = StyleContext.getDefaultStyleContext();
+			    javax.swing.text.AttributeSet aset = sc.addAttribute(SimpleAttributeSet.EMPTY, StyleConstants.Foreground, Color.RED);
+
+			    
+			    @Override
+			    public void write(int b) throws IOException {
+			    	Document doc = output.getDocument();
+			    	try {
+						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
+					} catch (BadLocationException e) {
+						e.printStackTrace();
+					}
+			    }
+			 
+			    @Override
+			    public void write(byte[] b, int off, int len) throws IOException {
+			    	Document doc = output.getDocument();
+			    	try {
+						doc.insertString(doc.getLength(), new String(b, off, len), aset);
+					} catch (BadLocationException e) {
+						e.printStackTrace();
+					}
+			    }
+			 
+			    @Override
+			    public void write(byte[] b) throws IOException {
+			      write(b, 0, b.length);
+			    }
+			  };
+		  		 
+		  System.setOut(new PrintStream(out, true));
+		  System.setErr(new PrintStream(outErr, true));
+		}
 
 	private void createPointLightsTab() {
 		DebugFrame debugFrame = this;

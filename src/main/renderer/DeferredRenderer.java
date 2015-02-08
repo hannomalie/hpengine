@@ -366,7 +366,7 @@ public class DeferredRenderer implements Renderer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		FileMonitor.getInstance().checkAndNotify();
+//		FileMonitor.getInstance().checkAndNotify();
 		updateLights(seconds);
 		setLastFrameTime();
 		fpsCounter.update(seconds);

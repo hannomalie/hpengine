@@ -34,7 +34,7 @@ public class ReloadOnFileChangeTest {
 	@Test
 	@Ignore
 	public void reloadProgramTest() throws Exception {
-		World.RELOAD_ON_FILE_CHANGE = true;
+		FileMonitor.getInstance().running = true;
 		
 		class DummyReloadable implements Reloadable {
 			public boolean reloaded = false;

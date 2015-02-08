@@ -58,7 +58,7 @@ public class World {
 	public static final String ASSETDIR_NAME = "hp/assets";
 
 	private static Logger LOGGER = getLogger();
-	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
+//	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
 //		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
 	
 	private OpenGLStopWatch glWatch;

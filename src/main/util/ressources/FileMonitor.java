@@ -1,7 +1,7 @@
 package main.util.ressources;
 
 import main.World;
-import main.util.stopwatch.StopWatch;
+import main.renderer.Renderer;
 
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
@@ -12,15 +12,18 @@ public class FileMonitor {
 	
 	public FileAlterationMonitor monitor;
 	public volatile boolean running = false;
+	// TODO: Interface for hot reload deactivation...
+	
+	private Renderer renderer;
 	
 	static {
 		instance = new FileMonitor(500);
-//		try {
-//			instance.monitor.start();
+		try {
+			instance.monitor.start();
 			instance.running = true;
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	public static FileMonitor getInstance() {
 		return instance;
@@ -43,7 +46,7 @@ public class FileMonitor {
 	
 	public void checkAndNotify() {
 //		StopWatch.getInstance().start("CheckAndNotify");
-		if (!World.RELOAD_ON_FILE_CHANGE) { return; }
+		if (!FileMonitor.getInstance().running) { return; }
 		monitor.getObservers().forEach(o -> {o.checkAndNotify();});
 //		StopWatch.getInstance().stopAndPrintMS();
 	}

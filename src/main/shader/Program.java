@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import main.World;
@@ -18,11 +21,15 @@ import main.model.DataChannels;
 import main.model.Entity;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
+import main.renderer.Result;
+import main.renderer.command.Command;
+import main.renderer.command.RenderProbeCommand;
 import main.util.Util;
 import main.util.ressources.FileMonitor;
 import main.util.ressources.OnFileChangeListener;
 import main.util.ressources.ReloadOnFileChangeListener;
 import main.util.ressources.Reloadable;
+import main.util.stopwatch.GPUProfiler;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -52,8 +59,9 @@ public class Program implements Reloadable {
 	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
 
 	private FileAlterationObserver observerFragmentShader;
+	private Renderer renderer;
 
-	protected Program(String geometryShaderName, String vertexShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
+	protected Program(Renderer renderer, String geometryShaderName, String vertexShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
@@ -61,6 +69,7 @@ public class Program implements Reloadable {
 		this.geometryShaderName = geometryShaderName;
 		this.vertexShaderName = vertexShaderName;
 		this.fragmentShaderName = fragmentShaderName;
+		this.renderer = renderer;
 
 		observerFragmentShader = new FileAlterationObserver(getDirectory());
 		
@@ -137,6 +146,30 @@ public class Program implements Reloadable {
 
 	public void unload() {
 		GL20.glDeleteProgram(id);
+	}
+	
+	public void reload() {
+		final Program self = this;
+		
+		SynchronousQueue<Result> queue = renderer.addCommand(new Command<Result>(){
+			@Override
+			public Result execute(World world) {
+				self.unload();
+				self.load();
+				return new Result();
+			}
+		});
+		Result result = null;
+		try {
+			result = queue.poll(5, TimeUnit.MINUTES);
+			if (!result.isSuccessful()) {
+				System.out.println("Program not reloaded");
+			} else {
+				System.out.println("Program reloaded");
+			}
+		} catch (Exception e1) {
+			System.out.println("Program not reloaded");
+		}
 	}
 	
 	@Override

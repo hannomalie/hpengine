@@ -54,7 +54,8 @@ public class PerformanceMonitor {
 
 	private DefaultCategoryDataset breakdownDataset;
 
-	 public PerformanceMonitor(Renderer myRenderer) {
+	@SuppressWarnings("deprecation")
+	public PerformanceMonitor(Renderer myRenderer) {
 		this.myRenderer = myRenderer;
 		long maxAge = 10000;
 
