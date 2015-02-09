@@ -167,6 +167,7 @@ public class EnvironmentProbeFactory {
 	public void prepareProbeRendering() {
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 		cubeMapArrayRenderTarget.use(false);
 	}
 	

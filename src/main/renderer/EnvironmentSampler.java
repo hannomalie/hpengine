@@ -32,6 +32,7 @@ import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
+import main.model.ITransformable;
 import main.octree.Octree;
 import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
@@ -40,6 +41,7 @@ import main.renderer.rendertarget.CubeMapArrayRenderTarget;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbeFactory;
+import main.scene.TransformDistanceComparator;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.CubeMapArray;
@@ -124,7 +126,15 @@ public class EnvironmentSampler {
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
-			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList());
+			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).
+					sorted(new TransformDistanceComparator<ITransformable>(camera) {
+						public int compare(ITransformable o1, ITransformable o2) {
+							if(reference == null) { return 0; }
+							Vector3f distanceToFirst = Vector3f.sub(reference.getPosition().negate(null), o1.getPosition(), null);
+							Vector3f distanceToSecond = Vector3f.sub(reference.getPosition().negate(null), o2.getPosition(), null);
+							return Float.compare(distanceToFirst.lengthSquared(), distanceToSecond.lengthSquared());
+						}
+					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = !movedVisibles.isEmpty() || !drawnOnce;
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
@@ -171,7 +181,7 @@ public class EnvironmentSampler {
 		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
 		GPUProfiler.end();
 
-		GPUProfiler.start("Draw entities");
+		GPUProfiler.start("Cubemapside draw entities");
 		for (IEntity e : visibles) {
 //				if(!e.isInFrustum(camera)) { continue; }
 			entityBuffer.rewind();

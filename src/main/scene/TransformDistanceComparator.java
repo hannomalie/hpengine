@@ -10,7 +10,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 public class TransformDistanceComparator<T extends ITransformable> implements Comparator<T>{
 
-	private T reference;
+	protected T reference;
 
 	public T getReference() {
 		return reference;

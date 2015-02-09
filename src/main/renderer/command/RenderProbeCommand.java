@@ -19,12 +19,7 @@ public class RenderProbeCommand implements Command<Result>, ITransformable {
 		
 		probe.draw(world.getScene().getOctree(), World.light);
 		
-		return new Result() {
-			@Override
-			public boolean isSuccessful() {
-				return true;
-			}
-		};
+		return new Result();
 	}
 
 	public EnvironmentProbe getProbe() {
