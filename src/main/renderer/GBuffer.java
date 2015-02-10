@@ -582,10 +582,9 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
 		if (World.AUTO_EXPOSURE_ENABLED){
 			GPUProfiler.start("Auto exposure");
-			autoAdjustExposure();
-			if(renderer.getFrameCount()%(int)(renderer.getCurrentFPS()/10) == 0) {
+			if(renderer.getFrameCount()%5 == 0) {
 				pixelBufferObject.readPixelsFromTexture(finalBuffer.getRenderedTexture(0), fullScreenMipmapCount, GL11.GL_TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
-			} else if(renderer.getFrameCount()%(int)(renderer.getCurrentFPS()/15) == 0) {
+			} else if(renderer.getFrameCount()%6 == 0) {
 				autoAdjustExposure();
 			}
 			GPUProfiler.end();
@@ -608,7 +607,7 @@ public class GBuffer {
 		float minBrightness = 0.02f;
 		brightness = brightness < minBrightness ? minBrightness : brightness;
 		float targetExposure = 0.5f / brightness;
-		World.EXPOSURE = World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.025f;
+		World.EXPOSURE = (World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.15f);
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
