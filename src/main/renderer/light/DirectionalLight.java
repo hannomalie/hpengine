@@ -29,7 +29,7 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class DirectionalLight implements IEntity {
+public class DirectionalLight extends Entity {
 	
 	private boolean castsShadows = false;
 
@@ -70,7 +70,7 @@ public class DirectionalLight implements IEntity {
 		this.renderTarget = renderTarget;
 	}
 	
-	public void init(Renderer renderer, Camera camera) throws Exception {
+	public void init(Renderer renderer, Camera camera) {
 		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
 																	put(MAP.DIFFUSE,"assets/textures/default.dds");
 																}});
@@ -79,7 +79,7 @@ public class DirectionalLight implements IEntity {
 			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
 			box = renderer.getEntityFactory().getEntity(camera.getPosition(), "DefaultCube", model, white);
 			box.setScale(0.4f);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -93,7 +93,7 @@ public class DirectionalLight implements IEntity {
 		setScatterFactor(1f);
 	}
 
-	public void init(Renderer renderer) throws Exception {
+	public void init(Renderer renderer) {
 //		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 		Matrix4f projectionMatrix = Util.createOrthogonal(-300f, 300f, 300f, -300f, -500f, 500f);
 		Matrix4f viewMatrix = Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0));
@@ -225,6 +225,14 @@ public class DirectionalLight implements IEntity {
 	public void setTransform(Transform transform) {
 		camera.setTransform(transform);
 	}
+
+	@Override public void move(Vector3f amount) {}
+	@Override public void moveInWorld(Vector3f amount) {}
+
+	private Vector3f position = new Vector3f();
+	@Override public Vector3f getPosition() { return position; }
+	@Override public void setPosition(Vector3f position) { }
+	
 	
 	public float getScatterFactor() {
 		return scatterFactor;

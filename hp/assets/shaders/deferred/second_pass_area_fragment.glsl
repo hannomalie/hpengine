@@ -102,9 +102,35 @@ vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
 	
 	return result;
 }
+
+float radicalInverse_VdC(uint bits) {
+     bits = (bits << 16u) | (bits >> 16u);
+     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+     
+     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+vec2 hammersley2d(uint i, int N) {
+	return vec2(float(i)/float(N), radicalInverse_VdC(i));
+}
+
+vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDistance) {
+	vec3 result = vec3(0,0,0);
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.002);
+	const int N = 16;
+	const float bias = 0.005;
+	for (int i = 0; i < N; i++) {
+		result += (texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/20).x > referenceDepth - bias ? 1 : 0);
+	}
+	return result/N;
+}
+
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
+  	  	float fadeOut = 1-max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y));
 		return vec3(0,0,0);
 	}
 	
@@ -114,13 +140,14 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	
 	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
 	
-	float bias = 0.003;
-	if (dist <= momentsUnblurred.x + bias) {
+	float bias = 0.0053;
+	/*if (dist <= momentsUnblurred.x + bias) {
 		return vec3(1.0,1.0,1.0);
-	} else { return vec3(0,0,0); }
+	} else*/
+	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0125); }
 	
 	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.00012);
+	variance = max(variance,0.0012);
 
 	float d = dist - moments.x;
 	float p_max = (variance / (variance + d*d));

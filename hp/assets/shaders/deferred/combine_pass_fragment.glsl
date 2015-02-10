@@ -20,7 +20,7 @@ uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
-uniform int exposure = 4;
+uniform float exposure = 4;
 
 uniform int fullScreenMipmapCount = 10;
 
@@ -351,16 +351,18 @@ void main(void) {
 	vec3 ambientTerm = ambientColor*environmentLight;
 	ambientTerm *= clamp(ao,0,1);
 	
-	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
+	vec4 lit = vec4(ambientTerm, 1) + 4*lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	//out_color = mix(out_color, refracted, refraction);
 	out_color.rgb += (scattering.gba); //scattering
 	
-	out_color *= exposure/2;
+	float autoExposure = exposure;
+
+	out_color *= autoExposure;
 	
 	out_color.rgb = Uncharted2Tonemap(out_color.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(2.2,2.2,2.2));
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(2,2,2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
 	/////////////////////////////// GAMMA
 	//out_color.r = pow(out_color.r,1/2.2);
@@ -380,7 +382,6 @@ void main(void) {
 	//out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = reflectedColor.rgb;
-	//out_color.rgb = texture(probes, vec4(normalWorld, 0), 0).rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,motion,motion);
 }

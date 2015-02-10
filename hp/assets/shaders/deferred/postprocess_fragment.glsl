@@ -3,7 +3,8 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = false;
+uniform bool usePostProcessing = true;
+uniform float exposure = 5;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
@@ -55,10 +56,10 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 3.0; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 1.3; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 const float threshold = 0.7595; //highlight threshold;
-const float gain = 44.0; //highlight gain;
+const float gain = 24.0; //highlight gain;
 
 const float bias = 0.8; //bokeh edge bias
 const float fringe = 0.7; //bokeh chromatic aberration/fringing
@@ -344,6 +345,32 @@ void main()
 	    out_color = in_color;
 	    //out_color.rgb = in_color.rgb;
 	    out_color.a = 1;
+	    vec4 sum = vec4(0);
+	    
+	    // code from http://wp.applesandoranges.eu/?p=14, thank you!
+	   vec2 texcoord = pass_TextureCoord;
+	   int j;
+	   int i;
+	
+	   for( i= -4 ;i < 4; i++) {
+	        for (j = -3; j < 3; j++) {
+	            sum += texture2D(renderedTexture, texcoord + vec2(j, i)*0.004) * (0.2 + clamp(exposure, 0, 3)*0.03);
+	        }
+	   }
+       if (texture2D(renderedTexture, texcoord).r < 0.3) {
+	       out_color = sum*sum*0.012 + texture2D(renderedTexture, texcoord);
+	    }
+	    else
+	    {
+	        if (texture2D(renderedTexture, texcoord).r < 0.5) {
+	            out_color = sum*sum*0.009 + texture2D(renderedTexture, texcoord);
+	        } else
+	        {
+	            out_color = sum*sum*0.0075 + texture2D(renderedTexture, texcoord);
+	        }
+	    }
+	    out_color.a = 1;
+	    out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.5);
 	} else {
 		out_color = texture2D(renderedTexture, pass_TextureCoord);
 	}

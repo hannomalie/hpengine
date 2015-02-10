@@ -544,15 +544,16 @@ public class DeferredRenderer implements Renderer {
 		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()));
 		lastFrameTime = getTime();
 	}
-	private static long getTime() {
-		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
+	private long getTime() {
+		return System.currentTimeMillis();
 	}
-	public static double getDeltainMS() {
+	public double getDeltainMS() {
 		long currentTime = getTime();
 		double delta = (double) currentTime - (double) lastFrameTime;
 		return delta;
 	}
-	public static double getDeltainS() {
+	@Override
+	public double getDeltaInS() {
 		return (getDeltainMS() / 1000d);
 	}
 
@@ -571,7 +572,7 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public float getElapsedSeconds() {
-		return (float)getDeltainS();
+		return (float)getDeltaInS();
 	}
 
 	public void drawLines(Program program) {

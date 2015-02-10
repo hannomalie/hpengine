@@ -212,6 +212,8 @@ void main(void) {
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
 
+	out_position = viewMatrix * position_world;
+	
 #ifdef use_normalMap
 		UV.x = UV.x * normalMapWidth;
 		UV.y = UV.y * normalMapHeight;
@@ -221,42 +223,92 @@ void main(void) {
 	vec2 uvParallax = vec2(0,0);
 
 	//if (useParallax) {
-	if (false) {
+#ifdef use_heightMap
+	if (true) {
 		float height = (textureLod(normalMap, UV,0).rgb).y;//texture2D(heightMap, UV).r;
 		height = height * 2 - 1;
-		//height -= 0.5;
 		height = clamp(height, 0, 1);
-		
-#ifdef use_heightMap
 		height = (textureLod(heightMap, UV,0).rgb).r;
-#endif
+		
 		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		//height = normalize( TBN * (textureLod(normalMap, UV,0).rgb)).y * 2 - 1;
-		vec3 viewVectorTangentSpace = ((TBN)) * V;//(-position_world.xyz);
+		vec3 viewVectorTangentSpace = normalize((inverse(TBN)) * (out_position.rgb));
 		float v = height * 0.04 - 0.02;
 		uvParallax = (viewVectorTangentSpace.xy * v);
-		UV = UV + uvParallax;
+		UV = UV - uvParallax;
 	//} else if (useSteepParallax) {
-	} else if (false) {
-		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		float n = 20;
-		float bumpScale = 2;
-		float step = 1/n;
-		vec3 viewVectorTangentSpace = (transpose(TBN)) * V;
-		vec2 dt = viewVectorTangentSpace.xy * bumpScale / (n * viewVectorTangentSpace.z);
-		
-		float height = 1;
-		vec2 t = UV;
-		vec4 nb = texture2D(normalMap, t);
-		nb = nb * 2 - 1;
-		while (length(nb.xyz) < height) { 
-			height -= step;
-			t += dt; 
-			nb = texture2D(normalMap, t); 
-			nb = nb * 2 - 1;
-		}
-		UV = t;
+	} else {
+   // determine required number of layers
+	   const float minLayers = 10;
+	   const float maxLayers = 15;
+	   const float parallaxScale = 0.1;
+	   mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
+	   vec3 viewVectorTangentSpace = normalize((inverse(TBN)) * (out_position.rgb));
+	   float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), V)));
+	
+	   // height of each layer
+	   float layerHeight = 1.0 / numLayers;
+	   // depth of current layer
+	   float currentLayerHeight = 0;
+	   // shift of texture coordinates for each iteration
+	   vec2 dtex = parallaxScale * viewVectorTangentSpace.xy / viewVectorTangentSpace.z / numLayers;
+	
+	   // current texture coordinates
+	   vec2 currentTextureCoords = UV;
+	
+	   // depth from heightmap
+	   float heightFromTexture = texture(heightMap, currentTextureCoords).r;
+	
+	   // while point is above surface
+	   while(heightFromTexture > currentLayerHeight) {
+	      // go to the next layer
+	      currentLayerHeight += layerHeight; 
+	      // shift texture coordinates along V
+	      currentTextureCoords -= dtex;
+	      // new depth from heightmap
+	      heightFromTexture = texture(heightMap, currentTextureCoords).r;
+	   }
+	
+	   ///////////////////////////////////////////////////////////
+	   // Start of Relief Parallax Mapping
+	
+	   // decrease shift and height of layer by half
+	   vec2 deltaTexCoord = dtex / 2;
+	   float deltaHeight = layerHeight / 2;
+	
+	   // return to the mid point of previous layer
+	   currentTextureCoords += deltaTexCoord;
+	   currentLayerHeight -= deltaHeight;
+	
+	   // binary search to increase precision of Steep Paralax Mapping
+	   const int numSearches = 5;
+	   for(int i=0; i<numSearches; i++)
+	   {
+	      // decrease shift and height of layer by half
+	      deltaTexCoord /= 2;
+	      deltaHeight /= 2;
+	
+	      // new depth from heightmap
+	      heightFromTexture = texture(heightMap, currentTextureCoords).r;
+	
+	      // shift along or agains vector V
+	      if(heightFromTexture > currentLayerHeight) // below the surface
+	      {
+	         currentTextureCoords -= deltaTexCoord;
+	         currentLayerHeight += deltaHeight;
+	      }
+	      else // above the surface
+	      {
+	         currentTextureCoords += deltaTexCoord;
+	         currentLayerHeight -= deltaHeight;
+	      }
+	   }
+	
+	   // return results
+	   float parallaxHeight = currentLayerHeight;
+	   UV = currentTextureCoords;
 	}
+	
+#endif
 	
     mat3 TBN = transpose(mat3(
         (vec4(normalize(tangent_world),0)).xyz,
@@ -272,8 +324,6 @@ void main(void) {
 	//PN_world = inverse(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
-	
-	out_position = viewMatrix * position_world;
 	
 	float depth = (position_clip.z / position_clip.w);
 	

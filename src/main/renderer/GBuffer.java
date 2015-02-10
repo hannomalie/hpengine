@@ -2,8 +2,12 @@ package main.renderer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import main.Transform;
@@ -36,6 +40,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.glu.MipMap;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -54,8 +59,9 @@ public class GBuffer {
 	private RenderTarget finalBuffer;
 	
 	private VertexBuffer fullscreenBuffer;
-	
+
 	private Program firstPassProgram;
+	private Program depthPrePassProgram;
 	private Program secondPassDirectionalProgram;
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
@@ -76,6 +82,10 @@ public class GBuffer {
 	private Model probeBox;
 	private IEntity probeBoxEntity;
 
+	private ByteBuffer vec4Buffer = BufferUtils.createByteBuffer(4*4).order(ByteOrder.nativeOrder());
+	private FloatBuffer fBuffer = vec4Buffer.asFloatBuffer();
+	private float[] onePixel = new float[4];
+
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
 		this.renderer = renderer;
@@ -92,6 +102,7 @@ public class GBuffer {
 		this.reflectionProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
 		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 		this.probeFirstpassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
+		this.depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "depth_prepass_fragment.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
@@ -122,10 +133,11 @@ public class GBuffer {
 	
 	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		firstPassProgram.use();
 		GL11.glDepthMask(true);
 		gBuffer.use(true);
+		firstPassProgram.use();
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_BLEND);
 
 		List<IEntity> entities = new ArrayList<>();
@@ -143,6 +155,11 @@ public class GBuffer {
 		}
 
 		if(World.DRAWSCENE_ENABLED) {
+//			GPUProfiler.start("Depth prepass");
+//			for (IEntity entity : entities) {
+//				entity.draw(renderer, camera, depthPrePassProgram);
+//			}
+//			GPUProfiler.end();
 			for (IEntity entity : entities) {
 				entity.draw(renderer, camera);
 			}
@@ -511,6 +528,9 @@ public class GBuffer {
 
 
 	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
+
+		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
+		
 		combineProgram.use();
 		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
@@ -558,6 +578,24 @@ public class GBuffer {
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
+		if (World.AUTO_EXPOSURE_ENABLED) {
+			// DONT MOVE; NEEDS BOUND TEXTURE
+			GPUProfiler.start("Auto exposure");
+			fBuffer.rewind();
+			GL11.glGetTexImage(GL11.GL_TEXTURE_2D, fullScreenMipmapCount, GL11.GL_RGBA, GL11.GL_FLOAT, fBuffer);
+			fBuffer.get(onePixel);
+			float brightness = (0.2126f * (onePixel[0]) + 0.7152f * (onePixel[1]) + 0.0722f * (onePixel[2]));
+			float maxBrightness = 0.9f;
+			brightness = brightness > maxBrightness ? maxBrightness : brightness;
+			float minBrightness = 0.02f;
+			brightness = brightness < minBrightness ? minBrightness : brightness;
+			float targetExposure = 0.5f / brightness;
+			World.EXPOSURE = World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.025f;
+			GPUProfiler.end();
+		} else {
+			World.EXPOSURE = 5;
+		}
+		postProcessProgram.setUniform("exposure", World.EXPOSURE);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);

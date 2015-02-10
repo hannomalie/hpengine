@@ -105,6 +105,7 @@ public class DebugFrame {
 	
 	private JScrollPane materialPane = new JScrollPane();
 	private JScrollPane texturePane = new JScrollPane();
+	private JScrollPane mainLightPane = new JScrollPane();
 	private JScrollPane pointLightsPane = new JScrollPane();
 	private JScrollPane tubeLightsPane = new JScrollPane();
 	private JScrollPane areaLightsPane = new JScrollPane();
@@ -141,6 +142,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
+	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", World.AUTO_EXPOSURE_ENABLED);
 
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
@@ -195,6 +197,7 @@ public class DebugFrame {
 		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
 		ac.install(console);
 		
+		createMainLightsTab();
 		createPointLightsTab();
 		createTubeLightsTab();
 		createAreaLightsTab();
@@ -211,7 +214,6 @@ public class DebugFrame {
 //		});
 		toggleProfiler.addActionListener( e -> {
 			
-			toggleProfiler.setEnabled(false);
 			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
 
 				@Override
@@ -225,20 +227,16 @@ public class DebugFrame {
 				result = queue.poll(5, TimeUnit.MINUTES);
 				if (!result.isSuccessful()) {
 					showError("Profiling can't be switched");
-					toggleProfiler.setEnabled(true);
 				} else {
 					showSuccess("Profiling switched");
-					toggleProfiler.setEnabled(true);
 				}
 			} catch (Exception e1) {
 				showError("Profiling can't be switched");
-				toggleProfiler.setEnabled(true);
 			}
 			
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 			
-			toggleProfilerPrint.setEnabled(false);
 			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
 
 				@Override
@@ -252,14 +250,11 @@ public class DebugFrame {
 				result = queue.poll(5, TimeUnit.MINUTES);
 				if (!result.isSuccessful()) {
 					showError("Printing can't be switched");
-					toggleProfilerPrint.setEnabled(GPUProfiler.PRINTING_ENABLED);
 				} else {
 					showSuccess("Printing switched");
-					toggleProfilerPrint.setEnabled(GPUProfiler.PRINTING_ENABLED);
 				}
 			} catch (Exception e1) {
 				showError("Profiling can't be switched");
-				toggleProfilerPrint.setEnabled(true);
 			}
 			
 		});
@@ -271,31 +266,25 @@ public class DebugFrame {
 		toggleParallax.addActionListener( e -> {
 			World.useParallax = !World.useParallax;
 			World.useSteepParallax = false;
-			toggleParallax.setSelected(World.useParallax);
 		});
 		
 		toggleSteepParallax.addActionListener(e -> {
 			World.useSteepParallax = !World.useSteepParallax;
 			World.useParallax = false;
-			toggleSteepParallax.setSelected(World.useSteepParallax);
 		});
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			World.useAmbientOcclusion = !World.useAmbientOcclusion;
-			toggleAmbientOcclusion.setSelected(World.useAmbientOcclusion);
 		});
 		toggleColorBleeding.addActionListener(e -> {
 			World.useColorBleeding = !World.useColorBleeding;
-			toggleColorBleeding.setSelected(World.useColorBleeding);
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
 			World.useFrustumCulling = !World.useFrustumCulling;
-			toggleFrustumCulling.setSelected(World.useFrustumCulling);
 		});
 		toggleInstantRadiosity.addActionListener(e -> {
 			World.useInstantRadiosity = !World.useInstantRadiosity;
-			toggleInstantRadiosity.setSelected(World.useInstantRadiosity);
 		});
 
 		toggleDrawLines.addActionListener(e -> {
@@ -332,13 +321,12 @@ public class DebugFrame {
 				@Override
 				public Result execute(World world) {
 					Display.setVSyncEnabled(World.VSYNC_ENABLED);
-					return new Result() {
-						public boolean isSuccessful() {
-							return true;
-						}
-					};
+					return new Result();
 				}
 			});
+		});
+		toggleAutoExposure.addActionListener(e -> {
+			World.AUTO_EXPOSURE_ENABLED = !World.AUTO_EXPOSURE_ENABLED;
 		});
 
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
@@ -397,8 +385,9 @@ public class DebugFrame {
 		mainButtonElements.add(toggleColorBleeding);
 		mainButtonElements.add(toggleFrustumCulling);
 		mainButtonElements.add(toggleVSync);
+		mainButtonElements.add(toggleAutoExposure);
 		mainButtonElements.add(toggleInstantRadiosity);
-		mainButtonElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, World.EXPOSURE) {
+		mainButtonElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
 			@Override
 			public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;
@@ -748,6 +737,7 @@ public class DebugFrame {
 		createTexturePane(textureFactory);
 		tabbedPane.addTab("Texture", texturePane);
 		tabbedPane.addTab("Material", materialPane);
+		tabbedPane.addTab("Main light", mainLightPane);
 		tabbedPane.addTab("PointLights", pointLightsPane);
 		tabbedPane.addTab("TubeLights", tubeLightsPane);
 		tabbedPane.addTab("AreaLights", areaLightsPane);
@@ -785,16 +775,28 @@ public class DebugFrame {
 			    public void write(int b) throws IOException {
 
 			    	Document doc = output.getDocument();
+			    	shrinkDocument(doc);
 			    	try {
 						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
 					} catch (BadLocationException e) {
 						e.printStackTrace();
 					}
 			    }
+
+				private void shrinkDocument(Document doc) {
+					if(doc.getLength() > 10000) {
+			    		try {
+							doc.remove(0, 5000);
+						} catch (BadLocationException e) {
+							e.printStackTrace();
+						}
+			    	}
+				}
 			 
 			    @Override
 			    public void write(byte[] b, int off, int len) throws IOException {
 			    	Document doc = output.getDocument();
+			    	shrinkDocument(doc);
 			    	try {
 						doc.insertString(doc.getLength(), new String(b, off, len), aset);
 					} catch (BadLocationException e) {
@@ -816,6 +818,7 @@ public class DebugFrame {
 			    @Override
 			    public void write(int b) throws IOException {
 			    	Document doc = output.getDocument();
+			    	shrinkDocument(doc);
 			    	try {
 						doc.insertString(doc.getLength(), String.valueOf((char) b), aset);
 					} catch (BadLocationException e) {
@@ -826,6 +829,7 @@ public class DebugFrame {
 			    @Override
 			    public void write(byte[] b, int off, int len) throws IOException {
 			    	Document doc = output.getDocument();
+			    	shrinkDocument(doc);
 			    	try {
 						doc.insertString(doc.getLength(), new String(b, off, len), aset);
 					} catch (BadLocationException e) {
@@ -837,12 +841,27 @@ public class DebugFrame {
 			    public void write(byte[] b) throws IOException {
 			      write(b, 0, b.length);
 			    }
+
+				private void shrinkDocument(Document doc) {
+					if(doc.getLength() > 10000) {
+			    		try {
+							doc.remove(0, 5000);
+						} catch (BadLocationException e) {
+							e.printStackTrace();
+						}
+			    	}
+				}
 			  };
 		  		 
 		  System.setOut(new PrintStream(out, true));
 		  System.setErr(new PrintStream(outErr, true));
 		}
 
+	private void createMainLightsTab() {
+		DebugFrame debugFrame = this;
+		mainLightPane = new JScrollPane(new MainLightView(world, debugFrame, World.light));
+	}
+	
 	private void createPointLightsTab() {
 		DebugFrame debugFrame = this;
 		TableModel pointLightsTableModel = new AbstractTableModel() {

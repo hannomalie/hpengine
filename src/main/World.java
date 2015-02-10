@@ -79,10 +79,11 @@ public class World {
 	public static volatile boolean DRAW_PROBES = true;
 	public static volatile boolean VSYNC_ENABLED = false;
 
-	public static float RAINEFFECT = 0.0f;
-	public static float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
-	public static float AMBIENTOCCLUSION_RADIUS = 0.0250f;
-	public static int EXPOSURE = 8;
+	public static volatile float RAINEFFECT = 0.0f;
+	public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
+	public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
+	public static volatile float EXPOSURE = 8f;
+	public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	

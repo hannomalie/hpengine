@@ -7,6 +7,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import main.model.ITransformable;
+import main.renderer.Renderer;
 
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.slider.WebSlider;
@@ -15,10 +16,12 @@ public class TransformablePanel<T extends ITransformable> extends WebComponentPa
 
 	private Quaternion startOrientation;
 	private Vector3f startPosition;
+	private Renderer renderer;
 	
-	public TransformablePanel(T transformable) {
+	public TransformablePanel(Renderer renderer, T transformable) {
 		super(false);
 	    this.setElementMargin(4);
+	    this.renderer = renderer;
 		startOrientation = new Quaternion(transformable.getOrientation());
 		startPosition = new Vector3f(transformable.getPosition());
 	    

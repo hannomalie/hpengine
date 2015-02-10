@@ -56,6 +56,7 @@ public class EnvironmentSampler {
 	private Camera camera;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
+	private Program depthPrePassProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
 	transient private boolean drawnOnce = false;
@@ -78,6 +79,7 @@ public class EnvironmentSampler {
 		camera.setPosition(position.negate(null));
 
 		cubeMapProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
@@ -97,30 +99,11 @@ public class EnvironmentSampler {
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		
-		cubeMapProgram.use();
-		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
-		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
-		
-		cubeMapProgram.setUniform("activeAreaLightCount", renderer.getLightFactory().getAreaLights().size());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", renderer.getLightFactory().getAreaLightPositions());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", renderer.getLightFactory().getAreaLightColors());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", renderer.getLightFactory().getAreaLightWidthHeightRanges());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", renderer.getLightFactory().getAreaLightViewDirections());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", renderer.getLightFactory().getAreaLightUpDirections());
-		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
-		
-		for(int i = 0; i < Math.min(renderer.getLightFactory().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
-			AreaLight areaLight = renderer.getLightFactory().getAreaLights().get(i);
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9 + i);
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
-			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
-		}
-		
-		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
-		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubeMapProgram);
+		bindProgramSpecificsPerCubeMap();
 		
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
@@ -158,7 +141,7 @@ public class EnvironmentSampler {
 			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 			
-			drawEntities(light, visibles, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+			drawEntities(cubeMapProgram, light, visibles, viewMatrixAsBuffer, projectionMatrixAsBuffer);
 			GPUProfiler.end();
 			
 			drawnOnce = true;
@@ -171,7 +154,57 @@ public class EnvironmentSampler {
 		GPUProfiler.end();
 	}
 
-	private void drawEntities(DirectionalLight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+	private void bindProgramSpecificsPerCubeMap() {
+		cubeMapProgram.use();
+		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
+		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
+		
+		cubeMapProgram.setUniform("activeAreaLightCount", renderer.getLightFactory().getAreaLights().size());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", renderer.getLightFactory().getAreaLightPositions());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", renderer.getLightFactory().getAreaLightColors());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", renderer.getLightFactory().getAreaLightWidthHeightRanges());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightViewDirections", renderer.getLightFactory().getAreaLightViewDirections());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", renderer.getLightFactory().getAreaLightUpDirections());
+		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
+		
+		for(int i = 0; i < Math.min(renderer.getLightFactory().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight = renderer.getLightFactory().getAreaLights().get(i);
+			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9 + i);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
+			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
+		}
+		
+		cubeMapProgram.setUniform("probeIndex", probe.getIndex());
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubeMapProgram);
+	}
+
+	private void drawEntities(Program program, DirectionalLight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+		bindShaderSpecificsPerCubeMapSide(light, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+
+		GPUProfiler.start("Cubemapside draw entities");
+		for (IEntity e : visibles) {
+			if(!e.isInFrustum(camera)) { continue; }
+			entityBuffer.rewind();
+			e.getModelMatrix().store(entityBuffer);
+			entityBuffer.rewind();
+			program.setUniformAsMatrix4("modelMatrix", entityBuffer);
+			e.getMaterial().setTexturesActive((Entity) e, program);
+			program.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+			program.setUniform("hasNormalMap", e.getMaterial().hasNormalMap());
+			program.setUniform("color", e.getMaterial().getDiffuse());
+			program.setUniform("metallic", e.getMaterial().getMetallic());
+			program.setUniform("roughness", e.getMaterial().getRoughness());
+			e.getMaterial().setTexturesActive(null, program);
+			
+			e.getVertexBuffer().draw();
+		}
+		GPUProfiler.end();
+	}
+
+	private void bindShaderSpecificsPerCubeMapSide(DirectionalLight light,
+			FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
@@ -179,25 +212,6 @@ public class EnvironmentSampler {
 		cubeMapProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 		cubeMapProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
 		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getLightMatrixAsBuffer());
-		GPUProfiler.end();
-
-		GPUProfiler.start("Cubemapside draw entities");
-		for (IEntity e : visibles) {
-//				if(!e.isInFrustum(camera)) { continue; }
-			entityBuffer.rewind();
-			e.getModelMatrix().store(entityBuffer);
-			entityBuffer.rewind();
-			cubeMapProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
-			e.getMaterial().setTexturesActive((Entity) e, cubeMapProgram);
-			cubeMapProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
-			cubeMapProgram.setUniform("hasNormalMap", e.getMaterial().hasNormalMap());
-			cubeMapProgram.setUniform("color", e.getMaterial().getDiffuse());
-			cubeMapProgram.setUniform("metallic", e.getMaterial().getMetallic());
-			cubeMapProgram.setUniform("roughness", e.getMaterial().getRoughness());
-			e.getMaterial().setTexturesActive(null, cubeMapProgram);
-			
-			e.getVertexBuffer().draw();
-		}
 		GPUProfiler.end();
 	}
 

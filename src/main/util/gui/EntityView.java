@@ -11,8 +11,10 @@ import java.util.concurrent.TimeUnit;
 import main.World;
 import main.model.Entity;
 import main.model.IEntity;
+import main.renderer.Renderer;
 import main.renderer.Result;
 import main.renderer.command.RemoveEntityCommand;
+import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.texture.Texture;
 import main.util.gui.input.ButtonInput;
@@ -39,14 +41,16 @@ import com.alee.managers.notification.WebNotificationPopup;
 
 public class EntityView extends WebPanel {
 
-	private Entity entity;
+	protected Entity entity;
 	protected World world;
-	private WebFormattedTextField nameField;
+	protected WebFormattedTextField nameField;
 	protected DebugFrame debugFrame;
+	protected Renderer renderer;
 
 	public EntityView(World world, DebugFrame debugFrame, Entity entity) {
 		this.entity = entity;
 		this.world = world;
+		this.renderer = world.getRenderer();
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 600);
@@ -74,7 +78,7 @@ public class EntityView extends WebPanel {
 
 	        addNamePanel(webComponentPanel);
 	        
-	        webComponentPanel.addElement(new TransformablePanel<IEntity>(entity));
+	        webComponentPanel.addElement(new TransformablePanel<IEntity>(renderer, entity));
 
 	        WebButton saveEntityButton = new WebButton("Save Entity");
 	        saveEntityButton.addActionListener(e -> {
@@ -91,7 +95,7 @@ public class EntityView extends WebPanel {
 	    			result = queue.poll(1, TimeUnit.MINUTES);
 	    		} catch (Exception e1) {
 	    			e1.printStackTrace();
-	    			showNotification(NotificationIcon.error, "Not able to change material");
+	    			showNotification(NotificationIcon.error, "Not able to remove entity");
 	    		}
 	    		
 	    		if (!result.isSuccessful()) {
@@ -117,7 +121,7 @@ public class EntityView extends WebPanel {
 	        return webComponentPanel;
 	}
 
-	private void addNamePanel(WebComponentPanel webComponentPanel) {
+	protected void addNamePanel(WebComponentPanel webComponentPanel) {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
 		nameField.setValue(entity.getName());
