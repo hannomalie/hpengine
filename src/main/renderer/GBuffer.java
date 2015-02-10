@@ -86,6 +86,8 @@ public class GBuffer {
 	private FloatBuffer fBuffer = vec4Buffer.asFloatBuffer();
 	private float[] onePixel = new float[4];
 
+	private PixelBufferObject pixelBufferObject;
+
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
 		this.renderer = renderer;
@@ -113,7 +115,7 @@ public class GBuffer {
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Renderer.WIDTH, Renderer.HEIGHT));
-		
+		pixelBufferObject = new PixelBufferObject(1, 1);
 	}
 	
 	public void init(Renderer renderer) {
@@ -578,19 +580,14 @@ public class GBuffer {
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
-		if (World.AUTO_EXPOSURE_ENABLED) {
-			// DONT MOVE; NEEDS BOUND TEXTURE
+		if (World.AUTO_EXPOSURE_ENABLED){
 			GPUProfiler.start("Auto exposure");
-			fBuffer.rewind();
-			GL11.glGetTexImage(GL11.GL_TEXTURE_2D, fullScreenMipmapCount, GL11.GL_RGBA, GL11.GL_FLOAT, fBuffer);
-			fBuffer.get(onePixel);
-			float brightness = (0.2126f * (onePixel[0]) + 0.7152f * (onePixel[1]) + 0.0722f * (onePixel[2]));
-			float maxBrightness = 0.9f;
-			brightness = brightness > maxBrightness ? maxBrightness : brightness;
-			float minBrightness = 0.02f;
-			brightness = brightness < minBrightness ? minBrightness : brightness;
-			float targetExposure = 0.5f / brightness;
-			World.EXPOSURE = World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.025f;
+			autoAdjustExposure();
+			if(renderer.getFrameCount()%(int)(renderer.getCurrentFPS()/10) == 0) {
+				pixelBufferObject.readPixelsFromTexture(finalBuffer.getRenderedTexture(0), fullScreenMipmapCount, GL11.GL_TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
+			} else if(renderer.getFrameCount()%(int)(renderer.getCurrentFPS()/15) == 0) {
+				autoAdjustExposure();
+			}
 			GPUProfiler.end();
 		} else {
 			World.EXPOSURE = 5;
@@ -601,6 +598,17 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
+	}
+
+	private void autoAdjustExposure() {
+		onePixel = pixelBufferObject.mapBuffer();
+		float brightness = (0.2126f * (onePixel[0]) + 0.7152f * (onePixel[1]) + 0.0722f * (onePixel[2]));
+		float maxBrightness = 0.9f;
+		brightness = brightness > maxBrightness ? maxBrightness : brightness;
+		float minBrightness = 0.02f;
+		brightness = brightness < minBrightness ? minBrightness : brightness;
+		float targetExposure = 0.5f / brightness;
+		World.EXPOSURE = World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.025f;
 	}
 	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {

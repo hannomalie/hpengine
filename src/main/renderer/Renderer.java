@@ -74,4 +74,5 @@ public interface Renderer {
 	public void addRenderProbeCommand(EnvironmentProbe probe);
 	public float getCurrentFPS();
 	public double getDeltaInS();
+	public int getFrameCount();
 }

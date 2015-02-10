@@ -693,7 +693,7 @@ void main()
 	out_color.rgb = 2*mix(out_color.rgb, sampleFromLastFrameAsSecondBounce, 0.5);
 	
 	// Fake the other missing bounces with some ambient light...
-	out_color.rgb += 0.025 * color.rgb;
+	out_color.rgb += 0.0125 * color.rgb;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);

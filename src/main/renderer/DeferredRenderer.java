@@ -96,7 +96,8 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = !(java.lang.management.ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
-	private static int frameCount = 0;
+	private int frameCount = 0;
+
 	private static Logger LOGGER = getLogger();
 	
 	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
@@ -362,7 +363,6 @@ public class DeferredRenderer implements Renderer {
 	public void update(World world, float seconds) {
 		try {
 			executeCommands(world);
-//			executeRenderProbeCommands(world.getScene().getOctree(), World.light);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -372,17 +372,15 @@ public class DeferredRenderer implements Renderer {
 		fpsCounter.update(seconds);
 	}
 	
-	
-
 	public void draw(Camera camera, Octree octree, List<IEntity> entities, DirectionalLight light) {
 		GPUProfiler.startFrame();
 		draw(null, octree, camera, entities, light);
-	    GPUProfiler.endFrame();
 	    GPUTaskProfile tp;
 	    while((tp = GPUProfiler.getFrameResults()) != null){
 	        
 	        tp.dump(); //Dumps the frame to System.out.
 	    }
+	    GPUProfiler.endFrame();
 	    frameCount++;
 	}
 	
@@ -541,8 +539,8 @@ public class DeferredRenderer implements Renderer {
 
 	private FPSCounter fpsCounter = new FPSCounter();
 	private void setLastFrameTime() {
-		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()));
 		lastFrameTime = getTime();
+		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()) + " | " + fpsCounter.getMsPerFrame() + " ms");
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -789,6 +787,9 @@ public class DeferredRenderer implements Renderer {
 	public float getCurrentFPS() {
 		return fpsCounter.getFPS();
 	}
-	
+
+	public int getFrameCount() {
+		return frameCount;
+	}
 
 }

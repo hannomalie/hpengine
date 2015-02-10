@@ -17,8 +17,12 @@ public class FPSCounter {
 	}
 	
 	public float getFPS() {
-		float msPerFrame = (lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length;
+		float msPerFrame = getMsPerFrame();
 		return 1000f / msPerFrame;
+	}
+	
+	public float getMsPerFrame() {
+		return (lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length;
 	}
 	
 }
