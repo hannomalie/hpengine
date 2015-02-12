@@ -40,6 +40,7 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL40;
 import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -150,6 +151,11 @@ public class EnvironmentProbeFactory {
 
 					@Override
 					public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
+//						Vector3f center1 = o1.getCenter();
+//						Vector3f center2 = o2.getCenter();
+//						Vector4f center1InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
+//						Vector4f center2InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
+//						return Float.compare(-center1InView.z, -center2InView.z);
 						return Float.compare(Vector3f.sub(o1.getCenter(), camera.getPosition().negate(null), null).lengthSquared(), Vector3f.sub(o2.getCenter(), camera.getPosition().negate(null), null).lengthSquared());
 					}
 				}).

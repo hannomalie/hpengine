@@ -105,16 +105,12 @@ public class RenderTarget {
 	}
 	
 	public void use(boolean clear) {
-		GPUProfiler.start("Bind framebuffer");
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 //		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-		GPUProfiler.end();
-		GPUProfiler.start("Viewport and clear");
 		GL11.glViewport(0, 0, width, height);
 		if (clear) {
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		}
-		GPUProfiler.end();
 	}
 
 	public void setTargetTexture(int textureID, int index) {

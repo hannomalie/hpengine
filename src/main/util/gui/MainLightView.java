@@ -39,7 +39,6 @@ public class MainLightView extends EntityView {
 		
 		WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
 		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				Color color = lightColorChooserPanel.getColor();
@@ -48,8 +47,19 @@ public class MainLightView extends EntityView {
 						color.getBlue()/255.f));
 			}
 		});
+		WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
+		ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				Color color = ambientLightColorChooserPanel.getColor();
+				World.AMBIENT_LIGHT.set(new Vector3f(color.getRed()/255.f,
+						color.getGreen()/255.f,
+						color.getBlue()/255.f));
+			}
+		});
+		panels.add(ambientLightColorChooserPanel);
 		panels.add(lightColorChooserPanel);
-		
+
 		addAttributesPanel(panels);
 		return panels;
 	}

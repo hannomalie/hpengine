@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
@@ -83,7 +84,7 @@ public class World {
 	public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	public static volatile float EXPOSURE = 8f;
-	public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
+	public static volatile boolean AUTO_EXPOSURE_ENABLED = false;
 
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
@@ -436,12 +437,15 @@ public class World {
 
 //		long millisecondsStart = System.currentTimeMillis();
 		update(seconds);
+//		LOGGER.log(Level.INFO, "update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 //		System.out.println("update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 //		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
+//		LOGGER.log(Level.INFO, "draw: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 		scene.endFrame();
-		
+//		LOGGER.log(Level.INFO, "cycle: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
+
 //		Renderer.exitOnGLError("loopCycle");
 	}
 

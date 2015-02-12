@@ -57,6 +57,7 @@ import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
 import main.util.gui.input.SliderInput;
+import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
@@ -146,24 +147,6 @@ public class DebugFrame {
 
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
-	WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
-	WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
-	SliderInput scatteringSlider = new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
-		
-		@Override
-		public void onValueChange(int value, int delta) {
-			World.light.setScatterFactor((float)value);
-			
-		}
-	};
-	SliderInput rainEffectSlider = new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
-		
-		@Override
-		public void onValueChange(int value, int delta) {
-			World.RAINEFFECT = (float) value/100;
-		}
-	};
-
 
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
@@ -327,6 +310,7 @@ public class DebugFrame {
 		});
 		toggleAutoExposure.addActionListener(e -> {
 			World.AUTO_EXPOSURE_ENABLED = !World.AUTO_EXPOSURE_ENABLED;
+			if(!World.AUTO_EXPOSURE_ENABLED) { World.EXPOSURE = 5; }
 		});
 
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
@@ -367,69 +351,35 @@ public class DebugFrame {
 
 ////////////////
 	    List<Component> mainButtonElements = new ArrayList<>();
-	    mainButtonElements.add(toggleDrawLines);
-	    mainButtonElements.add(toggleDrawScene);
-	    mainButtonElements.add(toggleDrawOctree);
-	    mainButtonElements.add(toggleDrawProbes);
-	    mainButtonElements.add(toggleDebugDrawProbes);
-	    mainButtonElements.add(toggleDebugDrawProbesWithContent);
-	    mainButtonElements.add(toggleDebugFrame);
-	    mainButtonElements.add(toggleDrawLights);
-//		mainButtonElements.add(toggleFileReload);
-		mainButtonElements.add(toggleProfiler);
-		mainButtonElements.add(toggleProfilerPrint);
-		mainButtonElements.add(dumpAverages);
-		mainButtonElements.add(toggleParallax);
-		mainButtonElements.add(toggleSteepParallax);
-		mainButtonElements.add(toggleAmbientOcclusion);
-		mainButtonElements.add(toggleColorBleeding);
-		mainButtonElements.add(toggleFrustumCulling);
-		mainButtonElements.add(toggleVSync);
-		mainButtonElements.add(toggleAutoExposure);
-		mainButtonElements.add(toggleInstantRadiosity);
-		mainButtonElements.add(new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
-			@Override
-			public void onValueChange(int value, int delta) {
+		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
+		mainButtonElements.add(new TitledPanel("Probes", toggleDrawProbes, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
+		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
+			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
+			@Override public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;
+			}},
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
+				@Override public void onValueChange(int value, int delta) {
+					World.light.setScatterFactor((float)value);
+				}
+			},
+			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
+				@Override public void onValueChange(int value, int delta) {
+					World.RAINEFFECT = (float) value/100;
+				}
 			}
-		});
-		mainButtonElements.add(scatteringSlider);
-		mainButtonElements.add(rainEffectSlider);
+		));
+//		mainButtonElements.add(toggleFileReload);
+//		mainButtonElements.add(toggleParallax);
+//		mainButtonElements.add(toggleSteepParallax);
+//		mainButtonElements.add(toggleInstantRadiosity);
         Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
         mainButtonElements.toArray(mainButtonsElementsArray);
-        GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length, 1, 5, mainButtonsElementsArray);
+        GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length/2, 2, 5, mainButtonsElementsArray);
 ////////////////
-	    WebLabel lightColorChooserLabel = new WebLabel("Directional light");
-		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				Color color = lightColorChooserPanel.getColor();
-				World.light.setColor(new Vector3f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f));
-			}
-		});
-
-	    WebLabel ambientLightColorChooserLabel = new WebLabel("Ambient light");
-		ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				Color color = ambientLightColorChooserPanel.getColor();
-				World.AMBIENT_LIGHT = (new Vector3f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f));
-			}
-		});
-		WebComponentPanel lightColorChooserGridPanelPanel = new WebComponentPanel();
-		lightColorChooserGridPanelPanel.addElement(lightColorChooserLabel);
-		lightColorChooserGridPanelPanel.addElement(lightColorChooserPanel);
-
-		WebComponentPanel mainColorChooserGridPanelPanel = new WebComponentPanel();
-	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserLabel);
-	    mainColorChooserGridPanelPanel.addElement(ambientLightColorChooserPanel);
 	    
-	    GridPanel mainGroupPanel = new GridPanel(1, 2, 4, buttonGridPanel, new GridPanel(2, 1, 4, lightColorChooserGridPanelPanel, mainColorChooserGridPanelPanel));
-        mainPane = new WebScrollPane(mainGroupPanel);
+        mainPane = new WebScrollPane(buttonGridPanel);
         
 		WebMenuBar menuBar = new WebMenuBar ();
 		WebMenu menuScene = new WebMenu("Scene");
@@ -922,7 +872,7 @@ public class DebugFrame {
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
-						entityViewFrame.setSize(600, 600);
+						entityViewFrame.setSize(1000, 600);
 						entityViewFrame.add(new PointLightView(world, debugFrame, (PointLight) selectedLight));
 						entityViewFrame.setVisible(true);
 					}
@@ -990,7 +940,7 @@ public class DebugFrame {
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
-						entityViewFrame.setSize(600, 600);
+						entityViewFrame.setSize(1000, 600);
 						entityViewFrame.add(new TubeLightView(world, debugFrame, (TubeLight) selectedLight));
 						entityViewFrame.setVisible(true);
 					}
@@ -1058,7 +1008,7 @@ public class DebugFrame {
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
-						entityViewFrame.setSize(600, 600);
+						entityViewFrame.setSize(1000, 600);
 						System.out.println(selectedLight.getName());
 						System.out.println(selectedRow[0]);
 						System.out.println(world.getRenderer().getLightFactory().getAreaLights().size());

@@ -89,7 +89,7 @@ public class EnvironmentSampler {
 	}
 	
 	private void drawCubeMapSides(Octree octree, DirectionalLight light) {
-		GPUProfiler.start("Cube map render 6 sides");
+		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);

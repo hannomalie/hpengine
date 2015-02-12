@@ -2,9 +2,13 @@ package main.util.gui;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BoxLayout;
+import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -30,7 +34,6 @@ public class PointLightView extends EntityView {
 		
 		WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
 		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				Color color = lightColorChooserPanel.getColor();
@@ -39,7 +42,8 @@ public class PointLightView extends EntityView {
 						color.getBlue()/255.f, 1f));
 			}
 		});
-		panels.add(lightColorChooserPanel);
+		JScrollPane lightColorChooserScrollPanel = new JScrollPane(lightColorChooserPanel);
+		panels.add(lightColorChooserScrollPanel);
 		
 		addAttributesPanel(panels);
 		return panels;

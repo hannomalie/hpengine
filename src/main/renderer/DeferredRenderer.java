@@ -259,7 +259,11 @@ public class DeferredRenderer implements Renderer {
 		try {
 			PixelFormat pixelFormat = new PixelFormat();
 			ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
-				.withProfileCompatibility(true).withDebug(false);
+//				.withProfileCompatibility(true)
+//				.withForwardCompatible(true)
+//				.withProfileCore(true)
+//				.withDebug(false)
+				;
 //				.withProfileCore(true);
 			
 			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));

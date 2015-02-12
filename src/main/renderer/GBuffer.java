@@ -8,7 +8,9 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import main.Transform;
 import main.World;
@@ -28,6 +30,7 @@ import main.renderer.material.Material;
 import main.renderer.rendertarget.RenderTarget;
 import main.scene.AABB;
 import main.scene.EnvironmentProbe;
+import main.scene.TransformDistanceComparator;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
@@ -139,9 +142,10 @@ public class GBuffer {
 		gBuffer.use(true);
 		firstPassProgram.use();
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glDepthFunc(GL11.GL_LEQUAL);
+		GL11.glDepthFunc(GL11.GL_LESS);
 		GL11.glDisable(GL11.GL_BLEND);
 
+		GPUProfiler.start("Culling");
 		List<IEntity> entities = new ArrayList<>();
 		if (World.useFrustumCulling) {
 			entities = (octree.getVisible(camera));
@@ -155,7 +159,22 @@ public class GBuffer {
 		} else {
 			entities = (octree.getEntities());
 		}
+		GPUProfiler.end();
 
+		GPUProfiler.start("Draw entities");
+		GPUProfiler.start("Sort by depth");
+		entities = entities.parallelStream().sorted(new Comparator<IEntity>() {
+			@Override
+			public int compare(IEntity o1, IEntity o2) {
+				Vector3f center1 = o1.getCenter();
+				Vector3f center2 = o2.getCenter();
+				Vector4f center1InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
+				Vector4f center2InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
+				return Float.compare(-center1InView.z, -center2InView.z);
+			}
+		}).collect(Collectors.toList());
+		GPUProfiler.end();
+		
 		if(World.DRAWSCENE_ENABLED) {
 //			GPUProfiler.start("Depth prepass");
 //			for (IEntity entity : entities) {
@@ -166,6 +185,7 @@ public class GBuffer {
 				entity.draw(renderer, camera);
 			}
 		}
+		GPUProfiler.end();
 		
 //		for (IEntity entity : entities.stream().filter(entity -> { return entity.isSelected(); }).collect(Collectors.toList())) {
 //			Material old = entity.getMaterial();
@@ -197,8 +217,10 @@ public class GBuffer {
 		}
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
+		GPUProfiler.start("Generate Mipmaps of colormap");
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
+		GPUProfiler.end();
 	}
 
 	private void debugDrawProbes(Camera camera) {
@@ -347,7 +369,7 @@ public class GBuffer {
 
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
-		
+
 		reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
 		reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
@@ -530,7 +552,6 @@ public class GBuffer {
 
 
 	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
-
 		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
 		
 		combineProgram.use();
@@ -576,20 +597,24 @@ public class GBuffer {
 		} else {
 			target.use(true);
 		}
-		
+
+		GPUProfiler.start("Post processing");
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
 		if (World.AUTO_EXPOSURE_ENABLED){
 			GPUProfiler.start("Auto exposure");
-			if(renderer.getFrameCount()%5 == 0) {
+//			if(renderer.getFrameCount()%5 == 0)
+			{
 				pixelBufferObject.readPixelsFromTexture(finalBuffer.getRenderedTexture(0), fullScreenMipmapCount, GL11.GL_TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
-			} else if(renderer.getFrameCount()%6 == 0) {
+			}
+//			else if(renderer.getFrameCount()%6 == 0)
+			{
 				autoAdjustExposure();
 			}
 			GPUProfiler.end();
 		} else {
-			World.EXPOSURE = 5;
+//			World.EXPOSURE = 5;
 		}
 		postProcessProgram.setUniform("exposure", World.EXPOSURE);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
@@ -597,6 +622,7 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
+		GPUProfiler.end();
 	}
 
 	private void autoAdjustExposure() {

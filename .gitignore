@@ -1,4 +1,5 @@
 /bin
+/build
 *.hptexture
 *.hpmaterial
 *.hpentity

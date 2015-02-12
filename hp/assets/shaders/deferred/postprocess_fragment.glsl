@@ -56,7 +56,7 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.3; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 2.3; //clamp value of max blur (0.0 = no blur,1.0 default)
 
 const float threshold = 0.7595; //highlight threshold;
 const float gain = 24.0; //highlight gain;
@@ -370,7 +370,7 @@ void main()
 	        }
 	    }
 	    out_color.a = 1;
-	    out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.5);
+	    out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.7 - exposure/100);
 	} else {
 		out_color = texture2D(renderedTexture, pass_TextureCoord);
 	}

@@ -673,7 +673,7 @@ void main()
 	
 	out_color.rgb = directLight.rgb;
 	
-	for(int i = 0; i < max(pointLightMaxCount, activePointLightCount); i++) {
+	for(int i = 0; i < min(pointLightMaxCount, activePointLightCount); i++) {
 		
 		float dist = distance(position_world.xyz, pointLightPositions[i]);
 		if(dist > pointLightRadiuses[i]) { continue; }
@@ -681,7 +681,7 @@ void main()
 		out_color.rgb += cookTorrancePointLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, pointLightColors[i], pointLightPositions[i], pointLightRadiuses[i], dist, diffuseColor, specularColor);
 	}
 	
-	for(int i = 0; i < max(areaLightMaxCount, activeAreaLightCount); i++) {
+	for(int i = 0; i < min(areaLightMaxCount, activeAreaLightCount); i++) {
 		
 		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
 	}

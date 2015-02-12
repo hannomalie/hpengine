@@ -164,7 +164,7 @@ public class DirectionalLight extends Entity {
 
 	@Override
 	public String getName() {
-		return "Sportlight";
+		return "Directional light";
 	}
 
 	@Override

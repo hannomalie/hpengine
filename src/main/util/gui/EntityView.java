@@ -1,12 +1,14 @@
 package main.util.gui;
 
 import java.awt.Component;
-import java.awt.event.ActionEvent;
+import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+
+import javax.swing.JScrollPane;
 
 import main.World;
 import main.model.Entity;
@@ -14,17 +16,8 @@ import main.model.IEntity;
 import main.renderer.Renderer;
 import main.renderer.Result;
 import main.renderer.command.RemoveEntityCommand;
-import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
-import main.texture.Texture;
-import main.util.gui.input.ButtonInput;
-import main.util.gui.input.SliderInput;
 import main.util.gui.input.TransformablePanel;
-import main.util.gui.input.WebFormattedVec3Field;
-
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
@@ -33,7 +26,6 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
-import com.alee.laf.slider.WebSlider;
 import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
@@ -62,7 +54,9 @@ public class EntityView extends WebPanel {
         panels.toArray(components);
         
         
-        this.add(new GridPanel ( components.length, 1, components));
+        GridPanel gridPanel = new GridPanel ( components.length, 1, components);
+        gridPanel.setLayout(new FlowLayout());
+		this.add(new JScrollPane(gridPanel));
 	}
 
 	protected List<Component> getPanels() {

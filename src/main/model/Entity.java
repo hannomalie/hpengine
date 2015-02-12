@@ -24,7 +24,9 @@ import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
 import main.shader.Program;
 import main.texture.CubeMap;
+import main.util.OpenGLThread;
 import main.util.Util;
+import main.util.stopwatch.GPUProfiler;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
@@ -208,7 +210,9 @@ public class Entity implements IEntity, Serializable {
 		verticesFloatBuffer.rewind();
 //		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 		
-		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
+		vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS);
+		vertexBuffer.upload();
+		
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
 	}
 

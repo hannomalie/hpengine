@@ -12,6 +12,7 @@ import java.util.zip.DataFormatException;
 
 import main.World;
 import main.util.CompressionUtils;
+import main.util.OpenGLThread;
 import main.util.stopwatch.StopWatch;
 
 import org.apache.commons.io.FilenameUtils;
@@ -216,7 +217,13 @@ public class Texture implements Serializable {
 	}
 
 	public void upload() {
-		upload(buffer());
+		new OpenGLThread() {
+			@Override
+			public void doRun() {
+				upload(buffer());
+			}
+		}.start();
+//		upload(buffer());
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
@@ -229,7 +236,7 @@ public class Texture implements Serializable {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT); 
         } 
- 
+
         GL11.glTexImage2D(target, 
                       0, 
                       EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 
