@@ -56,6 +56,7 @@ import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
+import main.util.OpenGLThread;
 import main.util.gui.input.SliderInput;
 import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
@@ -161,7 +162,7 @@ public class DebugFrame {
 	private void init(World world) {
 		this.world = world;
 		tabbedPane = new WebTabbedPane();
-		fileChooser = new WebFileChooser(new File("."));
+		fileChooser = new WebFileChooser(new File(getClass().getResource("").getPath()));
 		
 		scriptManager = new ScriptManager(world);
 		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
@@ -403,16 +404,34 @@ public class DebugFrame {
         {
         	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
         	sceneLoadMenuItem.addActionListener(e -> {
-        		
+
+        		fileChooser.setCurrentDirectory(new File(getClass().getResource("").getPath()));
 	    		File chosenFile = fileChooser.showOpenDialog();
 	    		if(chosenFile != null) {
 	    			String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
 	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
-	    			world.setScene(newScene);
-	    			init(world);
-	    			
+
+	    			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+						@Override public Result execute(World world) {
+			    			world.setScene(newScene);
+			    			init(world);
+			    			return new Result();
+						}}
+	    			);
+	        		
+	        		Result result = null;
+					try {
+						result = queue.poll(5, TimeUnit.MINUTES);
+					} catch (Exception e1) {
+						showError("Failed to load scene");
+					}
+					
+					if (!result.isSuccessful()) {
+						showError("Failed to load scene");
+					} else {
+						showSuccess("Scene loaded");
+					}
 	    		}
-	    		
         	});
 
 	        menuScene.add(sceneLoadMenuItem);

@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +13,6 @@ import java.util.stream.Collectors;
 import main.Transform;
 import main.World;
 import main.camera.Camera;
-import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
 import main.model.QuadVertexBuffer;
@@ -23,14 +20,13 @@ import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
-import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.rendertarget.RenderTarget;
 import main.scene.AABB;
 import main.scene.EnvironmentProbe;
-import main.scene.TransformDistanceComparator;
+import main.shader.ComputeShaderProgram;
 import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.Texture;
@@ -41,15 +37,15 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.glu.MipMap;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.bulletphysics.dynamics.DynamicsWorld;
-import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 public class GBuffer {
 
@@ -57,7 +53,7 @@ public class GBuffer {
 	
 	private Renderer renderer;
 	private RenderTarget gBuffer;
-	private RenderTarget halfScreenTarget;
+	private RenderTarget reflectionBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
 	
@@ -77,6 +73,7 @@ public class GBuffer {
 	private Program reflectionProgram;
 	private Program linesProgram;
 	private Program probeFirstpassProgram;
+	private ComputeShaderProgram tiledLightingProgram;
 	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -108,12 +105,13 @@ public class GBuffer {
 		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 		this.probeFirstpassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
 		this.depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "depth_prepass_fragment.glsl");
+		this.tiledLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_lighting_compute.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 4);
-		halfScreenTarget = new RenderTarget(Renderer.WIDTH/2, Renderer.HEIGHT/2, GL11.GL_RGBA8, 0,0,0,0, GL11.GL_LINEAR, 2);
+		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA32F, 4);
+		reflectionBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
 		laBuffer = new RenderTarget((int) (Renderer.WIDTH * SECONDPASSSCALE) , (int) (Renderer.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
-		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGB, 1);
+		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGBA8, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
@@ -246,7 +244,7 @@ public class GBuffer {
 	}
 
 	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-
+		
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -349,8 +347,6 @@ public class GBuffer {
 
 	private void renderReflectionsAndAO(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		GPUProfiler.start("Reflections and AO");
-		halfScreenTarget.use(true);
-		reflectionProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getPositionMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
@@ -361,24 +357,40 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap()); // specular
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getLightAccumulationMapOneId());
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(0));
-		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getFinalMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
-
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+		gBuffer.getDepthBufferTexture();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
-
-		reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
-		reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
-		reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
-		reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-		reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
-		reflectionProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
-		fullscreenBuffer.draw();
-		halfScreenTarget.unuse();
+		
+		boolean useComputeShaderForReflections = true;
+		if(!useComputeShaderForReflections) {
+			reflectionBuffer.use(true);
+			reflectionProgram.use();
+			reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+			reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
+			reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
+			reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+			reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
+			reflectionProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+			fullscreenBuffer.draw();
+			reflectionBuffer.unuse();
+		} else {
+			GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+			tiledLightingProgram.use();
+			tiledLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+			tiledLightingProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			tiledLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+			tiledLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+			tiledLightingProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(tiledLightingProgram);
+			tiledLightingProgram.dispatchCompute(reflectionBuffer.getWidth()/16, reflectionBuffer.getHeight()/16+1, 1);
+	//		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
+		}
 		GPUProfiler.end();
 	}
 	
@@ -553,7 +565,7 @@ public class GBuffer {
 
 	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
 		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
-		
+
 		combineProgram.use();
 		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
@@ -565,6 +577,7 @@ public class GBuffer {
 		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 //		bindEnvironmentProbePositions(combineProgram);
+
 		
 		finalBuffer.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -586,12 +599,14 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(0));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture(0));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenTarget.getRenderedTexture(1));
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture(1));
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0));
 		
 		fullscreenBuffer.draw();
-
+			
 		if(target == null) {
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 		} else {
@@ -613,8 +628,6 @@ public class GBuffer {
 				autoAdjustExposure();
 			}
 			GPUProfiler.end();
-		} else {
-//			World.EXPOSURE = 5;
 		}
 		postProcessProgram.setUniform("exposure", World.EXPOSURE);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
@@ -622,6 +635,7 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		fullscreenBuffer.draw();
+		
 		GPUProfiler.end();
 	}
 

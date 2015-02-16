@@ -40,8 +40,8 @@ public class GPUProfiler {
 	public static void startFrame() {
 
 		if (currentTask != null) {
-			throw new IllegalStateException(
-					"Previous frame not ended properly!");
+			tasks.clear();
+			return;
 		}
 		if (PROFILING_ENABLED) {
 			currentTask = new GPUTaskProfile().init(null,
@@ -67,8 +67,9 @@ public class GPUProfiler {
 
 		if (PROFILING_ENABLED) {
 			if (currentTask.getParent() != null) {
-				throw new IllegalStateException(
-						"Error ending frame. Not all tasks finished.");
+				tasks.clear();
+				return;
+				//throw new IllegalStateException("Error ending frame. Not all tasks finished.");
 			}
 			currentTask.end(getQuery());
 

@@ -122,7 +122,7 @@ vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDi
 	const int N = 16;
 	const float bias = 0.005;
 	for (int i = 0; i < N; i++) {
-		result += (texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/20).x > referenceDepth - bias ? 1 : 0);
+		result += (texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/50).x > referenceDepth - bias ? 1 : 0);
 	}
 	return result/N;
 }
@@ -144,7 +144,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	/*if (dist <= momentsUnblurred.x + bias) {
 		return vec3(1.0,1.0,1.0);
 	} else*/
-	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0125); }
+	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
 	
 	float variance = moments.y - (moments.x*moments.x);
 	variance = max(variance,0.0012);
@@ -309,6 +309,6 @@ void main(void) {
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
 	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
-	out_DiffuseSpecular.rgb = finalColor;
+	out_DiffuseSpecular.rgb = 4 * finalColor;
 	out_AOReflection = vec4(0,0,0,0);
 }

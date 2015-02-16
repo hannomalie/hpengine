@@ -690,7 +690,7 @@ void main()
 	vec3 sampleFromLastFrameAsSecondBounce = textureLod(probes, vec4(boxProjectedNormal, probeIndex), 1 + 8*roughness).rgb;
 	ProbeSample probeSample = importanceSampleProjectedCubeMap(probeIndex, position_world.xyz, PN_world.xyz, reflect(-V, PN_world.xyz), -V, roughness, metallic, color.rgb);
 	sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
-	out_color.rgb = 2*mix(out_color.rgb, sampleFromLastFrameAsSecondBounce, 0.5);
+	out_color.rgb = mix(out_color.rgb*4, sampleFromLastFrameAsSecondBounce, 0.5);
 	
 	// Fake the other missing bounces with some ambient light...
 	out_color.rgb += 0.0125 * color.rgb;

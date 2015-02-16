@@ -353,7 +353,7 @@ void main(void) {
 	//finalColor = vec4(visibility,visibility,visibility,visibility);
 	/////////////////// SHADOWMAP
 	
-	out_DiffuseSpecular.rgb = finalColor;
+	out_DiffuseSpecular.rgb = 4 * finalColor;
 	//out_AOReflection.gba = vec3(0,0,0);
 	//out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	

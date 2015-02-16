@@ -11,12 +11,12 @@ public class Uniform {
 	
 	protected int location = -1;
 	public String name = "";
-	protected Program program;
+	protected AbstractProgram program;
 	
-	public Uniform(Program program, String name) {
+	public Uniform(AbstractProgram iProgram, String name) {
 		this.name = name;
-		this.program = program;
-		program.addEmptyUniform(this);
+		this.program = iProgram;
+		iProgram.addEmptyUniform(this);
 		setLocationIfAbsent();
 	}
 

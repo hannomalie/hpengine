@@ -190,6 +190,6 @@ void main(void) {
 	//vec4 finalColor = phong(positionView, normalView, vec4(color,1), specular);
 	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
-	out_DiffuseSpecular.rgb = finalColor;
+	out_DiffuseSpecular.rgb = 4 * finalColor;
 	out_AOReflection = vec4(0,0,0,0);
 }

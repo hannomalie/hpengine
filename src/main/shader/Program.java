@@ -39,15 +39,10 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Program implements Reloadable {
+public class Program extends AbstractProgram implements Reloadable {
 	private static Logger LOGGER = getLogger();
 	
-	private int id;
-	
 	private EnumSet<DataChannels> channels;
-	
-	private HashMap<String, Uniform> uniforms;
-
 	private boolean needsTextures = true;
 	
 	private String geometryShaderName;
@@ -72,12 +67,14 @@ public class Program implements Reloadable {
 		this.renderer = renderer;
 
 		observerFragmentShader = new FileAlterationObserver(getDirectory());
-		
+
+		addFileListeners();
 		load();
 	}
 	
 	public void load() {
-		id = GL20.glCreateProgram();
+		clearUniforms();
+		setId(GL20.glCreateProgram());
 		
 		try {
 			GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
@@ -115,7 +112,6 @@ public class Program implements Reloadable {
 
 		use();
 		addFileListeners();
-		uniforms = new HashMap<>();
 	}
 	
 	private void addFileListeners() {
@@ -202,10 +198,6 @@ public class Program implements Reloadable {
 		return hash;
 	};
 	
-	public void use() {
-		GL20.glUseProgram(id);
-	}
-	
 	private void bindShaderAttributeChannels() {
 //		LOGGER.log(Level.INFO, "Binding shader input channels:");
 		EnumSet<DataChannels> channels = EnumSet.allOf(DataChannels.class);
@@ -228,7 +220,7 @@ public class Program implements Reloadable {
 		String shaderSource;
 		int shaderID = 0;
 		
-		shaderSource = "#version 420\n" + mapDefinesString;
+		shaderSource = "#version 430 core \n" + mapDefinesString;
 
 		try {
 			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);
@@ -239,7 +231,7 @@ public class Program implements Reloadable {
 		shaderID = GL20.glCreateShader(type);
 		GL20.glShaderSource(shaderID, shaderSource);
 		GL20.glCompileShader(shaderID);
-		
+
 		if (GL20.glGetShader(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not compile shader: " + filename);
 			System.err.println(GL20.glGetShaderInfoLog(shaderID, 10000));
@@ -258,78 +250,6 @@ public class Program implements Reloadable {
 
 	public boolean needsTextures() {
 		return needsTextures;
-	}
-
-	public void setUniform(String name, int value) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(value);
-	}
-	public void setUniform(String name, boolean value) {
-		int valueAsInd = value == true ? 1 : 0;
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(valueAsInd);
-	}
-	public void setUniform(String name, float value) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(value);
-	}
-	public void setUniform(String name, double value) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(value);
-	}
-	
-	public void setUniformAsMatrix4(String name, FloatBuffer matrixBuffer) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).setAsMatrix4(matrixBuffer);
-	}
-	public void setUniform(String name, float x, float y, float z) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(x, y, z);
-	}
-	public void setUniform(String name, Vector3f vec) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(vec.x, vec.y, vec.z);
-	}
-
-	public void setUniformVector3ArrayAsFloatBuffer(String name, FloatBuffer values) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).setVec3ArrayAsFloatBuffer(values);
-	}
-
-	public void setUniformFloatArrayAsFloatBuffer(String name, FloatBuffer values) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).setFloatArrayAsFloatBuffer(values);
-	}
-	
-	public void setUniformAsBlock(String name, float[] fs) {
-		putBlockInMapIfAbsent(name);
-		try {
-			((UniformBlock) uniforms.get(name)).set(fs);
-		} catch (ClassCastException e) {
-			System.err.println("You can't set a non block uniform as block!");
-			e.printStackTrace();
-		}
-	}
-
-	private void putInMapIfAbsent(String name) {
-		if (!uniforms.containsKey(name)) {
-			uniforms.put(name, new Uniform(this, name));
-		}
-	}
-	private void putBlockInMapIfAbsent(String name) {
-		if (!uniforms.containsKey(name)) {
-			uniforms.put(name, new UniformBlock(this, name));
-		}
-	}
-	
-	public int getUniformLocation(String name) {
-		return GL20.glGetUniformLocation(getId(), name);
-	}
-	public Uniform getUniform(String key) {
-		return uniforms.get(key);
-	}
-	public void addEmptyUniform(Uniform uniform) {
-		uniforms.put(uniform.name, uniform);
 	}
 
 	public static String getDirectory() {

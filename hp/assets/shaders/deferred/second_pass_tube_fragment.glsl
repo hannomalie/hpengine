@@ -205,7 +205,7 @@ void main(void) {
 	float depth = texture2D(normalMap, st).w;
 	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
 	
-	out_DiffuseSpecular = finalColor;
+	out_DiffuseSpecular = 4 * finalColor;
 	//out_DiffuseSpecular.rgba = vec4(roughness,roughness,roughness,roughness);
 	out_AOReflection = vec4(0,0,0,0);
 }

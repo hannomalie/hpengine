@@ -16,7 +16,7 @@ public class UniformBlock extends Uniform {
 	public String[] names = new String[]{};
 	public FloatBuffer buffer;
 
-	public UniformBlock(Program program, String uniformName, String... names) {
+	public UniformBlock(AbstractProgram program, String uniformName, String... names) {
 		super(program, uniformName);
 		setLocationIfAbsent();
 		this.names = names;

@@ -261,7 +261,7 @@ public class DeferredRenderer implements Renderer {
 			ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
 //				.withProfileCompatibility(true)
 //				.withForwardCompatible(true)
-//				.withProfileCore(true)
+				.withProfileCore(true)
 //				.withDebug(false)
 				;
 //				.withProfileCore(true);
@@ -270,6 +270,7 @@ public class DeferredRenderer implements Renderer {
 			Display.setVSyncEnabled(false);
 			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
+			Display.setResizable(true);
 			
 			GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		} catch (LWJGLException e) {
@@ -291,7 +292,7 @@ public class DeferredRenderer implements Renderer {
 		debugBuffer = new QuadVertexBuffer( false).upload();
 		
 		glWatch = new OpenGLStopWatch();
-		
+
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 //		CLUtil.initialize();
 	}
@@ -384,7 +385,8 @@ public class DeferredRenderer implements Renderer {
 	        
 	        tp.dump(); //Dumps the frame to System.out.
 	    }
-	    GPUProfiler.endFrame();
+		GPUProfiler.endFrame();
+	    
 	    frameCount++;
 	}
 	
@@ -426,11 +428,11 @@ public class DeferredRenderer implements Renderer {
 			drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer); // the first color attachment
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 		}
-		
+
 		if (World.DEBUGFRAME_ENABLED) {
 //			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
-			drawToQuad(light.getShadowMapId(), debugBuffer);
-//			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			drawToQuad(light.getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -452,6 +454,7 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
+		GPUProfiler.start("BLURRRRRRR");
 		int copyTextureId = GL11.glGenTextures();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
@@ -487,6 +490,7 @@ public class DeferredRenderer implements Renderer {
 		fullscreenBuffer.draw();
 		fullScreenTarget.unuse();
 		GL11.glDeleteTextures(copyTextureId);
+		GPUProfiler.end();
 	}
 	@Override
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {

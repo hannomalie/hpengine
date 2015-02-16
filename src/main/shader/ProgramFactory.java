@@ -10,6 +10,7 @@ import org.apache.commons.io.FileUtils;
 
 import main.model.DataChannels;
 import main.renderer.Renderer;
+import main.util.ressources.Reloadable;
 
 public class ProgramFactory {
 
@@ -18,7 +19,7 @@ public class ProgramFactory {
 	
 	private Renderer renderer;
 	
-	public static List<Program> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
+	public static List<Reloadable> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
 	public ProgramFactory(Renderer renderer) {
 		this.renderer = renderer;
@@ -36,6 +37,12 @@ public class ProgramFactory {
 		return program;
 	}
 
+	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
+		ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
+		LOADED_PROGRAMS.add(program);
+		return program;
+	}
+	
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
 		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
 		LOADED_PROGRAMS.add(program);
@@ -51,4 +58,5 @@ public class ProgramFactory {
 		name = name.endsWith(".glsl") ? name : name + ".glsl";
 		FileUtils.copyFile(new File(Program.getDirectory() + FIRSTPASS_DEFAULT_VERTEXSHADER_FILE), new File(Program.getDirectory() + name));
 	}
+
 }

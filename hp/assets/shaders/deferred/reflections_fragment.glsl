@@ -447,6 +447,108 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
+#define point2 vec2
+#define point3 vec3
+ 
+float distanceSquared(vec2 a, vec2 b) { a -= b; return dot(a, a); }
+ 
+// Returns true if the ray hit something
+vec3 traceScreenSpaceRay1(point3 csOrig, vec3 csDir, mat4x4 proj, vec2 csZBufferSize, float zThickness, 
+ 						float nearPlaneZ, float stride, float jitter, const float maxSteps, float maxDistance) {
+ 
+    float rayLength = ((csOrig.z + csDir.z * maxDistance) > nearPlaneZ) ? (nearPlaneZ - csOrig.z) / csDir.z : maxDistance;
+    point3 csEndPoint = csOrig + csDir * rayLength;
+ 
+    // Project into homogeneous clip space
+    vec4 H0 = proj * vec4(csOrig, 1.0);
+    vec4 H1 = proj * vec4(csEndPoint, 1.0);
+    
+    float k0 = 1.0 / H0.w, k1 = 1.0 / H1.w;
+ 
+    // The interpolated homogeneous version of the camera-space points  
+    point3 Q0 = csOrig * k0, Q1 = csEndPoint * k1;
+ 
+    // Screen-space endpoints
+    point2 P0 = H0.xy * k0;
+    point2 P1 = H1.xy * k1;
+    
+	P0 += 1;
+	P0 *= 0.5;
+	return texture(normalMap, (P0), 0).rgb;
+
+    // If the line is degenerate, make it cover at least one pixel
+    // to avoid handling zero-pixel extent as a special case later
+    P1 += vec2((distanceSquared(P0, P1) < 0.0001) ? 0.01 : 0.0);
+    vec2 delta = P1 - P0;
+ 
+    // Permute so that the primary iteration is in x to collapse
+    // all quadrant-specific DDA cases later
+    bool permute = false;
+    if (abs(delta.x) < abs(delta.y)) { 
+        // This is a more-vertical line
+        permute = true; delta = delta.yx; P0 = P0.yx; P1 = P1.yx; 
+    }
+ 
+    float stepDir = sign(delta.x);
+    float invdx = stepDir / delta.x;
+ 
+    // Track the derivatives of Q and k
+    vec3  dQ = (Q1 - Q0) * invdx;
+    float dk = (k1 - k0) * invdx;
+    vec2  dP = vec2(stepDir, delta.y * invdx);
+ 
+    // Scale derivatives by the desired pixel stride and then
+    // offset the starting values by the jitter fraction
+    dP *= stride; dQ *= stride; dk *= stride;
+    P0 += dP * jitter; Q0 += dQ * jitter; k0 += dk * jitter;
+ 
+    // Slide P from P0 to P1, (now-homogeneous) Q from Q0 to Q1, k from k0 to k1
+    point3 Q = Q0; 
+ 
+    // Adjust end condition for iteration direction
+    float  end = P1.x * stepDir;
+ 
+    float k = k0, stepCount = 0.0, prevZMaxEstimate = csOrig.z;
+    float rayZMin = prevZMaxEstimate, rayZMax = prevZMaxEstimate;
+    float sceneZMax = rayZMax + 100;
+    vec2 hitPixel;
+    for (point2 P = P0; 
+         ((P.x * stepDir) <= end) && (stepCount < maxSteps) &&
+         ((rayZMax < sceneZMax - zThickness) || (rayZMin > sceneZMax)) &&
+          (sceneZMax != 0); 
+         P += dP, Q.z += dQ.z, k += dk, ++stepCount) {
+         
+        rayZMin = prevZMaxEstimate;
+        rayZMax = (dQ.z * 0.5 + Q.z) / (dk * 0.5 + k);
+        prevZMaxEstimate = rayZMax;
+        if (rayZMin > rayZMax) { 
+           float t = rayZMin; rayZMin = rayZMax; rayZMax = t;
+        }
+
+        hitPixel = permute ? P.yx : P;
+        
+        // You may need hitPixel.y = csZBufferSize.y - hitPixel.y; here if your vertical axis
+        // is different than ours in screen space
+        
+		//P0 += 1;
+		//P0 *= 0.5;
+        sceneZMax = texelFetch(normalMap, ivec2(hitPixel), 0).a;
+    }
+     
+    // Advance Q based on the number of steps
+    Q.xy += dQ.xy * stepCount;
+    vec3 hitPoint = Q * (1.0 / k);
+    bool hit = (rayZMax >= sceneZMax - zThickness) && (rayZMin < sceneZMax);
+
+    return texelFetch(lightAccumulationMap, ivec2(hitPixel), 0).rgb;
+}
+
+vec3 _rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness, float metallic) {
+	return traceScreenSpaceRay1(targetPosView, normalize(targetNormalView), projectionMatrix, vec2(1280, 720), 1000, -0.1, 1, 0, 25, 500);
+	//vec3 traceScreenSpaceRay1(point3 csOrig, vec3 csDir, mat4x4 proj, vec2 csZBufferSize, float zThickness, 
+ 	//					float nearPlaneZ, float stride, float jitter, const float maxSteps, float maxDistance) {
+}
+
 vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness, float metallic) {
 
 //return color;
@@ -790,14 +892,13 @@ void main()
 	
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	
 	if(roughness < 0.4)
 	{
 		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
 		probeColorsDiffuseSpecular.specularColor = tempSSLR;
 	}
-	
 	out_environment.rgb = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
+	
 	out_environment.a = getAmbientOcclusion(st);
 	out_refracted.rgb = probeColorsDiffuseSpecular.refractedColor;
 }

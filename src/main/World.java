@@ -106,10 +106,16 @@ public class World {
 
 		world = new World(sceneName);
 //		world = new World();
-		
+
 		WebLookAndFeel.install();
 		if(debug) {
-			new DebugFrame(world);
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					new DebugFrame(world);
+				}
+			}).start();
+//			new DebugFrame(world);
 		}
 		world.simulate();
 	}
@@ -208,6 +214,7 @@ public class World {
 	
 	private void destroy() {
 		renderer.destroy();
+		System.exit(0);
 	}
 	
 	private void initDefaultMaterials() {
@@ -463,6 +470,8 @@ public class World {
 
 	public void setScene(Scene scene) {
 		this.scene = scene;
+		scene.init(renderer);
+		renderer.init(scene.getOctree());
 	}
 
 	public Camera getCamera() {

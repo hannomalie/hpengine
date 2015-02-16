@@ -28,6 +28,7 @@ import main.renderer.light.DirectionalLight;
 import main.renderer.rendertarget.CubeMapArrayRenderTarget;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe.Update;
+import main.shader.AbstractProgram;
 import main.shader.Program;
 import main.texture.CubeMapArray;
 import main.texture.DynamicCubeMap;
@@ -46,10 +47,8 @@ import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentProbeFactory {
 	public static final int MAX_PROBES = 50;
-	public static final int RESOLUTION = 512;
+	public static final int RESOLUTION = 256;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
-	
-	public static final int MAX_PROBES_PER_FRAME_DRAW_COUNT = 3;
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
 
@@ -261,7 +260,7 @@ public class EnvironmentProbeFactory {
 		return cubeMapArrayRenderTarget;
 	}
 
-	public void bindEnvironmentProbePositions(Program program) {
+	public void bindEnvironmentProbePositions(AbstractProgram program) {
 
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
