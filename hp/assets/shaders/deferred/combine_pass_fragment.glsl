@@ -46,6 +46,10 @@ vec3 Uncharted2Tonemap(vec3 x)
     return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
 }
 
+vec3 JimToneMap(vec3 x) {
+	return (x*(6.2*x+.5))/(x*(6.2*x+1.7)+0.06);
+}
+
 const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				2.0/16.0, 4.0/16.0, 2.0/16.0,
 				1.0/16.0, 2.0/16.0, 1.0/16.0
@@ -356,14 +360,14 @@ void main(void) {
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	//out_color = mix(out_color, refracted, refraction);
-	out_color.rgb += (scattering.gba); //scattering
+	//out_color.rgb += (scattering.gba); //scattering
 	
 	float autoExposure = exposure;
 
 	out_color *= autoExposure;
 	
 	out_color.rgb = Uncharted2Tonemap(out_color.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(4,4,4)); // whitescale marks the maximum value we can have before tone mapping
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
 	/////////////////////////////// GAMMA
 	//out_color.r = pow(out_color.r,1/2.2);
@@ -377,6 +381,7 @@ void main(void) {
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = environmentLight;
+	//out_color.rgb = ambientTerm;
 	//out_color.rgb = textureLod(refractedMap, st, 0.0).rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
