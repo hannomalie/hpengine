@@ -240,6 +240,10 @@ public class OBJLoader {
 			    	  addHelper(currentMaterialInfo, path, map, MAP.SPECULAR );
 //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 			    	  
+			    }  else if (materialLine.startsWith("map_Ns ")) {
+			    	  String map = materialLine.replaceAll("map_Ns ", "");
+			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
+			    	  
 			    } else if (materialLine.startsWith("map_bump ")) {
 			    	  String map = materialLine.replaceAll("map_bump ", "");
 			    	  addHelper(currentMaterialInfo, path, map, MAP.NORMAL );

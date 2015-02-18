@@ -244,6 +244,8 @@ public class GBuffer {
 	}
 
 	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+
+		renderer.getTextureFactory().generateMipMaps(directionalLight.getShadowMapId());
 		
 		Vector3f camPosition = camera.getPosition().negate(null);
 		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
@@ -362,9 +364,11 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		renderer.getEnvironmentMap().bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-		gBuffer.getDepthBufferTexture();
+		reflectionBuffer.getRenderedTexture(0);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
+		renderer.getEnvironmentMap().bind();
 		
 		boolean useComputeShaderForReflections = true;
 		if(!useComputeShaderForReflections) {

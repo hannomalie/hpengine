@@ -450,7 +450,7 @@ public class World {
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 //		LOGGER.log(Level.INFO, "draw: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
-		scene.endFrame();
+		scene.endFrame(activeCamera);
 //		LOGGER.log(Level.INFO, "cycle: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 
 //		Renderer.exitOnGLError("loopCycle");

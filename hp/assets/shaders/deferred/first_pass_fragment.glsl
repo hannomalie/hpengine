@@ -20,6 +20,9 @@ uniform float diffuseMapHeight = 1;
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
 
+uniform float roughnessMapWidth = 1;
+uniform float roughnessMapHeight = 1;
+
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
@@ -207,7 +210,7 @@ void main(void) {
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
-	vec2 blurVec = position_clip_post_w.xy - position_clip_last_post_w.xy;
+	vec2 motionVec = position_clip_post_w.xy - position_clip_last_post_w.xy;
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
@@ -237,7 +240,7 @@ void main(void) {
 		UV = UV - uvParallax;
 	//} else if (useSteepParallax) {
 	} else {
-   // determine required number of layers
+   	   // determine required number of layers
 	   const float minLayers = 10;
 	   const float maxLayers = 15;
 	   const float parallaxScale = 0.1;
@@ -365,7 +368,7 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(length(blurVec), 0,probeIndex1,probeIndex2);
+  	out_motion = vec4(motionVec,probeIndex1,probeIndex2);
   	out_visibility = vec4(1,depth,depth,0);
   	
   	//if(useRainEffect) {

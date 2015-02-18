@@ -49,6 +49,8 @@ uniform vec3[areaLightMaxCount] areaLightUpDirections;
 uniform vec3[areaLightMaxCount] areaLightRightDirections;
 uniform mat4[areaLightMaxCount] areaLightShadowMatrices;
 
+uniform vec3 probePosition;
+uniform vec3 probeSize;
 uniform int probeIndex = 0;
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
@@ -149,7 +151,9 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	variance = max(variance,0.00012);
 
 	float d = dist - moments.x;
-	float p_max = (variance / (variance + d*d));
+	//float p_max = (variance / (variance + d*d));
+	// thanks, for light bleeding reduction, FOOGYWOO! http://dontnormalize.me/ 
+	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -639,7 +643,15 @@ void main()
 
 	float depth = (position_clip.z / position_clip.w);
     //out_color = vec4(color.rgb, depth);
-    out_color.a = 1;
+    //out_color.a = 1;
+    vec3 vecToPoint = (position_world.xyz - probePosition);
+    vec3 overhead = abs(vecToPoint) - probeSize/2;
+    const vec3 bias = vec3(5,5,5);
+    overhead -= bias;
+    bvec3 hasOverhead = greaterThan(overhead, vec3(0,0,0));
+    out_color.a = depth;
+    out_color.a = any(hasOverhead)? 0 : 1;
+
     vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic); // biased, since specular term is only valid at POI of the probe...mäh
     vec3 specularColor = mix(vec3(0.04,0.04,0.04), color.rgb, metallic);
     
@@ -674,7 +686,6 @@ void main()
 	out_color.rgb = directLight.rgb;
 	
 	for(int i = 0; i < min(pointLightMaxCount, activePointLightCount); i++) {
-		
 		float dist = distance(position_world.xyz, pointLightPositions[i]);
 		if(dist > pointLightRadiuses[i]) { continue; }
 		
@@ -682,7 +693,6 @@ void main()
 	}
 	
 	for(int i = 0; i < min(areaLightMaxCount, activeAreaLightCount); i++) {
-		
 		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
 	}
 	

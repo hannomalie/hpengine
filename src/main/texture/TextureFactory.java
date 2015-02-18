@@ -543,14 +543,24 @@ public class TextureFactory {
             return loadImageAsStream(ref);
         }
         
-        BufferedImage bufferedImage = ImageIO.read(new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref))); 
+        BufferedImage bufferedImage = null;
+		try {
+			bufferedImage = ImageIO.read(new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
+		} catch (Exception e) {
+			System.err.println("Unable to read file " + ref);
+		} 
  
         return bufferedImage;
     }
 
     private BufferedImage loadImageAsStream(String ref) throws IOException 
     { 
-        BufferedImage bufferedImage = ImageIO.read(new File(ref)); 
+        BufferedImage bufferedImage = null;
+		try {
+			bufferedImage = ImageIO.read(new File(ref));
+		} catch (Exception e) {
+			System.err.println("Unable to read file " + ref);
+		} 
  
         return bufferedImage;
     }

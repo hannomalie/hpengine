@@ -15,7 +15,7 @@ import main.scene.TransformDistanceComparator;
 
 public class RenderProbeCommandQueue {
 
-	public static int MAX_PROBES_RENDERED_PER_DRAW_CALL = 2;
+	public static volatile int MAX_PROBES_RENDERED_PER_DRAW_CALL = 2;
 	
 	private BlockingQueue<RenderProbeCommand> workQueue;
 	

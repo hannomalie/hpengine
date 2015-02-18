@@ -8,10 +8,12 @@ layout(binding = 2) uniform sampler2D diffuseMap;
 layout(binding = 3) uniform sampler2D motionMap;
 layout(binding = 4) uniform sampler2D lightAccumulationMap;
 layout(binding = 5) uniform sampler2D lastFrameFinalBuffer;
-layout(binding = 7) uniform sampler2D depthBuffer;
-layout(binding = 8) uniform samplerCubeArray probes;
-
 layout(binding = 6, rgba16f) uniform image2D out_environment;
+layout(binding = 7) uniform sampler2D lastFrameReflectionBuffer;
+
+layout(binding = 8) uniform samplerCubeArray probes;
+layout(binding = 9) uniform samplerCube environmentProbe;
+
 
 
 uniform float screenWidth;
@@ -100,10 +102,11 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 				vec3 targetNormalWorld = (inverse(viewMatrix) * vec4(targetNormalView,0)).xyz;
 				
 				float distanceInWorld = distance(currentPosSample, targetPositionWorld);
-				float distanceInWorldPercent = distanceInWorld / 50;
+				float distanceInWorldPercent = distanceInWorld / 150;
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			float mipMapChoser = roughness * 9;
+    			mipMapChoser *= distanceInWorldPercent;
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 3);
     			
     			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
@@ -116,7 +119,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 			  	vec3 ambientDiffuseColor = diffuseColor;
 			  	//diffuseColor = mix(diffuseColor, vec3(0,0,0), metallic);
     			
-    			vec4 lightDiffuseSpecular = 0.5*textureLod(lastFrameFinalBuffer, resultCoords.xy, mipMapChoser);
+    			vec4 lightDiffuseSpecular = 0.25*textureLod(lastFrameFinalBuffer, resultCoords.xy, mipMapChoser); // compensation for *4 intensity
     			vec3 reflectedColor = lightDiffuseSpecular.rgb;
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
@@ -291,7 +294,10 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
   if(roughness < 0.01) {
   	reflected = boxProjection(positionWorld, reflected, index);
-    result.specularColor = SpecularColor * texture(probes, vec4(reflected, index), 1).rgb;
+	vec4 SampleColor = texture(probes, vec4(reflected, index), 1);
+	//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(reflected, 0), 1).rgb, 1-SampleColor.a);
+	
+    result.specularColor = SpecularColor * SampleColor.rgb;
   	normal = boxProjection(positionWorld, normal, index);
   	result.diffuseColor = diffuseColor * texture(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   	return result;
@@ -358,6 +364,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
 	    
     	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
+		//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(H, 0), lod).rgb, 1-SampleColor.a);
     	
 		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
 		ks += fresnel;
@@ -365,10 +372,10 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	}
   }
   
-  if(pdfSum < 0.9){
+  /*if(pdfSum < 0.9){
   	result.diffuseColor = vec3(1,0,0);
-  	//return result;
-  }
+  	return result;
+  }*/
   
   resultSpecular = resultSpecular/(N);
   //resultDiffuse = resultDiffuse/(N);
@@ -376,7 +383,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   float kd = (1 - ks) * (1 - metallic);
   
   normal = boxProjection(positionWorld, normal, index);
-  resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), 3 + roughness*MAX_MIPMAPLEVEL).rgb;
   
   result.diffuseColor = resultDiffuse.rgb;
   result.specularColor = resultSpecular.rgb;
@@ -653,19 +660,21 @@ void main()
 	*/
 	
 	barrier();
-
 	
 	TileProbes probesForTile = getProbesForTile(currentArrayIndex, probeIndicesForTile);
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(probesForTile, positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
 	if(roughness < 0.4)
 	{
-		//vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
-		//probeColorsDiffuseSpecular.specularColor = tempSSLR;
+		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
+		probeColorsDiffuseSpecular.specularColor = tempSSLR;
 	}
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	
-	imageStore(out_environment, storePos, vec4(result, 1));
+	vec2 motionVecNormalised = vec2(textureLod(motionMap, storePos, 0).rg);
+	ivec2 motionVec = ivec2(10*motionVecNormalised);
+	vec3 oldSample = imageLoad(out_environment, storePos).rgb;
+	imageStore(out_environment, storePos, vec4(mix(result, oldSample, 0.5), 1));
 	
 	/*
 	if(localIndex.x == 0 || localIndex.y == 0) {

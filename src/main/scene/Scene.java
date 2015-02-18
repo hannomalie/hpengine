@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import main.World;
+import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
@@ -123,7 +124,7 @@ public class Scene implements Serializable {
 			entity.update(seconds);
 		}
 	}
-	public void endFrame() {
+	public void endFrame(Camera camera) {
 		for (IEntity entity : octree.getEntities()) {
 			entity.setHasMoved(false);
 		}
@@ -134,6 +135,7 @@ public class Scene implements Serializable {
 			entity.setHasMoved(false);
 		}
 		World.light.setHasMoved(false);
+		camera.saveViewMatrixAsLastViewMatrix();
 	}
 	public Octree getOctree() {
 		return octree;

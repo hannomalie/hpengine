@@ -295,10 +295,10 @@ void main(void) {
 	}
 #endif
   	out_color = color * vec4(1,1,1+(n2/4)-n/8, 1);
-  	out_color.w = 1-materialMetallic * (n) * 0.3;
+  	out_color.w = clamp(1-materialMetallic * (n) * 0.3, 0.5, 1.0);
 
 	out_position.w = materialRoughness;
-	out_position.w = clamp(materialRoughness * (1-n2/2), 0.0, 1.0);
+	out_position.w = clamp(materialRoughness * (1-n2/2), 0.0, 0.5);
 	
 #ifdef use_roughnessMap
 	UV.x = texCoord.x * roughnessMapWidth;
@@ -319,7 +319,7 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(length(blurVec), 1 ,probeIndex1,probeIndex2);
+  	out_motion = vec4(length(blurVec), 0 ,probeIndex1,probeIndex2);
   	out_visibility = vec4(1,depth,depth,0);
 	//out_position.w = 0.5;
   	//out_color.w = 1;

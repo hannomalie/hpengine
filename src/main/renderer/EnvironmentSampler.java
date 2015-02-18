@@ -156,6 +156,8 @@ public class EnvironmentSampler {
 
 	private void bindProgramSpecificsPerCubeMap() {
 		cubeMapProgram.use();
+		cubeMapProgram.setUniform("probePosition", probe.getCenter());
+		cubeMapProgram.setUniform("probeSize", probe.getSize());
 		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());

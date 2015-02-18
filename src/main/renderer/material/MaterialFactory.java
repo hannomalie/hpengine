@@ -149,7 +149,7 @@ public class MaterialFactory {
 		public ENVIRONMENTMAPTYPE environmentMapType = ENVIRONMENTMAPTYPE.GENERATED;
 		public String name = "";
 		public Vector3f diffuse = new Vector3f();
-		public float roughness = 0.75f;
+		public float roughness = 0.95f;
 		public float metallic = 0f;
 		
 		public boolean textureLess;
@@ -218,7 +218,7 @@ public class MaterialFactory {
 //			return material;
 		} catch (Exception e) {
 //			e.printStackTrace();
-			System.out.println("Material read (" + fileName + ") caused an exception, probably not very important");
+//			System.out.println("Material read (" + fileName + ") caused an exception, probably not very important");
 		}
 		return null;
 	}

@@ -7,6 +7,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +52,7 @@ import main.renderer.command.AddTextureCommand;
 import main.renderer.command.AddTextureCommand.TextureResult;
 import main.renderer.command.Command;
 import main.renderer.command.DumpAveragesCommand;
+import main.renderer.command.RenderProbeCommandQueue;
 import main.renderer.light.AreaLight;
 import main.renderer.light.PointLight;
 import main.renderer.light.TubeLight;
@@ -56,7 +61,6 @@ import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
-import main.util.OpenGLThread;
 import main.util.gui.input.SliderInput;
 import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
@@ -73,14 +77,13 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
-import com.alee.extended.panel.WebComponentPanel;
+import com.alee.extended.panel.WebButtonGroup;
 import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
-import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.filechooser.WebFileChooser;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.menu.WebMenu;
@@ -146,6 +149,12 @@ public class DebugFrame {
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
 	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", World.AUTO_EXPOSURE_ENABLED);
 
+	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
+	private WebToggleButton toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
+	private WebToggleButton toggleProbeDrawCountThree = new WebToggleButton("3", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 3);
+	private WebToggleButton toggleProbeDrawCountFour = new WebToggleButton("4", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 4);
+	private WebButtonGroup probeDrawCountGroup = new WebButtonGroup(true, toggleProbeDrawCountOne, toggleProbeDrawCountTwo, toggleProbeDrawCountThree, toggleProbeDrawCountFour);
+	
 	WebSlider ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 
@@ -352,8 +361,12 @@ public class DebugFrame {
 
 ////////////////
 	    List<Component> mainButtonElements = new ArrayList<>();
+	    toggleProbeDrawCountOne.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountOne.getLabel()); });
+	    toggleProbeDrawCountTwo.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountTwo.getLabel()); });
+	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
+	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", toggleDrawProbes, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
+		mainButtonElements.add(new TitledPanel("Probes", toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {

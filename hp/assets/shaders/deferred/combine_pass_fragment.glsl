@@ -2,7 +2,7 @@
 layout(binding=0) uniform sampler2D diffuseMap; // diffuse, metallic 
 layout(binding=1) uniform sampler2D lightAccumulationMap; // diffuse, specular
 layout(binding=2) uniform sampler2D scatteringMap; // ao, reflectedColor
-layout(binding=3) uniform sampler2D motionMap; // motionVec
+layout(binding=3) uniform sampler2D motionMap; // motionVec, probeIndices
 layout(binding=4) uniform sampler2D positionMap; // position, glossiness
 layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap;
@@ -330,7 +330,7 @@ void main(void) {
 	V = (inverse(viewMatrix) * dir).xyz;
   	
   	vec4 motionVecProbeIndices = texture2D(motionMap, st);
-  	float motion = motionVecProbeIndices.x;
+  	vec2 motion = motionVecProbeIndices.xy;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
   	
   	float metallic = colorMetallic.a;
@@ -345,7 +345,6 @@ void main(void) {
 	vec4 scattering = textureLod(scatteringMap, st, 1);
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
-	float refraction = motionVecProbeIndices.g;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = textureLod(environment, st, 0);
@@ -359,7 +358,6 @@ void main(void) {
 	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
-	//out_color = mix(out_color, refracted, refraction);
 	//out_color.rgb += (scattering.gba); //scattering
 	
 	float autoExposure = exposure;
@@ -389,5 +387,5 @@ void main(void) {
 	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = reflectedColor.rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
-	//out_color.rgb = vec3(motion,motion,motion);
+	//out_color.rgb = vec3(motion,0);
 }
