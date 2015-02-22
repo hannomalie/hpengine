@@ -23,8 +23,8 @@ public class CubeRenderTarget extends RenderTarget {
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
-		this.clearG = 0.3f;
-		this.clearB = 0.3f;
+		this.clearG = 0f;
+		this.clearB = 0f;
 		this.clearA = 0;
 		this.cubeMap = cubeMap;
 		int colorBufferCount = 1;

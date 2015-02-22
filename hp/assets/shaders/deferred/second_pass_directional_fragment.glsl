@@ -22,8 +22,8 @@ uniform vec3 lightDiffuse;
 uniform float scatterFactor = 1;
 
 in vec2 pass_TextureCoord;
-out vec4 out_DiffuseSpecular;
-out vec4 out_AOReflection;
+layout(location=0)out vec4 out_DiffuseSpecular;
+layout(location=1)out vec4 out_AOReflection;
 
 float packColor(vec3 color) {
     return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
@@ -376,7 +376,6 @@ void main(void) {
 	//out_AOReflection.gba = vec3(0,0,0);
 	//out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	
-	//out_DiffuseSpecular.rgb = scatter(positionWorld, -eyePosition);
-	//out_DiffuseSpecular = vec4(ssdo,1);
+	//out_DiffuseSpecular = vec4(color,1);
 	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 }

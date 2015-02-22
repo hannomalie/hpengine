@@ -18,6 +18,7 @@ import main.renderer.light.DirectionalLight;
 import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbeFactory;
+import main.shader.AbstractProgram;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.texture.*;
@@ -75,4 +76,10 @@ public interface Renderer {
 	public float getCurrentFPS();
 	public double getDeltaInS();
 	public int getFrameCount();
+	public AbstractProgram getFirstPassProgram();
+	Program getSecondPassPointProgram();
+	Program getSecondPassTubeProgram();
+	Program getSecondPassDirectionalProgram();
+	Program getCombineProgram();
+	Program getPostProcessProgram();
 }

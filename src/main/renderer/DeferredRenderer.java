@@ -235,15 +235,15 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		Program firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
-		Program secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		Program secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		Program secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		Program secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		Program instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
+		secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", Entity.POSITIONCHANNEL, false);
 
-		Program combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
-		Program postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", RENDERTOQUAD, false);
+		combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
+		postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", RENDERTOQUAD, false);
 
 		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram, instantRadiosityProgram);
 
@@ -623,6 +623,14 @@ public class DeferredRenderer implements Renderer {
 	private List<Vector3f> linePoints = new ArrayList<>();
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private int rsmSize = 2048/2/2/2/2/2/2/2;
+	private Program firstPassProgram;
+	private Program secondPassPointProgram;
+	private Program secondPassTubeProgram;
+	private Program secondPassAreaProgram;
+	private Program secondPassDirectionalProgram;
+	private Program instantRadiosityProgram;
+	private Program combineProgram;
+	private Program postProcessProgram;
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {
@@ -800,4 +808,31 @@ public class DeferredRenderer implements Renderer {
 		return frameCount;
 	}
 
+	@Override
+	public Program getFirstPassProgram() {
+		return firstPassProgram;
+	}
+	@Override
+	public Program getSecondPassPointProgram() {
+		return secondPassPointProgram;
+	}
+	@Override
+	public Program getSecondPassTubeProgram() {
+		return secondPassTubeProgram;
+	}
+	public Program getSecondPassAreaProgram() {
+		return secondPassAreaProgram;
+	}
+	@Override
+	public Program getSecondPassDirectionalProgram() {
+		return secondPassDirectionalProgram;
+	}
+	@Override
+	public Program getCombineProgram() {
+		return combineProgram;
+	}
+	@Override
+	public Program getPostProcessProgram() {
+		return postProcessProgram;
+	}
 }

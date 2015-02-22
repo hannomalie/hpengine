@@ -10,7 +10,7 @@ in vec2 pass_TextureCoord;
 out vec4 out_color;
 
 float calculateMotionBlur(vec2 uv) {
-	return 100*(texture2D(motionMap, uv).x);
+	return 10*(texture2D(motionMap, uv).x);
 }
 
 ///////////////////////////////////////

@@ -209,4 +209,8 @@ public class RenderTarget {
 		}
 	    GL20.glDrawBuffers(scratchBuffer);
 	}
+
+	public int getFrameBufferLocation() {
+		return framebufferLocation;
+	}
 }

@@ -366,7 +366,7 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 		reflectionBuffer.getRenderedTexture(0);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
 		renderer.getEnvironmentMap().bind();
 		
@@ -581,7 +581,6 @@ public class GBuffer {
 		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 //		bindEnvironmentProbePositions(combineProgram);
-
 		
 		finalBuffer.use(true);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);

@@ -57,6 +57,9 @@ public class EnvironmentProbeFactory {
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 
 	private CubeMapArray environmentMapsArray;
+	private CubeMapArray environmentMapsArray1;
+	private CubeMapArray environmentMapsArray2;
+	private CubeMapArray environmentMapsArray3;
 	private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
@@ -65,6 +68,9 @@ public class EnvironmentProbeFactory {
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
 		this.environmentMapsArray = new CubeMapArray(renderer, MAX_PROBES);
+		this.environmentMapsArray1 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		this.environmentMapsArray2 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		this.environmentMapsArray3 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
 
 		int errorValue = GL11.glGetError();
 		if (errorValue != GL11.GL_NO_ERROR) {
@@ -72,7 +78,7 @@ public class EnvironmentProbeFactory {
 			System.err.println("ERROR: " + errorString);
 		}
 
-		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, environmentMapsArray);
+		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}
@@ -239,6 +245,20 @@ public class EnvironmentProbeFactory {
 
 	public CubeMapArray getEnvironmentMapsArray() {
 		return environmentMapsArray;
+	}
+	public CubeMapArray getEnvironmentMapsArray(int index) {
+		switch (index) {
+		case 0:
+			return environmentMapsArray;
+		case 1:
+			return environmentMapsArray1;
+		case 2:
+			return environmentMapsArray2;
+		case 3:
+			return environmentMapsArray3;
+		default:
+			return null;
+		}
 	}
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {

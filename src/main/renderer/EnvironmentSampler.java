@@ -1,7 +1,11 @@
 package main.renderer;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.lwjgl.BufferUtils;
@@ -33,10 +37,14 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.ITransformable;
+import main.model.QuadVertexBuffer;
+import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.light.AreaLight;
 import main.renderer.light.DirectionalLight;
 import main.renderer.light.LightFactory;
+import main.renderer.light.PointLight;
+import main.renderer.light.TubeLight;
 import main.renderer.rendertarget.CubeMapArrayRenderTarget;
 import main.renderer.rendertarget.CubeRenderTarget;
 import main.scene.EnvironmentProbe;
@@ -60,7 +68,15 @@ public class EnvironmentSampler {
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
 	transient private boolean drawnOnce = false;
+	transient Set<Integer> sidesDrawn = new HashSet<>();
 	transient private EnvironmentProbe probe;
+	private VertexBuffer fullscreenBuffer;
+	private int cubeMapView;
+	private int cubeMapView1;
+	private int cubeMapView2;
+	private int cubeMapFaceView;
+	private int cubeMapFaceView1;
+	private int cubeMapFaceView2;
 
 	public EnvironmentSampler(Renderer renderer, EnvironmentProbe probe, Vector3f position, int width, int height) {
 		this.renderer = renderer;
@@ -81,6 +97,19 @@ public class EnvironmentSampler {
 		cubeMapProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
+
+		cubeMapView = GL11.glGenTextures();
+		cubeMapView1 = GL11.glGenTextures();
+		cubeMapView2 = GL11.glGenTextures();
+		cubeMapFaceView = GL11.glGenTextures();
+		cubeMapFaceView1 = GL11.glGenTextures();
+		cubeMapFaceView2 = GL11.glGenTextures();
+		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
+		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+		GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+		
+		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 //		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 	
@@ -134,17 +163,34 @@ public class EnvironmentSampler {
 			filteringRequired = true;
 			
 			GPUProfiler.start("side " + i);
-			GPUProfiler.start("Switch attachment");
-			renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(probe.getIndex(), i);
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-			GPUProfiler.end();
-			FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
-			FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
-			
-			drawEntities(cubeMapProgram, light, visibles, viewMatrixAsBuffer, projectionMatrixAsBuffer);
-			GPUProfiler.end();
-			
-			drawnOnce = true;
+			boolean deferredRenderingForProbes = false;
+			if (deferredRenderingForProbes) {
+				if (!sidesDrawn.contains(i)) {
+					GPUProfiler.start("Switch attachment");
+					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), i);
+					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), i);
+					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), i);
+					GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+					GPUProfiler.end();
+
+					GPUProfiler.start("Fill GBuffer");
+					drawFirstPass(i, camera, visibles);
+					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
+
+					GPUProfiler.end();
+				}
+				GPUProfiler.start("Second pass");
+				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
+				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+				drawSecondPass(i, camera, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), renderer.getLightFactory().getAreaLights(), renderer.getEnvironmentMap());
+				GPUProfiler.end();
+				GPUProfiler.end();
+				registerSideAsDrawn(i);
+			} else {
+				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
+				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+				drawEntities(cubeMapProgram, World.light, visibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
+			}
 		}
 		if (filteringRequired) {
 			generateCubeMapMipMaps();
@@ -152,6 +198,13 @@ public class EnvironmentSampler {
 		camera.setPosition(initialPosition);
 		camera.setOrientation(initialOrientation);
 		GPUProfiler.end();
+	}
+	
+	private void registerSideAsDrawn(int i) {
+		sidesDrawn.add(i);
+		if(sidesDrawn.size() == 6) {
+			drawnOnce = true;
+		}
 	}
 
 	private void bindProgramSpecificsPerCubeMap() {
@@ -204,7 +257,123 @@ public class EnvironmentSampler {
 		}
 		GPUProfiler.end();
 	}
+	
+	void drawFirstPass(int sideIndex, Camera camera, List<IEntity> entities) {
+//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getFrameBufferLocation());
+//		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
+		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), sideIndex);
+		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(1, probe.getIndex(), sideIndex);
+		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(2, probe.getIndex(), sideIndex);
 
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glDepthMask(true);
+		renderer.getFirstPassProgram().use();
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDepthFunc(GL11.GL_LESS);
+		GL11.glDisable(GL11.GL_BLEND);
+
+		GPUProfiler.start("Draw entities");
+//			GPUProfiler.start("Depth prepass");
+//			for (IEntity entity : entities) {
+//				entity.draw(renderer, camera, depthPrePassProgram);
+//			}
+//			GPUProfiler.end();
+		for (IEntity entity : entities) {
+			entity.draw(renderer, camera);
+		}
+		GPUProfiler.end();
+
+		GL11.glEnable(GL11.GL_CULL_FACE);
+	}
+
+	void drawSecondPass(int sideIndex, Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+
+		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
+		Vector3f camPosition = camera.getPosition().negate(null);
+		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
+		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
+		
+		GPUProfiler.start("Directional light");
+		GL11.glDepthMask(false);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDepthFunc(GL11.GL_LESS);
+		GL11.glEnable(GL11.GL_BLEND);
+		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
+		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
+
+		Program secondPassDirectionalProgram = renderer.getSecondPassDirectionalProgram();
+		secondPassDirectionalProgram.use();
+
+		// WHY DOES THIS SOLVE THE ISSUE!? SHOULD ONLY DO THIS ONCE IN THE CONSTRUCTOR....
+		cubeMapFaceView = GL11.glGenTextures();
+		cubeMapFaceView1 = GL11.glGenTextures();
+		cubeMapFaceView2 = GL11.glGenTextures();
+//		System.out.println(cubeMapFaceView);
+//		System.out.println(cubeMapFaceView1);
+//		System.out.println(cubeMapFaceView2);
+
+		GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+		GL43.glTextureView(cubeMapFaceView1, GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+		GL43.glTextureView(cubeMapFaceView2, GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+
+
+		GPUProfiler.start("Activate GBuffer textures");
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, cubeMapFaceView);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, cubeMapFaceView1);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, cubeMapFaceView2);
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+		cubeMap.bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
+//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
+		GPUProfiler.end();
+		
+		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
+		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
+		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
+		secondPassDirectionalProgram.setUniform("secondPassScale", 1f);
+		FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
+		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
+		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
+		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
+		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+//		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
+		GPUProfiler.start("Draw fullscreen buffer");
+		fullscreenBuffer.draw();
+		GPUProfiler.end();
+
+		GPUProfiler.end();
+		
+//		doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
+//
+//		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
+//
+//		doAreaLights(areaLights, viewMatrix, projectionMatrix);
+//		
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+
+		GL11.glCullFace(GL11.GL_BACK);
+		GL11.glDepthFunc(GL11.GL_LESS);
+		
+//		GL11.glDeleteTextures(cubeMapFaceView);
+//		GL11.glDeleteTextures(cubeMapFaceView1);
+//		GL11.glDeleteTextures(cubeMapFaceView2);
+	}
+	
 	private void bindShaderSpecificsPerCubeMapSide(DirectionalLight light,
 			FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
@@ -222,7 +391,7 @@ public class EnvironmentSampler {
 		GPUProfiler.start("MipMap generation");
 
 		boolean use2DMipMapping = false;
-		CubeMapArray cubeMapArray = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray();
+		CubeMapArray cubeMapArray = renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3);
 		if (use2DMipMapping ) {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();

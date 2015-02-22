@@ -2,63 +2,57 @@ package main.renderer.rendertarget;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
-import main.texture.CubeMap;
+import main.renderer.DeferredRenderer;
+import main.scene.EnvironmentProbeFactory;
 import main.texture.CubeMapArray;
 import main.util.Util;
-import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL41;
-import org.lwjgl.opengl.GL43;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
 
-	private CubeMapArray cubeMapArray;
+	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
-	public CubeMapArrayRenderTarget(int width, int height, CubeMapArray cubeMapArray) {
+	public CubeMapArrayRenderTarget(int width, int height, CubeMapArray... cubeMapArray) {
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
 		this.clearG = 0.3f;
 		this.clearB = 0.3f;
 		this.clearA = 0;
-		this.cubeMapArray = cubeMapArray;
-		int colorBufferCount = 1;
+		for(CubeMapArray cma: cubeMapArray) {
+			this.cubeMapArrays.add(cma);	
+		}
+		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
 		
 		framebufferLocation = GL30.glGenFramebuffers();
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		
-//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 
-//		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 		for (int i = 0; i < colorBufferCount; i++) {
-
-			GL30.glFramebufferTexture3D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL12.GL_TEXTURE_3D, 0, 0, 0);
-			GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, cubeMapArray.getTextureID(), 0, 0);
+//			GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrays.get(i).getTextureID());
+//			GL30.glFramebufferTexture3D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, GL12.GL_TEXTURE_3D, 0, 0, 0);
+			GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMapArrays.get(i).getTextureID(), 0, 0);
+		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
 		}
-//	    GL20.glDrawBuffers(scratchBuffer);
-		
+	    GL20.glDrawBuffers(scratchBuffer);
+
 		depthbufferLocation = GL30.glGenRenderbuffers();
 		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
 		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
 		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
-		
+
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 		
 		//TODO: Make this more pretty
@@ -69,12 +63,24 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			System.exit(0);
 		}
 	}
-	
+
 	public void setCubeMapFace(int cubeMapIndex, int faceIndex) {
-		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-		GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, cubeMapArray.getTextureID(), 0, 6*cubeMapIndex + faceIndex);
+		setCubeMapFace(0, cubeMapIndex, faceIndex);
+	}
+	public void setCubeMapFace(int attachmentIndex, int cubeMapIndex, int faceIndex) {
+		setCubeMapFace(attachmentIndex, attachmentIndex, cubeMapIndex, faceIndex);
 	}
 
+	public void setCubeMapFace(int cubeMapArrayListIndex, int attachmentIndex, int cubeMapIndex, int faceIndex) {
+		GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+attachmentIndex, cubeMapArrays.get(cubeMapArrayListIndex).getTextureID(), 0, 6*cubeMapIndex + faceIndex);
+//		System.out.println("Setting cubemaparray number " + cubeMapArrayListIndex + " with texture id " + cubeMapArrays.get(cubeMapArrayListIndex).getTextureID() + " to attachment " + attachmentIndex + " with cubemap " + cubeMapIndex + " and face " + faceIndex);
+	}
+	public void resetAttachments() {
+		for (int i = 0; i < cubeMapArrays.size(); i++) {
+			GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, 0, 0, 0);
+		}
+	}
+	
 	public void saveBuffer(String path) {
 		Util.saveImage(getBuffer(), path);
 	}
@@ -103,6 +109,15 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 	}
 
 	public CubeMapArray getCubeMapArray() {
-		return cubeMapArray;
+		return getCubeMapArray(0);
 	}
+
+	public CubeMapArray getCubeMapArray(int i) {
+		return cubeMapArrays.get(i);
+	}
+
+	public void bindCubeMapFace(int unit, int attachment, int cubemapIndex, int sideIndex) {
+		cubeMapArrays.get(attachment).bind(6*cubemapIndex + sideIndex, unit);
+	}
+
 }
