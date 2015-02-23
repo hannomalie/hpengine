@@ -78,6 +78,7 @@ public interface Renderer {
 	public int getFrameCount();
 	public AbstractProgram getFirstPassProgram();
 	Program getSecondPassPointProgram();
+	Program getSecondPassAreaLightProgram();
 	Program getSecondPassTubeProgram();
 	Program getSecondPassDirectionalProgram();
 	Program getCombineProgram();

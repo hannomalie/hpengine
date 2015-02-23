@@ -666,8 +666,8 @@ void main()
 	
 	if(roughness < 0.4)
 	{
-		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
-		probeColorsDiffuseSpecular.specularColor = tempSSLR;
+		//vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
+		//probeColorsDiffuseSpecular.specularColor = tempSSLR;
 	}
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	

@@ -431,8 +431,7 @@ public class DeferredRenderer implements Renderer {
 
 		if (World.DEBUGFRAME_ENABLED) {
 //			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
-//			drawToQuad(light.getShadowMapId(), debugBuffer);
-			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
+			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -820,12 +819,13 @@ public class DeferredRenderer implements Renderer {
 	public Program getSecondPassTubeProgram() {
 		return secondPassTubeProgram;
 	}
-	public Program getSecondPassAreaProgram() {
-		return secondPassAreaProgram;
-	}
 	@Override
 	public Program getSecondPassDirectionalProgram() {
 		return secondPassDirectionalProgram;
+	}
+	@Override
+	public Program getSecondPassAreaLightProgram() {
+		return secondPassAreaProgram;
 	}
 	@Override
 	public Program getCombineProgram() {

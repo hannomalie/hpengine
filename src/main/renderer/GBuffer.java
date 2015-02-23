@@ -73,7 +73,8 @@ public class GBuffer {
 	private Program reflectionProgram;
 	private Program linesProgram;
 	private Program probeFirstpassProgram;
-	private ComputeShaderProgram tiledLightingProgram;
+	private ComputeShaderProgram tiledProbeLightingProgram;
+	private ComputeShaderProgram tiledDirectLightingProgram;
 	
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
@@ -105,7 +106,8 @@ public class GBuffer {
 		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 		this.probeFirstpassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
 		this.depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "depth_prepass_fragment.glsl");
-		this.tiledLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_lighting_compute.glsl");
+		this.tiledDirectLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_direct_lighting_compute.glsl");
+		this.tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_compute.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA32F, 4);
@@ -264,8 +266,6 @@ public class GBuffer {
 		GL11.glClearColor(0,0,0,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
-		secondPassDirectionalProgram.use();
-
 		GPUProfiler.start("Activate GBuffer textures");
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getPositionMap());
@@ -284,7 +284,8 @@ public class GBuffer {
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
 		GPUProfiler.end();
-		
+
+		secondPassDirectionalProgram.use();
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
@@ -385,14 +386,14 @@ public class GBuffer {
 			reflectionBuffer.unuse();
 		} else {
 			GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
-			tiledLightingProgram.use();
-			tiledLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-			tiledLightingProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
-			tiledLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-			tiledLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-			tiledLightingProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
-			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(tiledLightingProgram);
-			tiledLightingProgram.dispatchCompute(reflectionBuffer.getWidth()/16, reflectionBuffer.getHeight()/16+1, 1);
+			tiledProbeLightingProgram.use();
+			tiledProbeLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+			tiledProbeLightingProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+			tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+			tiledProbeLightingProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(tiledProbeLightingProgram);
+			tiledProbeLightingProgram.dispatchCompute(reflectionBuffer.getWidth()/16, reflectionBuffer.getHeight()/16+1, 1);
 	//		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
 		}
 		GPUProfiler.end();
