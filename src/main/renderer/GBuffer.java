@@ -50,6 +50,8 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 public class GBuffer {
 
 	public static float SECONDPASSSCALE = 1f;
+	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = true;
+	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
 	
 	private Renderer renderer;
 	private RenderTarget gBuffer;
@@ -371,11 +373,11 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
 		renderer.getEnvironmentMap().bind();
 		
-		boolean useComputeShaderForReflections = true;
-		if(!useComputeShaderForReflections) {
+		if(!USE_COMPUTESHADER_FOR_REFLECTIONS) {
 			reflectionBuffer.use(true);
 			reflectionProgram.use();
 			reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+			reflectionProgram.setUniform("useSSR", World.useSSR);
 			reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
 			reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
 			reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
@@ -387,6 +389,8 @@ public class GBuffer {
 		} else {
 			GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 			tiledProbeLightingProgram.use();
+			tiledProbeLightingProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+			tiledProbeLightingProgram.setUniform("useSSR", World.useSSR);
 			tiledProbeLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
 			tiledProbeLightingProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
 			tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);

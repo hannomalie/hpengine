@@ -2,6 +2,7 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+
 
 import javax.script.ScriptException;
 import javax.swing.JFrame;
@@ -42,10 +44,13 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+
 import main.World;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
+import main.renderer.EnvironmentSampler;
+import main.renderer.GBuffer;
 import main.renderer.Result;
 import main.renderer.command.AddCubeMapCommand;
 import main.renderer.command.AddTextureCommand;
@@ -66,6 +71,7 @@ import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -74,6 +80,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
@@ -142,6 +149,11 @@ public class DebugFrame {
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
 	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
+	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
+	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", World.useSSR);
+	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
+	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
+	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
 	private WebToggleButton toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", World.DEBUGDRAW_PROBES);
 	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", World.DEBUGDRAW_PROBES_WITH_CONTENT);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
@@ -290,8 +302,25 @@ public class DebugFrame {
 		toggleDrawOctree.addActionListener(e -> {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
+		forceProbeGBufferRedraw.addActionListener(e -> {
+			world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+				probe.getSampler().resetDrawing();
+			});
+		});
 		toggleDrawProbes.addActionListener(e -> {
 			World.DRAW_PROBES = !World.DRAW_PROBES;
+		});
+		toggleUseSSR.addActionListener(e -> {
+			World.useSSR = !World.useSSR;
+		});
+		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
+			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
+		});
+		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
+			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
+		});
+		toggleUseComputeShaderForReflections.addActionListener(e -> {
+			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
 		});
 		toggleDebugDrawProbes.addActionListener(e -> {
 			World.DEBUGDRAW_PROBES = !World.DEBUGDRAW_PROBES;
@@ -366,9 +395,9 @@ public class DebugFrame {
 	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
 	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
 			@Override public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;

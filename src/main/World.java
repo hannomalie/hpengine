@@ -71,6 +71,7 @@ public class World {
 	public static volatile boolean useColorBleeding = false;
 	public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
+	public static volatile boolean useSSR = true;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DRAWSCENE_ENABLED = true;
 	public static volatile boolean DEBUGDRAW_PROBES = false;

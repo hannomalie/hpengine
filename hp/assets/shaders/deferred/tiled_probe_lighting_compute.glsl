@@ -14,13 +14,13 @@ layout(binding = 7) uniform sampler2D lastFrameReflectionBuffer;
 layout(binding = 8) uniform samplerCubeArray probes;
 layout(binding = 9) uniform samplerCube environmentProbe;
 
-
-
 uniform float screenWidth;
 uniform float screenHeight; 
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
 uniform int activeProbeCount;
+uniform bool useAmbientOcclusion = true;
+uniform bool useSSR = true;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -59,6 +59,54 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
+float rand(vec2 co){
+	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
+}
+float getAmbientOcclusion(vec2 st) {
+	
+	float ao = 1;
+	if (useAmbientOcclusion) {
+		vec3 ssdo = vec3(0,0,0);
+		
+		float sum = 0.0;
+		float prof = texture(normalMap, st.xy).w; // depth
+		vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
+		const int NUM_SAMPLES = 4;
+		int hf = NUM_SAMPLES/2;
+		
+		//calculate sampling rates:
+		float ratex = (1.0/1280.0);
+		float ratey = (1.0/720.0);
+		float incx2 = ratex*8;//ao radius
+		float incy2 = ratey*8;
+		for(int i=-hf; i < hf; i++) {
+		      for(int j=-hf; j < hf; j++) {
+		 
+		      if (i != 0 || j!= 0) {
+	 
+			      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
+			
+			      float prof2g = texture2D(normalMap,st.xy+coords2*rand(st.xy)).w; // depth
+			      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
+			
+			      //OCCLUSION:
+			      //calculate approximate pixel distance:
+			      vec3 dist2 = vec3(coords2,prof-prof2g);
+			      //calculate normal and sampling direction coherence:
+			      float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
+			      //if there is coherence, calculate occlusion:
+			      if (coherence2 > 0){
+			          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
+			          sum += clamp(pformfactor2*0.2,0.0,1.0);//ao intensity; 
+			      }
+		      }
+		   }
+		}
+		ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
+	}
+	
+	return ao;
+}
 vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, vec3 targetNormalView, float roughness, float metallic) {
 
 //return color;
@@ -306,7 +354,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 4;
+  const int N = 12;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;
@@ -397,26 +445,6 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(TileP
 	
 	vec3 reflectionVector = normalize(reflect(V, normal));
 	
-	if(USE_CACHED_RPROBES) {
-		ivec2 precalculatedIndices = ivec2(textureLod(motionMap, uv, 0).ba);
-		if(precalculatedIndices.x != -1) {
-			vec3 mini = environmentMapMin[precalculatedIndices.x];
-			vec3 maxi = environmentMapMax[precalculatedIndices.x];
-			result.indexNearest = precalculatedIndices.x;
-			result.intersectionNormalNearest = getIntersectionPoint(position, normal, mini, maxi);
-			result.intersectionReflectedNearest = getIntersectionPoint(position, reflectionVector, mini, maxi);
-	
-			if(precalculatedIndices.y != -1) {
-				result.indexSecondNearest = precalculatedIndices.y;
-				result.intersectionNormalSecondNearest = getIntersectionPoint(position, normal, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]);
-				result.intersectionReflectedSecondNearest = getIntersectionPoint(position, reflectionVector, environmentMapMin[int(precalculatedIndices.y)], environmentMapMax[int(precalculatedIndices.y)]);
-				return result;
-			} else if(NO_INTERPOLATION_IF_ONE_PROBE_CACHED) {
-				return result;
-			}
-		}
-	}
-
 	vec3 currentEnvironmentMapMin1 = environmentMapMin[0];
 	vec3 currentEnvironmentMapMax1 = environmentMapMax[0];
 	vec3 currentEnvironmentMapMin2 = environmentMapMin[0];
@@ -664,17 +692,16 @@ void main()
 	TileProbes probesForTile = getProbesForTile(currentArrayIndex, probeIndicesForTile);
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(probesForTile, positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	if(roughness < 0.4)
+	if(useSSR && roughness < 0.4)
 	{
-		//vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
-		//probeColorsDiffuseSpecular.specularColor = tempSSLR;
+		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
+		probeColorsDiffuseSpecular.specularColor = tempSSLR;
 	}
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	
-	vec2 motionVecNormalised = vec2(textureLod(motionMap, storePos, 0).rg);
-	ivec2 motionVec = ivec2(10*motionVecNormalised);
 	vec3 oldSample = imageLoad(out_environment, storePos).rgb;
-	imageStore(out_environment, storePos, vec4(mix(result, oldSample, 0.5), 1));
+	float ao = getAmbientOcclusion(st);
+	imageStore(out_environment, storePos, vec4(mix(result, oldSample, 0.5), ao));
 	
 	/*
 	if(localIndex.x == 0 || localIndex.y == 0) {

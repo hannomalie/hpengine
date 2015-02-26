@@ -16,6 +16,7 @@ uniform float screenHeight = 720;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 uniform bool useAmbientOcclusion = true;
+uniform bool useSSR = true;
 
 uniform int activeProbeCount;
 uniform vec3 environmentMapMin[100];
@@ -298,6 +299,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
   ProbeSample result;
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
+  //result.specularColor = result.diffuseColor;
   //return result;
   
   if(roughness < 0.01) {
@@ -892,7 +894,7 @@ void main()
 	
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	if(roughness < 0.4)
+	if(useSSR && roughness < 0.4)
 	{
 		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
 		probeColorsDiffuseSpecular.specularColor = tempSSLR;

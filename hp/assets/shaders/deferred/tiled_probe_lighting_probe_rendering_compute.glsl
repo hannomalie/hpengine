@@ -17,6 +17,7 @@ uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
 uniform int activeProbeCount;
 uniform int currentProbe;
+uniform bool secondBounce = false;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -565,8 +566,7 @@ void main()
 	
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	
-	const bool thirdBounce = false;
-	if(thirdBounce) {
+	if(secondBounce) {
 		vec3 boxProjectedNormal = boxProjection(positionWorld.xyz, normalWorld, currentProbe);
 		ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorld.xyz, normalWorld.xyz, reflect(V, normalWorld.xyz), V, roughness, metallic, color.rgb);
 		vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;

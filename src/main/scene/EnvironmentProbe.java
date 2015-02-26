@@ -174,4 +174,8 @@ public class EnvironmentProbe implements IEntity {
 		float random = randomGenerator.nextFloat();
 		return new Vector3f(1- colorHelper * colorHelper, (1-colorHelper) * (1 - colorHelper), colorHelper*colorHelper);
 	}
+
+	public EnvironmentSampler getSampler() {
+		return sampler;
+	}
 }

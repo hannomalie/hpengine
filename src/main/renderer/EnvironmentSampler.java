@@ -47,6 +47,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentSampler {
+	public static volatile boolean deferredRenderingForProbes = true;
 	
 	private Camera camera;
 	private Program cubeMapProgram;
@@ -159,7 +160,6 @@ public class EnvironmentSampler {
 			filteringRequired = true;
 			
 			GPUProfiler.start("side " + i);
-			boolean deferredRenderingForProbes = true;
 			if (deferredRenderingForProbes) {
 				if (!sidesDrawn.contains(i)) {
 					GPUProfiler.start("Switch attachment");
@@ -195,12 +195,16 @@ public class EnvironmentSampler {
 		camera.setOrientation(initialOrientation);
 		GPUProfiler.end();
 	}
-	
+
 	private void registerSideAsDrawn(int i) {
 		sidesDrawn.add(i);
 		if(sidesDrawn.size() == 6) {
 			drawnOnce = true;
 		}
+	}
+	
+	public void resetDrawing() {
+		sidesDrawn.clear();
 	}
 
 	private void bindProgramSpecificsPerCubeMap() {
@@ -287,7 +291,7 @@ public class EnvironmentSampler {
 
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = camera.getPosition().negate(null);
-		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
+//		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
 		GPUProfiler.start("Directional light");
@@ -341,9 +345,11 @@ public class EnvironmentSampler {
 		GPUProfiler.end();
 
 		GPUProfiler.end();
-		
-		doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
 
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+		
 		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
 
 		doAreaLights(areaLights, viewMatrix, projectionMatrix);
@@ -376,6 +382,7 @@ public class EnvironmentSampler {
 		
 		GL42.glBindImageTexture(6, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
+		tiledProbeLightingProgram.setUniform("secondBounce", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
 		tiledProbeLightingProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		tiledProbeLightingProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
 		tiledProbeLightingProgram.setUniform("currentProbe", probe.getIndex());
