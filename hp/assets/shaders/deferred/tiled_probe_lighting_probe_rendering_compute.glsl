@@ -9,7 +9,7 @@ layout(binding = 6, rgba16f) uniform image2D out_environment;
 
 layout(binding = 8) uniform samplerCubeArray probes;
 layout(binding = 9) uniform samplerCube environmentProbe;
-
+layout(binding = 10) uniform samplerCubeArray probePositions;
 
 uniform float screenWidth;
 uniform float screenHeight; 
@@ -21,6 +21,9 @@ uniform bool secondBounce = false;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
+
+const float PI = 3.1415926536;
+const float MAX_MIPMAPLEVEL = 8; // HEMISPHERE is half the cubemap
 
 struct ProbeSample {
 	vec3 diffuseColor;
@@ -44,11 +47,6 @@ struct TileProbes {
 	int[10] indices;
 };
 
-const bool NO_INTERPOLATION_IF_ONE_PROBE_CACHED = true;
-const bool USE_CACHED_RPROBES = false;
-const float PI = 3.1415926536;
-const float MAX_MIPMAPLEVEL = 7;//11; HEMISPHERE is half the cubemap
-
 vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 	vec4 projectedCoord = projectionMatrix * vec4(viewPosition, 1);
     projectedCoord.xy /= projectedCoord.w;
@@ -65,6 +63,123 @@ vec3 findMainAxis(vec3 input) {
 }
 bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
 	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
+}
+struct Ray {
+	vec3 orig, direction;
+	float tmin, tmax;
+	vec3 invDir;
+	int[3] signs;
+};
+
+struct Hit {
+	bool hit;
+	float t0;
+	float t1;
+};
+
+Hit hits(Ray r, vec3 mini, vec3 maxi) {
+	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+	Hit result;
+	result.hit = false;
+	vec3[2] bounds;
+	bounds[0] = mini;
+	bounds[1] = maxi;
+    tmin = (bounds[r.signs[0]].x - r.orig.x) * r.invDir.x;
+    tmax = (bounds[1-r.signs[0]].x - r.orig.x) * r.invDir.x;
+    tymin = (bounds[r.signs[1]].y - r.orig.y) * r.invDir.y;
+    tymax = (bounds[1-r.signs[1]].y - r.orig.y) * r.invDir.y;
+    if ((tmin > tymax) || (tymin > tmax))
+        return result;
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+    tzmin = (bounds[r.signs[2]].z - r.orig.z) * r.invDir.z;
+    tzmax = (bounds[1-r.signs[2]].z - r.orig.z) * r.invDir.z;
+    if ((tmin > tzmax) || (tzmin > tmax))
+        return result;
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+    if (tmin > r.tmin) r.tmin = tmin;
+    if (tmax < r.tmax) r.tmax = tmax;
+    
+    result.hit = true;
+    result.t0 = tmin;
+    result.t1 = tmax;
+	return result;
+}
+
+
+struct TraceResult {
+	int probeIndexNearest;
+	vec3 hitPointNearest;
+	vec3 dirToHitPointNearest;
+	
+	int probeIndexSecondNearest;
+	vec3 hitPointSecondNearest;
+	vec3 dirToHitPointSecondNearest;
+};
+TraceResult traceCubes(vec3 positionWorld, vec3 dir, vec3 V, float roughness, float metallic, vec3 color) {
+	TraceResult result;
+	Ray r;
+	r.orig = positionWorld;
+	r.direction = dir;
+	r.tmin = -5000;
+	r.tmax = 5000;
+	r.invDir = 1/r.direction;
+	r.signs[0] = (r.invDir.x < 0) ? 1 : 0;
+    r.signs[1] = (r.invDir.y < 0) ? 1 : 0;
+    r.signs[2] = (r.invDir.z < 0) ? 1 : 0;
+    
+    result.probeIndexNearest = -1;
+    result.probeIndexSecondNearest = -1;
+    
+	float smallestDistOfContainingSample = 99999.0;
+	float smallestDistHelperSample = 99999.0;
+	
+	for(int i = 0; i < activeProbeCount; i++) {
+		vec3 mini = environmentMapMin[i];
+		vec3 maxi = environmentMapMax[i];
+		
+		Hit hit = hits(r, mini, maxi);
+		if(hit.hit) {
+			vec3 boxExtents = (maxi-mini);
+			vec3 boxCenter = mini + boxExtents/2;
+			vec3 hitPointNearest = r.orig + hit.t0*r.direction;
+			vec3 hitPointSecondNearest = r.orig + hit.t1*r.direction;
+			vec3 worldDirNearest = normalize(hitPointNearest - boxCenter);
+			vec3 worldDirSecondNearest = normalize(hitPointSecondNearest - boxCenter);
+			
+			const float bias = 0;
+			
+			// current fragment's world pos is inside volume, only use secondnearest hit, because it is in front of the ray
+			// while the nearest would be BEHIND..ray trace is in both directions
+			if(isInside(positionWorld,mini,maxi)) {
+				vec4 ownBoxSamplePosition = textureLod(probePositions, vec4(worldDirSecondNearest, i), 0);
+				// the traced sample is inside the box, no alpha blending required because we didn't shoot in a hole
+				//if(length(ownBoxSamplePosition.xyz) < length(hitPointSecondNearest-boxCenter) + bias)
+				{
+					result.probeIndexNearest = i;
+					result.hitPointNearest = hitPointSecondNearest;
+					result.dirToHitPointNearest = worldDirSecondNearest;
+					//return result;
+					continue;
+				}
+			} else {
+				float currentDistHelperSample = distance(positionWorld, hitPointSecondNearest);
+				if(currentDistHelperSample < smallestDistHelperSample) {
+					vec4 positionHelperSample = textureLod(probePositions, vec4(worldDirSecondNearest, i), 0);
+					smallestDistHelperSample = currentDistHelperSample;
+					result.probeIndexSecondNearest = i;
+					result.hitPointSecondNearest = hitPointSecondNearest;
+					result.dirToHitPointSecondNearest = worldDirSecondNearest;
+				}
+			}
+		}
+	}
+	return result;
 }
 
 vec2 cartesianToSpherical(vec3 cartCoords){
@@ -143,6 +258,25 @@ vec3 boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
 	return normalize(posonbox - environmentMapWorldPosition.xyz);
 }
 
+
+// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
+     float phi = u * 2.0 * PI;
+     float cosTheta = 1.0 - v;
+     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+     
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	 // Tangent to world space
+	 result = TangentX * result.x + TangentY * result.y + N * result.z;
+     //mat3 transform = createOrthonormalBasis(N);
+	 //result = (transform) * result;
+	 
+     return result;
+}
+
 vec3[2] ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
 	float a = Roughness * Roughness;
 	a = max(a, 0.001); // WHAT THE F***, How can a^2 appear as a divisor?! -> would cause too high mipmap levels....
@@ -196,11 +330,11 @@ float getAreaPerPixel(int index, vec3 normal) {
 	
 	vec3 mainAxis = findMainAxis(normal);
 	if(mainAxis.x > 0) {
-		return max(extents.y, extents.z) / 512; // TODO: NO HARDCODED RESOLUTION VALUES
+		return max(extents.y, extents.z) / 256; // TODO: NO HARDCODED RESOLUTION VALUES
 	} else if(mainAxis.y > 0) {
-		return max(extents.x, extents.z) / 512;
+		return max(extents.x, extents.z) / 256;
 	} else {
-		return max(extents.x, extents.y) / 512;
+		return max(extents.x, extents.y) / 256;
 	}
 }
 
@@ -226,7 +360,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 4;
+  const int N = 12;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;
@@ -350,6 +484,12 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(TileP
 			iForNearest2 = currentProbeIndex;
 		}
 	}
+	
+	currentEnvironmentMapMin1 = environmentMapMin[iForNearest1];
+	currentEnvironmentMapMax1 = environmentMapMax[iForNearest1];
+	currentEnvironmentMapMin2 = environmentMapMin[iForNearest2];
+	currentEnvironmentMapMax2 = environmentMapMax[iForNearest2];
+	
 	
 	result.indexNearest = iForNearest1;
 	result.intersectionNormalNearest = getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
@@ -565,16 +705,39 @@ void main()
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(probesForTile, positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
-	
+
 	if(secondBounce) {
-		vec3 boxProjectedNormal = boxProjection(positionWorld.xyz, normalWorld, currentProbe);
-		ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorld.xyz, normalWorld.xyz, reflect(V, normalWorld.xyz), V, roughness, metallic, color.rgb);
-		vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
-		result.rgb += sampleFromLastFrameAsSecondBounce;
+		const bool useConeTracingForSecondBounce = true;
+		if(useConeTracingForSecondBounce) {
+			vec3 tempResult;
+			const float mip = MAX_MIPMAPLEVEL-3;
+			vec3 H = normalWorld.xyz;//reflect(V, normalWorld.xyz);
+			TraceResult temp = traceCubes(positionWorld, H, V, roughness, metallic, color);
+			vec4 sampleNearest = texture(probes, vec4(temp.dirToHitPointNearest, temp.probeIndexNearest), mip);
+			vec3 sampleSecondNearest = texture(probes, vec4(temp.dirToHitPointSecondNearest, temp.probeIndexSecondNearest), mip).rgb;
+			if(temp.probeIndexSecondNearest == -1) {
+				tempResult += sampleNearest.rgb;
+			} else {
+				tempResult += mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
+			}
+			
+			result.rgb += tempResult;
+		} else {
+			vec3 boxProjectedNormal = boxProjection(positionWorld.xyz, normalWorld, currentProbe);
+			ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorld.xyz, normalWorld.xyz, reflect(V, normalWorld.xyz), V, roughness, metallic, color.rgb);
+			vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
+			result.rgb += sampleFromLastFrameAsSecondBounce;
+		}
 	}
 	
-	vec3 oldSample = imageLoad(out_environment, storePos).rgb;
-	imageStore(out_environment, storePos, vec4(mix(result, oldSample, 0.5), 1));
+	
+	vec3 mini = environmentMapMin[currentProbe];
+	vec3 maxi = environmentMapMax[currentProbe];
+	float probeVisibility = isInside(positionWorld.xyz, mini, maxi) ? 1 : 0;
+	
+	// Since the other lights are rendered additively, we have to take the current sample and alphablend by ourselves
+	vec4 oldSample = imageLoad(out_environment, storePos);
+	imageStore(out_environment, storePos, vec4(mix(result, oldSample.rgb, 0.5*(1+oldSample.a)), probeVisibility));
 	
 	/*
 	if(localIndex.x == 0 || localIndex.y == 0) {

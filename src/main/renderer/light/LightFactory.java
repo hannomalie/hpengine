@@ -331,7 +331,7 @@ public class LightFactory {
 	
 	public int getDepthMapForAreaLight(AreaLight light) {
 		int index = areaLights.indexOf(light);
-		if(index > MAX_AREALIGHT_SHADOWMAPS) {return -1;}
+		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 		
 		return areaLightDepthMaps.get(index);
 	}

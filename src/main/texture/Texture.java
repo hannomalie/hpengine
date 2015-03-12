@@ -361,4 +361,11 @@ public class Texture implements Serializable {
 	public void setTextureID(int textureID) {
 		this.textureID = textureID;
 	}
+
+	public static boolean filterRequiresMipmaps(int magTextureFilter) {
+		return (magTextureFilter == GL11.GL_LINEAR_MIPMAP_LINEAR ||
+				magTextureFilter == GL11.GL_LINEAR_MIPMAP_NEAREST ||
+				magTextureFilter == GL11.GL_NEAREST_MIPMAP_LINEAR ||
+				magTextureFilter == GL11.GL_NEAREST_MIPMAP_NEAREST);
+	}
 }

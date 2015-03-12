@@ -317,6 +317,7 @@ public class Util {
 		out.m32 = in.m32;
 		out.m33 = in.m33;
 		
+		out.transpose();
 		return out;
 	}
 	public static Matrix4f fromBullet(javax.vecmath.Matrix4f in) {
@@ -347,7 +348,7 @@ public class Util {
 		Quat4f outRot = new Quat4f();
 		
 		main.Transform finalTransform = new main.Transform();
-		finalTransform.setPosition(new Vector3f(out.m30,out.m31,out.m32));
+		finalTransform.setPosition(new Vector3f(in.origin.x,in.origin.y,in.origin.z));
 		finalTransform.setOrientation(fromBullet(in.getRotation(outRot)));
 		return finalTransform;
 	}

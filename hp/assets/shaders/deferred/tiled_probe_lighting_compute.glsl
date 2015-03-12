@@ -13,6 +13,7 @@ layout(binding = 7) uniform sampler2D lastFrameReflectionBuffer;
 
 layout(binding = 8) uniform samplerCubeArray probes;
 layout(binding = 9) uniform samplerCube environmentProbe;
+layout(binding = 10) uniform samplerCubeArray probePositions;
 
 uniform float screenWidth;
 uniform float screenHeight; 
@@ -21,10 +22,33 @@ uniform vec3 environmentMapMax[100];
 uniform int activeProbeCount;
 uniform bool useAmbientOcclusion = true;
 uniform bool useSSR = true;
+uniform int N = 12;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
+const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
+				2.0/16.0, 4.0/16.0, 2.0/16.0,
+				1.0/16.0, 2.0/16.0, 1.0/16.0 };
+				
+
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
+	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
+	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipLevel);
+	
+	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipLevel);
+	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipLevel);
+	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipLevel);
+	
+	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipLevel);
+	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
+	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipLevel);
+	
+	return result;
+}
 struct ProbeSample {
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -150,12 +174,13 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 				vec3 targetNormalWorld = (inverse(viewMatrix) * vec4(targetNormalView,0)).xyz;
 				
 				float distanceInWorld = distance(currentPosSample, targetPositionWorld);
-				float distanceInWorldPercent = distanceInWorld / 150;
+				float distanceInWorldPercent = distanceInWorld / 25;
     			float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))*2), 0, 1);
     			//float screenEdgefactor = clamp((distance(resultCoords.xy, vec2(0.5,0.5))-0.5)*2, 0, 1);
     			float mipMapChoser = roughness * 9;
     			mipMapChoser *= distanceInWorldPercent;
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 3);
+    			mipMapChoser = min(mipMapChoser, 6);
     			
     			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
     			float screenEdgefactorY = clamp(abs(resultCoords.y) - 0.95, 0, 1);
@@ -167,7 +192,10 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 			  	vec3 ambientDiffuseColor = diffuseColor;
 			  	//diffuseColor = mix(diffuseColor, vec3(0,0,0), metallic);
     			
-    			vec4 lightDiffuseSpecular = 0.25*textureLod(lastFrameFinalBuffer, resultCoords.xy, mipMapChoser); // compensation for *4 intensity
+    			vec4 motionVecProbeIndices = texture2D(motionMap, resultCoords.xy);
+  				vec2 motion = motionVecProbeIndices.xy;
+    			//vec4 lightDiffuseSpecular = 0.25*textureLod(lastFrameFinalBuffer, resultCoords.xy-motion, mipMapChoser); // compensation for *4 intensity
+    			vec4 lightDiffuseSpecular = 0.25*blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness/10, mipMapChoser); // compensation for *4 intensity
     			vec3 reflectedColor = lightDiffuseSpecular.rgb;
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
@@ -184,15 +212,129 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 	return probeColor;
 }
 
+bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
+	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
+}
+struct Ray {
+	vec3 orig, direction;
+	float tmin, tmax;
+	vec3 invDir;
+	int[3] signs;
+};
+
+struct Hit {
+	bool hit;
+	float t0;
+	float t1;
+};
+
+Hit hits(Ray r, vec3 mini, vec3 maxi) {
+	float tmin, tmax, tymin, tymax, tzmin, tzmax;
+	Hit result;
+	result.hit = false;
+	vec3[2] bounds;
+	bounds[0] = mini;
+	bounds[1] = maxi;
+    tmin = (bounds[r.signs[0]].x - r.orig.x) * r.invDir.x;
+    tmax = (bounds[1-r.signs[0]].x - r.orig.x) * r.invDir.x;
+    tymin = (bounds[r.signs[1]].y - r.orig.y) * r.invDir.y;
+    tymax = (bounds[1-r.signs[1]].y - r.orig.y) * r.invDir.y;
+    if ((tmin > tymax) || (tymin > tmax))
+        return result;
+    if (tymin > tmin)
+        tmin = tymin;
+    if (tymax < tmax)
+        tmax = tymax;
+    tzmin = (bounds[r.signs[2]].z - r.orig.z) * r.invDir.z;
+    tzmax = (bounds[1-r.signs[2]].z - r.orig.z) * r.invDir.z;
+    if ((tmin > tzmax) || (tzmin > tmax))
+        return result;
+    if (tzmin > tmin)
+        tmin = tzmin;
+    if (tzmax < tmax)
+        tmax = tzmax;
+    if (tmin > r.tmin) r.tmin = tmin;
+    if (tmax < r.tmax) r.tmax = tmax;
+    
+    result.hit = true;
+    result.t0 = tmin;
+    result.t1 = tmax;
+	return result;
+}
+
+struct TraceResult {
+	int probeIndexNearest;
+	vec3 hitPointNearest;
+	vec3 dirToHitPointNearest;
+	
+	int probeIndexSecondNearest;
+	vec3 hitPointSecondNearest;
+	vec3 dirToHitPointSecondNearest;
+};
+TraceResult traceCubes(vec3 positionWorld, vec3 dir, vec3 V, float roughness, float metallic, vec3 color) {
+	TraceResult result;
+	Ray r;
+	r.orig = positionWorld;
+	r.direction = dir;
+	r.tmin = -5000;
+	r.tmax = 5000;
+	r.invDir = 1/r.direction;
+	r.signs[0] = (r.invDir.x < 0) ? 1 : 0;
+    r.signs[1] = (r.invDir.y < 0) ? 1 : 0;
+    r.signs[2] = (r.invDir.z < 0) ? 1 : 0;
+    
+    result.probeIndexNearest = -1;
+    result.probeIndexSecondNearest = -1;
+    
+	float smallestDistOfContainingSample = 99999.0;
+	float smallestDistHelperSample = 99999.0;
+	
+	for(int i = 0; i < activeProbeCount; i++) {
+		vec3 mini = environmentMapMin[i];
+		vec3 maxi = environmentMapMax[i];
+		
+		Hit hit = hits(r, mini, maxi);
+		if(hit.hit) {
+			vec3 boxExtents = (maxi-mini);
+			vec3 boxCenter = mini + boxExtents/2;
+			vec3 hitPointNearest = r.orig + hit.t0*r.direction;
+			vec3 hitPointSecondNearest = r.orig + hit.t1*r.direction;
+			vec3 worldDirNearest = normalize(hitPointNearest - boxCenter);
+			vec3 worldDirSecondNearest = normalize(hitPointSecondNearest - boxCenter);
+			
+			const float bias = 0;
+			
+			// current fragment's world pos is inside volume, only use secondnearest hit, because it is in front of the ray
+			// while the nearest would be BEHIND..ray trace is in both directions
+			if(isInside(positionWorld,mini,maxi)) {
+				vec4 ownBoxSamplePosition = textureLod(probePositions, vec4(worldDirSecondNearest, i), 0);
+				// the traced sample is inside the box, no alpha blending required because we didn't shoot in a hole
+				result.probeIndexNearest = i;
+				result.hitPointNearest = hitPointSecondNearest;
+				result.dirToHitPointNearest = worldDirSecondNearest;
+				//return result;
+				//continue;
+			} else {
+				float currentDistHelperSample = distance(positionWorld, hitPointSecondNearest);
+				if(currentDistHelperSample < smallestDistHelperSample) {
+					vec4 positionHelperSample = textureLod(probePositions, vec4(worldDirSecondNearest, i), 0);
+					smallestDistHelperSample = currentDistHelperSample;
+					result.probeIndexSecondNearest = i;
+					result.hitPointSecondNearest = hitPointSecondNearest;
+					result.dirToHitPointSecondNearest = worldDirSecondNearest;
+				}
+			}
+		}
+	}
+	return result;
+}
+
 vec3 findMainAxis(vec3 input) {
 	if(abs(input.x) > abs(input.z)) {
 		return vec3(1,0,0);
 	} else {
 		return vec3(0,0,1);
 	}
-}
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
 }
 
 vec2 cartesianToSpherical(vec3 cartCoords){
@@ -324,11 +466,11 @@ float getAreaPerPixel(int index, vec3 normal) {
 	
 	vec3 mainAxis = findMainAxis(normal);
 	if(mainAxis.x > 0) {
-		return max(extents.y, extents.z) / 512; // TODO: NO HARDCODED RESOLUTION VALUES
+		return max(extents.y, extents.z) / 256; // TODO: NO HARDCODED RESOLUTION VALUES
 	} else if(mainAxis.y > 0) {
-		return max(extents.x, extents.z) / 512;
+		return max(extents.x, extents.z) / 256;
 	} else {
-		return max(extents.x, extents.y) / 512;
+		return max(extents.x, extents.y) / 256;
 	}
 }
 
@@ -341,28 +483,34 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //return result;
   
   if(roughness < 0.01) {
+  	vec3 oldReflected = reflected;
   	reflected = boxProjection(positionWorld, reflected, index);
 	vec4 SampleColor = texture(probes, vec4(reflected, index), 1);
-	//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(reflected, 0), 1).rgb, 1-SampleColor.a);
-	
     result.specularColor = SpecularColor * SampleColor.rgb;
   	normal = boxProjection(positionWorld, normal, index);
   	result.diffuseColor = diffuseColor * texture(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  	
+  	/*
+  	TraceResult temp = traceCubes(positionWorld, oldReflected, v, roughness, metallic, color);
+	vec4 sampleNearest = texture(probes, vec4(temp.dirToHitPointNearest, temp.probeIndexNearest), 1);
+	vec3 sampleSecondNearest = texture(probes, vec4(temp.dirToHitPointSecondNearest, temp.probeIndexSecondNearest), 1).rgb;
+	result.specularColor = SpecularColor * mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
+  	*/
   	return result;
   }
   
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 12;
+  const int SAMPLE_COUNT = N;
   vec4 resultDiffuse = vec4(0,0,0,0);
   vec4 resultSpecular = vec4(0,0,0,0);
   float pdfSum = 0;
   float ks = 0;
   float NoV = clamp(dot(n, V), 0.0, 1.0);
   
-  for (int k = 0; k < N; k++) {
-    vec2 xi = hammersley2d(k, N);
+  for (int k = 0; k < SAMPLE_COUNT; k++) {
+    vec2 xi = hammersley2d(k, SAMPLE_COUNT);
     vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, R);
     vec3 H = importanceSampleResult[0];
     vec2 sphericalCoordsTangentSpace = importanceSampleResult[1].xy;
@@ -409,7 +557,8 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    float crossSectionArea = (distToIntersection*distToIntersection*solidAngle)/cos(sphericalCoordsTangentSpace.x);
 	    float areaPerPixel = 0.25;
 	    areaPerPixel = getAreaPerPixel(index, normal);
-	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
+	    float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));
+	    //lod = roughness * MAX_MIPMAPLEVEL;
 	    
     	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
 		//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(H, 0), lod).rgb, 1-SampleColor.a);
@@ -479,6 +628,11 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(TileP
 		}
 	}
 	
+	currentEnvironmentMapMin1 = environmentMapMin[iForNearest1];
+	currentEnvironmentMapMax1 = environmentMapMax[iForNearest1];
+	currentEnvironmentMapMin2 = environmentMapMin[iForNearest2];
+	currentEnvironmentMapMax2 = environmentMapMax[iForNearest2];
+	
 	result.indexNearest = iForNearest1;
 	result.intersectionNormalNearest = getIntersectionPoint(position, normal, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
 	result.intersectionReflectedNearest = getIntersectionPoint(position, reflectionVector, currentEnvironmentMapMin1, currentEnvironmentMapMax1);
@@ -490,6 +644,65 @@ BoxIntersectionResult getTwoNearestProbeIndicesAndIntersectionsForPosition(TileP
 	return result;
 }
 
+const int k = 5;
+const int n = 3;
+float[k] knotsX;
+float[k] knotsY;
+
+float f_u(int i, int n, float u) {
+	return (u-knotsX[i]) / (knotsX[i+n]-knotsX[i]);
+}
+float g_u(int i, int n, float u) {
+	return (knotsX[i+n] - u) / (knotsX[i+n]-knotsX[i]);
+}
+float f_v(int i, int n, float u) {
+	return (u-knotsY[i]) / (knotsY[i+n]-knotsX[i]);
+}
+float g_v(int i, int n, float u) {
+	return (knotsY[i+n] - u) / (knotsY[i+n]-knotsY[i]);
+}
+
+vec3 N_u(int i, int n, float u) {
+	return f_u(i, n, u)*N_u(i, n-1, u) + g_u(i+1, n, u)*N_u(i+1, n-1, u);
+}
+vec3 N_v(int i, int n, float u) {
+	return f_v(i, n, u)*N_v(i, n-1, u) + g_v(i+1, n, u)*N_v(i+1, n-1, u);
+}
+
+float R(int i, int j, float u, float v, int k, int n) {
+	float denom;
+	
+	for(int p = 1; p <= k; p++) {
+		for(int q = 1; q <= k; q++) {
+			denom += N_u(p, n, u)*N_v(q, n, v);
+		}
+	}
+	
+	return (N_u(i, n, u) * N_v(j, n, v)) / denom; 
+}
+
+float __calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {
+	vec3 intersectionAreaMinimum = vec3(max(minimum2.x, minimum.x), max(minimum2.y, minimum.y), max(minimum2.z, minimum.z));
+	vec3 intersectionAreaMaximum = vec3(min(maximum2.x, maximum.x), min(maximum2.y, maximum.y), min(maximum2.z, maximum.z));
+	vec3 intersectionAreaExtends = (intersectionAreaMaximum - intersectionAreaMinimum);
+	vec3 intersectionAreaHalfExtends = intersectionAreaExtends/2.0;
+	
+	vec3 result;
+	float u_length = intersectionAreaExtends.x / k;
+	float v_length = intersectionAreaExtends.y / k;
+	for(int i = 0; i < k; i++) {
+		knotsX[i] = intersectionAreaMinimum.x + i*u_length;
+		knotsY[i] = intersectionAreaMinimum.y + i*v_length;
+	}
+	
+	for(int i = 1; i <= k; i++) {
+		for(int j = 1; j <= k; j++) {
+			result += R(i,j,positionWorld.x, positionWorld.y, k, n) * vec3(knotsX[i+1], knotsY[j+1],1);
+		}
+	}
+	
+	return result.z;
+}
 float calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {
 	vec3 centerNearest = minimum + (maximum - minimum)/2.0;
 	vec3 centerSecondNearest = minimum2 + (maximum2 - minimum2)/2.0;
@@ -631,7 +844,7 @@ void main()
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
-	V = normalize(inverse(viewMatrix) * vec4(positionView,0)).xyz;
+	//V = normalize(inverse(viewMatrix) * vec4(positionView,0)).xyz;
 	
 	atomicMin(minDepth, depth);
 	atomicMax(maxDepth, depth);
@@ -692,7 +905,7 @@ void main()
 	TileProbes probesForTile = getProbesForTile(currentArrayIndex, probeIndicesForTile);
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(probesForTile, positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	if(useSSR && roughness < 0.4)
+	if(useSSR && roughness < 0.2)
 	{
 		vec3 tempSSLR = rayCast(color, probeColorsDiffuseSpecular.specularColor.rgb, st, positionView, normalView.rgb, roughness, metallic);
 		probeColorsDiffuseSpecular.specularColor = tempSSLR;
@@ -701,6 +914,13 @@ void main()
 	
 	vec3 oldSample = imageLoad(out_environment, storePos).rgb;
 	float ao = getAmbientOcclusion(st);
+	
+	//const float mip = 0;
+	//TraceResult temp = traceCubes(positionWorld, reflect(V, normalWorld), V, roughness, metallic, color);
+	//vec4 sampleNearest = texture(probes, vec4(temp.dirToHitPointNearest, temp.probeIndexNearest), mip);
+	//vec3 sampleSecondNearest = texture(probes, vec4(temp.dirToHitPointSecondNearest, temp.probeIndexSecondNearest), mip).rgb;
+	//result = mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
+	
 	imageStore(out_environment, storePos, vec4(mix(result, oldSample, 0.5), ao));
 	
 	/*

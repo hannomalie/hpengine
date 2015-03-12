@@ -736,21 +736,14 @@ public class DeferredRenderer implements Renderer {
 //		environmentProbeFactory.prepareProbeRendering();
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(camera).ifPresent(new Consumer<RenderProbeCommand>() {
-			@Override
-			public void accept(RenderProbeCommand command) {
-				command.getProbe().draw(octree, light);
-			}
+		renderProbeCommandQueue.takeNearest(camera).ifPresent(command -> {
+			command.getProbe().draw(octree, light);
 		});
 		counter++;
-
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
-			renderProbeCommandQueue.take().ifPresent(new Consumer<RenderProbeCommand>() {
-				@Override
-				public void accept(RenderProbeCommand command) {
-					command.getProbe().draw(octree, light);
-				}
+			renderProbeCommandQueue.take().ifPresent(command -> {
+				command.getProbe().draw(octree, light);
 			});
 			counter++;
 		}

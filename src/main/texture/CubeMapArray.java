@@ -24,23 +24,29 @@ public class CubeMapArray {
 	public CubeMapArray(Renderer renderer, int textureCount) {
 		this(renderer, textureCount, GL11.GL_LINEAR_MIPMAP_LINEAR);
 	}
+	
+	public CubeMapArray(Renderer renderer, int textureCount, int magTextureFilter) {
+		this(renderer, textureCount, magTextureFilter, GL30.GL_RGBA16F);
+	}
 	/**
 	 * @param renderer
 	 * @param textureCount the actual number of cubemap textures you want to allocate
 	 */
-	public CubeMapArray(Renderer renderer, int textureCount, int magTextureFilter) {
+	public CubeMapArray(Renderer renderer, int textureCount, int magTextureFilter, int internalFormat) {
 		textureId = GL11.glGenTextures();
 		bind();
 
 		this.renderer = renderer;
 		mipMapCount = EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT;
-		internalFormat = GL11.GL_RGBA8;
-		internalFormat = GL30.GL_RGBA16F;
+		this.internalFormat = internalFormat;
 		GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, textureCount*6);
 
 		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, magTextureFilter);
 		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
+		
+		if(Texture.filterRequiresMipmaps(magTextureFilter)) {
+			GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
+		}
 	}
 	
 	/**

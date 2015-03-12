@@ -49,8 +49,10 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class GBuffer {
 
+	public static volatile int IMPORTANCE_SAMPLE_COUNT = 12;
 	public static float SECONDPASSSCALE = 1f;
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = true;
+	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
 	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
 	
 	private Renderer renderer;
@@ -233,6 +235,8 @@ public class GBuffer {
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
 		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
 		
+		Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getMaterial().getDiffuse());
+		
 		for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
 			Transform transform = new Transform();
 			transform.setPosition(probe.getCenter());
@@ -245,6 +249,11 @@ public class GBuffer {
 			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
 			probeBoxEntity.draw(renderer, camera, probeFirstpassProgram);
 		}
+
+		probeBoxEntity.getMaterial().getDiffuse().x = oldMaterialColor.x;
+		probeBoxEntity.getMaterial().getDiffuse().y = oldMaterialColor.y;
+		probeBoxEntity.getMaterial().getDiffuse().z = oldMaterialColor.z;
+		
 	}
 
 	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
@@ -372,14 +381,17 @@ public class GBuffer {
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
 		renderer.getEnvironmentMap().bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind();
 		
 		if(!USE_COMPUTESHADER_FOR_REFLECTIONS) {
 			reflectionBuffer.use(true);
 			reflectionProgram.use();
+			reflectionProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
 			reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 			reflectionProgram.setUniform("useSSR", World.useSSR);
-			reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH/2);
-			reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT/2);
+			reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
+			reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
 			reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
@@ -387,8 +399,9 @@ public class GBuffer {
 			fullscreenBuffer.draw();
 			reflectionBuffer.unuse();
 		} else {
-			GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+			GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
 			tiledProbeLightingProgram.use();
+			tiledProbeLightingProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
 			tiledProbeLightingProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 			tiledProbeLightingProgram.setUniform("useSSR", World.useSSR);
 			tiledProbeLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);

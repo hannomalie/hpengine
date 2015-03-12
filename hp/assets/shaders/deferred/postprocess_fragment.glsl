@@ -348,30 +348,33 @@ void main()
 	    vec4 sum = vec4(0);
 	    
 	    // code from http://wp.applesandoranges.eu/?p=14, thank you!
-	   vec2 texcoord = pass_TextureCoord;
-	   int j;
-	   int i;
-	
-	   for( i= -4 ;i < 4; i++) {
-	        for (j = -3; j < 3; j++) {
-	            sum += texture2D(renderedTexture, texcoord + vec2(j, i)*0.004) * (0.2 + clamp(exposure, 0, 3)*0.03);
-	        }
-	   }
-       if (texture2D(renderedTexture, texcoord).r < 0.3) {
-	       out_color = sum*sum*0.012 + texture2D(renderedTexture, texcoord);
+	    const bool USE_BLOOM = false;
+	    if(USE_BLOOM) {
+    	   vec2 texcoord = pass_TextureCoord;
+		   int j;
+		   int i;
+		
+		   for( i= -4 ;i < 4; i++) {
+		        for (j = -3; j < 3; j++) {
+		            sum += texture(renderedTexture, texcoord + vec2(j, i)*0.004, 3)*0.25;// * (0.2 + clamp(exposure, 0, 3)*0.03);
+		        }
+		   }
+	       if (texture(renderedTexture, texcoord).r < 0.3) {
+		       out_color = sum*sum*0.012 + texture(renderedTexture, texcoord);
+		    }
+		    else
+		    {
+		        if (texture(renderedTexture, texcoord).r < 0.5) {
+		            out_color = sum*sum*0.009 + texture(renderedTexture, texcoord);
+		        } else
+		        {
+		            out_color = sum*sum*0.0075 + texture(renderedTexture, texcoord);
+		        }
+		    }
+		    out_color.a = 1;
+		    //out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.7 - exposure/100);
 	    }
-	    else
-	    {
-	        if (texture2D(renderedTexture, texcoord).r < 0.5) {
-	            out_color = sum*sum*0.009 + texture2D(renderedTexture, texcoord);
-	        } else
-	        {
-	            out_color = sum*sum*0.0075 + texture2D(renderedTexture, texcoord);
-	        }
-	    }
-	    out_color.a = 1;
-	    out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.7 - exposure/100);
 	} else {
-		out_color = texture2D(renderedTexture, pass_TextureCoord);
+		out_color = texture(renderedTexture, pass_TextureCoord);
 	}
 }

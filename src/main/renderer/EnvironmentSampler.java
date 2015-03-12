@@ -67,6 +67,7 @@ public class EnvironmentSampler {
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
 	private Program secondPassAreaLightProgram;
+	private Program secondPassDirectionalProgram;
 
 	public EnvironmentSampler(Renderer renderer, EnvironmentProbe probe, Vector3f position, int width, int height) {
 		this.renderer = renderer;
@@ -88,6 +89,9 @@ public class EnvironmentSampler {
 		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
 		tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
+
+//		secondPassDirectionalProgram = renderer.getProgramFactory().getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_probe_fragment.glsl", Entity.POSITIONCHANNEL, false);
+		secondPassDirectionalProgram = renderer.getSecondPassDirectionalProgram();
 		secondPassPointProgram = renderer.getSecondPassPointProgram();
 		secondPassTubeProgram = renderer.getSecondPassTubeProgram();
 		secondPassAreaLightProgram = renderer.getSecondPassAreaLightProgram();
@@ -125,6 +129,8 @@ public class EnvironmentSampler {
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind();
 
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
@@ -209,6 +215,7 @@ public class EnvironmentSampler {
 
 	private void bindProgramSpecificsPerCubeMap() {
 		cubeMapProgram.use();
+		cubeMapProgram.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		cubeMapProgram.setUniform("probePosition", probe.getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
 		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
@@ -302,10 +309,10 @@ public class EnvironmentSampler {
 		GL14.glBlendEquation(GL14.GL_FUNC_ADD);
 		GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
 
-		Program secondPassDirectionalProgram = renderer.getSecondPassDirectionalProgram();
 		secondPassDirectionalProgram.use();
 
-		if (!sidesDrawn.contains(sideIndex)) {
+		if (!sidesDrawn.contains(sideIndex))
+		{
 			GL43.glTextureView(cubeMapFaceViews[0][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
 			GL43.glTextureView(cubeMapFaceViews[1][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
 			GL43.glTextureView(cubeMapFaceViews[2][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
@@ -338,7 +345,10 @@ public class EnvironmentSampler {
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
-		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+//		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+		secondPassDirectionalProgram.setUniform("currentProbe", probe.getIndex());
+		secondPassDirectionalProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(secondPassDirectionalProgram);
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		GPUProfiler.start("Draw fullscreen buffer");
 		fullscreenBuffer.draw();
@@ -354,14 +364,19 @@ public class EnvironmentSampler {
 
 		doAreaLights(areaLights, viewMatrix, projectionMatrix);
 
-		renderReflectionsSecondBounce(viewMatrix, projectionMatrix, cubeMapFaceViews[0][sideIndex], cubeMapFaceViews[1][sideIndex], cubeMapFaceViews[2][sideIndex], sideIndex);
-		
 		GL11.glDisable(GL11.GL_BLEND);
+
+		if (GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE) {
+			renderReflectionsSecondBounce(viewMatrix, projectionMatrix,
+					cubeMapFaceViews[0][sideIndex],
+					cubeMapFaceViews[1][sideIndex],
+					cubeMapFaceViews[2][sideIndex], sideIndex);
+		}
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
 		GL11.glCullFace(GL11.GL_BACK);
 		GL11.glDepthFunc(GL11.GL_LESS);
-		
+
 //		GL11.glDeleteTextures(cubeMapFaceView);
 //		GL11.glDeleteTextures(cubeMapFaceView1);
 //		GL11.glDeleteTextures(cubeMapFaceView2);

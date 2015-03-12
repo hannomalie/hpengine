@@ -132,7 +132,7 @@ const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				
 
 vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
 	vec4 result = vec4(0,0,0,0);
 	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
 	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));

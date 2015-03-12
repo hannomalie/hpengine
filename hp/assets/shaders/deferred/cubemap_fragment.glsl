@@ -13,6 +13,8 @@ layout(binding=13) uniform sampler2D shadowMapArealight4;
 
 const float pointLightRadius = 5.0;
 
+uniform bool firstBounceForProbe;
+
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
@@ -33,7 +35,7 @@ uniform float normalMapHeight = 1;
 uniform float metallic = 0;
 uniform float roughness = 1;
 
-const int pointLightMaxCount = 5;
+const int pointLightMaxCount = 40;
 uniform int activePointLightCount = 0;
 uniform vec3[pointLightMaxCount] pointLightPositions;
 uniform vec3[pointLightMaxCount] pointLightColors;
@@ -696,11 +698,13 @@ void main()
 		out_color.rgb += cookTorranceAreaLight(-V, position_world.xyz, PN_world.xyz, roughness, metallic, areaLightColors[i], areaLightPositions[i], i, diffuseColor, specularColor);
 	}
 	
-	vec3 boxProjectedNormal = boxProjection(position_world.xyz, PN_world, probeIndex);
-	vec3 sampleFromLastFrameAsSecondBounce = textureLod(probes, vec4(boxProjectedNormal, probeIndex), 1 + 8*roughness).rgb;
-	ProbeSample probeSample = importanceSampleProjectedCubeMap(probeIndex, position_world.xyz, PN_world.xyz, reflect(-V, PN_world.xyz), -V, roughness, metallic, color.rgb);
-	sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
-	out_color.rgb = mix(out_color.rgb*4, sampleFromLastFrameAsSecondBounce, 0.5);
+	if(firstBounceForProbe) {
+		vec3 boxProjectedNormal = boxProjection(position_world.xyz, PN_world, probeIndex);
+		vec3 sampleFromLastFrameAsSecondBounce = textureLod(probes, vec4(boxProjectedNormal, probeIndex), 1 + 8*roughness).rgb;
+		ProbeSample probeSample = importanceSampleProjectedCubeMap(probeIndex, position_world.xyz, PN_world.xyz, reflect(-V, PN_world.xyz), -V, roughness, metallic, color.rgb);
+		sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
+		out_color.rgb = mix(out_color.rgb*4, sampleFromLastFrameAsSecondBounce, 0.5);
+	}
 	
 	// Fake the other missing bounces with some ambient light...
 	out_color.rgb += 0.0125 * color.rgb;

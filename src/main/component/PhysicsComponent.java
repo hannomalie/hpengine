@@ -1,5 +1,6 @@
 package main.component;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
@@ -30,15 +31,17 @@ public class PhysicsComponent implements IGameComponent {
 	
 	public void update(float seconds) {
 		Transform out = new Transform();
-		rigidBody.getMotionState().getWorldTransform(out);
-		main.Transform converted = new main.Transform();//Util.fromBullet(out);
-		Quat4f outQuat = new Quat4f();
-		out.getRotation(outQuat);
-//		System.out.println("Rotation " + outQuat.x + " " + outQuat.y + " " + outQuat.z + " " + outQuat.w);
-//		owner.getTransform().setOrientation(new Quaternion(outQuat.x,outQuat.y,outQuat.z,outQuat.w));
+		rigidBody.getWorldTransform(out);
+		Matrix4f temp = new Matrix4f();
+		out.getMatrix(temp);
+		main.Transform converted = Util.fromBullet(out);
+//		System.out.println("Rotation " + converted.getOrientation().x + " " + converted.getOrientation().y + " " + converted.getOrientation().z + " " + converted.getOrientation().w);
 		owner.getTransform().setScale(owner.getScale());
-//		converted.setOrientation(new Quaternion(outQuat.x, outQuat.y, outQuat.z, outQuat.w));
-		owner.getTransform().setPosition(new org.lwjgl.util.vector.Vector3f(out.origin.x,out.origin.y,out.origin.z));
+
+		owner.getTransform().setOrientation(converted.getOrientation());
+		//owner.getTransform().setPosition(new org.lwjgl.util.vector.Vector3f(out.origin.x,out.origin.y,out.origin.z));
+		owner.getTransform().setPosition(converted.getPosition());
+//		System.out.println("Rotation own " + owner.getOrientation().x + " " + owner.getOrientation().y + " " + owner.getOrientation().z + " " + owner.getOrientation().w);
 	}
 
 	public RigidBody getRigidBody() {
