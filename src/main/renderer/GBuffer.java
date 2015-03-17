@@ -41,6 +41,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -383,6 +384,18 @@ public class GBuffer {
 		renderer.getEnvironmentMap().bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture());
+		
+		int copyTextureId = GL11.glGenTextures();
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA16F, reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL43.glCopyImageSubData(reflectionBuffer.getRenderedTexture(), GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+				reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 1);
 		
 		if(!USE_COMPUTESHADER_FOR_REFLECTIONS) {
 			reflectionBuffer.use(true);
@@ -410,9 +423,11 @@ public class GBuffer {
 			tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 			tiledProbeLightingProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(tiledProbeLightingProgram);
-			tiledProbeLightingProgram.dispatchCompute(reflectionBuffer.getWidth()/16, reflectionBuffer.getHeight()/16+1, 1);
+			tiledProbeLightingProgram.dispatchCompute(reflectionBuffer.getWidth()/16, reflectionBuffer.getHeight()/16, 1); //16+1
 	//		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
 		}
+
+		GL11.glDeleteTextures(copyTextureId);
 		GPUProfiler.end();
 	}
 	

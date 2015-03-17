@@ -1,4 +1,3 @@
-
 #define WORK_GROUP_SIZE 16
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE) in;
@@ -367,6 +366,24 @@ float p(vec2 spherical_coords, float roughness) {
 	return result;
 }
 
+// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
+     float phi = u * 2.0 * PI;
+     float cosTheta = 1.0 - v;
+     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+     
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	 // Tangent to world space
+	 result = TangentX * result.x + TangentY * result.y + N * result.z;
+     //mat3 transform = createOrthonormalBasis(N);
+	 //result = (transform) * result;
+	 
+     return result;
+}
+
 vec3 getIntersectionPoint(vec3 position_world, vec3 texCoords3d, vec3 environmentMapMin, vec3 environmentMapMax) {
 	vec3 nrdir = normalize(texCoords3d);
 	vec3 envMapMin = vec3(-300,-300,-300);
@@ -483,19 +500,18 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //return result;
   
   if(roughness < 0.01) {
-  	vec3 oldReflected = reflected;
-  	reflected = boxProjection(positionWorld, reflected, index);
-	vec4 SampleColor = texture(probes, vec4(reflected, index), 1);
-    result.specularColor = SpecularColor * SampleColor.rgb;
+  	vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
+    result.specularColor = SpecularColor * textureLod(probes, vec4(projectedReflected, index), 1).rgb;
   	normal = boxProjection(positionWorld, normal, index);
-  	result.diffuseColor = diffuseColor * texture(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+  	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   	
-  	/*
-  	TraceResult temp = traceCubes(positionWorld, oldReflected, v, roughness, metallic, color);
-	vec4 sampleNearest = texture(probes, vec4(temp.dirToHitPointNearest, temp.probeIndexNearest), 1);
-	vec3 sampleSecondNearest = texture(probes, vec4(temp.dirToHitPointSecondNearest, temp.probeIndexSecondNearest), 1).rgb;
-	result.specularColor = SpecularColor * mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
-  	*/
+	const bool USE_CONETRACING_FOR_MIRROR = false;
+	if (USE_CONETRACING_FOR_MIRROR) {
+		TraceResult traceResult = traceCubes(positionWorld, reflected, v, roughness, metallic, color);
+		vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), 1);
+		vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), 1);
+		result.specularColor = SpecularColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
+	}
   	return result;
   }
   
@@ -518,6 +534,16 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     vec3[2] projectedVectorAndIntersection = boxProjectionAndIntersection(positionWorld, H, index);
     float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
     H = normalize(projectedVectorAndIntersection[0]);
+    
+    const bool USE_CONETRACING_FOR_SPECULAR = false;
+    TraceResult traceResult;
+    if (USE_CONETRACING_FOR_SPECULAR) {
+    	traceResult = traceCubes(positionWorld, importanceSampleResult[0], v, roughness, metallic, color);
+    	distToIntersection = distance(positionWorld, traceResult.hitPointNearest);
+    	projectedVectorAndIntersection[0] = traceResult.dirToHitPointNearest;
+    	projectedVectorAndIntersection[1] = traceResult.hitPointNearest;
+		H = normalize(projectedVectorAndIntersection[0]);
+    }
     
     vec3 L = 2 * dot( V, H ) * H - V;
     
@@ -561,7 +587,11 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    //lod = roughness * MAX_MIPMAPLEVEL;
 	    
     	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
-		//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(H, 0), lod).rgb, 1-SampleColor.a);
+    	if (USE_CONETRACING_FOR_SPECULAR) {
+    		vec4 sampleNearest = textureLod(probes, vec4(H, traceResult.probeIndexNearest), lod);
+    		vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), lod);
+    		SampleColor = mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a);
+    	}
     	
 		vec3 cookTorrance = SpecularColor * SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
 		ks += fresnel;
@@ -579,8 +609,38 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   ks = clamp(ks/N, 0, 1);
   float kd = (1 - ks) * (1 - metallic);
   
-  normal = boxProjection(positionWorld, normal, index);
-  resultDiffuse.rgb = diffuseColor * textureLod(probes, vec4(normal, index), 3 + roughness*MAX_MIPMAPLEVEL).rgb;
+  vec3 projectedNormal = boxProjection(positionWorld, normal, index);
+  
+  const bool MULTIPLE_DIFFUSE_SAMPLES = true;
+  if(MULTIPLE_DIFFUSE_SAMPLES) {
+	float lod = MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
+  	vec3 probeExtents = environmentMapMax[index] - environmentMapMin[index];
+  	vec3 probeCenter = environmentMapMin[index] + probeExtents/2;
+  	vec3 sampleVector = normal;//reflect(normalize(positionWorld-probeCenter), normal);
+  	for (int k = 0; k < SAMPLE_COUNT; k++) {
+	    vec2 xi = hammersley2d(k, SAMPLE_COUNT);
+	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, sampleVector);
+	    vec3 H = importanceSampleResult[0];
+	    H = hemisphereSample_uniform(xi.x, xi.y, normal);
+	    
+	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
+  		if(USE_CONETRACING_FOR_DIFFUSE) {
+		  	TraceResult traceResult = traceCubes(positionWorld, H, v, roughness, metallic, color);
+			vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), lod);
+			if(traceResult.probeIndexSecondNearest == -1) {
+				resultDiffuse.rgb += diffuseColor.rgb * sampleNearest.rgb;
+				continue;
+			}
+			vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), lod);
+			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
+    	} else {
+			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), MAX_MIPMAPLEVEL).rgb;
+    	}
+	  }
+	  resultDiffuse.rgb /= SAMPLE_COUNT;
+  } else {
+  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL-1).rgb;
+  }
   
   result.diffuseColor = resultDiffuse.rgb;
   result.specularColor = resultSpecular.rgb;
@@ -869,36 +929,37 @@ void main()
 	worldSpaceMax /= worldSpaceMax.w;
 	worldSpaceMax = inverseView * vec4(worldSpaceMax.xyz, 1);
 	
-	const vec3 bias = vec3(5,5,5);
-    
-	for (int probeIndex = int(gl_LocalInvocationIndex); probeIndex < activeProbeCount; probeIndex += WORK_GROUP_SIZE) {
-		if(probeIndex < activeProbeCount) {
-			if( isInside(worldSpaceMin.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias) ||
-				isInside(worldSpaceMax.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias)) {
-			
-				uint index = atomicAdd(currentArrayIndex, 1);
-            	probeIndicesForTile[index] = probeIndex;
+	const vec3 bias = vec3(10,10,10);
+    const bool useBattlefieldMethod = true;
+
+	if(!useBattlefieldMethod) {
+		uint threadCount = WORK_GROUP_SIZE * WORK_GROUP_SIZE;
+	    uint passCount = (activeProbeCount + threadCount - 1) / threadCount;
+		for (uint passIt = 0; passIt < passCount; ++passIt) {
+		    uint probeIndex = passIt * threadCount + gl_LocalInvocationIndex;
+		    probeIndex = min(probeIndex, activeProbeCount);
+		    
+		    if (probeIndex < 10) {
+			    if( isInside(worldSpaceMin.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias) ||
+					isInside(worldSpaceMax.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias))
+				{
+		            uint id = atomicAdd(currentArrayIndex, 1);
+		            probeIndicesForTile[id] = int(probeIndex);
+			    }
+		    }
+		}
+	} else {
+		for (int probeIndex = int(gl_LocalInvocationIndex); probeIndex < activeProbeCount; probeIndex += WORK_GROUP_SIZE) {
+			if(probeIndex < activeProbeCount) {
+				if( isInside(worldSpaceMin.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias) ||
+					isInside(worldSpaceMax.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias)) {
+				
+					uint index = atomicAdd(currentArrayIndex, 1);
+	            	probeIndicesForTile[index] = probeIndex;
+				}
 			}
 		}
 	}
-	
-	/*
-	uint threadCount = WORK_GROUP_SIZE * WORK_GROUP_SIZE;
-    uint passCount = (activeProbeCount + threadCount - 1) / threadCount;
-	for (uint passIt = 0; passIt < passCount; ++passIt) {
-	    uint probeIndex = passIt * threadCount + gl_LocalInvocationIndex;
-	    probeIndex = min(probeIndex, activeProbeCount);
-	    
-	    if (probeIndex < 10) {
-		    if( isInside(worldSpaceMin.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias) ||
-				isInside(worldSpaceMax.xyz, environmentMapMin[probeIndex]-bias, environmentMapMax[probeIndex]+bias))
-			{
-	            uint id = atomicAdd(currentArrayIndex, 1);
-	            probeIndicesForTile[id] = int(probeIndex);
-		    }
-	    }
-	}
-	*/
 	
 	barrier();
 	

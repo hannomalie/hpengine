@@ -70,19 +70,20 @@ const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
 const float scaleX = 1;
 const float scaleY = 0.56;
 const vec2 ratio = vec2(scaleX, scaleY);
-vec4 blur(sampler2D sampler, vec2 texCoords) {
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
 	vec4 result = vec4(0,0,0,0);
-	result += kernel[0] * texture(sampler, texCoords + offsets[0]);
-	result += kernel[1] * texture(sampler, texCoords + offsets[1]);
-	result += kernel[2] * texture(sampler, texCoords + offsets[2]);
+	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
+	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
+	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipLevel);
 	
-	result += kernel[3] * texture(sampler, texCoords + offsets[3]);
-	result += kernel[4] * texture(sampler, texCoords + offsets[4]);
-	result += kernel[5] * texture(sampler, texCoords + offsets[5]);
+	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipLevel);
+	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipLevel);
+	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipLevel);
 	
-	result += kernel[6] * texture(sampler, texCoords + offsets[6]);
-	result += kernel[7] * texture(sampler, texCoords + offsets[7]);
-	result += kernel[8] * texture(sampler, texCoords + offsets[8]);
+	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipLevel);
+	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
+	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipLevel);
 	
 	return result;
 }
@@ -347,7 +348,7 @@ void main(void) {
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
-	vec4 environmentLightAO = textureLod(environment, st, 0);
+	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = environmentLightAO.rgb;
 	float ao = environmentLightAO.a;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
@@ -355,7 +356,7 @@ void main(void) {
 	vec3 ambientTerm = ambientColor*environmentLight;
 	ambientTerm *= clamp(ao,0,1);
 	
-	vec4 lit = vec4(ambientTerm, 1) + lightDiffuseSpecular;
+	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	//out_color.rgb += (scattering.gba); //scattering
@@ -364,7 +365,8 @@ void main(void) {
 
 	out_color *= autoExposure;
 	
-	out_color.rgb = Uncharted2Tonemap(out_color.rgb);
+	const float EXPOSURE_BIAS = 1;
+	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
 	/////////////////////////////// GAMMA
@@ -388,4 +390,58 @@ void main(void) {
 	//out_color.rgb = reflectedColor.rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,0);
+	
+	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
+	const bool useSphericalHarmonicLighting = false;
+	if(useSphericalHarmonicLighting) {
+		vec3[9] cubeMap_sh_coef;
+		cubeMap_sh_coef[0]= vec3(0.690826, 0.791972, 1.156998);
+		cubeMap_sh_coef[1]= vec3(-0.032214, -0.032154, -0.031143);
+		cubeMap_sh_coef[2]= vec3(0.181760, 0.213785, 0.350721);
+		cubeMap_sh_coef[3]= vec3(0.174773, 0.165067, 0.134813);
+		cubeMap_sh_coef[4]= vec3(-0.140021, -0.133054, -0.109773);
+		cubeMap_sh_coef[5]= vec3(0.003920, 0.002716, -0.001993);
+		cubeMap_sh_coef[6]= vec3(-0.285459, -0.332236, -0.476629);
+		cubeMap_sh_coef[7]= vec3(-0.021688, -0.022507, -0.025049);
+		cubeMap_sh_coef[8]= vec3(0.056419, 0.054559, 0.047959);
+		vec3 u_light_SHCoef0_r = vec3(cubeMap_sh_coef[0].x, cubeMap_sh_coef[1].x, cubeMap_sh_coef[2].x);
+		vec3 u_light_SHCoef1_r = vec3(cubeMap_sh_coef[3].x, cubeMap_sh_coef[4].x, cubeMap_sh_coef[5].x);
+		vec3 u_light_SHCoef2_r = vec3(cubeMap_sh_coef[6].x, cubeMap_sh_coef[7].x, cubeMap_sh_coef[8].x);
+		
+		vec3 u_light_SHCoef0_g = vec3(cubeMap_sh_coef[0].y, cubeMap_sh_coef[1].y, cubeMap_sh_coef[2].y);
+		vec3 u_light_SHCoef1_g = vec3(cubeMap_sh_coef[3].y, cubeMap_sh_coef[4].y, cubeMap_sh_coef[5].y);
+		vec3 u_light_SHCoef2_g = vec3(cubeMap_sh_coef[6].y, cubeMap_sh_coef[7].y, cubeMap_sh_coef[8].y);
+		
+		vec3 u_light_SHCoef0_b = vec3(cubeMap_sh_coef[0].z, cubeMap_sh_coef[1].z, cubeMap_sh_coef[2].z);
+		vec3 u_light_SHCoef1_b = vec3(cubeMap_sh_coef[3].z, cubeMap_sh_coef[4].z, cubeMap_sh_coef[5].z);
+		vec3 u_light_SHCoef2_b = vec3(cubeMap_sh_coef[6].z, cubeMap_sh_coef[7].z, cubeMap_sh_coef[8].z);
+		
+		float[3] transferFunc_zh_coef;
+		transferFunc_zh_coef[0]= 0.886215;
+		transferFunc_zh_coef[1]= 1.023305;
+		transferFunc_zh_coef[2]= 0.495396;
+		
+		float sqrt3= 1.732050808;
+		vec3 transferFunc_SHCoef0, transferFunc_SHCoef1, transferFunc_SHCoef2;
+		
+	    normalWorld = mix(normalWorld, reflect(V, normalWorld), metallic);
+	    transferFunc_SHCoef0.x=  transferFunc_zh_coef[0];                                                               // 0-band
+	    transferFunc_SHCoef0.y= -transferFunc_zh_coef[1] * normalWorld.y;                                                    // 1-band
+	    transferFunc_SHCoef0.z=  transferFunc_zh_coef[1] * normalWorld.z;
+	    transferFunc_SHCoef1.x= -transferFunc_zh_coef[1] * normalWorld.x;
+	    transferFunc_SHCoef1.y=  sqrt3 * transferFunc_zh_coef[2] * normalWorld.x * normalWorld.y;                                 // 2-band
+	    transferFunc_SHCoef1.z= -sqrt3 * transferFunc_zh_coef[2] * normalWorld.y * normalWorld.z;
+	    transferFunc_SHCoef2.x= 0.5    * transferFunc_zh_coef[2] * (3.0 * normalWorld.z * normalWorld.z - 1.0);
+	    transferFunc_SHCoef2.y= -sqrt3 * transferFunc_zh_coef[2] * normalWorld.x * normalWorld.z;
+	    transferFunc_SHCoef2.z= 0.5 * sqrt3 * transferFunc_zh_coef[2] * (normalWorld.x * normalWorld.x - normalWorld.y * normalWorld.y);
+	    
+	    color = mix(color, specularColor, metallic);
+		vec4 result = vec4(
+	        color.r * ( dot(u_light_SHCoef0_r, transferFunc_SHCoef0) + dot(u_light_SHCoef1_r, transferFunc_SHCoef1) + dot(u_light_SHCoef2_r, transferFunc_SHCoef2) ),
+	        color.g * ( dot(u_light_SHCoef0_g, transferFunc_SHCoef0) + dot(u_light_SHCoef1_g, transferFunc_SHCoef1) + dot(u_light_SHCoef2_g, transferFunc_SHCoef2) ),
+	        color.b * ( dot(u_light_SHCoef0_b, transferFunc_SHCoef0) + dot(u_light_SHCoef1_b, transferFunc_SHCoef1) + dot(u_light_SHCoef2_b, transferFunc_SHCoef2) ),
+	    1.0);
+	    
+	    out_color = result;
+	}
 }

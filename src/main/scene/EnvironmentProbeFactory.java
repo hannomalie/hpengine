@@ -46,7 +46,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 public class EnvironmentProbeFactory {
-	public static final int MAX_PROBES = 50;
+	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
 	
