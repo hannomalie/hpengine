@@ -61,7 +61,7 @@ public class EntityFactory {
 			
 			return entity;
 		} catch (IOException | ClassNotFoundException e) {
-//			e.printStackTrace();
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -78,7 +78,7 @@ public class EntityFactory {
 			
 			return entity;
 		} catch (IOException | ClassNotFoundException e) {
-//			e.printStackTrace();
+			e.printStackTrace();
 		}
 		return null;
 	}

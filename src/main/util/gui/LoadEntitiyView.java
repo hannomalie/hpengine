@@ -61,7 +61,11 @@ public class LoadEntitiyView extends WebPanel {
 			for (File chosenFile : chosenFiles) {
 				if(chosenFile != null) {
 					Entity entity = (Entity) world.getRenderer().getEntityFactory().readWithoutInit(chosenFile.getName());
-					entitiesToAdd.add(entity);
+//					entitiesToAdd.add(entity);
+					if(entity != null) {
+						showError(chosenFile);
+						continue;
+					}
 					SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 						@Override
 						public Result execute(World world) {
@@ -78,7 +82,7 @@ public class LoadEntitiyView extends WebPanel {
 	    				
 					Result result = null;
 					try {
-						result = queue.poll(5, TimeUnit.MINUTES);
+						result = queue.poll(1, TimeUnit.MINUTES);
 					} catch (Exception e1) {
 						e1.printStackTrace();
 						showError(chosenFile);

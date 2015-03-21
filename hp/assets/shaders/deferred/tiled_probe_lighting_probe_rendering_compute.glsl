@@ -750,7 +750,8 @@ void main()
 		int probeIndexNearest = twoIntersectionsAndIndices.indexNearest;
 		vec3 intersectionNearest = twoIntersectionsAndIndices.intersectionNormalNearest;
 		vec3 positionWorldSecondBounce = intersectionNearest;
-		vec3 normalWorldSeconBounce = -findMainAxis(normalWorld);
+		vec3 centerProbe = environmentMapMin[probeIndexNearest] + (environmentMapMax[probeIndexNearest] - environmentMapMin[probeIndexNearest])/2;
+		vec3 normalWorldSeconBounce = normalize(centerProbe - intersectionNearest);
 		vec3 viewWorldSecondBounce = -normalize(intersectionNearest - positionWorld);
 		const float mip = MAX_MIPMAPLEVEL;
 			
@@ -775,8 +776,8 @@ void main()
 				vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
 				result.rgb += sampleFromLastFrameAsSecondBounce;
 			} else {
-				vec3 boxProjectedNormal = boxProjection(positionWorldSecondBounce.xyz, normalWorld, probeIndexNearest);
-				result.rgb += texture(probes, vec4(boxProjectedNormal, currentProbe), mip).rgb;
+				vec3 boxProjectedNormal = boxProjection(positionWorldSecondBounce.xyz, normalWorldSeconBounce, probeIndexNearest);
+				result.rgb += 0.5*texture(probes, vec4(boxProjectedNormal, currentProbe), mip).rgb; // TODO: ADJUST THIS WITH NdotL!!!!
 			}
 		}
 	}

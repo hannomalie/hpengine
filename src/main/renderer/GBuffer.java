@@ -340,12 +340,16 @@ public class GBuffer {
 
 		laBuffer.unuse();
 
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
-		GL11.glDisable(GL11.GL_BLEND);
-		GL11.glCullFace(GL11.GL_BACK);
-		renderReflectionsAndAO(viewMatrix, projectionMatrix);
-
+		if (World.USE_GI) {
+			GL11.glDepthMask(false);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glDisable(GL11.GL_BLEND);
+			GL11.glCullFace(GL11.GL_BACK);
+			renderReflectionsAndAO(viewMatrix, projectionMatrix);
+		} else {
+			reflectionBuffer.use(true);
+			reflectionBuffer.unuse();
+		}
 		GPUProfiler.start("Blurring");
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);

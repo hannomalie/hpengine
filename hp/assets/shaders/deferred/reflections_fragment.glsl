@@ -453,7 +453,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   	normal = boxProjection(positionWorld, normal, index);
   	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
   	
-	const bool USE_CONETRACING_FOR_MIRROR = true;
+	const bool USE_CONETRACING_FOR_MIRROR = false;
 	if (USE_CONETRACING_FOR_MIRROR) {
 		TraceResult traceResult = traceCubes(positionWorld, reflected, v, roughness, metallic, color);
 		vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), 1);
@@ -844,6 +844,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 		  float difference = currentViewPos.z - currentPosSample.z;
 		  const float THICKNESS_THRESHOLD = 10;
 		  if (difference < 0) {
+		  	if(currentViewPos.z > targetPosView.z) { break;}
 		  
 		  	if(abs(difference) > THICKNESS_THRESHOLD) {
   		  		vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
@@ -864,7 +865,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 				  }
 		  	}
 		  	
-  		  	vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
+  		  	vec4 resultCoords = getViewPosInTextureSpace(currentViewPos);
   			if (resultCoords.x > 0 && resultCoords.x < 1 && resultCoords.y > 0 && resultCoords.y < 1)
 			{
 				vec3 targetPositionWorld = (inverse(viewMatrix) * vec4(targetPosView,1)).xyz;

@@ -2,32 +2,29 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-
 import javax.script.ScriptException;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
+import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
@@ -43,7 +40,7 @@ import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
-
+import javax.swing.tree.TreeModel;
 
 import main.World;
 import main.model.IEntity;
@@ -71,7 +68,6 @@ import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -81,7 +77,6 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
-
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.WebButtonGroup;
@@ -89,6 +84,7 @@ import com.alee.extended.tab.WebDocumentPane;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
 import com.alee.extended.tree.WebCheckBoxTree;
+import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.filechooser.WebFileChooser;
@@ -101,6 +97,7 @@ import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
 import com.alee.laf.tabbedpane.WebTabbedPane;
+import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
@@ -150,6 +147,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
 	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
 	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
+	private WebToggleButton toggleUseGI = new WebToggleButton("GI", World.USE_GI);
 	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", World.useSSR);
 	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
 	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
@@ -181,6 +179,7 @@ public class DebugFrame {
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
+	private WebTextField sceneViewFilterField = new WebTextField(15);
 	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	private WebFileChooser fileChooser;
 	private WebFrame addEntityFrame;
@@ -218,7 +217,12 @@ public class DebugFrame {
 		createAreaLightsTab();
 
 		createMaterialPane(world);
-		
+
+		sceneViewFilterField.addActionListener(e -> {
+			TreeModel model = scene.getModel();
+			scene.setModel(null);
+			scene.setModel(model);
+		});
 		addOctreeSceneObjects(world);
 		
 		addProbes(world);
@@ -320,6 +324,9 @@ public class DebugFrame {
 		toggleDrawProbes.addActionListener(e -> {
 			World.DRAW_PROBES = !World.DRAW_PROBES;
 		});
+		toggleUseGI.addActionListener(e -> {
+			World.USE_GI = !World.USE_GI;
+		});
 		toggleUseSSR.addActionListener(e -> {
 			World.useSSR = !World.useSSR;
 		});
@@ -418,7 +425,7 @@ public class DebugFrame {
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
 		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
 			@Override public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;
@@ -694,6 +701,10 @@ public class DebugFrame {
 			}
     		
     	});
+        WebMenuItem refreshAll = new WebMenuItem("Refresh");
+        refreshAll.addActionListener(e -> {
+    		init(world);
+    	});
 
 		WebMenu menuTextures = new WebMenu("Texture");
         {
@@ -759,6 +770,8 @@ public class DebugFrame {
         menuBar.add(runScriptMenuItem);
         menuBar.add(saveScriptMenuItem);
         menuBar.add(resetProfiling);
+        menuBar.add(refreshAll);
+        menuBar.add(sceneViewFilterField);
         mainFrame.setJMenuBar(menuBar);
         
 		mainFrame.add(tabbedPane);
@@ -1267,6 +1280,48 @@ public class DebugFrame {
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
 		new SetSelectedListener(scene, world, this, entityViewFrame);
+		scene.setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(scene) {
+            private JLabel lblNull = new JLabel("");
+
+            @Override
+            public Component getTreeCellRendererComponent(JTree tree, Object value,
+                    boolean arg2, boolean arg3, boolean arg4, int arg5, boolean arg6) {
+
+                Component c = super.getTreeCellRendererComponent(tree, value, arg2, arg3, arg4, arg5, arg6);
+
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                if (matchesFilter(node)) {
+                    c.setForeground(Color.BLACK);
+                	c.setVisible(false);
+                    return c;
+                }
+                else if (containsMatchingChild(node)) {
+                    c.setForeground(Color.GRAY);
+                	c.setVisible(false);
+                    return c;
+                }
+                else {
+                	c.setVisible(false);
+                    return lblNull;
+                }
+            }
+
+            private boolean matchesFilter(DefaultMutableTreeNode node) {
+            	String filterText = sceneViewFilterField.getText();
+                return "".equals(filterText) || (node.getUserObject().toString()).startsWith(filterText);
+            }
+
+            private boolean containsMatchingChild(DefaultMutableTreeNode node) {
+                Enumeration<DefaultMutableTreeNode> e = node.breadthFirstEnumeration();
+                while (e.hasMoreElements()) {
+                    if (matchesFilter(e.nextElement())) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        });
 
 		tabbedPane.remove(scenePane);
 		scenePane = new JScrollPane(scene);
