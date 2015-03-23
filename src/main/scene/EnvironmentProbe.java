@@ -35,15 +35,18 @@ public class EnvironmentProbe implements IEntity {
 	protected Update update;
 	
 
-	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update) {
+	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex) {
 		this.renderer = renderer;
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(renderer, this, center, resolution, resolution);
+		sampler = new EnvironmentSampler(renderer, this, center, resolution, resolution, probeIndex);
 	}
-	
+
 	public void draw(Octree octree, DirectionalLight light) {
-		sampler.drawCubeMap(octree, light);
+		draw(octree, light, false);
+	};
+	public void draw(Octree octree, DirectionalLight light, boolean urgent) {
+		sampler.drawCubeMap(octree, light, urgent);
 	};
 	
 	@Override

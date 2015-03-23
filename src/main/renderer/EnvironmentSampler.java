@@ -39,6 +39,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
@@ -69,7 +70,7 @@ public class EnvironmentSampler {
 	private Program secondPassAreaLightProgram;
 	private Program secondPassDirectionalProgram;
 
-	public EnvironmentSampler(Renderer renderer, EnvironmentProbe probe, Vector3f position, int width, int height) {
+	public EnvironmentSampler(Renderer renderer, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) {
 		this.renderer = renderer;
 		this.probe = probe;
 		float far = 5000f;
@@ -100,25 +101,28 @@ public class EnvironmentSampler {
 		cubeMapView = GL11.glGenTextures();
 		cubeMapView1 = GL11.glGenTextures();
 		cubeMapView2 = GL11.glGenTextures();
-		for(int i = 0; i < 3; i++) {
-			for (int z = 0; z < 6; z++) {
-				cubeMapFaceViews[i][z] = GL11.glGenTextures();
-				GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
-			}
+		for (int z = 0; z < 6; z++) {
+			cubeMapFaceViews[0][z] = GL11.glGenTextures();
+			cubeMapFaceViews[1][z] = GL11.glGenTextures();
+			cubeMapFaceViews[2][z] = GL11.glGenTextures();
+			//GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
+			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+			GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 		}
-		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-		GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-		
+		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
+		GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
+		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
+
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-//		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
+		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
+	}
+
+	public void drawCubeMap(Octree octree, DirectionalLight light, boolean urgent) {
+		drawCubeMapSides(octree, light, urgent);
 	}
 	
-	public void drawCubeMap(Octree octree, DirectionalLight light) {
-		drawCubeMapSides(octree, light);
-	}
-	
-	private void drawCubeMapSides(Octree octree, DirectionalLight light) {
+	private void drawCubeMapSides(Octree octree, DirectionalLight light, boolean urgent) {
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
@@ -136,7 +140,7 @@ public class EnvironmentSampler {
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		
 		bindProgramSpecificsPerCubeMap();
-		
+
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
@@ -150,12 +154,12 @@ public class EnvironmentSampler {
 							return Float.compare(distanceToFirst.lengthSquared(), distanceToSecond.lengthSquared());
 						}
 					}).collect(Collectors.toList());
-			boolean fullRerenderRequired = !movedVisibles.isEmpty() || !drawnOnce;
+			boolean fullRerenderRequired = urgent || !movedVisibles.isEmpty() || !drawnOnce;
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !fullRerenderRequired && !rerenderLightingRequired;
-			
+
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
 				continue;
 			} else if(rerenderLightingRequired) {
@@ -164,7 +168,7 @@ public class EnvironmentSampler {
 //				cubeMapProgram.use();
 			}
 			filteringRequired = true;
-			
+
 			GPUProfiler.start("side " + i);
 			if (deferredRenderingForProbes) {
 				if (!sidesDrawn.contains(i)) {

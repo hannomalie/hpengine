@@ -24,7 +24,7 @@ public class ReloadOnFileChangeTest {
 
 	@BeforeClass
 	public static void init() throws IOException {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
+		renderer = new DeferredRenderer(new World());
 		
 		simpleFile = new File("testfolder/test.file");
 		FileUtils.writeStringToFile(simpleFile, "xxx");

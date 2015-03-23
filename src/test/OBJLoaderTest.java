@@ -7,33 +7,19 @@ import java.util.List;
 import main.World;
 import main.model.Face;
 import main.model.Model;
-import main.model.OBJLoader;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.util.Util;
 import main.util.stopwatch.StopWatch;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.ContextAttribs;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import org.newdawn.slick.opengl.Texture;
 
-public class OBJLoaderTest {
-	static Renderer renderer;
-	
-	@BeforeClass
-	public static void setupOpenGLContext() throws LWJGLException {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class OBJLoaderTest extends TestWithRenderer {
 
 	@Test
 	public void parseVertex() {

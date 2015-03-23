@@ -1,9 +1,9 @@
 package test;
 
+import main.World;
 import main.model.Entity;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.shader.Program;
 import main.shader.Uniform;
 
@@ -18,7 +18,7 @@ public class UniformTest {
 	
 	@Before
 	public void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
+		renderer = new DeferredRenderer(new World());
 		program = renderer.getProgramFactory().getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		
 	}

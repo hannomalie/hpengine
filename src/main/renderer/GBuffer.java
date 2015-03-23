@@ -50,11 +50,11 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 
 public class GBuffer {
 
-	public static volatile int IMPORTANCE_SAMPLE_COUNT = 12;
+	public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 	public static float SECONDPASSSCALE = 1f;
-	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = true;
+	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
-	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
+	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = false;
 	
 	private Renderer renderer;
 	private RenderTarget gBuffer;
@@ -233,7 +233,7 @@ public class GBuffer {
 		probeFirstpassProgram.use();
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(probeFirstpassProgram);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
 		probeFirstpassProgram.setUniform("showContent", World.DEBUGDRAW_PROBES_WITH_CONTENT);
 		
 		Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getMaterial().getDiffuse());
@@ -695,7 +695,7 @@ public class GBuffer {
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDepthMask(true);
 		gBuffer.use(true);
-		GL11.glClearColor(1, 1, 1, 1);
+//		GL11.glClearColor(1, 1, 1, 1);
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_BLEND);

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.EventListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import main.World;
+import main.event.GlobalDefineChangedEvent;
 import main.model.DataChannels;
 import main.model.Entity;
 import main.renderer.DeferredRenderer;
@@ -34,10 +36,13 @@ import main.util.stopwatch.GPUProfiler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
+import org.jfree.util.StringUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.util.vector.Vector3f;
+
+import com.google.common.eventbus.Subscribe;
 
 public class Program extends AbstractProgram implements Reloadable {
 	private static Logger LOGGER = getLogger();
@@ -220,8 +225,11 @@ public class Program extends AbstractProgram implements Reloadable {
 		String shaderSource;
 		int shaderID = 0;
 		
-		shaderSource = "#version 430 core \n" + mapDefinesString;
+		shaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();
 
+		String findStr = "\n";
+		int newlineCount = (shaderSource.split(findStr, -1).length-1);
+		
 		try {
 			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);
 		} catch (IOException e) {
@@ -234,6 +242,7 @@ public class Program extends AbstractProgram implements Reloadable {
 
 		if (GL20.glGetShader(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not compile shader: " + filename);
+			System.err.println("Dynamic code takes " + newlineCount + " lines");
 			System.err.println(GL20.glGetShaderInfoLog(shaderID, 10000));
 //			System.exit(-1);
 			throw new Exception();
@@ -254,6 +263,12 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	public static String getDirectory() {
 		return World.WORKDIR_NAME + "/assets/shaders/deferred/";
+	}
+
+	@Override
+	@Subscribe
+	public void handle(GlobalDefineChangedEvent e) {
+		reload();
 	}
 
 }

@@ -9,13 +9,13 @@ import java.util.logging.Level;
 
 import junit.framework.Assert;
 import main.Transform;
+import main.World;
 import main.camera.Camera;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.scene.AABB;
 
@@ -24,13 +24,7 @@ import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class OctreeTest {
-	static Renderer renderer;
-	
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class OctreeTest extends TestWithRenderer {
 	
 	@Test
 	public void generatingBox() {

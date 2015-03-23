@@ -25,6 +25,7 @@ import main.renderer.light.PointLight;
 import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
+import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.Texture;
 import main.util.gui.DebugFrame;
@@ -53,6 +54,7 @@ import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
+import com.google.common.eventbus.EventBus;
 
 public class World {
 	public static final String WORKDIR_NAME = "hp";
@@ -71,11 +73,13 @@ public class World {
 	public static volatile boolean useColorBleeding = false;
 	public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
-	public static volatile boolean useSSR = true;
+	public static volatile boolean USE_GI = true;
+	public static volatile boolean useSSR = false;
 	public static volatile boolean DRAWLINES_ENABLED = false;
 	public static volatile boolean DRAWSCENE_ENABLED = true;
 	public static volatile boolean DEBUGDRAW_PROBES = false;
 	public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
+	public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
 	public static volatile boolean DEBUGFRAME_ENABLED = false;
 	public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	public static volatile boolean DRAW_PROBES = true;
@@ -86,7 +90,6 @@ public class World {
 	public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	public static volatile float EXPOSURE = 8f;
 	public static volatile boolean AUTO_EXPOSURE_ENABLED = false;
-
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
 	public static void main(String[] args) {
@@ -121,6 +124,7 @@ public class World {
 		world.simulate();
 	}
 
+	private EventBus eventBus;
 	PhysicsFactory physicsFactory;
 	Scene scene;
 	private int entityCount = 10;
@@ -136,34 +140,22 @@ public class World {
 	private Material mirror;
 
 	public World() {
-		initWorkDir();
-		renderer = new DeferredRenderer(light);
-		glWatch = new OpenGLStopWatch();
-		physicsFactory = new PhysicsFactory(this);
-		scene = new Scene(renderer);
-		camera = new Camera(renderer);
-		activeCamera = camera;
-		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
-		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
-		try {
-			light.init(renderer);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		initDefaultMaterials();
-		scene.addAll(loadDummies());
-		scene.setInitialized(true);
-		renderer.init(scene.getOctree());
+		this(null);
 	}
 	
 	public World(String sceneName) {
+		setEventBus(new EventBus());
 		initWorkDir();
-		renderer = new DeferredRenderer(light);
+		renderer = new DeferredRenderer(this);
 		glWatch = new OpenGLStopWatch();
 		physicsFactory = new PhysicsFactory(this);
 		initDefaultMaterials();
-		scene = Scene.read(renderer, sceneName);
-		scene.init(renderer);
+		if(sceneName != null) {
+			scene = Scene.read(renderer, sceneName);
+			scene.init(renderer);
+		} else {
+			scene = new Scene(renderer);
+		}
 		camera = new Camera(renderer);
 		activeCamera = camera;
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
@@ -175,7 +167,7 @@ public class World {
 		}
 		renderer.init(scene.getOctree());
 	}
-	
+
 	private void initWorkDir() {
 		ArrayList<File> dirs = new ArrayList<>();
 		dirs.add(new File(WORKDIR_NAME));
@@ -255,7 +247,7 @@ public class World {
 
 		try {
 			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
-			//List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
+//			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
 					Material mat = mirror;
@@ -301,8 +293,8 @@ public class World {
 //				}
 				IEntity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
 //				physicsFactory.addMeshPhysicsComponent(entity, 0);
-//				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-//				entity.setScale(scale);
+				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+				entity.setScale(scale);
 				entities.add(entity);
 			}
 			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
@@ -432,13 +424,31 @@ public class World {
 		if (DRAWLINES_ENABLED) {
 			renderer.drawDebug(activeCamera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities(), light);
 		} else {
-			renderer.draw(activeCamera, scene.getOctree(), scene.getEntities(), light);
+//			fireRenderProbeCommands();
+			renderer.draw(activeCamera, this, scene.getEntities(), light);
 		}
 
+		if(counter < 20) {
+			light.rotate(new Vector4f(0, 1, 0, 0.001f));
+			CONTINUOUS_DRAW_PROBES = true;
+			counter++;
+		} else if(counter == 20) {
+			CONTINUOUS_DRAW_PROBES = false;
+		}
 		StopWatch.getInstance().stopAndPrintMS();
 
 		Renderer.exitOnGLError("draw in render");
 		
+	}
+
+	// I need this to force probe redrawing after engine startup....TODO: Find better solution
+	int counter = 0;
+	
+	private void fireRenderProbeCommands() {
+//		if(!CONTINUOUS_DRAW_PROBES) { return; }
+		for(EnvironmentProbe probe: renderer.getEnvironmentProbeFactory().getProbes()) {
+			renderer.addRenderProbeCommand(probe, true);
+		}
 	}
 	
 	private void loopCycle(float seconds) {
@@ -489,5 +499,17 @@ public class World {
 
 	public void setActiveCamera(Camera activeCamera) {
 		this.activeCamera = activeCamera;
+	}
+
+	public EventBus getEventBus() {
+		return eventBus;
+	}
+
+	private void setEventBus(EventBus eventBus) {
+		this.eventBus = eventBus;
+	}
+
+	public void setRenderer(Renderer renderer) {
+		this.renderer = renderer;
 	}
 }

@@ -557,7 +557,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   ks = clamp(ks/N, 0, 1);
   float kd = (1 - ks);
   
-  
   vec3 projectedNormal = boxProjection(positionWorld, normal, index);
   
   const bool MULTIPLE_DIFFUSE_SAMPLES = true;
@@ -583,6 +582,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			
 			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
     	} else {
+    		float lod = MAX_MIPMAPLEVEL+4;
 			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
     	}
 	  }

@@ -1,12 +1,11 @@
 package test;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
+import main.World;
 import main.renderer.DeferredRenderer;
 import main.renderer.PixelBufferObject;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -16,14 +15,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 
-public class PixelBufferTest {
-
-	static Renderer renderer;
-	
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class PixelBufferTest extends TestWithRenderer {
 	
 	@Test
 	public void downloadWorks() throws InterruptedException {

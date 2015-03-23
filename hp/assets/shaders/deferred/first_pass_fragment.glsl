@@ -210,7 +210,7 @@ void main(void) {
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
-	vec2 motionVec = position_clip_post_w.xy - position_clip_last_post_w.xy;
+	vec2 motionVec = (position_clip_post_w.xy) - (position_clip_last_post_w.xy);
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
@@ -371,8 +371,7 @@ void main(void) {
   	out_motion = vec4(motionVec,probeIndex1,probeIndex2);
   	out_visibility = vec4(1,depth,depth,0);
   	
-  	//if(useRainEffect) {
-  	if(false) {
+  	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
 		float n2 = surface3(vec3(UV, 0.1), 2);
 		float waterEffect = rainEffect * clamp(3 * n2 * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0)*clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);

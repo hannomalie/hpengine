@@ -2,10 +2,10 @@ package test;
 
 import junit.framework.Assert;
 import main.Transform;
+import main.World;
 import main.model.IEntity;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.scene.EnvironmentProbe;
 import main.scene.EnvironmentProbe.Update;
@@ -15,13 +15,7 @@ import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class ProbeTest {
-	static Renderer renderer;
-	
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class ProbeTest extends TestWithRenderer {
 	
 	@Test
 	public void assignsProbesProperly() {

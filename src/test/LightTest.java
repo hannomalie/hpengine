@@ -1,25 +1,18 @@
 package test;
 
 import junit.framework.Assert;
+import main.World;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.AreaLight;
-import main.renderer.light.DirectionalLight;
 import main.renderer.light.TubeLight;
 
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class LightTest {
-
-	private static Renderer renderer;
-
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class LightTest extends TestWithRenderer {
 
 	@Test
 	public void tubeLightHasCorrectProportions() {

@@ -1,10 +1,16 @@
 package main.shader;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
+import main.event.GlobalDefineChangedEvent;
+
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Vector3f;
+
+import com.google.common.eventbus.Subscribe;
 
 
 public abstract class AbstractProgram {
@@ -95,4 +101,7 @@ public abstract class AbstractProgram {
 	public int getId() { return id; };
 	protected int setId(int id) { return this.id = id; };
 
+	@Subscribe
+	public void handle(GlobalDefineChangedEvent e) {
+	}
 }

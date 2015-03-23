@@ -1,11 +1,11 @@
 package test;
 
 import junit.framework.Assert;
+import main.World;
 import main.camera.Camera;
 import main.camera.Frustum;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.scene.AABB;
 import main.util.Util;
 
@@ -14,14 +14,7 @@ import org.junit.Test;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-public class CameraTest {
-	
-	Renderer renderer;
-	
-	@Before
-	public void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void rotation() {

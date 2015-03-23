@@ -20,5 +20,6 @@
 	<classpathentry kind="lib" path="libs/vecmath.jar"/>
 	<classpathentry kind="lib" path="libs/jcommon-1.0.23.jar"/>
 	<classpathentry kind="lib" path="libs/jfreechart-1.0.19.jar"/>
+	<classpathentry kind="lib" path="libs/guava-18.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

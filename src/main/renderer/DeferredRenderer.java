@@ -150,12 +150,13 @@ public class DeferredRenderer implements Renderer {
 	private int maxTextureUnits;
 	
 
-	public DeferredRenderer(DirectionalLight light) {
+	public DeferredRenderer(World world) {
 		setupOpenGL();
+		world.setRenderer(this);
 		objLoader = new OBJLoader(this);
 		textureFactory = new TextureFactory();
 		DeferredRenderer.exitOnGLError("After TextureFactory");
-		programFactory = new ProgramFactory(this);
+		programFactory = new ProgramFactory(world);
 		setupShaders();
 		setUpGBuffer();
 		fullScreenTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA8);
@@ -270,7 +271,7 @@ public class DeferredRenderer implements Renderer {
 			Display.setVSyncEnabled(false);
 			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
-			Display.setResizable(true);
+			Display.setResizable(false);
 			
 			GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		} catch (LWJGLException e) {
@@ -278,7 +279,7 @@ public class DeferredRenderer implements Renderer {
 			System.exit(-1);
 		}
 
-		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+//		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDisable(GL11.GL_CULL_FACE);
@@ -363,6 +364,14 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void init(Octree octree) {
 		environmentProbeFactory.drawInitial(octree);
+		
+		final int initialDrawCount = 2;
+		for(int i = 0; i < initialDrawCount; i++) {
+			for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
+				System.out.println("Added render probe command");
+				addRenderProbeCommand(probe, true);
+			}
+		}
 	}
 
 	public void update(World world, float seconds) {
@@ -377,9 +386,9 @@ public class DeferredRenderer implements Renderer {
 		fpsCounter.update(seconds);
 	}
 	
-	public void draw(Camera camera, Octree octree, List<IEntity> entities, DirectionalLight light) {
+	public void draw(Camera camera, World world, List<IEntity> entities, DirectionalLight light) {
 		GPUProfiler.startFrame();
-		draw(null, octree, camera, entities, light);
+		draw(null, world.getScene().getOctree(), camera, entities, light);
 	    GPUTaskProfile tp;
 	    while((tp = GPUProfiler.getFrameResults()) != null){
 	        
@@ -563,7 +572,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
-		if(IGNORE_GL_ERRORS) { return; }
+//		if(IGNORE_GL_ERRORS) { return; }
 		int errorValue = GL11.glGetError();
 		
 		if (errorValue != GL11.GL_NO_ERROR) {
@@ -737,22 +746,26 @@ public class DeferredRenderer implements Renderer {
 		int counter = 0;
 		
 		renderProbeCommandQueue.takeNearest(camera).ifPresent(command -> {
-			command.getProbe().draw(octree, light);
+			command.getProbe().draw(octree, light, command.isUrgent());
 		});
 		counter++;
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-				command.getProbe().draw(octree, light);
+				command.getProbe().draw(octree, light, command.isUrgent());
 			});
 			counter++;
 		}
 		counter = 0;
 	}
-	
+
 	@Override
 	public void addRenderProbeCommand(EnvironmentProbe probe) {
-		renderProbeCommandQueue.addProbeRenderCommand(probe);
+		addRenderProbeCommand(probe, false);
+	}
+	@Override
+	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
+		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
 	}
 
 	@Override

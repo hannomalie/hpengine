@@ -1,33 +1,22 @@
 package test;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import main.World;
-import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
-import main.model.OBJLoader;
 import main.model.VertexBuffer;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-public class ModelTest {
-	
-	static Renderer renderer;
-	
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
+public class ModelTest extends TestWithRenderer {
 	
 	@Test
 	public void loadsCorrectly() throws Exception {

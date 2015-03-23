@@ -6,11 +6,11 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.commons.io.FileUtils;
-
+import main.World;
 import main.model.DataChannels;
 import main.renderer.Renderer;
-import main.util.ressources.Reloadable;
+
+import org.apache.commons.io.FileUtils;
 
 public class ProgramFactory {
 
@@ -19,10 +19,12 @@ public class ProgramFactory {
 	
 	private Renderer renderer;
 	
-	public static List<Reloadable> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
+	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
-	public ProgramFactory(Renderer renderer) {
-		this.renderer = renderer;
+	public ProgramFactory(World world) {
+		this.renderer = world.getRenderer();
+		world.getEventBus().register(new AbstractProgram() { });
+		world.getEventBus().register(getProgram(""));
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) {

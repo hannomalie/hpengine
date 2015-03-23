@@ -4,6 +4,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Set;
 
+import main.World;
 import main.renderer.material.Material.MAP;
 
 public enum ShaderDefine {
@@ -53,6 +54,14 @@ public enum ShaderDefine {
 				}
 			}
 		}
+		
+		return builder.toString();
+	}
+	
+	public static String getGlobalDefinesString() {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append("const bool RAINEFFECT = " + (World.RAINEFFECT != 0.0) + ";\n");
 		
 		return builder.toString();
 	}

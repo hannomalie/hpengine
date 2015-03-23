@@ -50,7 +50,7 @@ public interface Renderer {
 		}
 	}
 	public void destroy();
-	public void draw(Camera camera, Octree octree, List<IEntity> entities, DirectionalLight light);
+	public void draw(Camera camera, World world, List<IEntity> entities, DirectionalLight light);
 	public void update(World world, float seconds);
 	public float getElapsedSeconds();
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light);
@@ -73,6 +73,7 @@ public interface Renderer {
 	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 	public void addRenderProbeCommand(EnvironmentProbe probe);
+	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);
 	public float getCurrentFPS();
 	public double getDeltaInS();
 	public int getFrameCount();

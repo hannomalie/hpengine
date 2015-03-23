@@ -9,15 +9,20 @@ import main.scene.EnvironmentProbe;
 public class RenderProbeCommand implements Command<Result>, ITransformable {
 
 	EnvironmentProbe probe;
-	
+	boolean urgent = false;
+
 	public RenderProbeCommand(EnvironmentProbe probe) {
+		this(probe, false);
+	}
+	public RenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
 		this.probe = probe;
+		this.urgent = urgent;
 	}
 	
 	@Override
 	public Result execute(World world) {
 		
-		probe.draw(world.getScene().getOctree(), World.light);
+		probe.draw(world.getScene().getOctree(), World.light, urgent);
 		
 		return new Result();
 	}
@@ -33,5 +38,9 @@ public class RenderProbeCommand implements Command<Result>, ITransformable {
 
 	@Override
 	public void setTransform(Transform transform) { }
+	
+	public boolean isUrgent() {
+		return urgent;
+	}
 
 }

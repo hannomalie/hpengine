@@ -91,7 +91,7 @@ public class EnvironmentProbeFactory {
 		return getProbe(center, new Vector3f(size, size, size), update);
 	}
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update) {
-		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update);
+		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update, getProbes().size());
 		probes.add(probe);
 		updateBuffers();
 		return probe;

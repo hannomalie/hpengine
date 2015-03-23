@@ -22,19 +22,42 @@ public class RenderProbeCommandQueue {
 	public <T extends ITransformable> RenderProbeCommandQueue() {
 		workQueue = new LinkedBlockingQueue<RenderProbeCommand>();
 	}
-	
+
 	public void addProbeRenderCommand(EnvironmentProbe probe) {
-		for (RenderProbeCommand renderProbeCommand : workQueue) {
-			if(probe.getIndex() == renderProbeCommand.getProbe().getIndex()) { return; };
+		addProbeRenderCommand(probe, false);
+	}
+	public void addProbeRenderCommand(EnvironmentProbe probe, boolean urgent) {
+		if(!urgent) {
+
+			RenderProbeCommand command = new RenderProbeCommand(probe);
+			if(contains(command)) { return; }
+			
+			add(new RenderProbeCommand(probe));
+		} else {
+			add(new RenderProbeCommand(probe));
 		}
-		workQueue.add(new RenderProbeCommand(probe));
+	}
+	
+	private boolean contains(RenderProbeCommand command) {
+		boolean result = false;
+		for (RenderProbeCommand c : workQueue) {
+			if(c.getProbe().getIndex() == command.getProbe().getIndex()) {
+				result = true; 
+			}
+		}
+		return result;
+	}
+	
+	private void add(RenderProbeCommand command) {
+		if(getRemaining() > 20) { return; }
+		workQueue.add(command);
 	}
 
 	public Optional<RenderProbeCommand> take() {
 		if(!workQueue.isEmpty()) {
 			RenderProbeCommand command = workQueue.poll();
 			if(command != null) {
-				return Optional.of(command); 
+				return Optional.of(command);
 			}
 		}
 		return Optional.empty();
@@ -50,5 +73,9 @@ public class RenderProbeCommandQueue {
 			workQueue.remove(result.get());
 		}
 		return result;
+	}
+
+	public int getRemaining() {
+		return workQueue.size();
 	}
 }

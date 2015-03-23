@@ -2,6 +2,7 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -17,6 +18,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+
 
 import javax.script.ScriptException;
 import javax.swing.JFrame;
@@ -42,7 +44,9 @@ import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 
+
 import main.World;
+import main.event.GlobalDefineChangedEvent;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
@@ -68,6 +72,7 @@ import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -76,6 +81,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
@@ -294,6 +300,7 @@ public class DebugFrame {
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			World.useAmbientOcclusion = !World.useAmbientOcclusion;
+			world.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 		toggleColorBleeding.addActionListener(e -> {
 			World.useColorBleeding = !World.useColorBleeding;
@@ -438,6 +445,7 @@ public class DebugFrame {
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
 				@Override public void onValueChange(int value, int delta) {
 					World.RAINEFFECT = (float) value/100;
+					world.getEventBus().post(new GlobalDefineChangedEvent());
 				}
 			}
 		));

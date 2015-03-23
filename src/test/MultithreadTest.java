@@ -1,9 +1,9 @@
 package test;
 
 import junit.framework.Assert;
+import main.World;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
-import main.renderer.light.DirectionalLight;
 import main.util.OpenGLThread;
 
 import org.junit.BeforeClass;
@@ -13,14 +13,8 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.SharedDrawable;
 
-public class MultithreadTest {
-	static Renderer renderer;
+public class MultithreadTest extends TestWithRenderer {
 	static volatile boolean success1 = false;
-	
-	@BeforeClass
-	public static void init() {
-		renderer = new DeferredRenderer(new DirectionalLight(true));
-	}
 	
 	@Test
 	public void secondThreadUsesGLContext() throws InterruptedException, LWJGLException {
