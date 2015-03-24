@@ -2,7 +2,6 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -12,13 +11,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-
+import java.util.stream.Collectors;
 
 import javax.script.ScriptException;
 import javax.swing.JFrame;
@@ -44,7 +48,6 @@ import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 
-
 import main.World;
 import main.event.GlobalDefineChangedEvent;
 import main.model.IEntity;
@@ -67,11 +70,12 @@ import main.renderer.material.MaterialFactory;
 import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.TextureFactory;
+import main.util.Adjustable;
+import main.util.Toggable;
 import main.util.gui.input.SliderInput;
 import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
-
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -81,7 +85,6 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
@@ -145,7 +148,6 @@ public class DebugFrame {
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
-	private WebToggleButton toggleColorBleeding = new WebToggleButton("Color Bleeding", World.useColorBleeding);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
 	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", World.useInstantRadiosity);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
@@ -197,6 +199,7 @@ public class DebugFrame {
 
 	private void init(World world) {
 		this.world = world;
+	    List<Component> mainButtonElements = new ArrayList<>();
 		tabbedPane = new WebTabbedPane();
 		fileChooser = new WebFileChooser(new File(getClass().getResource("").getPath()));
 		
@@ -283,6 +286,24 @@ public class DebugFrame {
 			}
 			
 		});
+		//////////////////////////////
+		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();
+		for (Field field : World.class.getDeclaredFields()) {
+			for (Annotation annotation : field.getDeclaredAnnotations()) {
+				if(annotation instanceof Toggable) {
+					createWebToggableButton(world, toggleButtonsWithGroups, field, annotation);
+				} else if(annotation instanceof Adjustable) {
+// TODO: FEINSCHLIFF
+//					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
+				}
+			}
+		}
+		for (Entry<String, List<Component>> groupAndButtons : toggleButtonsWithGroups.entrySet()) {
+			Component[] toggleButtonsArray = new Component[groupAndButtons.getValue().size()];
+			groupAndButtons.getValue().toArray(toggleButtonsArray);
+			mainButtonElements.add(new TitledPanel(groupAndButtons.getKey(), toggleButtonsArray));
+		}
+		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
 			world.getRenderer().addCommand(new DumpAveragesCommand(1000));
@@ -301,9 +322,6 @@ public class DebugFrame {
 		toggleAmbientOcclusion.addActionListener(e -> {
 			World.useAmbientOcclusion = !World.useAmbientOcclusion;
 			world.getEventBus().post(new GlobalDefineChangedEvent());
-		});
-		toggleColorBleeding.addActionListener(e -> {
-			World.useColorBleeding = !World.useColorBleeding;
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
@@ -416,7 +434,6 @@ public class DebugFrame {
 		});
 
 ////////////////
-	    List<Component> mainButtonElements = new ArrayList<>();
 	    
 	    toggleSampleCount2.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
 	    toggleSampleCount4.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
@@ -803,6 +820,93 @@ public class DebugFrame {
 		mainFrame.setVisible(true);
 		initPerformanceChart();
 		redirectSystemStreams();
+	}
+
+	private void createWebSlider(World world,
+			Map<String, List<Component>> toggleButtonsWithGroups, Field field,
+			Annotation annotation) {
+		try {
+			float f = field.getFloat(world);
+			Adjustable adjustable = (Adjustable) annotation;
+			
+			List<Component> groupList;
+			if(toggleButtonsWithGroups.containsKey(adjustable.group())) {
+				groupList = toggleButtonsWithGroups.get(adjustable.group());
+			} else {
+				groupList = new ArrayList<Component>();
+				toggleButtonsWithGroups.put(adjustable.group(), groupList);
+			}
+			
+			WebSlider slider = new WebSlider(WebSlider.HORIZONTAL);
+			slider.setMinimum ( adjustable.minimum() );
+			slider.setMaximum ( adjustable.maximum() );
+			slider.setMinorTickSpacing ( adjustable.minorTickSpacing() );
+			slider.setMajorTickSpacing ( adjustable.majorTickSpacing() );
+			slider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * adjustable.factor()));
+			slider.setPaintTicks ( true );
+			slider.setPaintLabels ( true );
+			slider.addChangeListener(new ChangeListener() {
+				
+				@Override
+				public void stateChanged(ChangeEvent e) {
+					try {
+						float currentValue = field.getFloat(world);
+					} catch (IllegalArgumentException | IllegalAccessException e2) {
+						e2.printStackTrace();
+					}
+					
+					WebSlider slider = (WebSlider) e.getSource();
+					int value = slider.getValue();
+					float valueAsFactor = ((float) value) / adjustable.factor();
+					try {
+						field.setFloat(world, valueAsFactor);
+						world.getEventBus().post(new GlobalDefineChangedEvent());
+					} catch (IllegalArgumentException | IllegalAccessException e1) {
+						e1.printStackTrace();
+					}
+				}
+			});
+			groupList.add(new WebLabel(field.getName()));
+			groupList.add(slider);
+			
+		} catch (IllegalArgumentException e1) {
+			e1.printStackTrace();
+		} catch (IllegalAccessException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	private void createWebToggableButton(World world,
+			Map<String, List<Component>> toggleButtonsWithGroups,
+			Field field, Annotation annotation) {
+		try {
+			boolean b = field.getBoolean(world);
+			Toggable toggable = (Toggable) annotation;
+			List<Component> groupList;
+			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
+				groupList = toggleButtonsWithGroups.get(toggable.group());
+			} else {
+				groupList = new ArrayList<Component>();
+				toggleButtonsWithGroups.put(toggable.group(), groupList);
+			}
+			
+			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
+				boolean currentValue;
+				try {
+					currentValue = field.getBoolean(world);
+					field.setBoolean(world, !currentValue);
+					world.getEventBus().post(new GlobalDefineChangedEvent());
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			});
+			groupList.add(button);
+			
+		} catch (IllegalArgumentException e1) {
+			e1.printStackTrace();
+		} catch (IllegalAccessException e1) {
+			e1.printStackTrace();
+		}
 	}
 
 	private void initPerformanceChart() {
@@ -1353,7 +1457,7 @@ public class DebugFrame {
 			current.add(new DefaultMutableTreeNode(entitiy));
 		}
 		
-		if (node.hasChildren() && node.entities.size() > 0) {
+		if (node.hasChildren() && node.entities.size() > 0 && !node.isRoot()) {
 			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
 		}
 	}

@@ -61,8 +61,18 @@ public enum ShaderDefine {
 	public static String getGlobalDefinesString() {
 		StringBuilder builder = new StringBuilder();
 
-		builder.append("const bool RAINEFFECT = " + (World.RAINEFFECT != 0.0) + ";\n");
+		appendWithSemicolonAndNewLine(builder, "const bool RAINEFFECT = " + (World.RAINEFFECT != 0.0));
+		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES = " + World.MULTIPLE_DIFFUSE_SAMPLES);
+		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + World.MULTIPLE_DIFFUSE_SAMPLES_PROBES);
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + World.USE_CONETRACING_FOR_DIFFUSE);
+		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + World.USE_CONETRACING_FOR_DIFFUSE_PROBES);
 		
 		return builder.toString();
+	}
+	
+	private static StringBuilder appendWithSemicolonAndNewLine(StringBuilder builder, String toAppend) {
+		builder.append(toAppend);
+		builder.append(";\n");
+		return builder;
 	}
 }

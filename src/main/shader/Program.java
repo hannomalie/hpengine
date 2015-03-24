@@ -229,6 +229,8 @@ public class Program extends AbstractProgram implements Reloadable {
 
 		String findStr = "\n";
 		int newlineCount = (shaderSource.split(findStr, -1).length-1);
+
+//		System.out.println(shaderSource);
 		
 		try {
 			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);

@@ -611,8 +611,8 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
   vec3 projectedNormal = boxProjection(positionWorld, normal, index);
   
-  const bool MULTIPLE_DIFFUSE_SAMPLES = true;
-  if(MULTIPLE_DIFFUSE_SAMPLES) {
+  //const bool MULTIPLE_DIFFUSE_SAMPLES = true;
+  if(MULTIPLE_DIFFUSE_SAMPLES_PROBES) {
 	float lod = MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
   	vec3 probeExtents = environmentMapMax[index] - environmentMapMin[index];
   	vec3 probeCenter = environmentMapMin[index] + probeExtents/2;
@@ -623,8 +623,8 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    vec3 H = importanceSampleResult[0];
 	    H = hemisphereSample_uniform(xi.x, xi.y, normal);
 	    
-	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
-  		if(USE_CONETRACING_FOR_DIFFUSE) {
+	    //const bool USE_CONETRACING_FOR_DIFFUSE = false;
+  		if(USE_CONETRACING_FOR_DIFFUSE_PROBES) {
 		  	TraceResult traceResult = traceCubes(positionWorld, H, v, roughness, metallic, color);
 			vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), lod);
 			if(traceResult.probeIndexSecondNearest == -1) {

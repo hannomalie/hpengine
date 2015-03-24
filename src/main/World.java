@@ -8,12 +8,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
-import main.component.IGameComponent.ComponentIdentifier;
-import main.component.PhysicsComponent;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
@@ -21,39 +18,24 @@ import main.physic.PhysicsFactory;
 import main.renderer.DeferredRenderer;
 import main.renderer.GBuffer;
 import main.renderer.Renderer;
-import main.renderer.light.PointLight;
 import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.scene.EnvironmentProbe;
 import main.scene.Scene;
 import main.texture.Texture;
+import main.util.Adjustable;
+import main.util.Toggable;
 import main.util.gui.DebugFrame;
 import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.laf.WebLookAndFeel;
-import com.bulletphysics.collision.broadphase.BroadphaseInterface;
-import com.bulletphysics.collision.broadphase.DbvtBroadphase;
-import com.bulletphysics.collision.dispatch.CollisionConfiguration;
-import com.bulletphysics.collision.dispatch.CollisionDispatcher;
-import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
-import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.collision.shapes.SphereShape;
-import com.bulletphysics.collision.shapes.StaticPlaneShape;
-import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
-import com.bulletphysics.dynamics.RigidBody;
-import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
-import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
-import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-import com.bulletphysics.linearmath.DefaultMotionState;
-import com.bulletphysics.linearmath.MotionState;
 import com.google.common.eventbus.EventBus;
 
 public class World {
@@ -67,29 +49,34 @@ public class World {
 	private OpenGLStopWatch glWatch;
 
 	public static DirectionalLight light= new DirectionalLight(true);
-	public static volatile boolean useParallax = false;
-	public static volatile boolean useSteepParallax = false;
-	public static volatile boolean useAmbientOcclusion = true;
-	public static volatile boolean useColorBleeding = false;
-	public static volatile boolean useFrustumCulling = true;
+	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
+	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;
+	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
+	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
-	public static volatile boolean USE_GI = true;
-	public static volatile boolean useSSR = false;
-	public static volatile boolean DRAWLINES_ENABLED = false;
-	public static volatile boolean DRAWSCENE_ENABLED = true;
-	public static volatile boolean DEBUGDRAW_PROBES = false;
-	public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
-	public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
-	public static volatile boolean DEBUGFRAME_ENABLED = false;
-	public static volatile boolean DRAWLIGHTS_ENABLED = false;
-	public static volatile boolean DRAW_PROBES = true;
-	public static volatile boolean VSYNC_ENABLED = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = true;
+	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
+	
+	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
+	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
+	
+	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
+	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
+	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES = false;
+	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
+	@Toggable(group = "Quality settings") public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
+	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
+	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
+	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
+	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = false;
 
-	public static volatile float RAINEFFECT = 0.0f;
-	public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
-	public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
-	public static volatile float EXPOSURE = 8f;
-	public static volatile boolean AUTO_EXPOSURE_ENABLED = false;
+	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
+	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
+	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
+	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
+	@Toggable(group = "Quality settings") public static volatile boolean AUTO_EXPOSURE_ENABLED = false;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
 	public static void main(String[] args) {

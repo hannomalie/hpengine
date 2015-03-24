@@ -559,7 +559,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
   vec3 projectedNormal = boxProjection(positionWorld, normal, index);
   
-  const bool MULTIPLE_DIFFUSE_SAMPLES = true;
+  //const bool MULTIPLE_DIFFUSE_SAMPLES = true;
   if(MULTIPLE_DIFFUSE_SAMPLES) {
 	float lod = roughness*MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
   	vec3 probeExtents = environmentMapMax[index] - environmentMapMin[index];
@@ -572,6 +572,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    
 	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
   		if(USE_CONETRACING_FOR_DIFFUSE) {
+			float lod = roughness*MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
 		  	TraceResult traceResult = traceCubes(positionWorld, H, v, roughness, metallic, color);
 			vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), lod);
 			if(traceResult.probeIndexSecondNearest == -1) {
@@ -580,7 +581,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			}
 			vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), lod);
 			
-			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
+			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb * clamp(dot(normal, H), 0, 1);
     	} else {
     		float lod = MAX_MIPMAPLEVEL+4;
 			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);

@@ -365,10 +365,9 @@ public class DeferredRenderer implements Renderer {
 	public void init(Octree octree) {
 		environmentProbeFactory.drawInitial(octree);
 		
-		final int initialDrawCount = 2;
+		final int initialDrawCount = 10;
 		for(int i = 0; i < initialDrawCount; i++) {
 			for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
-				System.out.println("Added render probe command");
 				addRenderProbeCommand(probe, true);
 			}
 		}
