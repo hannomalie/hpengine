@@ -55,6 +55,7 @@ public class EnvironmentSampler {
 	private Program cubeMapLightingProgram;
 	private Program depthPrePassProgram;
 	private ComputeShaderProgram tiledProbeLightingProgram;
+	private ComputeShaderProgram cubemapRadianceProgram;
 	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private Renderer renderer;
 	transient private boolean drawnOnce = false;
@@ -90,6 +91,7 @@ public class EnvironmentSampler {
 		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
 		tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
+		cubemapRadianceProgram = renderer.getProgramFactory().getComputeProgram("cubemap_radiance_compute.glsl");
 
 //		secondPassDirectionalProgram = renderer.getProgramFactory().getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_probe_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		secondPassDirectionalProgram = renderer.getSecondPassDirectionalProgram();
@@ -427,6 +429,42 @@ public class EnvironmentSampler {
 	}
 
 	private void generateCubeMapMipMaps() {
+		GPUProfiler.start("MipMap generation");
+
+		_generateCubeMapMipMaps();
+		if(World.PRECOMPUTED_RADIANCE) {
+			CubeMapArray cubeMapArray = renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3);
+			int internalFormat = cubeMapArray.getInternalFormat();
+			
+			for (int i = 0; i < 6; i++) {
+				int indexOfFace = 6 * probe.getIndex() + i;
+				
+				cubemapRadianceProgram.use();
+				int cubemapArrayColorTextureId = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID();
+				GL42.glBindImageTexture(0, cubemapArrayColorTextureId, 1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(1, cubemapArrayColorTextureId, 2, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(2, cubemapArrayColorTextureId, 3, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(3, cubemapArrayColorTextureId, 4, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(4, cubemapArrayColorTextureId, 5, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(5, cubemapArrayColorTextureId, 6, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(6, cubemapArrayColorTextureId, 7, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				GL42.glBindImageTexture(7, cubemapArrayColorTextureId, 8, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+
+				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+				renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
+				
+				cubemapRadianceProgram.setUniform("currentCubemapSide", i);
+				cubemapRadianceProgram.setUniform("currentProbe", probe.getIndex());
+				cubemapRadianceProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
+				cubemapRadianceProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
+				renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubemapRadianceProgram);
+				cubemapRadianceProgram.dispatchCompute(128/16, 128/16, 1);
+			}
+		}
+		GPUProfiler.end();
+		
+	}
+	private void _generateCubeMapMipMaps() {
 
 		GPUProfiler.start("MipMap generation");
 
@@ -446,12 +484,6 @@ public class EnvironmentSampler {
 			renderer.getTextureFactory().generateMipMapsCubeMap(cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}
-		//		
-//		int errorValue = GL11.glGetError();
-//		if (errorValue != GL11.GL_NO_ERROR) {
-//			String errorString = GLU.gluErrorString(errorValue);
-//			System.err.println("ERROR: " + errorString);
-//		}
 		GPUProfiler.end();
 	}
 

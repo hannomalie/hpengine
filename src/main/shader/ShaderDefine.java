@@ -66,6 +66,7 @@ public enum ShaderDefine {
 		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + World.MULTIPLE_DIFFUSE_SAMPLES_PROBES);
 		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + World.USE_CONETRACING_FOR_DIFFUSE);
 		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + World.USE_CONETRACING_FOR_DIFFUSE_PROBES);
+		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + World.PRECOMPUTED_RADIANCE);
 		
 		return builder.toString();
 	}

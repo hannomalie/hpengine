@@ -447,6 +447,21 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //result.specularColor = result.diffuseColor;
   //return result;
   
+	if(PRECOMPUTED_RADIANCE) {
+  		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
+		vec3 reflectionVector = reflect(v, normal);
+  		vec3 projectedReflected = boxProjection(positionWorld, reflectionVector, index);
+	  	
+		vec3 sample0 = diffuseColor*textureLod(probes, vec4(projectedNormal, index), roughness*MAX_MIPMAPLEVEL).rgb;
+		vec3 sample1 = SpecularColor*textureLod(probes, vec4(projectedReflected, index), roughness*MAX_MIPMAPLEVEL).rgb;
+		
+		float weight = mix(0, 1, 1-roughness);
+		result.diffuseColor = sample0*(1-weight);
+		result.specularColor = sample1*(weight);
+		return result;
+	}
+	
+  
   if(roughness < 0.01) {
   	vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
     result.specularColor = SpecularColor * textureLod(probes, vec4(projectedReflected, index), 1).rgb;
