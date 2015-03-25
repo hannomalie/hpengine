@@ -257,7 +257,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 	float alpha = roughness*roughness;
 	float alpha2 = alpha * alpha;
 	
-	//if( NoL > 0 )
+	if( NoL > 0 )
 	{
 		vec3 halfVector = normalize(H + v);
 		
@@ -319,8 +319,9 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, sampleVector);
 	    vec3 H = importanceSampleResult[0];
 	    //H = hemisphereSample_uniform(xi.x, xi.y, normal);
+		float NoL = clamp(dot(H, normal), 0.0, 1.0);
 	    
-		resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
+		resultDiffuse.rgb += NoL * diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
 	  }
 	  resultDiffuse.rgb /= SAMPLE_COUNT;
   } else {
@@ -341,7 +342,7 @@ void main()
 	vec2 st = vec2(storePos) / vec2(screenWidth, screenHeight);
 	
 	for(int i = 8; i > 0; i--) {
-		float roughness = i * (1/8);
+		float roughness = 0.2 + i * (0.8/8);
 		
 		vec3 boxHalfExtents = (environmentMapMax[currentProbe] - environmentMapMin[currentProbe])/2;
 		vec3 positionWorld = environmentMapMin[currentProbe] + boxHalfExtents;

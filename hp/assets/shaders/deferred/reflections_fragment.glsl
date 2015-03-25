@@ -440,7 +440,7 @@ float getAreaPerPixel(int index, vec3 normal) {
 
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
-  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  vec3 SpecularColor = mix(mix(vec3(0.04,0.04,0.04), vec3(0.2,0.2,0.2), (1-roughness)), color*(1-roughness), metallic);
   
   ProbeSample result;
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
@@ -452,12 +452,12 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		vec3 reflectionVector = reflect(v, normal);
   		vec3 projectedReflected = boxProjection(positionWorld, reflectionVector, index);
 	  	
-		vec3 sample0 = diffuseColor*textureLod(probes, vec4(projectedNormal, index), roughness*MAX_MIPMAPLEVEL).rgb;
+		vec3 sample0 = diffuseColor*textureLod(probes, vec4(projectedNormal, index), 6+roughness*MAX_MIPMAPLEVEL).rgb; // TODO: CHECK IF THERE'S A BETTER CHOICE, SPLIT-SUM_APPROX
 		vec3 sample1 = SpecularColor*textureLod(probes, vec4(projectedReflected, index), roughness*MAX_MIPMAPLEVEL).rgb;
 		
 		float weight = mix(0, 1, 1-roughness);
-		result.diffuseColor = sample0*(1-weight);
-		result.specularColor = sample1*(weight);
+		result.diffuseColor = sample0;
+		result.specularColor = sample1;
 		return result;
 	}
 	
@@ -584,6 +584,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    vec2 xi = hammersley2d(k, SAMPLE_COUNT);
 	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, 1, sampleVector);
 	    vec3 H = importanceSampleResult[0];
+		float NoL = clamp(dot(H, normal), 0.0, 1.0);
 	    
 	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
   		if(USE_CONETRACING_FOR_DIFFUSE) {
@@ -596,10 +597,10 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			}
 			vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), lod);
 			
-			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb * clamp(dot(normal, H), 0, 1);
+			resultDiffuse.rgb += NoL*diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb * clamp(dot(normal, H), 0, 1);
     	} else {
     		float lod = MAX_MIPMAPLEVEL+4;
-			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
+			resultDiffuse.rgb += NoL*diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
     	}
 	  }
 	  resultDiffuse.rgb /= SAMPLE_COUNT;
