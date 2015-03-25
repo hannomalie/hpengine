@@ -18,7 +18,7 @@ public class UniformTest {
 	
 	@Before
 	public void init() {
-		renderer = new DeferredRenderer(new World());
+		renderer = new DeferredRenderer(new World(), true);
 		program = renderer.getProgramFactory().getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", Entity.POSITIONCHANNEL, false);
 		
 	}

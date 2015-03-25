@@ -17,7 +17,7 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		World world = new World();
+		World world = new World(true);
 		renderer = world.getRenderer();
 	}
 

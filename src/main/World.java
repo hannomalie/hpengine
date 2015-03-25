@@ -130,11 +130,16 @@ public class World {
 	public World() {
 		this(null);
 	}
-	
+	public World(boolean headless) {
+		this(null, headless);
+	}
 	public World(String sceneName) {
+		this(sceneName, false);
+	}
+	public World(String sceneName, boolean headless) {
 		setEventBus(new EventBus());
 		initWorkDir();
-		renderer = new DeferredRenderer(this);
+		renderer = new DeferredRenderer(this, headless);
 		glWatch = new OpenGLStopWatch();
 		physicsFactory = new PhysicsFactory(this);
 		initDefaultMaterials();

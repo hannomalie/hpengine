@@ -2,6 +2,8 @@ package main.renderer;
 
 import static main.log.ConsoleLogger.getLogger;
 
+import java.awt.Canvas;
+import java.awt.Frame;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -23,6 +25,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import javax.swing.JFrame;
 
 import main.World;
 import main.camera.Camera;
@@ -150,8 +154,8 @@ public class DeferredRenderer implements Renderer {
 	private int maxTextureUnits;
 	
 
-	public DeferredRenderer(World world) {
-		setupOpenGL();
+	public DeferredRenderer(World world, boolean headless) {
+		setupOpenGL(headless);
 		world.setRenderer(this);
 		objLoader = new OBJLoader(this);
 		textureFactory = new TextureFactory();
@@ -256,8 +260,18 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
 
-	private void setupOpenGL() {
+	private void setupOpenGL(boolean headless) {
 		try {
+
+			if(headless) {
+				Canvas canvas = new Canvas();
+		        Frame frame = new JFrame("hpengine");
+		        frame.add(canvas);
+		        frame.pack();
+		        frame.setVisible(false);
+		        Display.setParent(canvas);
+			}
+			
 			PixelFormat pixelFormat = new PixelFormat();
 			ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
 //				.withProfileCompatibility(true)

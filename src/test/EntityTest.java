@@ -17,7 +17,7 @@ public class EntityTest extends TestWithRenderer {
 	@Test
 	public void writeAndRead() throws Exception {
 		Entity entity = (Entity) renderer.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
-		
+		entity.setName("default");
 		String filename = "default.hpentity";
 
 		Assert.assertTrue(Entity.write(entity, filename));
