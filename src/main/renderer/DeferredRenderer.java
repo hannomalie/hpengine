@@ -574,7 +574,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
-//		if(IGNORE_GL_ERRORS) { return; }
+		if(IGNORE_GL_ERRORS) { return; }
 		int errorValue = GL11.glGetError();
 		
 		if (errorValue != GL11.GL_NO_ERROR) {

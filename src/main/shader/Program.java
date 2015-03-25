@@ -115,7 +115,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		GL20.glLinkProgram(id);
 		GL20.glValidateProgram(id);
 
-		use();
+//		use(); // CAN CAUSE INVALID OPERATION - TODO: CHECK OUT WHY
 		addFileListeners();
 	}
 	
