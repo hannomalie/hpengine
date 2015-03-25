@@ -9,7 +9,10 @@ import java.util.stream.Collectors;
 
 import main.World;
 import main.camera.Camera;
+import main.event.GlobalDefineChangedEvent;
+import main.event.MaterialChangedEvent;
 import main.model.Entity;
+import main.model.Entity.Update;
 import main.model.IEntity;
 import main.model.ITransformable;
 import main.model.QuadVertexBuffer;
@@ -46,6 +49,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+
+import com.google.common.eventbus.Subscribe;
 
 public class EnvironmentSampler {
 	public static volatile boolean deferredRenderingForProbes = true;
@@ -147,7 +152,7 @@ public class EnvironmentSampler {
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
 			List<IEntity> visibles = octree.getVisible(camera);
-			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.hasMoved(); }).
+			List<IEntity> movedVisibles = visibles.stream().filter(e -> { return e.getUpdate() == Update.STATIC; }).
 					sorted(new TransformDistanceComparator<ITransformable>(camera) {
 						public int compare(ITransformable o1, ITransformable o2) {
 							if(reference == null) { return 0; }
@@ -156,7 +161,7 @@ public class EnvironmentSampler {
 							return Float.compare(distanceToFirst.lengthSquared(), distanceToSecond.lengthSquared());
 						}
 					}).collect(Collectors.toList());
-			boolean fullRerenderRequired = urgent || !movedVisibles.isEmpty() || !drawnOnce;
+			boolean fullRerenderRequired = urgent || !drawnOnce;
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
@@ -182,7 +187,7 @@ public class EnvironmentSampler {
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill GBuffer");
-					drawFirstPass(i, camera, visibles);
+					drawFirstPass(i, camera, movedVisibles);
 					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
@@ -196,7 +201,7 @@ public class EnvironmentSampler {
 			} else {
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawEntities(cubeMapProgram, World.light, visibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
+				drawEntities(cubeMapProgram, World.light, movedVisibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -217,6 +222,14 @@ public class EnvironmentSampler {
 	
 	public void resetDrawing() {
 		sidesDrawn.clear();
+	}
+	
+	@Subscribe
+	public void handle(MaterialChangedEvent e) {
+		resetDrawing();
+		renderer.addRenderProbeCommand(probe, true);
+		renderer.addRenderProbeCommand(probe, true);
+		renderer.addRenderProbeCommand(probe, true);
 	}
 
 	private void bindProgramSpecificsPerCubeMap() {

@@ -137,7 +137,7 @@ public class EnvironmentProbe implements IEntity {
 		this.update = update;
 	}
 
-	public Update getUpdate() {
+	public Update getProbeUpdate() {
 		return update;
 	}
 

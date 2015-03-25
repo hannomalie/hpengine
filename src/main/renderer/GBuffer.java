@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import main.Transform;
 import main.World;
 import main.camera.Camera;
+import main.config.Config;
 import main.model.IEntity;
 import main.model.Model;
 import main.model.QuadVertexBuffer;
@@ -115,14 +116,14 @@ public class GBuffer {
 		this.tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_compute.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		gBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA32F, 4);
-		reflectionBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
-		laBuffer = new RenderTarget((int) (Renderer.WIDTH * SECONDPASSSCALE) , (int) (Renderer.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
-		finalBuffer = new RenderTarget(Renderer.WIDTH, Renderer.HEIGHT, GL11.GL_RGBA8, 1);
+		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA32F, 4);
+		reflectionBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
+		laBuffer = new RenderTarget((int) (Config.WIDTH * SECONDPASSSCALE) , (int) (Config.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
+		finalBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
-		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Renderer.WIDTH, Renderer.HEIGHT));
+		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.WIDTH, Config.HEIGHT));
 		pixelBufferObject = new PixelBufferObject(1, 1);
 	}
 	
@@ -301,8 +302,8 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
-		secondPassDirectionalProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		secondPassDirectionalProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		secondPassDirectionalProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		secondPassDirectionalProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
@@ -407,8 +408,8 @@ public class GBuffer {
 			reflectionProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
 			reflectionProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 			reflectionProgram.setUniform("useSSR", World.useSSR);
-			reflectionProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-			reflectionProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			reflectionProgram.setUniform("screenWidth", (float) Config.WIDTH);
+			reflectionProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 			reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
@@ -421,8 +422,8 @@ public class GBuffer {
 			tiledProbeLightingProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
 			tiledProbeLightingProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 			tiledProbeLightingProgram.setUniform("useSSR", World.useSSR);
-			tiledProbeLightingProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-			tiledProbeLightingProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			tiledProbeLightingProgram.setUniform("screenWidth", (float) Config.WIDTH);
+			tiledProbeLightingProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 			tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 			tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 			tiledProbeLightingProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
@@ -447,8 +448,8 @@ public class GBuffer {
 		GPUProfiler.start("Set shared uniforms");
 //		secondPassPointProgram.setUniform("lightCount", pointLights.size());
 //		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
-		secondPassPointProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		secondPassPointProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassPointProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		secondPassPointProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		secondPassPointProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
@@ -499,8 +500,8 @@ public class GBuffer {
 		if(tubeLights.isEmpty()) { return; }
 		
 		secondPassTubeProgram.use();
-		secondPassTubeProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		secondPassTubeProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassTubeProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		secondPassTubeProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		secondPassTubeProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
@@ -538,8 +539,8 @@ public class GBuffer {
 		GPUProfiler.start("Area lights: " + areaLights.size());
 		
 		secondPassAreaLightProgram.use();
-		secondPassAreaLightProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		secondPassAreaLightProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		secondPassAreaLightProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		secondPassAreaLightProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		secondPassAreaLightProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
@@ -590,8 +591,8 @@ public class GBuffer {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
 			instantRadiosityProgram.use();
-			instantRadiosityProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-			instantRadiosityProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+			instantRadiosityProgram.setUniform("screenWidth", (float) Config.WIDTH);
+			instantRadiosityProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 			instantRadiosityProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 			instantRadiosityProgram.setUniform("lightDiffuse", directionalLight.getColor());
 			instantRadiosityProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
@@ -610,8 +611,8 @@ public class GBuffer {
 		combineProgram.use();
 		combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		combineProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		combineProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		combineProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("exposure", World.EXPOSURE);
@@ -701,8 +702,8 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_BLEND);
 
 		linesProgram.use();
-		linesProgram.setUniform("screenWidth", (float) Renderer.WIDTH);
-		linesProgram.setUniform("screenHeight", (float) Renderer.HEIGHT);
+		linesProgram.setUniform("screenWidth", (float) Config.WIDTH);
+		linesProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		linesProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		linesProgram.setUniform("eyePosition", camera.getPosition());

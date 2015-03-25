@@ -58,6 +58,12 @@ public class Entity implements IEntity, Serializable {
 	public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
 			DataChannels.POSITION3);
 
+	public enum Update {
+		STATIC,
+		DYNAMIC
+	}
+
+	private Update update = Update.DYNAMIC;
 
 	transient protected VertexBuffer vertexBuffer;
 	private float[] floatArray;
@@ -460,6 +466,7 @@ public class Entity implements IEntity, Serializable {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
 		ObjectOutputStream out = null;
+
 		try {
 			fos = new FileOutputStream(getDirectory() + fileName + ".hpentity");
 			out = new ObjectOutputStream(fos);
@@ -517,5 +524,13 @@ public class Entity implements IEntity, Serializable {
 
 	public boolean isHasMoved() {
 		return transform.isDirty();
+	}
+
+	public Update getUpdate() {
+		return update;
+	}
+
+	public void setUpdate(Update update) {
+		this.update = update;
 	}
 }

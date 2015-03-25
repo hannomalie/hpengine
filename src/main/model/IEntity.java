@@ -6,6 +6,7 @@ import main.Transform;
 import main.camera.Camera;
 import main.component.IGameComponent;
 import main.component.IGameComponent.ComponentIdentifier;
+import main.model.Entity.Update;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.shader.Program;
@@ -45,4 +46,7 @@ public interface IEntity extends ITransformable {
 
 	public default boolean hasMoved() { return getTransform().isHasMoved(); }
 	public default void setHasMoved(boolean hasMoved) { getTransform().setHasMoved(hasMoved); }
+
+	public default Update getUpdate() { return Entity.Update.DYNAMIC; }
+	public default void setUpdate(Update update) {}
 }

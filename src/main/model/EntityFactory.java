@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
+import main.model.Entity.Update;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
@@ -56,6 +57,7 @@ public class EntityFactory {
 			fis = new FileInputStream(Entity.getDirectory() + fileName + ".hpentity");
 			in = new ObjectInputStream(fis);
 			Entity entity = (Entity) in.readObject();
+			handleEvolution(entity);
 			entity.init(renderer);
 			in.close();
 			
@@ -74,6 +76,7 @@ public class EntityFactory {
 			fis = new FileInputStream(Entity.getDirectory() + fileName + ".hpentity");
 			in = new ObjectInputStream(fis);
 			Entity entity = (Entity) in.readObject();
+			handleEvolution(entity);
 			in.close();
 			
 			return entity;
@@ -82,4 +85,10 @@ public class EntityFactory {
 		}
 		return null;
 	}
+    
+    private void handleEvolution(Entity entity) {
+		if(entity.getUpdate() == null) {
+			entity.setUpdate(Update.DYNAMIC);
+		}
+    }
 }

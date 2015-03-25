@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.Transform;
+import main.config.Config;
 import main.model.IEntity;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
@@ -45,12 +46,12 @@ public class Camera implements IEntity {
 	private float near;
 	private float far;
 	private float fov = 60;
-	private float ratio = (float)Renderer.WIDTH / (float)Renderer.HEIGHT;
+	private float ratio = (float)Config.WIDTH / (float)Config.HEIGHT;
 
 	private boolean isPerspective = true;
 	
 	public Camera(Renderer renderer) {
-		this(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT);
+		this(renderer, Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	

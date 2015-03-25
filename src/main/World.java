@@ -11,6 +11,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.logging.Logger;
 
 import main.camera.Camera;
+import main.config.Config;
 import main.model.Entity;
 import main.model.IEntity;
 import main.model.Model;
@@ -90,6 +91,9 @@ public class World {
 				debug = false;
 			} else if("secondpassscale=0.5".equals(string)){
 				GBuffer.SECONDPASSSCALE = 0.5f;
+			} else if("fullhd".equals(string)){
+				Config.WIDTH = 1920;
+				Config.HEIGHT = 1080;
 			} else {
 				sceneName = string;
 				break;

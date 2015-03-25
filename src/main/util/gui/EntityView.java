@@ -3,6 +3,7 @@ package main.util.gui;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.SynchronousQueue;
@@ -12,6 +13,7 @@ import javax.swing.JScrollPane;
 
 import main.World;
 import main.model.Entity;
+import main.model.Entity.Update;
 import main.model.IEntity;
 import main.renderer.Renderer;
 import main.renderer.Result;
@@ -73,6 +75,10 @@ public class EntityView extends WebPanel {
 	        addNamePanel(webComponentPanel);
 	        
 	        webComponentPanel.addElement(new TransformablePanel<IEntity>(renderer, entity));
+	        
+	        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
+	        updateComboBox.addActionListener(e -> { entity.setUpdate((Update) updateComboBox.getSelectedItem()); });
+			webComponentPanel.addElement(updateComboBox);
 
 	        WebButton saveEntityButton = new WebButton("Save Entity");
 	        saveEntityButton.addActionListener(e -> {

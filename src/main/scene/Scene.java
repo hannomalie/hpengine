@@ -16,6 +16,7 @@ import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
+import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 
 import org.apache.commons.io.FilenameUtils;
@@ -70,7 +71,7 @@ public class Scene implements Serializable {
 			});
 			probes.clear();
 			for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
-				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getUpdate());
+				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
 				if(probes.contains(probeData)) { continue; }
 				probes.add(probeData);
 			}

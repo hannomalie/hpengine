@@ -3,18 +3,15 @@ package main.renderer;
 import static main.log.ConsoleLogger.getLogger;
 
 import java.awt.Canvas;
-import java.awt.Frame;
-import java.awt.image.BufferedImage;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,7 +19,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.SynchronousQueue;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -30,6 +26,7 @@ import javax.swing.JFrame;
 
 import main.World;
 import main.camera.Camera;
+import main.config.Config;
 import main.model.DataChannels;
 import main.model.Entity;
 import main.model.EntityFactory;
@@ -40,13 +37,10 @@ import main.model.QuadVertexBuffer;
 import main.model.VertexBuffer;
 import main.octree.Octree;
 import main.renderer.command.Command;
-import main.renderer.command.RenderProbeCommand;
 import main.renderer.command.RenderProbeCommandQueue;
-import main.renderer.light.AreaLight;
+import main.renderer.light.DirectionalLight;
 import main.renderer.light.LightFactory;
 import main.renderer.light.PointLight;
-import main.renderer.light.DirectionalLight;
-import main.renderer.light.TubeLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory;
@@ -57,10 +51,7 @@ import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
 import main.texture.CubeMap;
-import main.texture.DynamicCubeMap;
 import main.texture.TextureFactory;
-import main.util.Util;
-import main.util.ressources.FileMonitor;
 import main.util.stopwatch.GPUProfiler;
 import main.util.stopwatch.GPUTaskProfile;
 import main.util.stopwatch.OpenGLStopWatch;
@@ -68,32 +59,20 @@ import main.util.stopwatch.OpenGLStopWatch;
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.Sys;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL40;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-
-import sun.java2d.pipe.RenderingEngine;
 
 import com.bulletphysics.dynamics.DynamicsWorld;
 
@@ -163,7 +142,7 @@ public class DeferredRenderer implements Renderer {
 		programFactory = new ProgramFactory(world);
 		setupShaders();
 		setUpGBuffer();
-		fullScreenTarget = new RenderTarget(WIDTH, HEIGHT, GL11.GL_RGBA8);
+		fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
 		materialFactory = new MaterialFactory(this);
 		entityFactory = new EntityFactory(this);
 		lightFactory = new LightFactory(this);
@@ -259,16 +238,22 @@ public class DeferredRenderer implements Renderer {
 		
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
+	
+	protected void finalize() throws Throwable {
+		destroy();
+	}
+	
 
 	private void setupOpenGL(boolean headless) {
 		try {
 
 			if(headless) {
 				Canvas canvas = new Canvas();
-		        Frame frame = new JFrame("hpengine");
+		        frame = new JFrame("hpengine");
 		        frame.add(canvas);
 		        frame.pack();
 		        frame.setVisible(false);
+		        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		        Display.setParent(canvas);
 			}
 			
@@ -281,13 +266,13 @@ public class DeferredRenderer implements Renderer {
 				;
 //				.withProfileCore(true);
 			
-			Display.setDisplayMode(new DisplayMode(WIDTH, HEIGHT));
+			Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
 			Display.setVSyncEnabled(false);
 			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
 			Display.setResizable(false);
 			
-			GL11.glViewport(0, 0, WIDTH, HEIGHT);
+			GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 		} catch (LWJGLException e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -299,7 +284,7 @@ public class DeferredRenderer implements Renderer {
 //		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		// Map the internal OpenGL coordinate system to the entire screen
-		GL11.glViewport(0, 0, WIDTH, HEIGHT);
+		GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 		
 		initIdentityMatrixBuffer();
 
@@ -433,7 +418,7 @@ public class DeferredRenderer implements Renderer {
 			GPUProfiler.start("Second pass");
 			gBuffer.drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
 			GPUProfiler.end();
-			GL11.glViewport(0, 0, WIDTH, HEIGHT);
+			GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -441,7 +426,7 @@ public class DeferredRenderer implements Renderer {
 			gBuffer.combinePass(target, light, camera);
 			GPUProfiler.end();
 		} else {
-			GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
+			GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 		    
@@ -488,13 +473,13 @@ public class DeferredRenderer implements Renderer {
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
 		
-		float scaleForShaderX = (float) (Renderer.WIDTH / width);
-		float scaleForShaderY = (float) (Renderer.HEIGHT / height);
+		float scaleForShaderX = (float) (Config.WIDTH / width);
+		float scaleForShaderY = (float) (Config.HEIGHT / height);
 		// TODO: Reset texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}
@@ -527,12 +512,12 @@ public class DeferredRenderer implements Renderer {
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
 		
-		float scaleForShaderX = (float) (Renderer.WIDTH / width);
-		float scaleForShaderY = (float) (Renderer.HEIGHT / height);
+		float scaleForShaderX = (float) (Config.WIDTH / width);
+		float scaleForShaderY = (float) (Config.HEIGHT / height);
 		if(upscaleToFullscreen) {
 			GL13.glActiveTexture(GL13.GL_TEXTURE0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, WIDTH, HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}
@@ -552,7 +537,11 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	public void destroy() {
+		System.out.println("Finalize renderer");
 		destroyOpenGL();
+		if(frame != null) {
+			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+		}
 	}
 
 	private void destroyOpenGL() {
@@ -652,6 +641,7 @@ public class DeferredRenderer implements Renderer {
 	private Program instantRadiosityProgram;
 	private Program combineProgram;
 	private Program postProcessProgram;
+	private JFrame frame;
 
 	private void updateLights(float seconds) {
 //		for (PointLight light : pointLights) {
@@ -795,7 +785,7 @@ public class DeferredRenderer implements Renderer {
 			DirectionalLight light) {
 
 		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
-		GL11.glViewport(0, 0, Renderer.WIDTH, Renderer.HEIGHT);
+		GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 		GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 	    
