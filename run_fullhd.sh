@@ -1,0 +1,1 @@
+java -Xmx6g -Xverify:none -jar hpengine.jar fullhd
