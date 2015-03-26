@@ -213,19 +213,11 @@ vec3 boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
 	return normalize(posonbox - environmentMapWorldPosition.xyz);
 }
 ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color, int currentMipmapLevel) {
-  vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
-  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
   
   ProbeSample result;
-  //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
-  //return result;
 
   if(roughness < 0.01) {
-  //if(false) {
-  	vec3 projectedReflected = reflected;//boxProjection(positionWorld, reflected, index);
-    result.specularColor = SpecularColor * textureLod(probes, vec4(projectedReflected, index), 1).rgb;
-  	normal = boxProjection(positionWorld, normal, index);
-  	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+    result.diffuseColor = textureLod(probes, vec4(normal, index), 0).rgb;
   	return result;
   }
   
@@ -234,20 +226,14 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   vec3 R = reflected;
   const int N = 16;
   vec4 resultDiffuse = vec4(0,0,0,0);
-  vec4 resultSpecular = vec4(0,0,0,0);
-  float pdfSum = 0;
-  float ks = 0;
   float NoV = clamp(dot(n, V), 0.0, 1.0);
+  float totalWeight = 0;
   
   for (int k = 0; k < N; k++) {
     vec2 xi = hammersley2d(k, N);
     vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, R);
     vec3 H = importanceSampleResult[0];
     vec2 sphericalCoordsTangentSpace = importanceSampleResult[1].xy;
-    //H = hemisphereSample_uniform(xi.x, xi.y, n);
-    //vec3[2] projectedVectorAndIntersection = boxProjectionAndIntersection(positionWorld, H, index);
-    //float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
-    //H = normalize(projectedVectorAndIntersection[0]);
     
     vec3 L = 2 * dot( V, H ) * H - V;
     
@@ -261,75 +247,16 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 	{
 		vec3 halfVector = normalize(H + v);
 		
-		float G = GGX_PartialGeometryTerm(v, n, halfVector, alpha) * GGX_PartialGeometryTerm(H, n, halfVector, alpha);
-		
-		float glossiness = (1-roughness);
-		float F0 = 0.02;
-		float maxSpecular = mix(0.2, 1.0, metallic);
-		F0 = max(F0, (glossiness*maxSpecular));
-	    float fresnel = 1; fresnel -= dot(L, H);
-		fresnel = pow(fresnel, 5.0);
-		float temp = 1.0; temp -= F0;
-		fresnel *= temp;
-		float F = fresnel + F0;
-		
-		// Incident light = SampleColor * NoL
-		// Microfacet specular = D*G*F / (4*NoL*NoV)
-		// pdf = D * NoH / (4 * VoH)
-	    //pdfSum += pdf;
-	    //float solidAngle = 1/(pdf * N); // contains the solid angle
-	    //solidAngle *= roughness;
-	    //http://www.eecis.udel.edu/~xyu/publications/glossy_pg08.pdf
-	    //float crossSectionArea = (distToIntersection*distToIntersection*solidAngle)/cos(sphericalCoordsTangentSpace.x);
-	    //float areaPerPixel = 0.25;
-	    //areaPerPixel = getAreaPerPixel(index, normal);
-	    //float lod = 0.5*log2((crossSectionArea)/(areaPerPixel));// + roughness * MAX_MIPMAPLEVEL;
 	    float lod = roughness * MAX_MIPMAPLEVEL/N;
 	    
     	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
-		//SampleColor.rgb = mix(SampleColor.rgb, textureLod(probes, vec4(H, 0), lod).rgb, 1-SampleColor.a);
     	
-		vec3 cookTorrance = SampleColor.rgb * clamp((F*G/(4*(NoL*NoV))), 0.0, 1.0);
-		ks += fresnel;
-		resultSpecular.rgb += clamp(cookTorrance, vec3(0,0,0), vec3(1,1,1));
+		result.diffuseColor.rgb += SampleColor;
+		totalWeight += NoL;
 	}
   }
   
-  /*if(pdfSum < 0.9){
-  	result.diffuseColor = vec3(1,0,0);
-  	return result;
-  }*/
-  
-  resultSpecular = resultSpecular/(N);
-  //resultDiffuse = resultDiffuse/(N);
-  ks = clamp(ks/N, 0, 1);
-  float kd = (1 - ks) * (1 - metallic);
-  
-  vec3 projectedNormal = boxProjection(positionWorld, normal, index);
-  
-  const bool MULTIPLE_DIFFUSE_SAMPLES = true;
-  const int SAMPLE_COUNT = 16;
-  if(MULTIPLE_DIFFUSE_SAMPLES) {
-	float lod = MAX_MIPMAPLEVEL;//clamp(currentMipmapLevel-1, 0, MAX_MIPMAPLEVEL);
-  	vec3 probeExtents = environmentMapMax[index] - environmentMapMin[index];
-  	vec3 probeCenter = environmentMapMin[index] + probeExtents/2;
-  	vec3 sampleVector = normal;//reflect(normalize(positionWorld-probeCenter), normal);
-  	for (int k = 0; k < SAMPLE_COUNT; k++) {
-	    vec2 xi = hammersley2d(k, SAMPLE_COUNT);
-	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, sampleVector);
-	    vec3 H = importanceSampleResult[0];
-	    //H = hemisphereSample_uniform(xi.x, xi.y, normal);
-		float NoL = clamp(dot(H, normal), 0.0, 1.0);
-	    
-		resultDiffuse.rgb += NoL * diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
-	  }
-	  resultDiffuse.rgb /= SAMPLE_COUNT;
-  } else {
-  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL-1).rgb;
-  }
-  
-  result.diffuseColor = resultDiffuse.rgb*kd;
-  result.specularColor = resultSpecular.rgb*ks;
+  result.diffuseColor /= totalWeight;
   return result;
 }
 

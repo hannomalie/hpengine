@@ -438,9 +438,38 @@ float getAreaPerPixel(int index, vec3 normal) {
 	}
 }
 
+// https://knarkowicz.wordpress.com/
+vec3 EnvDFGPolynomial(vec3 specularColor, float gloss, float ndotv ) {
+    float x = gloss;
+    float y = ndotv;
+ 
+    float b1 = -0.1688;
+    float b2 = 1.895;
+    float b3 = 0.9903;
+    float b4 = -4.853;
+    float b5 = 8.404;
+    float b6 = -5.069;
+    float bias = clamp(min(b1 * x + b2 * x * x, b3 + b4 * y + b5 * y * y + b6 * y * y * y ), 0.0, 1.0);
+ 
+    float d0 = 0.6045;
+    float d1 = 1.699;
+    float d2 = -0.5228;
+    float d3 = -3.603;
+    float d4 = 1.404;
+    float d5 = 0.1939;
+    float d6 = 2.661;
+    float delta = clamp(d0 + d1 * x + d2 * y + d3 * x * x + d4 * x * y + d5 * y * y + d6 * x * x * x, 0.0, 1.0);
+    float scale = delta - bias;
+ 
+    bias *= clamp(50.0 * specularColor.y, 0, 1);
+    return specularColor * scale + vec3(bias,bias,bias);
+}
+
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
-  vec3 SpecularColor = mix(mix(vec3(0.04,0.04,0.04), vec3(0.2,0.2,0.2), (1-roughness)), color*(1-roughness), metallic);
+  vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+  float glossiness = pow((1-roughness), 4);// (1-roughness);
+  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), maxSpecular, glossiness);
   
   ProbeSample result;
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
@@ -449,16 +478,16 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   
 	if(PRECOMPUTED_RADIANCE) {
   		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
-		vec3 reflectionVector = reflect(v, normal);
-  		vec3 projectedReflected = boxProjection(positionWorld, reflectionVector, index);
-	  	
-		vec3 sample0 = diffuseColor*textureLod(probes, vec4(projectedNormal, index), 6+roughness*MAX_MIPMAPLEVEL).rgb; // TODO: CHECK IF THERE'S A BETTER CHOICE, SPLIT-SUM_APPROX
-		vec3 sample1 = SpecularColor*textureLod(probes, vec4(projectedReflected, index), roughness*MAX_MIPMAPLEVEL).rgb;
-		
-		float weight = mix(0, 1, 1-roughness);
-		result.diffuseColor = sample0;
-		result.specularColor = sample1;
-		return result;
+  		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
+  		float NoV = clamp(dot(normal, v), 0.0, 1.0);
+    	vec3 R = 2 * dot( v, normal) * normal - v;
+    	
+    	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), roughness*MAX_MIPMAPLEVEL).rgb;
+    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (1-roughness), NoV);
+    	
+    	result.diffuseColor = prefilteredColor * envBRDF;
+    	result.diffuseColor += diffuseColor * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
+    	return result;
 	}
 	
   
@@ -584,7 +613,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    vec2 xi = hammersley2d(k, SAMPLE_COUNT);
 	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, 1, sampleVector);
 	    vec3 H = importanceSampleResult[0];
-		float NoL = clamp(dot(H, normal), 0.0, 1.0);
 	    
 	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
   		if(USE_CONETRACING_FOR_DIFFUSE) {
@@ -597,10 +625,10 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			}
 			vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), lod);
 			
-			resultDiffuse.rgb += NoL*diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb * clamp(dot(normal, H), 0, 1);
+			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
     	} else {
     		float lod = MAX_MIPMAPLEVEL+4;
-			resultDiffuse.rgb += NoL*diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * clamp(dot(normal, H), 0, 1);
+			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb;
     	}
 	  }
 	  resultDiffuse.rgb /= SAMPLE_COUNT;
