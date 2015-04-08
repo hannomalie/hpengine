@@ -40,6 +40,7 @@ import org.jfree.util.StringUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.google.common.eventbus.Subscribe;
@@ -222,10 +223,10 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public static int loadShader(String filename, int type, String mapDefinesString) throws Exception {
-		String shaderSource;
+		String shaderSource = "";
 		int shaderID = 0;
 		
-		shaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();
+		shaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();	
 
 		String findStr = "\n";
 		int newlineCount = (shaderSource.split(findStr, -1).length-1);

@@ -133,7 +133,7 @@ public class Camera implements IEntity {
 		frustum.calculate(this);
 	}
 	
-	private Matrix4f calculateCurrentViewMatrix() {
+	public Matrix4f calculateCurrentViewMatrix() {
 		viewMatrix = transform.getTransformation();
 		return viewMatrix;
 	}

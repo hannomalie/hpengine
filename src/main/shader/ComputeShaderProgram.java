@@ -20,6 +20,7 @@ import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.util.glu.GLU;
 
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
@@ -48,10 +49,22 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		System.out.println("Pre load " + GLU.gluErrorString(GL11.glGetError()));
 		setId(GL20.glCreateProgram());
+		System.out.println("Create program " + GLU.gluErrorString(GL11.glGetError()));
 		GL20.glAttachShader(id, computeShaderId);
+		System.out.println("Attach shader " + GLU.gluErrorString(GL11.glGetError()));
 		GL20.glLinkProgram(id);
+		System.out.println("Link program " + GLU.gluErrorString(GL11.glGetError()));
 		GL20.glValidateProgram(id);
+		System.out.println("Validate program " + GLU.gluErrorString(GL11.glGetError()));
+		
+		if (GL20.glGetProgram(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
+			System.err.println("Could not compile shader: " + computeShaderName);
+			System.err.println(GL20.glGetProgramInfoLog(id, 10000));
+		}
+		
+		System.out.println("ComputeShader load " + GLU.gluErrorString(GL11.glGetError()));
 		
 		addFileListeners();
 	}
@@ -86,6 +99,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	}
 
 	public void unload() {
+		GL20.glUseProgram(0);
 		GL20.glDeleteProgram(id);
 		setId(-1);
 	}

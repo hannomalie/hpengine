@@ -42,6 +42,7 @@ import com.google.common.eventbus.EventBus;
 public class World {
 	public static final String WORKDIR_NAME = "hp";
 	public static final String ASSETDIR_NAME = "hp/assets";
+	private static EventBus eventBus;
 
 	private static Logger LOGGER = getLogger();
 //	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
@@ -62,7 +63,7 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = false;
+	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
 	
 	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
@@ -116,7 +117,6 @@ public class World {
 		world.simulate();
 	}
 
-	private EventBus eventBus;
 	PhysicsFactory physicsFactory;
 	Scene scene;
 	private int entityCount = 10;
@@ -141,7 +141,6 @@ public class World {
 		this(sceneName, false);
 	}
 	public World(String sceneName, boolean headless) {
-		setEventBus(new EventBus());
 		initWorkDir();
 		renderer = new DeferredRenderer(this, headless);
 		glWatch = new OpenGLStopWatch();
@@ -498,12 +497,15 @@ public class World {
 		this.activeCamera = activeCamera;
 	}
 
-	public EventBus getEventBus() {
+	public static EventBus getEventBus() {
+		if(eventBus == null) {
+			setEventBus(new EventBus());
+		}
 		return eventBus;
 	}
 
-	private void setEventBus(EventBus eventBus) {
-		this.eventBus = eventBus;
+	private static void setEventBus(EventBus eventBus) {
+		World.eventBus = eventBus;
 	}
 
 	public void setRenderer(Renderer renderer) {

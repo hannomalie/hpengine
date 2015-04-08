@@ -33,18 +33,23 @@ import main.shader.Program;
 import main.texture.CubeMap;
 import main.texture.CubeMapArray;
 import main.texture.Texture;
+import main.texture.TextureFactory;
 import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.GLSync;
+import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
@@ -108,6 +113,7 @@ public class EnvironmentSampler {
 		cubeMapView = GL11.glGenTextures();
 		cubeMapView1 = GL11.glGenTextures();
 		cubeMapView2 = GL11.glGenTextures();
+		DeferredRenderer.exitOnGLError("EnvironmentSampler before view creation");
 		for (int z = 0; z < 6; z++) {
 			cubeMapFaceViews[0][z] = GL11.glGenTextures();
 			cubeMapFaceViews[1][z] = GL11.glGenTextures();
@@ -122,6 +128,7 @@ public class EnvironmentSampler {
 		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
 
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
+		World.getEventBus().register(this);
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
@@ -165,7 +172,7 @@ public class EnvironmentSampler {
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
-			boolean noNeedToRedraw = !fullRerenderRequired && !rerenderLightingRequired;
+			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
 				continue;
@@ -222,6 +229,7 @@ public class EnvironmentSampler {
 	
 	public void resetDrawing() {
 		sidesDrawn.clear();
+		drawnOnce = false;
 	}
 	
 	@Subscribe
@@ -332,9 +340,9 @@ public class EnvironmentSampler {
 
 		if (!sidesDrawn.contains(sideIndex))
 		{
-			GL43.glTextureView(cubeMapFaceViews[0][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
-			GL43.glTextureView(cubeMapFaceViews[1][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
-			GL43.glTextureView(cubeMapFaceViews[2][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+//			GL43.glTextureView(cubeMapFaceViews[0][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+//			GL43.glTextureView(cubeMapFaceViews[1][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
+//			GL43.glTextureView(cubeMapFaceViews[2][sideIndex], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probe.getIndex() + sideIndex, 1);
 		}
 
 		GPUProfiler.start("Activate GBuffer textures");
@@ -442,40 +450,59 @@ public class EnvironmentSampler {
 	}
 
 	private void generateCubeMapMipMaps() {
-		GPUProfiler.start("MipMap generation");
-
-		_generateCubeMapMipMaps();
 		if(World.PRECOMPUTED_RADIANCE) {
+			_generateCubeMapMipMaps();
+			/*
+			GPUProfiler.start("Precompute radiance");
 			CubeMapArray cubeMapArray = renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3);
 			int internalFormat = cubeMapArray.getInternalFormat();
 			
-			for (int i = 0; i < 6; i++) {
-				int indexOfFace = 6 * probe.getIndex() + i;
-				
-				cubemapRadianceProgram.use();
-				int cubemapArrayColorTextureId = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID();
-				GL42.glBindImageTexture(0, cubemapArrayColorTextureId, 1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(1, cubemapArrayColorTextureId, 2, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(2, cubemapArrayColorTextureId, 3, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(3, cubemapArrayColorTextureId, 4, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(4, cubemapArrayColorTextureId, 5, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(5, cubemapArrayColorTextureId, 6, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(6, cubemapArrayColorTextureId, 7, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
-				GL42.glBindImageTexture(7, cubemapArrayColorTextureId, 8, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+			int cubemapArrayColorTextureId = cubeMapArray.getTextureID();
 
+			int cubeMapView = GL11.glGenTextures();
+			GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
+			int cubemapCopy = TextureFactory.copyCubeMap(cubeMapView, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, internalFormat);
+			renderer.getTextureFactory().generateMipMapsCubeMap(cubemapCopy);
+
+			cubemapRadianceProgram.use();
+			System.out.println("xx");
+			for (int i = 0; i < 6; i++) {
+
+				int indexOfFace = 6 * probe.getIndex() + i;
+
+				for (int z = 0; z < EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT; z++) {
+					GL42.glBindImageTexture(z, cubemapArrayColorTextureId, z+1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				}
+
+//				GL42.glBindImageTexture(0, cubemapArrayColorTextureId, 1, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(1, cubemapArrayColorTextureId, 2, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(2, cubemapArrayColorTextureId, 3, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(3, cubemapArrayColorTextureId, 4, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(4, cubemapArrayColorTextureId, 5, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(5, cubemapArrayColorTextureId, 6, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(6, cubemapArrayColorTextureId, 7, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+//				GL42.glBindImageTexture(7, cubemapArrayColorTextureId, 8, false, indexOfFace, GL15.GL_WRITE_ONLY, internalFormat);
+				
 				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-				renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
+				GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubemapCopy);
+				GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMapView);
+//				GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureID());
 				
 				cubemapRadianceProgram.setUniform("currentCubemapSide", i);
 				cubemapRadianceProgram.setUniform("currentProbe", probe.getIndex());
 				cubemapRadianceProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 				cubemapRadianceProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
 				renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubemapRadianceProgram);
-				cubemapRadianceProgram.dispatchCompute(128/16, 128/16, 1);
+				cubemapRadianceProgram.dispatchCompute((EnvironmentProbeFactory.RESOLUTION/2)/16, (EnvironmentProbeFactory.RESOLUTION/2)/16, 1);
 			}
+
+			GL11.glDeleteTextures(cubeMapView);
+			GL11.glDeleteTextures(cubemapCopy);
+			GPUProfiler.end();
+*/
+		} else {
+			_generateCubeMapMipMaps();
 		}
-		GPUProfiler.end();
-		
 	}
 	private void _generateCubeMapMipMaps() {
 
@@ -697,6 +724,7 @@ public class EnvironmentSampler {
 			break;
 		}
 
+		camera.calculateCurrentViewMatrix();
 		camera.updateShadow();
 	}
 

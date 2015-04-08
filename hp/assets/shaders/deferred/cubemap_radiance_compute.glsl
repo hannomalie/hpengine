@@ -10,7 +10,7 @@ layout(binding = 5, rgba16f) uniform image2D out5;
 layout(binding = 6, rgba16f) uniform image2D out6;
 layout(binding = 7, rgba16f) uniform image2D out7;
 
-layout(binding = 8) uniform samplerCubeArray probes;
+layout(binding = 8) uniform samplerCube currentCubemap;
 
 uniform float screenWidth;
 uniform float screenHeight; 
@@ -29,8 +29,6 @@ struct ProbeSample {
 };
 
 vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition) {
-	texelPosition -= 0.5; // remap 0-1 to -0.5-0.5
-	texelPosition *= 2; // remap to -1-1
 	vec3 normal;
 	
 	if(currentCubemapSide == 0) { // facing x-dir
@@ -48,6 +46,21 @@ vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition) {
 	}
 	
 	return normalize(normal);
+}
+
+vec3 getNormalForTexel(in vec2 txc)
+{
+  vec3 v;
+  switch(currentCubemapSide)
+  {
+    case 0: v = vec3( 1.0, -txc.x, txc.y); break; // +X
+    case 1: v = vec3(-1.0,  txc.x, txc.y); break; // -X
+    case 2: v = vec3( txc.x,  1.0, txc.y); break; // +Y
+    case 3: v = vec3(-txc.x, -1.0, txc.y); break; // -Y
+    case 4: v = vec3(txc.x, -txc.y,  1.0); break; // +Z
+    case 5: v = vec3(txc.x,  txc.y, -1.0); break; // -Z
+  }
+  return normalize(v);
 }
 
 struct BoxIntersectionResult {
@@ -215,9 +228,9 @@ vec3 boxProjection(vec3 position_world, vec3 texCoords3d, int probeIndex) {
 ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color, int currentMipmapLevel) {
   
   ProbeSample result;
-
+  
   if(roughness < 0.01) {
-    result.diffuseColor = textureLod(probes, vec4(normal, index), 0).rgb;
+    result.diffuseColor = textureLod(currentCubemap, normal, 0).rgb;
   	return result;
   }
   
@@ -230,6 +243,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   float totalWeight = 0;
   
   for (int k = 0; k < N; k++) {
+  
     vec2 xi = hammersley2d(k, N);
     vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, roughness, R);
     vec3 H = importanceSampleResult[0];
@@ -249,14 +263,16 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 		
 	    float lod = roughness * MAX_MIPMAPLEVEL/N;
 	    
-    	vec4 SampleColor = textureLod(probes, vec4(H, index), lod);
+    	vec4 SampleColor = textureLod(currentCubemap, H, lod);
     	
-		result.diffuseColor.rgb += SampleColor;
+		result.diffuseColor.rgb += SampleColor.rgb;
 		totalWeight += NoL;
 	}
+	
   }
   
   result.diffuseColor /= totalWeight;
+  
   return result;
 }
 
@@ -268,12 +284,15 @@ void main()
 	ivec2 localIndex = ivec2(gl_LocalInvocationID.xy);
 	vec2 st = vec2(storePos) / vec2(screenWidth, screenHeight);
 	
+	vec4[8] results;
+	
+	vec3 boxHalfExtents = (environmentMapMax[currentProbe] - environmentMapMin[currentProbe])/2;
+	vec3 positionWorld = environmentMapMin[currentProbe] + boxHalfExtents;
+	vec3 normalWorld = getNormalForTexel(positionWorld, st);
+	//normalWorld = getNormalForTexel(st);
+	
 	for(int i = 8; i > 0; i--) {
 		float roughness = 0.2 + i * (0.8/8);
-		
-		vec3 boxHalfExtents = (environmentMapMax[currentProbe] - environmentMapMin[currentProbe])/2;
-		vec3 positionWorld = environmentMapMin[currentProbe] + boxHalfExtents;
-		vec3 normalWorld = getNormalForTexel(positionWorld, st);
 		
 		normalWorld = boxProjection(positionWorld, normalWorld, currentProbe);
 		
@@ -281,30 +300,78 @@ void main()
 		vec4 radianceVisibility = 4*vec4(s.diffuseColor + s.specularColor, 1);
 		//radianceVisibility = textureLod(probes, vec4(normalWorld, currentProbe), i);
 		
+		results[i] = radianceVisibility;
+	}
+	
+	barrier();
+	/*imageStore(out0, storePos, vec4(1,0,0,1));
+	imageStore(out1, storePos, vec4(1,0,0,1));
+	imageStore(out2, storePos, vec4(1,0,0,1));
+	imageStore(out3, storePos, vec4(1,0,0,1));
+	imageStore(out4, storePos, vec4(1,0,0,1));
+	imageStore(out5, storePos, vec4(1,0,0,1));
+	imageStore(out6, storePos, vec4(1,0,0,1));
+	imageStore(out7, storePos, vec4(1,0,0,1));*/
+	
+	for(int i = 0; i < 8; i++) {
+		results[i] = vec4(textureLod(currentCubemap, normalWorld, 0).rgb, 1);
+	}
+	
+	for(int i = 0; i < 8; i++) {
 		int index = i;
 		if(index == 0) {
-			imageStore(out0, storePos, radianceVisibility);
+			imageStore(out0, storePos, results[i]);
 		} else if(index == 1) {
-			if(storePos.x > 64 || storePos.y > 64) { return; }
-			imageStore(out1, storePos/2, radianceVisibility);
+			//if(storePos.x < 64 || storePos.y < 64) { continue; }
+			imageStore(out1, storePos, results[i]);
 		} else if(index == 2) {
-			if(storePos.x > 32 || storePos.y > 32) { return; }
-			imageStore(out2, storePos/2/2, radianceVisibility);
+			//if(storePos.x < 32 || storePos.y < 32) { continue; }
+			imageStore(out2, storePos, results[i]);
 		} else if(index == 3) {
-			if(storePos.x > 16 || storePos.y > 16) { return; }
-			imageStore(out3, storePos/2/2/2, radianceVisibility);
+			//if(storePos.x < 16 || storePos.y < 16) { continue; }
+			imageStore(out3, storePos, results[i]);
 		} else if(index == 4) {
-			if(storePos.x > 8 || storePos.y > 8) { return; }
-			imageStore(out4, storePos/2/2/2/2, radianceVisibility);
+			//if(storePos.x < 8 || storePos.y < 8) { continue; }
+			imageStore(out4, storePos, results[i]);
 		} else if(index == 5) {
-			if(storePos.x > 4 || storePos.y > 4) { return; }
-			imageStore(out5, storePos/2/2/2/2/2, radianceVisibility);
+			//if(storePos.x < 4 || storePos.y < 4) { continue; }
+			imageStore(out5, storePos, results[i]);
 		} else if(index == 6) {
-			if(storePos.x > 2 || storePos.y > 2) { return; }
-			imageStore(out6, storePos/2/2/2/2/2/2, radianceVisibility);
+			//if(storePos.x < 2 || storePos.y < 2) { continue; }
+			imageStore(out6, storePos, results[i]);
 		} else if(index == 7) {
-			if(storePos.x > 1 || storePos.y > 1) { return; }
-			imageStore(out7, storePos/2/2/2/2/2/2/2, radianceVisibility);
+			//if(storePos.x < 1 || storePos.y < 1) { continue; }
+			imageStore(out7, storePos, results[i]);
 		}
 	}
+	
+	/*
+	for(int i = 8; i > 0; i--) {
+		int index = i;
+		if(index == 0) {
+			imageStore(out0, storePos, results[i]);
+		} else if(index == 1) {
+			if(storePos.x < 64 || storePos.y < 64) { return; }
+			imageStore(out1, storePos, results[i]);
+		} else if(index == 2) {
+			if(storePos.x < 32 || storePos.y < 32) { return; }
+			imageStore(out2, storePos, results[i]);
+		} else if(index == 3) {
+			if(storePos.x < 16 || storePos.y < 16) { return; }
+			imageStore(out3, storePos, results[i]);
+		} else if(index == 4) {
+			if(storePos.x < 8 || storePos.y < 8) { return; }
+			imageStore(out4, storePos, results[i]);
+		} else if(index == 5) {
+			if(storePos.x < 4 || storePos.y < 4) { return; }
+			imageStore(out5, storePos, results[i]);
+		} else if(index == 6) {
+			if(storePos.x < 2 || storePos.y < 2) { return; }
+			imageStore(out6, storePos, results[i]);
+		} else if(index == 7) {
+			if(storePos.x < 1 || storePos.y < 1) { return; }
+			imageStore(out7, storePos, results[i]);
+		}
+	}
+	*/
 }

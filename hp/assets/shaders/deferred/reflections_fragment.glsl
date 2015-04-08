@@ -482,11 +482,20 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   		float NoV = clamp(dot(normal, v), 0.0, 1.0);
     	vec3 R = 2 * dot( v, normal) * normal - v;
     	
-    	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), roughness*MAX_MIPMAPLEVEL).rgb;
-    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (1-roughness), NoV);
     	
-    	result.diffuseColor = prefilteredColor * envBRDF;
-    	result.diffuseColor += diffuseColor * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
+		vec3 mini = environmentMapMin[index];
+		vec3 maxi = environmentMapMax[index];
+		vec3 extents = maxi -mini;
+		vec3 intersection = getIntersectionPoint(positionWorld, normal, mini, maxi);
+		float dist = distance(positionWorld, intersection);
+		float distanceBias = (roughness) / (dist*dist);
+    	
+    	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL).rgb;
+    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
+    	
+    	result.specularColor = prefilteredColor * envBRDF;
+    	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
+    	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
     	return result;
 	}
 	
@@ -887,7 +896,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 		  vec3 currentPosSample = texture2D(positionMap, getViewPosInTextureSpace(currentViewPos).xy).xyz;
 		  
 		  float difference = currentViewPos.z - currentPosSample.z;
-		  const float THICKNESS_THRESHOLD = 10;
+		  const float THICKNESS_THRESHOLD = 70;
 		  if (difference < 0) {
 		  	if(currentViewPos.z > targetPosView.z) { break;}
 		  
@@ -925,9 +934,11 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 3);
     			mipMapChoser = min(mipMapChoser, 4);
     			
-    			float screenEdgefactorX = clamp(abs(resultCoords.x) - 0.95, 0, 1);
-    			float screenEdgefactorY = clamp(abs(resultCoords.y) - 0.95, 0, 1);
-    			screenEdgefactor = 20*max(screenEdgefactorX, screenEdgefactorY);
+    			float threshold = 0.00;
+    			float screenEdgefactorX = clamp(distance(resultCoords.x, 0.5)-threshold, 0, 1);
+    			float screenEdgefactorY = clamp(distance(resultCoords.y, 0.5)-threshold, 0, 1);
+    			screenEdgefactor = clamp(2*distance(resultCoords.xy, vec2(0.5,0.5))-threshold, 0.0, 1.0);
+    			screenEdgefactor = pow(screenEdgefactor, 0.2);
     			//return vec3(screenEdgefactor, 0, 0);
     			
     			vec4 diffuseColorMetallic = textureLod(diffuseMap, screenPos.xy, mipMapChoser);
@@ -940,7 +951,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
   				vec2 motion = motionVecProbeIndices.xy;
 
     			vec3 ambientSample = ambientColor*blur(ambientLightMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
-    			vec3 lightSample = 0.25*blur(lightAccumulationMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
+    			vec3 lightSample = blur(lightAccumulationMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
     			vec3 thisFrameLighting = ambientSample+lightSample;
 	    			
     			vec3 reflectedColor;
@@ -954,10 +965,11 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
     			
-    			float mixer = 1-screenEdgefactor;
-    			mixer = clamp(mixer, 0, 1);
-    			mixer *= fadeToViewer;
-    			vec3 result = mix(probeColor, reflectedColor, mixer); 
+    			float mixer = screenEdgefactor;
+    			//mixer = clamp(mixer, 0, 1);
+    			//mixer *= fadeToViewer;
+			//return vec3(1-mixer, 0, 0);
+    			vec3 result = mix(probeColor, reflectedColor, 1);
 				return specularColor*result;
 		  	}
 		  	//return vec3(1,0,0);

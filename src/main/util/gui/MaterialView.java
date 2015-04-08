@@ -20,7 +20,9 @@ import java.util.stream.Collectors;
 
 
 
+
 import main.World;
+import main.event.MaterialChangedEvent;
 import main.model.IEntity;
 import main.renderer.command.GetMaterialCommand;
 import main.renderer.command.InitMaterialCommand;
@@ -42,9 +44,11 @@ import main.util.gui.input.WebFormattedVec3Field;
 
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+
 
 
 
@@ -202,6 +206,7 @@ public class MaterialView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
+	        	World.getEventBus().post(new MaterialChangedEvent());
 	        });
 	        
 	        WebButton removeTextureButton = new WebButton("Remove");

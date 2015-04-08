@@ -2,6 +2,7 @@ package main.util.gui;
 
 import static main.util.Util.vectorToString;
 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -23,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
 
 import javax.script.ScriptException;
 import javax.swing.JFrame;
@@ -48,8 +50,10 @@ import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 
+
 import main.World;
 import main.event.GlobalDefineChangedEvent;
+import main.event.MaterialChangedEvent;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
@@ -77,6 +81,7 @@ import main.util.gui.input.TitledPanel;
 import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -85,6 +90,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
 
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
@@ -360,9 +366,19 @@ public class DebugFrame {
 		});
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
+			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
+			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
@@ -860,7 +876,7 @@ public class DebugFrame {
 					float valueAsFactor = ((float) value) / adjustable.factor();
 					try {
 						field.setFloat(world, valueAsFactor);
-						world.getEventBus().post(new GlobalDefineChangedEvent());
+						World.getEventBus().post(new GlobalDefineChangedEvent());
 					} catch (IllegalArgumentException | IllegalAccessException e1) {
 						e1.printStackTrace();
 					}
@@ -895,7 +911,7 @@ public class DebugFrame {
 				try {
 					currentValue = field.getBoolean(world);
 					field.setBoolean(world, !currentValue);
-					world.getEventBus().post(new GlobalDefineChangedEvent());
+					World.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}

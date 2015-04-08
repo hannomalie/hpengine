@@ -25,35 +25,33 @@ public class ProgramFactory {
 	public ProgramFactory(World world) {
 		this.world = world;
 		this.renderer = world.getRenderer();
-		world.getEventBus().register(new AbstractProgram() { });
-		world.getEventBus().register(getProgram(""));
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) {
 		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
 		LOADED_PROGRAMS.add(program);
-		world.getEventBus().register(program);
+		World.getEventBus().register(program);
 		return program;
 	}
 	
 	public Program getProgram(String defines) {
 		Program program = new Program(renderer, null, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
 		LOADED_PROGRAMS.add(program);
-		world.getEventBus().register(program);
+		World.getEventBus().register(program);
 		return program;
 	}
 
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
 		ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
 		LOADED_PROGRAMS.add(program);
-		world.getEventBus().register(program);
+		World.getEventBus().register(program);
 		return program;
 	}
 	
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
 		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
 		LOADED_PROGRAMS.add(program);
-		world.getEventBus().register(program);
+		World.getEventBus().register(program);
 		return program;
 	}
 

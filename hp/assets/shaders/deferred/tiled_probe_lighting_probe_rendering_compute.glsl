@@ -766,17 +766,19 @@ void main()
 			} else {
 				tempResult += mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
 			}
-			
-			result.rgb += tempResult;
+			result.rgb *= 0.5;
+			result.rgb += 0.5*tempResult;
 		} else {
 			const bool useFullImportanceSampleForSecondBounce = true;
 			
 			if (useFullImportanceSampleForSecondBounce) {
 				ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorldSecondBounce.xyz, normalWorldSeconBounce.xyz, reflect(viewWorldSecondBounce, normalWorldSeconBounce.xyz), viewWorldSecondBounce, 1, 0, color.rgb);
 				vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
-				result.rgb += sampleFromLastFrameAsSecondBounce;
+				result.rgb *= 0.5;
+				result.rgb += 0.5*sampleFromLastFrameAsSecondBounce;
 			} else {
 				vec3 boxProjectedNormal = boxProjection(positionWorldSecondBounce.xyz, normalWorldSeconBounce, probeIndexNearest);
+				result.rgb *= 0.5;
 				result.rgb += 0.5*texture(probes, vec4(boxProjectedNormal, currentProbe), mip).rgb; // TODO: ADJUST THIS WITH NdotL!!!!
 			}
 		}
@@ -787,9 +789,9 @@ void main()
 	vec3 maxi = environmentMapMax[currentProbe];
 	float probeVisibility = isInside(positionWorld.xyz, mini, maxi) ? 1 : 0;
 	
-	// Since the other lights are rendered additively, we have to take the current sample and alphablend by ourselves
+	// Since the other lights are rendered additively, we have to take the current sample and blend by ourselves
 	vec4 oldSample = imageLoad(out_environment, storePos);
-	imageStore(out_environment, storePos, vec4(mix(result, oldSample.rgb, 0.5*(1+oldSample.a)), probeVisibility));
+	imageStore(out_environment, storePos, vec4(result + oldSample.rgb, probeVisibility));
 	
 	/*
 	if(localIndex.x == 0 || localIndex.y == 0) {
