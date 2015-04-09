@@ -67,7 +67,7 @@ public interface Renderer {
 	public EnvironmentProbeFactory getEnvironmentProbeFactory();
 	public void init(Octree octree);
 	public int getMaxTextureUnits();
-	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
+	public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 	public void addRenderProbeCommand(EnvironmentProbe probe);
 	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);

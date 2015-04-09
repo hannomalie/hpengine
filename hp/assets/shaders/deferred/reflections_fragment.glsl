@@ -491,11 +491,13 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		float distanceBias = (roughness) / (dist*dist);
     	
     	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL).rgb;
+    	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
     	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
     	
     	result.specularColor = prefilteredColor * envBRDF;
     	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
-    	result.diffuseColor = diffuseColor * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
+    	vec3 diffuseSample = textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
+    	result.diffuseColor = diffuseColor * diffuseSample;
     	return result;
 	}
 	

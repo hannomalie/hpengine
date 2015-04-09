@@ -28,15 +28,20 @@ struct ProbeSample {
 	vec3 refractedColor;
 };
 
-vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition) {
+vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition, int i) {
 	vec3 normal;
+	float pot = pow(2, i);
+	float inverse = 1/pot;
 	
+	texelPosition -= inverse + 0.0001; // edge fixup TODO: can't explain yet
+	texelPosition *= pot;
+
 	if(currentCubemapSide == 0) { // facing x-dir
 		normal = vec3(1, -texelPosition.y, -texelPosition.x);
 	} else if(currentCubemapSide == 1) { // facing -x-dir
 		normal = vec3(-1, -texelPosition.y, texelPosition.x);
 	} else if(currentCubemapSide == 2) { // facing y-dir
-		normal = vec3(-texelPosition.x, 1, -texelPosition.y);
+		normal = vec3(-texelPosition.x, 1, texelPosition.y);
 	} else if(currentCubemapSide == 3) { // facing -y-dir
 		normal = vec3(texelPosition.x, -1, -texelPosition.y);
 	} else if(currentCubemapSide == 4) { // facing z-dir
@@ -229,9 +234,10 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   
   ProbeSample result;
   
-  if(roughness < 0.01) {
-    result.diffuseColor = textureLod(currentCubemap, normal, 0).rgb;
-  	return result;
+  {
+    result.specularColor = textureLod(currentCubemap, normal, 0).rgb;
+  	result.diffuseColor = vec3(0,0,0);
+  	//return result;
   }
   
   vec3 V = v;
@@ -241,7 +247,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   vec4 resultDiffuse = vec4(0,0,0,0);
   float NoV = clamp(dot(n, V), 0.0, 1.0);
   float totalWeight = 0;
-  
+  int counter = 0;
   for (int k = 0; k < N; k++) {
   
     vec2 xi = hammersley2d(k, N);
@@ -250,7 +256,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
     vec2 sphericalCoordsTangentSpace = importanceSampleResult[1].xy;
     
     vec3 L = 2 * dot( V, H ) * H - V;
-    
+     
 	float NoL = clamp(dot(n, L), 0.0, 1.0);
 	float NoH = clamp(dot(n, H), 0.0, 1.0);
 	float VoH = clamp(dot(v, H), 0.0, 1.0);
@@ -262,16 +268,17 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 		vec3 halfVector = normalize(H + v);
 		
 	    float lod = roughness * MAX_MIPMAPLEVEL/N;
-	    
+	 
     	vec4 SampleColor = textureLod(currentCubemap, H, lod);
-    	
-		result.diffuseColor.rgb += SampleColor.rgb;
+       
+		result.diffuseColor += SampleColor.rgb * NoL;
 		totalWeight += NoL;
+		counter ++;
 	}
 	
   }
   
-  result.diffuseColor /= totalWeight;
+  result.diffuseColor /= N;//totalWeight;
   
   return result;
 }
@@ -288,90 +295,47 @@ void main()
 	
 	vec3 boxHalfExtents = (environmentMapMax[currentProbe] - environmentMapMin[currentProbe])/2;
 	vec3 positionWorld = environmentMapMin[currentProbe] + boxHalfExtents;
-	vec3 normalWorld = getNormalForTexel(positionWorld, st);
-	//normalWorld = getNormalForTexel(st);
 	
-	for(int i = 8; i > 0; i--) {
+	for(int i = 0; i < 8; i++) {
 		float roughness = 0.2 + i * (0.8/8);
+		
+		vec3 normalWorld = getNormalForTexel(vec3(0,0,0), st, i+1);
 		
 		normalWorld = boxProjection(positionWorld, normalWorld, currentProbe);
 		
 		ProbeSample s = importanceSampleCubeMap(currentProbe, positionWorld, normalWorld, normalWorld, normalWorld, roughness, 1, vec3(1,1,1), i);
-		vec4 radianceVisibility = 4*vec4(s.diffuseColor + s.specularColor, 1);
-		//radianceVisibility = textureLod(probes, vec4(normalWorld, currentProbe), i);
+		vec4 radianceVisibility = vec4(s.diffuseColor + s.specularColor, 1);
 		
 		results[i] = radianceVisibility;
 	}
 	
 	barrier();
-	/*imageStore(out0, storePos, vec4(1,0,0,1));
-	imageStore(out1, storePos, vec4(1,0,0,1));
-	imageStore(out2, storePos, vec4(1,0,0,1));
-	imageStore(out3, storePos, vec4(1,0,0,1));
-	imageStore(out4, storePos, vec4(1,0,0,1));
-	imageStore(out5, storePos, vec4(1,0,0,1));
-	imageStore(out6, storePos, vec4(1,0,0,1));
-	imageStore(out7, storePos, vec4(1,0,0,1));*/
-	
-	for(int i = 0; i < 8; i++) {
-		results[i] = vec4(textureLod(currentCubemap, normalWorld, 0).rgb, 1);
-	}
-	
+
 	for(int i = 0; i < 8; i++) {
 		int index = i;
 		if(index == 0) {
 			imageStore(out0, storePos, results[i]);
 		} else if(index == 1) {
-			//if(storePos.x < 64 || storePos.y < 64) { continue; }
+			if(storePos.x > 64 || storePos.y > 64) { continue; }
 			imageStore(out1, storePos, results[i]);
 		} else if(index == 2) {
-			//if(storePos.x < 32 || storePos.y < 32) { continue; }
+			if(storePos.x > 32 || storePos.y > 32) { continue; }
 			imageStore(out2, storePos, results[i]);
 		} else if(index == 3) {
-			//if(storePos.x < 16 || storePos.y < 16) { continue; }
+			if(storePos.x > 16 || storePos.y > 16) { continue; }
 			imageStore(out3, storePos, results[i]);
 		} else if(index == 4) {
-			//if(storePos.x < 8 || storePos.y < 8) { continue; }
+			if(storePos.x > 8 || storePos.y > 8) { continue; }
 			imageStore(out4, storePos, results[i]);
 		} else if(index == 5) {
-			//if(storePos.x < 4 || storePos.y < 4) { continue; }
+			if(storePos.x > 4 || storePos.y > 4) { continue; }
 			imageStore(out5, storePos, results[i]);
 		} else if(index == 6) {
-			//if(storePos.x < 2 || storePos.y < 2) { continue; }
+			if(storePos.x > 2 || storePos.y > 2) { continue; }
 			imageStore(out6, storePos, results[i]);
 		} else if(index == 7) {
-			//if(storePos.x < 1 || storePos.y < 1) { continue; }
+			if(storePos.x > 1 || storePos.y > 1) { continue; }
 			imageStore(out7, storePos, results[i]);
 		}
 	}
-	
-	/*
-	for(int i = 8; i > 0; i--) {
-		int index = i;
-		if(index == 0) {
-			imageStore(out0, storePos, results[i]);
-		} else if(index == 1) {
-			if(storePos.x < 64 || storePos.y < 64) { return; }
-			imageStore(out1, storePos, results[i]);
-		} else if(index == 2) {
-			if(storePos.x < 32 || storePos.y < 32) { return; }
-			imageStore(out2, storePos, results[i]);
-		} else if(index == 3) {
-			if(storePos.x < 16 || storePos.y < 16) { return; }
-			imageStore(out3, storePos, results[i]);
-		} else if(index == 4) {
-			if(storePos.x < 8 || storePos.y < 8) { return; }
-			imageStore(out4, storePos, results[i]);
-		} else if(index == 5) {
-			if(storePos.x < 4 || storePos.y < 4) { return; }
-			imageStore(out5, storePos, results[i]);
-		} else if(index == 6) {
-			if(storePos.x < 2 || storePos.y < 2) { return; }
-			imageStore(out6, storePos, results[i]);
-		} else if(index == 7) {
-			if(storePos.x < 1 || storePos.y < 1) { return; }
-			imageStore(out7, storePos, results[i]);
-		}
-	}
-	*/
 }

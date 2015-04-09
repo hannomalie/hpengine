@@ -311,6 +311,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	return diff + reflectedColor * specularColor * cookTorrance;
 }
 
+const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
@@ -333,6 +334,7 @@ void main(void) {
   	vec4 motionVecProbeIndices = texture2D(motionMap, st);
   	vec2 motion = motionVecProbeIndices.xy;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
+  	colorMetallic.xyz = pow(colorMetallic.xyz, inverseGamma);
   	
   	float metallic = colorMetallic.a;
   	
@@ -369,6 +371,7 @@ void main(void) {
 	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
+	
 	/////////////////////////////// GAMMA
 	//out_color.r = pow(out_color.r,1/2.2);
 	//out_color.g = pow(out_color.g,1/2.2);
@@ -386,11 +389,11 @@ void main(void) {
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);
-	//out_color.rgb = environmentColor.rgb;
 	//out_color.rgb = reflectedColor.rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,0);
-	
+	//out_color.rgb = color;
+
 	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
 	const bool useSphericalHarmonicLighting = false;
 	if(useSphericalHarmonicLighting) {

@@ -3,6 +3,7 @@ layout(binding=0) uniform sampler2D renderedTexture;
 uniform float blurDistance = 0.0025;
 uniform float scaleX = 1;
 uniform float scaleY = 1;
+uniform int mipmap = 0;
 
 in vec2 pass_TextureCoord;
 

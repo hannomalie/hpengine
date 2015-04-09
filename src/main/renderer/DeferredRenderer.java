@@ -459,15 +459,15 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void blur2DTexture(int sourceTextureId, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
+	public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
 		GPUProfiler.start("BLURRRRRRR");
 		int copyTextureId = GL11.glGenTextures();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
 		
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 		
 		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -491,6 +491,7 @@ public class DeferredRenderer implements Renderer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
 
 		blurProgram.use();
+		blurProgram.setUniform("mipmap", mipmap);
 		blurProgram.setUniform("scaleX", scaleForShaderX);
 		blurProgram.setUniform("scaleY", scaleForShaderY);
 		fullscreenBuffer.draw();

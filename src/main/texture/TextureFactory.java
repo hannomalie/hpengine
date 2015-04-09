@@ -187,7 +187,7 @@ public class TextureFactory {
         tex = getCubeMap(resourceName,
         				 GL13.GL_TEXTURE_CUBE_MAP, // target
                          GL11.GL_RGBA,     // dst pixel format
-                         GL11.GL_LINEAR, // min filter (unused)
+                         GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, false);
 
         TEXTURES.put(resourceName + "_cube",tex);
@@ -214,7 +214,7 @@ public class TextureFactory {
         tex = getTexture(resourceName,
                          GL11.GL_TEXTURE_2D, // target
                          GL11.GL_RGBA,     // dst pixel format
-                         GL11.GL_LINEAR, // min filter (unused)
+                         GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, true);
         
         TEXTURES.put(resourceName,tex);

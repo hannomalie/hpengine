@@ -21,6 +21,8 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL30;
 
 /**
  * A texture to be bound within JOGL. This object is responsible for 
@@ -236,15 +238,18 @@ public class Texture implements Serializable {
         bind();
         if (target == GL11.GL_TEXTURE_2D) 
         { 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
+            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT); 
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT); 
-        } 
+            GL11.glTexParameteri(target, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE); 
+        }
 
         int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+    	//internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
         if(srgba) {
         	internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+        	//internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
         }
 		GL11.glTexImage2D(target, 
                       0, 
@@ -255,6 +260,7 @@ public class Texture implements Serializable {
                       srcPixelFormat, 
                       GL11.GL_UNSIGNED_BYTE, 
                       textureBuffer);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 	}
 
 	public void setMinFilter(int minFilter) {

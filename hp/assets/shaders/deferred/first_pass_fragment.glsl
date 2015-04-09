@@ -194,7 +194,7 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 }
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
-	vec3 map = (textureLod(normalMap, texcoord, 0)).xyz;
+	vec3 map = (texture(normalMap, texcoord)).xyz;
 	map = map * 2 - 1;
 	mat3 TBN = cotangent_frame( N, V, texcoord );
 	return normalize( TBN * map );
@@ -341,7 +341,7 @@ void main(void) {
 	UV.x = texCoord.x * diffuseMapWidth;
 	UV.y = texCoord.y * diffuseMapHeight;
 	UV += uvParallax;
-	color = texture2D(diffuseMap, UV);
+	color = texture(diffuseMap, UV);
 	if(color.a<0.1)
 	{
 		discard;

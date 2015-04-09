@@ -338,14 +338,68 @@ float getAreaPerPixel(int index, vec3 normal) {
 	}
 }
 
+// https://knarkowicz.wordpress.com/
+vec3 EnvDFGPolynomial(vec3 specularColor, float gloss, float ndotv ) {
+    float x = gloss;
+    float y = ndotv;
+ 
+    float b1 = -0.1688;
+    float b2 = 1.895;
+    float b3 = 0.9903;
+    float b4 = -4.853;
+    float b5 = 8.404;
+    float b6 = -5.069;
+    float bias = clamp(min(b1 * x + b2 * x * x, b3 + b4 * y + b5 * y * y + b6 * y * y * y ), 0.0, 1.0);
+ 
+    float d0 = 0.6045;
+    float d1 = 1.699;
+    float d2 = -0.5228;
+    float d3 = -3.603;
+    float d4 = 1.404;
+    float d5 = 0.1939;
+    float d6 = 2.661;
+    float delta = clamp(d0 + d1 * x + d2 * y + d3 * x * x + d4 * x * y + d5 * y * y + d6 * x * x * x, 0.0, 1.0);
+    float scale = delta - bias;
+ 
+    bias *= clamp(50.0 * specularColor.y, 0, 1);
+    return specularColor * scale + vec3(bias,bias,bias);
+}
+
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
-  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+  vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+  float glossiness = pow((1-roughness), 4);// (1-roughness);
+  vec3 SpecularColor = mix(vec3(0.04,0.04,0.04), maxSpecular, glossiness);
   
   ProbeSample result;
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
   //return result;
   
+	if(PRECOMPUTED_RADIANCE) {
+  		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
+  		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
+  		float NoV = clamp(dot(normal, v), 0.0, 1.0);
+    	vec3 R = 2 * dot( v, normal) * normal - v;
+    	
+    	
+		vec3 mini = environmentMapMin[index];
+		vec3 maxi = environmentMapMax[index];
+		vec3 extents = maxi -mini;
+		vec3 intersection = getIntersectionPoint(positionWorld, normal, mini, maxi);
+		float dist = distance(positionWorld, intersection);
+		float distanceBias = (roughness) / (dist*dist);
+    	
+    	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL).rgb;
+    	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
+    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
+    	
+    	result.specularColor = prefilteredColor * envBRDF;
+    	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
+    	vec3 diffuseSample = textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
+    	result.diffuseColor = diffuseColor * diffuseSample;
+    	return result;
+	}
+	
   if(roughness < 0.01) {
   	vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
     result.specularColor = SpecularColor * textureLod(probes, vec4(projectedReflected, index), 1).rgb;
@@ -742,7 +796,7 @@ void main()
 	TileProbes probesForTile = getProbesForTile(currentArrayIndex, probeIndicesForTile);
 	ProbeSample probeColorsDiffuseSpecular = getProbeColors(probesForTile, positionWorld, V, normalWorld, roughness, metallic, st, color);
 	
-	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
+	vec3 result = 0.5*(probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor);
 
 	if(secondBounce) {
 		TileProbes tileProbes;
