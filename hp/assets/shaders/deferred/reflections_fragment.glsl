@@ -495,7 +495,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     	
     	result.specularColor = prefilteredColor * envBRDF;
     	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
-    	result.diffuseColor = diffuseColor * textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
+    	result.diffuseColor = diffuseColor * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
     	return result;
 	}
 	
@@ -656,7 +656,7 @@ float getAmbientOcclusion(vec2 st) {
 	vec3 ssdo = vec3(0,0,0);
 	
 	float sum = 0.0;
-	float prof = texture(normalMap, st.xy).w; // depth
+	float prof = texture(motionMap, st.xy).b; // depth
 	vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
 	const int NUM_SAMPLES = 4;
 	int hf = NUM_SAMPLES/2;
@@ -674,7 +674,7 @@ float getAmbientOcclusion(vec2 st) {
 	 
 			      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
 			
-			      float prof2g = texture2D(normalMap,st.xy+coords2*rand(st.xy)).w; // depth
+			      float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
 			      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
 			
 			      //OCCLUSION:
@@ -797,7 +797,7 @@ vec3 traceScreenSpaceRay1(point3 csOrig, vec3 csDir, mat4x4 proj, vec2 csZBuffer
         
 		//P0 += 1;
 		//P0 *= 0.5;
-        sceneZMax = texelFetch(normalMap, ivec2(hitPixel), 0).a;
+        sceneZMax = texelFetch(motionMap, ivec2(hitPixel), 0).b;
     }
      
     // Advance Q based on the number of steps

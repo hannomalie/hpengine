@@ -28,6 +28,7 @@ uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
 uniform float materialRoughness = 0;
 uniform float materialMetallic = 0;
+uniform float materialAmbient = 0;
 uniform int probeIndex1 = 0;
 uniform int probeIndex2 = 0;
 
@@ -348,6 +349,10 @@ void main(void) {
 #endif
   	out_color = color;
   	out_color.w = materialMetallic;
+  	
+#ifdef use_occlusionMap
+	//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
+#endif
 
 	out_position.w = materialRoughness;
 #ifdef use_roughnessMap
@@ -355,7 +360,7 @@ void main(void) {
 	UV.y = texCoord.y * roughnessMapHeight;
 	UV = texCoord + uvParallax;
 	float r = texture2D(roughnessMap, UV).x;
-	out_position.w *= r;
+	out_position.w = materialRoughness*r;
 #endif
 	
 #ifdef use_specularMap
@@ -368,7 +373,8 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(motionVec,probeIndex1,probeIndex2);
+  	out_motion = vec4(motionVec,depth,probeIndex2);
+  	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,depth,0);
   	
   	if(RAINEFFECT) {

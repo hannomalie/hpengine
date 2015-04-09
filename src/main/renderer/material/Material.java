@@ -143,6 +143,7 @@ public class Material implements Serializable {
 		program.setUniform("materialDiffuseColor", getDiffuse());
 		program.setUniform("materialRoughness", getRoughness());
 		program.setUniform("materialMetallic", getMetallic());
+		program.setUniform("materialAmbient", getAmbient());
 		
 		if (!program.needsTextures()) {
 			return;
@@ -222,6 +223,12 @@ public class Material implements Serializable {
 
 	public void setMetallic(float metallic) {
 		materialInfo.metallic = metallic;
+	}
+	public float getAmbient() {
+		return materialInfo.ambient;
+	}
+	public void setAmbient(float ambient) {
+		materialInfo.ambient = ambient;
 	}
 
 	public boolean hasCustomVertexShader() {

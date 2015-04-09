@@ -3,7 +3,7 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
-uniform bool usePostProcessing = true;
+uniform bool usePostProcessing = false;
 uniform float exposure = 5;
 
 in vec2 pass_TextureCoord;
@@ -168,7 +168,7 @@ float bdepth(vec2 coords, vec2 texelSize, sampler2D color_depth) //blurring dept
 	for( int i=0; i<9; i++ )
 	{
 		//float tmp = texture2D(color_depth, coords + offset[i]).r;
-		float tmp = texture2D(normalDepthTexture, coords + vec2(offset[i],offset1[i])).a;
+		float tmp = texture2D(motionMap, coords + vec2(offset[i],offset1[i])).b;
 		d += tmp * kernel[i];
 	}
 	
@@ -231,7 +231,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 {
 	//scene depth calculation
 
-	float depthSample = texture2D(normalDepthTexture, uv ).a;
+	float depthSample = texture2D(motionMap, uv ).b;
 	float depth = linearize(depthSample);
 	
 	if (depthblur)
@@ -245,7 +245,7 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 	
 	if (autofocus)
 	{
-		fDepth = texture2D(normalDepthTexture,focus).a;
+		fDepth = texture2D(motionMap,focus).b;
 		fDepth = linearize(fDepth);
 		//fDepth = pow( (1.0f - fDepth), exponential );
 	}
@@ -339,7 +339,7 @@ void main()
 {
 	if (usePostProcessing) {
 		vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
-		float depth = texture2D(normalDepthTexture, pass_TextureCoord).a;
+		float depth = texture2D(motionMap, pass_TextureCoord).b;
 	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/1280,1/720), renderedTexture);
 	    
 	    out_color = in_color;

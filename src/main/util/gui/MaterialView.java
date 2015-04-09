@@ -233,12 +233,14 @@ public class MaterialView extends WebPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				material.setDiffuse(current);
+	        	World.getEventBus().post(new MaterialChangedEvent());
 			}
 		});
         webComponentPanel.addElement(new ColorChooserButton("Diffuse", new ColorChooserFrame() {
 			@Override
 			public void onColorChange(Vector3f color) {
 				material.setDiffuse(color);
+	        	World.getEventBus().post(new MaterialChangedEvent());
 			}
 		}));
 
@@ -281,6 +283,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					roughnessInput.setValue(((float)value/100f));
     					material.setRoughness(((float)value/100f));
+    		        	World.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
                 GroupPanel groupPanelRoughness = new GroupPanel ( 4, new WebLabel("Roughness"), roughnessInput, roughnessSliderInput );
@@ -302,11 +305,35 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					metallicInput.setValue(((float)value/100f));
     					material.setMetallic(((float)value/100f));
+    		        	World.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
                 GroupPanel groupPanelMetallic = new GroupPanel ( 4, new WebLabel("Metallic"), metallicInput, metallicSliderInput );
                 webComponentPanel.addElement(groupPanelMetallic);
+            }
+        }
+        {
+            LimitedWebFormattedTextField ambientInput = new LimitedWebFormattedTextField(0, 1) {
+    			@Override
+    			public void onChange(float currentValue) {
+    				material.setAmbient(currentValue);
+    			}
+    		};
+    		ambientInput.setValue(material.getAmbient());
+            {
+            	SliderInput ambientSliderInput = new SliderInput("Ambient/Emmissive", WebSlider.HORIZONTAL, 0, 100, (int)(material.getAmbient()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					ambientInput.setValue(((float)value/100f));
+    					material.setAmbient(((float)value/100f));
+    		        	World.getEventBus().post(new MaterialChangedEvent());
+    				}
+    			};
+    			
+                GroupPanel groupPanelAmbient = new GroupPanel(4, new WebLabel("Ambient"), ambientInput, ambientSliderInput);
+                webComponentPanel.addElement(groupPanelAmbient);
             }
         }
 

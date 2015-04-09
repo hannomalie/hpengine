@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import main.model.Entity;
+import main.model.Entity.Update;
 import main.renderer.Renderer;
 import main.renderer.material.Material.ENVIRONMENTMAPTYPE;
 import main.renderer.material.Material.MAP;
@@ -116,6 +118,7 @@ public class MaterialFactory {
 	}
 	
 	public static final class MaterialInfo implements Serializable {
+		private static final long serialVersionUID = 3564429930446909410L;
 		public MaterialInfo(MaterialMap maps) {
 			this.maps = maps;
 		}
@@ -151,6 +154,7 @@ public class MaterialFactory {
 		public Vector3f diffuse = new Vector3f();
 		public float roughness = 0.95f;
 		public float metallic = 0f;
+		public float ambient = 0;
 		
 		public boolean textureLess;
 		transient public Program firstPassProgram;
@@ -214,14 +218,19 @@ public class MaterialFactory {
 			in = new ObjectInputStream(fis);
 			Material material = (Material) in.readObject();
 			in.close();
+			handleEvolution(material.getMaterialInfo());
 			return getMaterialWithoutRead(material.getMaterialInfo());
 //			return material;
 		} catch (Exception e) {
-//			e.printStackTrace();
-//			System.out.println("Material read (" + fileName + ") caused an exception, probably not very important");
+			e.printStackTrace();
+			System.out.println("Material read (" + fileName + ") caused an exception, probably not very important");
 		}
 		return null;
 	}
+
+    private void handleEvolution(MaterialInfo materialInfo) {
+    	
+    }
 
 	public Map<String, Material> getMaterials() {
 		return MATERIALS;

@@ -48,12 +48,12 @@ vec3 decode(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
-	vec3 V = normalize(-position);
+	vec3 V = normalize(-positionView);
 	//V = ViewVector;
- 	vec3 L = -normalize((viewMatrix*vec4(lightDirection, 0)).xyz);
+ 	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
     vec3 P = position;
@@ -350,13 +350,15 @@ void main(void) {
 	if (positionView.z > -0.0001) {
 	  discard;
 	}
-	vec3 normalView = texture2D(normalMap, st).xyz;
-	//normalView = decodeNormal(normalView.xy);
+	vec4 normalAmbient = texture2D(normalMap, st);
+	vec3 normalView = normalAmbient.xyz;
+	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 	
 	float metallic = texture2D(diffuseMap, st).a;
   	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
-	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
+  	
+	vec3 finalColor = cookTorrance(V, positionView, positionWorld, normalWorld, roughness, metallic, diffuseColor, specularColor);
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -373,6 +375,11 @@ void main(void) {
 	/////////////////// SHADOWMAP
 	
 	out_DiffuseSpecular.rgb = 4 * finalColor;
+	
+	float ambient = normalAmbient.a;
+	out_DiffuseSpecular.rgb += ambient * color.rgb;
+	
+	//out_DiffuseSpecular.rgb = normalWorld/2+1;
 	//out_AOReflection.gba = vec3(0,0,0);
 	//out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	
