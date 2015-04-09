@@ -18,6 +18,7 @@ import main.util.stopwatch.StopWatch;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.ARBES3Compatibility;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
+import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
@@ -227,6 +228,10 @@ public class Texture implements Serializable {
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
+		upload(textureBuffer, false);
+	}
+	
+	public void upload(ByteBuffer textureBuffer, boolean srgba) {
 
         bind();
         if (target == GL11.GL_TEXTURE_2D) 
@@ -237,9 +242,13 @@ public class Texture implements Serializable {
             GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT); 
         } 
 
-        GL11.glTexImage2D(target, 
+        int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+        if(srgba) {
+        	internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+        }
+		GL11.glTexImage2D(target, 
                       0, 
-                      EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 
+                      internalformat,
                       get2Fold(getImageWidth()), 
                       get2Fold(getImageHeight()), 
                       0, 

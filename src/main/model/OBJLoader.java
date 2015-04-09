@@ -6,6 +6,7 @@ import main.renderer.material.Material.MAP;
 import main.renderer.material.MaterialFactory.MaterialInfo;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.util.glu.MipMap;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.newdawn.slick.opengl.Texture;
@@ -282,7 +283,7 @@ public class OBJLoader {
 
 	private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, MAP map) {
 		try {
-			currentMaterialInfo.maps.put(map, renderer.getTextureFactory().getTexture(path+name));
+			currentMaterialInfo.maps.put(map, renderer.getTextureFactory().getTexture(path+name, map == MAP.DIFFUSE));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

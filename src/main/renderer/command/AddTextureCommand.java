@@ -10,16 +10,22 @@ import main.texture.Texture;
 public class AddTextureCommand implements Command<TextureResult> {
 
 	String path;
-	
+	boolean srgba = false;
+
 	public AddTextureCommand(String path) {
+		this(path, false);
+	}
+	
+	public AddTextureCommand(String path, boolean srba) {
 		this.path = path;
+		this.srgba = srba;
 	}
 	
 	@Override
 	public TextureResult execute(World world) {
 		Texture texture = null;
 		try {
-			texture = world.getRenderer().getTextureFactory().getTexture(path);
+			texture = world.getRenderer().getTextureFactory().getTexture(path, srgba);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -776,6 +776,33 @@ public class DebugFrame {
         	menuTextures.add(textureAddMenuItem);
         }
         {
+        	WebMenuItem textureSrgbaAddMenuItem = new WebMenuItem ( "Add 2D SRGBA" );
+        	textureSrgbaAddMenuItem.addActionListener(e -> {
+        		
+	    		File chosenFile = fileChooser.showOpenDialog();
+	    		if(chosenFile != null) {
+					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
+					
+					TextureResult result = null;
+					try {
+						result = queue.poll(5, TimeUnit.MINUTES);
+					} catch (Exception e1) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					}
+					
+					if (!result.isSuccessful()) {
+						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					} else {
+						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+						refreshTextureTab();
+					}
+	    			
+	    		}
+	    		
+        	});
+        	menuTextures.add(textureSrgbaAddMenuItem);
+        }
+        {
         	WebMenuItem textureAddMenuItem = new WebMenuItem ( "Add Cube" );
     		textureAddMenuItem.addActionListener(e -> {
         		

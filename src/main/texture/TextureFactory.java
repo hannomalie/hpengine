@@ -125,6 +125,9 @@ public class TextureFactory {
      * @throws IOException Indicates a failure to access the resource
      */
     public Texture getTexture(String resourceName) throws IOException {
+    	return getTexture(resourceName, false);
+    }
+    public Texture getTexture(String resourceName, boolean srgba) throws IOException {
         Texture tex = (Texture) TEXTURES.get(resourceName);
         
         if (tex != null) {
@@ -145,7 +148,7 @@ public class TextureFactory {
                          GL11.GL_TEXTURE_2D, // target
                          GL11.GL_RGBA,     // dst pixel format
                          GL11.GL_LINEAR, // min filter (unused)
-                         GL11.GL_LINEAR, false);
+                         GL11.GL_LINEAR, false, srgba);
         
         TEXTURES.put(resourceName,tex);
         System.out.println("Precompiled " + Texture.write(tex, resourceName));
@@ -261,10 +264,19 @@ public class TextureFactory {
      * @throws IOException Indicates a failure to access the resource
      */
     public Texture getTexture(String resourceName, 
+            int target, 
+            int dstPixelFormat, 
+            int minFilter, 
+            int magFilter, boolean asStream) throws IOException {
+    	
+    	return getTexture(resourceName, target, dstPixelFormat, minFilter, magFilter, asStream, false);
+    }
+
+    public Texture getTexture(String resourceName, 
                               int target, 
                               int dstPixelFormat, 
                               int minFilter, 
-                              int magFilter, boolean asStream) throws IOException 
+                              int magFilter, boolean asStream, boolean srga) throws IOException 
     { 
         int srcPixelFormat = 0;
         
@@ -299,7 +311,7 @@ public class TextureFactory {
         // convert that image into a byte buffer of texture data 
         ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
         
-        texture.upload(textureBuffer);
+        texture.upload(textureBuffer, srga);
 //        System.out.println("TEXTURE READ NEW IN " + (System.currentTimeMillis() - start + " ms"));
         generateMipMaps(texture, Material.MIPMAP_DEFAULT);
         
