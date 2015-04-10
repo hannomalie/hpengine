@@ -296,6 +296,9 @@ public class GBuffer {
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
+		
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
@@ -314,6 +317,7 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(secondPassDirectionalProgram);
 		GPUProfiler.start("Draw fullscreen buffer");
 		fullscreenBuffer.draw();
 		GPUProfiler.end();
@@ -352,8 +356,9 @@ public class GBuffer {
 			reflectionBuffer.unuse();
 		}
 		GPUProfiler.start("Blurring");
-//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
-//		renderer.blur2DTexture(getLightAccumulationMapOneId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getAmbientOcclusionMapId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTextureBilateral(getLightAccumulationMapOneId(), 0, (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 

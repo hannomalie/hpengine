@@ -76,6 +76,7 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
 	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = false;
 
+	@Toggable(group = "Effects") public static volatile boolean SCATTERING = false;
 	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;

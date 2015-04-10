@@ -7,6 +7,8 @@ layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 
+layout(binding=8) uniform samplerCubeArray probes;
+
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
@@ -20,6 +22,10 @@ uniform vec3 eyePosition;
 uniform vec3 lightDirection;
 uniform vec3 lightDiffuse;
 uniform float scatterFactor = 1;
+
+uniform int activeProbeCount;
+uniform vec3 environmentMapMin[100];
+uniform vec3 environmentMapMax[100];
 
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_DiffuseSpecular;
@@ -278,6 +284,11 @@ float ComputeScattering(float lightDotView)
 	return result;
 }
 
+bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
+	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
+}
+
+
 float[16] ditherPattern = { 0.0f, 0.5f, 0.125f, 0.625f,
 							0.75f, 0.22f, 0.875f, 0.375f,
 							0.1875f, 0.6875f, 0.0625f, 0.5625,
@@ -316,6 +327,22 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
 			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
+		} else {
+			vec3 probeColor = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
+			
+			for(int z = 0; z < activeProbeCount; z++) {
+				vec3 currentEnvironmentMapMin = environmentMapMin[z];
+				vec3 currentEnvironmentMapMax = environmentMapMax[z];
+				vec3 halfExtents = (currentEnvironmentMapMax - currentEnvironmentMapMin)/2;
+				vec3 probeCenter = currentEnvironmentMapMin + halfExtents;
+				if(isInside(currentPosition, currentEnvironmentMapMin, currentEnvironmentMapMax)) {
+					vec3 sampleVec = probeCenter - currentPosition;
+					probeColor = 0.5*textureLod(probes, vec4(vec3(0,1,0), z), 8).rgb;
+					probeColor +=0.5*textureLod(probes, vec4(vec3(0,-1,0), z), 8).rgb;
+					accumFog += ComputeScattering(dot(rayDirection, rayVector)) *1*probeColor;
+					break;
+				}
+			}
 		}
 
 		currentPosition += step;
@@ -381,7 +408,12 @@ void main(void) {
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;
 	//out_AOReflection.gba = vec3(0,0,0);
-	//out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
+	if(SCATTERING) {
+		out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
+	} else {
+		out_AOReflection.gba = vec3(0,0,0);
+	}
+	
 	
 	//out_DiffuseSpecular = vec4(color,1);
 	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
