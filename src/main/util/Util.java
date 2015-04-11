@@ -8,20 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
 
-import main.renderer.material.Material;
-import main.texture.CubeMap;
-
 import org.lwjgl.Sys;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.util.vector.Matrix;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
@@ -378,5 +370,13 @@ public class Util {
 		buffer.rewind();
 		System.out.println(builder.toString());
 	}
-
+	
+	/**
+	 *
+	 * @author Aleksandr Dubinsky
+	 */
+      public static ByteBuffer asByteBuffer (FloatBuffer floatBuffer) {
+    	  ByteBuffer byteBuffer = (ByteBuffer) ((sun.nio.ch.DirectBuffer)floatBuffer).attachment();
+    	  return byteBuffer;
+      }
 }

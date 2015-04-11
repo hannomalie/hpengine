@@ -4,6 +4,7 @@ import main.World;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
@@ -20,5 +21,9 @@ public class TestWithRenderer {
 		World world = new World(true);
 		renderer = world.getRenderer();
 	}
-
+	
+	@AfterClass
+	public static void kill() {
+		renderer.destroy();
+	}
 }
