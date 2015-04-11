@@ -23,6 +23,8 @@ public class StorageBuffer {
 	protected ByteBuffer buffer;
 	private int size = -1;
 
+	private FloatBuffer tempBuffer;
+
 	public StorageBuffer(int size) {
 		this(BufferUtils.createFloatBuffer(size));
 	}
@@ -102,5 +104,17 @@ public class StorageBuffer {
 	}
 	public void setSize(int size) {
 		this.size = size;
+	}
+	
+	public void putValues(float ... values) {
+		putValues(0, values);
+	}
+
+	public void putValues(int offset, float ... values) {
+		tempBuffer = BufferUtils.createFloatBuffer(values.length);
+		for (int i = 0; i < values.length; i++) {
+			tempBuffer.put(offset+i, values[i]);
+		}
+		putValues(tempBuffer);
 	}
 }

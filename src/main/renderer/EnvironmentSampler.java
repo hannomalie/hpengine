@@ -85,7 +85,7 @@ public class EnvironmentSampler {
 		this.renderer = renderer;
 		this.probe = probe;
 		float far = 5000f;
-		float near = 20f;
+		float near = 1f;
 		float fov = 90f;
 		Matrix4f projectionMatrix = Util.createPerpective(fov, 1, near, far);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
@@ -552,7 +552,7 @@ public class EnvironmentSampler {
 			}
 			
 			Vector3f distance = new Vector3f();
-			Vector3f.sub(light.getPosition(), camPosition, distance); // <----- biggest Hack ever! TODO: Check where this fuckup with the cam goes on.... :(
+			Vector3f.sub(light.getPosition(), camPosition, distance);
 			float lightRadius = light.getRadius();
 			
 			// camera is inside light

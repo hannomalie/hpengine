@@ -29,6 +29,7 @@ import main.scene.AABB;
 import main.scene.EnvironmentProbe;
 import main.shader.ComputeShaderProgram;
 import main.shader.Program;
+import main.shader.StorageBuffer;
 import main.texture.CubeMap;
 import main.texture.Texture;
 import main.util.Util;
@@ -62,6 +63,7 @@ public class GBuffer {
 	private RenderTarget reflectionBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
+	private RenderTarget halfScreenBuffer;
 	
 	private VertexBuffer fullscreenBuffer;
 
@@ -94,7 +96,10 @@ public class GBuffer {
 	private float[] onePixel = new float[4];
 
 	private PixelBufferObject pixelBufferObject;
-
+	
+	private StorageBuffer storageBuffer;
+	private int exposureIndex = 0;
+	
 	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
 		this.renderer = renderer;
@@ -116,15 +121,19 @@ public class GBuffer {
 		this.tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_compute.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA32F, 4);
+		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 4);
 		reflectionBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
 		laBuffer = new RenderTarget((int) (Config.WIDTH * SECONDPASSSCALE) , (int) (Config.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8, 1);
+		halfScreenBuffer = new RenderTarget(Config.WIDTH/2, Config.HEIGHT/2, GL11.GL_RGBA8, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.WIDTH, Config.HEIGHT));
 		pixelBufferObject = new PixelBufferObject(1, 1);
+		
+		 storageBuffer = new StorageBuffer(16);
+		 storageBuffer.putValues(1f,0f,0f,1f);
 	}
 	
 	public void init(Renderer renderer) {
@@ -620,9 +629,11 @@ public class GBuffer {
 		combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
-		combineProgram.setUniform("exposure", World.EXPOSURE);
+		combineProgram.setUniform("worldExposure", World.EXPOSURE);
+		combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", World.AUTO_EXPOSURE_ENABLED);
 		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);
 		combineProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+		combineProgram.bindShaderStorageBuffer(0, storageBuffer);
 //		bindEnvironmentProbePositions(combineProgram);
 		
 		finalBuffer.use(true);
@@ -663,19 +674,8 @@ public class GBuffer {
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
-		if (World.AUTO_EXPOSURE_ENABLED){
-			GPUProfiler.start("Auto exposure");
-//			if(renderer.getFrameCount()%5 == 0)
-			{
-				pixelBufferObject.readPixelsFromTexture(finalBuffer.getRenderedTexture(0), fullScreenMipmapCount, GL11.GL_TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
-			}
-//			else if(renderer.getFrameCount()%6 == 0)
-			{
-				autoAdjustExposure();
-			}
-			GPUProfiler.end();
-		}
-		postProcessProgram.setUniform("exposure", World.EXPOSURE);
+		postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", World.AUTO_EXPOSURE_ENABLED);
+		postProcessProgram.bindShaderStorageBuffer(0, storageBuffer);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
@@ -685,17 +685,6 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 
-	private void autoAdjustExposure() {
-		onePixel = pixelBufferObject.mapBuffer();
-		float brightness = (0.2126f * (onePixel[0]) + 0.7152f * (onePixel[1]) + 0.0722f * (onePixel[2]));
-		float maxBrightness = 0.9f;
-		brightness = brightness > maxBrightness ? maxBrightness : brightness;
-		float minBrightness = 0.02f;
-		brightness = brightness < minBrightness ? minBrightness : brightness;
-		float targetExposure = 0.5f / brightness;
-		World.EXPOSURE = (World.EXPOSURE + (targetExposure - World.EXPOSURE) * 0.15f);
-	}
-	
 	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
 //		GL11.glEnable(GL11.GL_CULL_FACE);

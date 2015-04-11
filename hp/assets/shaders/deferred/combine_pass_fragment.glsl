@@ -11,6 +11,14 @@ layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap; // probe sample, ambient occlusion
 layout(binding=10) uniform sampler2D finalMap; // what gets drawn to the screen
 
+layout(std430, binding=0) buffer myBlock
+{
+  float exposure;
+};
+uniform float worldExposure;
+
+uniform bool AUTO_EXPOSURE_ENABLED = false;
+
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 projectionMatrix;
@@ -21,7 +29,7 @@ uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
-uniform float exposure = 4;
+//uniform float exposure = 4;
 
 uniform int fullScreenMipmapCount = 10;
 
@@ -364,6 +372,7 @@ void main(void) {
 	out_color.rgb += (scattering.gba); //scattering
 	
 	float autoExposure = exposure;
+	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
 
 	out_color *= autoExposure;
 	
@@ -371,6 +380,8 @@ void main(void) {
 	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
+	
+	//out_color.rgb = texture(finalMap, st).rgb;
 	
 	/////////////////////////////// GAMMA
 	//out_color.r = pow(out_color.r,1/2.2);

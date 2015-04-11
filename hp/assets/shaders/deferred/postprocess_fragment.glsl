@@ -3,8 +3,15 @@ layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap; // motionVec
 
+layout(std430, binding=0) buffer myBlock
+{ 
+  float exposure;
+};
+
+uniform bool AUTO_EXPOSURE_ENABLED = true;
+
 uniform bool usePostProcessing = false;
-uniform float exposure = 5;
+//uniform float exposure = 5;
 
 in vec2 pass_TextureCoord;
 out vec4 out_color;
@@ -12,7 +19,6 @@ out vec4 out_color;
 float calculateMotionBlur(vec2 uv) {
 	return 10*(texture2D(motionMap, uv).x);
 }
-
 ///////////////////////////////////////
 // http://facepunch.com/showthread.php?t=1401594
 ///////////////////////////////////////
@@ -455,5 +461,19 @@ void main()
 		} else {
 			out_color = texture(renderedTexture, pass_TextureCoord);
 		}
+	}
+	
+	
+	if(AUTO_EXPOSURE_ENABLED && pass_TextureCoord.x <= 0.001 && pass_TextureCoord.y <= 0.001)
+	{
+		vec3 averageSampleRGB = textureLod(renderedTexture, vec2(0,0),10).rgb;
+		float brightness = (0.2126f * (averageSampleRGB.r) + 0.7152f * (averageSampleRGB.g) + 0.0722f * (averageSampleRGB.b));
+		float maxBrightness = 0.9f;
+		brightness = brightness > maxBrightness ? maxBrightness : brightness;
+		float minBrightness = 0.02f;
+		brightness = brightness < minBrightness ? minBrightness : brightness;
+		float targetExposure = 1.5f / brightness;
+		exposure = (exposure + (targetExposure - exposure) * 0.015f);
+		//out_color.r = 1;
 	}
 }
