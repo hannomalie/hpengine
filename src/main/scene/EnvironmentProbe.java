@@ -84,6 +84,7 @@ public class EnvironmentProbe implements IEntity {
 	@Override
 	public void move(Vector3f amount) {
 		sampler.getCamera().moveInWorld(amount.negate(null));
+		renderer.getEnvironmentProbeFactory().updateBuffers();
 		box.move(amount);
 	}
 	
@@ -91,12 +92,14 @@ public class EnvironmentProbe implements IEntity {
 	public void moveInWorld(Vector3f amount) {
 		box.move(amount);
 		sampler.getCamera().moveInWorld(amount.negate(null));
+		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 	
 	@Override
 	public void setPosition(Vector3f position) {
 		box.setCenter(position);
 		sampler.getCamera().setPosition(position.negate(null));
+		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 
 	@Override

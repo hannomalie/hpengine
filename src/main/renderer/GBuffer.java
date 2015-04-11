@@ -127,7 +127,7 @@ public class GBuffer {
 		reflectionBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
 		laBuffer = new RenderTarget((int) (Config.WIDTH * SECONDPASSSCALE) , (int) (Config.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8, 1);
-		halfScreenBuffer = new RenderTarget(Config.WIDTH/2, Config.HEIGHT/2, GL11.GL_RGBA8, 1);
+		halfScreenBuffer = new RenderTarget(Config.WIDTH/2, Config.HEIGHT/2, GL30.GL_RGBA16F, 1);
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
@@ -396,6 +396,9 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
+		
 		halfScreenBuffer.use(true);
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
 		aoScatteringProgram.use();

@@ -902,13 +902,14 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 		  float difference = currentViewPos.z - currentPosSample.z;
 		  const float THICKNESS_THRESHOLD = 70;
 		  if (difference < 0) {
-		  	if(currentViewPos.z > targetPosView.z) { break;}
+		  	const bool objectInFrontOfStartPoint = currentViewPos.z > targetPosView.z;
+		  	if(objectInFrontOfStartPoint) { continue;}
 		  
 		  	if(abs(difference) > THICKNESS_THRESHOLD) {
   		  		vec4 resultCoords = getViewPosInTextureSpace(currentPosSample);
 		  		vec4 motionVecProbeIndices = texture2D(motionMap, resultCoords.xy);
   				vec2 motion = motionVecProbeIndices.xy;
-		  		return mix(probeColor, 0.25*blur(lastFrameFinalBuffer, resultCoords.xy, 0.05, 4).rgb, 0.5);
+		  		return mix(probeColor, 0.025*blur(lastFrameFinalBuffer, resultCoords.xy, 0.05, 4).rgb, 0.5);
 		  	}
 		  	
 		  	currentViewPos -= viewRay;
@@ -938,12 +939,11 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 3);
     			mipMapChoser = min(mipMapChoser, 4);
     			
-    			float threshold = 0.00;
-    			float screenEdgefactorX = clamp(distance(resultCoords.x, 0.5)-threshold, 0, 1);
-    			float screenEdgefactorY = clamp(distance(resultCoords.y, 0.5)-threshold, 0, 1);
-    			screenEdgefactor = clamp(2*distance(resultCoords.xy, vec2(0.5,0.5))-threshold, 0.0, 1.0);
-    			screenEdgefactor = pow(screenEdgefactor, 0.2);
-    			//return vec3(screenEdgefactor, 0, 0);
+    			float threshold = 0.15;
+				float maxDist = distance(1.0, 0.5);
+				float dist = distance(screenPos.xy, vec2(0.5,0.5));
+				float percent = (dist/maxDist);
+				float screenEdgeFactor = smoothstep(1, 0, percent-threshold);
     			
     			vec4 diffuseColorMetallic = textureLod(diffuseMap, screenPos.xy, mipMapChoser);
     			vec3 diffuseColor = diffuseColorMetallic.xyz;
@@ -964,16 +964,16 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 	    			vec4 lightDiffuseSpecular = blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness/10, mipMapChoser); // compensation for *4 intensity
     				reflectedColor = (lightDiffuseSpecular.rgb + thisFrameLighting)/2;
     			} else {
-    				reflectedColor = thisFrameLighting;
+    				reflectedColor = 4*thisFrameLighting;
     			}
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
     			
-    			float mixer = screenEdgefactor;
+    			float mixer = pow(screenEdgefactor,1);
     			//mixer = clamp(mixer, 0, 1);
     			//mixer *= fadeToViewer;
-			//return vec3(1-mixer, 0, 0);
-    			vec3 result = mix(probeColor, reflectedColor, 1);
+			//return vec3(mixer,mixer,mixer);
+    			vec3 result = mix(probeColor, reflectedColor, mixer);
 				return specularColor*result;
 		  	}
 		  	//return vec3(1,0,0);

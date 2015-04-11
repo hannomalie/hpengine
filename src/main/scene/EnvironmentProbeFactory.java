@@ -281,7 +281,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void bindEnvironmentProbePositions(AbstractProgram program) {
-
+		program.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
 		
