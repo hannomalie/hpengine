@@ -4,8 +4,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="libs/commons-io-2.4/commons-io-2.4.jar"/>
 	<classpathentry kind="lib" path="libs/lwjgl-2.9.2/jar/lwjgl_util.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.9.2/jar/lwjgl.jar" sourcepath="libs/lwjgl-2.9.2/doc">
+	<classpathentry kind="lib" path="libs/lwjgl-2.9.2/jar/lwjgl.jar" sourcepath="libs/lwjgl-2.9.2">
 		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/workspace/hpengine/libs/lwjgl-2.9.2/javadoc/"/>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="hpengine/libs/lwjgl-2.9.2/native/windows"/>
 		</attributes>
 	</classpathentry>

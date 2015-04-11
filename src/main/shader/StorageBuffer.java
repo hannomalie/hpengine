@@ -18,7 +18,8 @@ import org.lwjgl.opengl.GL43;
  */
 public class StorageBuffer {
 	
-	protected int bufferId = -1;
+	protected int id = -1;
+
 	protected ByteBuffer buffer;
 	private int size = -1;
 
@@ -27,16 +28,16 @@ public class StorageBuffer {
 	}
 	
 	public StorageBuffer(FloatBuffer data) {
-		bufferId = GL15.glGenBuffers();
+		id = GL15.glGenBuffers();
 		bind();
 		GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, data, GL15.GL_DYNAMIC_COPY);
+		setSize(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
 		unbind();
 		getValues();
-		setSize(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
 	}
 	
 	public void bind() {
-		GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, bufferId);
+		GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, id);
 	}
 	public void unbind() {
 		GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
@@ -83,19 +84,23 @@ public class StorageBuffer {
 	public void putValues(int offset, FloatBuffer values) {
 		bind();
 		if(offset*4 + values.capacity()*4 > size) {
-			throw new IndexOutOfBoundsException(String.format("Can't put values into shader storage buffer %d (size: %d, offset %d, length %d)", bufferId, size, offset*4, values.capacity()*4));
+			throw new IndexOutOfBoundsException(String.format("Can't put values into shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset*4, values.capacity()*4));
 		}
 		GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, offset*4, values);
 		unbind();
+	}
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public int getSize() {
 		return size;
 	}
-
 	public void setSize(int size) {
 		this.size = size;
 	}
-	
-	
 }

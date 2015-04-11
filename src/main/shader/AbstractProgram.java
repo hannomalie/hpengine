@@ -8,6 +8,9 @@ import java.util.HashMap;
 import main.event.GlobalDefineChangedEvent;
 
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.google.common.eventbus.Subscribe;
@@ -91,6 +94,20 @@ public abstract class AbstractProgram {
 	public int getUniformLocation(String name) {
 		return GL20.glGetUniformLocation(getId(), name);
 	}
+
+	public void bindShaderStorageBuffer(int index, StorageBuffer block) {
+		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.getId());
+	}
+
+	public int getShaderStorageBlockIndex(String name) {
+		return GL43.glGetProgramResourceIndex(getId(), GL43.GL_SHADER_STORAGE_BLOCK, name);
+	}
+	
+	public void getShaderStorageBlockBinding(String name, int bindingIndex) {
+		GL43.glShaderStorageBlockBinding(getId(), getShaderStorageBlockIndex(name), bindingIndex);
+	}
+	
+	
 	public Uniform getUniform(String key) {
 		return uniforms.get(key);
 	}
