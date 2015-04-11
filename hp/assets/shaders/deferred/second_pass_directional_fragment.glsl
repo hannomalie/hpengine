@@ -328,7 +328,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		{
 			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
 		} else {
-			vec3 probeColor = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
+			vec3 probeColor;// = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
 			
 			for(int z = 0; z < activeProbeCount; z++) {
 				vec3 currentEnvironmentMapMin = environmentMapMin[z];
@@ -336,9 +336,13 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 				vec3 halfExtents = (currentEnvironmentMapMax - currentEnvironmentMapMin)/2;
 				vec3 probeCenter = currentEnvironmentMapMin + halfExtents;
 				if(isInside(currentPosition, currentEnvironmentMapMin, currentEnvironmentMapMax)) {
-					vec3 sampleVec = probeCenter - currentPosition;
-					probeColor = 0.5*textureLod(probes, vec4(vec3(0,1,0), z), 8).rgb;
-					probeColor +=0.5*textureLod(probes, vec4(vec3(0,-1,0), z), 8).rgb;
+					float mipmap = 2;
+					probeColor = textureLod(probes, vec4(vec3(0,1,0), z), mipmap).rgb/6;
+					probeColor +=textureLod(probes, vec4(vec3(0,-1,0), z), mipmap).rgb/6;
+					probeColor +=textureLod(probes, vec4(vec3(1,0,0), z), mipmap).rgb/6;
+					probeColor +=textureLod(probes, vec4(vec3(-1,0,0), z), mipmap).rgb/6;
+					probeColor +=textureLod(probes, vec4(vec3(0,0,1), z), mipmap).rgb/6;
+					probeColor +=textureLod(probes, vec4(vec3(0,0,-1), z), mipmap).rgb/6;
 					accumFog += ComputeScattering(dot(rayDirection, rayVector)) *1*probeColor;
 					break;
 				}
@@ -408,12 +412,11 @@ void main(void) {
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;
 	//out_AOReflection.gba = vec3(0,0,0);
-	if(SCATTERING) {
+	/*if(SCATTERING) {
 		out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
 	} else {
 		out_AOReflection.gba = vec3(0,0,0);
-	}
-	
+	}*/
 	
 	//out_DiffuseSpecular = vec4(color,1);
 	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);

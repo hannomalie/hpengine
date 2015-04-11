@@ -77,6 +77,8 @@ public class GBuffer {
 	private Program postProcessProgram;
 	private Program instantRadiosityProgram;
 
+	private Program aoScatteringProgram;
+
 	private Program highZProgram;
 	private Program reflectionProgram;
 	private Program linesProgram;
@@ -111,7 +113,7 @@ public class GBuffer {
 		this.combineProgram = combineProgram;
 		this.postProcessProgram = postProcessProgram;
 		this.instantRadiosityProgram = instantRadiosityProgram;
-
+		this.aoScatteringProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "scattering_ao_fragment.glsl");
 		this.highZProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
 		this.reflectionProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
 		this.linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
@@ -350,10 +352,11 @@ public class GBuffer {
 		
 		GL11.glDisable(GL11.GL_BLEND);
 //		GL11.glEnable(GL11.GL_CULL_FACE);
-		
 
 		laBuffer.unuse();
-
+		
+		renderAOAndScattering(camera, viewMatrix, projectionMatrix, directionalLight);
+		
 		if (World.USE_GI) {
 			GL11.glDepthMask(false);
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -365,7 +368,7 @@ public class GBuffer {
 			reflectionBuffer.unuse();
 		}
 		GPUProfiler.start("Blurring");
-//		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		renderer.blur2DTexture(halfScreenBuffer.getRenderedTexture(), 0, (int)(Config.WIDTH/2), (int)(Config.HEIGHT/2), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getAmbientOcclusionMapId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
@@ -376,6 +379,42 @@ public class GBuffer {
 		
 		GL11.glCullFace(GL11.GL_BACK);
 		GL11.glDepthFunc(GL11.GL_LESS);
+		GPUProfiler.end();
+	}
+
+	private void renderAOAndScattering(Camera camera, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, DirectionalLight directionalLight) {
+		if(!World.useAmbientOcclusion && !World.SCATTERING) { return; }
+		GPUProfiler.start("Scattering and AO");
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getPositionMap());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getNormalMap());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getColorReflectivenessMap());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getMotionMap());
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
+		halfScreenBuffer.use(true);
+//		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
+		aoScatteringProgram.use();
+		aoScatteringProgram.setUniform("eyePosition", camera.getPosition());
+		aoScatteringProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
+		aoScatteringProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
+		aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+		aoScatteringProgram.setUniform("screenWidth", (float) Config.WIDTH/2);
+		aoScatteringProgram.setUniform("screenHeight", (float) Config.HEIGHT/2);
+		aoScatteringProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
+		aoScatteringProgram.setUniform("lightDirection", directionalLight.getViewDirection());
+		aoScatteringProgram.setUniform("lightDiffuse", directionalLight.getColor());
+		aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(aoScatteringProgram);
+		fullscreenBuffer.draw();
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		renderer.getTextureFactory().generateMipMaps(halfScreenBuffer.getRenderedTexture());
 		GPUProfiler.end();
 	}
 
@@ -661,6 +700,8 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture(1));
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0));
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, halfScreenBuffer.getRenderedTexture(0));
 		
 		fullscreenBuffer.draw();
 			
@@ -674,6 +715,7 @@ public class GBuffer {
 		postProcessProgram.use();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
+		postProcessProgram.setUniform("worldExposure", World.EXPOSURE);
 		postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", World.AUTO_EXPOSURE_ENABLED);
 		postProcessProgram.bindShaderStorageBuffer(0, storageBuffer);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);

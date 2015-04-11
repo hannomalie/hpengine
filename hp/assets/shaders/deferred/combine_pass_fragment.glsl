@@ -10,6 +10,7 @@ layout(binding=7) uniform samplerCubeArray probes;
 layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap; // probe sample, ambient occlusion
 layout(binding=10) uniform sampler2D finalMap; // what gets drawn to the screen
+layout(binding=11) uniform sampler2D aoScattering;
 
 layout(std430, binding=0) buffer myBlock
 {
@@ -353,14 +354,15 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
 	
-	vec4 scattering = textureLod(scatteringMap, st, 1);
+	vec4 AOscattering = textureLod(aoScattering, st, 2);
+	vec3 scattering = AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
 	//environmentColorAO = bilateralBlur(diffuseEnvironment, st).rgba;
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = environmentLightAO.rgb;
-	float ao = environmentLightAO.a;
+	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
 	vec3 ambientTerm = ambientColor*environmentLight;
@@ -369,7 +371,7 @@ void main(void) {
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
-	out_color.rgb += (scattering.gba); //scattering
+	out_color.rgb += (scattering.rgb); //scattering
 	
 	float autoExposure = exposure;
 	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
@@ -380,13 +382,6 @@ void main(void) {
 	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
-	
-	//out_color.rgb = texture(finalMap, st).rgb;
-	
-	/////////////////////////////// GAMMA
-	//out_color.r = pow(out_color.r,1/2.2);
-	//out_color.g = pow(out_color.g,1/2.2);
-	//out_color.b = pow(out_color.b,1/2.2);
 	
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);

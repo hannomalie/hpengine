@@ -8,6 +8,8 @@ layout(std430, binding=0) buffer myBlock
   float exposure;
 };
 
+uniform float worldExposure = 5;
+
 uniform bool AUTO_EXPOSURE_ENABLED = true;
 
 uniform bool usePostProcessing = false;
@@ -472,7 +474,7 @@ void main()
 		brightness = brightness > maxBrightness ? maxBrightness : brightness;
 		float minBrightness = 0.02f;
 		brightness = brightness < minBrightness ? minBrightness : brightness;
-		float targetExposure = 1.5f / brightness;
+		float targetExposure = 2*worldExposure / brightness;
 		exposure = (exposure + (targetExposure - exposure) * 0.015f);
 		//out_color.r = 1;
 	}

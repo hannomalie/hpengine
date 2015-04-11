@@ -490,11 +490,13 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		float dist = distance(positionWorld, intersection);
 		float distanceBias = (roughness) / (dist*dist);
     	
-    	vec3 prefilteredColor = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL).rgb;
+    	vec4 specularSample = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL);
+    	vec3 biasSample = textureLod(probes, vec4(projectedReflected, index), MAX_MIPMAPLEVEL-2).rgb;
+    	vec3 prefilteredColor = specularSample.rgb;
     	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
     	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
     	
-    	result.specularColor = prefilteredColor * envBRDF;
+    	result.specularColor = mix(prefilteredColor, biasSample,1-specularSample.a) * envBRDF;
     	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
     	vec3 diffuseSample = textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
     	result.diffuseColor = diffuseColor * diffuseSample;
@@ -1298,6 +1300,6 @@ void main()
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	
 	out_environment.rgb = result;
-	out_environment.a = getAmbientOcclusion(st);
+	//out_environment.a = getAmbientOcclusion(st);
 	out_refracted.rgb = probeColorsDiffuseSpecular.refractedColor;
 }
