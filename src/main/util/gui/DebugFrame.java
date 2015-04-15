@@ -242,256 +242,8 @@ public class DebugFrame {
 		
 		addProbes(world);
 
-//		toggleFileReload.addActionListener( e -> {
-//			FileMonitor.getInstance().running = !FileMonitor.getInstance().running;
-//			toggleFileReload.setSelected(FileMonitor.getInstance().running);
-//		});
-		toggleProfiler.addActionListener( e -> {
-			
-			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
-
-				@Override
-				public Result execute(World world) {
-					GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
-					return new Result() { @Override public boolean isSuccessful() { return true; } };
-				}
-			});
-			Result result = null;
-			try {
-				result = queue.poll(5, TimeUnit.MINUTES);
-				if (!result.isSuccessful()) {
-					showError("Profiling can't be switched");
-				} else {
-					showSuccess("Profiling switched");
-				}
-			} catch (Exception e1) {
-				showError("Profiling can't be switched");
-			}
-			
-		});
-		toggleProfilerPrint.addActionListener( e -> {
-			
-			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
-
-				@Override
-				public Result execute(World world) {
-					GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
-					return new Result();
-				}
-			});
-			Result result = null;
-			try {
-				result = queue.poll(5, TimeUnit.MINUTES);
-				if (!result.isSuccessful()) {
-					showError("Printing can't be switched");
-				} else {
-					showSuccess("Printing switched");
-				}
-			} catch (Exception e1) {
-				showError("Profiling can't be switched");
-			}
-			
-		});
-		//////////////////////////////
-		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();
-		for (Field field : World.class.getDeclaredFields()) {
-			for (Annotation annotation : field.getDeclaredAnnotations()) {
-				if(annotation instanceof Toggable) {
-					createWebToggableButton(world, toggleButtonsWithGroups, field, annotation);
-				} else if(annotation instanceof Adjustable) {
-// TODO: FEINSCHLIFF
-//					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
-				}
-			}
-		}
-		for (Entry<String, List<Component>> groupAndButtons : toggleButtonsWithGroups.entrySet()) {
-			Component[] toggleButtonsArray = new Component[groupAndButtons.getValue().size()];
-			groupAndButtons.getValue().toArray(toggleButtonsArray);
-			mainButtonElements.add(new TitledPanel(groupAndButtons.getKey(), toggleButtonsArray));
-		}
-		/////////////////////
-		
-		dumpAverages.addActionListener(e -> {
-			world.getRenderer().addCommand(new DumpAveragesCommand(1000));
-		});
-		
-		toggleParallax.addActionListener( e -> {
-			World.useParallax = !World.useParallax;
-			World.useSteepParallax = false;
-		});
-		
-		toggleSteepParallax.addActionListener(e -> {
-			World.useSteepParallax = !World.useSteepParallax;
-			World.useParallax = false;
-		});
-
-		toggleAmbientOcclusion.addActionListener(e -> {
-			World.useAmbientOcclusion = !World.useAmbientOcclusion;
-			world.getEventBus().post(new GlobalDefineChangedEvent());
-		});
-
-		toggleFrustumCulling.addActionListener(e -> {
-			World.useFrustumCulling = !World.useFrustumCulling;
-		});
-		toggleInstantRadiosity.addActionListener(e -> {
-			World.useInstantRadiosity = !World.useInstantRadiosity;
-		});
-
-		toggleDrawLines.addActionListener(e -> {
-			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
-		});
-		toggleDrawScene.addActionListener(e -> {
-			World.DRAWSCENE_ENABLED = !World.DRAWSCENE_ENABLED;
-		});
-
-		toggleDrawOctree.addActionListener(e -> {
-			Octree.DRAW_LINES = !Octree.DRAW_LINES;
-		});
-		forceProbeGBufferRedraw.addActionListener(e -> {
-			world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
-				probe.getSampler().resetDrawing();
-			});
-		});
-		toggleDrawProbes.addActionListener(e -> {
-			World.DRAW_PROBES = !World.DRAW_PROBES;
-		});
-		toggleUseGI.addActionListener(e -> {
-			World.USE_GI = !World.USE_GI;
-		});
-		toggleUseSSR.addActionListener(e -> {
-			World.useSSR = !World.useSSR;
-		});
-		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
-			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
-		});
-		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
-			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
-			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-		});
-		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
-			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
-			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-		});
-		toggleUseComputeShaderForReflections.addActionListener(e -> {
-			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
-		});
-		toggleDebugDrawProbes.addActionListener(e -> {
-			World.DEBUGDRAW_PROBES = !World.DEBUGDRAW_PROBES;
-		});
-		toggleDebugDrawProbesWithContent.addActionListener(e -> {
-			World.DEBUGDRAW_PROBES_WITH_CONTENT = !World.DEBUGDRAW_PROBES_WITH_CONTENT;
-		});
-
-		toggleDebugFrame.addActionListener(e -> {
-			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
-		});
-
-		toggleDrawLights.addActionListener(e -> {
-			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
-		});
-		toggleVSync.addActionListener(e -> {
-			World.VSYNC_ENABLED = !World.VSYNC_ENABLED;
-			world.getRenderer().addCommand(new Command<Result>() {
-
-				@Override
-				public Result execute(World world) {
-					Display.setVSyncEnabled(World.VSYNC_ENABLED);
-					return new Result();
-				}
-			});
-		});
-		toggleAutoExposure.addActionListener(e -> {
-			World.AUTO_EXPOSURE_ENABLED = !World.AUTO_EXPOSURE_ENABLED;
-			if(!World.AUTO_EXPOSURE_ENABLED) { World.EXPOSURE = 5; }
-		});
-
-	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
-	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
-	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
-	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
-	    ambientOcclusionRadiusSlider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * 10000f));
-	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
-	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
-	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 10000;
-				World.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
-			}
-		});
-
-	    ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
-	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
-	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
-	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-	    ambientOcclusionTotalStrengthSlider.setValue((int) (World.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
-	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
-	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
-	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
-			
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				WebSlider slider = (WebSlider) e.getSource();
-				int value = slider.getValue();
-				float valueAsFactor = ((float) value) / 100;
-				World.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
-			}
-		});
-
-////////////////
-	    
-	    toggleSampleCount2.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
-	    toggleSampleCount4.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
-	    toggleSampleCount8.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount8.getLabel()); });
-	    toggleSampleCount16.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount16.getLabel()); });
-	    toggleSampleCount32.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount32.getLabel()); });
-	    toggleSampleCount64.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount64.getLabel()); });
-		
-	    toggleProbeDrawCountOne.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountOne.getLabel()); });
-	    toggleProbeDrawCountTwo.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountTwo.getLabel()); });
-	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
-	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
-		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
-		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
-			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
-			@Override public void onValueChange(int value, int delta) {
-				World.EXPOSURE = value;
-			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
-				@Override public void onValueChange(int value, int delta) {
-					World.light.setScatterFactor((float)value);
-				}
-			},
-			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
-				@Override public void onValueChange(int value, int delta) {
-					World.RAINEFFECT = (float) value/100;
-					world.getEventBus().post(new GlobalDefineChangedEvent());
-				}
-			}
-		));
-//		mainButtonElements.add(toggleFileReload);
-//		mainButtonElements.add(toggleParallax);
-//		mainButtonElements.add(toggleSteepParallax);
-//		mainButtonElements.add(toggleInstantRadiosity);
-        Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
-        mainButtonElements.toArray(mainButtonsElementsArray);
-        GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length/2, 2, 5, mainButtonsElementsArray);
-////////////////
-	    
-        mainPane = new WebScrollPane(buttonGridPanel);
+		createInputs();
+		initActionListeners(world, mainButtonElements);
         
 		WebMenuBar menuBar = new WebMenuBar ();
 		WebMenu menuScene = new WebMenu("Scene");
@@ -863,6 +615,304 @@ public class DebugFrame {
 		mainFrame.setVisible(true);
 		initPerformanceChart();
 		redirectSystemStreams();
+	}
+
+	private void createInputs() {
+		toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
+		toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
+		dumpAverages = new WebButton("Dump Averages");
+		toggleParallax = new WebToggleButton("Parallax", World.useParallax);
+		toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
+		toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
+		toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", World.useInstantRadiosity);
+		toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
+		toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
+		toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
+		toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
+		forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
+		toggleUseGI = new WebToggleButton("GI", World.USE_GI);
+		toggleUseSSR = new WebToggleButton("SSR", World.useSSR);
+		toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
+		toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
+		toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
+		toggleSampleCount2 = new WebToggleButton("2", GBuffer.IMPORTANCE_SAMPLE_COUNT == 2);
+		toggleSampleCount4 = new WebToggleButton("4", GBuffer.IMPORTANCE_SAMPLE_COUNT == 4);
+		toggleSampleCount8 = new WebToggleButton("8", GBuffer.IMPORTANCE_SAMPLE_COUNT == 8);
+		toggleSampleCount16 = new WebToggleButton("16", GBuffer.IMPORTANCE_SAMPLE_COUNT == 16);
+		toggleSampleCount32 = new WebToggleButton("32", GBuffer.IMPORTANCE_SAMPLE_COUNT == 32);
+		toggleSampleCount64 = new WebToggleButton("64", GBuffer.IMPORTANCE_SAMPLE_COUNT == 64);
+		sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
+		toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
+		toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", World.DEBUGDRAW_PROBES);
+		toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", World.DEBUGDRAW_PROBES_WITH_CONTENT);
+		toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
+		toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
+		toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
+		toggleAutoExposure = new WebToggleButton("Auto Exposure", World.AUTO_EXPOSURE_ENABLED);
+		toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
+		toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
+		toggleProbeDrawCountThree = new WebToggleButton("3", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 3);
+		toggleProbeDrawCountFour = new WebToggleButton("4", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 4);
+		probeDrawCountGroup = new WebButtonGroup(true, toggleProbeDrawCountOne, toggleProbeDrawCountTwo, toggleProbeDrawCountThree, toggleProbeDrawCountFour);
+		ambientOcclusionRadiusSlider = new WebSlider ( WebSlider.HORIZONTAL );
+		ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
+		WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<DefaultMutableTreeNode>();
+		WebTextField sceneViewFilterField = new WebTextField(15);
+		WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
+	}
+	private void initActionListeners(World world,
+	List<Component> mainButtonElements) {
+//		toggleFileReload.addActionListener( e -> {
+//			FileMonitor.getInstance().running = !FileMonitor.getInstance().running;
+//			toggleFileReload.setSelected(FileMonitor.getInstance().running);
+//		});
+		toggleProfiler.addActionListener( e -> {
+			
+			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+
+				@Override
+				public Result execute(World world) {
+					GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
+					return new Result() { @Override public boolean isSuccessful() { return true; } };
+				}
+			});
+			Result result = null;
+			try {
+				result = queue.poll(5, TimeUnit.MINUTES);
+				if (!result.isSuccessful()) {
+					showError("Profiling can't be switched");
+				} else {
+					showSuccess("Profiling switched");
+				}
+			} catch (Exception e1) {
+				showError("Profiling can't be switched");
+			}
+			
+		});
+		toggleProfilerPrint.addActionListener( e -> {
+			
+			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+
+				@Override
+				public Result execute(World world) {
+					GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+					return new Result();
+				}
+			});
+			Result result = null;
+			try {
+				result = queue.poll(5, TimeUnit.MINUTES);
+				if (!result.isSuccessful()) {
+					showError("Printing can't be switched");
+				} else {
+					showSuccess("Printing switched");
+				}
+			} catch (Exception e1) {
+				showError("Profiling can't be switched");
+			}
+			
+		});
+		//////////////////////////////
+		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();
+		for (Field field : World.class.getDeclaredFields()) {
+			for (Annotation annotation : field.getDeclaredAnnotations()) {
+				if(annotation instanceof Toggable) {
+					createWebToggableButton(world, toggleButtonsWithGroups, field, annotation);
+				} else if(annotation instanceof Adjustable) {
+// TODO: FEINSCHLIFF
+//					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
+				}
+			}
+		}
+		for (Entry<String, List<Component>> groupAndButtons : toggleButtonsWithGroups.entrySet()) {
+			Component[] toggleButtonsArray = new Component[groupAndButtons.getValue().size()];
+			groupAndButtons.getValue().toArray(toggleButtonsArray);
+			mainButtonElements.add(new TitledPanel(groupAndButtons.getKey(), toggleButtonsArray));
+		}
+		/////////////////////
+		
+		dumpAverages.addActionListener(e -> {
+			world.getRenderer().addCommand(new DumpAveragesCommand(1000));
+		});
+		
+		toggleParallax.addActionListener( e -> {
+			World.useParallax = !World.useParallax;
+			World.useSteepParallax = false;
+		});
+		
+		toggleSteepParallax.addActionListener(e -> {
+			World.useSteepParallax = !World.useSteepParallax;
+			World.useParallax = false;
+		});
+
+		toggleAmbientOcclusion.addActionListener(e -> {
+			World.useAmbientOcclusion = !World.useAmbientOcclusion;
+			world.getEventBus().post(new GlobalDefineChangedEvent());
+		});
+
+		toggleFrustumCulling.addActionListener(e -> {
+			World.useFrustumCulling = !World.useFrustumCulling;
+		});
+		toggleInstantRadiosity.addActionListener(e -> {
+			World.useInstantRadiosity = !World.useInstantRadiosity;
+		});
+
+		toggleDrawLines.addActionListener(e -> {
+			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
+		});
+		toggleDrawScene.addActionListener(e -> {
+			World.DRAWSCENE_ENABLED = !World.DRAWSCENE_ENABLED;
+		});
+
+		toggleDrawOctree.addActionListener(e -> {
+			Octree.DRAW_LINES = !Octree.DRAW_LINES;
+		});
+		forceProbeGBufferRedraw.addActionListener(e -> {
+			world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+				probe.getSampler().resetDrawing();
+			});
+		});
+		toggleDrawProbes.addActionListener(e -> {
+			World.DRAW_PROBES = !World.DRAW_PROBES;
+		});
+		toggleUseGI.addActionListener(e -> {
+			World.USE_GI = !World.USE_GI;
+			System.out.println("XXXXXXXXXX");
+		});
+		toggleUseSSR.addActionListener(e -> {
+			World.useSSR = !World.useSSR;
+		});
+		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
+			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
+		});
+		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
+			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
+			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+		});
+		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
+			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
+			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+			World.getEventBus().post(new MaterialChangedEvent());
+		});
+		toggleUseComputeShaderForReflections.addActionListener(e -> {
+			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
+		});
+		toggleDebugDrawProbes.addActionListener(e -> {
+			World.DEBUGDRAW_PROBES = !World.DEBUGDRAW_PROBES;
+		});
+		toggleDebugDrawProbesWithContent.addActionListener(e -> {
+			World.DEBUGDRAW_PROBES_WITH_CONTENT = !World.DEBUGDRAW_PROBES_WITH_CONTENT;
+		});
+
+		toggleDebugFrame.addActionListener(e -> {
+			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
+		});
+
+		toggleDrawLights.addActionListener(e -> {
+			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
+		});
+		toggleVSync.addActionListener(e -> {
+			World.VSYNC_ENABLED = !World.VSYNC_ENABLED;
+			world.getRenderer().addCommand(new Command<Result>() {
+
+				@Override
+				public Result execute(World world) {
+					Display.setVSyncEnabled(World.VSYNC_ENABLED);
+					return new Result();
+				}
+			});
+		});
+		toggleAutoExposure.addActionListener(e -> {
+			World.AUTO_EXPOSURE_ENABLED = !World.AUTO_EXPOSURE_ENABLED;
+			if(!World.AUTO_EXPOSURE_ENABLED) { World.EXPOSURE = 5; }
+		});
+
+	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
+	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
+	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
+	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
+	    ambientOcclusionRadiusSlider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * 10000f));
+	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
+	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
+	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 10000;
+				World.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
+			}
+		});
+
+	    ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
+	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
+	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
+	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
+	    ambientOcclusionTotalStrengthSlider.setValue((int) (World.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
+	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
+	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
+	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				WebSlider slider = (WebSlider) e.getSource();
+				int value = slider.getValue();
+				float valueAsFactor = ((float) value) / 100;
+				World.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
+			}
+		});
+
+////////////////
+	    
+	    toggleSampleCount2.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount2.getLabel()); });
+	    toggleSampleCount4.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount4.getLabel()); });
+	    toggleSampleCount8.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount8.getLabel()); });
+	    toggleSampleCount16.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount16.getLabel()); });
+	    toggleSampleCount32.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount32.getLabel()); });
+	    toggleSampleCount64.addActionListener(e -> { GBuffer.IMPORTANCE_SAMPLE_COUNT = Integer.valueOf(toggleSampleCount64.getLabel()); });
+		
+	    toggleProbeDrawCountOne.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountOne.getLabel()); });
+	    toggleProbeDrawCountTwo.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountTwo.getLabel()); });
+	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
+	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
+		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
+		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
+			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
+			@Override public void onValueChange(int value, int delta) {
+				World.EXPOSURE = value;
+			}},
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
+				@Override public void onValueChange(int value, int delta) {
+					World.light.setScatterFactor((float)value);
+				}
+			},
+			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
+				@Override public void onValueChange(int value, int delta) {
+					World.RAINEFFECT = (float) value/100;
+					world.getEventBus().post(new GlobalDefineChangedEvent());
+				}
+			}
+		));
+//		mainButtonElements.add(toggleFileReload);
+//		mainButtonElements.add(toggleParallax);
+//		mainButtonElements.add(toggleSteepParallax);
+//		mainButtonElements.add(toggleInstantRadiosity);
+        Component[] mainButtonsElementsArray = new Component[mainButtonElements.size()];
+        mainButtonElements.toArray(mainButtonsElementsArray);
+        GridPanel buttonGridPanel = new GridPanel(mainButtonsElementsArray.length/2, 2, 5, mainButtonsElementsArray);
+////////////////
+	    
+        mainPane = new WebScrollPane(buttonGridPanel);
 	}
 
 	private void createWebSlider(World world,
