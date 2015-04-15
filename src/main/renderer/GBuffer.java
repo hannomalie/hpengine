@@ -457,6 +457,8 @@ public class GBuffer {
 		GL43.glCopyImageSubData(reflectionBuffer.getRenderedTexture(), GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 1);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
 		
 		if(!USE_COMPUTESHADER_FOR_REFLECTIONS) {
 			reflectionBuffer.use(true);
@@ -470,6 +472,7 @@ public class GBuffer {
 			reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 			renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(reflectionProgram);
 			reflectionProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
+			reflectionProgram.bindShaderStorageBuffer(0, storageBuffer);
 			fullscreenBuffer.draw();
 			reflectionBuffer.unuse();
 		} else {

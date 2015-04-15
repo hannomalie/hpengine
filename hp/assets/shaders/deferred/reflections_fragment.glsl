@@ -11,6 +11,11 @@ layout(binding=8) uniform samplerCubeArray probes;
 layout(binding = 10) uniform samplerCubeArray probePositions;
 layout(binding=11) uniform sampler2D ambientLightMap; // diffuse, specular
 
+layout(std430, binding=0) buffer myBlock
+{
+  float exposure;
+};
+
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
@@ -56,6 +61,17 @@ vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLeve
 	return result;
 }
 
+vec3 Uncharted2Tonemap(vec3 x)
+{
+    float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
 struct ProbeSample {
 	vec3 diffuseColor;
 	vec3 specularColor;
@@ -981,14 +997,17 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			vec3 ambientSample = ambientColor*blur(ambientLightMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
     			vec3 lightSample = blur(lightAccumulationMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
     			vec3 thisFrameLighting = ambientSample+lightSample;
+					thisFrameLighting.rgb = Uncharted2Tonemap(exposure*thisFrameLighting.rgb);
+					vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
+					thisFrameLighting.rgb = thisFrameLighting.rgb * whiteScale;
 	    			
     			vec3 reflectedColor;
-    			const bool useTemporalFiltering = false;
+    			const bool useTemporalFiltering = true;
     			if(useTemporalFiltering) {
 	    			vec4 lightDiffuseSpecular = blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness/10, mipMapChoser); // compensation for *4 intensity
     				reflectedColor = (lightDiffuseSpecular.rgb + thisFrameLighting)/2;
     			} else {
-    				reflectedColor = 4*thisFrameLighting;
+    				reflectedColor = thisFrameLighting;
     			}
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
