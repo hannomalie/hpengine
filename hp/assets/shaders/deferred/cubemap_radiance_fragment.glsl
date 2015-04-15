@@ -1,23 +1,16 @@
-#define WORK_GROUP_SIZE 32
-
-layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE) in;
-layout(binding = 0, rgba16f) uniform image2D out0;
-layout(binding = 1, rgba16f) uniform image2D out1;
-layout(binding = 2, rgba16f) uniform image2D out2;
-layout(binding = 3, rgba16f) uniform image2D out3;
-layout(binding = 4, rgba16f) uniform image2D out4;
-layout(binding = 5, rgba16f) uniform image2D out5;
-layout(binding = 6, rgba16f) uniform image2D out6;
-layout(binding = 7, rgba16f) uniform image2D out7;
-
 layout(binding = 8) uniform samplerCube currentCubemap;
 
+uniform currentTargetMipmap = 0;
+
 uniform float screenWidth;
-uniform float screenHeight; 
+uniform float screenHeight;
 uniform int currentProbe;
 uniform int currentCubemapSide;
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
+
+in vec2 pass_TextureCoord;
+layout(location=0)out vec4 out_color;
 
 const float PI = 3.1415926536;
 const float MAX_MIPMAPLEVEL = 8; // HEMISPHERE is half the cubemap
@@ -26,7 +19,6 @@ struct ProbeSample {
 	vec3 diffuseColor;
 	vec3 specularColor;
 	vec3 refractedColor;
-	float visibility;
 };
 
 vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition, int i) {
@@ -238,7 +230,6 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   {
     result.specularColor = textureLod(currentCubemap, normal, 0).rgb;
   	result.diffuseColor = vec3(0,0,0);
-  	result.visibility = 0;
   	//return result;
   }
   
@@ -273,8 +264,6 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 	    float lod = roughness * MAX_MIPMAPLEVEL/N;
 	 
     	vec4 SampleColor = textureLod(currentCubemap, H, lod);
-    	
-    	result.visibility += SampleColor.a;
        
 		result.diffuseColor += SampleColor.rgb * NoL;
 		totalWeight += NoL;
@@ -284,23 +273,23 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   }
   
   result.diffuseColor /= N; // /totalWeight;
-  result.visibility /= N;
+  
   return result;
 }
 
 void main()
 {
-	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 workGroup = ivec2(gl_WorkGroupID);
-	ivec2 workGroupSize = ivec2(gl_WorkGroupSize.xy);
-	ivec2 localIndex = ivec2(gl_LocalInvocationID.xy);
-	vec2 st = vec2(storePos) / vec2(screenWidth, screenHeight);
+	vec2 st = pass_TextureCoord;
+	ivec2 storePos = ivec2(texCoord * vec2(screenWidth, screenHeight));
 	
 	vec4[8] results;
 	
 	vec3 boxHalfExtents = (environmentMapMax[currentProbe] - environmentMapMin[currentProbe])/2;
 	vec3 positionWorld = environmentMapMin[currentProbe] + boxHalfExtents;
 	
+	out_color = vec4(1,0,0,1);
+	
+	/*
 	for(int i = 0; i < 8; i++) {
 	
 		if(i == 1 && (storePos.x > 64 || storePos.y > 64)) {
@@ -323,7 +312,7 @@ void main()
 		vec3 normalWorld = getNormalForTexel(vec3(0,0,0), st, i+1);
 		normalWorld = boxProjection(positionWorld, normalWorld, currentProbe);
 		ProbeSample s = importanceSampleCubeMap(currentProbe, positionWorld, normalWorld, normalWorld, normalWorld, roughness, 1, vec3(1,1,1), i);
-		vec4 radianceVisibility = vec4(s.diffuseColor + s.specularColor, s.visibility);
+		vec4 radianceVisibility = vec4(s.diffuseColor + s.specularColor, 1);
 		results[i] = radianceVisibility;
 	}
 	
@@ -355,5 +344,5 @@ void main()
 			if(storePos.x > 1 || storePos.y > 1) { continue; }
 			imageStore(out7, storePos, results[i]);
 		}
-	}
+	}*/
 }

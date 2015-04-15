@@ -56,7 +56,7 @@ public class GBuffer {
 	public static float SECONDPASSSCALE = 1f;
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
-	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = false;
+	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
 	
 	private Renderer renderer;
 	private RenderTarget gBuffer;
@@ -671,6 +671,7 @@ public class GBuffer {
 		combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
+		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		combineProgram.setUniform("worldExposure", World.EXPOSURE);
 		combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", World.AUTO_EXPOSURE_ENABLED);
 		combineProgram.setUniform("fullScreenMipmapCount", fullScreenMipmapCount);

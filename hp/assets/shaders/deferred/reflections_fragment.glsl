@@ -465,6 +465,10 @@ vec3 EnvDFGPolynomial(vec3 specularColor, float gloss, float ndotv ) {
     return specularColor * scale + vec3(bias,bias,bias);
 }
 
+float dotSaturate(vec3 a, vec3 b) {
+	return clamp(dot(a, b),0,1);
+}
+
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
   vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
@@ -475,34 +479,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
   //result.specularColor = result.diffuseColor;
   //return result;
-  
-	if(PRECOMPUTED_RADIANCE) {
-  		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
-  		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
-  		float NoV = clamp(dot(normal, v), 0.0, 1.0);
-    	vec3 R = 2 * dot( v, normal) * normal - v;
-    	
-    	
-		vec3 mini = environmentMapMin[index];
-		vec3 maxi = environmentMapMax[index];
-		vec3 extents = maxi -mini;
-		vec3 intersection = getIntersectionPoint(positionWorld, normal, mini, maxi);
-		float dist = distance(positionWorld, intersection);
-		float distanceBias = (roughness) / (dist*dist);
-    	
-    	vec4 specularSample = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL);
-    	vec3 biasSample = textureLod(probes, vec4(projectedReflected, index), MAX_MIPMAPLEVEL-2).rgb;
-    	vec3 prefilteredColor = specularSample.rgb;
-    	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
-    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
-    	
-    	result.specularColor = mix(prefilteredColor, biasSample,1-specularSample.a) * envBRDF;
-    	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
-    	vec3 diffuseSample = textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
-    	result.diffuseColor = diffuseColor * diffuseSample;
-    	return result;
-	}
-	
   
   if(roughness < 0.01) {
   	vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
@@ -519,6 +495,54 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	}
   	return result;
   }
+  
+	if(PRECOMPUTED_RADIANCE) {
+  		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
+  		float NoV = clamp(dot(normal, v), 0.0, 1.0);
+    	vec3 R = 2 * dot( v, normal) * normal - v;
+  		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
+    	
+		const bool USE_CONETRACING_FOR_SPECULAR = false;
+		TraceResult traceResult;
+    	if (USE_CONETRACING_FOR_SPECULAR) {
+	    	traceResult = traceCubes(positionWorld, reflected, v, roughness, metallic, color);
+	    	projectedReflected = traceResult.dirToHitPointNearest;
+			index = traceResult.probeIndexNearest;
+	    }
+	    
+		vec3 mini = environmentMapMin[index];
+		vec3 maxi = environmentMapMax[index];
+		vec3 extents = maxi -mini;
+		vec3 intersection = getIntersectionPoint(positionWorld, normal, mini, maxi);
+		float dist = distance(positionWorld, intersection);
+		float distanceBias = max((glossiness) * (0.01*dist), 0.1);
+    	
+    	vec4 specularSample = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL);
+    	vec3 biasSample = textureLod(probes, vec4(projectedReflected, index), MAX_MIPMAPLEVEL-2).rgb;
+    	vec3 prefilteredColor = specularSample.rgb;
+    	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
+    	vec3 envBRDF = EnvDFGPolynomial(SpecularColor, (glossiness), NoV);
+    	
+    	result.specularColor = prefilteredColor*envBRDF;
+    	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
+    	vec3 diffuseSample = textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL-1).rgb;
+    	result.diffuseColor = diffuseColor * diffuseSample;
+		
+    	if (USE_CONETRACING_FOR_DIFFUSE) {
+	    	TraceResult traceResult = traceCubes(positionWorld, normal, v, roughness, metallic, color);
+	    	vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), MAX_MIPMAPLEVEL-1);
+	    	vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), MAX_MIPMAPLEVEL-1);
+			result.diffuseColor = diffuseColor.rgb * mix(sampleNearest.rgb, sampleSecondNearest.rgb, sampleNearest.a);
+	    }
+    	
+    	if (USE_CONETRACING_FOR_SPECULAR) {
+			vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), (1-glossiness)*MAX_MIPMAPLEVEL);
+			result.specularColor = mix(result.specularColor, sampleSecondNearest.rgb*envBRDF, 1-specularSample.a).rgb;
+    	}
+    	
+    	return result;
+	}
+	
   
   vec3 V = v;
   vec3 n = normal;
@@ -640,13 +664,13 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			
 			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
     	} else {
-    		float lod = MAX_MIPMAPLEVEL+4;
-			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb;
+			float lod = MAX_MIPMAPLEVEL-2;// / SAMPLE_COUNT;
+			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb;// * dotSaturate(projectedNormal, H);
     	}
 	  }
 	  resultDiffuse.rgb /= SAMPLE_COUNT;
   } else {
-  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL-1).rgb;
+  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL-1).rgb * dotSaturate(projectedNormal, vec3(0,1,0));
   }
   
   result.diffuseColor = resultDiffuse.rgb;

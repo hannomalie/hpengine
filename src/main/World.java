@@ -64,7 +64,7 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
 	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
-	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = false;
+	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = true;
 	
 	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;

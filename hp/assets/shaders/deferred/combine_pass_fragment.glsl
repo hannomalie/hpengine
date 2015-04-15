@@ -29,6 +29,7 @@ uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
+uniform bool useAmbientOcclusion = true;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 //uniform float exposure = 4;
 
@@ -366,7 +367,10 @@ void main(void) {
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
 	vec3 ambientTerm = ambientColor*environmentLight;
-	ambientTerm *= clamp(ao,0,1);
+	if(useAmbientOcclusion) {
+		ambientTerm *= clamp(ao,0,1);
+	}
+	
 	
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
@@ -382,7 +386,7 @@ void main(void) {
 	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
-	
+
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
 	//out_color.rgb = normalView.xyz;
@@ -399,6 +403,7 @@ void main(void) {
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,0);
 	//out_color.rgb = color;
+	//out_color.rgb = scattering.rgb;
 
 	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
 	const bool useSphericalHarmonicLighting = false;

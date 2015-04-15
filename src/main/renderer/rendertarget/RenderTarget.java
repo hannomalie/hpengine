@@ -11,10 +11,15 @@ import main.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
 
+/**
+ * @author Hanno
+ *
+ */
 public class RenderTarget {
 	protected int framebufferLocation;
 	protected int depthbufferLocation;
@@ -118,6 +123,16 @@ public class RenderTarget {
 	}
 	public void setTargetTexture(int textureID, int index, int mipMapLevel) {
 		GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + index, textureID, mipMapLevel);
+	}
+
+	/**
+	 * @param attachmentIndex the attachment point index
+	 * @param textureId the id of the cubemap texture
+	 * @param index the index of the cubemap face, from 0 to 5
+	 * @param mipmap the mipmap level that should be bound
+	 */
+	public void setCubeMapFace(int attachmentIndex, int textureId, int index, int mipmap) {
+		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + attachmentIndex, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, textureId, mipmap);
 	}
 	
 	public void unuse() {
