@@ -43,6 +43,7 @@ public class Scene implements Serializable {
 	public void init(Renderer renderer) {
 		List<IEntity> entities = new ArrayList<>();
 		if (probes == null) { probes = new ArrayList<>(); }
+		renderer.getEnvironmentProbeFactory().clearProbes();
 		octree = new Octree(renderer, new Vector3f(), 600, 5);
 		entitieNames.forEach(name -> {entities .add(renderer.getEntityFactory().read(name));});
 		octree.insert(entities);

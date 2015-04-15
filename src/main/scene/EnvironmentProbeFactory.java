@@ -291,4 +291,9 @@ public class EnvironmentProbeFactory {
 //			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());
 //		});
 	}
+
+	public void clearProbes() {
+		probes.forEach( p -> { World.getEventBus().unregister(p.getSampler()); });
+		probes.clear();
+	}
 }

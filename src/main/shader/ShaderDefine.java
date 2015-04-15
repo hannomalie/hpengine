@@ -68,6 +68,7 @@ public enum ShaderDefine {
 		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + World.USE_CONETRACING_FOR_DIFFUSE_PROBES);
 		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + World.PRECOMPUTED_RADIANCE);
 		appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + World.SCATTERING);
+		appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + World.CALCULATE_ACTUAL_RADIANCE);
 		
 		return builder.toString();
 	}
