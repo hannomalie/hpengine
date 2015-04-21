@@ -681,12 +681,12 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 			resultDiffuse.rgb += diffuseColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
     	} else {
 			float lod = MAX_MIPMAPLEVEL-2;// / SAMPLE_COUNT;
-			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb;// * dotSaturate(projectedNormal, H);
+			resultDiffuse.rgb += diffuseColor * textureLod(probes, vec4(H, index), lod).rgb * dotSaturate(projectedNormal, H);
     	}
 	  }
 	  resultDiffuse.rgb /= SAMPLE_COUNT;
   } else {
-  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL-1).rgb * dotSaturate(projectedNormal, vec3(0,1,0));
+  	resultDiffuse.rgb = diffuseColor.rgb * textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;// * dotSaturate(projectedNormal, vec3(0,1,0));
   }
   
   result.diffuseColor = resultDiffuse.rgb;
@@ -998,11 +998,11 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			vec3 lightSample = blur(lightAccumulationMap, resultCoords.xy, roughness/10, mipMapChoser).rgb;
     			vec3 thisFrameLighting = ambientSample+lightSample;
 					thisFrameLighting.rgb = Uncharted2Tonemap(exposure*thisFrameLighting.rgb);
-					vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
+					vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2));
 					thisFrameLighting.rgb = thisFrameLighting.rgb * whiteScale;
 	    			
     			vec3 reflectedColor;
-    			const bool useTemporalFiltering = true;
+    			const bool useTemporalFiltering = false;
     			if(useTemporalFiltering) {
 	    			vec4 lightDiffuseSpecular = blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness/10, mipMapChoser); // compensation for *4 intensity
     				reflectedColor = (lightDiffuseSpecular.rgb + thisFrameLighting)/2;
@@ -1012,7 +1012,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
     			
-    			float mixer = pow(screenEdgefactor,1);
+    			float mixer = 1-pow(screenEdgefactor,1);
     			//mixer = clamp(mixer, 0, 1);
     			//mixer *= fadeToViewer;
 			//return vec3(mixer,mixer,mixer);

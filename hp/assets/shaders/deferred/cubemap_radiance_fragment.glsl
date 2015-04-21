@@ -273,6 +273,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   }
   
   result.diffuseColor /= N; // /totalWeight;
+  //result.diffuseColor /= totalWeight;
   
   return result;
 }
