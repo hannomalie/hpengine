@@ -245,7 +245,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
   vec3 V = v;
   vec3 n = normal;
   vec3 R = reflected;
-  const int N = 32;
+  const int N = 16;
   vec4 resultDiffuse = vec4(0,0,0,0);
   float NoV = clamp(dot(n, V), 0.0, 1.0);
   float totalWeight = 0;

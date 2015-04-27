@@ -447,7 +447,7 @@ public class GBuffer {
 		renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture());
-		
+
 		int copyTextureId = GL11.glGenTextures();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
@@ -593,6 +593,8 @@ public class GBuffer {
 	private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		
 
+		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		if(areaLights.isEmpty()) { return; }
 		
 		GPUProfiler.start("Area lights: " + areaLights.size());
@@ -603,8 +605,6 @@ public class GBuffer {
 		secondPassAreaLightProgram.setUniform("secondPassScale", SECONDPASSSCALE);
 		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-		GL11.glDisable(GL11.GL_CULL_FACE);
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		for (AreaLight areaLight : areaLights) {
 //			boolean camInsideLightVolume = new AABB(areaLight.getPosition(), 2*areaLight.getScale().x, 2*areaLight.getScale().y, 2*areaLight.getScale().z).contains(camPositionV4);
 //			if (camInsideLightVolume) {

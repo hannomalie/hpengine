@@ -142,6 +142,8 @@ public class MaterialFactory {
 			this.diffuse = materialInfo.diffuse;
 			this.roughness = materialInfo.roughness;
 			this.metallic = materialInfo.metallic;
+			this.ambient = materialInfo.ambient;
+			this.transparency = materialInfo.transparency;
 			this.firstPassProgram = materialInfo.firstPassProgram;
 			this.geometryShader = materialInfo.geometryShader;
 			this.vertexShader = materialInfo.vertexShader;
@@ -155,6 +157,7 @@ public class MaterialFactory {
 		public float roughness = 0.95f;
 		public float metallic = 0f;
 		public float ambient = 0;
+		public float transparency = 0;
 		
 		public boolean textureLess;
 		transient public Program firstPassProgram;

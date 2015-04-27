@@ -20,11 +20,16 @@ uniform float diffuseMapHeight = 1;
 uniform float specularMapWidth = 1;
 uniform float specularMapHeight = 1;
 
+uniform float roughnessMapWidth = 1;
+uniform float roughnessMapHeight = 1;
+
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
 uniform float materialRoughness = 0;
 uniform float materialMetallic = 0;
+uniform float materialAmbient = 0;
+uniform float materialTransparency = 0;
 uniform int probeIndex1 = 0;
 uniform int probeIndex2 = 0;
 
@@ -33,6 +38,8 @@ uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
 
 uniform int time = 0;
+uniform bool useRainEffect = false;
+uniform float rainEffect = 0.0;
 
 in vec4 color;
 in vec2 texCoord;
@@ -62,17 +69,52 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 vec3 mod289(vec3 x)
 {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
+	return x-floor(x * (1.0 / 289.0)) * 289.0;
 }
-
-vec4 mod289(vec4 x)
+vec2 mod289(vec2 x)
 {
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
+	return x-floor(x * (1.0 / 289.0)) * 289.0;
 }
-
+vec3 permute(vec3 x)
+{
+	return mod289(((x*34.0)+1.0)*x);
+}
 vec4 permute(vec4 x)
 {
-  return mod289(((x*34.0)+1.0)*x);
+	return mod((34.0 * x + 1.0) * x, 289.0);
+}
+float snoise(vec2 v)
+{
+	const vec4 C=vec4(0.211324865405187, // (3.0-sqrt(3.0))/6.0
+	0.366025403784439, // 0.5*(sqrt(3.0)-1.0)
+	-0.577350269189626 , // -1.0 + 2.0 * C.x
+	0.024390243902439); // 1.0 / 41.0
+	// First corner
+	vec2 i=floor(v + dot(v, C.yy));
+	vec2 x0 = v - i + dot(i, C.xx);
+	// Other corners
+	vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+	vec4 x12 = x0.xyxy + C.xxzz;
+	x12.xy -= i1;
+	// Permutations
+	i = mod289(i); // Avoid truncation effects in permutation
+	vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+	+ i.x + vec3(0.0, i1.x, 1.0 ));
+	vec3 m=max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+	dot(x12.zw,x12.zw)), 0.0);
+	m=m*m;
+	m=m*m;
+	// Gradients
+	vec3 x = 2.0 * fract(p * C.www) - 1.0;
+	vec3 h=abs(x) - 0.5;
+	vec3 a0 = x - floor(x + 0.5);
+	// Normalize gradients implicitly by scaling m
+	m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+	// Compute final noise value at P
+	vec3 g;
+	g.x = a0.x * x0.x + h.x * x0.y;
+	g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+	return 130.0 * dot(m, g);
 }
 
 vec4 taylorInvSqrt(vec4 r)
@@ -188,7 +230,7 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 }
 vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
 {
-	vec3 map = (textureLod(normalMap, texcoord, 0)).xyz;
+	vec3 map = (texture(normalMap, texcoord)).xyz;
 	map = map * 2 - 1;
 	mat3 TBN = cotangent_frame( N, V, texcoord );
 	return normalize( TBN * map );
@@ -200,61 +242,29 @@ vec2 encodeNormal(vec3 n) {
 }
 
 void main(void) {
-	
-	vec3 V = -normalize((position_world.xyz - eyePos_world.xyz).xyz);
+	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
 	vec2 UV = texCoord;
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
-	vec2 blurVec = position_clip_post_w.xy - position_clip_last_post_w.xy;
+	vec2 motionVec = (position_clip_post_w.xy) - (position_clip_last_post_w.xy);
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
 
+	out_position = viewMatrix * position_world;
+	
 #ifdef use_normalMap
 		UV.x = UV.x * normalMapWidth;
 		UV.y = UV.y * normalMapHeight;
 		//UV = UV + time/2000.0;
 #endif
 
+	float n = surface3(vec3(UV, int(time)%1000000 * 0.0001));
+	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 8);
+	
 	vec2 uvParallax = vec2(0,0);
 
-	if (useParallax) {
-		float height = (textureLod(normalMap, UV,0).rgb).y;//texture2D(heightMap, UV).r;
-		height = height * 2 - 1;
-		//height -= 0.5;
-		height = clamp(height, 0, 1);
-		
-#ifdef use_heightMap
-		height = (textureLod(heightMap, UV,0).rgb).r;
-#endif
-		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		//height = normalize( TBN * (textureLod(normalMap, UV,0).rgb)).y * 2 - 1;
-		vec3 viewVectorTangentSpace = ((TBN)) * V;//(-position_world.xyz);
-		float v = height * 0.04 - 0.02;
-		uvParallax = (viewVectorTangentSpace.xy * v);
-		UV = UV + uvParallax;
-	} else if (useSteepParallax) {
-		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		float n = 20;
-		float bumpScale = 2;
-		float step = 1/n;
-		vec3 viewVectorTangentSpace = (transpose(TBN)) * V;
-		vec2 dt = viewVectorTangentSpace.xy * bumpScale / (n * viewVectorTangentSpace.z);
-		
-		float height = 1;
-		vec2 t = UV;
-		vec4 nb = texture2D(normalMap, t);
-		nb = nb * 2 - 1;
-		while (length(nb.xyz) < height) { 
-			height -= step;
-			t += dt; 
-			nb = texture2D(normalMap, t); 
-			nb = nb * 2 - 1;
-		}
-		UV = t;
-	}
-	
     mat3 TBN = transpose(mat3(
         (vec4(normalize(tangent_world),0)).xyz,
         (vec4(normalize(bitangent_world),0)).xyz,
@@ -270,16 +280,10 @@ void main(void) {
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	
-	out_position = viewMatrix * position_world;
-	
 	float depth = (position_clip.z / position_clip.w);
 	
 	out_normal = vec4(PN_view, depth);
-	float n = surface3(vec3(UV, int(time)%1000000 * 0.0001));
-	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 8);
 	out_normal.rgb = normalize(viewMatrix * vec4(normalize(vec3(0,1,0) + vec3(n*n2,1-n*n2,n*n)), 0)).rgb;
-	//out_normal.rgb = viewMatrix * vec4(vec3(0,1,0), 0).rgb;
-	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
@@ -288,26 +292,27 @@ void main(void) {
 	UV.x = texCoord.x * diffuseMapWidth;
 	UV.y = texCoord.y * diffuseMapHeight;
 	UV += uvParallax;
-	color = texture2D(diffuseMap, UV);
+	color = texture(diffuseMap, UV);
 	if(color.a<0.1)
 	{
 		discard;
 	}
 #endif
-  	out_color = color * vec4(1,1,1+(n2/4)-n/8, 1);
-  	out_color.w = clamp(1-materialMetallic * (n) * 0.3, 0.5, 1.0);
+  	out_color = color;
+  	out_color.w = materialMetallic;
+  	
+#ifdef use_occlusionMap
+	//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
+#endif
 
 	out_position.w = materialRoughness;
-	out_position.w = clamp(materialRoughness * (1-n2/2), 0.0, 0.5);
-	
 #ifdef use_roughnessMap
 	UV.x = texCoord.x * roughnessMapWidth;
 	UV.y = texCoord.y * roughnessMapHeight;
 	UV = texCoord + uvParallax;
 	float r = texture2D(roughnessMap, UV).x;
-	out_position.w *= r;
+	out_position.w = materialRoughness*r;
 #endif
-
 	
 #ifdef use_specularMap
 	UV.x = texCoord.x * specularMapWidth;
@@ -319,9 +324,18 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(length(blurVec), 0 ,probeIndex1,probeIndex2);
+  	out_motion = vec4(motionVec,depth,materialTransparency);
+  	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,depth,0);
-	//out_position.w = 0.5;
-  	//out_color.w = 1;
-  	//out_normal.rgb = vec3(0,1,0);
+  	
+  	if(RAINEFFECT) {
+		float n = surface3(vec3(UV, 0.01));
+		float n2 = surface3(vec3(UV, 0.1), 2);
+		float waterEffect = rainEffect * clamp(3 * n2 * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0)*clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
+		float waterEffect2 = rainEffect * clamp(3 * n * clamp(dot(PN_world, vec3(0,1,0)), 0.0, 1.0), 0.0, 1.0);
+		out_position.w *= 1-waterEffect2;
+		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
+		out_color.w = waterEffect2;
+  	}
+  		
 }

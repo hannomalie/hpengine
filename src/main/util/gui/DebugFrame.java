@@ -498,6 +498,34 @@ public class DebugFrame {
         refreshAll.addActionListener(e -> {
     		init(world);
     	});
+        WebMenuItem loadMaterial = new WebMenuItem("Load Material");
+        loadMaterial.addActionListener(e -> {
+        	File chosenFile = fileChooser.showOpenDialog();
+    		if(chosenFile != null) {
+				SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+
+					@Override
+					public Result execute(World world) {
+						System.out.println(chosenFile.getName());
+						world.getRenderer().getMaterialFactory().get(chosenFile.getName());
+						return new Result();
+					}
+				});
+				Result result = null;
+				try {
+					result = queue.poll(5, TimeUnit.SECONDS);
+				} catch (Exception e1) {
+					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+				}
+				
+				if (!result.isSuccessful()) {
+					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+				} else {
+					showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
+					refreshTextureTab();
+				}
+    		}
+    	});
 
 		WebMenu menuTextures = new WebMenu("Texture");
         {
@@ -521,9 +549,7 @@ public class DebugFrame {
 						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 						refreshTextureTab();
 					}
-	    			
 	    		}
-	    		
         	});
         	menuTextures.add(textureAddMenuItem);
         }
@@ -587,6 +613,7 @@ public class DebugFrame {
         menuBar.add(menuProbe);
         menuBar.add(menuLight);
         menuBar.add(menuTextures);
+        menuBar.add(loadMaterial);
         menuBar.add(runScriptMenuItem);
         menuBar.add(saveScriptMenuItem);
         menuBar.add(resetProfiling);

@@ -343,6 +343,7 @@ void main(void) {
   	
   	vec4 motionVecProbeIndices = texture2D(motionMap, st);
   	vec2 motion = motionVecProbeIndices.xy;
+  	float transparency = motionVecProbeIndices .a;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
   	colorMetallic.xyz = pow(colorMetallic.xyz, inverseGamma);
   	
@@ -376,6 +377,7 @@ void main(void) {
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	out_color.rgb += (scattering.rgb); //scattering
+	out_color.rgb = mix(out_color.rgb, textureLod(refractedMap, st, 0).rgb, transparency);
 	
 	float autoExposure = exposure;
 	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
@@ -393,9 +395,8 @@ void main(void) {
 	//out_color.rgb = specularColor.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
-	//out_color.rgb = environmentLight;
+	//out_color.rgb = 10*environmentLight;
 	//out_color.rgb = ambientTerm;
-	//out_color.rgb = textureLod(refractedMap, st, 0.0).rgb;
 	//out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularTerm;
 	//out_color.rgb = vec3(ao,ao,ao);

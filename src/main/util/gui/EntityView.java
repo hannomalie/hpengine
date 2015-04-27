@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JScrollPane;
 
 import main.World;
+import main.event.MaterialChangedEvent;
 import main.model.Entity;
 import main.model.Entity.Update;
 import main.model.IEntity;
@@ -113,6 +114,7 @@ public class EntityView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Material selectedMaterial = world.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
 	        	entity.setMaterial(selectedMaterial.getName());
+	        	World.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
 	        });
 	        webComponentPanel.addElement(materialSelect);
 	        

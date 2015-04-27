@@ -144,6 +144,7 @@ public class Material implements Serializable {
 		program.setUniform("materialRoughness", getRoughness());
 		program.setUniform("materialMetallic", getMetallic());
 		program.setUniform("materialAmbient", getAmbient());
+		program.setUniform("materialTransparency", getTransparency());
 		
 		if (!program.needsTextures()) {
 			return;
@@ -158,14 +159,13 @@ public class Material implements Serializable {
 			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), program.getId(), map.textureSlot));
 		}
-		
 		if(entity == null) { return; }
 		
-		List<EnvironmentProbe> surroundingProbes = renderer.getEnvironmentProbeFactory().getProbesForEntity(entity);
-		int probeIndex1 = surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : -1;
-		program.setUniform("probeIndex1", probeIndex1);
-		int probeIndex2 = surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : -1;
-		program.setUniform("probeIndex2", probeIndex2);
+//		List<EnvironmentProbe> surroundingProbes = renderer.getEnvironmentProbeFactory().getProbesForEntity(entity);
+//		int probeIndex1 = surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : -1;
+//		program.setUniform("probeIndex1", probeIndex1);
+//		int probeIndex2 = surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : -1;
+//		program.setUniform("probeIndex2", probeIndex2);
 	}
 
 	public void setTexturesInactive() {
@@ -229,6 +229,13 @@ public class Material implements Serializable {
 	}
 	public void setAmbient(float ambient) {
 		materialInfo.ambient = ambient;
+	}
+	
+	public float getTransparency() {
+		return materialInfo.transparency;
+	}
+	public void setTransparency(float transparency) {
+		materialInfo.transparency = transparency;
 	}
 
 	public boolean hasCustomVertexShader() {

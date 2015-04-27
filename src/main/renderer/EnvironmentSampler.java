@@ -173,7 +173,7 @@ public class EnvironmentSampler {
 						}
 					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
-			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
@@ -326,7 +326,6 @@ public class EnvironmentSampler {
 	}
 
 	void drawSecondPass(int sideIndex, Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = camera.getPosition().negate(null);
 //		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
@@ -465,7 +464,7 @@ public class EnvironmentSampler {
 
 				int cubemapCopy = cubeMapView;//TextureFactory.copyCubeMap(cubeMapView, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, internalFormat);
 //				renderer.getTextureFactory().generateMipMapsCubeMap(cubemapCopy);
-
+				
 				boolean USE_OMPUTE_SHADER_FOR_RADIANCE = true;
 				if(USE_OMPUTE_SHADER_FOR_RADIANCE) {
 					calculateRadianceCompute(internalFormat, cubemapArrayColorTextureId, cubeMapView, cubemapCopy);	
@@ -473,7 +472,7 @@ public class EnvironmentSampler {
 					calculateRadianceFragment(internalFormat, cubemapArrayColorTextureId, cubeMapView, cubemapCopy);	
 				}
 				GL11.glDeleteTextures(cubeMapView);
-				GL11.glDeleteTextures(cubemapCopy);
+//				GL11.glDeleteTextures(cubemapCopy);
 				GPUProfiler.end();
 			}
 			
@@ -539,7 +538,7 @@ public class EnvironmentSampler {
 
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
 			GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubemapCopy);
-			GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMapView);
+//			GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMapView);
 			//GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, renderer.getEnvironmentMap().getTextureID());
 
 			cubemapRadianceProgram.setUniform("currentCubemapSide", i);
@@ -578,7 +577,7 @@ public class EnvironmentSampler {
 			FloatBuffer projectionMatrix) {
 		
 		if(pointLights.isEmpty()) { return; }
-		
+
 		GPUProfiler.start("Pointlights");
 		secondPassPointProgram.use();
 

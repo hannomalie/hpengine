@@ -230,6 +230,7 @@ void main(void) {
 #ifdef use_heightMap
 	if (true) {
 		float height = (textureLod(normalMap, UV,0).rgb).y;//texture2D(heightMap, UV).r;
+		float height = (texture(normalMap, UV).rgb).y;//texture2D(heightMap, UV).r;
 		height = height * 2 - 1;
 		height = clamp(height, 0, 1);
 		height = (textureLod(heightMap, UV,0).rgb).r;
@@ -373,7 +374,7 @@ void main(void) {
 	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
-  	out_motion = vec4(motionVec,depth,probeIndex2);
+  	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,depth,0);
   	

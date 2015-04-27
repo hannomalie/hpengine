@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 
 
+
 import main.World;
 import main.event.MaterialChangedEvent;
 import main.model.IEntity;
@@ -45,9 +46,11 @@ import main.util.gui.input.WebFormattedVec3Field;
 
 
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+
 
 
 
@@ -334,6 +337,29 @@ public class MaterialView extends WebPanel {
     			
                 GroupPanel groupPanelAmbient = new GroupPanel(4, new WebLabel("Ambient"), ambientInput, ambientSliderInput);
                 webComponentPanel.addElement(groupPanelAmbient);
+            }
+        }
+        {
+            LimitedWebFormattedTextField transparencyInput = new LimitedWebFormattedTextField(0, 1) {
+    			@Override
+    			public void onChange(float currentValue) {
+    				material.setTransparency(currentValue);
+    			}
+    		};
+    		transparencyInput.setValue(material.getTransparency());
+            {
+            	SliderInput transparencySliderInput = new SliderInput("Transparency", WebSlider.HORIZONTAL, 0, 100, (int)(material.getTransparency()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					transparencyInput.setValue(((float)value/100f));
+    					material.setTransparency(((float)value/100f));
+    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    				}
+    			};
+    			
+                GroupPanel groupPanelTransparency = new GroupPanel(4, new WebLabel("Transparency"), transparencyInput, transparencySliderInput);
+                webComponentPanel.addElement(groupPanelTransparency);
             }
         }
 
