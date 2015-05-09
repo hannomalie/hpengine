@@ -532,9 +532,13 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		vec3 extents = maxi -mini;
 		vec3 intersection = getIntersectionPoint(positionWorld, normal, mini, maxi);
 		float dist = distance(positionWorld, intersection);
-		float distanceBias = max((glossiness) * (0.01*dist), 0.1);
+		float areaPerPixel = getAreaPerPixel(index, projectedReflected);
+		float solidAngle = (1-glossiness);
+		float crossSectionArea = (dist*dist*solidAngle) / cos(projectedReflected.x);
+		float lod = 0.25 * log2(crossSectionArea/areaPerPixel);
     	
     	vec4 specularSample = textureLod(probes, vec4(projectedReflected, index), (1-glossiness)*MAX_MIPMAPLEVEL);
+    	//vec4 specularSample = textureLod(probes, vec4(projectedReflected, index), lod);
     	vec3 biasSample = textureLod(probes, vec4(projectedReflected, index), MAX_MIPMAPLEVEL-2).rgb;
     	vec3 prefilteredColor = specularSample.rgb;
     	//prefilteredColor = textureLod(globalEnvironmentMap, projectedNormal, 0).rgb;
@@ -1212,12 +1216,14 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		int[k] indices;
 		float[k] distances;
 		float[k] weights;
+		float[k] customWeights;
 		float[k] blendFactors;
 		for(int i = 0; i < k; i++) {
 			indices[i] = -1;
 			distances[i] = 100000f;
 			weights[i] = 0.0f;
 			blendFactors[i] = 0.0f;
+			customWeights[i] = 1.0;
 		}
 		
 		for(int i = 0; i < activeProbeCount && overlappingVolumesCount < k; i++) {
@@ -1252,7 +1258,8 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			
 			indices[overlappingVolumesCount] = i;
 			distances[overlappingVolumesCount] = dist;
-			weights[overlappingVolumesCount] = minimumPercent * (1-environmentMapWeights[i]);
+			weights[overlappingVolumesCount] = minimumPercent * (environmentMapWeights[i]);
+			customWeights[overlappingVolumesCount] = environmentMapWeights[i];
 			overlappingVolumesCount++;
 		}
 		
@@ -1260,7 +1267,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		float invWeightSum = 0.0f;
 		for(int i = 0; i < overlappingVolumesCount; i++) {
 			weightSum = weightSum + weights[i];
-			invWeightSum = invWeightSum + (1.0f - weights[i]);
+			invWeightSum = invWeightSum + clamp(customWeights[i] - weights[i], 0.0f, 1.0f);
 		}
 		
 		float SumBlendFactor = 0.0f;
@@ -1268,7 +1275,8 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			//if(weightSum == 0.0f || invWeightSum == 0.0f) { blendFactors[i] = 1.0f; continue; }
 			//blendFactors[i] = (1.0f - (weights[i] / weightSum)) / (overlappingVolumesCount - 1.0f);
 	        //blendFactors[i] = blendFactors[i] * ((1.0f - weights[i]) / invWeightSum);
-	        blendFactors[i] = (1.0f - weights[i]) / invWeightSum;
+	        blendFactors[i] = clamp(customWeights[i] - weights[i], 0.0f, 1.0f) / invWeightSum;
+	        blendFactors[i] /= overlappingVolumesCount;
 	        SumBlendFactor += blendFactors[i];
 		}
 		if (SumBlendFactor == 0.0f) {
@@ -1279,7 +1287,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			blendFactors[i] = blendFactors[i] * ConstVal;
 		}
 		
-		//if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
+		if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
 		
 		for(int i = 0; i < overlappingVolumesCount; i++) {
 			ProbeSample s = importanceSampleProjectedCubeMap(indices[i], positionWorld, normalWorld, reflect(V, normalWorld), V, roughness, metallic, color);

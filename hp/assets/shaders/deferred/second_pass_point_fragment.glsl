@@ -56,11 +56,17 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-float calculateAttenuation(float dist) {
+float _calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
     atten_factor = pow(atten_factor, 2);
     return atten_factor;
+}
+float calculateAttenuation(float dist) {
+    float distDivRadius = (dist / lightRadius);
+    float atten_factor = clamp(1.0f - pow(distDivRadius,4), 0.0, 1.0);
+    atten_factor = pow(atten_factor, 2);
+    return 100*atten_factor/(dist*dist); // TODO: Figure out the 100...
 }
 
 
@@ -85,11 +91,11 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
 	float distTemp = length (light_position_eye - position);
 	
+    float pointLightSphereRadius = lightRadius/15;
 	// make every pointlight a sphere light for better highlights, thanks Unreal Engine
- 	//vec3 r = reflect(V, normal);
-    //vec3 centerToRay = (light_position_eye - position) * clamp(dot((light_position_eye - position), r),0,1) * r;
-    //light_position_eye = (light_position_eye - position) + centerToRay*clamp(pointLightRadius/length(centerToRay),0,1);
-    float pointLightSphereRadius = length(light_position_eye - position)/15;
+ 	//vec3 r = reflect(vec3(0,0,1), normal);
+    //vec3 centerToRay = (light_position_eye - position) - dot((light_position_eye - position), r) * r;
+    //light_position_eye = (light_position_eye - position) + centerToRay*clamp(pointLightSphereRadius/length(centerToRay),0,1);
     if(distTemp > pointLightSphereRadius) {
     	light_position_eye += normalize(position - light_position_eye) * pointLightSphereRadius;
     }
@@ -164,12 +170,11 @@ void main(void) {
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
 	float metallic = texture2D(diffuseMap, st).w;
-  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
-  	float glossiness = (1-roughness);
-	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), vec3(1.0,1.0,1.0), metallic);
-	specularColor = max(specularColor, (glossiness*maxSpecular));
+
+	float glossiness = (1-roughness);
+	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
-	
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);

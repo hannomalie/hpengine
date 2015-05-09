@@ -57,7 +57,7 @@ vec3 decode(vec2 enc) {
 vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
-	vec3 V = normalize(-positionView);
+	vec3 V = -normalize(-positionView);
 	//V = ViewVector;
  	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
@@ -98,7 +98,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 	
 	/////////////////////////
 	// OREN-NAYAR
-	{
+	/*{
 		float angleVN = acos(NdotV);
 	    float angleLN = acos(NdotL);
 	    float alpha = max(angleVN, angleLN);
@@ -109,10 +109,10 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 	    float B = 0.45 * (roughnessSquared / (roughnessSquared + 0.09));
 	    float C = sin(alpha) * tan(beta);
 	    diff *= (A + B * max(0.0, gamma) * C);
-    }
+    }*/
 	/////////////////////////
 	
-	//diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 	
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 	
@@ -218,6 +218,7 @@ vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDi
 	}
 	return result/N;
 }
+
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
@@ -240,7 +241,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 		if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
 	}
 	
-	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125, 2).rg;
+	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
 	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
 	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
 	//moments /= 3;
@@ -260,7 +261,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// thanks, for light bleeding reduction, FOOGYWOO! http://dontnormalize.me/ 
 	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
 	
-	//p_max = linstep(0.2, 1.0, p_max);
+	p_max = smoothstep(0.1, 1.0, p_max);
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -386,9 +387,11 @@ void main(void) {
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 	
 	float metallic = texture2D(diffuseMap, st).a;
-  	vec3 specularColor = mix(vec3(0.04,0.04,0.04), color, metallic);
+	float glossiness = (1-roughness);
+	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
-  	
+	
 	vec3 finalColor = cookTorrance(V, positionView, positionWorld, normalWorld, roughness, metallic, diffuseColor, specularColor);
 	
 	/////////////////// SHADOWMAP

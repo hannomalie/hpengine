@@ -11,6 +11,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import main.World;
+import main.event.GlobalDefineChangedEvent;
 import main.model.IEntity;
 import main.renderer.Result;
 import main.renderer.command.Command;
@@ -117,6 +118,19 @@ public class ProbeView extends WebPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				probe.setSize(current.x, current.y, current.z);
+			}
+		});
+        
+        webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
+			@Override public void onValueChange(int value, int delta) {
+				probe.setWeight((float) value/100.0f);
+				world.getRenderer().addCommand(new Command<Result>() {
+					@Override
+					public Result execute(World world) {
+						world.getRenderer().getEnvironmentProbeFactory().updateBuffers();
+						return new Result();
+					}
+				});
 			}
 		});
         

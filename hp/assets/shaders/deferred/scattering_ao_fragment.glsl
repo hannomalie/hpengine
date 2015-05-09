@@ -238,7 +238,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 		if(envelopeMaxDepth < dist - 0.005) { return vec3(0,0,0); }
 	}
 	
-	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125, 2).rg;
+	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125, 1).rg;
 	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
 	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
 	//moments /= 3;
@@ -258,7 +258,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	// thanks, for light bleeding reduction, FOOGYWOO! http://dontnormalize.me/ 
 	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
 	
-	//p_max = linstep(0.2, 1.0, p_max);
+	p_max = smoothstep(0.2, 1.0, p_max);
 
 	return vec3(p_max,p_max,p_max);
 }

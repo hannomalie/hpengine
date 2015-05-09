@@ -29,6 +29,7 @@ uniform float materialSpecularCoefficient = 0;
 uniform float materialRoughness = 0;
 uniform float materialMetallic = 0;
 uniform float materialAmbient = 0;
+uniform float materialTransparency = 0;
 uniform int probeIndex1 = 0;
 uniform int probeIndex2 = 0;
 
