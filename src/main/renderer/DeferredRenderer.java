@@ -59,6 +59,7 @@ import main.util.stopwatch.OpenGLStopWatch;
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.ARBDebugOutputCallback;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
@@ -67,7 +68,11 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
+import org.lwjgl.opengl.KHRDebug;
+import org.lwjgl.opengl.KHRDebugCallback;
+import org.lwjgl.opengl.KHRDebugCallback.Handler;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
@@ -137,7 +142,7 @@ public class DeferredRenderer implements Renderer {
 		setupOpenGL(headless);
 		world.setRenderer(this);
 		objLoader = new OBJLoader(this);
-		textureFactory = new TextureFactory();
+		textureFactory = new TextureFactory(this);
 		DeferredRenderer.exitOnGLError("After TextureFactory");
 		programFactory = new ProgramFactory(world);
 		setupShaders();
@@ -189,7 +194,7 @@ public class DeferredRenderer implements Renderer {
 		for (int i = 0; i < count; i++) {
 			for (int z = 0; z < count; z++) {
 				Vector3f position = new Vector3f(minXY + i*size+gap, 0, minXY + z*size+gap);
-				environmentProbeFactory.getProbe(position, size, Update.DYNAMIC);
+				environmentProbeFactory.getProbe(position, size, Update.DYNAMIC, 1);
 			}
 		}
 	}
@@ -262,7 +267,7 @@ public class DeferredRenderer implements Renderer {
 //				.withProfileCompatibility(true)
 //				.withForwardCompatible(true)
 				.withProfileCore(true)
-//				.withDebug(false)
+//				.withDebug(true)
 				;
 //				.withProfileCore(true);
 			
@@ -271,6 +276,15 @@ public class DeferredRenderer implements Renderer {
 			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
 			Display.setResizable(false);
+			Handler handler = new Handler() {
+				@Override
+				public void handleMessage(int source, int type, int id, int severity, String message) {
+					if(severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
+						System.out.println(message);
+					}
+				}
+			};
+//			GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
 			
 			GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
 		} catch (LWJGLException e) {
@@ -316,7 +330,7 @@ public class DeferredRenderer implements Renderer {
 			e.printStackTrace();
 		}
 		
-		copyDefaultShaders();
+//		copyDefaultShaders();
 
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
 		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);

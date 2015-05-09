@@ -64,6 +64,7 @@ public class EnvironmentProbeFactory {
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
+	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
 	public EnvironmentProbeFactory(Renderer renderer) {
 		this.renderer = renderer;
@@ -84,14 +85,17 @@ public class EnvironmentProbeFactory {
 	}
 
 	public EnvironmentProbe getProbe(Vector3f center, float size) {
-		return getProbe(center, size, DEFAULT_PROBE_UPDATE);
+		return getProbe(center, size, DEFAULT_PROBE_UPDATE, 1.0f);
+	}
+	public EnvironmentProbe getProbe(Vector3f center, float size, float weight) {
+		return getProbe(center, size, DEFAULT_PROBE_UPDATE, weight);
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size, Update update) {
-		return getProbe(center, new Vector3f(size, size, size), update);
+	public EnvironmentProbe getProbe(Vector3f center, float size, Update update, float weight) {
+		return getProbe(center, new Vector3f(size, size, size), update, weight);
 	}
-	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update) {
-		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update, getProbes().size());
+	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) {
+		EnvironmentProbe probe = new EnvironmentProbe(renderer, center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
 		return probe;
@@ -100,13 +104,17 @@ public class EnvironmentProbeFactory {
 	public void updateBuffers() {
 		minPositions = BufferUtils.createFloatBuffer(100*3);
 		maxPositions = BufferUtils.createFloatBuffer(100*3);
+		weights = BufferUtils.createFloatBuffer(100);
 		float[] srcMinPositions = new float[100*3];
 		float[] srcMaxPositions = new float[100*3];
+		float[] srcWeights = new float[100];
 		
 		for(int i = 0; i < probes.size(); i++) {
 			AABB box = probes.get(i).getBox();
 			Vector3f min = box.getBottomLeftBackCorner();
 			Vector3f max = box.getTopRightForeCorner();
+			float weight = probes.get(i).getWeight();
+			
 			srcMinPositions[3*i] = min.x;
 			srcMinPositions[3*i+1] = min.y;
 			srcMinPositions[3*i+2] = min.z;
@@ -114,12 +122,17 @@ public class EnvironmentProbeFactory {
 			srcMaxPositions[3*i] = max.x;
 			srcMaxPositions[3*i+1] = max.y;
 			srcMaxPositions[3*i+2] = max.z;
+			
+			srcWeights[i] = weight;
 		}
 		
 		minPositions.put(srcMinPositions);
 		maxPositions.put(srcMaxPositions);
+		weights.put(srcWeights);
+		
 		minPositions.rewind();
 		maxPositions.rewind();
+		weights.rewind();
 	}
 
 	public FloatBuffer getMinPositions() {
@@ -127,6 +140,9 @@ public class EnvironmentProbeFactory {
 	}
 	public FloatBuffer getMaxPositions() {
 		return maxPositions;
+	}
+	public FloatBuffer getWeights() {
+		return weights;
 	}
 	
 	public void draw(Octree octree, DirectionalLight light) {
@@ -189,7 +205,7 @@ public class EnvironmentProbeFactory {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
-//			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
+			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
 //			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
 //			renderer.drawLine(clipStart, clipEnd);
 
@@ -284,7 +300,8 @@ public class EnvironmentProbeFactory {
 		program.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", renderer.getEnvironmentProbeFactory().getMinPositions());
 		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", renderer.getEnvironmentProbeFactory().getMaxPositions());
-		
+		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", renderer.getEnvironmentProbeFactory().getWeights());
+
 //		renderer.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
 //			int probeIndex = probe.getIndex();
 //			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());

@@ -33,13 +33,15 @@ public class EnvironmentProbe implements IEntity {
 	private AABB box;
 	private EnvironmentSampler sampler;
 	protected Update update;
+	private float weight;
 	
 
-	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex) {
+	protected EnvironmentProbe(Renderer renderer, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) {
 		this.renderer = renderer;
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(renderer, this, center, resolution, resolution, probeIndex);
+		this.setWeight(weight);
 	}
 
 	public void draw(Octree octree, DirectionalLight light) {
@@ -183,5 +185,13 @@ public class EnvironmentProbe implements IEntity {
 
 	public EnvironmentSampler getSampler() {
 		return sampler;
+	}
+
+	public float getWeight() {
+		return weight;
+	}
+
+	public void setWeight(float weight) {
+		this.weight = weight;
 	}
 }

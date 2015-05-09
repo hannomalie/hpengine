@@ -27,7 +27,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.imageio.ImageIO;
 
+import main.World;
 import main.renderer.DeferredRenderer;
+import main.renderer.Renderer;
+import main.renderer.Result;
+import main.renderer.command.Command;
 import main.renderer.material.Material;
 
 import org.apache.commons.io.FileUtils;
@@ -58,8 +62,9 @@ import org.lwjgl.util.vector.Vector2f;
  * @author Brian Matzon
  */
 public class TextureFactory {
+	private Renderer renderer;
     /** The table of textures that have been loaded in this loader */
-    public Map TEXTURES = new ConcurrentHashMap<String, Texture>();
+    public Map<String, Texture> TEXTURES = new ConcurrentHashMap<String, Texture>();
 
     /** The colour model including alpha for the GL image */
     private ColorModel glAlphaColorModel;
@@ -72,7 +77,8 @@ public class TextureFactory {
      *
      * @param gl The GL content in which the textures should be loaded
      */
-    public TextureFactory() {
+    public TextureFactory(Renderer renderer) {
+    	this.renderer = renderer;
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,
@@ -130,7 +136,7 @@ public class TextureFactory {
     	return getTexture(resourceName, false);
     }
     public Texture getTexture(String resourceName, boolean srgba) throws IOException {
-        Texture tex = (Texture) TEXTURES.get(resourceName);
+        Texture tex = TEXTURES.get(resourceName);
         
         if (tex != null) {
             return tex;
@@ -285,7 +291,6 @@ public class TextureFactory {
         // create the texture ID for this texture 
         Texture texture = new Texture(resourceName, target,createTextureID()); 
         
-        // bind this texture 
         texture.bind();
         
 //        long start = System.currentTimeMillis();
@@ -313,9 +318,17 @@ public class TextureFactory {
         // convert that image into a byte buffer of texture data 
         ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
         
-        texture.upload(textureBuffer, srga);
+        renderer.addCommand(new Command<Result>() {
+			@Override
+			public Result execute(World world) {
+		        texture.upload(textureBuffer, srga);
+		        return new Result();
+			}
+		});
+//        texture.upload(textureBuffer, srga);
+        
 //        System.out.println("TEXTURE READ NEW IN " + (System.currentTimeMillis() - start + " ms"));
-        generateMipMaps(texture, Material.MIPMAP_DEFAULT);
+//        generateMipMaps(texture, Material.MIPMAP_DEFAULT);
         
         return texture; 
     }

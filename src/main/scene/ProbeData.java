@@ -17,6 +17,7 @@ public class ProbeData implements Serializable {
 	private Vector3f center;
 	private Vector3f size;
 	private Update update;
+	private float weight = 1;
 	
 	public Vector3f getCenter() {
 		return center;
@@ -35,6 +36,12 @@ public class ProbeData implements Serializable {
 	}
 	public void setUpdate(Update update) {
 		this.update = update;
+	}
+	public float getWeight() {
+		return weight;
+	}
+	public void setWeight(float weight) {
+		this.weight = weight;
 	}
 	
 	@Override

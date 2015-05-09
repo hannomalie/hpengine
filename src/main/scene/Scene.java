@@ -48,7 +48,7 @@ public class Scene implements Serializable {
 		entitieNames.forEach(name -> {entities .add(renderer.getEntityFactory().read(name));});
 		octree.insert(entities);
 		for (ProbeData data : probes) {
-			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate());	
+			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());	
 		}
 		initialized = true;
 	}

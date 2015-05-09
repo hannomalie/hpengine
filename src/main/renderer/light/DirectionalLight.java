@@ -72,7 +72,7 @@ public class DirectionalLight extends Entity {
 	
 	public void init(Renderer renderer, Camera camera) {
 		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
-																	put(MAP.DIFFUSE,"assets/textures/default.dds");
+																	put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
 																}});
 
 		try {

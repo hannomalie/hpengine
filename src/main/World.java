@@ -19,6 +19,8 @@ import main.physic.PhysicsFactory;
 import main.renderer.DeferredRenderer;
 import main.renderer.GBuffer;
 import main.renderer.Renderer;
+import main.renderer.Result;
+import main.renderer.command.Command;
 import main.renderer.light.DirectionalLight;
 import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
@@ -149,8 +151,11 @@ public class World {
 		physicsFactory = new PhysicsFactory(this);
 		initDefaultMaterials();
 		if(sceneName != null) {
+			long start = System.currentTimeMillis();
+			System.out.println(start);
 			scene = Scene.read(renderer, sceneName);
 			scene.init(renderer);
+			System.out.println("Duration: " + (System.currentTimeMillis() - start));
 		} else {
 			scene = new Scene(renderer);
 //			scene.addAll(loadDummies());
@@ -212,30 +217,30 @@ public class World {
 	private void initDefaultMaterials() {
 
 		white = renderer.getMaterialFactory().getMaterial("default", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"assets/textures/default.dds");
+														put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
 																}});
 
 		stone = renderer.getMaterialFactory().getMaterial("stone", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
-														put(MAP.NORMAL,"assets/textures/stone_normal.png");
+														put(MAP.DIFFUSE,"hp/assets/textures/stone_diffuse.png");
+														put(MAP.NORMAL,"hp/assets/textures/stone_normal.png");
 																}});
 		
 		stone2 = renderer.getMaterialFactory().getMaterial("stone2", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"assets/textures/brick.png");
-														    		put(MAP.NORMAL,"assets/textures/brick_normal.png");
+														    		put(MAP.DIFFUSE,"hp/assets/textures/brick.png");
+														    		put(MAP.NORMAL,"hp/assets/textures/brick_normal.png");
 																}});
 		
 		wood = renderer.getMaterialFactory().getMaterial("wood", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"assets/textures/wood_diffuse.png");
-														    		put(MAP.NORMAL,"assets/textures/wood_normal.png");
+														    		put(MAP.DIFFUSE,"hp/assets/textures/wood_diffuse.png");
+														    		put(MAP.NORMAL,"hp/assets/textures/wood_normal.png");
 																}});
 		stoneWet = renderer.getMaterialFactory().getMaterial("stoneWet", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"assets/textures/stone_diffuse.png");
-														    		put(MAP.NORMAL,"assets/textures/stone_normal.png");
-														    		put(MAP.REFLECTION,"assets/textures/stone_reflection.png");
+														    		put(MAP.DIFFUSE,"hp/assets/textures/stone_diffuse.png");
+														    		put(MAP.NORMAL,"hp/assets/textures/stone_normal.png");
+														    		put(MAP.REFLECTION,"hp/assets/textures/stone_reflection.png");
 																}});
 		mirror = renderer.getMaterialFactory().getMaterial("mirror", new HashMap<MAP,String>(){{
-														    		put(MAP.REFLECTION,"assets/textures/default.dds");
+														    		put(MAP.REFLECTION,"hp/assets/textures/default.dds");
 																}});
 	}
 
@@ -480,8 +485,14 @@ public class World {
 
 	public void setScene(Scene scene) {
 		this.scene = scene;
-		scene.init(renderer);
-		renderer.init(scene.getOctree());
+		renderer.addCommand(new Command<Result>() {
+			@Override
+			public Result execute(World world) {
+				scene.init(renderer);
+				renderer.init(scene.getOctree());
+				return new Result();
+			}
+		});
 	}
 
 	public Camera getCamera() {

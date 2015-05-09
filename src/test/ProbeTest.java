@@ -19,8 +19,8 @@ public class ProbeTest extends TestWithRenderer {
 	
 	@Test
 	public void assignsProbesProperly() {
-		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC);
-		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC);
+		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
+		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
 		
 		IEntity centeredEntity = new IEntity() {
 			Transform transform = new Transform();

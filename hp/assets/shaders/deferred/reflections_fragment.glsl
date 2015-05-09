@@ -32,6 +32,7 @@ uniform int N = 12;
 uniform int activeProbeCount;
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
+uniform float environmentMapWeights[100];
 
 in vec2 pass_TextureCoord;
 
@@ -667,9 +668,8 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 	    vec3[2] importanceSampleResult = ImportanceSampleGGX(xi, 1, sampleVector);
 	    vec3 H = importanceSampleResult[0];
 	    
-	    const bool USE_CONETRACING_FOR_DIFFUSE = false;
   		if(USE_CONETRACING_FOR_DIFFUSE) {
-			float lod = roughness*MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
+			float lod = 1*MAX_MIPMAPLEVEL;// / SAMPLE_COUNT;
 		  	TraceResult traceResult = traceCubes(positionWorld, H, v, roughness, metallic, color);
 			vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), lod);
 			if(traceResult.probeIndexSecondNearest == -1) {
@@ -1252,7 +1252,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			
 			indices[overlappingVolumesCount] = i;
 			distances[overlappingVolumesCount] = dist;
-			weights[overlappingVolumesCount] = minimumPercent;
+			weights[overlappingVolumesCount] = minimumPercent * (1-environmentMapWeights[i]);
 			overlappingVolumesCount++;
 		}
 		
@@ -1266,8 +1266,9 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		float SumBlendFactor = 0.0f;
 		for(int i = 0; i < overlappingVolumesCount; i++) {
 			//if(weightSum == 0.0f || invWeightSum == 0.0f) { blendFactors[i] = 1.0f; continue; }
-			blendFactors[i] = (1.0f - (weights[i] / weightSum)) / (overlappingVolumesCount - 1.0f);
-	        blendFactors[i] = blendFactors[i] * ((1.0f - weights[i]) / invWeightSum);
+			//blendFactors[i] = (1.0f - (weights[i] / weightSum)) / (overlappingVolumesCount - 1.0f);
+	        //blendFactors[i] = blendFactors[i] * ((1.0f - weights[i]) / invWeightSum);
+	        blendFactors[i] = (1.0f - weights[i]) / invWeightSum;
 	        SumBlendFactor += blendFactors[i];
 		}
 		if (SumBlendFactor == 0.0f) {
@@ -1278,7 +1279,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			blendFactors[i] = blendFactors[i] * ConstVal;
 		}
 		
-		if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
+		//if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
 		
 		for(int i = 0; i < overlappingVolumesCount; i++) {
 			ProbeSample s = importanceSampleProjectedCubeMap(indices[i], positionWorld, normalWorld, reflect(V, normalWorld), V, roughness, metallic, color);
@@ -1286,10 +1287,12 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			result.diffuseColor += s.diffuseColor * blendFactor;
 			result.specularColor += s.specularColor * blendFactor;
 						
-			/*if(overlappingVolumesCount == 2) {
-				//result.diffuseColor = vec3(0,1,0);
-				//result.specularColor = result.diffuseColor;
-				//return result;
+			/*if(overlappingVolumesCount == 2)
+			{
+				result.diffuseColor = vec3(0,1,0);
+				result.diffuseColor = vec3(0,blendFactors[0],0);
+				result.specularColor = result.diffuseColor;
+				return result;
 			}
 			if(blendFactors[0] == 0.0f)
 			{

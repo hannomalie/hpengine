@@ -158,8 +158,8 @@ public class Transform implements Serializable {
 	private Matrix4f calculateTransformation() {
 		Matrix4f temp = new Matrix4f();
 		temp.setIdentity();
-		Matrix4f.mul(temp, Util.toMatrix(orientation), temp);
-		Matrix4f.translate(position, temp, temp);
+		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
+		Matrix4f.translate(position, temp, temp); // TODO: SWITCH THESE LINES....
 		temp.scale(scale);
 		setDirty(false);
 		return temp;
