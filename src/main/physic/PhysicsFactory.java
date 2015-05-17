@@ -135,6 +135,11 @@ public class PhysicsFactory {
 	public PhysicsComponent addPhysicsComponent(CollisionShape shape, IEntity owner, float mass, Vector3f inertia) {
 		Transform transform = Util.toBullet(owner.getTransform());
 		MotionState motionState = new DefaultMotionState(transform);
+//		System.out.println("bullet: " + transform.origin);
+//		System.out.println("own: " + owner.getTransform().getPosition());
+//		Quat4f out = new Quat4f();
+//		System.out.println("bullet: " + transform.getRotation(out));
+//		System.out.println("own: " + owner.getTransform().getOrientation());
 		RigidBodyConstructionInfo bodyConstructionInfo = new RigidBodyConstructionInfo(mass, motionState, shape, inertia);
 		bodyConstructionInfo.restitution = 0.5f;
 		RigidBody body = new RigidBody(bodyConstructionInfo);

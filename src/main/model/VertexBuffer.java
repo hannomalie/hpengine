@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.logging.Logger;
 
 import main.renderer.Renderer;
+import main.util.OpenGLThread;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;

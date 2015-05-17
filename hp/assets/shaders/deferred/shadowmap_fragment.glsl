@@ -54,6 +54,7 @@ void main()
 	float dy = dFdy(depth);
 	moment2 += 0.25*(dx*dx+dy*dy);
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
+    
     out_Color = vec4(moment1,moment2,0,0);//encode(normal_world));
     //out_Diffuse = vec4(normal_world,1);
     /*vec3 diffuse = color;

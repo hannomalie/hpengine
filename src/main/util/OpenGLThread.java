@@ -34,6 +34,7 @@ public abstract class OpenGLThread extends Thread {
 		} catch (LWJGLException e) {
 			e.printStackTrace();
 		}
+		
 	}
 
 	public abstract void doRun();

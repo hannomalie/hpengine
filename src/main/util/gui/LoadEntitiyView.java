@@ -61,8 +61,7 @@ public class LoadEntitiyView extends WebPanel {
 			for (File chosenFile : chosenFiles) {
 				if(chosenFile != null) {
 					Entity entity = (Entity) world.getRenderer().getEntityFactory().readWithoutInit(chosenFile.getName());
-//					entitiesToAdd.add(entity);
-					if(entity != null) {
+					if(entity == null) {
 						showError(chosenFile);
 						continue;
 					}

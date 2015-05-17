@@ -22,7 +22,7 @@ public class StorageBufferTest extends TestWithRenderer {
 		
 		FloatBuffer data = BufferUtils.createFloatBuffer(16);
 		for (int i = 0; i < 16; i++) {
-			data.put(i, i);	
+			data.put(i, i);
 		}
 		StorageBuffer buffer = new StorageBuffer(data);
 		
@@ -94,5 +94,4 @@ public class StorageBufferTest extends TestWithRenderer {
 			Assert.assertTrue(dst[i] == i+4);
 		}
 	}
-
 }

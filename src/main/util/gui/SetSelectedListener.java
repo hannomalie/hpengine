@@ -1,5 +1,8 @@
 package main.util.gui;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import javax.swing.JFrame;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
@@ -32,6 +35,26 @@ public class SetSelectedListener implements TreeSelectionListener {
 		this.world = world;
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+		
+//		final SetSelectedListener myself = this;
+//		tree.addMouseListener(new MouseAdapter() {
+//			public void mousePressed(MouseEvent e) {
+//		         int selRow = tree.getRowForLocation(e.getX(), e.getY());
+//		         TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+//		         
+//		         if(selRow != -1) {
+//		             if(e.getClickCount() == 1) {
+//		                 System.out.println("Single " + e.getButton());
+//		             }
+//		             else if(e.getClickCount() == 2) {
+//		                 System.out.println("Double " + e.getButton());
+//		             }
+//		             if(e.getButton() == MouseEvent.BUTTON1) {
+//		            	 
+//		             }
+//		         }
+//		     }
+//		});
 	}
 	
 	@Override
@@ -51,6 +74,7 @@ public class SetSelectedListener implements TreeSelectionListener {
         if (node == null) return;
         Object nodeInfo = node.getUserObject();
         
+        // MIIIIEEEEEES
         if (nodeInfo instanceof Entity) {
         	Entity selected = (Entity) nodeInfo;
 	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);

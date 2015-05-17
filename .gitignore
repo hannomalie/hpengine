@@ -1,6 +1,9 @@
 /bin
 /build
+/libs/lwjgl-2.9.2/javadoc
+/.gradle
 *.hptexture
+*.hpcubemap
 *.hpmaterial
 *.hpentity
 *.hpscene

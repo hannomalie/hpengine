@@ -164,6 +164,7 @@ public class GBuffer {
 
 		GPUProfiler.start("Culling");
 		List<IEntity> entities = new ArrayList<>();
+
 		if (World.useFrustumCulling) {
 			entities = (octree.getVisible(camera));
 			
@@ -172,7 +173,6 @@ public class GBuffer {
 					entities.remove(i);
 				}
 			}
-			
 		} else {
 			entities = (octree.getEntities());
 		}
@@ -191,7 +191,7 @@ public class GBuffer {
 			}
 		}).collect(Collectors.toList());
 		GPUProfiler.end();
-		
+
 		if(World.DRAWSCENE_ENABLED) {
 //			GPUProfiler.start("Depth prepass");
 //			for (IEntity entity : entities) {
@@ -225,7 +225,7 @@ public class GBuffer {
 				light.drawAsMesh(renderer, camera);
 			}
 		}
-		
+
 //		linesProgram.use();
 //		GL11.glDisable(GL11.GL_CULL_FACE);
 		if(World.DEBUGDRAW_PROBES) {
