@@ -32,7 +32,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
 			
 			for (int i = 0; i < models.size(); i++) {
 				Model model = models.get(i);
-				String counter = i == 0 ? "" : "_" +i;
+				String counter = i == 0 ? "" : "_" +i + model.getName() ;
 				entities.add(renderer.getEntityFactory().getEntity(new Vector3f(), name + counter, model, model.getMaterial()));
 			}
 			

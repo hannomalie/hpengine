@@ -36,16 +36,18 @@ public class EntityFactory {
 		
 		if(entity != null) {
 			entity.setPosition(position);
-			return entity;
+			entity.setName(name);
+		} else {
+			entity = read(name);
+			if(entity != null) {
+				entity.setPosition(position);
+				return entity;
+			} else {
+				entity = new Entity(renderer.getMaterialFactory(), position, name, model, material.getName());	
+			}
 		}
-		entity = read(name);
-		if(entity != null) {
-			entity.setPosition(position);
-			return entity;
-		}
-		
-		entity = new Entity(renderer.getMaterialFactory(), position, name, model, material.getName());
 		Entity.write((Entity) entity, name);
+		
 		return entity;
 	}
 

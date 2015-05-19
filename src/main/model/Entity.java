@@ -92,14 +92,16 @@ public class Entity implements IEntity, Serializable {
 	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-		
-		transform.setPosition(position);
-		createFloatArray(model);
-		createVertexBuffer();
-		
+
 		this.materialFactory = materialFactory;
 		this.materialName = materialName;
 		this.name = name;
+		
+		transform.setPosition(position);
+		
+		createFloatArray(model);
+		createVertexBuffer();
+		
 	}
 	
 	public void init(Renderer renderer) {

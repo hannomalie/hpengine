@@ -109,7 +109,7 @@ public class OBJLoader {
 					parseInt(thirdTriple[1]),
 					};
 		} catch (Exception e) {
-			texCoordsIndices = new int[]{0,0,0};
+			texCoordsIndices = new int[]{-1,-1,-1};
 		}
 
 		int[] normalIndices = {

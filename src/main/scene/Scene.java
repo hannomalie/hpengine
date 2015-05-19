@@ -158,4 +158,10 @@ public class Scene implements Serializable {
 	public boolean removeEntity(IEntity entity) {
 		return octree.removeEntity(entity);
 	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
 }

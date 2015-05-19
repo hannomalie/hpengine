@@ -3,6 +3,8 @@ package main.util.gui;
 import static main.util.Util.vectorToString;
 
 
+
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -26,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
+
+
 import javax.script.ScriptException;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -39,6 +43,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.text.BadLocationException;
@@ -49,6 +54,8 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
+
+
 
 
 import main.World;
@@ -82,6 +89,8 @@ import main.util.script.ScriptManager;
 import main.util.stopwatch.GPUProfiler;
 
 
+
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -90,6 +99,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
+
 
 
 import com.alee.extended.checkbox.CheckState;
@@ -251,7 +262,8 @@ public class DebugFrame {
         {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
-	        	Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, scene.getName() != "" ? scene.getName() : "default" );
+	        	String initialSelectionValue = world.getScene().getName() != "" ? world.getScene().getName() : "default";
+				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
 	        	if(selection != null) {
 	        		boolean success = world.getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
@@ -268,8 +280,9 @@ public class DebugFrame {
         	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
         	sceneLoadMenuItem.addActionListener(e -> {
 
-        		fileChooser.setCurrentDirectory(new File(getClass().getResource("").getPath()));
-	    		File chosenFile = fileChooser.showOpenDialog();
+	    		File chosenFile = WebFileChooser.showOpenDialog(".", choser -> {
+	    			choser.setFileFilter(new FileNameExtensionFilter("Scenes", "hpscene"));
+	    		});
 	    		if(chosenFile != null) {
 	    			String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
 	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
@@ -311,12 +324,12 @@ public class DebugFrame {
         }
 		WebMenu menuEntity = new WebMenu("Entity");
         {
-        	WebMenuItem entitiyAddMenuItem = new WebMenuItem ( "Add" );
+        	WebMenuItem entitiyAddMenuItem = new WebMenuItem ( "Add new" );
         	entitiyAddMenuItem.addActionListener(e -> {
         		
 	    		addEntityFrame = new WebFrame("Add Entity");
-	    		addEntityFrame.setSize(600, 600);
-	    		addEntityFrame.add(new AddEntitiyView(world, this));
+	    		addEntityFrame.setSize(600, 300);
+	    		addEntityFrame.add(new AddEntitiyView(world, addEntityFrame, this));
 	    		addEntityFrame.setVisible(true);
 	    		
         	});
@@ -324,14 +337,11 @@ public class DebugFrame {
         	menuEntity.add(entitiyAddMenuItem);
         }
         {
-        	WebMenuItem entitiyLoadMenuItem = new WebMenuItem ( "Load" );
+        	WebMenuItem entitiyLoadMenuItem = new WebMenuItem ( "Load existing" );
         	entitiyLoadMenuItem.addActionListener(e -> {
         		
-	    		addEntityFrame = new WebFrame("Load Entity");
-	    		addEntityFrame.setSize(600, 600);
-	    		addEntityFrame.add(new LoadEntitiyView(world, this));
-	    		addEntityFrame.setVisible(true);
-	    		
+        		world.getScene().addAll(LoadEntitiyView.showDialog(world));
+        		refreshSceneTree();
         	});
 
         	menuEntity.add(entitiyLoadMenuItem);
