@@ -160,6 +160,12 @@ public class VertexBuffer {
 		
 		return this;
 	}
+	
+	public void delete() {
+		GL15.glDeleteBuffers(vertexBuffer);
+		GL30.glDeleteVertexArrays(vertexArray);
+		buffer = null;
+	}
 
 	public void draw() {
 //		LOGGER.log(Level.INFO, String.format("Binding VertexArray", vertexArray));

@@ -619,6 +619,7 @@ public class DeferredRenderer implements Renderer {
 		}
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
 		buffer.drawDebug();
+		buffer.delete();
 		linePoints.clear();
 	}
 
