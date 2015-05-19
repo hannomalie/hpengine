@@ -23,6 +23,9 @@ uniform float specularMapHeight = 1;
 uniform float roughnessMapWidth = 1;
 uniform float roughnessMapHeight = 1;
 
+uniform float parallaxScale = 0.04;
+uniform float parallaxBias = 0.02;
+
 uniform vec3 materialDiffuseColor = vec3(0,0,0);
 uniform vec3 materialSpecularColor = vec3(0,0,0);
 uniform float materialSpecularCoefficient = 0;
@@ -243,6 +246,7 @@ vec2 encodeNormal(vec3 n) {
 
 void main(void) {
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
+	//V = normalize((eyePos_world.xyz - position_world.xyz).xyz);
 	vec2 UV = texCoord;
 	
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
@@ -271,10 +275,10 @@ void main(void) {
 		height = (texture(heightMap, UV).rgb).r;
 		
 		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		vec3 viewVectorTangentSpace = normalize(((TBN)) * (out_position.rgb));
-		float v = height * 0.04 - 0.002;
+		vec3 viewVectorTangentSpace = normalize((TBN) * (V));
+		float v = height * parallaxScale - parallaxBias;
 		uvParallax = (viewVectorTangentSpace.xy * v);
-		UV = UV - uvParallax;
+		UV = UV + uvParallax;
 	//} else if (useSteepParallax) {
 	} else {
    	   // determine required number of layers
@@ -359,8 +363,10 @@ void main(void) {
 	// NORMAL
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
+	vec3 old_PN_world = PN_world;
+
 #ifdef use_normalMap
-	PN_world = normalize(perturb_normal(PN_world, V, UV));
+	PN_world = normalize(perturb_normal(old_PN_world, V, UV));
 	//PN_world = inverse(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif

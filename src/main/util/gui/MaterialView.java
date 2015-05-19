@@ -362,6 +362,52 @@ public class MaterialView extends WebPanel {
                 webComponentPanel.addElement(groupPanelTransparency);
             }
         }
+        {
+            LimitedWebFormattedTextField parallaxScaleInput = new LimitedWebFormattedTextField(0, 1) {
+    			@Override
+    			public void onChange(float currentValue) {
+    				material.setParallaxScale(currentValue);
+    			}
+    		};
+    		parallaxScaleInput.setValue(material.getParallaxScale());
+            {
+            	SliderInput parallaxScaleSliderInput = new SliderInput("Parallax Scale", WebSlider.HORIZONTAL, 0, 100, (int)(material.getParallaxScale()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					parallaxScaleInput.setValue(((float)value/100f));
+    					material.setParallaxScale(((float)value/100f));
+    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    				}
+    			};
+    			
+                GroupPanel groupPanelParallaxScale = new GroupPanel(4, new WebLabel("Parallax Scale"), parallaxScaleInput, parallaxScaleSliderInput);
+                webComponentPanel.addElement(groupPanelParallaxScale);
+            }
+        }
+        {
+            LimitedWebFormattedTextField parallaxBiasInput = new LimitedWebFormattedTextField(0, 1) {
+    			@Override
+    			public void onChange(float currentValue) {
+    				material.setParallaxBias(currentValue);
+    			}
+    		};
+    		parallaxBiasInput.setValue(material.getParallaxBias());
+            {
+            	SliderInput parallaxBiasSliderInput = new SliderInput("Parallax Bias", WebSlider.HORIZONTAL, 0, 100, (int)(material.getParallaxScale()*100)) {
+    				
+    				@Override
+    				public void onValueChange(int value, int delta) {
+    					parallaxBiasInput.setValue(((float)value/100f));
+    					material.setParallaxBias(((float)value/100f));
+    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    				}
+    			};
+    			
+                GroupPanel groupPanelParallaxBias = new GroupPanel(4, new WebLabel("Parallax Bias"), parallaxBiasInput, parallaxBiasSliderInput);
+                webComponentPanel.addElement(groupPanelParallaxBias);
+            }
+        }
 
         {
             WebComboBox environmentMapInput = new WebComboBox((EnumSet.allOf(ENVIRONMENTMAPTYPE.class)).toArray());

@@ -148,6 +148,8 @@ public class MaterialFactory {
 			this.geometryShader = materialInfo.geometryShader;
 			this.vertexShader = materialInfo.vertexShader;
 			this.fragmentShader = materialInfo.fragmentShader;
+			this.parallaxScale = materialInfo.parallaxScale;
+			this.parallaxBias = materialInfo.parallaxBias;
 		}
 
 		public MaterialMap maps = new MaterialMap();
@@ -158,6 +160,8 @@ public class MaterialFactory {
 		public float metallic = 0f;
 		public float ambient = 0;
 		public float transparency = 0;
+		public float parallaxScale = 0.04f;
+		public float parallaxBias = 0.02f;
 		
 		public boolean textureLess;
 		transient public Program firstPassProgram;

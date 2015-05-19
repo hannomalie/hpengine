@@ -145,6 +145,8 @@ public class Material implements Serializable {
 		program.setUniform("materialMetallic", getMetallic());
 		program.setUniform("materialAmbient", getAmbient());
 		program.setUniform("materialTransparency", getTransparency());
+		program.setUniform("parallaxScale", getParallaxScale());
+		program.setUniform("parallaxBias", getParallaxBias());
 		
 		if (!program.needsTextures()) {
 			return;
@@ -230,12 +232,24 @@ public class Material implements Serializable {
 	public void setAmbient(float ambient) {
 		materialInfo.ambient = ambient;
 	}
-	
+
 	public float getTransparency() {
 		return materialInfo.transparency;
 	}
 	public void setTransparency(float transparency) {
 		materialInfo.transparency = transparency;
+	}
+	public float getParallaxScale() {
+		return materialInfo.parallaxScale;
+	}
+	public void setParallaxScale(float parallaxScale) {
+		materialInfo.parallaxScale = parallaxScale;
+	}
+	public float getParallaxBias() {
+		return materialInfo.parallaxBias;
+	}
+	public void setParallaxBias(float parallaxBias) {
+		materialInfo.parallaxBias = parallaxBias;
 	}
 
 	public boolean hasCustomVertexShader() {
