@@ -547,7 +547,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     	result.specularColor = prefilteredColor*envBRDF;
     	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
     	vec3 diffuseSample = textureLod(probes, vec4(normal, index), MAX_MIPMAPLEVEL).rgb;
-    	result.diffuseColor = diffuseColor * diffuseSample;
+    	result.diffuseColor = 2*diffuseColor * diffuseSample;
 		
     	if (USE_CONETRACING_FOR_DIFFUSE) {
 	    	TraceResult traceResult = traceCubes(positionWorld, normal, v, roughness, metallic, color);
