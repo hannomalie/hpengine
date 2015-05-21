@@ -12,7 +12,7 @@ uniform float worldExposure = 5;
 
 uniform bool AUTO_EXPOSURE_ENABLED = true;
 
-uniform bool usePostProcessing = false;
+uniform bool usePostProcessing = true;
 //uniform float exposure = 5;
 
 in vec2 pass_TextureCoord;
@@ -29,9 +29,9 @@ float calculateMotionBlur(vec2 uv) {
 ///////////////////////////////////////
 #define PI  3.14159265
 //uniform variables from external script
-const float focalDepth = 10;  //focal distance value in meters, but you may use autofocus option below
+const float focalDepth = 110;  //focal distance value in meters, but you may use autofocus option below
 const float focalLength = 52.0; //focal length in mm
-const float fstop = 0.7;//1.4; //f-stop value
+const float fstop = 1.4;//0.7;//1.4; //f-stop value
 const bool showFocus = false; //show debug focus point and focal range (red = focal point, green = focal range)
 
 /* 
@@ -64,9 +64,9 @@ const float vignfade = 22.0; //f-stops till vignete fades
 
 const bool autofocus = true; //use autofocus in shader? disable if you use external focalDepth value
 const vec2 focus = vec2(0.5,0.5); // autofocus point on screen (0.0,0.0 - left lower corner, 1.0,1.0 - upper right)
-const float maxblur = 1.3; //clamp value of max blur (0.0 = no blur,1.0 default)
+const float maxblur = 2.93; //clamp value of max blur (0.0 = no blur,1.0 default)
 
-const float threshold = 0.7595; //highlight threshold;
+const float threshold = 10;//0.7595; //highlight threshold;
 const float gain = 24.0; //highlight gain;
 
 const float bias = 0.8; //bokeh edge bias
@@ -456,7 +456,6 @@ void main()
 		    //out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.7 - exposure/100);
 	    }
 	} else {
-		
 		const bool useFXAA = true;
 		if(useFXAA) {
 			out_color = PostFX(renderedTexture, pass_TextureCoord);
@@ -474,7 +473,7 @@ void main()
 		brightness = brightness > maxBrightness ? maxBrightness : brightness;
 		float minBrightness = 0.02f;
 		brightness = brightness < minBrightness ? minBrightness : brightness;
-		float targetExposure = 2*worldExposure / brightness;
+		float targetExposure = 1*worldExposure / brightness;
 		exposure = (exposure + (targetExposure - exposure) * 0.015f);
 		//out_color.r = 1;
 	}

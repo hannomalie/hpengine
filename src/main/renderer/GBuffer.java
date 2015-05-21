@@ -724,6 +724,7 @@ public class GBuffer {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
 		postProcessProgram.setUniform("worldExposure", World.EXPOSURE);
 		postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", World.AUTO_EXPOSURE_ENABLED);
+		postProcessProgram.setUniform("usePostProcessing", World.ENABLE_POSTPROCESSING);
 		postProcessProgram.bindShaderStorageBuffer(0, storageBuffer);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRenderedTexture(1));

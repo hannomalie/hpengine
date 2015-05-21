@@ -84,6 +84,7 @@ public class World {
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
 	@Toggable(group = "Quality settings") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
+	@Toggable(group = "Quality settings") public static volatile boolean ENABLE_POSTPROCESSING = true;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
 	public static void main(String[] args) {
