@@ -72,6 +72,15 @@ public class MainLightView extends EntityView {
         
         WebComponentPanel movablePanel = new WebComponentPanel(false);
         movablePanel.setElementMargin(4);
+        
+	    WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", entity.getPosition()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				entity.setPosition(current);
+			}
+		};
+		movablePanel.addElement(positionField);
+        
 		movablePanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 3600, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
@@ -90,6 +99,35 @@ public class MainLightView extends EntityView {
 				entity.rotateWorld(new Vector4f(0, 0, 1, 0.01f*delta));
 			}
 		});
+
+		movablePanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
+			@Override
+			public void onValueChange(int value, int delta) {
+				Vector3f axis = entity.getRightDirection();
+				axis = new Vector3f(1, 0, 0);
+				entity.moveInWorld((Vector3f) axis.scale(delta));
+				positionField.setValue(entity.getPosition());
+			}
+		});
+		movablePanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
+			@Override
+			public void onValueChange(int value, int delta) {
+				Vector3f axis = entity.getUpDirection();
+				axis = new Vector3f(0, 1, 0);
+				entity.moveInWorld((Vector3f) axis.scale(delta));
+				positionField.setValue(entity.getPosition());
+			}
+		});
+		movablePanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
+			@Override
+			public void onValueChange(int value, int delta) {
+				Vector3f axis = entity.getViewDirection().negate(null);
+				axis = new Vector3f(0, 0, -1);
+				entity.moveInWorld((Vector3f) axis.scale(delta));
+				positionField.setValue(entity.getPosition());
+			}
+		});
+
 		movablePanel.addElement(new WebFormattedVec3Field("View Direction", entity.getViewDirection()) {
 			@Override
 			public void onValueChange(Vector3f current) {

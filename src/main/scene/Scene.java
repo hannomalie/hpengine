@@ -64,6 +64,7 @@ public class Scene implements Serializable {
 		}
 		initLights(renderer);
 		initialized = true;
+		renderer.init(octree);
 	}
 	private void initLights(Renderer renderer) {
 		for(PointLightSerializationProxy pointLightSerializationProxy : pointlightProxies) {

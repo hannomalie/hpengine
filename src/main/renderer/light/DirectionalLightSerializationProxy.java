@@ -9,7 +9,7 @@ import org.lwjgl.util.vector.Vector4f;
 public class DirectionalLightSerializationProxy implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private Vector3f position = new Vector3f();
-	private Vector3f color = new Vector3f();
+	private Vector3f color = new Vector3f(1f, 0.76f, 0.49f);
 	private Quaternion orientation = new Quaternion();
 
 	public DirectionalLightSerializationProxy(DirectionalLight directionalLight) {

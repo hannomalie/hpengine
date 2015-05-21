@@ -167,11 +167,11 @@ public class World {
 		activeCamera = camera;
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
-		try {
-			renderer.getLightFactory().getDirectionalLight().init(renderer);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+//		try {
+//			renderer.getLightFactory().getDirectionalLight().init(renderer);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		renderer.init(scene.getOctree());
 	}
 

@@ -117,7 +117,7 @@ public class DirectionalLight extends Entity {
 	public void drawShadowMap(Octree octree) {
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-//		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		List<IEntity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
@@ -138,7 +138,7 @@ public class DirectionalLight extends Entity {
 
 			e.getVertexBuffer().draw();
 		}
-//		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 	}
 
 	public int getShadowMapId() {
@@ -228,12 +228,16 @@ public class DirectionalLight extends Entity {
 		camera.setTransform(transform);
 	}
 
-	@Override public void move(Vector3f amount) {}
-	@Override public void moveInWorld(Vector3f amount) {}
+	@Override public void move(Vector3f amount) {  getTransform().move(amount);}
+	@Override public void moveInWorld(Vector3f amount) { getTransform().moveInWorld(amount);}
 
 	private Vector3f position = new Vector3f();
-	@Override public Vector3f getPosition() { return position; }
-	@Override public void setPosition(Vector3f position) { }
+	@Override public Vector3f getPosition() {
+		return camera.getTransform().getPosition();
+	}
+	@Override public void setPosition(Vector3f position) {
+		camera.getTransform().setPosition(position);
+	}
 	
 	
 	public float getScatterFactor() {
