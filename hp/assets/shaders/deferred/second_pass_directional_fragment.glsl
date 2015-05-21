@@ -263,6 +263,9 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	
 	p_max = smoothstep(0.1, 1.0, p_max);
 
+	float darknessFactor = 120.0;
+	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
+
 	return vec3(p_max,p_max,p_max);
 }
 

@@ -144,7 +144,8 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	/*if (dist <= momentsUnblurred.x + bias) {
 		return vec3(1.0,1.0,1.0);
 	} else*/
-	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
+	
+	//{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
 	
 	float variance = moments.y - (moments.x*moments.x);
 	variance = max(variance,0.0012);
@@ -153,6 +154,9 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	float p_max = (variance / (variance + d*d));
 	
 	//p_max = linstep(0.2, 1.0, p_max);
+
+	float darknessFactor = 120.0;
+	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
 
 	return vec3(p_max,p_max,p_max);
 }
