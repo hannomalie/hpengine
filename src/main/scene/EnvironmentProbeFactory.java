@@ -145,7 +145,7 @@ public class EnvironmentProbeFactory {
 		return weights;
 	}
 	
-	public void draw(Octree octree, DirectionalLight light) {
+	public void draw(Octree octree) {
 		if(!World.DRAW_PROBES) { return; }
 		
 		prepareProbeRendering();
@@ -256,7 +256,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void drawInitial(Octree octree) {
-		draw(octree, World.light);
+		draw(octree);
 	}
 
 	public CubeMapArray getEnvironmentMapsArray() {

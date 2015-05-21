@@ -20,6 +20,8 @@ import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
 import main.renderer.light.AreaLightSerializationProxy;
+import main.renderer.light.DirectionalLight;
+import main.renderer.light.DirectionalLightSerializationProxy;
 import main.renderer.light.PointLight;
 import main.renderer.light.PointLightSerializationProxy;
 
@@ -36,6 +38,7 @@ public class Scene implements Serializable {
 	List<PointLight> pointlights;
 	List<PointLightSerializationProxy> pointlightProxies;
 	List<AreaLightSerializationProxy> arealightProxies;
+	DirectionalLightSerializationProxy directionalLight;
 	
 	transient Octree octree;// = new Octree(renderer, new Vector3f(), 400, 6);
 	transient boolean initialized = false;
@@ -69,6 +72,8 @@ public class Scene implements Serializable {
 		for(AreaLightSerializationProxy areaLightSerializationProxy : arealightProxies) {
 			renderer.getLightFactory().getAreaLight(areaLightSerializationProxy);
 		}
+		
+		renderer.getLightFactory().setDirectionalLight(directionalLight);
 	}
 	
 	public void write() {
@@ -116,6 +121,7 @@ public class Scene implements Serializable {
 		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
 		arealightProxies.clear();
 		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
+		directionalLight = new DirectionalLightSerializationProxy(renderer.getLightFactory().getDirectionalLight());
 	}
 	
 	public static Scene read(Renderer renderer, String name) {
@@ -126,7 +132,7 @@ public class Scene implements Serializable {
 			fis = new FileInputStream(getDirectory() + fileName + ".hpscene");
 			in = new ObjectInputStream(fis);
 			Scene scene = (Scene) in.readObject();
-			handleEvolution(scene);
+			handleEvolution(scene, renderer);
 			in.close();
 			fis.close();
 			scene.renderer = renderer;
@@ -138,12 +144,15 @@ public class Scene implements Serializable {
 		return null;
 	}
 
-    private static void handleEvolution(Scene scene) {
+    private static void handleEvolution(Scene scene, Renderer renderer) {
 		if(scene.getPointlights() == null) {
 			scene.setPointLights(new ArrayList<PointLightSerializationProxy>());
 		}
 		if(scene.getAreaLights() == null) {
 			scene.setAreaLights(new ArrayList<AreaLightSerializationProxy>());
+		}
+		if(scene.directionalLight == null) {
+			scene.directionalLight = new DirectionalLightSerializationProxy();
 		}
     }
 
@@ -162,6 +171,8 @@ public class Scene implements Serializable {
 		}
 	}
 	public void endFrame(Camera camera) {
+		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
+		
 		for (IEntity entity : octree.getEntities()) {
 			entity.setHasMoved(false);
 		}
@@ -171,7 +182,7 @@ public class Scene implements Serializable {
 		for (IEntity entity : renderer.getLightFactory().getAreaLights()) {
 			entity.setHasMoved(false);
 		}
-		World.light.setHasMoved(false);
+		light.setHasMoved(false);
 		camera.saveViewMatrixAsLastViewMatrix();
 	}
 	public Octree getOctree() {

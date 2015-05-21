@@ -28,9 +28,9 @@ import com.alee.laf.slider.WebSlider;
 public class MainLightView extends EntityView {
 	private DirectionalLight light;
 
-	public MainLightView(World world, DebugFrame debugFrame, DirectionalLight light) {
-		super(world, debugFrame, light);
-		this.light = light;
+	public MainLightView(World world, DebugFrame debugFrame) {
+		super(world, debugFrame, world.getRenderer().getLightFactory().getDirectionalLight());
+		this.light = world.getRenderer().getLightFactory().getDirectionalLight();
 	}
 
 	@Override

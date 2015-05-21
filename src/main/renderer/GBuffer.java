@@ -230,7 +230,7 @@ public class GBuffer {
 //		GL11.glDisable(GL11.GL_CULL_FACE);
 		if(World.DEBUGDRAW_PROBES) {
 			debugDrawProbes(camera);
-			renderer.getEnvironmentProbeFactory().draw(octree, World.light);
+			renderer.getEnvironmentProbeFactory().draw(octree);
 		}
 		GL11.glEnable(GL11.GL_CULL_FACE);
 
@@ -735,7 +735,7 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDepthMask(true);
@@ -810,7 +810,7 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
 
-		drawSecondPass(camera, light, pointLights, tubeLights, areaLights, cubeMap);
+		drawSecondPass(camera, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 	}
 
 	public int getLightAccumulationMapOneId() {

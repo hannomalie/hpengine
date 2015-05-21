@@ -136,17 +136,18 @@ public class EnvironmentSampler {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
-	public void drawCubeMap(Octree octree, DirectionalLight light, boolean urgent) {
-		drawCubeMapSides(octree, light, urgent);
+	public void drawCubeMap(Octree octree, boolean urgent) {
+		drawCubeMapSides(octree, urgent);
 	}
 	
-	private void drawCubeMapSides(Octree octree, DirectionalLight light, boolean urgent) {
+	private void drawCubeMapSides(Octree octree, boolean urgent) {
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = camera.getOrientation();
 		Vector3f initialPosition = camera.getPosition();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
+		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
@@ -212,7 +213,7 @@ public class EnvironmentSampler {
 			} else {
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawEntities(cubeMapProgram, World.light, movedVisibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
+				drawEntities(cubeMapProgram, movedVisibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -273,8 +274,8 @@ public class EnvironmentSampler {
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(cubeMapProgram);
 	}
 
-	private void drawEntities(Program program, DirectionalLight light, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
-		bindShaderSpecificsPerCubeMapSide(light, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+	private void drawEntities(Program program, List<IEntity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
 		for (IEntity e : visibles) {
@@ -433,9 +434,9 @@ public class EnvironmentSampler {
 		GPUProfiler.end();
 	}
 	
-	private void bindShaderSpecificsPerCubeMapSide(DirectionalLight light,
-			FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
+		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);

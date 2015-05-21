@@ -47,10 +47,10 @@ public interface Renderer {
 		}
 	}
 	public void destroy();
-	public void draw(Camera camera, World world, List<IEntity> entities, DirectionalLight light);
+	public void draw(Camera camera, World world, List<IEntity> entities);
 	public void update(World world, float seconds);
 	public float getElapsedSeconds();
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities, DirectionalLight light);
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<IEntity> entities);
 	public Program getLastUsedProgram();
 	public void setLastUsedProgram(Program firstPassProgram);
 	public CubeMap getEnvironmentMap();

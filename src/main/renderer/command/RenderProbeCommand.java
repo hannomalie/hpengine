@@ -22,7 +22,7 @@ public class RenderProbeCommand implements Command<Result>, ITransformable {
 	@Override
 	public Result execute(World world) {
 		
-		probe.draw(world.getScene().getOctree(), World.light, urgent);
+		probe.draw(world.getScene().getOctree(), urgent);
 		
 		return new Result();
 	}

@@ -354,7 +354,7 @@ public class DebugFrame {
         		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(World world) {
-						world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree(), World.light);
+						world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree());
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
         		
@@ -929,9 +929,9 @@ public class DebugFrame {
 			@Override public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;
 			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) World.light.getScatterFactor()) {
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) world.getRenderer().getLightFactory().getDirectionalLight().getScatterFactor()) {
 				@Override public void onValueChange(int value, int delta) {
-					World.light.setScatterFactor((float)value);
+					world.getRenderer().getLightFactory().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
@@ -1150,7 +1150,7 @@ public class DebugFrame {
 
 	private void createMainLightsTab() {
 		DebugFrame debugFrame = this;
-		mainLightPane = new JScrollPane(new MainLightView(world, debugFrame, World.light));
+		mainLightPane = new JScrollPane(new MainLightView(world, debugFrame));
 	}
 	
 	private void createPointLightsTab() {

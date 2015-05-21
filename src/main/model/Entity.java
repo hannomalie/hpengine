@@ -268,7 +268,7 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
 		currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 		currentProgram.setUniform("eyePosition", camera.getPosition());
-		currentProgram.setUniform("lightDirection", World.light.getViewDirection());
+		currentProgram.setUniform("lightDirection", renderer.getLightFactory().getDirectionalLight().getViewDirection());
 		currentProgram.setUniform("near", camera.getNear());
 		currentProgram.setUniform("far", camera.getFar());
 		currentProgram.setUniform("time", (int)System.currentTimeMillis());

@@ -44,11 +44,11 @@ public class EnvironmentProbe implements IEntity {
 		this.setWeight(weight);
 	}
 
-	public void draw(Octree octree, DirectionalLight light) {
-		draw(octree, light, false);
+	public void draw(Octree octree) {
+		draw(octree, false);
 	};
-	public void draw(Octree octree, DirectionalLight light, boolean urgent) {
-		sampler.drawCubeMap(octree, light, urgent);
+	public void draw(Octree octree, boolean urgent) {
+		sampler.drawCubeMap(octree, urgent);
 	};
 	
 	@Override

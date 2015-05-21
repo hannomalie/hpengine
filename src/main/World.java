@@ -52,7 +52,8 @@ public class World {
 	
 	private OpenGLStopWatch glWatch;
 
-	public static DirectionalLight light= new DirectionalLight(true);
+//	public static DirectionalLight light= new DirectionalLight(true);
+	
 	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
@@ -167,7 +168,7 @@ public class World {
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 		try {
-			light.init(renderer);
+			renderer.getLightFactory().getDirectionalLight().init(renderer);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -339,30 +340,32 @@ public class World {
 //			}
 //			
 //		}
+
+		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
 		
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			light.rotateWorld(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
+			directionalLight.rotateWorld(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			light.rotateWorld(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
+			directionalLight.rotateWorld(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			light.rotateWorld(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
+			directionalLight.rotateWorld(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			light.rotateWorld(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
+			directionalLight.rotateWorld(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
-			light.move(new Vector3f(0,-1f,0));
+			directionalLight.move(new Vector3f(0,-1f,0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
-			light.move(new Vector3f(0,1f,0));
+			directionalLight.move(new Vector3f(0,1f,0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
-			light.move(new Vector3f(-1f,0,0));
+			directionalLight.move(new Vector3f(-1f,0,0));
 		}
 		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
-			light.move(new Vector3f(1f,0,0));
+			directionalLight.move(new Vector3f(1f,0,0));
 		}
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (IEntity entity : entities) {
@@ -378,7 +381,7 @@ public class World {
 		camera.update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
-		light.update(seconds);
+		directionalLight.update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
 		StopWatch.getInstance().start("Entities update");
@@ -389,53 +392,19 @@ public class World {
 
 		Renderer.exitOnGLError("update");
 	}
-
-	
-	private class RecursiveEntityUpdate extends RecursiveAction {
-		final int LIMIT = 3;
-		int result;
-		int start, end;
-		List<IEntity> entities;
-		float seconds;
-
-		RecursiveEntityUpdate(List<IEntity> entities, int start, int end, float seconds) {
-			this.start = start;
-			this.end = end;
-			this.entities = entities;
-			this.seconds = seconds;
-		}
-		
-		@Override
-		protected void compute() {
-			if ((end - start) < LIMIT) {
-				for (int i = start; i < end; i++) {
-					entities.get(i).update(seconds);
-				}
-			} else {
-				int mid = (start + end) / 2;
-				RecursiveEntityUpdate left = new RecursiveEntityUpdate(entities, start, mid, seconds);
-				RecursiveEntityUpdate right = new RecursiveEntityUpdate(entities, mid, end, seconds);
-				left.fork();
-				right.fork();
-				left.join();
-				right.join();
-			}
-		}
-		
-	}
 	
 	private void draw() {
 
 		StopWatch.getInstance().start("Draw");
 		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(activeCamera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities(), light);
+			renderer.drawDebug(activeCamera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities());
 		} else {
 //			fireRenderProbeCommands();
-			renderer.draw(activeCamera, this, scene.getEntities(), light);
+			renderer.draw(activeCamera, this, scene.getEntities());
 		}
 
 		if(counter < 20) {
-			light.rotate(new Vector4f(0, 1, 0, 0.001f));
+			renderer.getLightFactory().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
 			CONTINUOUS_DRAW_PROBES = true;
 			counter++;
 		} else if(counter == 20) {

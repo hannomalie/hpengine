@@ -49,6 +49,7 @@ public class LightFactory {
 	private List<PointLight> pointLights = new ArrayList<>();
 	private List<TubeLight> tubeLights = new ArrayList<>();
 	private List<AreaLight> areaLights = new ArrayList<>();
+	private DirectionalLight light = new DirectionalLight(true);
 	
 	private int pointLightsForwardMaxCount = 20;
 	private FloatBuffer pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
@@ -84,6 +85,7 @@ public class LightFactory {
 		this.renderTarget = new RenderTarget(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION);
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", Entity.DEFAULTCHANNELS, true);
 		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
+		this.getDirectionalLight().init(renderer);
 
 		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 			int renderedTextureTemp = GL11.glGenTextures();
@@ -404,5 +406,18 @@ public class LightFactory {
 		pointLights.clear();
 		areaLights.clear();
 		tubeLights.clear();
+	}
+
+	public DirectionalLight getDirectionalLight() {
+		return light;
+	}
+
+	private void setDirectionalLight(DirectionalLight light) {
+		this.light = light;
+	}
+	public void setDirectionalLight(DirectionalLightSerializationProxy lightProxy) {
+		this.light.setPosition(lightProxy.getPosition());
+		this.light.setOrientation(lightProxy.getOrientation());
+		this.light.setColor(lightProxy.getColor());
 	}
 }
