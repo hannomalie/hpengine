@@ -209,6 +209,7 @@ public class DebugFrame {
 	private WebFileChooser fileChooser;
 	private WebFrame addEntityFrame;
 	private World world;
+	private PerformanceMonitor performanceMonitor;
 	
 	public DebugFrame(World world) {
 		init(world);
@@ -1040,7 +1041,10 @@ public class DebugFrame {
 	}
 
 	private void initPerformanceChart() {
-		new PerformanceMonitor(world.getRenderer());
+		if(performanceMonitor == null) {
+			performanceMonitor = new PerformanceMonitor(world.getRenderer());
+		}
+		performanceMonitor.init();
 	}
 	
 	private void redirectSystemStreams() {

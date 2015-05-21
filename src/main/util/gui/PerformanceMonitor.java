@@ -54,31 +54,37 @@ public class PerformanceMonitor {
 
 	private DefaultCategoryDataset breakdownDataset;
 
+	private JFrame frame;
+
 	@SuppressWarnings("deprecation")
 	public PerformanceMonitor(Renderer myRenderer) {
 		this.myRenderer = myRenderer;
+	}
+
+	public void init() {
 		long maxAge = 10000;
+		if(frame == null) {
+			frame = new JFrame("FPS");
 
+			int rows = 0;
+			
+			this.thirtyFPS = new TimeSeries("30 FPS", Millisecond.class);
+			this.thirtyFPS.setMaximumItemAge(maxAge);
+			this.sixtyFPS = new TimeSeries("60 FPS", Millisecond.class);
+			this.sixtyFPS.setMaximumItemAge(maxAge);
+			this.actualMS = new TimeSeries("Current FPS", Millisecond.class);
+			this.actualMS.setMaximumItemAge(maxAge);
+			ChartPanel chartPanel = addFPSChart(myRenderer);
+			rows++;
+			
+//			ChartPanel waterfallChartPanel = addBreakdownChart(myRenderer);
+//			rows++;
 
-		JFrame frame = new JFrame("FPS");
-		int rows = 0;
-		
-		this.thirtyFPS = new TimeSeries("30 FPS", Millisecond.class);
-		this.thirtyFPS.setMaximumItemAge(maxAge);
-		this.sixtyFPS = new TimeSeries("60 FPS", Millisecond.class);
-		this.sixtyFPS.setMaximumItemAge(maxAge);
-		this.actualMS = new TimeSeries("Current FPS", Millisecond.class);
-		this.actualMS.setMaximumItemAge(maxAge);
-		ChartPanel chartPanel = addFPSChart(myRenderer);
-		rows++;
-		
-//		ChartPanel waterfallChartPanel = addBreakdownChart(myRenderer);
-//		rows++;
-
-		frame.setLayout(new GridLayout(rows, 1));
-		frame.add(chartPanel);
-//		frame.add(waterfallChartPanel);
-		frame.pack();
+			frame.setLayout(new GridLayout(rows, 1));
+			frame.add(chartPanel);
+//			frame.add(waterfallChartPanel);
+			frame.pack();
+		}
 		frame.setVisible(true);
 	}
 
@@ -223,4 +229,5 @@ public class PerformanceMonitor {
 			if(frameAverage != null) { breakdownDataset.addValue(frameAverage.getAverageInMS(), "", "Frame"); }
 		}
 	}
+
 }
