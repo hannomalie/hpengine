@@ -117,6 +117,7 @@ public class DirectionalLight extends Entity {
 	public void drawShadowMap(Octree octree) {
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+//		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		List<IEntity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
@@ -137,6 +138,7 @@ public class DirectionalLight extends Entity {
 
 			e.getVertexBuffer().draw();
 		}
+//		GL11.glEnable(GL11.GL_CULL_FACE);
 	}
 
 	public int getShadowMapId() {

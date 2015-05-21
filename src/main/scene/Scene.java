@@ -15,9 +15,13 @@ import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.IEntity;
+import main.model.Entity.Update;
 import main.octree.Octree;
 import main.renderer.DeferredRenderer;
 import main.renderer.Renderer;
+import main.renderer.light.AreaLightSerializationProxy;
+import main.renderer.light.PointLight;
+import main.renderer.light.PointLightSerializationProxy;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -28,6 +32,11 @@ public class Scene implements Serializable {
 	String name = "";
 	List<String> entitieNames = new ArrayList<>();
 	List<ProbeData> probes = new ArrayList<>();
+
+	List<PointLight> pointlights;
+	List<PointLightSerializationProxy> pointlightProxies;
+	List<AreaLightSerializationProxy> arealightProxies;
+	
 	transient Octree octree;// = new Octree(renderer, new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	transient Renderer renderer;
@@ -50,7 +59,16 @@ public class Scene implements Serializable {
 		for (ProbeData data : probes) {
 			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());	
 		}
+		initLights(renderer);
 		initialized = true;
+	}
+	private void initLights(Renderer renderer) {
+		for(PointLightSerializationProxy pointLightSerializationProxy : pointlightProxies) {
+			renderer.getLightFactory().getPointLight(pointLightSerializationProxy);
+		}
+		for(AreaLightSerializationProxy areaLightSerializationProxy : arealightProxies) {
+			renderer.getLightFactory().getAreaLight(areaLightSerializationProxy);
+		}
 	}
 	
 	public void write() {
@@ -76,6 +94,7 @@ public class Scene implements Serializable {
 				if(probes.contains(probeData)) { continue; }
 				probes.add(probeData);
 			}
+			gatherLights();
 			out.writeObject(this);
 
 		} catch (Exception e) {
@@ -92,6 +111,12 @@ public class Scene implements Serializable {
 		}
 		return false;
 	}
+	private void gatherLights() {
+		pointlightProxies.clear();
+		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
+		arealightProxies.clear();
+		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
+	}
 	
 	public static Scene read(Renderer renderer, String name) {
 		String fileName = FilenameUtils.getBaseName(name);
@@ -101,6 +126,7 @@ public class Scene implements Serializable {
 			fis = new FileInputStream(getDirectory() + fileName + ".hpscene");
 			in = new ObjectInputStream(fis);
 			Scene scene = (Scene) in.readObject();
+			handleEvolution(scene);
 			in.close();
 			fis.close();
 			scene.renderer = renderer;
@@ -111,6 +137,15 @@ public class Scene implements Serializable {
 		}
 		return null;
 	}
+
+    private static void handleEvolution(Scene scene) {
+		if(scene.getPointlights() == null) {
+			scene.setPointLights(new ArrayList<PointLightSerializationProxy>());
+		}
+		if(scene.getAreaLights() == null) {
+			scene.setAreaLights(new ArrayList<AreaLightSerializationProxy>());
+		}
+    }
 
 	public static String getDirectory() {
 		return World.WORKDIR_NAME + "/assets/scenes/";
@@ -163,5 +198,19 @@ public class Scene implements Serializable {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public void setPointLights(List<PointLightSerializationProxy> list) {
+		pointlightProxies = list;
+	}
+	public List<PointLightSerializationProxy> getPointlights() {
+		return pointlightProxies;
+	}
+	
+	public void setAreaLights(List<AreaLightSerializationProxy> list) {
+		arealightProxies = list;
+	}
+	public List<AreaLightSerializationProxy> getAreaLights() {
+		return arealightProxies;
 	}
 }

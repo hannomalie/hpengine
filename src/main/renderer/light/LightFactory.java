@@ -118,6 +118,10 @@ public class LightFactory {
 	public PointLight getPointLight(float range) {
 		return getPointLight(new Vector3f(), sphereModel, new Vector4f(1,1,1,1), range);
 	}
+
+	public PointLight getPointLight(PointLightSerializationProxy proxy) {
+		return getPointLight(proxy.getPosition(), sphereModel, proxy.getColor(), proxy.getRadius());
+	}
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
     		put(MAP.DIFFUSE,"assets/textures/default.dds");
@@ -202,11 +206,28 @@ public class LightFactory {
 	}
 
 	public AreaLight getAreaLight(int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(renderer, new Vector3f(), cubeModel, new Vector3f(1, 1, 1), new Vector3f(width, height, range));
+		return getAreaLight(new Vector3f(), new Vector3f(1, 1, 1), width, height, range);
+	}
+	public AreaLight getAreaLight(Vector3f position, Vector3f color, int width, int height, int range) {
+		return getAreaLight(position, new Quaternion(), color, width, height, range);
+	}
+	public AreaLight getAreaLight(Vector3f position, int width, int height, int range) {
+		return getAreaLight(position, new Quaternion(), new Vector3f(1, 1, 1), width, height, range);
+	}
+
+	public AreaLight getAreaLight(AreaLightSerializationProxy proxy) {
+		return getAreaLight(proxy.getPosition(), proxy.getOrientation(), proxy.getColor(), proxy.getWidth(), proxy.getHeight(), proxy.getRadius());
+	}
+	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, float width, float height, float range) {
+		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
+	}
+	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
+		AreaLight areaLight = new AreaLight(renderer, position, cubeModel, color, new Vector3f(width, height, range));
+		areaLight.setOrientation(orientation);
 		areaLights.add(areaLight);
 		return areaLight;
 	}
-
+	
 	private void updateAreaLightArrays() {
 		float[] positions = new float[areaLightsForwardMaxCount*3];
 		float[] colors = new float[areaLightsForwardMaxCount*3];
@@ -264,6 +285,20 @@ public class LightFactory {
 
 	public List<PointLight> getPointLights() {
 		return pointLights;
+	}
+	public List<PointLightSerializationProxy> getPointLightProxies() {
+		List<PointLightSerializationProxy> result = new ArrayList<>();
+		for (PointLight pointLight : pointLights) {
+			result.add(new PointLightSerializationProxy(pointLight));
+		}
+		return result;
+	}
+	public List<AreaLightSerializationProxy> getAreaLightProxies() {
+		List<AreaLightSerializationProxy> result = new ArrayList<>();
+		for (AreaLight areaLight : areaLights) {
+			result.add(new AreaLightSerializationProxy(areaLight));
+		}
+		return result;
 	}
 
 	public void setPointLights(List<PointLight> pointLights) {
@@ -363,5 +398,11 @@ public class LightFactory {
 		Matrix4f.mul(c.getProjectionMatrix(), c.getViewMatrix().negate(null), null).store(buffer);
 		buffer.flip();
 		return buffer;
+	}
+
+	public void clearAll() {
+		pointLights.clear();
+		areaLights.clear();
+		tubeLights.clear();
 	}
 }

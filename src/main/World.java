@@ -118,6 +118,7 @@ public class World {
 			}).start();
 //			new DebugFrame(world);
 		}
+
 		world.simulate();
 	}
 
@@ -484,6 +485,7 @@ public class World {
 	}
 
 	public void setScene(Scene scene) {
+		renderer.getLightFactory().clearAll();
 		this.scene = scene;
 		renderer.addCommand(new Command<Result>() {
 			@Override

@@ -1,6 +1,7 @@
 package main.renderer.light;
 
 import java.awt.Color;
+import java.io.Serializable;
 import java.util.List;
 
 import main.camera.Camera;
@@ -17,7 +18,8 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 
-public class PointLight extends Entity {
+public class PointLight extends Entity implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	public static float DEFAULT_RANGE = 1f;
 	private static int counter = 0;
@@ -123,5 +125,9 @@ public class PointLight extends Entity {
 			return true;
 		}
 		return false;
+	}
+	
+	private Object writeReplace() {
+		return new PointLightSerializationProxy(this);
 	}
 }
