@@ -135,10 +135,21 @@ public class TransformTest {
 		assertEpsilonEqual(new Vector3f(10, 10, 10), transform.getPosition(), 0.1f);
 	}
 	
-	
-	
-	
-	
+
+	@Test
+	public void multipleRotationsTest() {
+		Transform transform = new Transform();
+		transform.move(new Vector3f(10, 10, 10));
+		transform.rotate(new Vector3f(1,0,0), 90);
+		assertEpsilonEqual(new Vector3f(0,-1,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getUpDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(1,0,0), transform.getRightDirection(), 0.1f);
+		
+		transform.rotate(new Vector3f(0,1,0), 90);
+		assertEpsilonEqual(new Vector3f(1,0,0), transform.getViewDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getUpDirection(), 0.1f);
+		assertEpsilonEqual(new Vector3f(0,1,0), transform.getRightDirection(), 0.1f);
+	}
 	
 	private void assertEpsilonEqual(Vector3f a, Vector3f b, float delta) {
 		Assert.assertEquals(a.x, b.x, delta);

@@ -134,7 +134,7 @@ public class Camera implements IEntity {
 	}
 	
 	public Matrix4f calculateCurrentViewMatrix() {
-		viewMatrix = transform.getTransformation();
+		viewMatrix = transform.getTranslationRotation();
 		return viewMatrix;
 	}
 

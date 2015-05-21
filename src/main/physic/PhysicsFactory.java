@@ -45,6 +45,7 @@ public class PhysicsFactory {
 	
 	private World world;
 	private DynamicsWorld dynamicsWorld;
+	private RigidBody ground;
 
 	public PhysicsFactory(World world) {
 		this(world, new Vector3f(0,-20,0));
@@ -197,11 +198,18 @@ public class PhysicsFactory {
 		MotionState groundMotionState = new DefaultMotionState(transform);
 		RigidBodyConstructionInfo groundBodyConstructionInfo = new RigidBodyConstructionInfo(0, groundMotionState, groundShape, inertia);
 		groundBodyConstructionInfo.restitution = 0.25f;
-		RigidBody ground = new RigidBody(groundBodyConstructionInfo);
+		ground = new RigidBody(groundBodyConstructionInfo);
 		dynamicsWorld.addRigidBody(ground);
 	}
 	
 	public DynamicsWorld getDynamicsWorld() {
 		return dynamicsWorld;
+	}
+
+	public RigidBody getGround() {
+		return ground;
+	}
+	public void setGround(RigidBody ground) {
+		this.ground = ground;
 	}
 }

@@ -802,7 +802,7 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
 	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
-//	    dynamicsWorld.debugDrawWorld();
+	    dynamicsWorld.debugDrawWorld();
 	    renderer.drawLines(linesProgram);
 		
 		GL11.glDepthMask(false);

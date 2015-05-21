@@ -134,9 +134,17 @@ public class Transform implements Serializable {
 	private Matrix4f calculateTranslationRotation() {
 		Matrix4f temp = new Matrix4f();
 		temp.setIdentity();
-//		Matrix4f.mul(temp, Util.toMatrix(getOrientation()), temp);
-		temp.rotate(orientation.w, new Vector3f(orientation.x,orientation.y, orientation.z), temp);
+		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
 		Matrix4f.translate(position, temp, temp);
+		setDirty(false);
+		return temp;
+	}
+	private Matrix4f calculateTransformation() {
+		Matrix4f temp = new Matrix4f();
+		temp.setIdentity();
+		Matrix4f.translate(position, temp, temp); // TODO: SWITCH THESE LINES....
+		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
+		temp.scale(scale);
 		setDirty(false);
 		return temp;
 	}
@@ -154,15 +162,6 @@ public class Transform implements Serializable {
 		translationRotation = calculateTranslationRotation();
 		transformation = calculateTransformation();
 		hasMoved = true;
-	}
-	private Matrix4f calculateTransformation() {
-		Matrix4f temp = new Matrix4f();
-		temp.setIdentity();
-		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
-		Matrix4f.translate(position, temp, temp); // TODO: SWITCH THESE LINES....
-		temp.scale(scale);
-		setDirty(false);
-		return temp;
 	}
 	
 	public boolean isDirty() {
