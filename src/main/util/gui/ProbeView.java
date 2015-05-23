@@ -154,7 +154,11 @@ public class ProbeView extends WebPanel {
 		nameField.setValue(probe.getName());
 		
 		WebLabel colorPanel = new WebLabel(" ");
-		colorPanel.setBackground(new Color((int)(probe.getDebugColor().x * 255f), (int)(probe.getDebugColor().y * 255f), (int)(probe.getDebugColor().z * 255f)));
+		try {
+			colorPanel.setBackground(new Color((int)(probe.getDebugColor().x * 255f), (int)(probe.getDebugColor().y * 255f), (int)(probe.getDebugColor().z * 255f)));
+		} catch (Exception e) {
+			colorPanel.setBackground(new Color(255, 255, 255));
+		}
 		colorPanel.setOpaque(true);
 		GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField,
 				new WebLabel(String.format("ProbesArrayIndex: %d TexUnitIndex: %d", probe.getIndex(), probe.getTextureUnitIndex())));
