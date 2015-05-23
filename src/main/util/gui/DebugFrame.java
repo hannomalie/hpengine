@@ -5,6 +5,9 @@ import static main.util.Util.vectorToString;
 
 
 
+
+
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -26,6 +29,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+
+
 
 
 
@@ -58,9 +64,14 @@ import javax.swing.tree.TreeModel;
 
 
 
+
+
+
 import main.World;
+import main.event.EntitySelectedEvent;
 import main.event.GlobalDefineChangedEvent;
 import main.event.MaterialChangedEvent;
+import main.model.Entity;
 import main.model.IEntity;
 import main.octree.Octree;
 import main.octree.Octree.Node;
@@ -91,6 +102,9 @@ import main.util.stopwatch.GPUProfiler;
 
 
 
+
+
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -99,6 +113,9 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+
+
+
 
 
 
@@ -127,6 +144,7 @@ import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.google.common.eventbus.Subscribe;
 
 
 public class DebugFrame {
@@ -212,6 +230,7 @@ public class DebugFrame {
 	private PerformanceMonitor performanceMonitor;
 	
 	public DebugFrame(World world) {
+		World.getEventBus().register(this);
 		init(world);
 	}
 
@@ -281,7 +300,7 @@ public class DebugFrame {
         	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
         	sceneLoadMenuItem.addActionListener(e -> {
 
-	    		File chosenFile = WebFileChooser.showOpenDialog(".", choser -> {
+	    		File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", choser -> {
 	    			choser.setFileFilter(new FileNameExtensionFilter("Scenes", "hpscene"));
 	    		});
 	    		if(chosenFile != null) {
@@ -1654,6 +1673,19 @@ public class DebugFrame {
 		notificationPopup.setDisplayTime( 2000 );
 		notificationPopup.setContent(new WebLabel(content));
 		NotificationManager.showNotification(notificationPopup);
+	}
+	
+	@Subscribe
+	public void handle(EntitySelectedEvent e) {
+    	DebugFrame debugFrame = this;
+    	if(!Display.isActive()) { return; }
+		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    	entityViewFrame.getContentPane().removeAll();
+    	entityViewFrame.pack();
+    	entityViewFrame.setSize(600, 700);
+		entityViewFrame.add(new EntityView(world, debugFrame, (Entity) e.getEntity()));
+    	entityViewFrame.setVisible(true);
+//    	entityViewFrame.toBack();
 	}
 
 }

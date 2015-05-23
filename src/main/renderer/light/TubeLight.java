@@ -2,6 +2,7 @@ package main.renderer.light;
 
 import java.util.List;
 
+import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.Model;
@@ -22,14 +23,14 @@ public class TubeLight extends Entity {
 	private static int counter = 0;
 	private Vector3f color;
 
-	protected TubeLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
-		super(materialFactory, position, generateName(), model, materialName);
+	protected TubeLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
+		super(world, materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
 	}
-	public TubeLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, float length, float radius) {
-		super(materialFactory, position, generateName(), model, model.getMaterial().getName());
+	public TubeLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, float length, float radius) {
+		super(world, materialFactory, position, generateName(), model, model.getMaterial().getName());
 		setColor(color);
 		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
 	}

@@ -48,7 +48,7 @@ public class EntityView extends WebPanel {
 		this.renderer = world.getRenderer();
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
-		this.setSize(600, 600);
+		this.setSize(600, 700);
 		setMargin(20);
 		
 		List<Component> panels = getPanels();

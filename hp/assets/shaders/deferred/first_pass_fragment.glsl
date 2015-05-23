@@ -8,6 +8,9 @@ layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
+uniform int entityIndex;
+uniform bool isSelected = false;
+
 uniform bool useParallax;
 uniform bool useSteepParallax;
 
@@ -244,7 +247,7 @@ vec2 encodeNormal(vec3 n) {
     return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
 }
 
-void main(void) {
+void main(void) {	
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
 	//V = normalize((eyePos_world.xyz - position_world.xyz).xyz);
 	vec2 UV = texCoord;
@@ -255,6 +258,8 @@ void main(void) {
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
+	
+	vec2 positionTextureSpace = position_clip_post_w.xy * 0.5 + 0.5;
 
 	out_position = viewMatrix * position_world;
 	
@@ -417,7 +422,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,depth,0);
+  	out_visibility = vec4(1,depth,depth,entityIndex);
   	
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
@@ -428,4 +433,8 @@ void main(void) {
 		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
 		out_color.w = waterEffect2;
   	}
+  	
+	if(isSelected) {
+		out_color.rgb = vec3(1,0,0);
+	}
 }

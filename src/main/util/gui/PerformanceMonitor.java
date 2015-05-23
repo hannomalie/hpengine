@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
@@ -228,6 +229,10 @@ public class PerformanceMonitor {
 
 			if(frameAverage != null) { breakdownDataset.addValue(frameAverage.getAverageInMS(), "", "Frame"); }
 		}
+	}
+
+	public JFrame getFrame() {
+		return frame;
 	}
 
 }

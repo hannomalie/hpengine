@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.Serializable;
 import java.util.List;
 
+import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.Model;
@@ -25,8 +26,8 @@ public class PointLight extends Entity implements Serializable {
 	private static int counter = 0;
 	private Vector4f color;
 	
-	protected PointLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
-		super(materialFactory, position, generateName(), model, materialName);
+	protected PointLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
+		super(world, materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(range);

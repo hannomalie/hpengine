@@ -2,6 +2,7 @@ package main.renderer.light;
 
 import java.util.List;
 
+import main.World;
 import main.camera.Camera;
 import main.model.Entity;
 import main.model.Model;
@@ -24,8 +25,8 @@ public class AreaLight extends Entity {
 	private Vector3f color;
 	private RenderTarget renderTarget;
 	
-	protected AreaLight(Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
+	protected AreaLight(World world, Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
+		super(world, renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
 		setColor(color);
 		setScale(scale);
 		counter++;

@@ -50,6 +50,7 @@ import main.scene.EnvironmentProbe.Update;
 import main.scene.EnvironmentProbeFactory;
 import main.shader.Program;
 import main.shader.ProgramFactory;
+import main.shader.StorageBuffer;
 import main.texture.CubeMap;
 import main.texture.TextureFactory;
 import main.util.stopwatch.GPUProfiler;
@@ -136,10 +137,12 @@ public class DeferredRenderer implements Renderer {
 
 	private Program cubeMapDiffuseProgram;
 	private int maxTextureUnits;
+	private World world;
 	
 
 	public DeferredRenderer(World world, boolean headless) {
 		setupOpenGL(headless);
+		this.world = world;
 		world.setRenderer(this);
 		objLoader = new OBJLoader(this);
 		textureFactory = new TextureFactory(this);
@@ -149,8 +152,8 @@ public class DeferredRenderer implements Renderer {
 		setUpGBuffer();
 		fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
 		materialFactory = new MaterialFactory(this);
-		entityFactory = new EntityFactory(this);
-		lightFactory = new LightFactory(this);
+		entityFactory = new EntityFactory(world);
+		lightFactory = new LightFactory(world);
 		environmentProbeFactory = new EnvironmentProbeFactory(this);
 //		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
 //		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
@@ -234,7 +237,7 @@ public class DeferredRenderer implements Renderer {
 		combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", RENDERTOQUAD, false);
 		postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", RENDERTOQUAD, false);
 
-		gBuffer = new GBuffer(this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram, instantRadiosityProgram);
+		gBuffer = new GBuffer(world, this, firstPassProgram, secondPassDirectionalProgram, secondPassPointProgram, secondPassTubeProgram, secondPassAreaProgram, combineProgram, postProcessProgram, instantRadiosityProgram);
 
 //		environmentSampler = new EnvironmentSampler(this, new Vector3f(0,-200,0), 128, 128);
 		
@@ -858,5 +861,10 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public Program getPostProcessProgram() {
 		return postProcessProgram;
+	}
+
+	@Override
+	public StorageBuffer getStorageBuffer() {
+		return gBuffer.getStorageBuffer();
 	}
 }

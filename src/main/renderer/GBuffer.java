@@ -10,10 +10,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
+
 import main.Transform;
 import main.World;
 import main.camera.Camera;
 import main.config.Config;
+import main.event.EntitySelectedEvent;
 import main.model.IEntity;
 import main.model.Model;
 import main.model.QuadVertexBuffer;
@@ -36,12 +39,18 @@ import main.util.Util;
 import main.util.stopwatch.GPUProfiler;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL21;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
@@ -100,10 +109,13 @@ public class GBuffer {
 	private PixelBufferObject pixelBufferObject;
 	
 	private StorageBuffer storageBuffer;
-	private int exposureIndex = 0;
+
+	private final int exposureIndex = 0;
+	private World world;
 	
-	public GBuffer(Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
+	public GBuffer(World world, Renderer renderer, Program firstPassProgram, Program secondPassDirectionalProgram, Program secondPassPointProgram, Program secondPassTubeProgram, Program secondPassAreaLightProgram,
 					Program combineProgram, Program postProcessProgram, Program instantRadiosityProgram) {
+		this.world = world;
 		this.renderer = renderer;
 		this.firstPassProgram = firstPassProgram;
 		this.secondPassDirectionalProgram = secondPassDirectionalProgram;
@@ -123,7 +135,7 @@ public class GBuffer {
 		this.tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_compute.glsl");
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 4);
+		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 5);
 		reflectionBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
 		laBuffer = new RenderTarget((int) (Config.WIDTH * SECONDPASSSCALE) , (int) (Config.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
 		finalBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8, 1);
@@ -135,7 +147,7 @@ public class GBuffer {
 		pixelBufferObject = new PixelBufferObject(1, 1);
 		
 		 storageBuffer = new StorageBuffer(16);
-		 storageBuffer.putValues(1f,0f,0f,1f);
+		 storageBuffer.putValues(1f,-1f,0f,1f);
 	}
 	
 	public void init(Renderer renderer) {
@@ -238,6 +250,23 @@ public class GBuffer {
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		renderer.getTextureFactory().generateMipMaps(getColorReflectivenessMap());
 		GPUProfiler.end();
+
+		if(world.PICKING_CLICK == 1) {
+			GL11.glReadBuffer(GL30.GL_COLOR_ATTACHMENT4);
+			
+			FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(4); // 4 channels
+			GL11.glReadPixels(Mouse.getX(), Mouse.getY(), 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
+			try {
+				int componentIndex = 3; // alpha component
+				world.getScene().getEntities().parallelStream().forEach(e -> { e.setSelected(false); });
+				IEntity entity = world.getScene().getEntities().get((int)floatBuffer.get(componentIndex));
+				entity.setSelected(true);
+				World.getEventBus().post(new EntitySelectedEvent(entity));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			floatBuffer = null;
+		}
 	}
 
 	private void debugDrawProbes(Camera camera) {
@@ -836,4 +865,11 @@ public class GBuffer {
 		return finalBuffer.getRenderedTexture(0);
 	}
 
+	public StorageBuffer getStorageBuffer() {
+		return storageBuffer;
+	}
+
+	public void setStorageBuffer(StorageBuffer storageBuffer) {
+		this.storageBuffer = storageBuffer;
+	}
 }

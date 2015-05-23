@@ -21,6 +21,7 @@ import main.scene.EnvironmentProbeFactory;
 import main.shader.AbstractProgram;
 import main.shader.Program;
 import main.shader.ProgramFactory;
+import main.shader.StorageBuffer;
 import main.texture.*;
 
 import org.lwjgl.opengl.Display;
@@ -81,4 +82,5 @@ public interface Renderer {
 	Program getSecondPassDirectionalProgram();
 	Program getCombineProgram();
 	Program getPostProcessProgram();
+	StorageBuffer getStorageBuffer();
 }

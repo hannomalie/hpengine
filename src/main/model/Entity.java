@@ -19,6 +19,7 @@ import main.World;
 import main.camera.Camera;
 import main.component.IGameComponent;
 import main.component.IGameComponent.ComponentIdentifier;
+import main.config.Config;
 import main.renderer.Renderer;
 import main.renderer.material.Material;
 import main.renderer.material.MaterialFactory;
@@ -30,7 +31,9 @@ import main.util.stopwatch.GPUProfiler;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -71,8 +74,9 @@ public class Entity implements IEntity, Serializable {
 	
 	private Transform transform = new Transform();
 	transient protected FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
-	
+
 	protected transient MaterialFactory materialFactory;
+	protected transient World world;
 	protected String materialName = "";
 
 	protected String name = "Entity_" + System.currentTimeMillis();
@@ -85,14 +89,15 @@ public class Entity implements IEntity, Serializable {
 	protected Entity() {
 	}
 
-	protected Entity(MaterialFactory materialFactory, Model model, String materialName) {
-		this(materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	protected Entity(World world, MaterialFactory materialFactory, Model model, String materialName) {
+		this(world, materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
 	}
 
-	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
+	protected Entity(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
 		modelMatrix = new Matrix4f();
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 
+		this.world = world;
 		this.materialFactory = materialFactory;
 		this.materialName = materialName;
 		this.name = name;
@@ -104,11 +109,12 @@ public class Entity implements IEntity, Serializable {
 		
 	}
 	
-	public void init(Renderer renderer) {
+	public void init(World world) {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		createVertexBuffer();
 		components = new HashMap<ComponentIdentifier, IGameComponent>();
-		this.materialFactory = renderer.getMaterialFactory();
+		this.materialFactory = world.getRenderer().getMaterialFactory();
+		this.world = world;
 	}
 	
 	public void createFloatArray(Model model) {
@@ -272,7 +278,8 @@ public class Entity implements IEntity, Serializable {
 		currentProgram.setUniform("near", camera.getNear());
 		currentProgram.setUniform("far", camera.getFar());
 		currentProgram.setUniform("time", (int)System.currentTimeMillis());
-		
+		currentProgram.setUniform("entityIndex", world.getScene().getEntities().indexOf(this));
+		currentProgram.setUniform("isSelected", isSelected());
 		currentProgram.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		getMaterial().setTexturesActive(this, currentProgram);
 		

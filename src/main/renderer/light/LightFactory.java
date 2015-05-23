@@ -63,13 +63,15 @@ public class LightFactory {
 	private FloatBuffer areaLightViewDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
-	
+
+	private World world;
 	private Renderer renderer;
 	private Model sphereModel;
 	private Model cubeModel;
 	
-	public LightFactory(Renderer renderer) {
-		this.renderer = renderer;
+	public LightFactory(World world) {
+		this.world = world;
+		this.renderer = world.getRenderer();
 		sphereModel = null;
 		try {
 			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
@@ -129,7 +131,7 @@ public class LightFactory {
     		put(MAP.DIFFUSE,"assets/textures/default.dds");
 		}});
 		
-		PointLight light = new PointLight(renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
+		PointLight light = new PointLight(world, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
 		pointLights.add(light);
 		updatePointLightArrays();
 		return light;
@@ -202,7 +204,7 @@ public class LightFactory {
 		return getTubeLight(200.0f, 50.0f);
 	}
 	public TubeLight getTubeLight(float length, float radius) {
-		TubeLight tubeLight = new TubeLight(renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		TubeLight tubeLight = new TubeLight(world, renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
 		tubeLights.add(tubeLight);
 		return tubeLight;
 	}
@@ -224,7 +226,7 @@ public class LightFactory {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(renderer, position, cubeModel, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(world, renderer, position, cubeModel, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		areaLights.add(areaLight);
 		return areaLight;

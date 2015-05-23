@@ -18,6 +18,7 @@ import main.renderer.material.Material;
 import main.renderer.material.Material.MAP;
 import main.renderer.rendertarget.RenderTarget;
 import main.shader.Program;
+import main.shader.StorageBuffer;
 import main.util.Util;
 
 import org.lwjgl.BufferUtils;

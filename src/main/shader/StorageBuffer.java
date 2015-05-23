@@ -65,9 +65,9 @@ public class StorageBuffer {
 	 */
 	public FloatBuffer getValues(int offset, int length) {
 		bind();
-		System.out.println("Offset " + offset*4);
-		System.out.println("Length " + length*4);
-		System.out.println(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
+//		System.out.println("Offset " + offset*4);
+//		System.out.println("Length " + length*4);
+//		System.out.println(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
 		FloatBuffer result = GL30.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, offset*4, length*4/*bytes!*/, GL30.GL_MAP_READ_BIT , null).asFloatBuffer();
 		GL15.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
 		unbind();

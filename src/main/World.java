@@ -34,6 +34,7 @@ import main.util.stopwatch.OpenGLStopWatch;
 import main.util.stopwatch.StopWatch;
 
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -127,6 +128,7 @@ public class World {
 	PhysicsFactory physicsFactory;
 	Scene scene;
 	private int entityCount = 10;
+	public volatile int PICKING_CLICK = 0;
 	public Renderer renderer;
 	private Camera camera;
 	private Camera activeCamera;
@@ -323,6 +325,7 @@ public class World {
 	
 
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
+	private boolean STRG_PRESSED_LAST_FRAME = false;
 	private void update(float seconds) {
 
 		StopWatch.getInstance().start("Controls update");
@@ -341,6 +344,20 @@ public class World {
 //			
 //		}
 
+		PICKING_CLICK = 0;	
+		if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+			if(Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
+				PICKING_CLICK = 1;
+				STRG_PRESSED_LAST_FRAME = true;
+			} else if(Mouse.isButtonDown(1) && !STRG_PRESSED_LAST_FRAME) {
+				getScene().getEntities().parallelStream().forEach(e -> { e.setSelected(false); });
+			}
+		} else {
+			STRG_PRESSED_LAST_FRAME = false;
+			PICKING_CLICK = 0;
+		}
+		
+		
 		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
 		
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
