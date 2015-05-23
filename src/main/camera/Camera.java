@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.Transform;
+import main.World;
 import main.config.Config;
 import main.model.IEntity;
 import main.renderer.Renderer;
@@ -75,7 +76,6 @@ public class Camera implements IEntity {
 
 	public void update(float seconds) {
 		transform();
-		updateControls(seconds);
 		storeMatrices();
 	}
 	public void updateShadow() {
@@ -96,7 +96,7 @@ public class Camera implements IEntity {
 		}
 		
 
-		float rotationAmount = 1.1f * turbo*rotationDelta * seconds;
+		float rotationAmount = 1.1f * turbo*rotationDelta * seconds * World.CAMERA_SPEED;
 		if (Mouse.isButtonDown(0)) {
 			rotate(Transform.WORLD_UP, Mouse.getDX() * rotationAmount);
 		}
@@ -107,7 +107,7 @@ public class Camera implements IEntity {
 			rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
 		}
 		
-		float moveAmount = turbo*posDelta * seconds;
+		float moveAmount = turbo*posDelta * seconds * World.CAMERA_SPEED;
 		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
 			move(new Vector3f(0,0,moveAmount));
 		}

@@ -530,7 +530,9 @@ public class DebugFrame {
     	});
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
         loadMaterial.addActionListener(e -> {
-        	File chosenFile = fileChooser.showOpenDialog();
+        	File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\materials\\", choser -> {
+    			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
+    		});
     		if(chosenFile != null) {
 				SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 
@@ -956,7 +958,12 @@ public class DebugFrame {
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
 				@Override public void onValueChange(int value, int delta) {
 					World.RAINEFFECT = (float) value/100;
-					world.getEventBus().post(new GlobalDefineChangedEvent());
+					World.getEventBus().post(new GlobalDefineChangedEvent());
+				}
+			},
+			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.CAMERA_SPEED)) {
+				@Override public void onValueChange(int value, int delta) {
+					World.CAMERA_SPEED = (float) value/100;
 				}
 			}
 		));
