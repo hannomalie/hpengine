@@ -8,6 +8,9 @@ layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
+uniform int entityIndex;
+uniform bool isSelected = false;
+
 uniform bool useParallax;
 uniform bool useSteepParallax;
 
@@ -260,8 +263,8 @@ void main(void) {
 		//UV = UV + time/2000.0;
 #endif
 
-	float n = surface3(vec3(UV, int(time)%1000000 * 0.0001));
-	float n2 = surface3(vec3(UV, int(time)%1000000 * 0.00001), 8);
+	float n = surface3(vec3(UV*10, int(time)%1000000 * 0.0001));
+	float n2 = surface3(vec3(UV*10, int(time)%1000000 * 0.00001), 8);
 	
 	vec2 uvParallax = vec2(0,0);
 
@@ -326,7 +329,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,depth,0);
+  	out_visibility = vec4(1,depth,depth,entityIndex);
   	
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
@@ -337,5 +340,8 @@ void main(void) {
 		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
 		out_color.w = waterEffect2;
   	}
-  		
+
+	if(isSelected) {
+		out_color.rgb = vec3(1,0,0);
+	}
 }

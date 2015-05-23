@@ -63,10 +63,12 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = true;
 	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
 	
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = false;
+	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
+	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = true;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR_PROBES = false;
 	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
 	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = true;
 	
@@ -80,7 +82,9 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
 	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = false;
 
-	@Toggable(group = "Effects") public static volatile boolean SCATTERING = false;
+	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
+	
+	@Toggable(group = "Effects") public static volatile boolean SCATTERING = true;
 	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
@@ -344,7 +348,7 @@ public class World {
 //			
 //		}
 
-		PICKING_CLICK = 0;	
+		PICKING_CLICK = 0;
 		if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
 			if(Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
 				PICKING_CLICK = 1;
@@ -356,6 +360,8 @@ public class World {
 			STRG_PRESSED_LAST_FRAME = false;
 			PICKING_CLICK = 0;
 		}
+		
+		
 		
 		
 		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
@@ -396,6 +402,9 @@ public class World {
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);
+		camera.updateControls(seconds);
+		
+		
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
 		directionalLight.update(seconds);

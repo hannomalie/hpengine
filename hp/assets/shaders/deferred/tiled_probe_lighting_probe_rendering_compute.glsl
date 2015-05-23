@@ -415,6 +415,14 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     	// Use unprojected normal for diffuse in precomputed radiance due to poor precision compared to importance sampling method
     	vec3 diffuseSample = textureLod(probes, vec4(projectedNormal, index), MAX_MIPMAPLEVEL).rgb;
     	result.diffuseColor = diffuseColor * diffuseSample;
+    	
+    	if (USE_CONETRACING_FOR_DIFFUSE_PROBES) {
+	    	TraceResult traceResult = traceCubes(positionWorld, normal, v, roughness, metallic, color);
+	    	vec4 sampleNearest = textureLod(probes, vec4(traceResult.dirToHitPointNearest, traceResult.probeIndexNearest), MAX_MIPMAPLEVEL-1);
+	    	vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), MAX_MIPMAPLEVEL-1);
+			result.diffuseColor = diffuseColor.rgb * mix(sampleNearest.rgb, sampleSecondNearest.rgb, sampleNearest.a);
+	    }
+	    
     	return result;
 	}
   
@@ -809,33 +817,10 @@ void main()
 		vec3 viewWorldSecondBounce = -normalize(intersectionNearest - positionWorld);
 		const float mip = MAX_MIPMAPLEVEL;
 			
-		const bool useConeTracingForSecondBounce = false;
-		if(useConeTracingForSecondBounce) {
-			vec3 tempResult;
-			TraceResult temp = traceCubes(positionWorldSecondBounce, normalWorldSeconBounce, viewWorldSecondBounce, 1, 0, vec3(0.5,0.5,0.5));
-			vec4 sampleNearest = texture(probes, vec4(temp.dirToHitPointNearest, temp.probeIndexNearest), mip);
-			vec3 sampleSecondNearest = texture(probes, vec4(temp.dirToHitPointSecondNearest, temp.probeIndexSecondNearest), mip).rgb;
-			if(temp.probeIndexSecondNearest == -1) {
-				tempResult += sampleNearest.rgb;
-			} else {
-				tempResult += mix(sampleNearest.rgb, sampleSecondNearest, 1-sampleNearest.a);
-			}
-			result.rgb *= 0.5;
-			result.rgb += 0.5*tempResult;
-		} else {
-			const bool useFullImportanceSampleForSecondBounce = true;
-			
-			if (useFullImportanceSampleForSecondBounce) {
-				ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorldSecondBounce.xyz, normalWorldSeconBounce.xyz, reflect(viewWorldSecondBounce, normalWorldSeconBounce.xyz), viewWorldSecondBounce, 1, 0, color.rgb);
-				vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
-				result.rgb *= 0.5;
-				result.rgb += 0.5*sampleFromLastFrameAsSecondBounce;
-			} else {
-				vec3 boxProjectedNormal = boxProjection(positionWorldSecondBounce.xyz, normalWorldSeconBounce, probeIndexNearest);
-				result.rgb *= 0.5;
-				result.rgb += 0.5*texture(probes, vec4(boxProjectedNormal, currentProbe), mip).rgb; // TODO: ADJUST THIS WITH NdotL!!!!
-			}
-		}
+		ProbeSample probeSample = importanceSampleProjectedCubeMap(currentProbe, positionWorldSecondBounce.xyz, normalWorldSeconBounce.xyz, reflect(viewWorldSecondBounce, normalWorldSeconBounce.xyz), viewWorldSecondBounce, 1, 0, color.rgb);
+		vec3 sampleFromLastFrameAsSecondBounce = probeSample.diffuseColor + probeSample.specularColor;
+		result.rgb *= 0.5;
+		result.rgb += 0.5*sampleFromLastFrameAsSecondBounce;
 	}
 	
 	

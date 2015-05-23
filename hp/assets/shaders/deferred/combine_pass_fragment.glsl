@@ -8,7 +8,7 @@ layout(binding=5) uniform sampler2D normalMap; // normal, depth
 layout(binding=6) uniform samplerCube globalEnvironmentMap;
 layout(binding=7) uniform samplerCubeArray probes;
 layout(binding=8) uniform sampler2D environment; // reflection
-layout(binding=9) uniform sampler2D refractedMap; // probe sample, ambient occlusion
+layout(binding=9) uniform sampler2D refractedMap;
 layout(binding=10) uniform sampler2D finalMap; // what gets drawn to the screen
 layout(binding=11) uniform sampler2D aoScattering;
 
@@ -376,8 +376,8 @@ void main(void) {
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
+	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
 	out_color.rgb += (scattering.rgb); //scattering
-	out_color.rgb = mix(out_color.rgb, textureLod(refractedMap, st, 0).rgb, transparency);
 	
 	float autoExposure = exposure;
 	if(!AUTO_EXPOSURE_ENABLED) { autoExposure = worldExposure; }
@@ -392,6 +392,7 @@ void main(void) {
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
 	//out_color.rgb = normalView.xyz;
+	//out_color.rgb = vec3(normalView.xyz*0.5+0.5);
 	//out_color.rgb = specularColor.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;
 	//out_color.rgb = vec3(motionVec,0);
@@ -405,6 +406,7 @@ void main(void) {
 	//out_color.rgb = vec3(motion,0);
 	//out_color.rgb = color;
 	//out_color.rgb = scattering.rgb;
+	//out_color.rgb = refracted.rgb;
 
 	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
 	const bool useSphericalHarmonicLighting = false;

@@ -519,7 +519,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     	vec3 R = 2 * dot( v, normal) * normal - v;
   		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
     	
-		const bool USE_CONETRACING_FOR_SPECULAR = false;
 		TraceResult traceResult;
     	if (USE_CONETRACING_FOR_SPECULAR) {
 	    	traceResult = traceCubes(positionWorld, reflected, v, roughness, metallic, color);
@@ -585,7 +584,6 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
     float distToIntersection = distance(positionWorld, projectedVectorAndIntersection[1]);
     H = normalize(projectedVectorAndIntersection[0]);
     
-    const bool USE_CONETRACING_FOR_SPECULAR = false;
     TraceResult traceResult;
     if (USE_CONETRACING_FOR_SPECULAR) {
     	traceResult = traceCubes(positionWorld, importanceSampleResult[0], v, roughness, metallic, color);
@@ -1294,6 +1292,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 			float blendFactor = blendFactors[i];//clamp(blendFactors[i], 0.0f, 1.0f);
 			result.diffuseColor += s.diffuseColor * blendFactor;
 			result.specularColor += s.specularColor * blendFactor;
+			result.refractedColor += textureLod(probes, vec4(boxProjection(positionWorld, refract(V, normalWorld, 1-roughness), indices[i]), indices[i]), roughness*MAX_MIPMAPLEVEL-4).rgb * blendFactor;
 						
 			/*if(overlappingVolumesCount == 2)
 			{
