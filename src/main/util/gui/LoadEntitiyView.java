@@ -43,8 +43,9 @@ public class LoadEntitiyView extends WebPanel {
 			}
 		};
 		
-		List<File> chosenFiles = WebFileChooser.showMultiOpenDialog(".", customizer);
+		List<File> chosenFiles = WebFileChooser.showMultiOpenDialog(".\\hp\\assets\\entities\\", customizer);
 		List<main.model.IEntity> entitiesToAdd = new ArrayList();
+		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
 				Entity entity = (Entity) world.getRenderer().getEntityFactory().readWithoutInit(chosenFile.getName());
@@ -55,7 +56,7 @@ public class LoadEntitiyView extends WebPanel {
 				SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(World world) {
-						entity.init(world.getRenderer());
+						entity.init(world);
 						return new Result() {
 							@Override
 							public boolean isSuccessful() {
