@@ -71,6 +71,10 @@ public enum ShaderDefine {
 		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + World.PRECOMPUTED_RADIANCE);
 		appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + World.SCATTERING);
 		appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + World.CALCULATE_ACTUAL_RADIANCE);
+		appendWithSemicolonAndNewLine(builder, "const bool SSR_FADE_TO_SCREEN_BORDERS = " + World.SSR_FADE_TO_SCREEN_BORDERS);
+		appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + World.SSR_TEMPORAL_FILTERING);
+		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + World.USE_BLOOM);
+		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + World.USE_PCF);
 		
 		return builder.toString();
 	}

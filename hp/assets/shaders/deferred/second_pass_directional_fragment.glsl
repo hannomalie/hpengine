@@ -225,7 +225,10 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
   		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
 		return vec3(0,0,0);
 	}
-	//return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
+	if(USE_PCF) {
+		return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
+	}
+	
 	
 	// We retrive the two moments previously stored (depth and depth*depth)
 	vec4 shadowMapSample = textureLod(shadowMap,ShadowCoordPostW.xy, 2);

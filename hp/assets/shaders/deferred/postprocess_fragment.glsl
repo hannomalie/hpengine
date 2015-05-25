@@ -429,7 +429,6 @@ void main()
 	    vec4 sum = vec4(0);
 	    
 	    // code from http://wp.applesandoranges.eu/?p=14, thank you!
-	    const bool USE_BLOOM = false;
 	    if(USE_BLOOM) {
     	   vec2 texcoord = pass_TextureCoord;
 		   int j;
@@ -453,7 +452,7 @@ void main()
 		        }
 		    }
 		    out_color.a = 1;
-		    //out_color.rgb = mix(out_color.rgb, in_color.rgb, 0.7 - exposure/100);
+		    out_color.rgb = mix(out_color.rgb, in_color.rgb, clamp(0.9 - exposure/100.0, 0.0, 1.0));
 	    }
 	} else {
 		const bool useFXAA = true;

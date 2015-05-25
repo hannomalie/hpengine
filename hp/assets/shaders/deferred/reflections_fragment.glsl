@@ -45,7 +45,7 @@ const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				
 
 vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.025);
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
 	vec4 result = vec4(0,0,0,0);
 	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
 	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
@@ -973,7 +973,7 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			float mipMapChoser = roughness * 11;
     			mipMapChoser *= distanceInWorldPercent;
     			mipMapChoser = max(mipMapChoser, screenEdgefactor * 3);
-    			mipMapChoser = min(mipMapChoser, 4);
+    			mipMapChoser = min(mipMapChoser, 2);
     			
     			float threshold = 0.65;
 				float maxDist = distance(1.0, 0.5);
@@ -989,9 +989,9 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
     			specularColor = EnvDFGPolynomial(specularColor, (glossiness), 0);
     			
     			vec4 motionVecProbeIndices = texture2D(motionMap, resultCoords.xy);
-  				vec2 motion = motionVecProbeIndices.xy;
+  				vec2 motion = 0.25*motionVecProbeIndices.xy;
 
-    			vec3 ambientSample = ambientColor*blur(ambientLightMap, resultCoords.xy, roughness*0.1f, mipMapChoser).rgb;
+    			vec3 ambientSample = ambientColor*blur(ambientLightMap, resultCoords.xy, roughness*0.05f, mipMapChoser).rgb;
     			vec3 lightSample = blur(lightAccumulationMap, resultCoords.xy, roughness*0.1f, mipMapChoser).rgb;
     			vec3 thisFrameLighting = ambientSample+lightSample;
 					//thisFrameLighting.rgb = Uncharted2Tonemap(exposure*thisFrameLighting.rgb);
@@ -999,19 +999,24 @@ vec3 rayCast(vec3 color, vec3 probeColor, vec2 screenPos, vec3 targetPosView, ve
 					//thisFrameLighting.rgb = thisFrameLighting.rgb * whiteScale;
 	    			
     			vec3 reflectedColor;
-    			const bool useTemporalFiltering = false;
-    			if(useTemporalFiltering) {
-	    			vec4 lightDiffuseSpecular = blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness*0.1f, mipMapChoser); // compensation for *4 intensity
+    			if(SSR_TEMPORAL_FILTERING) {
+	    			vec4 lightDiffuseSpecular = 0.5*blur(lastFrameFinalBuffer, resultCoords.xy-motion, roughness*0.05f, mipMapChoser);
     				reflectedColor = (lightDiffuseSpecular.rgb + thisFrameLighting)/2.0f;
     			} else {
-    				reflectedColor = thisFrameLighting;
+    				reflectedColor = ambientSample;//thisFrameLighting;
     			}
     			//reflectedColor = 0.5*blur(ambientLightMap, resultCoords.xy, roughness*0.1f, mipMapChoser).rgb + 0.5*blur(lightAccumulationMap, resultCoords.xy, roughness*0.1f, mipMapChoser).rgb;
     			//return specularColor*reflectedColor;
     			
     			vec3 lightDirection = currentPosSample - targetPositionWorld;
     			
-    			float mixer = 1-pow(screenEdgefactor,1);
+    			float mixer;
+    			if(SSR_FADE_TO_SCREEN_BORDERS) {
+    				mixer = 1-pow(screenEdgefactor,1);
+    			} else {
+    				mixer = 1;
+    			}
+    			
     			//mixer = clamp(mixer, 0, 1);
     			//mixer *= fadeToViewer;
 			//return vec3(mixer,mixer,mixer);

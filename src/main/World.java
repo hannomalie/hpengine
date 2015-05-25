@@ -71,6 +71,9 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR_PROBES = false;
 	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
 	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = true;
+	@Toggable(group = "Quality settings") public static volatile boolean SSR_FADE_TO_SCREEN_BORDERS = true;
+	@Toggable(group = "Quality settings") public static volatile boolean SSR_TEMPORAL_FILTERING = true;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
 	
 	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
@@ -89,8 +92,9 @@ public class World {
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
-	@Toggable(group = "Quality settings") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
-	@Toggable(group = "Quality settings") public static volatile boolean ENABLE_POSTPROCESSING = true;
+	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = true;
+	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
+	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = true;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
 	
 	public static void main(String[] args) {
