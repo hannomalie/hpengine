@@ -7,3 +7,4 @@
 *.hpmaterial
 *.hpentity
 *.hpscene
+/target/

@@ -1,1 +1,1 @@
-java -Xmx6g -Xverify:none -jar hpengine.jar fullhd
+java -Xmx6g -Xverify:none -jar hpengine-jar-with-dependencies.jar fullhd
