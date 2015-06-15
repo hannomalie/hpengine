@@ -1,125 +1,5 @@
 package main.util.gui;
 
-import static main.util.Util.vectorToString;
-
-
-
-
-
-
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-
-
-
-
-
-
-import javax.script.ScriptException;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextPane;
-import javax.swing.JTree;
-import javax.swing.ListSelectionModel;
-import javax.swing.border.LineBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultCaret;
-import javax.swing.text.Document;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeModel;
-
-
-
-
-
-
-
-import main.World;
-import main.event.EntitySelectedEvent;
-import main.event.GlobalDefineChangedEvent;
-import main.event.MaterialChangedEvent;
-import main.model.Entity;
-import main.model.IEntity;
-import main.octree.Octree;
-import main.octree.Octree.Node;
-import main.renderer.EnvironmentSampler;
-import main.renderer.GBuffer;
-import main.renderer.Result;
-import main.renderer.command.AddCubeMapCommand;
-import main.renderer.command.AddTextureCommand;
-import main.renderer.command.AddTextureCommand.TextureResult;
-import main.renderer.command.Command;
-import main.renderer.command.DumpAveragesCommand;
-import main.renderer.command.RenderProbeCommandQueue;
-import main.renderer.light.AreaLight;
-import main.renderer.light.PointLight;
-import main.renderer.light.TubeLight;
-import main.renderer.material.Material;
-import main.renderer.material.MaterialFactory;
-import main.scene.EnvironmentProbe;
-import main.scene.Scene;
-import main.texture.TextureFactory;
-import main.util.Adjustable;
-import main.util.Toggable;
-import main.util.gui.input.SliderInput;
-import main.util.gui.input.TitledPanel;
-import main.util.script.ScriptManager;
-import main.util.stopwatch.GPUProfiler;
-
-
-
-
-
-
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.fife.ui.autocomplete.AutoCompletion;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-import org.fife.ui.rtextarea.RTextScrollPane;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector3f;
-
-
-
-
-
-
-
 import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.WebButtonGroup;
@@ -145,6 +25,69 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.google.common.eventbus.Subscribe;
+import main.World;
+import main.event.EntitySelectedEvent;
+import main.event.GlobalDefineChangedEvent;
+import main.event.MaterialChangedEvent;
+import main.model.Entity;
+import main.model.IEntity;
+import main.octree.Octree;
+import main.octree.Octree.Node;
+import main.renderer.EnvironmentSampler;
+import main.renderer.GBuffer;
+import main.renderer.Result;
+import main.renderer.command.*;
+import main.renderer.command.AddTextureCommand.TextureResult;
+import main.renderer.light.AreaLight;
+import main.renderer.light.PointLight;
+import main.renderer.light.TubeLight;
+import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
+import main.scene.EnvironmentProbe;
+import main.scene.Scene;
+import main.texture.TextureFactory;
+import main.util.Adjustable;
+import main.util.Toggable;
+import main.util.gui.input.SliderInput;
+import main.util.gui.input.TitledPanel;
+import main.util.script.ScriptManager;
+import main.util.stopwatch.GPUProfiler;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.util.vector.Vector3f;
+
+import javax.script.ScriptException;
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.text.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeModel;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
+
+import static main.util.Util.vectorToString;
 
 
 public class DebugFrame {
@@ -1609,12 +1552,19 @@ public class DebugFrame {
 		parent.add(current);
 		if(node.hasChildren()) {
 			for(int i = 0; i < 8; i++) {
-				addOctreeChildren(current, node.children[i]);	
+				addOctreeChildren(current, node.children[i]);
 			}
 		}
 		
-		for (IEntity entitiy : node.entities) {
-			current.add(new DefaultMutableTreeNode(entitiy));
+		for (IEntity entity : node.entities) {
+			if(entity.hasParent()) { continue; }
+			DefaultMutableTreeNode currentEntity = new DefaultMutableTreeNode(entity);
+			if(entity.hasChildren()) {
+				entity.getChildren().forEach(child -> {
+					currentEntity.add(new DefaultMutableTreeNode(child));
+				});
+			}
+			current.add(currentEntity);
 		}
 		
 		if (node.hasChildren() && node.entities.size() > 0 && !node.isRoot()) {

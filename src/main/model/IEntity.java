@@ -1,8 +1,5 @@
 package main.model;
 
-import java.util.HashMap;
-
-import main.Transform;
 import main.camera.Camera;
 import main.component.IGameComponent;
 import main.component.IGameComponent.ComponentIdentifier;
@@ -12,10 +9,8 @@ import main.renderer.material.Material;
 import main.shader.Program;
 import main.texture.CubeMap;
 
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import java.util.HashMap;
+import java.util.List;
 
 
 public interface IEntity extends ITransformable {
@@ -49,4 +44,9 @@ public interface IEntity extends ITransformable {
 
 	public default Update getUpdate() { return Entity.Update.DYNAMIC; }
 	public default void setUpdate(Update update) {}
+
+	public default boolean hasParent() { return false; };
+	public default boolean hasChildren() { return false; };
+
+	public default List<? extends IEntity> getChildren() { return null; };
 }

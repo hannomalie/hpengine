@@ -17,7 +17,7 @@
                 </includes>
             </resource>
         </resources>
-        
+                
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -125,6 +125,21 @@
                         </configuration>            
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>main.World</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

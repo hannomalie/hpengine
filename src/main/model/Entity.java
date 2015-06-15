@@ -1,6 +1,21 @@
 package main.model;
 
-import static main.log.ConsoleLogger.getLogger;
+import main.Transform;
+import main.World;
+import main.camera.Camera;
+import main.component.IGameComponent;
+import main.component.IGameComponent.ComponentIdentifier;
+import main.renderer.Renderer;
+import main.renderer.material.Material;
+import main.renderer.material.MaterialFactory;
+import main.shader.Program;
+import main.texture.CubeMap;
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector2f;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,31 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javafx.beans.DefaultProperty;
-import main.Transform;
-import main.World;
-import main.camera.Camera;
-import main.component.IGameComponent;
-import main.component.IGameComponent.ComponentIdentifier;
-import main.config.Config;
-import main.renderer.Renderer;
-import main.renderer.material.Material;
-import main.renderer.material.MaterialFactory;
-import main.shader.Program;
-import main.texture.CubeMap;
-import main.util.OpenGLThread;
-import main.util.Util;
-import main.util.stopwatch.GPUProfiler;
-
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import static main.log.ConsoleLogger.getLogger;
 
 public class Entity implements IEntity, Serializable {
 	private static final long serialVersionUID = 1;
@@ -81,6 +72,10 @@ public class Entity implements IEntity, Serializable {
 
 	protected String name = "Entity_" + System.currentTimeMillis();
 
+	protected String parentName;
+	private transient Entity parentEntity;
+	private transient List<Entity> children;
+
 	private boolean selected = false;
 	private boolean visible = true;
 	
@@ -116,7 +111,38 @@ public class Entity implements IEntity, Serializable {
 		this.materialFactory = world.getRenderer().getMaterialFactory();
 		this.world = world;
 	}
-	
+
+	@Override
+	public boolean hasParent() {
+		return parentName != null;
+	}
+
+	@Override
+	public boolean hasChildren() {
+		return children != null && !children.isEmpty();
+	}
+
+	@Override
+	public List<? extends IEntity> getChildren() {
+		return children;
+	}
+
+	public void setParent(Entity parent) {
+		parentEntity = parent;
+		parentEntity.addChild(this);
+		getTransform().setParent(parent.getTransform());
+		getTransform().recalculate();
+	}
+
+	private void addChild(Entity child) {
+		if(children == null) {
+			children = new ArrayList<>();
+		}
+		if(!children.contains(child)) {
+			children.add(child);
+		}
+	}
+
 	public void createFloatArray(Model model) {
 
 		List<Vector3f> verticesTemp = model.getVertices();
@@ -232,6 +258,8 @@ public class Entity implements IEntity, Serializable {
 
 	@Override
 	public void update(float seconds) {
+		initParentship();
+
 		for (IGameComponent c : components.values()) {
 			c.update(seconds);
 		}
@@ -239,7 +267,15 @@ public class Entity implements IEntity, Serializable {
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();
 	}
-	
+
+	private void initParentship() {
+		if(parentName != null && parentEntity == null) {
+			world.getScene().getEntity(parentName).ifPresent(parent -> {
+				this.setParent((Entity) parent);
+			});
+		}
+	}
+
 	@Override
 	public HashMap<ComponentIdentifier,IGameComponent> getComponents() {
 		return components;
@@ -480,6 +516,7 @@ public class Entity implements IEntity, Serializable {
 		try {
 			fos = new FileOutputStream(getDirectory() + fileName + ".hpentity");
 			out = new ObjectOutputStream(fos);
+			entity.saveParentString();
 			out.writeObject(entity);
 
 		} catch (IOException e) {
@@ -494,6 +531,12 @@ public class Entity implements IEntity, Serializable {
 			}
 		}
 		return false;
+	}
+
+	private void saveParentString() {
+		if(parentEntity != null) {
+			parentName = parentEntity.getName();
+		}
 	}
 
 	public static String getDirectory() {

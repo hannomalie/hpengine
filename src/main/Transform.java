@@ -1,6 +1,8 @@
 package main;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import main.util.Util;
 
@@ -21,6 +23,9 @@ public class Transform implements Serializable {
 	public static Vector3f IDENTITY_LOCAL_WORLD = new Vector3f(1,1,1);
 	public static Vector4f IDENTITY_LOCAL_WORLD_V4 = new Vector4f(1,1,1,1);
 	
+	private transient Transform parent;
+	private transient Matrix4f parentMatrix;
+	private transient List<Transform> children;
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
 	private Quaternion orientation = new Quaternion();
@@ -36,6 +41,25 @@ public class Transform implements Serializable {
 //		Quaternion.setIdentity(orientation);
 //	}
 	
+        public Transform getParent() {
+            return parent;
+        }
+        public void setParent(Transform parent) {
+            this.parent = parent;
+            parent.addChild(this);
+        }
+        public void addChild(Transform transform) {
+            if(children == null) {
+                children = new ArrayList<>();
+            }
+            
+            children.add(transform);
+        }
+
+	public List<Transform> getChildren() {
+		return children;
+	}
+        
 	public Vector3f getPosition() {
 		recalculateIfDirty();
 		return position;
@@ -145,6 +169,14 @@ public class Transform implements Serializable {
 		Matrix4f.translate(position, temp, temp); // TODO: SWITCH THESE LINES....
 		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
 		temp.scale(scale);
+                if(parent != null) {
+                    parentMatrix = parent.getTransformation();
+                }
+                if(parentMatrix == null) {
+                    parentMatrix = new Matrix4f();
+                }
+                temp = Matrix4f.mul(parentMatrix, temp, null);
+                
 		setDirty(false);
 		return temp;
 	}
@@ -161,6 +193,13 @@ public class Transform implements Serializable {
 	public void recalculate() {
 		translationRotation = calculateTranslationRotation();
 		transformation = calculateTransformation();
+                if(children == null) {
+                    children = new ArrayList<>();
+                }
+                for (Transform child : children) {
+					System.out.print(child);
+                    child.recalculate();
+                }
 		hasMoved = true;
 	}
 	
@@ -168,7 +207,7 @@ public class Transform implements Serializable {
 		return isDirty;
 	}
 	public void setDirty(boolean isDirty) {
-		this.isDirty = isDirty;
+            this.isDirty = isDirty;
 	}
 
 	public boolean isHasMoved() {
