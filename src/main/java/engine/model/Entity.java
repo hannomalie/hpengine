@@ -30,7 +30,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	public static int count = 0;
 
 	public void addComponent(Component component) {
+		component.setEntity(this);
 		getComponents().put(component.getIdentifier(), component);
+	}
+	public void removeComponent(Component component) {
+		getComponents().remove(component.getIdentifier(), component);
 	}
 
 	public <T extends Component> T getComponent(Class<T> type) {

@@ -13,3 +13,7 @@
 *.iml
 nbactions-debug.xml
 nbactions.xml
+
+.classpath
+.project
+.settings/*

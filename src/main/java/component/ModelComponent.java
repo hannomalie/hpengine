@@ -58,6 +58,14 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.materialName = materialName;
         this.model = model;
     }
+    @Override
+    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
+        draw(camera, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+    }
+    @Override
+    public void draw(Camera camera) {
+        draw(camera, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+    }
 
     @Override
     public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {

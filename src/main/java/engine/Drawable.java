@@ -12,6 +12,9 @@ public interface Drawable {
     default void draw(Camera camera, FloatBuffer modelMatrix, int entityIndex, boolean isVisible, boolean isSelected) { draw(camera, modelMatrix, getFirstPassProgram(), entityIndex, isVisible, isSelected);}
     default void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex) { draw(camera, modelMatrix, firstPassProgram, entityIndex, true, false); }
     void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected);
+    void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram);
+    void draw(Camera camera);
+
     void drawDebug(Program program, FloatBuffer modelMatrix);
     Program getFirstPassProgram();
 }

@@ -197,7 +197,7 @@ public class GBuffer {
 //			GPUProfiler.end();
 			for (Entity entity : entities) {
 				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					modelComponent.draw(camera, entity.getModelMatrixAsBuffer(), world.getScene().getEntities().indexOf(entity));
+					modelComponent.draw(camera);
 				});
 			}
 		}

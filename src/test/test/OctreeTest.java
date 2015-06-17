@@ -18,7 +18,7 @@ import java.util.logging.Level;
 
 import static log.ConsoleLogger.getLogger;
 
-public class OctreeTest extends TestWithRenderer {
+public class OctreeTest extends TestWithWorld {
 	
 	@Test
 	public void generatingBox() {
@@ -89,6 +89,7 @@ public class OctreeTest extends TestWithRenderer {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 0);
+		octree.init(world);
 		octree.insert(entity);
 		Assert.assertFalse(octree.rootNode.hasChildren());
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
@@ -183,6 +184,7 @@ public class OctreeTest extends TestWithRenderer {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
+		octree.init(world);
 		octree.insert(entityBottomLeftBack);
 		octree.insert(entityTopRightFront);
 //		Assert.assertEquals(1, octree.getCurrentDeepness());
@@ -222,6 +224,7 @@ public class OctreeTest extends TestWithRenderer {
 		getLogger().setLevel(Level.OFF);
 		
 		Octree octree = new Octree(new Vector3f(), 2000f, 7);
+		octree.init(world);
 		Random random = new Random();
 		final int entityCount = 10000;
 		List<Entity> toAdd = new ArrayList<>();
