@@ -434,7 +434,10 @@ void main(void) {
 		out_color.w = waterEffect2;
   	}
   	
-	if(isSelected) {
+	if(isSelected)
+	{
 		out_color.rgb = vec3(1,0,0);
 	}
+	//out_color.rgb = vec3(1,0,0);
+	//out_normal.a = 1;
 }

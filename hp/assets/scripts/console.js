@@ -81,13 +81,25 @@ javaVec3 = Java.type('javax.vecmath.Vector3f');
 var componentIdentifier = Java.type('main.component.IGameComponent.ComponentIdentifier').Physic;
 //physicsFactory.getGround().translate(new javaVec3(0, 1, 0));
 for each (entity in world.getScene().getEntities()) {
-	if(entity.getName().contains("Entity_Sphere0"))
+	if(entity.getName().contains("Entity_Sphere10"))
 	{
-  		var physicsComponent = entity.getComponents()[componentIdentifier];
-  		if(physicsComponent == undefined) { physicsComponent = physicsFactory.addBallPhysicsComponent(entity); }
+  		////var physicsComponent = entity.getComponents()[componentIdentifier];
+  		////if(physicsComponent == undefined) { physicsComponent = physicsFactory.addBallPhysicsComponent(entity); }
   		//physicsComponent.getRigidBody().applyCentralImpulse(new javaVec3(10, 10, 0));
   		//print(physicsComponent.getRigidBody().getMotionState());
   		//physicsComponent.getRigidBody().activate();
   		//physicsComponent.getRigidBody().translate(new javaVec3(0, 10, 0));
+	}
+}
+for each (entity in world.getScene().getEntities()) {
+	if(entity.getName().contains("Entity_Sphere0"))
+	{
+		
+		for each (parent in world.getScene().getEntities()) {
+			if(parent.getName().contains("Entity_Sphere11"))
+			{
+				entity.getTransform().setParent(parent.getTransform());
+			}
+		}
 	}
 }

@@ -56,17 +56,29 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-float _calculateAttenuation(float dist) {
+float calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
     atten_factor = pow(atten_factor, 2);
     return atten_factor;
 }
-float calculateAttenuation(float dist) {
+float __calculateAttenuation(float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - pow(distDivRadius,4), 0.0, 1.0);
     atten_factor = pow(atten_factor, 2);
     return 100*atten_factor/(dist*dist); // TODO: Figure out the 100...
+}
+float _calculateAttenuation(float dist) {
+	float cutoff = lightRadius;
+	float r = lightRadius/10;
+	float d = max(dist - r, 0);
+	
+	float denom = d/r + 1;
+    float attenuation = 1 / (denom*denom);
+    attenuation = (attenuation - cutoff) / (1 - cutoff);
+    attenuation = max(attenuation, 0);
+    
+    return attenuation;
 }
 
 
@@ -108,7 +120,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     
     float atten_factor = calculateAttenuation(dist);
     if(distTemp < pointLightSphereRadius) {
-    	atten_factor = 1;
+    	//atten_factor = 1;
     }
     
  	vec3 L = normalize(light_position_eye - position);

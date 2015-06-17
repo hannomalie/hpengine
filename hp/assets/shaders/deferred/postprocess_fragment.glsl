@@ -472,7 +472,7 @@ void main()
 		brightness = brightness > maxBrightness ? maxBrightness : brightness;
 		float minBrightness = 0.02f;
 		brightness = brightness < minBrightness ? minBrightness : brightness;
-		float targetExposure = 1*worldExposure / brightness;
+		float targetExposure = 0.5f*worldExposure / brightness;
 		exposure = (exposure + (targetExposure - exposure) * 0.015f);
 		//out_color.r = 1;
 	}

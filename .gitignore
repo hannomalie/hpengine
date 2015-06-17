@@ -8,3 +8,8 @@
 *.hpentity
 *.hpscene
 /target/
+
+/.idea
+*.iml
+nbactions-debug.xml
+nbactions.xml

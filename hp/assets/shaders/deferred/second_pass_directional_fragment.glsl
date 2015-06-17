@@ -218,6 +218,18 @@ vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDi
 	}
 	return result/N;
 }
+vec3 blurESM(sampler2D sampler, vec2 texCoords, float dist, float inBlurDistance) {
+	float darknessFactor = 120.0;
+	vec3 result = vec3(0,0,0);
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.002);
+	const int N = 32;
+	const float bias = 0.001;
+	for (int i = 0; i < N; i++) {
+		float moment = texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/100).x;
+		result += clamp(exp(darknessFactor * (moment - dist)), 0.0, 1.0);
+	}
+	return result/N;
+}
 
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {
@@ -268,6 +280,8 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	float darknessFactor = 120.0;
 	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
+	
+	//p_max = blurESM(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -417,6 +431,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	
 	float ambient = normalAmbient.a;
+	ambient += 5;
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;
