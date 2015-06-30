@@ -44,10 +44,10 @@ import java.util.concurrent.SynchronousQueue;
 		}
 	}
 	void destroy();
-	void draw(Camera camera, World world, List<Entity> entities);
+	void draw(Entity camera, World world, List<Entity> entities);
 	void update(World world, float seconds);
 	float getElapsedSeconds();
-	void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities);
+	void drawDebug(Entity camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities);
 	Program getLastUsedProgram();
 	void setLastUsedProgram(Program firstPassProgram);
 	CubeMap getEnvironmentMap();

@@ -2,6 +2,7 @@ package renderer;
 
 import camera.Camera;
 import com.bulletphysics.dynamics.DynamicsWorld;
+import component.CameraComponent;
 import component.ModelComponent;
 import config.Config;
 import engine.Transform;
@@ -150,7 +151,8 @@ public class GBuffer {
 		}
 	}
 	
-	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
+	void drawFirstPass(Entity cameraEntity, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
+		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glDepthMask(true);
 		gBuffer.use(true);
@@ -197,7 +199,7 @@ public class GBuffer {
 //			GPUProfiler.end();
 			for (Entity entity : entities) {
 				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					modelComponent.draw(camera);
+					modelComponent.draw(cameraEntity);
 				});
 			}
 		}
@@ -213,22 +215,22 @@ public class GBuffer {
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (PointLight light : pointLights) {
 				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(camera);
+				light.drawAsMesh(cameraEntity);
 			}
 			for (TubeLight light : tubeLights) {
 //				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(camera);
+				light.drawAsMesh(cameraEntity);
 			}
 			for (AreaLight light : areaLights) {
 //				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(camera);
+				light.drawAsMesh(cameraEntity);
 			}
 		}
 
 //		linesProgram.use();
 //		GL11.glDisable(GL11.GL_CULL_FACE);
 		if(World.DEBUGDRAW_PROBES) {
-			debugDrawProbes(camera);
+			debugDrawProbes(cameraEntity);
 			renderer.getEnvironmentProbeFactory().draw(octree);
 		}
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -256,8 +258,8 @@ public class GBuffer {
 		}
 	}
 
-	private void debugDrawProbes(Camera camera) {
-		
+	private void debugDrawProbes(Entity cameraEntity) {
+		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 		probeFirstpassProgram.use();
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(probeFirstpassProgram);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
@@ -277,7 +279,7 @@ public class GBuffer {
 			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
 			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
 			probeBoxEntity.getComponent(ModelComponent.class).
-					draw(camera, probeBoxEntity.getModelMatrixAsBuffer(), probeFirstpassProgram, world.getScene().getEntities().indexOf(probeBoxEntity));
+					draw(cameraEntity, probeBoxEntity.getModelMatrixAsBuffer(), probeFirstpassProgram, world.getScene().getEntities().indexOf(probeBoxEntity));
 		}
 
 		probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
@@ -286,12 +288,12 @@ public class GBuffer {
 		
 	}
 
-	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-
+	void drawSecondPass(Entity cameraEntity, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 		renderer.getTextureFactory().generateMipMaps(directionalLight.getShadowMapId());
 		
-		Vector3f camPosition = camera.getPosition().negate(null);
-		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
+		Vector3f camPosition = cameraEntity.getPosition().negate(null);
+		Vector3f.add(camPosition, (Vector3f) cameraEntity.getViewDirection().negate(null).scale(-cameraEntity.getComponent(CameraComponent.class).getCamera().getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
 		GPUProfiler.start("Directional light");
@@ -330,7 +332,7 @@ public class GBuffer {
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
-		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
+		secondPassDirectionalProgram.setUniform("eyePosition", cameraEntity.getPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.WIDTH);
@@ -372,7 +374,7 @@ public class GBuffer {
 
 		laBuffer.unuse();
 		
-		renderAOAndScattering(camera, viewMatrix, projectionMatrix, directionalLight);
+		renderAOAndScattering(cameraEntity, viewMatrix, projectionMatrix, directionalLight);
 		
 		if (World.USE_GI) {
 			GL11.glDepthMask(false);
@@ -399,7 +401,7 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 
-	private void renderAOAndScattering(Camera camera, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, DirectionalLight directionalLight) {
+	private void renderAOAndScattering(Entity cameraEntity, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, DirectionalLight directionalLight) {
 		if(!World.useAmbientOcclusion && !World.SCATTERING) { return; }
 		GPUProfiler.start("Scattering and AO");
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
@@ -419,7 +421,7 @@ public class GBuffer {
 		halfScreenBuffer.use(true);
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
 		aoScatteringProgram.use();
-		aoScatteringProgram.setUniform("eyePosition", camera.getPosition());
+		aoScatteringProgram.setUniform("eyePosition", cameraEntity.getPosition());
 		aoScatteringProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		aoScatteringProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
@@ -682,7 +684,8 @@ public class GBuffer {
 	}
 
 
-	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
+	void combinePass(RenderTarget target, DirectionalLight light, Entity cameraEntity) {
+		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
 		combineProgram.use();
@@ -690,7 +693,7 @@ public class GBuffer {
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		combineProgram.setUniform("screenWidth", (float) Config.WIDTH);
 		combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-		combineProgram.setUniform("camPosition", camera.getPosition());
+		combineProgram.setUniform("camPosition", cameraEntity.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		combineProgram.setUniform("worldExposure", World.EXPOSURE);
@@ -753,7 +756,8 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	public void drawDebug(Entity cameraEntity, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 		///////////// firstpass
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDepthMask(true);
@@ -768,7 +772,7 @@ public class GBuffer {
 		linesProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		linesProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		linesProgram.setUniform("eyePosition", camera.getPosition());
+		linesProgram.setUniform("eyePosition", cameraEntity.getPosition());
 		
 		if(World.DRAWSCENE_ENABLED) {
 			linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
@@ -820,9 +824,9 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,15,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,0,-15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f)(camera.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
 	    dynamicsWorld.debugDrawWorld();
 	    renderer.drawLines(linesProgram);
 		
@@ -830,7 +834,7 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
 
-		drawSecondPass(camera, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
+		drawSecondPass(cameraEntity, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 	}
 
 	public int getLightAccumulationMapOneId() {

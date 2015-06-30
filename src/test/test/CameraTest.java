@@ -2,6 +2,8 @@ package test;
 
 import camera.Camera;
 import camera.Frustum;
+import component.CameraComponent;
+import engine.model.Entity;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Matrix4f;
@@ -13,7 +15,7 @@ public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void rotation() {
-		Camera camera = new Camera(renderer);
+		Entity camera = renderer.getEntityFactory().getEntity().addComponent(new CameraComponent(new Camera(renderer)));
 		Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
 		
 		camera.rotate(new Vector3f(0,1,0), 90f);
@@ -36,7 +38,8 @@ public class CameraTest extends TestWithRenderer {
 	public void inFrustum() {
 		Matrix4f projectionMatrix = Util.createPerpective(60, 16/9, 0.1f, 100f);
 		Camera camera = new Camera(renderer, projectionMatrix, 0.1f, 100f, 60, 16/9);
-		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(camera.getViewDirection())));
+		Entity cameraEntity = renderer.getEntityFactory().getEntity().addComponent(new CameraComponent(camera));
+		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(cameraEntity.getViewDirection())));
 		
 		Frustum frustum = camera.getFrustum();
 
@@ -44,15 +47,15 @@ public class CameraTest extends TestWithRenderer {
 		Assert.assertEquals(100f, frustum.values[Frustum.BACK][Frustum.D], 0.0001f); // distance is always positive value
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, -1));
-		
-		camera.moveInWorld(new Vector3f(0,0,-5));
+
+		cameraEntity.moveInWorld(new Vector3f(0,0,-5));
 		frustum.calculate(camera);
-		Helpers.assertEpsilonEqual(new Vector3f(0, 0, -1), camera.getViewDirection(), 0.01f);
+		Helpers.assertEpsilonEqual(new Vector3f(0, 0, -1), cameraEntity.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
-		
-		camera.setPosition(new Vector3f());
-		camera.rotateWorld(new Vector3f(0, 1, 0), 180); // cam is now at pos 0,0,0, rotated 180 degrees, looking in +z
-		Helpers.assertEpsilonEqual(new Vector3f(0, 0, 1), camera.getViewDirection(), 0.01f);
+
+		cameraEntity.setPosition(new Vector3f());
+		cameraEntity.rotateWorld(new Vector3f(0, 1, 0), 180); // cam is now at pos 0,0,0, rotated 180 degrees, looking in +z
+		Helpers.assertEpsilonEqual(new Vector3f(0, 0, 1), cameraEntity.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.sphereInFrustum(0, 0, 1, 1));
 		Assert.assertTrue(frustum.cubeInFrustum(new Vector3f(0, 0, 1), 1));

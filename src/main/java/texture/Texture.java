@@ -287,7 +287,7 @@ public class Texture implements Serializable {
 			texture.upload();
 			DeferredRenderer.exitOnGLError("YYY");
 			return texture;
-		} catch (IOException | ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
 			e.printStackTrace();
 		}
 		

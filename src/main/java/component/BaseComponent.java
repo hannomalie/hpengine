@@ -7,12 +7,12 @@ import renderer.Renderer;
 import java.io.Serializable;
 
 public abstract class BaseComponent implements Component, Serializable {
+    private static final long serialVersionUID = -224913983270697337L;
 
     transient protected World world;
+    transient private Renderer renderer;
 
     private Entity entity;
-
-    transient private Renderer renderer;
 
     public Class getIdentifier() { return BaseComponent.class; }
 

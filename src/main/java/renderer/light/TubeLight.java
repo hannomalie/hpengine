@@ -61,7 +61,7 @@ public class TubeLight extends Entity {
 	public void update(float seconds) {
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			Matrix4f tempModel = calculateCurrentModelMatrix();
 			tempModel.store(matrix44Buffer);

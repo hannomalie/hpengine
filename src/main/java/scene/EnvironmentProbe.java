@@ -69,16 +69,16 @@ public class EnvironmentProbe extends Entity {
 	
 	@Override
 	public Transform getTransform() {
-		return sampler.getCamera().getTransform();
+		return sampler.getCameraEntity().getTransform();
 	}
 	@Override
 	public void setTransform(Transform transform) {
-		sampler.getCamera().setTransform(transform);
+		sampler.getCameraEntity().setTransform(transform);
 	}
 
 	@Override
 	public void move(Vector3f amount) {
-		sampler.getCamera().moveInWorld(amount.negate(null));
+		sampler.getCameraEntity().moveInWorld(amount.negate(null));
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 		box.move(amount);
 	}
@@ -86,14 +86,14 @@ public class EnvironmentProbe extends Entity {
 	@Override
 	public void moveInWorld(Vector3f amount) {
 		box.move(amount);
-		sampler.getCamera().moveInWorld(amount.negate(null));
+		sampler.getCameraEntity().moveInWorld(amount.negate(null));
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 	
 	@Override
 	public void setPosition(Vector3f position) {
 		box.setCenter(position);
-		sampler.getCamera().setPosition(position.negate(null));
+		sampler.getCameraEntity().setPosition(position.negate(null));
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 

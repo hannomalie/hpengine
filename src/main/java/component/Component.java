@@ -14,4 +14,5 @@ public interface Component extends LifeCycle, Serializable {
 
 	Class<? extends Component> getIdentifier();
 
+	default void initAfterAdd(Entity entity) {}
 }

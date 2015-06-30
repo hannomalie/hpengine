@@ -2,6 +2,7 @@ package renderer;
 
 import camera.Camera;
 import com.google.common.eventbus.Subscribe;
+import component.CameraComponent;
 import component.ModelComponent;
 import engine.World;
 import engine.model.Entity;
@@ -27,11 +28,9 @@ import shader.ComputeShaderProgram;
 import shader.Program;
 import texture.CubeMap;
 import texture.CubeMapArray;
-import texture.Texture;
 import util.Util;
 import util.stopwatch.GPUProfiler;
 
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +40,8 @@ import java.util.stream.Collectors;
 public class EnvironmentSampler {
 	public static volatile boolean deferredRenderingForProbes = true;
 	private final World world;
-	private Camera camera;
+	private Entity camera;
+	private final CameraComponent cameraComponent;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
 	private Program depthPrePassProgram;
@@ -74,7 +74,9 @@ public class EnvironmentSampler {
 		float fov = 90f;
 		Matrix4f projectionMatrix = Util.createPerpective(fov, 1, near, far);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
-		this.camera = new Camera(renderer, projectionMatrix, near, far, fov, 1);
+		this.camera = world.getRenderer().getEntityFactory().getEntity();
+		this.cameraComponent = new CameraComponent(new Camera(renderer, projectionMatrix, near, far, fov, 1));
+		camera.addComponent(this.cameraComponent);
 		Quaternion cubeMapCamInitialOrientation = new Quaternion();
 		Quaternion.setIdentity(cubeMapCamInitialOrientation);
 		camera.setOrientation(cubeMapCamInitialOrientation);
@@ -148,7 +150,7 @@ public class EnvironmentSampler {
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, camera);
-			List<Entity> visibles = octree.getVisible(camera);
+			List<Entity> visibles = octree.getVisible(getCamera());
 			List<Entity> movedVisibles = visibles.stream().filter(e -> { return e.getUpdate() == Entity.Update.STATIC; }).
 					sorted(new TransformDistanceComparator<Transformable>(camera) {
 						public int compare(Transformable o1, Transformable o2) {
@@ -192,13 +194,13 @@ public class EnvironmentSampler {
 				GPUProfiler.start("Second pass");
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawSecondPass(i, camera, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), renderer.getLightFactory().getAreaLights(), renderer.getEnvironmentMap());
+				drawSecondPass(i, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), renderer.getLightFactory().getAreaLights(), renderer.getEnvironmentMap());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawEntities(cubeMapProgram, movedVisibles, camera.getViewMatrixAsBuffer(), camera.getProjectionMatrixAsBuffer());
+				drawEntities(cubeMapProgram, movedVisibles, getCamera().getViewMatrixAsBuffer(), getCamera().getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -264,7 +266,7 @@ public class EnvironmentSampler {
 
 		GPUProfiler.start("Cubemapside draw entities");
 		for (Entity e : visibles) {
-			if(!e.isInFrustum(camera)) { continue; }
+			if(!e.isInFrustum(getCamera())) { continue; }
 			e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 				entityBuffer.rewind();
 				e.getModelMatrix().store(entityBuffer);
@@ -284,7 +286,7 @@ public class EnvironmentSampler {
 		GPUProfiler.end();
 	}
 	
-	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities) {
+	void drawFirstPass(int sideIndex, Entity camera, List<Entity> entities) {
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getFrameBufferLocation());
 //		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
 		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), sideIndex);
@@ -315,7 +317,7 @@ public class EnvironmentSampler {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 	}
 
-	void drawSecondPass(int sideIndex, Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = camera.getPosition().negate(null);
 //		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
@@ -351,9 +353,9 @@ public class EnvironmentSampler {
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("secondPassScale", 1f);
-		FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
+		FloatBuffer viewMatrix = getCamera().getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-		FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
+		FloatBuffer projectionMatrix = getCamera().getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
@@ -370,7 +372,7 @@ public class EnvironmentSampler {
 		GPUProfiler.end();
 
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
+		doPointLights(getCamera(), pointLights, camPosition, viewMatrix, projectionMatrix);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		
 		doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
@@ -711,13 +713,13 @@ public class EnvironmentSampler {
 		
 		GPUProfiler.end();
 	}
-	private void rotateForIndex(int i, Camera camera) {
+	private void rotateForIndex(int i, Entity camera) {
 		float deltaNear = 0.0f;
 		float deltaFar = 100.0f;
 		float halfSizeX = probe.getSize().x/2;
 		float halfSizeY = probe.getSize().y/2;
 		float halfSizeZ = probe.getSize().z/2;
-		Vector3f position = getCamera().getPosition().negate(null); // TODO: AHHhhhh, kill this hack
+		Vector3f position = camera.getPosition().negate(null); // TODO: AHHhhhh, kill this hack
 		float width = probe.getSize().x;
 		float height = probe.getSize().y;
 //		Matrix4f projectionMatrix = Util.createOrthogonal(position.z-width/2, position.z+width/2, position.y+height/2, position.y-height/2, getCamera().getNear(), getCamera().getFar());
@@ -726,7 +728,7 @@ public class EnvironmentSampler {
 //		camera.setPerspective(false);
 //		camera.setTransform(oldTransform);
 //		camera.updateShadow();
-		this.probe.setCamera(camera);
+		this.probe.setCamera(getCamera());
 		
 		switch (i) {
 		case 0:
@@ -764,15 +766,23 @@ public class EnvironmentSampler {
 			break;
 		}
 
-		camera.calculateCurrentViewMatrix();
-		camera.updateShadow();
+		getCamera().calculateCurrentViewMatrix();
+		getCamera().updateShadow();
 	}
 
 	public Camera getCamera() {
-		return camera;
+		return cameraComponent.getCamera();
 	}
 
 	public void setCamera(Camera camera) {
+		this.cameraComponent.setCamera(camera);
+	}
+
+	public Entity getCameraEntity() {
+		return camera;
+	}
+
+	public void setCameraEntity(Entity camera) {
 		this.camera = camera;
 	}
 }

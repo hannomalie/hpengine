@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
-public class Camera extends Entity {
+public class Camera {
 	private static Logger LOGGER = getLogger();
 
 	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
@@ -26,9 +26,6 @@ public class Camera extends Entity {
 	FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	Transform transform = new Transform();
-	private float rotationDelta = 45f;
-	private float scaleDelta = 0.1f;
-	private float posDelta = 180f;
 	
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewMatrix = null;
@@ -75,16 +72,6 @@ public class Camera extends Entity {
 		storeMatrices();
 	}
 
-	@Override
-	public void setWorld(World world) {
-		this.world = world;
-	}
-
-	@Override
-	public World getWorld() {
-		return world;
-	}
-
 	public void updateShadow() {
 		transform();
 		storeMatrices();
@@ -93,46 +80,6 @@ public class Camera extends Entity {
 	private void storeMatrices() {
 		projectionMatrix.store(projectionMatrixBuffer); projectionMatrixBuffer.flip();
 		viewMatrix.store(viewMatrixBuffer); viewMatrixBuffer.flip();
-	}
-	
-	public void updateControls(float seconds) {
-		
-		float turbo = 1f;
-		if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-			turbo = 3f;
-		}
-		
-
-		float rotationAmount = 1.1f * turbo*rotationDelta * seconds * World.CAMERA_SPEED;
-		if (Mouse.isButtonDown(0)) {
-			rotate(Transform.WORLD_UP, Mouse.getDX() * rotationAmount);
-		}
-		if (Mouse.isButtonDown(1)) {
-			rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * rotationAmount);
-		}
-		if (Mouse.isButtonDown(2)) {
-			rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
-		}
-		
-		float moveAmount = turbo*posDelta * seconds * World.CAMERA_SPEED;
-		if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-			move(new Vector3f(0,0,moveAmount));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-			move(new Vector3f(moveAmount, 0, 0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-			move(new Vector3f(0, 0, -moveAmount));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-			move(new Vector3f(-moveAmount, 0, 0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-			move(new Vector3f(0, moveAmount, 0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			move(new Vector3f(0, -moveAmount, 0));
-		}
 	}
 	
 
@@ -178,34 +125,8 @@ public class Camera extends Entity {
 		return viewMatrixBuffer.asReadOnlyBuffer();
 	}
 
-	@Override
-	public String getName() {
-		return name;
-	}
-	@Override
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public float getRotationSpeed() {
-		return rotationDelta;
-	}
-
 	public Frustum getFrustum() {
 		return frustum;
-	}
-
-	@Override
-	public Matrix4f getModelMatrix() {
-		return new Matrix4f();
-	}
-	@Override
-	public boolean isSelected() {
-		return selected;
-	}
-	@Override
-	public void setSelected(boolean selected) {
-		this.selected = selected;
 	}
 
 	public float getNear() {
@@ -249,12 +170,10 @@ public class Camera extends Entity {
 		this.ratio = ratio;
 	}
 
-	@Override
 	public Transform getTransform() {
 		return transform;
 	}
 
-	@Override
 	public void setTransform(Transform transform) {
 		this.transform = transform;
 	}

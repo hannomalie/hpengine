@@ -1559,7 +1559,7 @@ public class DebugFrame {
 		}
 		
 		for (Entity entity : node.entities) {
-			if(entity.hasParent()) { Logger.getGlobal().info("" + entity.getName() + " has parent");continue; }
+			if(entity.hasParent()) { continue; }
 			DefaultMutableTreeNode currentEntity = new DefaultMutableTreeNode(entity);
 			if(entity.hasChildren()) {
 				entity.getChildren().forEach(child -> {

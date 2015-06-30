@@ -1,6 +1,7 @@
 package component;
 
 import camera.Camera;
+import engine.model.Entity;
 
 public class CameraComponent extends BaseComponent {
 
@@ -21,5 +22,15 @@ public class CameraComponent extends BaseComponent {
 
     public void setCamera(Camera camera) {
         this.camera = camera;
+    }
+
+    @Override
+    public void update(float seconds) {
+        camera.update(seconds);
+    }
+
+    @Override
+    public void initAfterAdd(Entity entity) {
+        camera.setTransform(entity.getTransform());
     }
 }

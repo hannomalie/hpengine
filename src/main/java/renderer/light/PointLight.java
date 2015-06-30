@@ -46,7 +46,7 @@ public class PointLight extends Entity implements Serializable {
 		return color;
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			Matrix4f tempModel = calculateCurrentModelMatrix();
 			matrix44Buffer.rewind();

@@ -1,6 +1,7 @@
 package renderer.light;
 
 import camera.Camera;
+import component.CameraComponent;
 import component.ModelComponent;
 import engine.Transform;
 import engine.World;
@@ -30,8 +31,6 @@ public class DirectionalLight extends Entity {
 	
 	private boolean castsShadows = false;
 
-	private Camera camera;
-
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	
@@ -43,8 +42,6 @@ public class DirectionalLight extends Entity {
 	private boolean selected;
 
 	private Program directionalShadowPassProgram;
-
-	private Renderer renderer;
 
 	private float scatterFactor;
 	
@@ -66,15 +63,19 @@ public class DirectionalLight extends Entity {
 	public void setRenderTarget(RenderTarget renderTarget) {
 		this.renderTarget = renderTarget;
 	}
-	
-	public void init(Renderer renderer, Camera camera) {
+
+	@Override
+	public void init(World world) {
+		super.init(world);
+		Renderer renderer = world.getRenderer();
+
 		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
-																	put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
-																}});
+			put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
+		}});
 
 		try {
 			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-			box = renderer.getEntityFactory().getEntity(camera.getPosition(), "DefaultCube", model, white);
+			box = renderer.getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
 			box.setScale(0.4f);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -84,31 +85,17 @@ public class DirectionalLight extends Entity {
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		
 		renderTarget = new RenderTarget(1024, 1024, GL30.GL_RGBA32F, 1f, 1f, 1f, 1f, GL11.GL_NEAREST, 3);
-		this.camera = camera;
-		this.renderer = renderer;
-		this.color = new Vector3f(1f, 0.76f, 0.49f);
-		setScatterFactor(1f);
-	}
-
-	public void init(Renderer renderer) {
-//		camera =  new Camera(renderer, Util.createPerpective(60f, (float)Renderer.WIDTH / (float)Renderer.HEIGHT, 0.1f, 100f));
 		Matrix4f projectionMatrix = Util.createOrthogonal(-300f, 300f, 300f, -300f, -500f, 500f);
 		Matrix4f viewMatrix = Util.lookAt(new Vector3f(1,1,1), new Vector3f(0,0,0), new Vector3f(0, 1f, 0));
-		camera =  new Camera(renderer, projectionMatrix, viewMatrix, 0.1f, 500f, 60, 16/9);
-		setPosition(new Vector3f(12f,80f,2f));
+		Camera camera = new Camera(renderer, projectionMatrix, viewMatrix, 0.1f, 500f, 60, 16 / 9);
+		addComponent(new CameraComponent(camera));
+		setPosition(new Vector3f(12f, 80f, 2f));
 		Quaternion quat = new Quaternion(0.77555925f, 0.22686659f, 0.36588323f, 0.46171495f);
 //		quat.setFromAxisAngle(new Vector4f(0,-1,0,0));
 		setOrientation(quat);
-		init(renderer, camera);
-	}
 
-	public void update(float seconds) {
-		
-		camera.updateShadow();
-
-		box.setPosition(getPosition());
-		box.setOrientation(getOrientation());
-		box.update(seconds);
+		this.color = new Vector3f(1f, 0.76f, 0.49f);
+		setScatterFactor(1f);
 	}
 
 	public void drawShadowMap(Octree octree) {
@@ -119,8 +106,8 @@ public class DirectionalLight extends Entity {
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
 		directionalShadowPassProgram.use();
-		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", getComponent(CameraComponent.class).getCamera().getViewMatrixAsBuffer());
+		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", getComponent(CameraComponent.class).getCamera().getProjectionMatrixAsBuffer());
 //		directionalShadowPassProgram.setUniform("near", camera.getNear());
 //		directionalShadowPassProgram.setUniform("far", camera.getFar());
 		
@@ -152,16 +139,11 @@ public class DirectionalLight extends Entity {
 	}
 	
 	public Camera getCamera() {
-		return camera;
+		return getComponent(CameraComponent.class).getCamera();
 	}
 
 	public void setCamera(Camera camera) {
-		this.camera = camera;
-	}
-
-	@Override
-	public void destroy() {
-		
+		getComponent(CameraComponent.class).setCamera(camera);
 	}
 
 	@Override
@@ -176,18 +158,15 @@ public class DirectionalLight extends Entity {
 	}
 
 	public FloatBuffer getLightMatrix() {
-		Matrix4f.mul(camera.getProjectionMatrix(), camera.getViewMatrix(), null).store(buffer);
+		Matrix4f viewMatrix = getComponent(CameraComponent.class).getCamera().getViewMatrix();
+		//Matrix4f withOffset = Matrix4f.mul(viewMatrix, new Matrix4f().translate(new Vector3f(0, 100, 0)), null);
+		Matrix4f.mul(getComponent(CameraComponent.class).getCamera().getProjectionMatrix(), viewMatrix, null).store(buffer);
 		buffer.flip();
 		return buffer;
 	}
 
 	public FloatBuffer getLightMatrixAsBuffer() {
 		return getLightMatrix().asReadOnlyBuffer();
-	}
-
-	@Override
-	public Matrix4f getModelMatrix() {
-		return null;
 	}
 
 	@Override
@@ -198,44 +177,10 @@ public class DirectionalLight extends Entity {
 	public Vector3f getColor() {
 		return color ;
 	}
-
 	public void setColor(Vector3f color) {
 		this.color = color;
 	}
 
-
-	@Override
-	public boolean isSelected() {
-		return selected;
-	}
-
-	@Override
-	public void setSelected(boolean selected) {
-		this.selected = selected;
-	}
-
-	@Override
-	public Transform getTransform() {
-		return camera.getTransform();
-	}
-
-	@Override
-	public void setTransform(Transform transform) {
-		camera.setTransform(transform);
-	}
-
-	@Override public void move(Vector3f amount) {  getTransform().move(amount);}
-	@Override public void moveInWorld(Vector3f amount) { getTransform().moveInWorld(amount);}
-
-	private Vector3f position = new Vector3f();
-	@Override public Vector3f getPosition() {
-		return camera.getTransform().getPosition();
-	}
-	@Override public void setPosition(Vector3f position) {
-		camera.getTransform().setPosition(position);
-	}
-	
-	
 	public float getScatterFactor() {
 		return scatterFactor;
 	}

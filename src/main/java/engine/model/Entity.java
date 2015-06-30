@@ -29,9 +29,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
-	public void addComponent(Component component) {
+	public Entity addComponent(Component component) {
 		component.setEntity(this);
 		getComponents().put(component.getIdentifier(), component);
+		component.initAfterAdd(this);
+		return this;
 	}
 	public void removeComponent(Component component) {
 		getComponents().remove(component.getIdentifier(), component);
@@ -107,8 +109,9 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		transform.setPosition(position);
 	}
 
+	@Override
 	public void init(World world) {
-		this.world = world;
+		LifeCycle.super.init(world);
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		matrix44Buffer.rewind();
 
@@ -365,9 +368,10 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 //		
 	}
 
-	public void setHasMoved(boolean value) { transform.setDirty(value); }
+	public void setHasMoved(boolean value) { transform.setHasMoved(value); }
+
 	public boolean hasMoved() {
-		return transform.isDirty();
+		return transform.isHasMoved();
 	}
 
 	public Update getUpdate() {
@@ -376,5 +380,10 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	public void setUpdate(Update update) {
 		this.update = update;
+		if (hasChildren()) {
+			for (Entity child : children) {
+				child.setUpdate(update);
+			}
+		}
 	}
 }

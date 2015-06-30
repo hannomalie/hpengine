@@ -431,7 +431,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	
 	float ambient = normalAmbient.a;
-	ambient += 5;
+	//ambient += 1;
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;
@@ -443,5 +443,6 @@ void main(void) {
 	}*/
 	
 	//out_DiffuseSpecular = vec4(color,1);
+	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
 }

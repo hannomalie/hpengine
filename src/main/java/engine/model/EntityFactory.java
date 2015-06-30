@@ -24,6 +24,13 @@ public class EntityFactory {
 		this.renderer = world.getRenderer();
 	}
 
+
+	public Entity getEntity() {
+		Entity entity = new Entity();
+		entity.init(world);
+		return entity;
+	}
+
 	public Entity getEntity(String name, List<Model> models) {
 		if(models.size() > 1) {
 			Entity entity = new Entity();
@@ -55,7 +62,7 @@ public class EntityFactory {
 		try {
 			entity = read(name);
 		} catch (IOException e) {
-			Logger.getGlobal().info(String.format("File not found for %s)", name));
+			Logger.getGlobal().info(String.format("File not found for %s", name));
 
 			entity = new Entity(world, renderer.getMaterialFactory(), position, name, model, material.getName());
 			entity.setPosition(position);
@@ -130,5 +137,4 @@ public class EntityFactory {
 			entity.setUpdate(Update.DYNAMIC);
 		}
     }
-
 }

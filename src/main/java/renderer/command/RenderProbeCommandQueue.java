@@ -5,6 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import camera.Camera;
+import engine.model.Entity;
 import engine.model.Transformable;
 import scene.EnvironmentProbe;
 import scene.TransformDistanceComparator;
@@ -59,7 +60,7 @@ public class RenderProbeCommandQueue {
 		return Optional.empty();
 	}
 
-	public Optional<RenderProbeCommand> takeNearest(Camera camera) {
+	public Optional<RenderProbeCommand> takeNearest(Entity camera) {
 		TransformDistanceComparator<Transformable> comparator = new TransformDistanceComparator<Transformable>(camera);
 		Optional<RenderProbeCommand> result = workQueue.stream().filter(command -> { return command.getProbe().getBox().contains(camera.getPosition().negate(null)); }).sorted(comparator).findFirst();
 		if(!result.isPresent()) {

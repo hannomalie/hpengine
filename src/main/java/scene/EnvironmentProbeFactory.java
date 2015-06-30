@@ -147,7 +147,7 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void drawAlternating(Octree octree, Camera camera, DirectionalLight light, int frameCount) {
+	public void drawAlternating(Octree octree, Entity camera, DirectionalLight light, int frameCount) {
 		if(!World.DRAW_PROBES) { return; }
 
 		prepareProbeRendering();
@@ -191,7 +191,7 @@ public class EnvironmentProbeFactory {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
-			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getNear()), null);
+			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getRightDirection().scale(probe.getCamera().getNear()), null);
 //			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
 //			renderer.drawLine(clipStart, clipEnd);
 

@@ -1,6 +1,7 @@
 package test;
 
 import camera.Camera;
+import component.CameraComponent;
 import engine.Transform;
 import engine.model.Entity;
 import junit.framework.Assert;
@@ -197,15 +198,17 @@ public class OctreeTest extends TestWithWorld {
 		Assert.assertTrue(octree.rootNode.children[3].entities.contains(entityTopRightFront));
 		
 		// Octree culling
-		Camera camera = new Camera(renderer); // cam is at 0 0 0 and looks into -z, up is y, right is x
+		Camera camera = new Camera(renderer);
+		Entity cameraEntity = renderer.getEntityFactory().getEntity().addComponent(new CameraComponent(camera)); // cam is at 0 0 0 and looks into -z, up is y, right is x
+
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
 		Assert.assertTrue(entityBottomLeftBack.isInFrustum(camera));
 		Assert.assertFalse(entityTopRightFront.isInFrustum(camera));
 
-		camera.moveInWorld(new Vector3f(0, 0, -2));
+		cameraEntity.moveInWorld(new Vector3f(0, 0, -2));
 		camera.update(1);
-		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
-		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
+		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), cameraEntity.getPosition(), 0.001f);
+		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), cameraEntity.getViewDirection(), 0.001f);
 		camera.getFrustum().calculate(camera);
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
 		Assert.assertTrue(octree.rootNode.children[0].isVisible(camera)); // left front

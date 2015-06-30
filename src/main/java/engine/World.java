@@ -3,6 +3,8 @@ package engine;
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.EventBus;
+import component.CameraComponent;
+import component.InputControllerComponent;
 import component.ModelComponent;
 import config.Config;
 import engine.model.Entity;
@@ -36,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
@@ -136,8 +139,8 @@ public class World {
 	private int entityCount = 10;
 	public volatile int PICKING_CLICK = 0;
 	public Renderer renderer;
-	private Camera camera;
-	private Camera activeCamera;
+	private Entity camera;
+	private Entity activeCamera;
 
 	private Material white;
 	private Material stone;
@@ -172,7 +175,53 @@ public class World {
 			scene.init(this);
 //			scene.addAll(loadDummies());
 		}
-		camera = new Camera(renderer);
+
+		float rotationDelta = 45f;
+		float scaleDelta = 0.1f;
+		float posDelta = 180f;
+		camera = renderer.getEntityFactory().getEntity().
+					addComponent(new CameraComponent(new Camera(renderer))).
+					addComponent(new InputControllerComponent() {
+						 @Override public void update(float seconds) {
+
+							float turbo = 1f;
+							if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+								turbo = 3f;
+							}
+
+							float rotationAmount = 1.1f * turbo*rotationDelta * seconds * World.CAMERA_SPEED;
+							if (Mouse.isButtonDown(0)) {
+								getEntity().rotate(Transform.WORLD_UP, Mouse.getDX() * rotationAmount);
+							}
+							if (Mouse.isButtonDown(1)) {
+								getEntity().rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * rotationAmount);
+							}
+							if (Mouse.isButtonDown(2)) {
+								getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
+							}
+
+							float moveAmount = turbo*posDelta * seconds * World.CAMERA_SPEED;
+							if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+								getEntity().move(new Vector3f(0, 0, moveAmount));
+							}
+							if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+								getEntity().move(new Vector3f(moveAmount, 0, 0));
+							}
+							if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+								getEntity().move(new Vector3f(0, 0, -moveAmount));
+							}
+							if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+								getEntity().move(new Vector3f(-moveAmount, 0, 0));
+							}
+							if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+								getEntity().move(new Vector3f(0, moveAmount, 0));
+							}
+							if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+								getEntity().move(new Vector3f(0, -moveAmount, 0));
+							}
+						 }
+					 }
+					);
 		activeCamera = camera;
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
@@ -368,31 +417,7 @@ public class World {
 		
 		
 		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
-		
-		if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-			directionalLight.rotateWorld(new Vector3f(0,0,1), camera.getRotationSpeed()/100);
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-			directionalLight.rotateWorld(new Vector3f(0,0,1), -camera.getRotationSpeed()/100);
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-			directionalLight.rotateWorld(new Vector3f(1,0,0), camera.getRotationSpeed()/100);
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-			directionalLight.rotateWorld(new Vector3f(1,0,0), -camera.getRotationSpeed()/100);
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
-			directionalLight.move(new Vector3f(0,-1f,0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
-			directionalLight.move(new Vector3f(0,1f,0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
-			directionalLight.move(new Vector3f(-1f,0,0));
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
-			directionalLight.move(new Vector3f(1f,0,0));
-		}
+
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (Entity entity : entities) {
 //			float random = (float) (Math.random() -1f );
@@ -405,8 +430,7 @@ public class World {
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);
-		camera.updateControls(seconds);
-		
+
 		
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
@@ -465,7 +489,7 @@ public class World {
 //		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
 		draw();
 //		LOGGER.log(Level.INFO, "draw: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
-		scene.endFrame(activeCamera);
+		scene.endFrame(activeCamera.getComponent(CameraComponent.class).getCamera());
 //		LOGGER.log(Level.INFO, "cycle: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
 
 //		Renderer.exitOnGLError("loopCycle");
@@ -486,7 +510,7 @@ public class World {
 	public void setScene(Scene scene) {
 		renderer.getLightFactory().clearAll();
 		this.scene = scene;
-		renderer.addCommand(new Command<Result>() {
+		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
 			@Override
 			public Result execute(World world) {
 				scene.init(world);
@@ -497,19 +521,19 @@ public class World {
 	}
 
 	public Camera getCamera() {
-		return camera;
+		return camera.getComponent(CameraComponent.class).getCamera();
 	}
 
 	public void setCamera(Camera camera) {
-		this.camera = camera;
+		this.camera.getComponent(CameraComponent.class).setCamera(camera);
 	}
 
 	public Camera getActiveCamera() {
-		return activeCamera;
+		return activeCamera.getComponent(CameraComponent.class).getCamera();
 	}
 
 	public void setActiveCamera(Camera activeCamera) {
-		this.activeCamera = activeCamera;
+		this.activeCamera.getComponent(CameraComponent.class).setCamera(activeCamera);
 	}
 
 	public static EventBus getEventBus() {

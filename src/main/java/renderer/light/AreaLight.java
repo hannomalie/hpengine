@@ -53,7 +53,7 @@ public class AreaLight extends Entity {
 	public void update(float seconds) {
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(Entity camera) {
 		Matrix4f tempModel = calculateCurrentModelMatrix(); 
 		tempModel.store(matrix44Buffer);
 		matrix44Buffer.flip();
@@ -64,7 +64,7 @@ public class AreaLight extends Entity {
 		matrix44Buffer.flip();
 	}
 
-	public void draw(Camera camera, Program program) {
+	public void draw(Entity camera, Program program) {
 		calculateCurrentModelMatrix();
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.flip();

@@ -347,7 +347,7 @@ public class DeferredRenderer implements Renderer {
 		fpsCounter.update(seconds);
 	}
 	
-	public void draw(Camera camera, World world, List<Entity> entities) {
+	public void draw(Entity camera, World world, List<Entity> entities) {
 		GPUProfiler.startFrame();
 		draw(null, world.getScene().getOctree(), camera, entities);
 	    GPUTaskProfile tp;
@@ -360,7 +360,7 @@ public class DeferredRenderer implements Renderer {
 	    frameCount++;
 	}
 	
-	private void draw(RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
+	private void draw(RenderTarget target, Octree octree, Entity camera, List<Entity> entities) {
 		DirectionalLight light = getLightFactory().getDirectionalLight();
 		GPUProfiler.start("First pass");
 		gBuffer.drawFirstPass(camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights());
@@ -370,7 +370,8 @@ public class DeferredRenderer implements Renderer {
 			environmentProbeFactory.drawAlternating(octree, camera, light, frameCount);
 			executeRenderProbeCommands(octree, camera, light);
 			GPUProfiler.start("Shadowmap pass");
-			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) {
+			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
+			{
 				GPUProfiler.start("Directional shadowmap");
 				light.drawShadowMap(octree);
 				GPUProfiler.end();
@@ -401,7 +402,8 @@ public class DeferredRenderer implements Renderer {
 
 		if (World.DEBUGFRAME_ENABLED) {
 //			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
+			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -710,7 +712,7 @@ public class DeferredRenderer implements Renderer {
         }
 	}
 	
-	private void executeRenderProbeCommands(Octree octree, Camera camera, DirectionalLight light) {
+	private void executeRenderProbeCommands(Octree octree, Entity camera, DirectionalLight light) {
 //		environmentProbeFactory.prepareProbeRendering();
 		int counter = 0;
 		
@@ -747,7 +749,7 @@ public class DeferredRenderer implements Renderer {
 		return environmentProbeFactory;
 	}
 	@Override
-	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities) {
+	public void drawDebug(Entity camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities) {
 
 		gBuffer.drawDebug(camera, dynamicsWorld, octree, entities, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), cubeMap);
 		GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);

@@ -3,10 +3,7 @@ package component;
 import camera.Camera;
 import engine.Drawable;
 import engine.World;
-import engine.model.DataChannels;
-import engine.model.Face;
-import engine.model.Model;
-import engine.model.VertexBuffer;
+import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -59,16 +56,16 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.model = model;
     }
     @Override
-    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(camera, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+    public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram) {
+        draw(cameraEntity, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
-    public void draw(Camera camera) {
-        draw(camera, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+    public void draw(Entity cameraEntity) {
+        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
-    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+    public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
         if(!isVisible) {
             return;
         }
@@ -76,6 +73,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if (firstPassProgram == null) {
             return;
         }
+        Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
         Program currentProgram = firstPassProgram;
 //		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
 //			currentProgram = firstPassProgram;
@@ -91,7 +89,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        currentProgram.setUniform("eyePosition", camera.getPosition());
+        currentProgram.setUniform("eyePosition", cameraEntity.getPosition());
         currentProgram.setUniform("lightDirection", world.getRenderer().getLightFactory().getDirectionalLight().getViewDirection());
         currentProgram.setUniform("near", camera.getNear());
         currentProgram.setUniform("far", camera.getFar());
