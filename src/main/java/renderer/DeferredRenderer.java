@@ -1,11 +1,12 @@
 package renderer;
 
-import camera.Camera;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import component.ModelComponent;
 import config.Config;
+import engine.TimeStepThread;
 import engine.World;
 import engine.model.*;
+import event.StateChangedEvent;
 import octree.Octree;
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
@@ -37,6 +38,7 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.GPUTaskProfile;
 import util.stopwatch.OpenGLStopWatch;
+import util.stopwatch.StopWatch;
 
 import javax.swing.*;
 import java.awt.*;
@@ -58,9 +60,11 @@ public class DeferredRenderer implements Renderer {
 	private int frameCount = 0;
 
 	private static Logger LOGGER = getLogger();
-	
+
+	private volatile boolean initialized = false;
+
 	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
-	private Map<Command, SynchronousQueue<Result>> commandQueueMap = new ConcurrentHashMap<Command, SynchronousQueue<Result>>();
+	private Map<Command<? extends Result<?>>, SynchronousQueue<Result<? extends Object>>> commandQueueMap = new ConcurrentHashMap<>();
 	
 	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
 
@@ -108,39 +112,64 @@ public class DeferredRenderer implements Renderer {
 	private Program cubeMapDiffuseProgram;
 	private int maxTextureUnits;
 	private World world;
-	
+	private String currentState = "";
 
 	public DeferredRenderer(World world, boolean headless) {
-		setupOpenGL(headless);
-		this.world = world;
-		world.setRenderer(this);
-		objLoader = new OBJLoader(this);
-		textureFactory = new TextureFactory(this);
-		DeferredRenderer.exitOnGLError("After TextureFactory");
-		programFactory = new ProgramFactory(world);
-		setupShaders();
-		setUpGBuffer();
-		fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
-		materialFactory = new MaterialFactory(this);
-		entityFactory = new EntityFactory(world);
-		lightFactory = new LightFactory(world);
-		environmentProbeFactory = new EnvironmentProbeFactory(world);
+		DeferredRenderer renderer = this;
+
+		new TimeStepThread("Renderer"){
+			public void update(float seconds) {
+				if(!initialized) {
+					setCurrentState("INITIALIZING");
+					setupOpenGL(headless);
+					renderer.world = world;
+					world.setRenderer(renderer);
+					objLoader = new OBJLoader(renderer);
+					textureFactory = new TextureFactory(renderer);
+					DeferredRenderer.exitOnGLError("After TextureFactory");
+					programFactory = new ProgramFactory(world);
+					setupShaders();
+					setUpGBuffer();
+					fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
+					materialFactory = new MaterialFactory(renderer);
+					entityFactory = new EntityFactory(world);
+					lightFactory = new LightFactory(world);
+					environmentProbeFactory = new EnvironmentProbeFactory(world);
 //		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
 //		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
-		gBuffer.init(this);
-		
-		sphereModel = null;
-		try {
-			sphereModel = objLoader.loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-			sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+					gBuffer.init(renderer);
+
+					sphereModel = null;
+					try {
+						sphereModel = objLoader.loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+						sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 //		_addPointLights();
 //		_addPointLightsGrid();
 //		_addEnvironmentPorbesGrid();
+				}
+
+				initialized = true;
+
+				while (!Display.isCloseRequested()) {
+					if(world.isInitialized()) {
+						setCurrentState("BEFORE DRAW");
+						draw();
+						Display.update();
+						setCurrentState("AFTER DRAW");
+					}
+					setCurrentState("BEFORE UPDATE");
+					renderer.update(world, seconds);
+					setCurrentState("AFTER UPDATE");
+				}
+
+			}
+		}.start();
+
 	}
 
 	private void _addPointLights() {
@@ -325,14 +354,22 @@ public class DeferredRenderer implements Renderer {
 	
 	@Override
 	public void init(Octree octree) {
-		environmentProbeFactory.drawInitial(octree);
-		
-		final int initialDrawCount = 10;
-		for(int i = 0; i < initialDrawCount; i++) {
-			for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
-				addRenderProbeCommand(probe, true);
+		addCommand(new Command() {
+			@Override
+			public Result execute(World world) {
+
+				environmentProbeFactory.drawInitial(octree);
+
+				final int initialDrawCount = 10;
+				for(int i = 0; i < initialDrawCount; i++) {
+					for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
+						addRenderProbeCommand(probe, true);
+					}
+				}
+
+				return new Result();
 			}
-		}
+		});
 	}
 
 	public void update(World world, float seconds) {
@@ -346,7 +383,34 @@ public class DeferredRenderer implements Renderer {
 		setLastFrameTime();
 		fpsCounter.update(seconds);
 	}
-	
+
+
+	// I need this to force probe redrawing after engine startup....TODO: Find better solution
+	int counter = 0;
+
+	private void draw() {
+
+		StopWatch.getInstance().start("Draw");
+		if (World.DRAWLINES_ENABLED) {
+			drawDebug(world.getActiveCameraEntity(), world.getPhysicsFactory().getDynamicsWorld(), world.getScene().getOctree(), world.getScene().getEntities());
+		} else {
+//			fireRenderProbeCommands();
+			draw(world.getActiveCameraEntity(), world, world.getScene().getEntities());
+		}
+
+		if(counter < 20) {
+			getLightFactory().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+			World.CONTINUOUS_DRAW_PROBES = true;
+			counter++;
+		} else if(counter == 20) {
+			World.CONTINUOUS_DRAW_PROBES = false;
+			counter++;
+		}
+		StopWatch.getInstance().stopAndPrintMS();
+
+		Renderer.exitOnGLError("draw in render");
+	}
+
 	public void draw(Entity camera, World world, List<Entity> entities) {
 		GPUProfiler.startFrame();
 		draw(null, world.getScene().getOctree(), camera, entities);
@@ -397,13 +461,12 @@ public class DeferredRenderer implements Renderer {
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 			drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer); // the first color attachment
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
 		}
 
 		if (World.DEBUGFRAME_ENABLED) {
 //			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
-//			drawToQuad(gBuffer.getLightAccumulationMapOneId(), debugBuffer);
-			drawToQuad(light.getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 	}
@@ -524,7 +587,7 @@ public class DeferredRenderer implements Renderer {
 	private FPSCounter fpsCounter = new FPSCounter();
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
-		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()) + " | " + fpsCounter.getMsPerFrame() + " ms");
+		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()) + " | " + fpsCounter.getMsPerFrame() + " ms" + " Renderstate: " + getCurrentState());
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -551,6 +614,11 @@ public class DeferredRenderer implements Renderer {
 			if (Display.isCreated()) Display.destroy();
 			System.exit(-1);
 		}
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
 	}
 
 	@Override
@@ -694,10 +762,12 @@ public class DeferredRenderer implements Renderer {
 	public Model getSphere() {
 		return sphereModel;
 	}
-	
-	public SynchronousQueue<Result> addCommand(Command command) {
-	    SynchronousQueue<Result> queue = new SynchronousQueue<Result>();
-	    commandQueueMap.put(command, queue);
+
+
+	@Override
+	public <OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command) {
+		SynchronousQueue<RESULT_TYPE> queue = new SynchronousQueue<>();
+	    commandQueueMap.put(command, (SynchronousQueue<Result<? extends Object>>) queue);
 	    workQueue.offer(command);
 	    return queue;
 	}
@@ -705,8 +775,10 @@ public class DeferredRenderer implements Renderer {
 	private void executeCommands(World world) throws Exception {
         Command command = workQueue.poll();
         while(command != null) {
+			setCurrentState("BEFORE EXECUTION " + command.getClass().getSimpleName());
         	Result result = command.execute(world);
-            SynchronousQueue<Result> queue = commandQueueMap.get(command);
+			setCurrentState("AFTER EXECUTION " + command.getClass().getSimpleName());
+            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
             queue.offer(result);
         	command = workQueue.poll();
         }
@@ -815,5 +887,14 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public StorageBuffer getStorageBuffer() {
 		return gBuffer.getStorageBuffer();
+	}
+
+	@Override
+	public String getCurrentState() {
+		return currentState;
+	}
+	private void setCurrentState(String newState) {
+		currentState = newState;
+		World.getEventBus().post(new StateChangedEvent(newState));
 	}
 }

@@ -49,7 +49,7 @@ public class Octree implements LifeCycle, Serializable {
 
 	private int currentDeepness = 0;
 
-	public Node rootNode;
+	public Node rootNode = new Node(this, center, size);
 
 	transient private List<Entity> entities = new CopyOnWriteArrayList<>();
 	public transient HashMap<Entity, Octree.Node> entityNodeMappings = new HashMap();

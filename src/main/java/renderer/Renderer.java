@@ -43,6 +43,7 @@ import java.util.concurrent.SynchronousQueue;
 			System.exit(-1);
 		}
 	}
+	 boolean isInitialized();
 	void destroy();
 	void draw(Entity camera, World world, List<Entity> entities);
 	void update(World world, float seconds);
@@ -58,7 +59,9 @@ import java.util.concurrent.SynchronousQueue;
 	Model getSphere();
 	void drawLine(Vector3f from, Vector3f to);
 	void drawLines(Program firstPassProgram);
-	<T extends Result> SynchronousQueue<T> addCommand(Command<T> command);
+
+	<OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command);
+
 	ProgramFactory getProgramFactory();
 	LightFactory getLightFactory();
 	EnvironmentProbeFactory getEnvironmentProbeFactory();
@@ -79,4 +82,5 @@ import java.util.concurrent.SynchronousQueue;
 	Program getCombineProgram();
 	Program getPostProcessProgram();
 	StorageBuffer getStorageBuffer();
+	 String getCurrentState();
 }

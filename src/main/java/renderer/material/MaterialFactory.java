@@ -6,9 +6,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import engine.World;
 import renderer.Renderer;
+import renderer.Result;
+import renderer.command.Command;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
 import shader.Program;
@@ -30,7 +35,45 @@ public class MaterialFactory {
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
 		defaultMaterial = getMaterialWithoutRead(new MaterialInfo());
-		
+		initDefaultMaterials();
+	}
+
+
+	private Material white;
+	private Material stone;
+	private Material stone2;
+	private Material wood;
+	private Material stoneWet;
+	private Material mirror;
+
+	private void initDefaultMaterials() {
+
+		white = getMaterial("default", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/textures/default.dds");
+		}});
+
+		stone = getMaterial("stone", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png");
+			put(MAP.NORMAL, "hp/assets/textures/stone_normal.png");
+		}});
+
+		stone2 = getMaterial("stone2", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/textures/brick.png");
+			put(MAP.NORMAL, "hp/assets/textures/brick_normal.png");
+		}});
+
+		wood = getMaterial("wood", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/textures/wood_diffuse.png");
+			put(MAP.NORMAL, "hp/assets/textures/wood_normal.png");
+		}});
+		stoneWet = getMaterial("stoneWet", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png");
+			put(MAP.NORMAL, "hp/assets/textures/stone_normal.png");
+			put(MAP.REFLECTION, "hp/assets/textures/stone_reflection.png");
+		}});
+		mirror = getMaterial("mirror", new HashMap<MAP, String>() {{
+			put(MAP.REFLECTION, "hp/assets/textures/default.dds");
+		}});
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
@@ -103,6 +146,7 @@ public class MaterialFactory {
 
 			if(material == null) {
 				material = getDefaultMaterial();
+				Logger.getGlobal().info("Failed to get material " + materialName);
 			}
 			MATERIALS.put(material.getName(), material);
 		}

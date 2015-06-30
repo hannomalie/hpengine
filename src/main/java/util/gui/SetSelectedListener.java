@@ -66,9 +66,17 @@ public class SetSelectedListener implements TreeSelectionListener {
 
         if (node == null) return;
         Object nodeInfo = node.getUserObject();
-        
-        // MIIIIEEEEEES
-        if (nodeInfo instanceof Entity) {
+
+		// MIIIIEEEEEES
+		if (nodeInfo instanceof EnvironmentProbe) {
+			EnvironmentProbe selected = (EnvironmentProbe) nodeInfo;
+			entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+			entityViewFrame.getContentPane().removeAll();
+			entityViewFrame.pack();
+			entityViewFrame.setSize(600, 600);
+			entityViewFrame.add(new ProbeView(world, debugFrame, selected));
+			entityViewFrame.setVisible(true);
+		} else if (nodeInfo instanceof Entity) {
         	Entity selected = (Entity) nodeInfo;
 	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 	    	entityViewFrame.getContentPane().removeAll();
@@ -77,14 +85,6 @@ public class SetSelectedListener implements TreeSelectionListener {
 	    	entityViewFrame.add(new EntityView(world, debugFrame, (Entity) selected));
 	    	entityViewFrame.setVisible(true);
         	
-        } else if (nodeInfo instanceof EnvironmentProbe) {
-        	EnvironmentProbe selected = (EnvironmentProbe) nodeInfo;
-	    	entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-	    	entityViewFrame.getContentPane().removeAll();
-	    	entityViewFrame.pack();
-	    	entityViewFrame.setSize(600, 600);
-	    	entityViewFrame.add(new ProbeView(world, debugFrame, selected));
-	    	entityViewFrame.setVisible(true);
         }
     }
 }

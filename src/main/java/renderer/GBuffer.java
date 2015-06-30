@@ -255,6 +255,7 @@ public class GBuffer {
 				e.printStackTrace();
 			}
 			floatBuffer = null;
+			world.PICKING_CLICK = 0;
 		}
 	}
 

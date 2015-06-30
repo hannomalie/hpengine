@@ -49,6 +49,7 @@ public class World {
 	private static EventBus eventBus;
 
 	private static Logger LOGGER = getLogger();
+	private volatile boolean initialized;
 //	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
 //		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
 	
@@ -142,13 +143,6 @@ public class World {
 	private Entity camera;
 	private Entity activeCamera;
 
-	private Material white;
-	private Material stone;
-	private Material stone2;
-	private Material wood;
-	private Material stoneWet;
-	private Material mirror;
-
 	public World() {
 		this(null);
 	}
@@ -161,9 +155,11 @@ public class World {
 	public World(String sceneName, boolean headless) {
 		initWorkDir();
 		renderer = new DeferredRenderer(this, headless);
+		while(!renderer.isInitialized()) {
+
+		}
 		glWatch = new OpenGLStopWatch();
 		physicsFactory = new PhysicsFactory(this);
-		initDefaultMaterials();
 		if(sceneName != null) {
 			long start = System.currentTimeMillis();
 			System.out.println(start);
@@ -231,6 +227,8 @@ public class World {
 //			e.printStackTrace();
 //		}
 		renderer.init(scene.getOctree());
+
+		initialized = true;
 	}
 
 	private void initWorkDir() {
@@ -262,7 +260,7 @@ public class World {
 //			Display.sync(60);
 
 			StopWatch.getInstance().start("Display update");
-			Display.update();
+//			Display.update();
 			StopWatch.getInstance().stopAndPrintMS();
 		}
 		
@@ -273,36 +271,6 @@ public class World {
 	private void destroy() {
 		renderer.destroy();
 		System.exit(0);
-	}
-	
-	private void initDefaultMaterials() {
-
-		white = renderer.getMaterialFactory().getMaterial("default", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
-																}});
-
-		stone = renderer.getMaterialFactory().getMaterial("stone", new HashMap<MAP,String>(){{
-														put(MAP.DIFFUSE,"hp/assets/textures/stone_diffuse.png");
-														put(MAP.NORMAL,"hp/assets/textures/stone_normal.png");
-																}});
-		
-		stone2 = renderer.getMaterialFactory().getMaterial("stone2", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"hp/assets/textures/brick.png");
-														    		put(MAP.NORMAL,"hp/assets/textures/brick_normal.png");
-																}});
-		
-		wood = renderer.getMaterialFactory().getMaterial("wood", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"hp/assets/textures/wood_diffuse.png");
-														    		put(MAP.NORMAL,"hp/assets/textures/wood_normal.png");
-																}});
-		stoneWet = renderer.getMaterialFactory().getMaterial("stoneWet", new HashMap<MAP,String>(){{
-														    		put(MAP.DIFFUSE,"hp/assets/textures/stone_diffuse.png");
-														    		put(MAP.NORMAL,"hp/assets/textures/stone_normal.png");
-														    		put(MAP.REFLECTION,"hp/assets/textures/stone_reflection.png");
-																}});
-		mirror = renderer.getMaterialFactory().getMaterial("mirror", new HashMap<MAP,String>(){{
-														    		put(MAP.REFLECTION,"hp/assets/textures/default.dds");
-																}});
 	}
 
 	private List<Entity> loadDummies() {
@@ -315,18 +283,18 @@ public class World {
 //			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
-					Material mat = mirror;
+					Material mat = renderer.getMaterialFactory().get("mirror");
 					if (i%4 == 1) {
-						mat = stone;
+						mat = renderer.getMaterialFactory().get("stone");
 					}
 					if (i%4 == 2) {
-						mat = wood;
+						mat = renderer.getMaterialFactory().get("wood");
 					}
 					if (i%4 == 3) {
-						mat = stone2;
+						mat = renderer.getMaterialFactory().get("stone2");
 					}
 					if (i%4 == 4) {
-						mat = mirror;
+						mat = renderer.getMaterialFactory().get("mirror");
 					}
 					try {
 						float random = (float) (Math.random() -0.5);
@@ -364,7 +332,7 @@ public class World {
 			}
 			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
 			for (Model model : skyBox) {
-				Entity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, mirror);
+				Entity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
 				entity.setScale(scale);
 				entities.add(entity);
@@ -400,8 +368,7 @@ public class World {
 //			
 //		}
 
-		PICKING_CLICK = 0;
-		if (Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+		if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
 			if(Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
 				PICKING_CLICK = 1;
 				STRG_PRESSED_LAST_FRAME = true;
@@ -410,11 +377,7 @@ public class World {
 			}
 		} else {
 			STRG_PRESSED_LAST_FRAME = false;
-			PICKING_CLICK = 0;
 		}
-		
-		
-		
 		
 		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
 
@@ -425,9 +388,9 @@ public class World {
 //		}
 		StopWatch.getInstance().stopAndPrintMS();
 		physicsFactory.update(seconds);
-		StopWatch.getInstance().start("Renderer update");
-		renderer.update(this, seconds);
-		StopWatch.getInstance().stopAndPrintMS();
+//		StopWatch.getInstance().start("Renderer update");
+//		renderer.update(this, seconds);
+//		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);
 
@@ -445,33 +408,7 @@ public class World {
 
 		Renderer.exitOnGLError("update");
 	}
-	
-	private void draw() {
 
-		StopWatch.getInstance().start("Draw");
-		if (DRAWLINES_ENABLED) {
-			renderer.drawDebug(activeCamera, physicsFactory.getDynamicsWorld(), scene.getOctree(), scene.getEntities());
-		} else {
-//			fireRenderProbeCommands();
-			renderer.draw(activeCamera, this, scene.getEntities());
-		}
-
-		if(counter < 20) {
-			renderer.getLightFactory().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
-			CONTINUOUS_DRAW_PROBES = true;
-			counter++;
-		} else if(counter == 20) {
-			CONTINUOUS_DRAW_PROBES = false;
-		}
-		StopWatch.getInstance().stopAndPrintMS();
-
-		Renderer.exitOnGLError("draw in render");
-		
-	}
-
-	// I need this to force probe redrawing after engine startup....TODO: Find better solution
-	int counter = 0;
-	
 	private void fireRenderProbeCommands() {
 //		if(!CONTINUOUS_DRAW_PROBES) { return; }
 		for(EnvironmentProbe probe: renderer.getEnvironmentProbeFactory().getProbes()) {
@@ -480,19 +417,9 @@ public class World {
 	}
 	
 	private void loopCycle(float seconds) {
-
-//		long millisecondsStart = System.currentTimeMillis();
 		update(seconds);
-//		LOGGER.log(Level.INFO, "update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
-//		System.out.println("update: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
-//		long timeSpentInMilliseconds = System.currentTimeMillis() - millisecondsStart;
-//		LOGGER.log(Level.INFO, String.format("%d ms for update", timeSpentInMilliseconds));
-		draw();
-//		LOGGER.log(Level.INFO, "draw: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
+//		draw();
 		scene.endFrame(activeCamera.getComponent(CameraComponent.class).getCamera());
-//		LOGGER.log(Level.INFO, "cycle: " + (System.currentTimeMillis() - millisecondsStart) + " ms");
-
-//		Renderer.exitOnGLError("loopCycle");
 	}
 
 	public Renderer getRenderer() {
@@ -532,6 +459,10 @@ public class World {
 		return activeCamera.getComponent(CameraComponent.class).getCamera();
 	}
 
+	public Entity getActiveCameraEntity() {
+		return activeCamera;
+	}
+
 	public void setActiveCamera(Camera activeCamera) {
 		this.activeCamera.getComponent(CameraComponent.class).setCamera(activeCamera);
 	}
@@ -549,5 +480,13 @@ public class World {
 
 	public void setRenderer(Renderer renderer) {
 		this.renderer = renderer;
+	}
+
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	public void setInitialized(boolean initialized) {
+		this.initialized = initialized;
 	}
 }

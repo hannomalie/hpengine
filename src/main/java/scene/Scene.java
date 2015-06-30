@@ -4,16 +4,19 @@ import camera.Camera;
 import engine.World;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
+import javafx.scene.paint.Stop;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.Renderer;
 import renderer.light.*;
+import util.stopwatch.StopWatch;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Scene implements LifeCycle, Serializable {
@@ -41,17 +44,30 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	public void init(World world) {
+		Logger.getGlobal().info("Scene initialization");
 		LifeCycle.super.init(world);
 		renderer = world.getRenderer();
-		entities.forEach(entity -> { entity.init(world); });
+		Logger.getGlobal().info("Entities initialization");
+		StopWatch.getInstance().start("xxxx");
+		entities.forEach(entity -> {
+			Logger.getGlobal().info("Started " + entity.getName());
+			StopWatch.getInstance().start(entity.getName());
+			entity.init(world);
+			StopWatch.getInstance().stopAndPrintMS(); }
+		);
+		StopWatch.getInstance().stopAndPrintMS();
 		renderer.getEnvironmentProbeFactory().clearProbes();
+		Logger.getGlobal().info("Octree init and insert");
 		octree.init(world);
 		octree.insert(entities);
+		Logger.getGlobal().info("Probe init");
 		for (ProbeData data : probes) {
 			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());	
 		}
+		Logger.getGlobal().info("Lights init");
 		initLights(renderer);
 		initialized = true;
+		Logger.getGlobal().info("Renderer octree init");
 		renderer.init(octree);
 	}
 	private void initLights(Renderer renderer) {

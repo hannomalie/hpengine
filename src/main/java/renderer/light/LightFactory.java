@@ -90,16 +90,16 @@ public class LightFactory {
 			@Override public void update(float seconds) {
 
 				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-					getEntity().rotateWorld(new Vector3f(0, 0, 1), 45 / 40);
+					getEntity().rotateWorld(new Vector3f(0, 0, 1), seconds * 45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-					getEntity().rotateWorld(new Vector3f(0, 0, 1), -45 / 40);
+					getEntity().rotateWorld(new Vector3f(0, 0, 1), seconds * -45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					getEntity().rotateWorld(new Vector3f(1, 0, 0), 45 / 40);
+					getEntity().rotateWorld(new Vector3f(1, 0, 0), seconds * 45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					getEntity().rotateWorld(new Vector3f(1, 0, 0), -45 / 40);
+					getEntity().rotateWorld(new Vector3f(1, 0, 0), seconds * -45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
 					getEntity().move(new Vector3f(0, -1f, 0));

@@ -57,11 +57,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(cameraEntity, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+        draw(cameraEntity, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
     public void draw(Entity cameraEntity) {
-        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(this), getEntity().isVisible(), getEntity().isSelected());
+        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
@@ -127,6 +127,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     public void setMaterial(String materialName) {
         this.materialName = materialName;
+        model.setMaterial(getRenderer().getMaterialFactory().get(materialName));
     };
 
     @Override

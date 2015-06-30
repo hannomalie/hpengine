@@ -118,7 +118,6 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		for(Component component : components.values()) {
 			component.init(world);
 		}
-
 		for(Entity child: children) {
 			child.init(world);
 		}
@@ -181,11 +180,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	protected Matrix4f calculateCurrentModelMatrix() {
 		modelMatrix = transform.getTransformation();
-		matrix44Buffer.rewind();
-		modelMatrix.store(matrix44Buffer);
-//		matrix44Buffer.flip();
-		matrix44Buffer.rewind();
-		
+		synchronized(this) {
+			matrix44Buffer.rewind();
+			modelMatrix.store(matrix44Buffer);
+			matrix44Buffer.rewind();
+		}
 		return modelMatrix;
 	}
 

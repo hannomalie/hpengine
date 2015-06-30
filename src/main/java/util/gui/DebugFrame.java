@@ -31,6 +31,7 @@ import engine.model.Entity;
 import event.EntitySelectedEvent;
 import event.GlobalDefineChangedEvent;
 import event.MaterialChangedEvent;
+import event.StateChangedEvent;
 import octree.Octree;
 import octree.Octree.Node;
 import org.apache.commons.io.FileUtils;
@@ -253,7 +254,7 @@ public class DebugFrame {
 
 	    			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 						@Override public Result execute(World world) {
-							newScene.init(world);
+//							newScene.init(world);
 			    			world.setScene(newScene);
 			    			init(world);
 			    			return new Result();
@@ -1633,18 +1634,17 @@ public class DebugFrame {
 		notificationPopup.setContent(new WebLabel(content));
 		NotificationManager.showNotification(notificationPopup);
 	}
-	
+
 	@Subscribe
 	public void handle(EntitySelectedEvent e) {
-    	DebugFrame debugFrame = this;
-    	if(!Display.isActive()) { return; }
+		DebugFrame debugFrame = this;
+		if(!Display.isActive()) { return; }
 		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-    	entityViewFrame.getContentPane().removeAll();
-    	entityViewFrame.pack();
-    	entityViewFrame.setSize(600, 700);
+		entityViewFrame.getContentPane().removeAll();
+		entityViewFrame.pack();
+		entityViewFrame.setSize(600, 700);
 		entityViewFrame.add(new EntityView(world, debugFrame, (Entity) e.getEntity()));
-    	entityViewFrame.setVisible(true);
+		entityViewFrame.setVisible(true);
 //    	entityViewFrame.toBack();
 	}
-
 }

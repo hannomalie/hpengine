@@ -1,13 +1,13 @@
 package util.gui;
 
-import java.awt.Component;
-import java.awt.FlowLayout;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.swing.JScrollPane;
+import javax.swing.*;
 
 import component.ModelComponent;
 import engine.World;
