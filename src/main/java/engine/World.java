@@ -62,7 +62,7 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
 	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = true;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
 	
 	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
@@ -263,8 +263,14 @@ public class World {
 //			Display.update();
 			StopWatch.getInstance().stopAndPrintMS();
 		}
-		
-		destroy();
+
+		renderer.addCommand(new Command<Result<Object>>() {
+			@Override
+			public Result<Object> execute(World world) {
+				world.getRenderer().destroy();
+				return new Result<Object>(new Object());
+			}
+		});
 		
 	}
 	
@@ -442,7 +448,7 @@ public class World {
 			public Result execute(World world) {
 				scene.init(world);
 				renderer.init(scene.getOctree());
-				return new Result();
+				return new Result(new Object());
 			}
 		});
 	}

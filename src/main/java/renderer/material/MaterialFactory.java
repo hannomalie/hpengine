@@ -34,7 +34,9 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		defaultMaterial = getMaterialWithoutRead(new MaterialInfo());
+		MaterialInfo defaultTemp = new MaterialInfo();
+		defaultTemp.diffuse.setX(1.0f);
+		defaultMaterial = getMaterialWithoutRead(defaultTemp);
 		initDefaultMaterials();
 	}
 

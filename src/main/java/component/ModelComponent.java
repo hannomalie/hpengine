@@ -7,6 +7,8 @@ import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.Result;
+import renderer.command.Command;
 import renderer.material.Material;
 import shader.Program;
 
@@ -61,11 +63,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public void draw(Entity cameraEntity) {
-        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), model.getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), world.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
     public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+
         if(!isVisible) {
             return;
         }
@@ -73,6 +76,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if (firstPassProgram == null) {
             return;
         }
+
         Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
         Program currentProgram = firstPassProgram;
 //		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
@@ -139,6 +143,13 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     public void init(World world) {
         super.init(world);
         createFloatArray(model);
+//        world.getRenderer().addCommand(new Command<Result<Object>>() {
+//            @Override
+//            public Result<Object> execute(World world) {
+//                createVertexBuffer();
+//                return new Result(new Object());
+//            }
+//        });
         createVertexBuffer();
     }
 

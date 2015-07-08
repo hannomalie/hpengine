@@ -60,7 +60,9 @@ public class EntityView extends WebPanel {
 		GridPanel gridPanel = new GridPanel ( components.length, 1, components);
 		gridPanel.setLayout(new FlowLayout());
 		this.removeAll();
-		this.add(new JScrollPane(gridPanel));
+		JScrollPane scrollPane = new JScrollPane(gridPanel);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+		this.add(scrollPane);
 		repaint();
 	}
 
@@ -112,15 +114,20 @@ public class EntityView extends WebPanel {
 
 			try {
 				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(world.getRenderer().getMaterialFactory().getMaterialsAsList()));
-				final Material material = world.getRenderer().getMaterialFactory().getDefaultMaterial();
+				Material material = world.getRenderer().getMaterialFactory().getDefaultMaterial();
 				if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-					entity.getComponent(ModelComponent.class).getMaterial();
+					material = entity.getComponent(ModelComponent.class).getMaterial();
 				}
 				materialSelect.setSelectedIndex(world.getRenderer().getMaterialFactory().getMaterialsAsList().indexOf(material));
 				materialSelect.addActionListener(e -> {
 					WebComboBox cb = (WebComboBox) e.getSource();
 					Material selectedMaterial = world.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
-					entity.getComponent(ModelComponent.class).setMaterial(selectedMaterial.getName());
+					entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+					if(entity.hasChildren()) {
+						for (Entity child : entity.getChildren()) {
+							child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+						}
+					}
 					World.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
 				});
 				webComponentPanel.addElement(materialSelect);

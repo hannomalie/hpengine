@@ -154,9 +154,7 @@ public class LightFactory {
 		return getPointLight(proxy.getPosition(), sphereModel, proxy.getColor(), proxy.getRadius());
 	}
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
-		Material material = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
-    		put(MAP.DIFFUSE,"assets/textures/default.dds");
-		}});
+		Material material = renderer.getMaterialFactory().getDefaultMaterial();
 		
 		PointLight light = new PointLight(world, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
 		pointLights.add(light);

@@ -209,7 +209,7 @@ public class Texture implements Serializable {
 
 	public ByteBuffer buffer() {
 		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
-		imageBuffer = ByteBuffer.allocateDirect(data.length);
+//		imageBuffer = ByteBuffer.allocateDirect(data.length);
 		imageBuffer.order(ByteOrder.nativeOrder());
 		imageBuffer.put(data, 0, data.length);
 		imageBuffer.flip();
@@ -248,7 +248,8 @@ public class Texture implements Serializable {
         	internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
         	//internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
         }
-		GL11.glTexImage2D(target, 
+		synchronized (data) {
+			GL11.glTexImage2D(target,
                       0, 
                       internalformat,
                       get2Fold(getImageWidth()), 
@@ -257,6 +258,7 @@ public class Texture implements Serializable {
                       srcPixelFormat, 
                       GL11.GL_UNSIGNED_BYTE, 
                       textureBuffer);
+		}
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 	}
 
@@ -320,7 +322,7 @@ public class Texture implements Serializable {
 
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
 //		long start = System.currentTimeMillis();
-	    in.defaultReadObject();
+		in.defaultReadObject();
 	    decompress();
 //		System.out.println("TEXTURE READ IN " +  (System.currentTimeMillis() - start) + " ms");
 	}
@@ -333,14 +335,18 @@ public class Texture implements Serializable {
 
 	protected void compress() throws IOException {
 //    	long start = System.currentTimeMillis();
-		setData(CompressionUtils.compress(getData()));
+		synchronized (data) {
+			setData(CompressionUtils.compress(getData()));
+		}
 //		System.out.println("Compression took " + (System.currentTimeMillis() - start));
 	}
 
 	protected void decompress() throws IOException {
 		try {
 //	    	long start = System.currentTimeMillis();
-			setData(CompressionUtils.decompress(getData()));
+			synchronized (data) {
+				setData(CompressionUtils.decompress(getData()));
+			}
 //			System.out.println("Decompression took " + (System.currentTimeMillis() - start));
 		} catch (DataFormatException e) {
 			e.printStackTrace();

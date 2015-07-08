@@ -598,9 +598,10 @@ public class DebugFrame {
         menuBar.add(refreshAll);
         menuBar.add(sceneViewFilterField);
         mainFrame.setJMenuBar(menuBar);
-        
+
 		mainFrame.add(tabbedPane);
-		
+
+		mainPane.getVerticalScrollBar().setUnitIncrement(32);
 		tabbedPane.addTab("Main", mainPane);
 		tabbedPane.addTab("Scene", scenePane);
 		tabbedPane.addTab("Probes", probesPane);

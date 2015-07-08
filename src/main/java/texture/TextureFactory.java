@@ -167,7 +167,6 @@ public class TextureFactory {
         }
 
         TEXTURES.put(resourceName,tex);
-        System.out.println("Precompiled " + Texture.write(tex, resourceName));
         return tex;
     }
     
@@ -234,8 +233,7 @@ public class TextureFactory {
                          GL11.GL_LINEAR, true);
         
         TEXTURES.put(resourceName,tex);
-        System.out.println("Precompiled " + Texture.write(tex, resourceName));
-        
+
         return tex;
     }
 	
@@ -262,7 +260,6 @@ public class TextureFactory {
                          GL11.GL_LINEAR, true);
         
         TEXTURES.put(resourceName+ "_cube",tex);
-        System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
         return (CubeMap) tex;
     }
     
@@ -333,7 +330,7 @@ public class TextureFactory {
 			@Override
 			public Result execute(World world) {
 		        texture.upload(textureBuffer, srga);
-		        return new Result();
+		        return new Result(new Object());
 			}
 		});
 //        texture.upload(textureBuffer, srga);

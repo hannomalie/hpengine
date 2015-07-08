@@ -8,6 +8,9 @@ import javafx.scene.paint.Stop;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.FSTObjectInput;
+import org.nustaq.serialization.FSTObjectOutput;
 import renderer.Renderer;
 import renderer.light.*;
 import util.stopwatch.StopWatch;
@@ -103,7 +106,10 @@ public class Scene implements LifeCycle, Serializable {
 				probes.add(probeData);
 			}
 			gatherLights();
-			out.writeObject(this);
+			//out.writeObject(this);
+			FSTObjectOutput newOut = new FSTObjectOutput(out);
+			newOut.writeObject(this);
+			newOut.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -119,14 +125,7 @@ public class Scene implements LifeCycle, Serializable {
 		}
 		return false;
 	}
-	private void gatherLights() {
-		pointlightProxies.clear();
-		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
-		arealightProxies.clear();
-		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
-		directionalLight = new DirectionalLightSerializationProxy(renderer.getLightFactory().getDirectionalLight());
-	}
-	
+
 	public static Scene read(Renderer renderer, String name) {
 		String fileName = FilenameUtils.getBaseName(name);
 		FileInputStream fis = null;
@@ -134,7 +133,12 @@ public class Scene implements LifeCycle, Serializable {
 		try {
 			fis = new FileInputStream(getDirectory() + fileName + ".hpscene");
 			in = new ObjectInputStream(fis);
-			Scene scene = (Scene) in.readObject();
+			//Scene scene = (Scene) in.readObject();
+
+			FSTObjectInput newIn = new FSTObjectInput(in);
+			Scene scene = (Scene)newIn.readObject();
+			newIn.close();
+
 			handleEvolution(scene, renderer);
 			in.close();
 			fis.close();
@@ -145,6 +149,16 @@ public class Scene implements LifeCycle, Serializable {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
+
+	private void gatherLights() {
+		pointlightProxies.clear();
+		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
+		arealightProxies.clear();
+		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
+		directionalLight = new DirectionalLightSerializationProxy(renderer.getLightFactory().getDirectionalLight());
 	}
 
     private static void handleEvolution(Scene scene, Renderer renderer) {

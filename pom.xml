@@ -9,7 +9,6 @@
     <version>1.0-SNAPSHOT</version>
 
     <build>
-                
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -125,13 +124,18 @@
                 <executions>
                     <execution>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>java</goal>
                         </goals>
+                        <configuration>
+                            <mainClass>engine.World</mainClass>
+                            <arguments>
+                                <argument>-Djava.library.path="${basedir}/target"</argument>
+                            </arguments>
+                            <!--<executable>${basedir}/target/hpengine-jar-with-dependencies.jar</executable>
+                            -->
+                        </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <mainClass>engine.World</mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -207,6 +211,11 @@
             <groupId>de.mathiasmann</groupId>
             <artifactId>PNGDecoder</artifactId>
             <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.ruedigermoeller</groupId>
+            <artifactId>fst</artifactId>
+            <version>2.33</version>
         </dependency>
     </dependencies>
 
