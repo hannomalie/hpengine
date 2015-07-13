@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
@@ -384,5 +385,20 @@ public class Util {
 		float[] array = new float[values.capacity()];
 		values.get(array);
 		return array;
+	}
+
+	public static void getOverallMinMax(Vector4f[] minMax, List<Vector4f[]> minMaxFromChildren) {
+		for (Vector4f[] candidate : minMaxFromChildren) {
+			Vector4f min = candidate[0];
+			Vector4f max = candidate[1];
+
+			if(min.x  < minMax[0].x) { minMax[0].x = min.x; }
+			if(min.y  < minMax[0].y) { minMax[0].y = min.y; }
+			if(min.z  < minMax[0].z) { minMax[0].z = min.z; }
+
+			if(max.x  > minMax[1].x) { minMax[1].x = min.x; }
+			if(max.y  > minMax[1].y) { minMax[1].y = min.y; }
+			if(max.z  > minMax[1].z) { minMax[1].z = min.z; }
+		}
 	}
 }

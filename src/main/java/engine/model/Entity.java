@@ -12,6 +12,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
+import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -61,7 +62,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	private boolean hasComponent(Class<ModelComponent> type) {
-		return getComponents().keySet().contains(type);
+		return getComponents().keySet().contains(type.getSimpleName().toString());
 	}
 
 	public List<Entity> getAllChildrenAndSelf() {
@@ -263,9 +264,6 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 		if(hasComponent(ModelComponent.class)) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			if(modelComponent == null || modelComponent.getVertexBuffer() == null) {
-				int x = 5;
-			}
 			minMax = modelComponent.getVertexBuffer().getMinMax();
 
 			Vector4f minView = new Vector4f(0,0,0,1);
@@ -287,6 +285,14 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 			minMax[0] = vector;
 			minMax[1] = vector;
 		}
+
+//		if(hasChildren()) {
+//			List<Vector4f[]> minMaxFromChildren = new ArrayList<>();
+//			for (Entity child : children) {
+//				minMaxFromChildren.add(child.getMinMaxWorld());
+//			}
+//			Util.getOverallMinMax(minMax, minMaxFromChildren);
+//		}
 
 		return minMax;
 	}
