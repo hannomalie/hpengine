@@ -56,7 +56,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
-		Component component = getComponents().get(type);
+		Component component = getComponents().get(type.getSimpleName().toString());
 		return Optional.ofNullable(type.cast(component));
 	}
 
