@@ -155,7 +155,8 @@ public class DeferredRenderer implements Renderer {
 
 				initialized = true;
 
-				while (!Display.isCloseRequested()) {
+				//TODO: throws illegalstateexception
+				while (Display.isCreated() && !Display.isCloseRequested()) {
 					if(world.isInitialized()) {
 						setCurrentState("BEFORE DRAW");
 						draw();
@@ -256,12 +257,25 @@ public class DeferredRenderer implements Renderer {
 
 			if(headless) {
 				Canvas canvas = new Canvas();
-		        frame = new JFrame("hpengine");
-		        frame.add(canvas);
-		        frame.pack();
-		        frame.setVisible(false);
-		        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		        Display.setParent(canvas);
+				Display.setParent(canvas);
+				frame = new JFrame("hpengine");
+				frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+				JLayeredPane layeredPane = new JLayeredPane();
+				layeredPane.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+				layeredPane.add(canvas, 0);
+				JPanel overlayPanel = new JPanel();
+				overlayPanel.setOpaque(true);
+				overlayPanel.add(new JButton("asdasdasd"));
+	//			layeredPane.add(overlayPanel, 1);
+				//frame.add(layeredPane);
+	//			frame.setLayout(new BorderLayout());
+				frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
+				frame.getContentPane().add(canvas, BorderLayout.CENTER);
+				frame.pack();
+				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				frame.setVisible(true);
+
+				frame.setVisible(false);
 			}
 			
 			PixelFormat pixelFormat = new PixelFormat();
@@ -367,7 +381,7 @@ public class DeferredRenderer implements Renderer {
 					}
 				}
 
-				return new Result();
+				return new Result(new Object());
 			}
 		});
 	}
@@ -779,8 +793,13 @@ public class DeferredRenderer implements Renderer {
         	Result result = command.execute(world);
 			setCurrentState("AFTER EXECUTION " + command.getClass().getSimpleName());
             SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
-            queue.offer(result);
-        	command = workQueue.poll();
+            try {
+				queue.offer(result);
+
+			} catch (NullPointerException e) {
+				Logger.getGlobal().info("Got null for command " + command.toString());
+			}
+			command = workQueue.poll();
         }
 	}
 	

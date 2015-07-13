@@ -14,7 +14,7 @@ public abstract class BaseComponent implements Component, Serializable {
 
     private Entity entity;
 
-    public Class getIdentifier() { return BaseComponent.class; }
+    public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
 
     public void init(World world) {
         setWorld(world);

@@ -94,7 +94,6 @@ import static util.Util.vectorToString;
 
 public class DebugFrame {
 
-	ScriptManager scriptManager;
 	private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame materialViewFrame = new WebFrame("Material");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
@@ -185,7 +184,6 @@ public class DebugFrame {
 		tabbedPane = new WebTabbedPane();
 		fileChooser = new WebFileChooser(new File(getClass().getResource("").getPath()));
 		
-		scriptManager = new ScriptManager(world);
 		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
 		TextureFactory textureFactory = world.getRenderer().getTextureFactory();
 		
@@ -199,7 +197,7 @@ public class DebugFrame {
 		}
 		console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
 		console.setCodeFoldingEnabled(true);
-		AutoCompletion ac = new AutoCompletion(scriptManager.getProvider());
+		AutoCompletion ac = new AutoCompletion(world.getScriptManager().getProvider());
 		ac.install(console);
 		
 		createMainLightsTab();
@@ -430,7 +428,7 @@ public class DebugFrame {
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
-				scriptManager.eval(console.getText());
+				world.getScriptManager().eval(console.getText());
 			} catch (ScriptException e1) {
 				showError("Line " + e1.getLineNumber() + " contains errors.");
 				e1.printStackTrace();

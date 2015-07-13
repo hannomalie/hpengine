@@ -7,8 +7,6 @@ import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.Result;
-import renderer.command.Command;
 import renderer.material.Material;
 import shader.Program;
 
@@ -267,8 +265,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
 
     @Override
-    public Class getIdentifier() {
-        return ModelComponent.class;
+    public String getIdentifier() {
+        return "ModelComponent";
     }
 
     public VertexBuffer getVertexBuffer() {

@@ -21,7 +21,7 @@ public class PhysicsComponent extends BaseComponent {
 	public PhysicsComponent(Entity owner, RigidBody rigidBody) {
 		this.owner = owner;
 		this.rigidBody = rigidBody;
-		owner.getComponents().put(PhysicsComponent.class, this);
+		owner.getComponents().put(getIdentifier(), this);
 	}
 	
 	public void update(float seconds) {
@@ -40,8 +40,8 @@ public class PhysicsComponent extends BaseComponent {
 	}
 
 	@Override
-	public Class getIdentifier() {
-		return PhysicsComponent.class;
+	public String getIdentifier() {
+		return "PhysicsComponent";
 	}
 
 	public RigidBody getRigidBody() {

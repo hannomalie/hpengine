@@ -30,17 +30,28 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	public static int count = 0;
 
 	public Entity addComponent(Component component) {
+		return addComponent(component, component.getIdentifier());
+	}
+	public Entity addComponent(Component component , String key) {
 		component.setEntity(this);
-		getComponents().put(component.getIdentifier(), component);
+		getComponents().put(key, component);
 		component.initAfterAdd(this);
 		return this;
 	}
+
 	public void removeComponent(Component component) {
 		getComponents().remove(component.getIdentifier(), component);
 	}
+	public void removeComponent(String key) {
+		getComponents().remove(key);
+	}
 
 	public <T extends Component> T getComponent(Class<T> type) {
-		Component component = getComponents().get(type);
+		Component component = getComponents().get(type.getSimpleName().toString());
+		return type.cast(component);
+	}
+	public <T extends Component> T getComponent(Class<T> type, String key) {
+		Component component = getComponents().get(key);
 		return type.cast(component);
 	}
 
@@ -90,7 +101,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	private boolean selected = false;
 	private boolean visible = true;
 	
-	public HashMap<Class<? extends Component>, Component> components = new HashMap<>();
+	public HashMap<String, Component> components = new HashMap<>();
 
 	protected Entity() { }
 
@@ -121,6 +132,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		for(Entity child: children) {
 			child.init(world);
 		}
+//		children.parallelStream().forEach(child -> child.init(world));
 	}
 
 	public boolean hasParent() {
@@ -174,7 +186,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		return world;
 	}
 
-	public HashMap<Class<? extends Component>,Component> getComponents() {
+	public HashMap<String,Component> getComponents() {
 		return components;
 	};
 
@@ -251,7 +263,9 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 		if(hasComponent(ModelComponent.class)) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
-
+			if(modelComponent == null || modelComponent.getVertexBuffer() == null) {
+				int x = 5;
+			}
 			minMax = modelComponent.getVertexBuffer().getMinMax();
 
 			Vector4f minView = new Vector4f(0,0,0,1);

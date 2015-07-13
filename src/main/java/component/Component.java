@@ -12,7 +12,7 @@ public interface Component extends LifeCycle, Serializable {
 
 	default void update(float seconds) {}
 
-	Class<? extends Component> getIdentifier();
+	String getIdentifier();
 
 	default void initAfterAdd(Entity entity) {}
 }

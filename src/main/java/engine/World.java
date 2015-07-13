@@ -6,6 +6,7 @@ import com.google.common.eventbus.EventBus;
 import component.CameraComponent;
 import component.InputControllerComponent;
 import component.ModelComponent;
+import component.ScriptComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.Model;
@@ -29,6 +30,7 @@ import texture.Texture;
 import util.Adjustable;
 import util.Toggable;
 import util.gui.DebugFrame;
+import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.StopWatch;
 
@@ -98,7 +100,7 @@ public class World {
 	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
 	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = true;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
-	
+
 	public static void main(String[] args) {
 		final World world;
 		
@@ -135,6 +137,7 @@ public class World {
 		world.simulate();
 	}
 
+	ScriptManager scriptManager;
 	PhysicsFactory physicsFactory;
 	Scene scene;
 	private int entityCount = 10;
@@ -159,6 +162,7 @@ public class World {
 
 		}
 		glWatch = new OpenGLStopWatch();
+		scriptManager = new ScriptManager(this);
 		physicsFactory = new PhysicsFactory(this);
 		if(sceneName != null) {
 			long start = System.currentTimeMillis();
@@ -218,6 +222,7 @@ public class World {
 						 }
 					 }
 					);
+		camera.init(this);
 		activeCamera = camera;
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
@@ -274,8 +279,15 @@ public class World {
 		
 	}
 	
-	private void destroy() {
-		renderer.destroy();
+	public void destroy() {
+		SynchronousQueue<Result<Object>> queue = renderer.addCommand(new Command<Result<Object>>() {
+			@Override
+			public Result<Object> execute(World world) {
+				world.getRenderer().destroy();
+				return new Result<Object>(new Object());
+			}
+		});
+		queue.poll();
 		System.exit(0);
 	}
 
@@ -494,5 +506,9 @@ public class World {
 
 	public void setInitialized(boolean initialized) {
 		this.initialized = initialized;
+	}
+
+	public ScriptManager getScriptManager() {
+		return scriptManager;
 	}
 }

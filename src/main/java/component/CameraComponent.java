@@ -12,8 +12,8 @@ public class CameraComponent extends BaseComponent {
     }
 
     @Override
-    public Class getIdentifier() {
-        return CameraComponent.class;
+    public String getIdentifier() {
+        return "CameraComponent";
     }
 
     public Camera getCamera() {

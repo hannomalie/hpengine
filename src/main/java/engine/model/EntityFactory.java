@@ -59,17 +59,17 @@ public class EntityFactory {
 	}
 	public Entity getEntity(Vector3f position, String name, Model model, Material material) {
 		Entity entity = null;
-		try {
-			entity = read(name);
-		} catch (IOException e) {
-			Logger.getGlobal().info(String.format("File not found for %s", name));
+//		try {
+//			entity = read(name);
+//		} catch (IOException e) {
+//			Logger.getGlobal().info(String.format("File not found for %s", name));
 
 			entity = new Entity(world, renderer.getMaterialFactory(), position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+//		} catch (ClassNotFoundException e) {
+//			e.printStackTrace();
+//		}
 
 		entity.init(world);
 		return entity;
