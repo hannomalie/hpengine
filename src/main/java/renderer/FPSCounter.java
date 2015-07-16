@@ -6,7 +6,7 @@ public class FPSCounter {
 	private final long[] lastFrameTimes = new long[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	
 	
-	public void update(float elapsedSeconds) {
+	public void update() {
 		for(int i = 0; i < lastFrameTimes.length-1; i++) {
 			lastFrameTimes[i] = lastFrameTimes[i+1];
 		}

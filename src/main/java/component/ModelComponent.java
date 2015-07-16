@@ -9,6 +9,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.material.Material;
 import shader.Program;
+import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -76,6 +77,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         }
 
         Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+
         Program currentProgram = firstPassProgram;
 //		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
 //			currentProgram = firstPassProgram;
@@ -215,7 +217,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         texcoordsTemp = null;
         normalsTemp = null;
         facesTemp = null;
-        System.gc();
+//        System.gc();
     }
 
     private Vector3f[] calculateTangentBitangent(Vector3f v1, Vector3f v2, Vector3f v3, Vector2f w1, Vector2f w2, Vector2f w3, Vector3f n1, Vector3f n2, Vector3f n3) {

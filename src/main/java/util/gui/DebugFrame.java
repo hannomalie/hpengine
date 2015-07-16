@@ -16,6 +16,7 @@ import com.alee.laf.menu.WebMenu;
 import com.alee.laf.menu.WebMenuBar;
 import com.alee.laf.menu.WebMenuItem;
 import com.alee.laf.optionpane.WebOptionPane;
+import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
@@ -172,7 +173,8 @@ public class DebugFrame {
 	private WebFrame addEntityFrame;
 	private World world;
 	private PerformanceMonitor performanceMonitor;
-	
+	private WebProgressBar progressBar = new WebProgressBar();
+
 	public DebugFrame(World world) {
 		World.getEventBus().register(this);
 		init(world);
@@ -595,6 +597,11 @@ public class DebugFrame {
         menuBar.add(resetProfiling);
         menuBar.add(refreshAll);
         menuBar.add(sceneViewFilterField);
+		menuBar.add(progressBar);
+		progressBar.setIndeterminate(false);
+		progressBar.setStringPainted(true);
+		progressBar.setString ( "Nothing to do..." );
+
         mainFrame.setJMenuBar(menuBar);
 
 		mainFrame.add(tabbedPane);
@@ -619,6 +626,17 @@ public class DebugFrame {
 		mainFrame.setVisible(true);
 		initPerformanceChart();
 //		redirectSystemStreams();
+	}
+
+	public void startProgress(String label) {
+		progressBar.setIndeterminate(true);
+		progressBar.setStringPainted(true);
+		progressBar.setString(label);
+	}
+
+	public void stopProgress() {
+		progressBar.setIndeterminate(false);
+		progressBar.setString("Idle");
 	}
 
 	private void createInputs() {

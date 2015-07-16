@@ -178,29 +178,16 @@ public class GBuffer {
 		GPUProfiler.end();
 
 		GPUProfiler.start("Draw entities");
-		GPUProfiler.start("Sort by depth");
-		entities = entities.stream().sorted(new Comparator<Entity>() {
-			@Override
-			public int compare(Entity o1, Entity o2) {
-				Vector3f center1 = o1.getCenter();
-				Vector3f center2 = o2.getCenter();
-				Vector4f center1InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
-				Vector4f center2InView = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
-				return Float.compare(-center1InView.z, -center2InView.z);
-			}
-		}).collect(Collectors.toList());
-		GPUProfiler.end();
 
 		if(World.DRAWSCENE_ENABLED) {
 //			GPUProfiler.start("Depth prepass");
-//			for (Entity entity : entities) {
-//				entity.draw(renderer, camera, depthPrePassProgram);
-//			}
-//			GPUProfiler.end();
 			for (Entity entity : entities) {
-				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					modelComponent.draw(cameraEntity);
-				});
+				if(entity.getComponents().containsKey("ModelComponent")) {
+					ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(cameraEntity);
+				}
+//				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+//					modelComponent.draw(cameraEntity);
+//				});
 			}
 		}
 		GPUProfiler.end();

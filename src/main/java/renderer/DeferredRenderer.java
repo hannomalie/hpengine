@@ -160,7 +160,9 @@ public class DeferredRenderer implements Renderer {
 					if(world.isInitialized()) {
 						setCurrentState("BEFORE DRAW");
 						draw();
+						long start = System.currentTimeMillis();
 						Display.update();
+//						System.out.println("Display update " + (System.currentTimeMillis() - start));
 						setCurrentState("AFTER DRAW");
 					}
 					setCurrentState("BEFORE UPDATE");
@@ -395,8 +397,6 @@ public class DeferredRenderer implements Renderer {
 		}
 //		FileMonitor.getInstance().checkAndNotify();
 		updateLights(seconds);
-		setLastFrameTime();
-		fpsCounter.update(seconds);
 	}
 
 
@@ -406,6 +406,7 @@ public class DeferredRenderer implements Renderer {
 	private void draw() {
 
 		StopWatch.getInstance().start("Draw");
+		setLastFrameTime();
 		if (World.DRAWLINES_ENABLED) {
 			drawDebug(world.getActiveCameraEntity(), world.getPhysicsFactory().getDynamicsWorld(), world.getScene().getOctree(), world.getScene().getEntities());
 		} else {
@@ -421,9 +422,11 @@ public class DeferredRenderer implements Renderer {
 			World.CONTINUOUS_DRAW_PROBES = false;
 			counter++;
 		}
+
+		fpsCounter.update();
 		StopWatch.getInstance().stopAndPrintMS();
 
-		Renderer.exitOnGLError("draw in render");
+//		Renderer.exitOnGLError("draw in render");
 	}
 
 	public void draw(Entity camera, World world, List<Entity> entities) {
@@ -593,8 +596,15 @@ public class DeferredRenderer implements Renderer {
 //		materialProgram.delete();
 //
 //		DeferredRenderer.exitOnGLError("destroyOpenGL");
-		
-		Display.destroy();
+		addCommand(new Command<Result<Object>>() {
+			@Override
+			public Result<Object> execute(World world) {
+				if(!Display.isCloseRequested()) {
+					Display.destroy();
+				}
+				return new Result<Object>(true);
+			}
+		});
 	}
 
 	private static long lastFrameTime = 0l;

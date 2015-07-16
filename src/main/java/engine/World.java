@@ -154,6 +154,7 @@ public class World {
 		this(sceneName, false);
 	}
 	public World(String sceneName, boolean headless) {
+		Thread.currentThread().setName("World Main");
 		initWorkDir();
 		renderer = new DeferredRenderer(this, headless);
 		while(!renderer.isInitialized()) {
