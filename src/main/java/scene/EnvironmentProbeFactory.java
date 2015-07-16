@@ -216,6 +216,7 @@ public class EnvironmentProbeFactory {
 				renderer.drawLine(probe.getCenter(), e.getPosition());
 			});
 		});
+		buffer.delete();
 	}
 	
 	public<T extends Entity> Optional<EnvironmentProbe> getProbeForEntity(T entity) {

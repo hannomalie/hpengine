@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 import camera.Camera;
+import component.CameraComponent;
 import engine.Transform;
 import engine.World;
 import engine.model.Entity;
@@ -36,7 +37,10 @@ public class EnvironmentProbe extends Entity {
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(world, this, center, resolution, resolution, probeIndex);
+		addComponent(new CameraComponent(sampler.getCamera()));
+		sampler.init(world);
 		this.setWeight(weight);
+		super.init(world);
 	}
 
 	public void draw(Octree octree) {
@@ -59,46 +63,50 @@ public class EnvironmentProbe extends Entity {
 		renderer.drawLine(points.get(1), points.get(7));
 		renderer.drawLine(points.get(2), points.get(4));
 		renderer.drawLine(points.get(3), points.get(5));
-		
+
+		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(5, 0, 0), null));
+		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 5, 0), null));
+		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 0, -5), null));
+
 		float temp = (float)getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
 	    renderer.drawLines(program);
 		
 //		renderer.drawLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
 	}
-	
-	@Override
-	public Transform getTransform() {
-		return sampler.getCameraEntity().getTransform();
-	}
-	@Override
-	public void setTransform(Transform transform) {
-		sampler.getCameraEntity().setTransform(transform);
-	}
 
 	@Override
 	public void move(Vector3f amount) {
-		sampler.getCameraEntity().moveInWorld(amount.negate(null));
+		super.moveInWorld(amount);
+		resetAllProbes();
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 		box.move(amount);
 	}
 	
 	@Override
 	public void moveInWorld(Vector3f amount) {
+		super.moveInWorld(amount);
+		resetAllProbes();
 		box.move(amount);
-		sampler.getCameraEntity().moveInWorld(amount.negate(null));
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 	
 	@Override
 	public void setPosition(Vector3f position) {
+		super.setPosition(position);
+		resetAllProbes();
 		box.setCenter(position);
-		sampler.getCameraEntity().setPosition(position.negate(null));
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 
+	private void resetAllProbes() {
+		world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+			probe.getSampler().resetDrawing();
+		});
+	}
+
 	@Override
-	public Vector3f getCenter() { return getPosition().negate(null); }
+	public Vector3f getCenter() { return getPosition(); }
 	
 	@Override
 	public String getName() {
@@ -135,10 +143,12 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public void setSize(float size) {
+		resetAllProbes();
 		box.setSize(size);
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
+		resetAllProbes();
 		box.setSize(sizeX, sizeY, sizeZ);
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 	}
@@ -150,10 +160,7 @@ public class EnvironmentProbe extends Entity {
 	public Camera getCamera(){
 		return sampler.getCamera();
 	}
-	public void setCamera(Camera camera){
-		sampler.setCamera(camera);
-	}
-	
+
 	public int getTextureUnitIndex() {
 		int index = getIndex();
 		return renderer.getMaxTextureUnits() - index - 1;

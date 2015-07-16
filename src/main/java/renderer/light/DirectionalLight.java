@@ -3,7 +3,6 @@ package renderer.light;
 import camera.Camera;
 import component.CameraComponent;
 import component.ModelComponent;
-import engine.Transform;
 import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
@@ -25,7 +24,6 @@ import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 public class DirectionalLight extends Entity {
 	
@@ -153,7 +151,7 @@ public class DirectionalLight extends Entity {
 
 	public void drawDebug(Program program) {
 		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			modelComponent.drawDebug(program, matrix44Buffer);
+			modelComponent.drawDebug(program, modelMatrixBuffer);
 		});
 	}
 

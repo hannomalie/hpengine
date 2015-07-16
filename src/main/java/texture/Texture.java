@@ -285,9 +285,9 @@ public class Texture implements Serializable {
 			Texture texture = (Texture) in.readObject();
 			in.close();
 			texture.textureID = textureId;
-			DeferredRenderer.exitOnGLError("XXX");
+//			DeferredRenderer.exitOnGLError("XXX");
 			texture.upload();
-			DeferredRenderer.exitOnGLError("YYY");
+//			DeferredRenderer.exitOnGLError("YYY");
 			return texture;
 		} catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
 			e.printStackTrace();

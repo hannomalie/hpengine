@@ -8,7 +8,7 @@ import org.junit.Test;
 
 public class StopWatch {
 	public static boolean ACTIVE = false;
-	public static boolean PRINT = true;
+	public static boolean PRINT = false;
 	
 	public static StopWatch stopWatch;
 	static {
@@ -18,7 +18,9 @@ public class StopWatch {
 		return stopWatch;
 	}
 	private LinkedList<Watch> watches = new LinkedList<>();
-	
+
+
+	private StopWatch() {}
 	public void start(String description) {
 		if (!ACTIVE) {return;}
 		watches.addLast(new Watch( System.nanoTime(), description));

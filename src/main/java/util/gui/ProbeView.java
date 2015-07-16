@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ProbeView extends WebPanel {
 
+	private final Entity worldCam;
 	private EnvironmentProbe probe;
 	private World world;
 	private WebFormattedTextField nameField;
@@ -41,6 +42,7 @@ public class ProbeView extends WebPanel {
 		this.probe = selected;
 		this.world = world;
 		this.debugFrame = debugFrame;
+		this.worldCam = world.getActiveCameraEntity();
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
@@ -70,7 +72,7 @@ public class ProbeView extends WebPanel {
 				@Override
 				public Result execute(World world) {
 					world.getRenderer().getEnvironmentProbeFactory().remove(probe);
-					return new Result();
+					return new Result(true);
 				}
         	});
     		
@@ -92,10 +94,10 @@ public class ProbeView extends WebPanel {
 
         webComponentPanel.addElement(removeProbeButton);
         webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-        	world.setActiveCamera(probe.getCamera());
+        	world.setActiveCameraEntity(probe.getSampler());
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-        	world.setActiveCamera(world.getCamera());
+        	world.setActiveCameraEntity(worldCam);
         });}});
 
         webComponentPanel.addElement(new MovablePanel<Entity>(probe));

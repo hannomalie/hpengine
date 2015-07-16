@@ -364,9 +364,12 @@ public class Util {
 	public static void printFloatBuffer(FloatBuffer buffer) {
 		buffer.rewind();
 		StringBuilder builder = new StringBuilder();
+		int columnCounter = 1;
 		while (buffer.hasRemaining()) {
 			builder.append(buffer.get());
 			builder.append(" ");
+			if(columnCounter%4==0) { builder.append(System.lineSeparator()); }
+			columnCounter++;
 		}
 		buffer.rewind();
 		System.out.println(builder.toString());

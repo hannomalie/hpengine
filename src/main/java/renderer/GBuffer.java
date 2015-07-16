@@ -179,7 +179,7 @@ public class GBuffer {
 
 		GPUProfiler.start("Draw entities");
 		GPUProfiler.start("Sort by depth");
-		entities = entities.parallelStream().sorted(new Comparator<Entity>() {
+		entities = entities.stream().sorted(new Comparator<Entity>() {
 			@Override
 			public int compare(Entity o1, Entity o2) {
 				Vector3f center1 = o1.getCenter();

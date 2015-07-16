@@ -292,6 +292,7 @@ public class DeferredRenderer implements Renderer {
 			Display.setTitle("DeferredRenderer");
 			Display.create(pixelFormat, contextAtrributes);
 			Display.setResizable(false);
+			Display.setVSyncEnabled(World.VSYNC_ENABLED);
 			Handler handler = new Handler() {
 				@Override
 				public void handleMessage(int source, int type, int id, int severity, String message) {

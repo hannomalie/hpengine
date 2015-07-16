@@ -149,24 +149,63 @@ public class TransformTest {
 		assertEpsilonEqual(new Vector3f(0,0,-1), transform.getUpDirection(), 0.1f);
 		assertEpsilonEqual(new Vector3f(0,1,0), transform.getRightDirection(), 0.1f);
 	}
-	
-	private void assertEpsilonEqual(Vector3f a, Vector3f b, float delta) {
-		Assert.assertEquals(a.x, b.x, delta);
-		Assert.assertEquals(a.y, b.y, delta);
-		Assert.assertEquals(a.z, b.z, delta);
+
+	@Test
+	public void simpleTranslationWithParent() {
+		Transform parent = new Transform();
+		Transform child = new Transform();
+		child.setParent(parent);
+
+		parent.moveInWorld(new Vector3f(0, 5, 0));
+
+		assertEpsilonEqual(new Vector3f(0, 5, 0), parent.getPosition());
+		assertEpsilonEqual(new Vector3f(0, 5, 0), child.getPosition());
+		assertEpsilonEqual(parent.getViewDirection(), child.getViewDirection());
+
+		child.moveInWorld(new Vector3f(0, 10, 0));
+		assertEpsilonEqual(new Vector3f(0, 15, 0), child.getPosition());
+	}
+
+	@Test
+	public void simpleTranslationRotationWithParent() {
+		Transform parent = new Transform();
+		Transform child = new Transform();
+		child.setParent(parent);
+
+		parent.moveInWorld(new Vector3f(0, 5, 0));
+
+		assertEpsilonEqual(new Vector3f(0, 5, 0), parent.getPosition());
+		assertEpsilonEqual(new Vector3f(0, 5, 0), child.getPosition());
+		assertEpsilonEqual(parent.getViewDirection(), child.getViewDirection());
+
+		child.rotateWorld(new Vector4f(0, 1, 0, 90));
+		assertEpsilonEqual(new Vector3f(1, 0, 0), child.getViewDirection());
+
+		child.moveInWorld(new Vector3f(-10, 0, 0));
+		assertEpsilonEqual(new Vector3f(-10, 5, 0), child.getPosition());
+	}
+
+
+	private void assertEpsilonEqual(Vector3f actual, Vector3f expected) {
+		assertEpsilonEqual(actual, expected, 0.01f);
+	}
+	private void assertEpsilonEqual(Vector3f actual, Vector3f expected, float delta) {
+		Assert.assertEquals("x component", actual.x, expected.x, delta);
+		Assert.assertEquals("y component", actual.y, expected.y, delta);
+		Assert.assertEquals("z component", actual.z, expected.z, delta);
 	}
 	private void assertEpsilonEqual(Vector4f a, Vector4f b, float delta) {
-		Assert.assertEquals(a.x, b.x, delta);
-		Assert.assertEquals(a.y, b.y, delta);
-		Assert.assertEquals(a.z, b.z, delta);
-		Assert.assertEquals(a.w, b.w, delta);
+		Assert.assertEquals("x component", a.x, b.x, delta);
+		Assert.assertEquals("y component", a.y, b.y, delta);
+		Assert.assertEquals("z component", a.z, b.z, delta);
+		Assert.assertEquals("w component", a.w, b.w, delta);
 	}
 
 	private void assertEpsilonEqual(Quaternion a, Quaternion b, float delta) {
-		Assert.assertEquals(a.x, b.x, delta);
-		Assert.assertEquals(a.y, b.y, delta);
-		Assert.assertEquals(a.z, b.z, delta);
-		Assert.assertEquals(a.w, b.w, delta);
+		Assert.assertEquals("x component", a.x, b.x, delta);
+		Assert.assertEquals("y component", a.y, b.y, delta);
+		Assert.assertEquals("z component", a.z, b.z, delta);
+		Assert.assertEquals("w component", a.w, b.w, delta);
 	}
 	private boolean quaternionEqualsHelper(Quaternion a, Quaternion b) {
 		return (a.x == b.x &&

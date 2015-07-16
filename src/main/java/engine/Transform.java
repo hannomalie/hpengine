@@ -9,6 +9,7 @@ import org.lwjgl.util.vector.Vector4f;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Transform implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -58,9 +59,23 @@ public class Transform implements Serializable {
 	public List<Transform> getChildren() {
 		return children;
 	}
-        
+
+	public Vector3f getLocalPosition() {
+		return position;
+	}
+	public Quaternion getLocalOrientation() {
+		return orientation;
+	}
+	public Vector3f getLocalScale() {
+		return scale;
+	}
+
 	public Vector3f getPosition() {
 		recalculateIfDirty();
+		if(parent != null) {
+			Vector4f temp = Matrix4f.transform(parent.getTransformation(), new Vector4f(position.x, position.y, position.z, 1), null);
+			return new Vector3f(temp.x, temp.y, temp.z);
+		}
 		return position;
 	}
 	public void setPosition(Vector3f position) {
@@ -81,6 +96,9 @@ public class Transform implements Serializable {
 	}
 	public Quaternion getOrientation() {
 		recalculateIfDirty();
+		if(parent != null) {
+			return Quaternion.mul(parent.getOrientation(), orientation, null);
+		}
 		return orientation;
 	}
 	public void setOrientation(Quaternion orientation) {
@@ -127,8 +145,8 @@ public class Transform implements Serializable {
 		setDirty(true);
 	}
 	public void moveInWorld(Vector3f amount) {
+		recalculateIfDirty();
 		setPosition(Vector3f.add(position, amount, null));
-		setDirty(true);
 	}
 
 	public Vector3f localPositionToWorld(Vector3f localPosition) {
@@ -159,6 +177,15 @@ public class Transform implements Serializable {
 		temp.setIdentity();
 		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
 		Matrix4f.translate(position, temp, temp);
+			if(parent != null) {
+				parentMatrix = parent.getTranslationRotation();
+			}
+			if(parentMatrix == null) {
+				parentMatrix = new Matrix4f();
+				Matrix4f.setIdentity(parentMatrix);
+			}
+			temp = Matrix4f.mul(parentMatrix, temp, null);
+
 		setDirty(false);
 		return temp;
 	}

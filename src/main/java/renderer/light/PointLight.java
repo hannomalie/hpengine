@@ -8,8 +8,6 @@ import component.ModelComponent;
 import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
-import renderer.Renderer;
-import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
 import util.Util;
@@ -49,20 +47,20 @@ public class PointLight extends Entity implements Serializable {
 	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			Matrix4f tempModel = calculateCurrentModelMatrix();
-			matrix44Buffer.rewind();
-			tempModel.store(matrix44Buffer);
-			matrix44Buffer.rewind();
-			modelComponent.draw(camera, matrix44Buffer, 0);
+			modelMatrixBuffer.rewind();
+			tempModel.store(modelMatrixBuffer);
+			modelMatrixBuffer.rewind();
+			modelComponent.draw(camera, modelMatrixBuffer, 0);
 		});
 	}
 
 	public void draw(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			calculateCurrentModelMatrix();
-			matrix44Buffer.rewind();
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.rewind();
-			program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+			modelMatrixBuffer.rewind();
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.rewind();
+			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
 			modelComponent.getVertexBuffer().draw();
 		});
 	}
@@ -70,10 +68,10 @@ public class PointLight extends Entity implements Serializable {
 	public void drawAgain(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			calculateCurrentModelMatrix();
-			matrix44Buffer.rewind();
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.rewind();
-			program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+			modelMatrixBuffer.rewind();
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.rewind();
+			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
 			modelComponent.getVertexBuffer().drawAgain();
 		});
 	}

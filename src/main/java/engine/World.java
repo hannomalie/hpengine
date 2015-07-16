@@ -6,10 +6,10 @@ import com.google.common.eventbus.EventBus;
 import component.CameraComponent;
 import component.InputControllerComponent;
 import component.ModelComponent;
-import component.ScriptComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.Model;
+import javafx.scene.paint.Stop;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -23,7 +23,6 @@ import renderer.Result;
 import renderer.command.Command;
 import renderer.light.DirectionalLight;
 import renderer.material.Material;
-import renderer.material.Material.MAP;
 import scene.EnvironmentProbe;
 import scene.Scene;
 import texture.Texture;
@@ -36,7 +35,6 @@ import util.stopwatch.StopWatch;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
@@ -64,7 +62,7 @@ public class World {
 	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
 	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = false;
+	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = true;
 	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
 	
 	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
@@ -87,7 +85,7 @@ public class World {
 	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
-	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = false;
+	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = true;
 
 	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
 	
@@ -144,7 +142,7 @@ public class World {
 	public volatile int PICKING_CLICK = 0;
 	public Renderer renderer;
 	private Entity camera;
-	private Entity activeCamera;
+	private Entity activeCameraEntity;
 
 	public World() {
 		this(null);
@@ -176,9 +174,9 @@ public class World {
 //			scene.addAll(loadDummies());
 		}
 
-		float rotationDelta = 45f;
+		float rotationDelta = 5f;
 		float scaleDelta = 0.1f;
-		float posDelta = 180f;
+		float posDelta = 10f;
 		camera = renderer.getEntityFactory().getEntity().
 					addComponent(new CameraComponent(new Camera(renderer))).
 					addComponent(new InputControllerComponent() {
@@ -223,9 +221,9 @@ public class World {
 					 }
 					);
 		camera.init(this);
-		activeCamera = camera;
-		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
-		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
+		activeCameraEntity = camera;
+		activeCameraEntity.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
+		activeCameraEntity.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 //		try {
 //			renderer.getLightFactory().getDirectionalLight().init(renderer);
 //		} catch (Exception e) {
@@ -437,7 +435,7 @@ public class World {
 	private void loopCycle(float seconds) {
 		update(seconds);
 //		draw();
-		scene.endFrame(activeCamera.getComponent(CameraComponent.class).getCamera());
+		scene.endFrame(activeCameraEntity.getComponent(CameraComponent.class).getCamera());
 	}
 
 	public Renderer getRenderer() {
@@ -458,11 +456,16 @@ public class World {
 		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
 			@Override
 			public Result execute(World world) {
+				StopWatch.getInstance().start("All init");
+				StopWatch.getInstance().start("Scene init");
 				scene.init(world);
+				StopWatch.getInstance().stopAndPrintMS();
 				renderer.init(scene.getOctree());
+				StopWatch.getInstance().stopAndPrintMS();
 				return new Result(new Object());
 			}
 		});
+		activeCameraEntity = camera;
 	}
 
 	public Camera getCamera() {
@@ -474,15 +477,18 @@ public class World {
 	}
 
 	public Camera getActiveCamera() {
-		return activeCamera.getComponent(CameraComponent.class).getCamera();
+		return activeCameraEntity.getComponent(CameraComponent.class).getCamera();
 	}
 
 	public Entity getActiveCameraEntity() {
-		return activeCamera;
+		return activeCameraEntity;
 	}
 
-	public void setActiveCamera(Camera activeCamera) {
-		this.activeCamera.getComponent(CameraComponent.class).setCamera(activeCamera);
+	public void setActiveCameraEntity(Entity newActiveCameraEntity) {
+		this.activeCameraEntity = newActiveCameraEntity;
+	}
+	public void restoreWorldCamera() {
+		this.activeCameraEntity = camera;
 	}
 
 	public static EventBus getEventBus() {
@@ -511,4 +517,5 @@ public class World {
 	public ScriptManager getScriptManager() {
 		return scriptManager;
 	}
+
 }

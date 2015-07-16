@@ -12,7 +12,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
-import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.logging.Logger;
 
 public class Entity implements Transformable, LifeCycle, Serializable {
 	private static final long serialVersionUID = 1;
@@ -85,12 +82,13 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		DYNAMIC
 	}
 
-	private Update update = Update.DYNAMIC;
+	private Update update = Update.STATIC;
 
 	transient public Matrix4f modelMatrix = new Matrix4f();
-	
+
 	private Transform transform = new Transform();
-	transient protected FloatBuffer matrix44Buffer;
+	transient protected FloatBuffer modelMatrixBuffer;
+	transient protected FloatBuffer viewMatrixBuffer;
 
 	protected transient World world;
 
@@ -112,8 +110,10 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	protected Entity(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
 		modelMatrix = new Matrix4f();
-		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-		matrix44Buffer.rewind();
+		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		modelMatrixBuffer.rewind();
+		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		viewMatrixBuffer.rewind();
 
 		addComponent(new ModelComponent(model, materialName));
 		this.name = name;
@@ -124,8 +124,10 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	@Override
 	public void init(World world) {
 		LifeCycle.super.init(world);
-		matrix44Buffer = BufferUtils.createFloatBuffer(16);
-		matrix44Buffer.rewind();
+		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		modelMatrixBuffer.rewind();
+		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		viewMatrixBuffer.rewind();
 
 		for(Component component : components.values()) {
 			component.init(world);
@@ -194,9 +196,13 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	protected Matrix4f calculateCurrentModelMatrix() {
 		modelMatrix = transform.getTransformation();
 		synchronized(this) {
-			matrix44Buffer.rewind();
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.rewind();
+			modelMatrixBuffer.rewind();
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.rewind();
+
+			viewMatrixBuffer.rewind();
+			getTransform().getTranslationRotation().store(viewMatrixBuffer);
+			viewMatrixBuffer.rewind();
 		}
 		return modelMatrix;
 	}
@@ -206,7 +212,14 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	public FloatBuffer getModelMatrixAsBuffer() {
-		return matrix44Buffer;
+		return modelMatrixBuffer;
+	}
+	public Matrix4f getViewMatrix() {
+		return calculateCurrentModelMatrix();
+	}
+
+	public FloatBuffer getViewMatrixAsBuffer() {
+		return viewMatrixBuffer;
 	}
 
 	public void setModelMatrix(Matrix4f modelMatrix) {

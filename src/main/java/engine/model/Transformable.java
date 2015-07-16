@@ -10,15 +10,18 @@ import org.lwjgl.util.vector.Vector4f;
  public interface Transformable {
 	Transform getTransform();
 	void setTransform(Transform transform);
-	default Vector3f getPosition() { return getTransform().getPosition(); };
-	default Quaternion getOrientation() { return getTransform().getOrientation(); };
+    default Vector3f getPosition() { return getTransform().getPosition(); };
+    default Vector3f getLocalPosition() { return getTransform().getLocalPosition(); };
+    default Quaternion getOrientation() { return getTransform().getOrientation(); };
+    default Quaternion getLocalOrientation() { return getTransform().getLocalOrientation(); };
 	default void rotate(Vector4f axisDegree) { getTransform().rotate(axisDegree); };
 	default void rotate(Vector3f axis, float degree) { getTransform().rotate(axis, degree);};
 	default void rotate(Vector3f axis, float radians, boolean useRadians) { getTransform().rotate(axis, (float) Math.toDegrees(radians)); };
 	default void move(Vector3f amount) { getTransform().move(amount); };
 	default void setScale(Vector3f scale) { getTransform().setScale(scale); };
 	default void setScale(float scale) { getTransform().setScale(scale); };
-	default Vector3f getScale() { return getTransform().getScale(); };
+    default Vector3f getScale() { return getTransform().getScale(); };
+    default Vector3f getLocalScale() { return getTransform().getLocalScale(); };
 	default void setPosition(Vector3f position) { getTransform().setPosition(position); };
 	default void setOrientation(Quaternion orientation) { getTransform().setOrientation(orientation); };
 	default void moveInWorld(Vector3f amount) { getTransform().moveInWorld(amount); };
@@ -29,6 +32,8 @@ import org.lwjgl.util.vector.Vector4f;
 	default Vector3f getRightDirection() { return getTransform().getRightDirection(); };
 	default Matrix4f getModelMatrix() { return Matrix4f.setIdentity(null); };
 	default void setModelMatrix(Matrix4f modelMatrix) {};
+    default Matrix4f getViewMatrix() { return Matrix4f.setIdentity(null); };
+ 	default void setViewMatrix(Matrix4f viewMatrix) {};
 
 	default Vector4f[] getMinMaxWorld() {
 		Vector3f position = getPosition();

@@ -4,6 +4,7 @@ import config.Config;
 import engine.Transform;
 import engine.World;
 import engine.model.Entity;
+import engine.model.Transformable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -78,8 +79,12 @@ public class Camera {
 	}
 	
 	private void storeMatrices() {
-		projectionMatrix.store(projectionMatrixBuffer); projectionMatrixBuffer.flip();
-		viewMatrix.store(viewMatrixBuffer); viewMatrixBuffer.flip();
+		synchronized (this) {
+			projectionMatrixBuffer.rewind();
+			projectionMatrix.store(projectionMatrixBuffer); projectionMatrixBuffer.flip();
+			viewMatrixBuffer.rewind();
+			viewMatrix.store(viewMatrixBuffer); viewMatrixBuffer.flip();
+		}
 	}
 	
 

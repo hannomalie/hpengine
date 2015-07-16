@@ -8,7 +8,6 @@ import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
 import renderer.Renderer;
-import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
 import util.Util;
@@ -64,20 +63,20 @@ public class TubeLight extends Entity {
 	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			Matrix4f tempModel = calculateCurrentModelMatrix();
-			tempModel.store(matrix44Buffer);
-			matrix44Buffer.flip();
-			modelComponent.draw(camera, matrix44Buffer, 0);
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.flip();
+			tempModel.store(modelMatrixBuffer);
+			modelMatrixBuffer.flip();
+			modelComponent.draw(camera, modelMatrixBuffer, 0);
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.flip();
 		});
 	}
 
 	public void draw(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			calculateCurrentModelMatrix();
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.flip();
-			program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.flip();
+			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
 			modelComponent.getVertexBuffer().draw();
 		});
 	}
@@ -85,9 +84,9 @@ public class TubeLight extends Entity {
 	public void drawAgain(Renderer renderer, Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			calculateCurrentModelMatrix();
-			modelMatrix.store(matrix44Buffer);
-			matrix44Buffer.flip();
-			program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+			modelMatrix.store(modelMatrixBuffer);
+			modelMatrixBuffer.flip();
+			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
 			modelComponent.getVertexBuffer().drawAgain();
 		});
 	}

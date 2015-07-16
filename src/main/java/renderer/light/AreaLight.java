@@ -55,22 +55,22 @@ public class AreaLight extends Entity {
 
 	public void drawAsMesh(Entity camera) {
 		Matrix4f tempModel = calculateCurrentModelMatrix(); 
-		tempModel.store(matrix44Buffer);
-		matrix44Buffer.flip();
+		tempModel.store(modelMatrixBuffer);
+		modelMatrixBuffer.flip();
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, matrix44Buffer, 0);
+			component.draw(camera, modelMatrixBuffer, 0);
 		});
-		modelMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
+		modelMatrix.store(modelMatrixBuffer);
+		modelMatrixBuffer.flip();
 	}
 
 	public void draw(Entity camera, Program program) {
 		calculateCurrentModelMatrix();
-		modelMatrix.store(matrix44Buffer);
-		matrix44Buffer.flip();
-		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+		modelMatrix.store(modelMatrixBuffer);
+		modelMatrixBuffer.flip();
+		program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, matrix44Buffer, 0);
+			component.draw(camera, modelMatrixBuffer, 0);
 		});
 	}
 

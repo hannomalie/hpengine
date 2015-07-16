@@ -26,6 +26,7 @@ import scene.EnvironmentProbeFactory;
 import scene.TransformDistanceComparator;
 import shader.ComputeShaderProgram;
 import shader.Program;
+import sun.rmi.runtime.Log;
 import texture.CubeMap;
 import texture.CubeMapArray;
 import util.Util;
@@ -35,12 +36,12 @@ import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class EnvironmentSampler {
+public class EnvironmentSampler extends Entity {
 	public static volatile boolean deferredRenderingForProbes = true;
 	private final World world;
-	private Entity camera;
 	private final CameraComponent cameraComponent;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
@@ -66,6 +67,7 @@ public class EnvironmentSampler {
 	private RenderTarget renderTarget;
 	
 	public EnvironmentSampler(World world, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) {
+		init(world);
 		this.world = world;
 		this.renderer = world.getRenderer();
 		this.probe = probe;
@@ -74,15 +76,15 @@ public class EnvironmentSampler {
 		float fov = 90f;
 		Matrix4f projectionMatrix = Util.createPerpective(fov, 1, near, far);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
-		this.camera = world.getRenderer().getEntityFactory().getEntity();
+		setParent(probe);
 		this.cameraComponent = new CameraComponent(new Camera(renderer, projectionMatrix, near, far, fov, 1));
-		camera.addComponent(this.cameraComponent);
+		addComponent(this.cameraComponent);
+		cameraComponent.getCamera().setTransform(getTransform());
 		Quaternion cubeMapCamInitialOrientation = new Quaternion();
 		Quaternion.setIdentity(cubeMapCamInitialOrientation);
-		camera.setOrientation(cubeMapCamInitialOrientation);
-		camera.rotate(new Vector4f(0,1,0,90));
-//		position.y = -position.y;
-		camera.setPosition(position.negate(null));
+		setOrientation(cubeMapCamInitialOrientation);
+		rotate(new Vector4f(0, 1, 0, 90));
+//		setPosition(position);
 
 		cubeMapProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
 		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
@@ -128,9 +130,10 @@ public class EnvironmentSampler {
 	}
 	
 	private void drawCubeMapSides(Octree octree, boolean urgent) {
+		cameraComponent.getCamera().updateShadow();
 		GPUProfiler.start("Cubemap render 6 sides");
-		Quaternion initialOrientation = camera.getOrientation();
-		Vector3f initialPosition = camera.getPosition();
+		Quaternion initialOrientation = getLocalOrientation();
+		Vector3f initialPosition = getLocalPosition();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
@@ -149,10 +152,10 @@ public class EnvironmentSampler {
 
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
-			rotateForIndex(i, camera);
+			rotateForIndex(i, this);
 			List<Entity> visibles = octree.getVisible(getCamera());
 			List<Entity> movedVisibles = visibles.stream().filter(e -> { return e.getUpdate() == Entity.Update.STATIC; }).
-					sorted(new TransformDistanceComparator<Transformable>(camera) {
+					sorted(new TransformDistanceComparator<Transformable>(this) {
 						public int compare(Transformable o1, Transformable o2) {
 							if(reference == null) { return 0; }
 							Vector3f distanceToFirst = Vector3f.sub(reference.getPosition().negate(null), o1.getPosition(), null);
@@ -186,7 +189,7 @@ public class EnvironmentSampler {
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill GBuffer");
-					drawFirstPass(i, camera, movedVisibles);
+					drawFirstPass(i, this, movedVisibles);
 					renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
@@ -207,8 +210,8 @@ public class EnvironmentSampler {
 		if (filteringRequired) {
 			generateCubeMapMipMaps();
 		}
-		camera.setPosition(initialPosition);
-		camera.setOrientation(initialOrientation);
+		setPosition(initialPosition);
+		setOrientation(initialOrientation);
 		GPUProfiler.end();
 	}
 
@@ -287,6 +290,7 @@ public class EnvironmentSampler {
 	}
 	
 	void drawFirstPass(int sideIndex, Entity camera, List<Entity> entities) {
+		camera.update(0.1f);
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().getFrameBufferLocation());
 //		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().resetAttachments();
 		renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(0, probe.getIndex(), sideIndex);
@@ -319,7 +323,7 @@ public class EnvironmentSampler {
 
 	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
-		Vector3f camPosition = camera.getPosition().negate(null);
+		Vector3f camPosition = getPosition().negate(null);
 //		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().negate(null).scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
@@ -347,7 +351,7 @@ public class EnvironmentSampler {
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
 		GPUProfiler.end();
 		
-		secondPassDirectionalProgram.setUniform("eyePosition", camera.getPosition());
+		secondPassDirectionalProgram.setUniform("eyePosition", getPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
@@ -728,11 +732,11 @@ public class EnvironmentSampler {
 //		camera.setPerspective(false);
 //		camera.setTransform(oldTransform);
 //		camera.updateShadow();
-		this.probe.setCamera(getCamera());
-		
+
 		switch (i) {
 		case 0:
-			camera.rotate(new Vector4f(0,0,1, -180));
+//			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, -180));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
@@ -766,8 +770,8 @@ public class EnvironmentSampler {
 			break;
 		}
 
-		getCamera().calculateCurrentViewMatrix();
-		getCamera().updateShadow();
+		probe.getCamera().updateShadow();
+		probe.getCamera().calculateCurrentViewMatrix();
 	}
 
 	public Camera getCamera() {
@@ -776,13 +780,5 @@ public class EnvironmentSampler {
 
 	public void setCamera(Camera camera) {
 		this.cameraComponent.setCamera(camera);
-	}
-
-	public Entity getCameraEntity() {
-		return camera;
-	}
-
-	public void setCameraEntity(Entity camera) {
-		this.camera = camera;
 	}
 }

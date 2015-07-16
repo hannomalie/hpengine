@@ -1,12 +1,5 @@
 package renderer.light;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
 import camera.Camera;
 import component.CameraComponent;
 import component.InputControllerComponent;
@@ -15,22 +8,26 @@ import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
 import octree.Octree;
-import org.lwjgl.input.Keyboard;
-import renderer.Renderer;
-import renderer.material.Material;
-import renderer.material.Material.MAP;
-import renderer.rendertarget.RenderTarget;
-import shader.Program;
-import util.Util;
-import util.stopwatch.GPUProfiler;
-
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.Renderer;
+import renderer.material.Material;
+import renderer.rendertarget.RenderTarget;
+import shader.Program;
+import util.Util;
+import util.stopwatch.GPUProfiler;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LightFactory {
 
@@ -402,7 +399,7 @@ public class LightFactory {
 		return areaLightDepthMaps.get(index);
 	}
 
-	public Camera getCameraForAreaLight(AreaLight light) {
+	public Entity getCameraForAreaLight(AreaLight light) {
 		camera.setPosition(light.getPosition().negate(null));
 //		camera.getOrientation().x = -light.getOrientation().x;
 //		camera.getOrientation().y = -light.getOrientation().y;
@@ -410,11 +407,12 @@ public class LightFactory {
 //		camera.getOrientation().w = -light.getOrientation().w;
 //		camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
 		camera.getComponent(CameraComponent.class).getCamera().updateShadow();
-		return camera.getComponent(CameraComponent.class).getCamera();
+		//return camera.getComponent(CameraComponent.class).getCamera();
+		return camera;
 	}
 
 	public FloatBuffer getShadowMatrixForAreaLight(AreaLight light) {
-		Camera c = getCameraForAreaLight(light);
+		Camera c = getCameraForAreaLight(light).getComponent(CameraComponent.class).getCamera();
 //		c.getOrientation().x = light.getOrientation().negate(null).x;
 //		c.getOrientation().y = light.getOrientation().negate(null).y;
 //		c.getOrientation().z = light.getOrientation().negate(null).z;

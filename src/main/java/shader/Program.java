@@ -4,7 +4,7 @@ import static log.ConsoleLogger.getLogger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.EnumSet;
+import java.util.*;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -34,6 +34,8 @@ public class Program extends AbstractProgram implements Reloadable {
 	
 	private EnumSet<DataChannels> channels;
 	private boolean needsTextures = true;
+
+	private Map<String, Object> localDefines = new HashMap<>();
 	
 	private String geometryShaderName;
 	private String vertexShaderName;
@@ -252,10 +254,39 @@ public class Program extends AbstractProgram implements Reloadable {
 		return World.WORKDIR_NAME + "/assets/shaders/deferred/";
 	}
 
+	public void addDefine(String name, Object define) {
+		localDefines.put(name, define);
+	}
+	public void removeDefine(String name) {
+		localDefines.remove(name);
+	}
+
 	@Override
 	@Subscribe
 	public void handle(GlobalDefineChangedEvent e) {
 		reload();
 	}
 
+	public String getDefineString() {
+		StringBuilder builder = new StringBuilder();
+
+		for (Map.Entry<String, Object> shaderDefine : localDefines.entrySet()) {
+			builder.append(getDefineTextForObject(shaderDefine));
+			builder.append("\n");
+		}
+		return builder.toString();
+	}
+
+	public static String getDefineTextForObject(Map.Entry<String, Object> define) {
+		if(define.getValue() instanceof Boolean) {
+			return "const bool " + define.getKey() + " = " + define.getValue().toString() + ";\n";
+		} else if(define.getValue() instanceof Integer) {
+			return "const int " + define.getKey() + " = " + define.getValue().toString() + ";\n";
+		} else if(define.getValue() instanceof Float) {
+			return "const float " + define.getKey() + " = " + define.getValue().toString() + ";\n";
+		} else {
+			Logger.getGlobal().info("Local define not supported type for " + define.getKey() + " - " + define.getValue());
+			return "";
+		}
+	}
 }

@@ -88,7 +88,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
         currentProgram.setUniform("useRainEffect", World.RAINEFFECT == 0.0 ? false : true);
         currentProgram.setUniform("rainEffect", World.RAINEFFECT);
-        currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        currentProgram.setUniformAsMatrix4("viewMatrix", cameraEntity.getViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         currentProgram.setUniform("eyePosition", cameraEntity.getPosition());
