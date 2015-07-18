@@ -1,10 +1,7 @@
 package engine.model;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
@@ -13,6 +10,7 @@ import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
 public class VertexBuffer {
+
 	public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
@@ -165,6 +163,11 @@ public class VertexBuffer {
 	public void drawDebug() {
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
+	}
+
+	public void drawInstanced(int instanceCount) {
+		GL30.glBindVertexArray(vertexArray);
+		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
 	}
 	
 	private void setUpAttributes() {

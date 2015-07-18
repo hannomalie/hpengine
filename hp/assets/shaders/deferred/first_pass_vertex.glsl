@@ -9,8 +9,10 @@ uniform mat4 lightMatrix;
 //uniform mat4 viewMatrixShadow;
 
 uniform vec3 eyePosition;
-uniform float time = 0;
+uniform int time = 0;
 //uniform vec3 lightPosition;
+
+uniform bool isInstanced = false;
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -43,6 +45,12 @@ out mat3 TBN;
 void main(void) {
 
 	position_world = modelMatrix * vec4(in_Position.xyz,1);
+
+//	if(isInstanced) {
+//		position_world.x += float(gl_InstanceID/50) * 30.0f;
+//		position_world.z += float(gl_InstanceID%50) * 25.0f;
+//	}
+
 	position_clip = (projectionMatrix * viewMatrix * position_world);
 	position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 	gl_Position = position_clip;

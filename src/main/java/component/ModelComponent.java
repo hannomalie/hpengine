@@ -23,6 +23,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     private Model model;
 
+    public boolean instanced = false;
+
     transient protected VertexBuffer vertexBuffer;
     private float[] floatArray;
 
@@ -86,6 +88,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //		}
 //		currentProgram = renderer.getLastUsedProgram();
         currentProgram.use();
+        currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("useParallax", World.useParallax);
         currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
         currentProgram.setUniform("useRainEffect", World.RAINEFFECT == 0.0 ? false : true);
@@ -106,7 +109,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
 
-        vertexBuffer.draw();
+        if(instanced) {
+            vertexBuffer.drawInstanced(2000);
+        } else {
+            vertexBuffer.draw();
+        }
 
 //		material.setTexturesInactive();
     }

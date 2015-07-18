@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import javax.swing.*;
 
+import com.alee.laf.checkbox.WebCheckBox;
 import component.ModelComponent;
 import engine.World;
 import engine.model.Entity;
@@ -133,6 +134,12 @@ public class EntityView extends WebPanel {
 				webComponentPanel.addElement(materialSelect);
 			} catch (NullPointerException e) {
 				Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
+			}
+
+			if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+				webComponentPanel.addElement(new WebCheckBox("Instanced") {{
+					this.addActionListener(e -> {entity.getComponent(ModelComponent.class).instanced = !entity.getComponent(ModelComponent.class).instanced;});
+				}});
 			}
 
 			if(entity.hasChildren()) {

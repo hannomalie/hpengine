@@ -282,7 +282,8 @@ void main(void) {
 		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
 		vec3 viewVectorTangentSpace = normalize((TBN) * (V));
 		float v = height * parallaxScale - parallaxBias;
-		uvParallax = (viewVectorTangentSpace.xy * v);
+
+		uvParallax = (v * viewVectorTangentSpace.xy);
 		UV = UV + uvParallax;
 	//} else if (useSteepParallax) {
 	} else {

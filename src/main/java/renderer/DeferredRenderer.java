@@ -114,12 +114,71 @@ public class DeferredRenderer implements Renderer {
 	private World world;
 	private String currentState = "";
 
+	private ExecutorService renderThread = Executors.newSingleThreadExecutor();
+
 	public DeferredRenderer(World world, boolean headless) {
 		DeferredRenderer renderer = this;
 
-		new TimeStepThread("Renderer"){
+//		new TimeStepThread("Renderer"){
+//			public void update(float seconds) {
+//				if(!initialized) {
+//					setCurrentState("INITIALIZING");
+//					setupOpenGL(headless);
+//					renderer.world = world;
+//					world.setRenderer(renderer);
+//					objLoader = new OBJLoader(renderer);
+//					textureFactory = new TextureFactory(renderer);
+//					DeferredRenderer.exitOnGLError("After TextureFactory");
+//					programFactory = new ProgramFactory(world);
+//					setupShaders();
+//					setUpGBuffer();
+//					fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
+//					materialFactory = new MaterialFactory(renderer);
+//					entityFactory = new EntityFactory(world);
+//					lightFactory = new LightFactory(world);
+//					environmentProbeFactory = new EnvironmentProbeFactory(world);
+////		environmentProbeFactory.getProbe(new Vector3f(-10,30,-1), new Vector3f(490, 250, 220), Update.DYNAMIC);
+////		environmentProbeFactory.getProbe(new Vector3f(160,10,0), 100, Update.DYNAMIC);
+//					gBuffer.init(renderer);
+//
+//					sphereModel = null;
+//					try {
+//						sphereModel = objLoader.loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+//						sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//					} catch (Exception e) {
+//						e.printStackTrace();
+//					}
+////		_addPointLights();
+////		_addPointLightsGrid();
+////		_addEnvironmentPorbesGrid();
+//				}
+//
+//				initialized = true;
+//
+//				//TODO: throws illegalstateexception
+//				while (Display.isCreated() && !Display.isCloseRequested()) {
+//					if(world.isInitialized()) {
+//						setCurrentState("BEFORE DRAW");
+//						draw();
+//						long start = System.currentTimeMillis();
+//						Display.update();
+////						System.out.println("Display update " + (System.currentTimeMillis() - start));
+//						setCurrentState("AFTER DRAW");
+//					}
+//					setCurrentState("BEFORE UPDATE");
+//					renderer.update(world, seconds);
+//					setCurrentState("AFTER UPDATE");
+//				}
+//
+//			}
+//		}.start();
+
+		TimeStepThread drawThread = new TimeStepThread("Renderer") {
 			public void update(float seconds) {
-				if(!initialized) {
+				Thread.currentThread().setName("Renderer");
+				if (!initialized) {
 					setCurrentState("INITIALIZING");
 					setupOpenGL(headless);
 					renderer.world = world;
@@ -157,22 +216,21 @@ public class DeferredRenderer implements Renderer {
 
 				//TODO: throws illegalstateexception
 				while (Display.isCreated() && !Display.isCloseRequested()) {
-					if(world.isInitialized()) {
+					if (world.isInitialized()) {
 						setCurrentState("BEFORE DRAW");
 						draw();
-						long start = System.currentTimeMillis();
 						Display.update();
-//						System.out.println("Display update " + (System.currentTimeMillis() - start));
 						setCurrentState("AFTER DRAW");
+
+						setCurrentState("BEFORE UPDATE");
+						renderer.update(world, seconds);
+						setCurrentState("AFTER UPDATE");
 					}
-					setCurrentState("BEFORE UPDATE");
-					renderer.update(world, seconds);
-					setCurrentState("AFTER UPDATE");
 				}
-
 			}
-		}.start();
+		};
 
+		renderThread.submit(drawThread);
 	}
 
 	private void _addPointLights() {
@@ -257,7 +315,8 @@ public class DeferredRenderer implements Renderer {
 	private void setupOpenGL(boolean headless) {
 		try {
 
-			if(headless) {
+			if(headless)
+			{
 				Canvas canvas = new Canvas();
 				Display.setParent(canvas);
 				frame = new JFrame("hpengine");
@@ -272,11 +331,11 @@ public class DeferredRenderer implements Renderer {
 				//frame.add(layeredPane);
 	//			frame.setLayout(new BorderLayout());
 				frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
+				frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
 				frame.getContentPane().add(canvas, BorderLayout.CENTER);
 				frame.pack();
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				frame.setVisible(true);
-
 				frame.setVisible(false);
 			}
 			
