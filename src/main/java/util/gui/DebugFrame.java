@@ -257,7 +257,7 @@ public class DebugFrame {
 //							newScene.init(world);
 			    			world.setScene(newScene);
 			    			init(world);
-			    			return new Result();
+			    			return new Result(true);
 						}}
 	    			);
 	        		
