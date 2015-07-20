@@ -199,18 +199,10 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	public void endFrame(Camera camera) {
-		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
-		
 		for (Entity entity : octree.getEntities()) {
 			entity.setHasMoved(false);
 		}
-		for (Entity entity : renderer.getLightFactory().getPointLights()) {
-			entity.setHasMoved(false);
-		}
-		for (Entity entity : renderer.getLightFactory().getAreaLights()) {
-			entity.setHasMoved(false);
-		}
-		light.setHasMoved(false);
+
 		camera.saveViewMatrixAsLastViewMatrix();
 	}
 	public Octree getOctree() {

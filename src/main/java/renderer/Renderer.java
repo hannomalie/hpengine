@@ -83,4 +83,6 @@ import java.util.concurrent.SynchronousQueue;
 	Program getPostProcessProgram();
 	StorageBuffer getStorageBuffer();
 	 String getCurrentState();
-}
+
+	 void endFrame();
+ }

@@ -50,13 +50,9 @@ public class World {
 
 	private static Logger LOGGER = getLogger();
 	private volatile boolean initialized;
-//	public static boolean RELOAD_ON_FILE_CHANGE = false;//(java.lang.management.ManagementFactory.getRuntimeMXBean().
-//		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
-	
+
 	private OpenGLStopWatch glWatch;
 
-//	public static DirectionalLight light= new DirectionalLight(true);
-	
 	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
@@ -129,7 +125,6 @@ public class World {
 					new DebugFrame(world);
 				}
 			}).start();
-//			new DebugFrame(world);
 		}
 
 		world.simulate();
@@ -177,7 +172,7 @@ public class World {
 
 		float rotationDelta = 5f;
 		float scaleDelta = 0.1f;
-		float posDelta = 10f;
+		float posDelta = 1f;
 		camera = renderer.getEntityFactory().getEntity().
 					addComponent(new CameraComponent(new Camera(renderer))).
 					addComponent(new InputControllerComponent() {
@@ -267,6 +262,8 @@ public class World {
 //			Display.update();
 			StopWatch.getInstance().stopAndPrintMS();
 		}
+
+		System.out.println("XXXXXXXXXXXXXXXXXXXX");
 
 		renderer.addCommand(new Command<Result<Object>>() {
 			@Override
@@ -409,7 +406,7 @@ public class World {
 //		renderer.update(this, seconds);
 //		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
-		camera.update(seconds);
+		activeCameraEntity.update(seconds);
 
 		
 		StopWatch.getInstance().stopAndPrintMS();
@@ -437,6 +434,7 @@ public class World {
 		update(seconds);
 //		draw();
 		scene.endFrame(activeCameraEntity.getComponent(CameraComponent.class).getCamera());
+		renderer.endFrame();
 	}
 
 	public Renderer getRenderer() {
@@ -457,16 +455,13 @@ public class World {
 		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
 			@Override
 			public Result execute(World world) {
-				StopWatch.getInstance().start("All init");
 				StopWatch.getInstance().start("Scene init");
 				scene.init(world);
-				StopWatch.getInstance().stopAndPrintMS();
-				renderer.init(scene.getOctree());
 				StopWatch.getInstance().stopAndPrintMS();
 				return new Result(new Object());
 			}
 		});
-		activeCameraEntity = camera;
+		restoreWorldCamera();
 	}
 
 	public Camera getCamera() {

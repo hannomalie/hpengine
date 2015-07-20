@@ -35,6 +35,7 @@ import shader.ProgramFactory;
 import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
+import util.OpenGLThread;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.GPUTaskProfile;
 import util.stopwatch.OpenGLStopWatch;
@@ -856,6 +857,7 @@ public class DeferredRenderer implements Renderer {
 	    return queue;
 	}
 
+
 	private void executeCommands(World world) throws Exception {
         Command command = workQueue.poll();
         while(command != null) {
@@ -982,6 +984,20 @@ public class DeferredRenderer implements Renderer {
 	public String getCurrentState() {
 		return currentState;
 	}
+
+	@Override
+	public void endFrame() {
+
+		DirectionalLight light = getLightFactory().getDirectionalLight();
+		light.setHasMoved(false);
+		for (Entity entity : getLightFactory().getPointLights()) {
+			entity.setHasMoved(false);
+		}
+		for (Entity entity : getLightFactory().getAreaLights()) {
+			entity.setHasMoved(false);
+		}
+	}
+
 	private void setCurrentState(String newState) {
 		currentState = newState;
 		World.getEventBus().post(new StateChangedEvent(newState));

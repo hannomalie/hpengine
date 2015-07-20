@@ -280,7 +280,7 @@ void main(void) {
 		height = (texture(heightMap, UV).rgb).r;
 		
 		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		vec3 viewVectorTangentSpace = normalize((TBN) * (V));
+		vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
 		float v = height * parallaxScale - parallaxBias;
 
 		uvParallax = (v * viewVectorTangentSpace.xy);
