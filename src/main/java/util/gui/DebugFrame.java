@@ -254,9 +254,10 @@ public class DebugFrame {
 
 	    			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 						@Override public Result execute(World world) {
-//							newScene.init(world);
+							startProgress("Load scene ...");
 			    			world.setScene(newScene);
 			    			init(world);
+							stopProgress();
 			    			return new Result(true);
 						}}
 	    			);
