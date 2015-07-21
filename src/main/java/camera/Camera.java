@@ -93,7 +93,7 @@ public class Camera {
 	}
 	
 	public Matrix4f calculateCurrentViewMatrix() {
-		viewMatrix = transform.getTranslationRotation();
+		viewMatrix = transform.getViewMatrix();
 		return viewMatrix;
 	}
 

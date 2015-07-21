@@ -15,12 +15,11 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -31,18 +30,18 @@ public class Octree implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
-
-
 	private static Logger LOGGER = getLogger();
-
 	private static FloatBuffer matrix44Buffer = null;
 	private static Matrix4f modelMatrix = new Matrix4f();
-
 	public static final float DEFAULT_SIZE = 1000;
 	public static final int DEFAULT_MAX_DEEPNESS = 6;
-
 	public static boolean DRAW_LINES = false;
-
+	static {
+		matrix44Buffer = BufferUtils.createFloatBuffer(16);
+		matrix44Buffer.rewind();
+		modelMatrix.store(matrix44Buffer);
+		matrix44Buffer.rewind();
+	}
 	private Vector3f center = new Vector3f();
 	private float size = DEFAULT_SIZE;
 	public int maxDeepness = DEFAULT_MAX_DEEPNESS;
@@ -51,8 +50,7 @@ public class Octree implements LifeCycle, Serializable {
 
 	public Node rootNode = new Node(this, center, size);
 
-	transient private List<Entity> entities = new CopyOnWriteArrayList<>();
-	public transient HashMap<Entity, Octree.Node> entityNodeMappings = new HashMap();
+	private transient Map<Entity, Octree.Node> entityNodeMappings = new ConcurrentHashMap<>();
 
 	transient private World world;
 
@@ -76,11 +74,13 @@ public class Octree implements LifeCycle, Serializable {
 	public void init(World world) {
 		LifeCycle.super.init(world);
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
-		entities = new CopyOnWriteArrayList<>();
-		entityNodeMappings = new HashMap();
+		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
 	}
+
+	public List<Entity> getEntitiesForNode(Node node) { return Collections.unmodifiableList(entityNodeMappings.entrySet().stream().filter(pair -> pair.getValue().equals(node))
+																					.map(pair -> pair.getKey()).collect(Collectors.toList()));}
 	
 	public void insert(Entity entity) {
 
@@ -90,7 +90,6 @@ public class Octree implements LifeCycle, Serializable {
 
 	   Node insertedInto = rootNode.insert(entity);
 	   if (insertedInto == null) {
-		   rootNode.entities.add(entity);
 		   entityNodeMappings.put(entity, rootNode);
 	   } else {
 		   entityNodeMappings.put(entity, insertedInto);
@@ -98,9 +97,8 @@ public class Octree implements LifeCycle, Serializable {
 	   
 	   rootNode.optimize();
 //	   rootNode.optimizeThreaded();
-	   entities.add(entity);
 	}
-		
+
 	public void insertWithoutOptimize(Entity entity) {
 
 		if(entity.hasChildren()) {
@@ -109,13 +107,10 @@ public class Octree implements LifeCycle, Serializable {
 
 	   Node insertedInto = rootNode.insert(entity);
 	   if (insertedInto == null) {
-		   rootNode.entities.add(entity);
 		   entityNodeMappings.put(entity, rootNode);
 	   } else {
 		   entityNodeMappings.put(entity, insertedInto);
 	   }
-	   
-	   entities.add(entity);
 	}
 	
 	
@@ -135,11 +130,11 @@ public class Octree implements LifeCycle, Serializable {
 	public List<Entity> getVisible(Camera camera) {
 		StopWatch.getInstance().start("Octree get visible");
 		List<Entity> result = new ArrayList<>();
-		result.addAll(rootNode.entities);
+		result.addAll(getEntitiesForNode(rootNode));
 		
 //		rootNode.getVisible(camera, result);
 //		rootNode.getVisibleThreaded(camera, result);
-		result = entities.stream().filter(e -> { return e.isInFrustum(camera); }).collect(Collectors.toList());
+		result = getEntities().stream().filter(e -> { return e.isInFrustum(camera); }).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<Entity>(result);
 	}
@@ -155,12 +150,6 @@ public class Octree implements LifeCycle, Serializable {
 	}
 	
 	public void drawDebug(Renderer renderer, Camera camera, Program program) {
-		if (matrix44Buffer == null) {
-			 matrix44Buffer = BufferUtils.createFloatBuffer(16);
-			 matrix44Buffer.rewind();
-			 modelMatrix.store(matrix44Buffer);
-			 matrix44Buffer.rewind();
-		}
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		
@@ -197,7 +186,6 @@ public class Octree implements LifeCycle, Serializable {
 		Octree octree;
 		Node parent;
 		public Node[] children = new Node[8];
-		public List<Entity> entities = new ArrayList();
 		Vector3f center;
 		float size;
 		AABB aabb;
@@ -247,7 +235,7 @@ public class Octree implements LifeCycle, Serializable {
 						children[i].getVisible(camera, result);
 					}	
 				}  else {
-					result.addAll(entities);
+					result.addAll(octree.getEntitiesForNode(this));
 				}
 			}
 		}
@@ -283,7 +271,11 @@ public class Octree implements LifeCycle, Serializable {
 //			StopWatch.getInstance().stopAndPrintMS();
 			return result;
 		}
-		
+
+		public Collection<? extends Entity> getEntities() {
+			return octree.getEntitiesForNode(this);
+		}
+
 		static class CollectVisibleCallable implements Callable<List<Entity>> {
 			private Node node;
 			private Camera camera;
@@ -308,7 +300,7 @@ public class Octree implements LifeCycle, Serializable {
 					children[i].getAllEntitiesInAndBelow(result);
 				}
 			}
-			result.addAll(entities);
+			result.addAll(octree.getEntitiesForNode(this));
 		}
 		
 
@@ -340,7 +332,7 @@ public class Octree implements LifeCycle, Serializable {
 			      }
 			    }
 			
-			result.addAll(entities);
+			result.addAll(octree.getEntitiesForNode(this));
 			return result;
 		}
 		
@@ -407,7 +399,7 @@ public class Octree implements LifeCycle, Serializable {
 			
 			if (isLeaf()) {
 				if(contains(minMaxWorld)) {
-					entities.add(entity);
+					octree.entityNodeMappings.put(entity, this);
 					return this;	
 				} else {
 					return null;
@@ -427,11 +419,11 @@ public class Octree implements LifeCycle, Serializable {
 				}
 				
 				// Wasn't able to add entity to children
-				this.entities.add(entity);
+				octree.entityNodeMappings.put(entity, this);
 				return this;
 				
 			} else {
-				entities.add(entity);
+				octree.entityNodeMappings.put(entity, this);
 				return this;
 			}
 		}
@@ -463,7 +455,7 @@ public class Octree implements LifeCycle, Serializable {
 			if (hasChildren()) {
 				if(hasEntities() && !isRoot()) {
 					List<Entity> collected = collectAllEntitiesFromChildren();
-					entities.addAll(collected);
+					for(Entity toInsert : collected) { octree.entityNodeMappings.put(toInsert, this); }
 					setHasChildren(false);
 				} else {
 					for (int i = 0; i < 8; i++) {
@@ -484,7 +476,7 @@ public class Octree implements LifeCycle, Serializable {
 			  @Override
 			  public void run() {
 				  if (node.hasEntities() && node.hasChildren()) {
-					node.entities.addAll(node.collectAllEntitiesFromChildren());
+					node.addAll(node.collectAllEntitiesFromChildren());
 					node.setHasChildren(false);
 					System.out.println("Optimized...");
 //					return;
@@ -492,7 +484,13 @@ public class Octree implements LifeCycle, Serializable {
 				node.optimize();
 			  }
 		}
-		
+
+		private void addAll(List<Entity> entities) {
+			for (Entity toAdd : entities) {
+				octree.entityNodeMappings.put(toAdd, this);
+			}
+		}
+
 		private List<Entity> collectAllEntitiesFromChildren() {
 			
 			List<Entity> result = new ArrayList<>();
@@ -500,11 +498,9 @@ public class Octree implements LifeCycle, Serializable {
 				Node node = children[i];
 
 				if (!node.hasChildren()) {
-					result.addAll(node.entities);
-					node.entities.clear();
+					result.addAll(node.getEntities());
 				} else {
-					result.addAll(node.entities);
-					node.entities.clear();
+					result.addAll(node.getEntities());
 					result.addAll(node.collectAllEntitiesFromChildren());
 				}
 			}
@@ -588,7 +584,7 @@ public class Octree implements LifeCycle, Serializable {
 		}
 		
 		public boolean hasEntities() {
-			return !entities.isEmpty();
+			return !getEntities().isEmpty();
 		}
 		
 		public boolean hasEntitiesInChildNodes() {
@@ -646,7 +642,7 @@ public class Octree implements LifeCycle, Serializable {
 		
 		private boolean checkValid() {
 			boolean valid = false;
-			if ((hasChildren() && entities.isEmpty()) || isRoot() || !hasChildren()) {
+			if ((hasChildren() && getEntities().isEmpty()) || isRoot() || !hasChildren()) {
 				valid = true;
 			} else {
 				valid = false;
@@ -658,23 +654,21 @@ public class Octree implements LifeCycle, Serializable {
 		public boolean remove(Entity entity) {
 			if (hasChildren) {
 				for (int i = 0; i < children.length; i++) {
-					if (children[i].entities.contains(entity)) {
-						return children[i].entities.remove(entity);
+					if (children[i].getEntities().contains(entity)) {
+						return children[i].remove(entity);
 					}
 				}
 			}
-			return this.entities.remove(entity);
+			return octree.entityNodeMappings.remove(this, entity);
 		}
 	}
 
 	public List<Entity> getEntities() {
-//		List<Entity> result = rootNode.getAllEntitiesInAndBelowThreaded();
-//		List<Entity> result = rootNode.getAllEntitiesInAndBelow();
-		return entities;
+		return new CopyOnWriteArrayList<>(entityNodeMappings.keySet());
 	}
 	
 	public int getEntityCount() {
-		return entities.size();
+		return getEntities().size();
 	}
 
 	public int getCurrentDeepness() {
@@ -682,7 +676,7 @@ public class Octree implements LifeCycle, Serializable {
 	}
 
 	public boolean removeEntity(Entity entity) {
-		entities.remove(entity);
+		entityNodeMappings.remove(entity);
 		return rootNode.remove(entity);
 	}
 

@@ -151,7 +151,7 @@ public class DirectionalLight extends Entity {
 
 	public void drawDebug(Program program) {
 		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			modelComponent.drawDebug(program, modelMatrixBuffer);
+			modelComponent.drawDebug(program, getTransform().getTransformationBuffer());
 		});
 	}
 

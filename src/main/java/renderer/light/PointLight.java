@@ -46,32 +46,20 @@ public class PointLight extends Entity implements Serializable {
 
 	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			Matrix4f tempModel = calculateCurrentModelMatrix();
-			modelMatrixBuffer.rewind();
-			tempModel.store(modelMatrixBuffer);
-			modelMatrixBuffer.rewind();
-			modelComponent.draw(camera, modelMatrixBuffer, 0);
+			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 
 	public void draw(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			calculateCurrentModelMatrix();
-			modelMatrixBuffer.rewind();
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.rewind();
-			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
+			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().draw();
 		});
 	}
 
 	public void drawAgain(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			calculateCurrentModelMatrix();
-			modelMatrixBuffer.rewind();
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.rewind();
-			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
+			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().drawAgain();
 		});
 	}

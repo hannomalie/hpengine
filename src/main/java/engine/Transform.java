@@ -1,12 +1,16 @@
 package engine;
 
+import org.lwjgl.BufferUtils;
 import util.Util;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -33,13 +37,18 @@ public class Transform implements Serializable {
 	transient private boolean isDirty = true;
 	transient private boolean hasMoved = true;
 	transient Matrix4f translationRotation = new Matrix4f();
+	transient Matrix4f viewMatrix = new Matrix4f();
 	transient Matrix4f transformation = new Matrix4f();
+
+	transient protected FloatBuffer modelMatrixBuffer;
+	transient protected FloatBuffer viewMatrixBuffer;
 	
-//	public Transform() {
-//		position = new Vector3f(0, 0, 0);
-//		orientation = new Quaternion();
-//		Quaternion.setIdentity(orientation);
-//	}
+	public Transform() {
+		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		modelMatrixBuffer.rewind();
+		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		viewMatrixBuffer.rewind();
+	}
 	
         public Transform getParent() {
             return parent;
@@ -192,17 +201,17 @@ public class Transform implements Serializable {
 	private Matrix4f calculateTransformation() {
 		Matrix4f temp = new Matrix4f();
 		temp.setIdentity();
-		Matrix4f.translate(position, temp, temp); // TODO: SWITCH THESE LINES....
-		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
+		Matrix4f.translate(position, temp, temp);
+		Matrix4f.mul(temp, Util.toMatrix(orientation), temp);
 		temp.scale(scale);
-                if(parent != null) {
-                    parentMatrix = parent.getTransformation();
-                }
-                if(parentMatrix == null) {
-                    parentMatrix = new Matrix4f();
-					Matrix4f.setIdentity(parentMatrix);
-                }
-                temp = Matrix4f.mul(parentMatrix, temp, null);
+			if(parent != null) {
+				parentMatrix = parent.getTransformation();
+			}
+			if(parentMatrix == null) {
+				parentMatrix = new Matrix4f();
+				Matrix4f.setIdentity(parentMatrix);
+			}
+			temp = Matrix4f.mul(parentMatrix, temp, null);
                 
 		setDirty(false);
 		return temp;
@@ -219,13 +228,16 @@ public class Transform implements Serializable {
 	}
 	public void recalculate() {
 		translationRotation = calculateTranslationRotation();
+		viewMatrix = new Matrix4f(translationRotation);
+//		viewMatrix.invert();
 		transformation = calculateTransformation();
-                if(children == null) {
-                    children = new ArrayList<>();
-                }
-                for (Transform child : children) {
-                    child.recalculate();
-                }
+			if(children == null) {
+				children = new ArrayList<>();
+			}
+			for (Transform child : children) {
+				child.recalculate();
+			}
+		bufferMatrixes();
 		hasMoved = true;
 	}
 	
@@ -260,4 +272,41 @@ public class Transform implements Serializable {
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
+	public Matrix4f getViewMatrix() {
+		return viewMatrix;
+	}
+
+	public void init(World world) {
+		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		modelMatrixBuffer.rewind();
+		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		viewMatrixBuffer.rewind();
+		recalculate();
+	}
+
+	protected void bufferMatrixes() {
+		synchronized(modelMatrixBuffer) {
+			modelMatrixBuffer.rewind();
+			transformation.store(modelMatrixBuffer);
+			modelMatrixBuffer.rewind();
+		}
+
+		synchronized(viewMatrixBuffer) {
+			viewMatrixBuffer.rewind();
+			translationRotation.store(viewMatrixBuffer);
+			viewMatrixBuffer.rewind();
+		}
+	}
+
+	public FloatBuffer getTransformationBuffer() {
+		return modelMatrixBuffer.asReadOnlyBuffer();
+	}
+	public FloatBuffer getTranslationRotationBuffer() {
+		return viewMatrixBuffer.asReadOnlyBuffer();
+	}
+
+	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+		stream.defaultReadObject();
+		init(null);
+	}
 }

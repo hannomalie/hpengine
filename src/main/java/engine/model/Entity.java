@@ -27,6 +27,55 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
+	public enum Update {
+		STATIC,
+		DYNAMIC
+	}
+
+	private Update update = Update.STATIC;
+
+	private Transform transform = new Transform();
+
+	protected transient World world;
+
+	protected String name = "Entity_" + System.currentTimeMillis();
+
+	private Entity parent = null;
+	private List<Entity> children = new ArrayList<>();
+
+	private boolean selected = false;
+	private boolean visible = true;
+	
+	public HashMap<String, Component> components = new HashMap<>();
+
+	protected Entity() { }
+
+	protected Entity(World world, MaterialFactory materialFactory, Model model, String materialName) {
+		this(world, materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	}
+
+	protected Entity(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
+		transform.init(world);
+		addComponent(new ModelComponent(model, materialName));
+		this.name = name;
+		
+		transform.setPosition(position);
+	}
+
+	@Override
+	public void init(World world) {
+		LifeCycle.super.init(world);
+		transform.init(world);
+
+		for(Component component : components.values()) {
+			component.init(world);
+		}
+		for(Entity child: children) {
+			child.init(world);
+		}
+//		children.parallelStream().forEach(child -> child.init(world));
+	}
+
 	public Entity addComponent(Component component) {
 		return addComponent(component, component.getIdentifier());
 	}
@@ -77,67 +126,6 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		return parent;
 	}
 
-	public enum Update {
-		STATIC,
-		DYNAMIC
-	}
-
-	private Update update = Update.STATIC;
-
-	transient public Matrix4f modelMatrix = new Matrix4f();
-
-	private Transform transform = new Transform();
-	transient protected FloatBuffer modelMatrixBuffer;
-	transient protected FloatBuffer viewMatrixBuffer;
-
-	protected transient World world;
-
-	protected String name = "Entity_" + System.currentTimeMillis();
-
-	private Entity parent = null;
-	private List<Entity> children = new ArrayList<>();
-
-	private boolean selected = false;
-	private boolean visible = true;
-	
-	public HashMap<String, Component> components = new HashMap<>();
-
-	protected Entity() { }
-
-	protected Entity(World world, MaterialFactory materialFactory, Model model, String materialName) {
-		this(world, materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
-	}
-
-	protected Entity(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
-		modelMatrix = new Matrix4f();
-		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		modelMatrixBuffer.rewind();
-		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		viewMatrixBuffer.rewind();
-
-		addComponent(new ModelComponent(model, materialName));
-		this.name = name;
-		
-		transform.setPosition(position);
-	}
-
-	@Override
-	public void init(World world) {
-		LifeCycle.super.init(world);
-		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		modelMatrixBuffer.rewind();
-		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
-		viewMatrixBuffer.rewind();
-
-		for(Component component : components.values()) {
-			component.init(world);
-		}
-		for(Entity child: children) {
-			child.init(world);
-		}
-//		children.parallelStream().forEach(child -> child.init(world));
-	}
-
 	public boolean hasParent() {
 		return parent != null;
 	}
@@ -176,7 +164,6 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		for (Component c : components.values()) {
 			c.update(seconds);
 		}
-		modelMatrix = calculateCurrentModelMatrix();
 	}
 
 	@Override
@@ -193,37 +180,12 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		return components;
 	};
 
-	protected Matrix4f calculateCurrentModelMatrix() {
-		modelMatrix = transform.getTransformation();
-		synchronized(this) {
-			modelMatrixBuffer.rewind();
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.rewind();
-
-			viewMatrixBuffer.rewind();
-			getTransform().getTranslationRotation().store(viewMatrixBuffer);
-			viewMatrixBuffer.rewind();
-		}
-		return modelMatrix;
-	}
-
-	public Matrix4f getModelMatrix() {
-		return calculateCurrentModelMatrix();
-	}
-
 	public FloatBuffer getModelMatrixAsBuffer() {
-		return modelMatrixBuffer;
-	}
-	public Matrix4f getViewMatrix() {
-		return calculateCurrentModelMatrix();
+		return transform.getTransformationBuffer();
 	}
 
 	public FloatBuffer getViewMatrixAsBuffer() {
-		return viewMatrixBuffer;
-	}
-
-	public void setModelMatrix(Matrix4f modelMatrix) {
-		this.modelMatrix = modelMatrix;
+		return transform.getTranslationRotationBuffer();
 	}
 
 	public void setTransform(Transform transform) {
@@ -375,6 +337,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		Entity b = (Entity) other;
 		
 		return b.getName().equals(getName());
+	}
+
+	@Override
+	public int hashCode() {
+		return getName().hashCode();
 	}
 
 	public void destroy() {

@@ -62,31 +62,20 @@ public class TubeLight extends Entity {
 
 	public void drawAsMesh(Entity camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			Matrix4f tempModel = calculateCurrentModelMatrix();
-			tempModel.store(modelMatrixBuffer);
-			modelMatrixBuffer.flip();
-			modelComponent.draw(camera, modelMatrixBuffer, 0);
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.flip();
+			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 
 	public void draw(Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			calculateCurrentModelMatrix();
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.flip();
-			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
+			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().draw();
 		});
 	}
 
 	public void drawAgain(Renderer renderer, Program program) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			calculateCurrentModelMatrix();
-			modelMatrix.store(modelMatrixBuffer);
-			modelMatrixBuffer.flip();
-			program.setUniformAsMatrix4("modelMatrix", modelMatrixBuffer);
+			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().drawAgain();
 		});
 	}

@@ -96,7 +96,7 @@ public class OctreeTest extends TestWithWorld {
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
 		Assert.assertEquals(octree.rootNode.getSize(), Octree.DEFAULT_SIZE, 0.1f);
 		Assert.assertEquals(0, octree.getCurrentDeepness());
-		Assert.assertTrue(octree.rootNode.entities.contains(entity));
+		Assert.assertTrue(octree.rootNode.getEntities().contains(entity));
 	}
 
 	@Test
@@ -194,8 +194,8 @@ public class OctreeTest extends TestWithWorld {
 		Assert.assertEquals(new Vector3f(-2.5f, 2.5f, 2.5f), octree.rootNode.children[0].getCenter());
 		Assert.assertEquals(new Vector3f(2.5f, -2.5f, -2.5f), octree.rootNode.children[4].getCenter());
 		
-		Assert.assertTrue(octree.rootNode.children[7].entities.contains(entityBottomLeftBack));
-		Assert.assertTrue(octree.rootNode.children[3].entities.contains(entityTopRightFront));
+		Assert.assertTrue(octree.rootNode.children[7].getEntities().contains(entityBottomLeftBack));
+		Assert.assertTrue(octree.rootNode.children[3].getEntities().contains(entityTopRightFront));
 		
 		// Octree culling
 		Camera camera = new Camera(renderer);
@@ -292,7 +292,7 @@ public class OctreeTest extends TestWithWorld {
 			}
 		}
 		Assert.assertTrue(!node.hasChildren() ||
-							(node.hasChildren() && node.entities.isEmpty()) ||
+							(node.hasChildren() && node.getEntities().isEmpty()) ||
 							node.getDeepness() == 0 );
 	}
 }

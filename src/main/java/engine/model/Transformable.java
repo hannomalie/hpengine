@@ -30,9 +30,9 @@ import org.lwjgl.util.vector.Vector4f;
 	default Vector3f getViewDirection() { return getTransform().getViewDirection(); };
 	default Vector3f getUpDirection() { return getTransform().getUpDirection(); };
 	default Vector3f getRightDirection() { return getTransform().getRightDirection(); };
-	default Matrix4f getModelMatrix() { return Matrix4f.setIdentity(null); };
+	default Matrix4f getModelMatrix() { return getTransform().getTransformation(); };
 	default void setModelMatrix(Matrix4f modelMatrix) {};
-    default Matrix4f getViewMatrix() { return Matrix4f.setIdentity(null); };
+    default Matrix4f getViewMatrix() { return getTransform().getViewMatrix(); };
  	default void setViewMatrix(Matrix4f viewMatrix) {};
 
 	default Vector4f[] getMinMaxWorld() {

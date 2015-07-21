@@ -25,6 +25,7 @@ import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import engine.World;
@@ -243,11 +244,10 @@ public class DebugFrame {
         }
         {
         	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
-        	sceneLoadMenuItem.addActionListener(e -> {
+			Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("HP scenes", "hpscene"));
 
-	    		File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", choser -> {
-	    			choser.setFileFilter(new FileNameExtensionFilter("Scenes", "hpscene"));
-	    		});
+        	sceneLoadMenuItem.addActionListener(e -> {
+				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", customizer);
 	    		if(chosenFile != null) {
 	    			String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
 	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
@@ -1577,7 +1577,7 @@ public class DebugFrame {
 			}
 		}
 		
-		for (Entity entity : node.entities) {
+		for (Entity entity : node.getEntities()) {
 			if(entity.hasParent()) { continue; }
 			DefaultMutableTreeNode currentEntity = new DefaultMutableTreeNode(entity);
 			if(entity.hasChildren()) {
@@ -1588,7 +1588,7 @@ public class DebugFrame {
 			current.add(currentEntity);
 		}
 		
-		if (node.hasChildren() && node.entities.size() > 0 && !node.isRoot()) {
+		if (node.hasChildren() && node.getEntities().size() > 0 && !node.isRoot()) {
 			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
 		}
 	}

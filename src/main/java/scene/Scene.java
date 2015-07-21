@@ -17,6 +17,7 @@ import util.stopwatch.StopWatch;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -47,30 +48,17 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	public void init(World world) {
-		Logger.getGlobal().info("Scene initialization");
 		LifeCycle.super.init(world);
 		renderer = world.getRenderer();
-		Logger.getGlobal().info("Entities initialization");
-		StopWatch.getInstance().start("xxxx");
-		entities.forEach(entity -> {
-			Logger.getGlobal().info("Started " + entity.getName());
-			StopWatch.getInstance().start(entity.getName());
-			entity.init(world);
-			StopWatch.getInstance().stopAndPrintMS(); }
-		);
-		StopWatch.getInstance().stopAndPrintMS();
+		entities.forEach(entity -> entity.init(world));
 		renderer.getEnvironmentProbeFactory().clearProbes();
-		Logger.getGlobal().info("Octree init and insert");
 		octree.init(world);
 		octree.insert(entities);
-		Logger.getGlobal().info("Probe init");
 		for (ProbeData data : probes) {
 			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());	
 		}
-		Logger.getGlobal().info("Lights init");
 		initLights(renderer);
 		initialized = true;
-		Logger.getGlobal().info("Renderer octree init");
 		renderer.init(octree);
 	}
 	private void initLights(Renderer renderer) {
@@ -89,7 +77,6 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	
 	public boolean write(String name) {
-
 		String fileName = FilenameUtils.getBaseName(name);
 		this.name = fileName;
 		FileOutputStream fos = null;
@@ -106,10 +93,10 @@ public class Scene implements LifeCycle, Serializable {
 				probes.add(probeData);
 			}
 			gatherLights();
-			//out.writeObject(this);
-			FSTObjectOutput newOut = new FSTObjectOutput(out);
-			newOut.writeObject(this);
-			newOut.close();
+			out.writeObject(this);
+//			FSTObjectOutput newOut = new FSTObjectOutput(out);
+//			newOut.writeObject(this);
+//			newOut.close();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -133,11 +120,11 @@ public class Scene implements LifeCycle, Serializable {
 		try {
 			fis = new FileInputStream(getDirectory() + fileName + ".hpscene");
 			in = new ObjectInputStream(fis);
-			//Scene scene = (Scene) in.readObject();
+			Scene scene = (Scene) in.readObject();
 
-			FSTObjectInput newIn = new FSTObjectInput(in);
-			Scene scene = (Scene)newIn.readObject();
-			newIn.close();
+//			FSTObjectInput newIn = new FSTObjectInput(in);
+//			Scene scene = (Scene)newIn.readObject();
+//			newIn.close();
 
 			handleEvolution(scene, renderer);
 			in.close();
