@@ -1,5 +1,7 @@
 # README #
 ![cover_compressed.PNG](https://bitbucket.org/repo/qR4Kpr/images/312771496-cover_compressed.PNG)
+*(Actual engine footage)*
+
 ### My Graphics/Game Engine ###
 
 This engine is my hobby project - I wanted to learn more about graphics programming, OpenGL and have a motivating project again :) It's written from scratch, based on LWJGLs OpenGL bindings. 95% is developed by myself, some snippets like the dds loader came from the interwebs. Thanks to everybody who silently contributed!
