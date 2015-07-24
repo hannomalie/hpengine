@@ -95,7 +95,7 @@ public class MaterialFactory {
 		}
 		
 		material = new Material();
-		material.setMaterialInfo(materialInfo);
+		material.setMaterialInfo(new MaterialInfo(materialInfo));
 		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
 		Material.write(material, materialInfo.name);

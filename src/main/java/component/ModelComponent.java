@@ -34,9 +34,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
             DataChannels.NORMAL
-//		,
-//		DataChannels.TANGENT,
-//		DataChannels.BINORMAL
+		,
+		DataChannels.TANGENT,
+		DataChannels.BINORMAL
     );
     public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
@@ -110,7 +110,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //		renderer.getEnvironmentMap().bind();
 
         if(instanced) {
-            vertexBuffer.drawInstanced(2000);
+            vertexBuffer.drawInstanced(10);
         } else {
             vertexBuffer.draw();
         }
@@ -179,9 +179,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             int[] referencedNormals = face.getNormalIndices();
             int[] referencedTexcoords = face.getTextureCoordinateIndices();
 
-//			Vector3f[] tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
-//					texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
-//					normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
+			Vector3f[] tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
+					texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
+					normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
 
             for (int j = 0; j < 3; j++) {
                 Vector3f referencedVertex = verticesTemp.get(referencedVertices[j]-1);
@@ -202,12 +202,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
-//				values.add(tangentBitangent[2*j].x);
-//				values.add(tangentBitangent[2*j].y);
-//				values.add(tangentBitangent[2*j].z);
-//				values.add(tangentBitangent[2*j+1].x);
-//				values.add(tangentBitangent[2*j+1].y);
-//				values.add(tangentBitangent[2*j+1].z);
+				values.add(tangentBitangent[2*j].x);
+				values.add(tangentBitangent[2*j].y);
+				values.add(tangentBitangent[2*j].z);
+				values.add(tangentBitangent[2*j+1].x);
+				values.add(tangentBitangent[2*j+1].y);
+				values.add(tangentBitangent[2*j+1].z);
             }
 
         }
@@ -224,7 +224,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         texcoordsTemp = null;
         normalsTemp = null;
         facesTemp = null;
-//        System.gc();
     }
 
     private Vector3f[] calculateTangentBitangent(Vector3f v1, Vector3f v2, Vector3f v3, Vector2f w1, Vector2f w2, Vector2f w3, Vector3f n1, Vector3f n2, Vector3f n3) {
@@ -236,25 +235,40 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
         Vector2f deltaUV1 = Vector2f.sub(w2, w1, null);
         Vector2f deltaUV2 = Vector2f.sub(w3, w1, null);
+
         float DeltaU1 = deltaUV1.x;
         float DeltaV1 = deltaUV1.y;
         float DeltaU2 = deltaUV2.x;
         float DeltaV2 = deltaUV2.y;
 
-        float f = 1.0F / (DeltaU1 * DeltaV2 - DeltaU2 * DeltaV1);
+        float f = 1.0F / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
 
-        tangent = Vector3f.sub((Vector3f) edge1.scale(DeltaV2), (Vector3f) edge2.scale(DeltaV1), null);
-        bitangent = Vector3f.sub((Vector3f) edge1.scale(-DeltaU2), (Vector3f) edge2.scale(DeltaU1), null);
+        tangent = Vector3f.sub((Vector3f) new Vector3f(edge1).scale(DeltaV2), (Vector3f) new Vector3f(edge2).scale(DeltaV1), null);
+        bitangent = Vector3f.sub((Vector3f) new Vector3f(edge2).scale(DeltaU1), (Vector3f) new Vector3f(edge1).scale(DeltaU2), null);
 
-        tangent = (Vector3f) tangent.scale(f);
-        bitangent = (Vector3f) bitangent.scale(f);
+        tangent = (Vector3f) new Vector3f(tangent).scale(f);
+        bitangent = (Vector3f) new Vector3f(bitangent).scale(f);
+
+        Vector3f tangent1 = Vector3f.sub(tangent, (Vector3f)(new Vector3f(n1).scale(Vector3f.dot(n1, tangent))), null).normalise(null);
+        Vector3f tangent2 = Vector3f.sub(tangent, (Vector3f)(new Vector3f(n2).scale(Vector3f.dot(n2, tangent))), null).normalise(null);
+        Vector3f tangent3 = Vector3f.sub(tangent, (Vector3f)(new Vector3f(n3).scale(Vector3f.dot(n3, tangent))), null).normalise(null);
+
+        if (Vector3f.dot(Vector3f.cross(n1, tangent1, null), bitangent) < 0.0f){
+            tangent1.scale(-1.0f);
+        }
+        if (Vector3f.dot(Vector3f.cross(n2, tangent2, null), bitangent) < 0.0f){
+            tangent2.scale(-1.0f);
+        }
+        if (Vector3f.dot(Vector3f.cross(n3, tangent3, null), bitangent) < 0.0f){
+            tangent3.scale(-1.0f);
+        }
 
         Vector3f[] result = new Vector3f[2*3];
-        result[0] = tangent;
+        result[0] = tangent1;
         result[1] = bitangent;
-        result[2] = tangent;
+        result[2] = tangent2;
         result[3] = bitangent;
-        result[4] = tangent;
+        result[4] = tangent3;
         result[5] = bitangent;
         return result;
     }

@@ -63,7 +63,7 @@ in vec4 position_world;
 
 in vec3 eyeVec;
 in vec3 eyePos_world;
-//in mat3 TBN;
+in mat3 TBN;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
@@ -271,18 +271,20 @@ void main(void) {
 
 	vec2 uvParallax = vec2(0,0);
 
+#define use_precomputed_tangent_space_
 	//if (useParallax) {
 #ifdef use_heightMap
 	if (true) {
-		float height = (texture(normalMap, UV).rgb).y;//texture2D(heightMap, UV).r;
-		height = height * 2 - 1;
-		height = clamp(height, 0, 1);
-		height = (texture(heightMap, UV).rgb).r;
-		
+		float height = (texture(heightMap, UV).rgb).r;
+
+#ifdef use_precomputed_tangent_space
+		vec3 viewVectorTangentSpace = normalize((TBN) * (V));
+		float v = height * parallaxScale - parallaxBias;
+#else
 		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
 		vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
 		float v = height * parallaxScale - parallaxBias;
-
+#endif
 		uvParallax = (v * viewVectorTangentSpace.xy);
 		UV = UV + uvParallax;
 	//} else if (useSteepParallax) {
@@ -360,20 +362,17 @@ void main(void) {
 	
 #endif
 	
-    mat3 TBN = transpose(mat3(
-        (vec4(normalize(tangent_world),0)).xyz,
-        (vec4(normalize(bitangent_world),0)).xyz,
-        normalize(normal_world)
-    ));
-	
 	// NORMAL
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
 
 #ifdef use_normalMap
+#ifdef use_precomputed_tangent_space
+	PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
+#else
 	PN_world = normalize(perturb_normal(old_PN_world, V, UV));
-	//PN_world = inverse(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
+#endif
 	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 	

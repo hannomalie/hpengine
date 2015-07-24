@@ -511,7 +511,8 @@ public class DebugFrame {
         	WebMenuItem textureAddMenuItem = new WebMenuItem ( "Add 2D" );
         	textureAddMenuItem.addActionListener(e -> {
         		
-	    		File chosenFile = fileChooser.showOpenDialog();
+				Customizer<WebFileChooser> customizer = arg0 -> {};
+				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath()));
 					
@@ -535,8 +536,9 @@ public class DebugFrame {
         {
         	WebMenuItem textureSrgbaAddMenuItem = new WebMenuItem ( "Add 2D SRGBA" );
         	textureSrgbaAddMenuItem.addActionListener(e -> {
-        		
-	    		File chosenFile = fileChooser.showOpenDialog();
+
+				Customizer<WebFileChooser> customizer = arg0 -> {};
+				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
 					
@@ -562,8 +564,9 @@ public class DebugFrame {
         {
         	WebMenuItem textureAddMenuItem = new WebMenuItem ( "Add Cube" );
     		textureAddMenuItem.addActionListener(e -> {
-        		
-	    		File chosenFile = fileChooser.showOpenDialog();
+
+				Customizer<WebFileChooser> customizer = arg0 -> {};
+				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
 					
