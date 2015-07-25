@@ -179,9 +179,23 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             int[] referencedNormals = face.getNormalIndices();
             int[] referencedTexcoords = face.getTextureCoordinateIndices();
 
-			Vector3f[] tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
-					texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
-					normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
+			Vector3f[] tangentBitangent;
+            boolean hasTexcoords = referencedTexcoords[0] != -1;
+            if(hasTexcoords) {
+                tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
+                    texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
+                    normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
+            } else {
+                tangentBitangent = new Vector3f[6];
+                Vector3f edge1 = Vector3f.sub(verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[0]-1), null);
+                Vector3f edge2 = Vector3f.sub(verticesTemp.get(referencedVertices[2]-1), verticesTemp.get(referencedVertices[0]-1), null);
+                tangentBitangent[0] = edge1;
+                tangentBitangent[1] = edge2;
+                tangentBitangent[2] = edge1;
+                tangentBitangent[3] = edge2;
+                tangentBitangent[4] = edge1;
+                tangentBitangent[5] = edge2;
+            }
 
             for (int j = 0; j < 3; j++) {
                 Vector3f referencedVertex = verticesTemp.get(referencedVertices[j]-1);

@@ -330,28 +330,28 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		{
 			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
 		}
-		{
-			vec3 probeColor;// = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
-			
-			for(int z = 0; z < activeProbeCount; z++) {
-				vec3 currentEnvironmentMapMin = environmentMapMin[z];
-				vec3 currentEnvironmentMapMax = environmentMapMax[z];
-				vec3 halfExtents = (currentEnvironmentMapMax - currentEnvironmentMapMin)/2;
-				vec3 probeCenter = currentEnvironmentMapMin + halfExtents;
-				if(isInside(currentPosition, currentEnvironmentMapMin, currentEnvironmentMapMax))
-				{
-					float mipmap = 10;
-					probeColor = ComputeScattering(dotSaturate(rayDirection, vec3(0,-1,0)))*textureLod(probes, vec4(vec3(0,1,0), z), mipmap).rgb/6;
-					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,1,0)))*textureLod(probes, vec4(vec3(0,-1,0), z), mipmap).rgb/6;
-					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(-1,0,0)))*textureLod(probes, vec4(vec3(1,0,0), z), mipmap).rgb/6;
-					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(1,0,0)))*textureLod(probes, vec4(vec3(-1,0,0), z), mipmap).rgb/6;
-					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,0,-1)))*textureLod(probes, vec4(vec3(0,0,1), z), mipmap).rgb/6;
-					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,0,1)))*textureLod(probes, vec4(vec3(0,0,-1), z), mipmap).rgb/6;
-					accumFog += probeColor*2*scatterFactor;
-					break;
-				}
-			}
-		}
+//		{
+//			vec3 probeColor;// = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
+//
+//			for(int z = 0; z < activeProbeCount; z++) {
+//				vec3 currentEnvironmentMapMin = environmentMapMin[z];
+//				vec3 currentEnvironmentMapMax = environmentMapMax[z];
+//				vec3 halfExtents = (currentEnvironmentMapMax - currentEnvironmentMapMin)/2;
+//				vec3 probeCenter = currentEnvironmentMapMin + halfExtents;
+//				if(isInside(currentPosition, currentEnvironmentMapMin, currentEnvironmentMapMax))
+//				{
+//					float mipmap = 10;
+//					probeColor = ComputeScattering(dotSaturate(rayDirection, vec3(0,-1,0)))*textureLod(probes, vec4(vec3(0,1,0), z), mipmap).rgb/6;
+//					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,1,0)))*textureLod(probes, vec4(vec3(0,-1,0), z), mipmap).rgb/6;
+//					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(-1,0,0)))*textureLod(probes, vec4(vec3(1,0,0), z), mipmap).rgb/6;
+//					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(1,0,0)))*textureLod(probes, vec4(vec3(-1,0,0), z), mipmap).rgb/6;
+//					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,0,-1)))*textureLod(probes, vec4(vec3(0,0,1), z), mipmap).rgb/6;
+//					probeColor +=ComputeScattering(dotSaturate(rayDirection, vec3(0,0,1)))*textureLod(probes, vec4(vec3(0,0,-1), z), mipmap).rgb/6;
+//					accumFog += probeColor*2*scatterFactor;
+//					break;
+//				}
+//			}
+//		}
 
 		currentPosition += step;
 	}

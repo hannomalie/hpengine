@@ -42,6 +42,7 @@ import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.StopWatch;
 
 import javax.swing.*;
+import javax.vecmath.Vector2f;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -84,6 +85,7 @@ public class DeferredRenderer implements Renderer {
 	
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
+	private ArrayList<VertexBuffer> sixDebugBuffers;
 
 	private static float MINLIGHTRADIUS = 64.5f;
 	private static float LIGHTRADIUSSCALE = 15f;
@@ -383,6 +385,14 @@ public class DeferredRenderer implements Renderer {
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
+		sixDebugBuffers = new ArrayList<VertexBuffer>() {{
+			float height = -2f/3f;
+			float width = 2f;
+			float widthDiv = width/6f;
+			for (int i = 0; i < 6; i++) {
+				add(new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height)).upload());
+			}
+		}};
 		
 		glWatch = new OpenGLStopWatch();
 
@@ -544,6 +554,9 @@ public class DeferredRenderer implements Renderer {
 		if (World.DEBUGFRAME_ENABLED) {
 //			drawToQuad(lightFactory.getDepthMapForAreaLight(getLightFactory().getAreaLights().get(0)), debugBuffer);
 			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			for(int i = 0; i < 6; i++) {
+//				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
+//			}
 //			drawToQuad(light.getShadowMapId(), debugBuffer);
 		}
 		GL11.glEnable(GL11.GL_DEPTH_TEST);

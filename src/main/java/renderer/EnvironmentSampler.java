@@ -58,6 +58,7 @@ public class EnvironmentSampler extends Entity {
 	private int cubeMapView;
 	private int cubeMapView1;
 	private int cubeMapView2;
+
 	private int cubeMapFaceViews[][] = new int[3][6];
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
@@ -735,34 +736,44 @@ public class EnvironmentSampler extends Entity {
 
 		switch (i) {
 		case 0:
-//			camera.setOrientation(new Quaternion().setIdentity());
-			camera.rotateWorld(new Vector4f(0,0,1, -180));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0,1,0, 90));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 1:
-			camera.rotate(new Vector4f(0,1,0, -180));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, -90));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 2:
-			camera.rotate(new Vector4f(0,1,0, 90));
-			camera.rotate(new Vector4f(1,0,0, 90));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 3:
-			camera.rotate(new Vector4f(1,0,0, -180));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 4:
-			camera.rotate(new Vector4f(1,0,0, 90));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
 			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
 		case 5:
-			camera.rotate(new Vector4f(0,1,0, -180));
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
 			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
@@ -780,5 +791,21 @@ public class EnvironmentSampler extends Entity {
 
 	public void setCamera(Camera camera) {
 		this.cameraComponent.setCamera(camera);
+	}
+
+	public int getCubeMapView() {
+		return cubeMapView;
+	}
+
+	public int getCubeMapView1() {
+		return cubeMapView1;
+	}
+
+	public int getCubeMapView2() {
+		return cubeMapView2;
+	}
+
+	public int[][] getCubeMapFaceViews() {
+		return cubeMapFaceViews;
 	}
 }

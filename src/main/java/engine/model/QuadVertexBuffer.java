@@ -1,35 +1,48 @@
 package engine.model;
 
+import javax.vecmath.Vector2f;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
 public class QuadVertexBuffer extends VertexBuffer{
 	
-//	public QuadVertexBuffer(ForwardRenderer renderer, boolean fullscreen) {
-//		super(renderer, getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	public QuadVertexBuffer(boolean fullscreen) {
 		super(getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+	}
+	public QuadVertexBuffer(Vector2f leftBottom, Vector2f rightUpper) {
+		super(getPositionsAndTexCoords(leftBottom, rightUpper), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	}
 
 	static float[] getPositionsAndTexCoords(boolean fullscreen) {
 		if (fullscreen) {
 			return new float[] {
-			    -1.0f, -1.0f, 0.0f,   0f, 0f,
-			    1.0f, -1.0f, 0.0f,    1f, 0f,
-			    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
-			    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
-			    1.0f, -1.0f, 0.0f,    1.0f, 0f,
-			    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+					-1.0f, -1.0f, 0.0f,   0f, 0f,
+					1.0f, -1.0f, 0.0f,    1f, 0f,
+					-1.0f,  1.0f, 0.0f,   0f,  1.0f,
+					-1.0f,  1.0f, 0.0f,   0f,  1.0f,
+					1.0f, -1.0f, 0.0f,    1.0f, 0f,
+					1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 			};
 		} else {
-			return new float[] {
-			    -1.0f, -1.0f, 0.0f,   0f, 0f,
-			    0f, -1.0f, 0.0f,    1f, 0f,
-			    -1.0f,  0f, 0.0f,   0f, 1.0f,
-			    -1.0f,  0f, 0.0f,   0f, 1.0f,
-			    0f, -1.0f, 0.0f,    1.0f, 0f,
-			    0f,  0f, 0.0f,    1.0f, 1.0f
-			};
+//			return new float[] {
+//					-1.0f, -1.0f, 0.0f, 0f, 0f,
+//					0f, -1.0f, 0.0f,    1f, 0f,
+//					-1.0f,  0f, 0.0f,   0f, 1.0f,
+//					-1.0f,  0f, 0.0f,   0f, 1.0f,
+//					0f, -1.0f, 0.0f,    1.0f, 0f,
+//					0f,  0f, 0.0f,      1.0f, 1.0f
+//			};
+			return getPositionsAndTexCoords(new Vector2f(-1, -1), new Vector2f(0, 0));
 		}
+	}
+	static float[] getPositionsAndTexCoords(Vector2f leftBottom, Vector2f rightUpper) {
+		return new float[] {
+				leftBottom.x, leftBottom.y, 0.0f,   0f, 0f,
+				rightUpper.x, leftBottom.y, 0.0f,    1f, 0f,
+				leftBottom.x,  rightUpper.y, 0.0f,   0f,  1.0f,
+				leftBottom.x,  rightUpper.y, 0.0f,   0f,  1.0f,
+				rightUpper.x, leftBottom.y, 0.0f,    1.0f, 0f,
+				rightUpper.x,  rightUpper.y, 0.0f,    1.0f,  1.0f
+		};
 	}
 }

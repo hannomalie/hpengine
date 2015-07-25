@@ -267,7 +267,7 @@ public class GBuffer {
 			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
 			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
 			probeBoxEntity.getComponent(ModelComponent.class).
-					draw(cameraEntity, probeBoxEntity.getModelMatrixAsBuffer(), probeFirstpassProgram, world.getScene().getEntities().indexOf(probeBoxEntity));
+				draw(cameraEntity, probeBoxEntity.getModelMatrixAsBuffer(), probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(probeBoxEntity));
 		}
 
 		probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
