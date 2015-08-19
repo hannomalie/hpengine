@@ -56,6 +56,7 @@ void main()
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
     
     out_Color = vec4(moment1,moment2,0,0);//encode(normal_world));
+    //out_Color.rgba = vec4(1,0,0,1);
     //out_Diffuse = vec4(normal_world,1);
     /*vec3 diffuse = color;
     if(hasDiffuseMap) {

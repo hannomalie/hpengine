@@ -69,41 +69,19 @@ public class AddEntitiyView extends WebPanel {
 			List<File> chosenFiles = WebFileChooser.showMultiOpenDialog(".\\hp\\assets\\models\\", customizer);
 			if(chosenFiles != null) {
 				for (File chosenFile : chosenFiles) {
-					if(chosenFile != null) {
-						SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(new LoadModelCommand(chosenFile, nameField.getText()));
+					if (chosenFile != null) {
 
-						EntityListResult result = null;
-
-						new SwingWorker<EntityListResult, Void>() {
+						new SwingWorkerWithProgress<EntityListResult>(world.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
-							protected EntityListResult doInBackground() throws Exception {
-								debugFrame.startProgress("Load model ...");
-								try {
-									return queue.poll(5, TimeUnit.MINUTES);
-								} catch (Exception e1) {
-									e1.printStackTrace();
-									showError(chosenFile);
-								}
-								return null;
+							public EntityListResult doInBackground() throws Exception {
+								SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(new LoadModelCommand(chosenFile, nameField.getText()));
+								return queue.poll(5, TimeUnit.MINUTES);
 							}
 
 							@Override
-							public void done() {
-								try {
-									debugFrame.stopProgress();
-									EntityListResult temp = get();
-									if (temp == null || !temp.isSuccessful()) {
-										showError(chosenFile);
-									} else {
-										world.getScene().addAll(temp.entities);
-										debugFrame.refreshSceneTree();
-										showSuccess(chosenFile);
-									}
-								} catch (InterruptedException e1) {
-									e1.printStackTrace();
-								} catch (ExecutionException e1) {
-									e1.printStackTrace();
-								}
+							public void done(EntityListResult result) {
+								world.getScene().addAll(result.entities);
+								debugFrame.refreshSceneTree();
 							}
 						}.execute();
 					}

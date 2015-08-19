@@ -278,7 +278,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	
 	p_max = smoothstep(0.1, 1.0, p_max);
 
-	float darknessFactor = 120.0;
+	float darknessFactor = 420.0;
 	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
 	
 	//p_max = blurESM(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
@@ -425,13 +425,10 @@ void main(void) {
 	
 	finalColor *= visibility;
 
-	//finalColor = vec4(visibility,visibility,visibility,visibility);
-	/////////////////// SHADOWMAP
-	
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	
 	float ambient = normalAmbient.a;
-	ambient += 0.05;
+	//ambient += 0.01;
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;
@@ -444,5 +441,5 @@ void main(void) {
 	
 	//out_DiffuseSpecular = vec4(color,1);
 	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
-	//out_AOReflection.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
+	//out_DiffuseSpecular.rgb = vec3(positionShadow.xyz);
 }

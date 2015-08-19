@@ -39,6 +39,7 @@ public class Octree implements LifeCycle, Serializable {
 	static {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		matrix44Buffer.rewind();
+		modelMatrix.setIdentity();
 		modelMatrix.store(matrix44Buffer);
 		matrix44Buffer.rewind();
 	}

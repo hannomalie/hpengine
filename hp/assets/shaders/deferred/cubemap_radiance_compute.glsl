@@ -42,7 +42,7 @@ vec3 getNormalForTexel(vec3 positionWorld, vec2 texelPosition, int i) {
 	} else if(currentCubemapSide == 1) { // facing -x-dir
 		normal = vec3(-1, -texelPosition.y, texelPosition.x);
 	} else if(currentCubemapSide == 2) { // facing y-dir
-		normal = vec3(-texelPosition.x, 1, texelPosition.y);
+		normal = vec3(texelPosition.x, 1, texelPosition.y);
 	} else if(currentCubemapSide == 3) { // facing -y-dir
 		normal = vec3(texelPosition.x, -1, -texelPosition.y);
 	} else if(currentCubemapSide == 4) { // facing z-dir

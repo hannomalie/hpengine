@@ -2,7 +2,6 @@ package renderer;
 
 import camera.Camera;
 import com.bulletphysics.dynamics.DynamicsWorld;
-import component.CameraComponent;
 import component.ModelComponent;
 import config.Config;
 import engine.Transform;
@@ -151,8 +150,7 @@ public class GBuffer {
 		}
 	}
 	
-	void drawFirstPass(Entity cameraEntity, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
-		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+	void drawFirstPass(Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glDepthMask(true);
 		gBuffer.use(true);
@@ -183,7 +181,7 @@ public class GBuffer {
 //			GPUProfiler.start("Depth prepass");
 			for (Entity entity : entities) {
 				if(entity.getComponents().containsKey("ModelComponent")) {
-					ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(cameraEntity);
+					ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
 				}
 //				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 //					modelComponent.draw(cameraEntity);
@@ -202,22 +200,28 @@ public class GBuffer {
 		if (World.DRAWLIGHTS_ENABLED) {
 			for (PointLight light : pointLights) {
 				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(cameraEntity);
+				light.drawAsMesh(camera);
 			}
 			for (TubeLight light : tubeLights) {
 //				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(cameraEntity);
+				light.drawAsMesh(camera);
 			}
 			for (AreaLight light : areaLights) {
 //				if (!light.isInFrustum(camera)) { continue;}
-				light.drawAsMesh(cameraEntity);
+				light.drawAsMesh(camera);
 			}
+			renderer.getLightFactory().getDirectionalLight().drawAsMesh(camera);
+
+			renderer.drawLine(renderer.getLightFactory().getDirectionalLight().getWorldPosition(),
+					renderer.getLightFactory().getDirectionalLight().getCamera().getWorldPosition());
+			renderer.drawLines(linesProgram);
+
 		}
 
 //		linesProgram.use();
 //		GL11.glDisable(GL11.GL_CULL_FACE);
 		if(World.DEBUGDRAW_PROBES) {
-			debugDrawProbes(cameraEntity);
+			debugDrawProbes(camera);
 			renderer.getEnvironmentProbeFactory().draw(octree);
 		}
 		GL11.glEnable(GL11.GL_CULL_FACE);
@@ -246,8 +250,7 @@ public class GBuffer {
 		}
 	}
 
-	private void debugDrawProbes(Entity cameraEntity) {
-		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+	private void debugDrawProbes(Camera camera) {
 		probeFirstpassProgram.use();
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(probeFirstpassProgram);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
@@ -267,7 +270,7 @@ public class GBuffer {
 			probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
 			probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
 			probeBoxEntity.getComponent(ModelComponent.class).
-				draw(cameraEntity, probeBoxEntity.getModelMatrixAsBuffer(), probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(probeBoxEntity));
+				draw(camera, probeBoxEntity.getModelMatrixAsBuffer(), probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getFirstPassProgram(), world.getScene().getEntities().indexOf(probeBoxEntity));
 		}
 
 		probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
@@ -276,12 +279,11 @@ public class GBuffer {
 		
 	}
 
-	void drawSecondPass(Entity cameraEntity, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+	void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		renderer.getTextureFactory().generateMipMaps(directionalLight.getShadowMapId());
 		
-		Vector3f camPosition = cameraEntity.getPosition().negate(null);
-		Vector3f.add(camPosition, (Vector3f) cameraEntity.getViewDirection().negate(null).scale(-cameraEntity.getComponent(CameraComponent.class).getCamera().getNear()), camPosition);
+		Vector3f camPosition = camera.getPosition();
+		Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
 		GPUProfiler.start("Directional light");
@@ -320,7 +322,7 @@ public class GBuffer {
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
-		secondPassDirectionalProgram.setUniform("eyePosition", cameraEntity.getPosition());
+		secondPassDirectionalProgram.setUniform("eyePosition", camera.getWorldPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", World.AMBIENTOCCLUSION_RADIUS);
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", World.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.WIDTH);
@@ -330,10 +332,9 @@ public class GBuffer {
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
+		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
 		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
-		secondPassDirectionalProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
 //		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
 		renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(secondPassDirectionalProgram);
 		GPUProfiler.start("Draw fullscreen buffer");
@@ -362,7 +363,7 @@ public class GBuffer {
 
 		laBuffer.unuse();
 		
-		renderAOAndScattering(cameraEntity, viewMatrix, projectionMatrix, directionalLight);
+		renderAOAndScattering(camera, viewMatrix, projectionMatrix, directionalLight);
 		
 		if (World.USE_GI) {
 			GL11.glDepthMask(false);
@@ -417,7 +418,7 @@ public class GBuffer {
 		aoScatteringProgram.setUniform("screenHeight", (float) Config.HEIGHT/2);
 		aoScatteringProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-		aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getLightMatrixAsBuffer());
+		aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
 		aoScatteringProgram.setUniform("lightDirection", directionalLight.getViewDirection());
 		aoScatteringProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
@@ -599,7 +600,6 @@ public class GBuffer {
 	
 	private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 		
-
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		if(areaLights.isEmpty()) { return; }
@@ -672,8 +672,7 @@ public class GBuffer {
 	}
 
 
-	void combinePass(RenderTarget target, DirectionalLight light, Entity cameraEntity) {
-		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+	void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
 		renderer.getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
 		combineProgram.use();
@@ -681,7 +680,7 @@ public class GBuffer {
 		combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		combineProgram.setUniform("screenWidth", (float) Config.WIDTH);
 		combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-		combineProgram.setUniform("camPosition", cameraEntity.getPosition());
+		combineProgram.setUniform("camPosition", camera.getPosition());
 		combineProgram.setUniform("ambientColor", World.AMBIENT_LIGHT);
 		combineProgram.setUniform("useAmbientOcclusion", World.useAmbientOcclusion);
 		combineProgram.setUniform("worldExposure", World.EXPOSURE);
@@ -744,8 +743,7 @@ public class GBuffer {
 		GPUProfiler.end();
 	}
 
-	public void drawDebug(Entity cameraEntity, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-		Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
+	public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
 		///////////// firstpass
 //		GL11.glEnable(GL11.GL_CULL_FACE);
 //		GL11.glDepthMask(true);
@@ -760,14 +758,13 @@ public class GBuffer {
 		linesProgram.setUniform("screenHeight", (float) Config.HEIGHT);
 		linesProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-		linesProgram.setUniform("eyePosition", cameraEntity.getPosition());
+		linesProgram.setUniform("eyePosition", camera.getPosition());
 		
 		if(World.DRAWSCENE_ENABLED) {
 			linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
 			List<Entity> visibleEntities = new ArrayList<>();
 			if (World.useFrustumCulling) {
 				visibleEntities.addAll(octree.getVisible(camera));
-//				entities.addAll(octree.getEntities());
 				for (int i = 0; i < visibleEntities.size(); i++) {
 					if (!visibleEntities.get(i).isInFrustum(camera)) {
 						visibleEntities.remove(i);
@@ -781,10 +778,39 @@ public class GBuffer {
 				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 					modelComponent.drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
 				});
-				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getViewDirection(), null).scale(10));
-				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getUpDirection(), null).scale(10));
-				renderer.drawLine(new Vector3f(), (Vector3f) Vector3f.add(new Vector3f(), entity.getRightDirection(), null).scale(10));
 			}
+			linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
+			for (Entity entity : visibleEntities) {
+				linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
+				renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
+				renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
+				renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
+			}
+			renderer.drawLines(linesProgram);
+			// draw coord system for entity
+			linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+			linesProgram.setUniform("diffuseColor", new Vector3f(1,0,1));
+			for (Entity entity : visibleEntities) {
+				Vector4f view = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_VIEW.x, Transform.WORLD_VIEW.y, Transform.WORLD_VIEW.z, 0.0f), null);
+				Vector4f right = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, 0.0f), null);
+				Vector4f up = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, 0.0f), null);
+
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+			}
+			renderer.drawLines(linesProgram);
+			linesProgram.setUniform("diffuseColor", new Vector3f(0.5f,0.5f,0));
+			for (Entity entity : visibleEntities) {
+				Vector4f view = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getViewDirection().x, entity.getViewDirection().y, entity.getViewDirection().z, 0.0f), null);
+				Vector4f right = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getRightDirection().x, entity.getRightDirection().y, entity.getRightDirection().z, 0.0f), null);
+				Vector4f up = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getUpDirection().x, entity.getUpDirection().y, entity.getUpDirection().z, 0.0f), null);
+
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+				renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+			}
+			renderer.drawLines(linesProgram);
 		}
 
 		linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
@@ -812,9 +838,9 @@ public class GBuffer {
 	    renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,15,0));
 	    renderer.drawLine(new Vector3f(), new Vector3f(0,0,-15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
-	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (cameraEntity.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
+	    renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
 	    dynamicsWorld.debugDrawWorld();
 	    renderer.drawLines(linesProgram);
 		
@@ -822,7 +848,7 @@ public class GBuffer {
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		////////////////////
 
-		drawSecondPass(cameraEntity, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
+		drawSecondPass(camera, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 	}
 
 	public int getLightAccumulationMapOneId() {

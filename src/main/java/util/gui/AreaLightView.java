@@ -27,13 +27,11 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 
 public class AreaLightView extends EntityView {
-	private final Entity worldCam;
 	private AreaLight light;
 
 	public AreaLightView(World world, DebugFrame debugFrame, AreaLight light) {
 		super(world, debugFrame, light);
 		this.light = light;
-		this.worldCam = world.getActiveCameraEntity();
 	}
 
 	@Override
@@ -56,7 +54,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-        	world.setActiveCameraEntity(world.getRenderer().getLightFactory().getCameraForAreaLight(light));
+        	world.setActiveCamera(world.getRenderer().getLightFactory().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			world.restoreWorldCamera();

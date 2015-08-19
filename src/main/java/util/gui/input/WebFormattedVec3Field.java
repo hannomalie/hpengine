@@ -6,6 +6,8 @@ import com.alee.extended.panel.GroupPanel;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.text.WebFormattedTextField;
 
+import java.awt.event.ActionListener;
+
 public abstract class WebFormattedVec3Field extends GroupPanel {
 	
 	private Vector3f input;
@@ -29,25 +31,30 @@ public abstract class WebFormattedVec3Field extends GroupPanel {
         inputZ = new WebFormattedTextField();
         inputZ.setValue(input.z);
         inputZ.setColumns(15);
-        
 
-        inputX.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
-        });
-        inputY.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
-        });
-        inputZ.addActionListener(e -> {
-        	onValueChange(new Vector3f(Float.valueOf(inputX.getText().replace(',', '.')),Float.valueOf(inputY.getText().replace(',', '.')),Float.valueOf(inputZ.getText().replace(',', '.'))));
-        });
+
+        ActionListener defaultValueCleanerActionListener = e -> {
+            onValueChange(replaceDotAndSemicolonAndGetAsVector());
+        };
+
+        inputX.addActionListener(defaultValueCleanerActionListener);
+        inputY.addActionListener(defaultValueCleanerActionListener);
+        inputZ.addActionListener(defaultValueCleanerActionListener);
         
         this.add(webLabel);
         this.add(inputX);
         this.add(inputY);
         this.add(inputZ);
 	}
-	
-	public abstract void onValueChange(Vector3f current);
+
+    private Vector3f replaceDotAndSemicolonAndGetAsVector() {
+        return new Vector3f(replaceDotAndSemicolonAndGetAsFloat(inputX), replaceDotAndSemicolonAndGetAsFloat(inputY), replaceDotAndSemicolonAndGetAsFloat(inputZ));
+    }
+    private Float replaceDotAndSemicolonAndGetAsFloat(WebFormattedTextField inputField) {
+        return Float.valueOf(inputField.getText().replace(",", "").replace(".", ""));
+    }
+
+    public abstract void onValueChange(Vector3f current);
 
 	public void setValue(Vector3f position) {
 		inputX.setValue(position.x);

@@ -3,7 +3,6 @@ package engine;
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.EventBus;
-import component.CameraComponent;
 import component.InputControllerComponent;
 import component.ModelComponent;
 import config.Config;
@@ -136,8 +135,8 @@ public class World {
 	private int entityCount = 10;
 	public volatile int PICKING_CLICK = 0;
 	public Renderer renderer;
-	private Entity camera;
-	private Entity activeCameraEntity;
+	private Camera camera;
+	private Camera activeCamera;
 
 	public World() {
 		this(null);
@@ -158,68 +157,67 @@ public class World {
 		glWatch = new OpenGLStopWatch();
 		scriptManager = new ScriptManager(this);
 		physicsFactory = new PhysicsFactory(this);
+		Scene scene;
 		if(sceneName != null) {
-			long start = System.currentTimeMillis();
-			System.out.println(start);
 			scene = Scene.read(renderer, sceneName);
-			scene.init(this);
-			System.out.println("Duration: " + (System.currentTimeMillis() - start));
 		} else {
 			scene = new Scene();
-			scene.init(this);
-//			scene.addAll(loadDummies());
 		}
+		long start = System.currentTimeMillis();
+		System.out.println(start);
+		setScene(scene);
+		System.out.println("Duration: " + (System.currentTimeMillis() - start));
 
 		float rotationDelta = 5f;
 		float scaleDelta = 0.1f;
 		float posDelta = 1f;
-		camera = renderer.getEntityFactory().getEntity().
-					addComponent(new CameraComponent(new Camera(renderer))).
+		camera = (Camera) new Camera(renderer).
 					addComponent(new InputControllerComponent() {
-						 @Override public void update(float seconds) {
+							 @Override
+							 public void update(float seconds) {
 
-							float turbo = 1f;
-							if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-								turbo = 3f;
-							}
+								 float turbo = 1f;
+								 if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+									 turbo = 3f;
+								 }
 
-							float rotationAmount = 1.1f * turbo*rotationDelta * seconds * World.CAMERA_SPEED;
-							if (Mouse.isButtonDown(0)) {
-								getEntity().rotate(Transform.WORLD_UP, Mouse.getDX() * rotationAmount);
-							}
-							if (Mouse.isButtonDown(1)) {
-								getEntity().rotate(Transform.WORLD_RIGHT, -Mouse.getDY() * rotationAmount);
-							}
-							if (Mouse.isButtonDown(2)) {
-								getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
-							}
+								 float rotationAmount = 1.1f * turbo * rotationDelta * seconds * World.CAMERA_SPEED;
+								 if (Mouse.isButtonDown(0)) {
+									 getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
+								 }
+								 if (Mouse.isButtonDown(1)) {
+									 getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
+								 }
+								 if (Mouse.isButtonDown(2)) {
+									 getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
+								 }
 
-							float moveAmount = turbo*posDelta * seconds * World.CAMERA_SPEED;
-							if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-								getEntity().move(new Vector3f(0, 0, moveAmount));
-							}
-							if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-								getEntity().move(new Vector3f(moveAmount, 0, 0));
-							}
-							if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-								getEntity().move(new Vector3f(0, 0, -moveAmount));
-							}
-							if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-								getEntity().move(new Vector3f(-moveAmount, 0, 0));
-							}
-							if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-								getEntity().move(new Vector3f(0, moveAmount, 0));
-							}
-							if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-								getEntity().move(new Vector3f(0, -moveAmount, 0));
-							}
+								 float moveAmount = turbo * posDelta * seconds * World.CAMERA_SPEED;
+								 if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+									 getEntity().move(new Vector3f(0, 0, -moveAmount));
+								 }
+								 if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+									 getEntity().move(new Vector3f(-moveAmount, 0, 0));
+								 }
+								 if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+									 getEntity().move(new Vector3f(0, 0, moveAmount));
+								 }
+								 if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+									 getEntity().move(new Vector3f(moveAmount, 0, 0));
+								 }
+								 if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+									 getEntity().move(new Vector3f(0, -moveAmount, 0));
+								 }
+								 if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+									 getEntity().move(new Vector3f(0, moveAmount, 0));
+								 }
+							 }
 						 }
-					 }
 					);
 		camera.init(this);
-		activeCameraEntity = camera;
-		activeCameraEntity.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
-		activeCameraEntity.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
+		activeCamera = camera;
+		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
+		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 //		try {
 //			renderer.getLightFactory().getDirectionalLight().init(renderer);
 //		} catch (Exception e) {
@@ -406,11 +404,19 @@ public class World {
 //		renderer.update(this, seconds);
 //		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
-		activeCameraEntity.update(seconds);
+		activeCamera.update(seconds);
 
-		
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
+		if(directionalLight.hasMoved()) {
+			renderer.addCommand(world -> {
+				for(EnvironmentProbe probe: renderer.getEnvironmentProbeFactory().getProbes()) {
+					renderer.addRenderProbeCommand(probe, true);
+				}
+                renderer.getEnvironmentProbeFactory().draw(scene.getOctree(), true);
+                return new Result(true);
+            });
+		}
 		directionalLight.update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
@@ -433,7 +439,7 @@ public class World {
 	private void loopCycle(float seconds) {
 		update(seconds);
 //		draw();
-		scene.endFrame(activeCameraEntity.getComponent(CameraComponent.class).getCamera());
+		scene.endFrame(activeCamera);
 		renderer.endFrame();
 	}
 
@@ -465,26 +471,22 @@ public class World {
 	}
 
 	public Camera getCamera() {
-		return camera.getComponent(CameraComponent.class).getCamera();
+		return camera;
 	}
 
 	public void setCamera(Camera camera) {
-		this.camera.getComponent(CameraComponent.class).setCamera(camera);
+		this.camera = camera;
 	}
 
 	public Camera getActiveCamera() {
-		return activeCameraEntity.getComponent(CameraComponent.class).getCamera();
+		return activeCamera;
 	}
 
-	public Entity getActiveCameraEntity() {
-		return activeCameraEntity;
-	}
-
-	public void setActiveCameraEntity(Entity newActiveCameraEntity) {
-		this.activeCameraEntity = newActiveCameraEntity;
+	public void setActiveCamera(Camera newActiveCamera) {
+		this.activeCamera = newActiveCamera;
 	}
 	public void restoreWorldCamera() {
-		this.activeCameraEntity = camera;
+		this.activeCamera = camera;
 	}
 
 	public static EventBus getEventBus() {

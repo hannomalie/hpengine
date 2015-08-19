@@ -496,7 +496,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   //result.diffuseColor = textureLod(probes, vec4(boxProjection(positionWorld, reflected, index), index), 0).rgb;
   //result.specularColor = result.diffuseColor;
   //return result;
-  
+
   if(roughness < 0.01) {
   	vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
     result.specularColor = SpecularColor * textureLod(probes, vec4(projectedReflected, index), 1).rgb;
@@ -510,6 +510,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		vec4 sampleSecondNearest = textureLod(probes, vec4(traceResult.dirToHitPointSecondNearest, traceResult.probeIndexSecondNearest), 1);
 		result.specularColor = SpecularColor * mix(sampleNearest, sampleSecondNearest, 1-sampleNearest.a).rgb;
 	}
+	result.specularColor = textureLod(probes, vec4(projectedReflected, index), 0).rgb;
   	return result;
   }
   
@@ -517,7 +518,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
   		vec3 projectedNormal = boxProjection(positionWorld, normal, index);
   		float NoV = clamp(dot(normal, v), 0.0, 1.0);
     	vec3 R = 2 * dot( v, normal) * normal - v;
-  		vec3 projectedReflected = boxProjection(positionWorld, reflect(v, normal), index);
+  		vec3 projectedReflected = boxProjection(positionWorld, reflected, index);
     	
 		TraceResult traceResult;
     	if (USE_CONETRACING_FOR_SPECULAR) {
@@ -1320,7 +1321,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	
 	vec3 normal = normalize(normalWorld);
 	vec3 reflected = normalize(reflect(V, normalWorld));
-	
+
 	float mixer = calculateWeight(positionWorld, environmentMapMin[probeIndexNearest], environmentMapMax[probeIndexNearest],
 									 environmentMapMin[probeIndexSecondNearest], environmentMapMax[probeIndexSecondNearest]);
 	

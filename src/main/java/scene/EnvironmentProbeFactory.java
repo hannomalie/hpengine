@@ -130,8 +130,11 @@ public class EnvironmentProbeFactory {
 	public FloatBuffer getWeights() {
 		return weights;
 	}
-	
+
 	public void draw(Octree octree) {
+		draw(octree, false);
+	}
+	public void draw(Octree octree, boolean urgent) {
 		if(!World.DRAW_PROBES) { return; }
 		
 		prepareProbeRendering();
@@ -143,7 +146,7 @@ public class EnvironmentProbeFactory {
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 			//environmentProbe.draw(octree, light);
-			renderer.addRenderProbeCommand(environmentProbe);
+			renderer.addRenderProbeCommand(environmentProbe, urgent);
 		}
 	}
 	

@@ -77,7 +77,7 @@ void main(void) {
     normal_world.y = dot(modelMatrix[1].xyz, normal_model);
     normal_world.z = dot(modelMatrix[2].xyz, normal_model);
     normal_world = normalize(normal_world);
-	//normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
+	normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
 	
 	vec3 tangent_model = in_Tangent;

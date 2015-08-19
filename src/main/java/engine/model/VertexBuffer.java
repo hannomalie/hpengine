@@ -161,6 +161,7 @@ public class VertexBuffer {
 	}
 	
 	public void drawDebug() {
+		GL11.glLineWidth(1f);
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
 	}

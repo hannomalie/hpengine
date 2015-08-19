@@ -25,6 +25,7 @@ import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
@@ -249,31 +250,23 @@ public class DebugFrame {
         	sceneLoadMenuItem.addActionListener(e -> {
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", customizer);
 	    		if(chosenFile != null) {
-	    			String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-	    			Scene newScene = Scene.read(world.getRenderer(), sceneName);
 
-	    			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
-						@Override public Result execute(World world) {
-							startProgress("Load scene ...");
-			    			world.setScene(newScene);
-			    			init(world);
-							stopProgress();
-			    			return new Result(true);
-						}}
-	    			);
-	        		
-	        		Result result = null;
-					try {
-						result = queue.poll(5, TimeUnit.MINUTES);
-					} catch (Exception e1) {
-						showError("Failed to load scene");
-					}
-					
-					if (!result.isSuccessful()) {
-						showError("Failed to load scene");
-					} else {
-						showSuccess("Scene loaded");
-					}
+					String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
+					new SwingWorkerWithProgress<Result>(world.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
+						@Override
+						public Result doInBackground() throws Exception {
+							Scene newScene = Scene.read(world.getRenderer(), sceneName);
+							SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+								@Override
+								public Result execute(World world) {
+									world.setScene(newScene);
+									return new Result(true);
+								}
+							});
+
+							return queue.poll(5, TimeUnit.MINUTES);
+						}
+					}.execute();
 	    		}
         	});
 
@@ -317,26 +310,27 @@ public class DebugFrame {
         {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+
+				new SwingWorkerWithProgress<Result>(world.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
-					public Result execute(World world) {
-						world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree());
-						return new Result() { @Override public boolean isSuccessful() { return true; } };
-					}});
-        		
-        		Result result = null;
-				try {
-					result = queue.poll(5, TimeUnit.MINUTES);
-				} catch (Exception e1) {
-					showError("Failed to add probe");
-				}
-				
-				if (!result.isSuccessful()) {
-					showError("Failed to add probe");
-				} else {
-					showSuccess("Added probe");
-	        		refreshProbeTab();
-				}
+					public Result doInBackground() throws Exception {
+						SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+							@Override
+							public Result execute(World world) {
+								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree());
+								return new Result() { @Override public boolean isSuccessful() { return true; } };
+							}
+						});
+
+						return queue.poll(5, TimeUnit.MINUTES);
+					}
+
+					@Override
+					public void done(Result result) {
+						refreshProbeTab();
+					}
+
+				}.execute();
         	});
 
         	menuProbe.add(probeAddMenuItem);
@@ -633,6 +627,7 @@ public class DebugFrame {
 	}
 
 	public void startProgress(String label) {
+		if(label == null) {return; }
 		progressBar.setIndeterminate(true);
 		progressBar.setStringPainted(true);
 		progressBar.setString(label);
@@ -1640,7 +1635,8 @@ public class DebugFrame {
 		tabbedPane.addTab("Probes", probesPane);
 	}
 	
-	private void showSuccess(String content) {
+	public void showSuccess(String content) {
+		if(content == null) {return; }
 		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 		notificationPopup.setIcon(NotificationIcon.plus);
 		notificationPopup.setDisplayTime( 2000 );
@@ -1648,7 +1644,8 @@ public class DebugFrame {
 		NotificationManager.showNotification(notificationPopup);
 	}
 
-	private void showError(String content) {
+	public void showError(String content) {
+		if(content == null) {return; }
 		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 		notificationPopup.setIcon(NotificationIcon.error);
 		notificationPopup.setDisplayTime( 2000 );

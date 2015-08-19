@@ -48,10 +48,10 @@ public class EntityView extends WebPanel {
 		this.setSize(600, 700);
 		setMargin(20);
 
-		init(entity);
+		init(world, entity);
 	}
 
-	private void init(Entity entity) {
+	protected void init(World world, Entity entity) {
 		this.entity = entity;
 		List<Component> panels = getPanels();
 
@@ -148,7 +148,7 @@ public class EntityView extends WebPanel {
 				childSelect.addActionListener(e ->{
 					int index = childSelect.getSelectedIndex();
 					Entity newEntity = entity.getChildren().get(index);
-					temp.init(newEntity);
+					temp.init(world, newEntity);
 				});
 				childSelect.setName("Children");
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Children"), childSelect));
@@ -158,9 +158,24 @@ public class EntityView extends WebPanel {
 				WebButton parentSelectButton = new WebButton(entity.getParent().getName());
 				EntityView temp = this;
 				parentSelectButton.addActionListener(e -> {
-					temp.init(entity.getParent());
+					temp.init(world, entity.getParent());
 				});
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Parent"), parentSelectButton));
+
+				WebButton parentRemove = new WebButton("Remove Parent");
+				parentRemove.addActionListener(e -> {
+					entity.removeParent();
+				});
+				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
+
+			} else {
+				WebComboBox parentSelect = new WebComboBox(new Vector<>(world.getScene().getEntities()));
+				parentSelect.addActionListener(e ->{
+					int index = parentSelect.getSelectedIndex();
+					Entity newParent = world.getScene().getEntities().get(index);
+					entity.setParent(newParent);
+				});
+				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));
 			}
 	        panels.add(webComponentPanel);
 	        

@@ -60,7 +60,7 @@ public class TubeLight extends Entity {
 	public void update(float seconds) {
 	}
 
-	public void drawAsMesh(Entity camera) {
+	public void drawAsMesh(Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});

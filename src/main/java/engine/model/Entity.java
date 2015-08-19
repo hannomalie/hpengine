@@ -58,7 +58,6 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		transform.init(world);
 		addComponent(new ModelComponent(model, materialName));
 		this.name = name;
-		
 		transform.setPosition(position);
 	}
 
@@ -149,10 +148,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		getTransform().recalculate();
 	}
 
-	private void addChild(Entity child) {
-		if(!children.contains(child)) {
+	private Entity addChild(Entity child) {
+		if(!children.contains(child) && !(this.getParent() == null && this.getParent() == child)) {
 			children.add(child);
 		}
+		return child;
 	}
 
 	private void removeChild(Entity entity) {

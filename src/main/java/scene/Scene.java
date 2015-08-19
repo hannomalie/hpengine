@@ -12,6 +12,8 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
 import renderer.Renderer;
+import renderer.Result;
+import renderer.command.Command;
 import renderer.light.*;
 import util.stopwatch.StopWatch;
 
@@ -20,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -29,7 +32,6 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new ArrayList<>();
 
-	List<PointLight> pointlights;
 	List<PointLightSerializationProxy> pointlightProxies = new ArrayList<>();
 	List<AreaLightSerializationProxy> arealightProxies = new ArrayList<>();
 	DirectionalLightSerializationProxy directionalLight = new DirectionalLightSerializationProxy();
@@ -50,12 +52,18 @@ public class Scene implements LifeCycle, Serializable {
 	public void init(World world) {
 		LifeCycle.super.init(world);
 		renderer = world.getRenderer();
-		entities.forEach(entity -> entity.init(world));
 		renderer.getEnvironmentProbeFactory().clearProbes();
 		octree.init(world);
-		octree.insert(entities);
+		entities.forEach(entity -> entity.init(world));
+		addAll(entities);
 		for (ProbeData data : probes) {
-			renderer.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());	
+			world.getRenderer().addCommand(new Command<Result>() {
+				@Override
+				public Result execute(World world) {
+					world.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(octree);
+					return new Result() { @Override public boolean isSuccessful() { return true; } };
+				}
+			});
 		}
 		initLights(renderer);
 		initialized = true;

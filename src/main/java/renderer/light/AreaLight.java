@@ -13,6 +13,7 @@ import renderer.rendertarget.RenderTarget;
 import shader.Program;
 import util.Util;
 
+import java.nio.FloatBuffer;
 import java.util.List;
 
 
@@ -53,13 +54,13 @@ public class AreaLight extends Entity {
 	public void update(float seconds) {
 	}
 
-	public void drawAsMesh(Entity camera) {
+	public void drawAsMesh(Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 
-	public void draw(Entity camera, Program program) {
+	public void draw(Camera camera, Program program) {
 		program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
@@ -119,5 +120,9 @@ public class AreaLight extends Entity {
 	}
 	public float getHeight() {
 		return (getScale().y);
+	}
+
+	public FloatBuffer getViewProjectionMatrixAsBuffer() {
+		return null; // TODO: RETURN A VIEWPROJECTIONMATRIX
 	}
 }

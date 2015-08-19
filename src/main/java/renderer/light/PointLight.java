@@ -44,7 +44,7 @@ public class PointLight extends Entity implements Serializable {
 		return color;
 	}
 
-	public void drawAsMesh(Entity camera) {
+	public void drawAsMesh(Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});

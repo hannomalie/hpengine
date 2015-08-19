@@ -59,16 +59,16 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.model = model;
     }
     @Override
-    public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(cameraEntity, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
+        draw(camera, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
-    public void draw(Entity cameraEntity) {
-        draw(cameraEntity, getEntity().getModelMatrixAsBuffer(), world.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+    public void draw(Camera camera) {
+        draw(camera, getEntity().getModelMatrixAsBuffer(), world.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
-    public void draw(Entity cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
 
         if(!isVisible) {
             return;
@@ -77,8 +77,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if (firstPassProgram == null) {
             return;
         }
-
-        Camera camera = cameraEntity.getComponent(CameraComponent.class).getCamera();
 
         Program currentProgram = firstPassProgram;
 //		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
@@ -93,10 +91,10 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
         currentProgram.setUniform("useRainEffect", World.RAINEFFECT == 0.0 ? false : true);
         currentProgram.setUniform("rainEffect", World.RAINEFFECT);
-        currentProgram.setUniformAsMatrix4("viewMatrix", cameraEntity.getViewMatrixAsBuffer());
+        currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        currentProgram.setUniform("eyePosition", cameraEntity.getPosition());
+        currentProgram.setUniform("eyePosition", camera.getPosition());
         currentProgram.setUniform("lightDirection", world.getRenderer().getLightFactory().getDirectionalLight().getViewDirection());
         currentProgram.setUniform("near", camera.getNear());
         currentProgram.setUniform("far", camera.getFar());
@@ -119,12 +117,15 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
 
     public void drawDebug(Program program, FloatBuffer modelMatrix) {
+
+        if(!getEntity().isVisible()) {
+            return;
+        }
+
         program.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
         model.getMaterial().setTexturesActive(program);
         vertexBuffer.drawDebug();
-
-//		material.setTexturesInactive();
     }
 
 

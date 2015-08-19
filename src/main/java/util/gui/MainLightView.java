@@ -8,7 +8,9 @@ import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import com.alee.laf.button.WebButton;
 import engine.World;
+import engine.model.Entity;
 import renderer.light.DirectionalLight;
 import util.gui.input.SliderInput;
 import util.gui.input.WebFormattedVec3Field;
@@ -26,7 +28,12 @@ public class MainLightView extends EntityView {
 
 	public MainLightView(World world, DebugFrame debugFrame) {
 		super(world, debugFrame, world.getRenderer().getLightFactory().getDirectionalLight());
+	}
+
+	@Override
+	protected void init(World world, Entity entity) {
 		this.light = world.getRenderer().getLightFactory().getDirectionalLight();
+		super.init(world, entity);
 	}
 
 	@Override
@@ -132,8 +139,28 @@ public class MainLightView extends EntityView {
 				entity.setOrientation(temp);
 			}
 		});
-        
+
         webComponentPanel.addElement(movablePanel);
+
+		webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(light.getCamera().getWidth(),
+																									light.getCamera().getHeight(),
+																									light.getCamera().getFar()
+																)) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				light.getCamera().setWidth(current.x);
+				light.getCamera().setHeight(current.y);
+				light.getCamera().setFar(current.z);
+			}
+		});
+
+		webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
+			world.setActiveCamera(light.getCamera());
+		});}});
+		webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
+			world.restoreWorldCamera();
+		});}});
+
         panels.add(webComponentPanel);
         return webComponentPanel;
 	}

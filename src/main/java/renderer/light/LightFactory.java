@@ -1,7 +1,6 @@
 package renderer.light;
 
 import camera.Camera;
-import component.CameraComponent;
 import component.InputControllerComponent;
 import component.ModelComponent;
 import engine.World;
@@ -38,7 +37,7 @@ public class LightFactory {
 	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	private Program areaShadowPassProgram;
-	private Entity camera;
+	private Camera camera;
 	
 	private List<PointLight> pointLights = new ArrayList<>();
 	private List<TubeLight> tubeLights = new ArrayList<>();
@@ -80,35 +79,38 @@ public class LightFactory {
 
 		this.renderTarget = new RenderTarget(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION);
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
-		this.camera = renderer.getEntityFactory().getEntity().addComponent(new CameraComponent(new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1)));
+		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 		this.getDirectionalLight().init(world);
 		this.getDirectionalLight().addComponent(new InputControllerComponent() {
 
 			@Override public void update(float seconds) {
 
+				float moveAmount = seconds;
+				float rotateAmount = seconds;
+
 				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-					getEntity().rotateWorld(new Vector3f(0, 0, 1), seconds * 45 / 40);
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-					getEntity().rotateWorld(new Vector3f(0, 0, 1), seconds * -45 / 40);
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					getEntity().rotateWorld(new Vector3f(1, 0, 0), seconds * 45 / 40);
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					getEntity().rotateWorld(new Vector3f(1, 0, 0), seconds * -45 / 40);
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
-					getEntity().move(new Vector3f(0, -1f, 0));
+					getEntity().move(new Vector3f(0, -moveAmount, 0));
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
-					getEntity().move(new Vector3f(0, 1f, 0));
+					getEntity().move(new Vector3f(0, moveAmount, 0));
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
-					getEntity().move(new Vector3f(-1f, 0, 0));
+					getEntity().move(new Vector3f(-moveAmount, 0, 0));
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
-					getEntity().move(new Vector3f(1f, 0, 0));
+					getEntity().move(new Vector3f(moveAmount, 0, 0));
 				}
 			}
 		});
@@ -364,14 +366,13 @@ public class LightFactory {
 			camera.setPosition(light.getPosition().negate(null));
 			camera.setOrientation(light.getOrientation());
 			camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
-			camera.getComponent(CameraComponent.class).getCamera().updateShadow();
-			
-			List<Entity> visibles = octree.getVisible(camera.getComponent(CameraComponent.class).getCamera());
+
+			List<Entity> visibles = octree.getVisible(camera);
 //			if(visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) { continue; }
 //			if(!light.hasMoved()) { continue; }
 			areaShadowPassProgram.use();
-			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getComponent(CameraComponent.class).getCamera().getViewMatrixAsBuffer());
-			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getComponent(CameraComponent.class).getCamera().getProjectionMatrixAsBuffer());
+			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 //			directionalShadowPassProgram.setUniform("near", camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", camera.getFar());
 			
@@ -399,20 +400,18 @@ public class LightFactory {
 		return areaLightDepthMaps.get(index);
 	}
 
-	public Entity getCameraForAreaLight(AreaLight light) {
+	public Camera getCameraForAreaLight(AreaLight light) {
 		camera.setPosition(light.getPosition().negate(null));
 //		camera.getOrientation().x = -light.getOrientation().x;
 //		camera.getOrientation().y = -light.getOrientation().y;
 //		camera.getOrientation().z = -light.getOrientation().z;
 //		camera.getOrientation().w = -light.getOrientation().w;
 //		camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
-		camera.getComponent(CameraComponent.class).getCamera().updateShadow();
 		//return camera.getComponent(CameraComponent.class).getCamera();
 		return camera;
 	}
 
 	public FloatBuffer getShadowMatrixForAreaLight(AreaLight light) {
-		Camera c = getCameraForAreaLight(light).getComponent(CameraComponent.class).getCamera();
 //		c.getOrientation().x = light.getOrientation().negate(null).x;
 //		c.getOrientation().y = light.getOrientation().negate(null).y;
 //		c.getOrientation().z = light.getOrientation().negate(null).z;
@@ -424,9 +423,7 @@ public class LightFactory {
 //		c.setPosition(newPosition);
 //		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
 //		c.updateShadow();
-		Matrix4f.mul(c.getProjectionMatrix(), c.getViewMatrix().negate(null), null).store(buffer);
-		buffer.flip();
-		return buffer;
+		return light.getViewProjectionMatrixAsBuffer();
 	}
 
 	public void clearAll() {

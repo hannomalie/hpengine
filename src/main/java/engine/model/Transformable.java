@@ -11,9 +11,7 @@ import org.lwjgl.util.vector.Vector4f;
 	Transform getTransform();
 	void setTransform(Transform transform);
     default Vector3f getPosition() { return getTransform().getPosition(); };
-    default Vector3f getLocalPosition() { return getTransform().getLocalPosition(); };
     default Quaternion getOrientation() { return getTransform().getOrientation(); };
-    default Quaternion getLocalOrientation() { return getTransform().getLocalOrientation(); };
 	default void rotate(Vector4f axisDegree) { getTransform().rotate(axisDegree); };
 	default void rotate(Vector3f axis, float degree) { getTransform().rotate(axis, degree);};
 	default void rotate(Vector3f axis, float radians, boolean useRadians) { getTransform().rotate(axis, (float) Math.toDegrees(radians)); };
@@ -21,12 +19,12 @@ import org.lwjgl.util.vector.Vector4f;
 	default void setScale(Vector3f scale) { getTransform().setScale(scale); };
 	default void setScale(float scale) { getTransform().setScale(scale); };
     default Vector3f getScale() { return getTransform().getScale(); };
-    default Vector3f getLocalScale() { return getTransform().getLocalScale(); };
 	default void setPosition(Vector3f position) { getTransform().setPosition(position); };
 	default void setOrientation(Quaternion orientation) { getTransform().setOrientation(orientation); };
 	default void moveInWorld(Vector3f amount) { getTransform().moveInWorld(amount); };
 	default void rotateWorld(Vector3f axis, float degree) { getTransform().rotateWorld(axis, degree); };
-	default void rotateWorld(Vector4f axisAngle) { getTransform().rotateWorld(axisAngle); };
+	 default void rotateWorld(Vector4f axisAngle) { getTransform().rotateWorld(axisAngle); };
+	 default void setOrientationFromAxisAngle(Vector4f axisAngle) { getTransform().setOrientationFromAxisAngle(axisAngle); };
 	default Vector3f getViewDirection() { return getTransform().getViewDirection(); };
 	default Vector3f getUpDirection() { return getTransform().getUpDirection(); };
 	default Vector3f getRightDirection() { return getTransform().getRightDirection(); };
@@ -43,4 +41,7 @@ import org.lwjgl.util.vector.Vector4f;
 
 	default Vector3f getCenter() { return getPosition(); }
 	default boolean isInFrustum(Camera camera) { return true; }
-}
+
+	 default Vector3f getWorldPosition() { return getTransform().getWorldPosition(); }
+	 default Quaternion getWorldRotation() { return getTransform().getWorldOrientation(); }
+ }

@@ -36,19 +36,19 @@ public class TransformablePanel<T extends Transformable> extends WebComponentPan
         this.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotateWorld(new Vector4f(1, 0, 0, delta));
+				transformable.rotate(new Vector4f(1, 0, 0, delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotateWorld(new Vector4f(0, 1, 0, delta));
+				transformable.rotate(new Vector4f(0, 1, 0, delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotateWorld(new Vector4f(0, 0, 1, delta));
+				transformable.rotate(new Vector4f(0, 0, 1, delta));
 			}
 		});
         

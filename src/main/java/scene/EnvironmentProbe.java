@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Random;
 
 import camera.Camera;
-import component.CameraComponent;
 import engine.Transform;
 import engine.World;
 import engine.model.Entity;
@@ -37,7 +36,6 @@ public class EnvironmentProbe extends Entity {
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(world, this, center, resolution, resolution, probeIndex);
-		addComponent(new CameraComponent(sampler.getCamera()));
 		sampler.init(world);
 		this.setWeight(weight);
 		super.init(world);
@@ -77,7 +75,7 @@ public class EnvironmentProbe extends Entity {
 
 	@Override
 	public void move(Vector3f amount) {
-		super.moveInWorld(amount);
+		super.move(amount);
 		resetAllProbes();
 		renderer.getEnvironmentProbeFactory().updateBuffers();
 		box.move(amount);
@@ -158,7 +156,7 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public Camera getCamera(){
-		return sampler.getCamera();
+		return sampler;
 	}
 
 	public int getTextureUnitIndex() {
