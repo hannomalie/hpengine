@@ -10,7 +10,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import engine.World;
 import engine.model.Entity;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 
 import com.alee.laf.filechooser.WebFileChooser;
@@ -39,7 +39,7 @@ public class LoadEntitiyView extends WebPanel {
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
-				Entity entity = world.getRenderer().getEntityFactory().readWithoutInit(chosenFile.getName());
+				Entity entity = world.getEntityFactory().readWithoutInit(chosenFile.getName());
 				if(entity == null) {
 					showError(chosenFile);
 					continue;

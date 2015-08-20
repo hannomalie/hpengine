@@ -19,7 +19,11 @@ public abstract class TimeStepThread extends Thread {
     }
     public void run() {
         long ms = System.currentTimeMillis() - lastFrame;
-        update(ms / 1000f);
+        try {
+            update(ms / 1000f);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
         lastFrame = System.currentTimeMillis();
     }
 

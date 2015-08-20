@@ -13,7 +13,7 @@ import engine.World;
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import util.Util;
 import util.ressources.FileMonitor;

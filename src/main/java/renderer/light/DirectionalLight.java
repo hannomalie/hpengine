@@ -91,7 +91,7 @@ public class DirectionalLight extends Entity {
 
 		try {
 			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-			box = renderer.getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
+			box = getWorld().getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
 			box.setScale(0.4f);
 			ModelComponent modelComponent = new ModelComponent(model);
 			modelComponent.init(world);

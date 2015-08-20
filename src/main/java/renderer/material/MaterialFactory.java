@@ -6,14 +6,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import engine.World;
 import renderer.Renderer;
-import renderer.Result;
-import renderer.command.Command;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
 import shader.Program;

@@ -13,21 +13,21 @@ public class EntityTest extends test.TestWithWorld {
 
 	@Test
 	public void writeAndRead() throws Exception {
-		Entity entity = renderer.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
+		Entity entity = world.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
 		entity.setName("default");
 
 		String filename = "default.hpentity";
 
 		Assert.assertTrue(Entity.write(entity, filename));
 
-		Entity loadedEntity = renderer.getEntityFactory().read(filename);
+		Entity loadedEntity = world.getEntityFactory().read(filename);
 		Assert.assertTrue(entity.equals(loadedEntity));
 
 	}
 	@Test
 	public void loadParented() throws Exception {
 		List<Model> models = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
-		Entity entity = renderer.getEntityFactory().getEntity("xxx", models);
+		Entity entity = world.getEntityFactory().getEntity("xxx", models);
 		world.getScene().add(entity);
 
 		Assert.assertTrue(world.getScene().getEntities().contains(entity));

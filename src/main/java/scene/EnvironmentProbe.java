@@ -4,13 +4,11 @@ import java.util.List;
 import java.util.Random;
 
 import camera.Camera;
-import engine.Transform;
 import engine.World;
 import engine.model.Entity;
 import octree.Octree;
-import renderer.EnvironmentSampler;
+import renderer.environmentsampler.EnvironmentSampler;
 import renderer.Renderer;
-import renderer.material.Material;
 import shader.Program;
 
 import org.lwjgl.util.vector.Vector3f;

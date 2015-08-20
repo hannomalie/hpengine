@@ -1,7 +1,7 @@
 package util.gui;
 
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 
 import javax.swing.*;
 import java.util.concurrent.ExecutionException;

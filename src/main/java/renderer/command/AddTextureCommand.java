@@ -1,7 +1,6 @@
 package renderer.command;
 
 import engine.World;
-import renderer.Result;
 import renderer.command.AddTextureCommand.TextureResult;
 import texture.Texture;
 

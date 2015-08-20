@@ -1,4 +1,4 @@
-package renderer;
+package renderer.environmentsampler;
 
 import camera.Camera;
 import com.google.common.eventbus.Subscribe;
@@ -16,6 +16,9 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.DeferredRenderer;
+import renderer.drawstrategy.GBuffer;
+import renderer.Renderer;
 import renderer.light.*;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import renderer.rendertarget.RenderTarget;
@@ -25,7 +28,7 @@ import scene.EnvironmentProbeFactory;
 import scene.TransformDistanceComparator;
 import shader.ComputeShaderProgram;
 import shader.Program;
-import sun.rmi.runtime.Log;
+import shader.ProgramFactory;
 import texture.CubeMap;
 import texture.CubeMapArray;
 import util.Util;
@@ -35,7 +38,6 @@ import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class EnvironmentSampler extends Camera {
@@ -60,7 +62,7 @@ public class EnvironmentSampler extends Camera {
 	private int cubeMapFaceViews[][] = new int[3][6];
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
-	private Program secondPassAreaLightProgram;
+	private Program secondPassAreaProgram;
 	private Program secondPassDirectionalProgram;
 	
 	private RenderTarget renderTarget;
@@ -87,18 +89,17 @@ public class EnvironmentSampler extends Camera {
 //		rotate(new Vector4f(0, 1, 0, 90));
 //		setPosition(position);
 
-		cubeMapProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
-		depthPrePassProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
-		cubeMapLightingProgram = renderer.getProgramFactory().getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
-		tiledProbeLightingProgram = renderer.getProgramFactory().getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
-		cubemapRadianceProgram = renderer.getProgramFactory().getComputeProgram("cubemap_radiance_compute.glsl");
-		cubemapRadianceFragmentProgram = renderer.getProgramFactory().getProgram("passthrough_vertex.glsl", "passthrough_fragment.glsl");
-		
-//		secondPassDirectionalProgram = renderer.getProgramFactory().getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_probe_fragment.glsl", Entity.POSITIONCHANNEL, false);
-		secondPassDirectionalProgram = renderer.getSecondPassDirectionalProgram();
-		secondPassPointProgram = renderer.getSecondPassPointProgram();
-		secondPassTubeProgram = renderer.getSecondPassTubeProgram();
-		secondPassAreaLightProgram = renderer.getSecondPassAreaLightProgram();
+		ProgramFactory programFactory = renderer.getProgramFactory();
+		cubeMapProgram = programFactory.getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		depthPrePassProgram = programFactory.getProgram("first_pass_vertex.glsl", "cubemap_fragment.glsl");
+		cubeMapLightingProgram = programFactory.getProgram("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl");
+		tiledProbeLightingProgram = programFactory.getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
+		cubemapRadianceProgram = programFactory.getComputeProgram("cubemap_radiance_compute.glsl");
+		cubemapRadianceFragmentProgram = programFactory.getProgram("passthrough_vertex.glsl", "passthrough_fragment.glsl");
+		secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+		secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+		secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+		secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
 
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget();
 		cubeMapView = GL11.glGenTextures();
@@ -169,7 +170,6 @@ public class EnvironmentSampler extends Camera {
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
-			System.out.println("fullRerenderRequired " + fullRerenderRequired);
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
 				continue;
 			} else if(rerenderLightingRequired) {
@@ -299,7 +299,6 @@ public class EnvironmentSampler extends Camera {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glDepthMask(true);
-		renderer.getFirstPassProgram().use();
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glDisable(GL11.GL_BLEND);
@@ -666,12 +665,12 @@ public class EnvironmentSampler extends Camera {
 		
 		GPUProfiler.start("Area lights: " + areaLights.size());
 		
-		secondPassAreaLightProgram.use();
-		secondPassAreaLightProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassAreaLightProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassAreaLightProgram.setUniform("secondPassScale", 1);
-		secondPassAreaLightProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-		secondPassAreaLightProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+		secondPassAreaProgram.use();
+		secondPassAreaProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
+		secondPassAreaProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
+		secondPassAreaProgram.setUniform("secondPassScale", 1);
+		secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+		secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		for (AreaLight areaLight : areaLights) {
@@ -683,15 +682,15 @@ public class EnvironmentSampler extends Camera {
 //				GL11.glCullFace(GL11.GL_BACK);
 //				GL11.glDepthFunc(GL11.GL_LEQUAL);
 //			}
-			secondPassAreaLightProgram.setUniform("lightPosition", areaLight.getPosition());
-			secondPassAreaLightProgram.setUniform("lightRightDirection", areaLight.getRightDirection());
-			secondPassAreaLightProgram.setUniform("lightViewDirection", areaLight.getViewDirection());
-			secondPassAreaLightProgram.setUniform("lightUpDirection", areaLight.getUpDirection());
-			secondPassAreaLightProgram.setUniform("lightWidth", areaLight.getWidth());
-			secondPassAreaLightProgram.setUniform("lightHeight", areaLight.getHeight());
-			secondPassAreaLightProgram.setUniform("lightRange", areaLight.getRange());
-			secondPassAreaLightProgram.setUniform("lightDiffuse", areaLight.getColor());
-			secondPassAreaLightProgram.setUniformAsMatrix4("shadowMatrix", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
+			secondPassAreaProgram.setUniform("lightPosition", areaLight.getPosition());
+			secondPassAreaProgram.setUniform("lightRightDirection", areaLight.getRightDirection());
+			secondPassAreaProgram.setUniform("lightViewDirection", areaLight.getViewDirection());
+			secondPassAreaProgram.setUniform("lightUpDirection", areaLight.getUpDirection());
+			secondPassAreaProgram.setUniform("lightWidth", areaLight.getWidth());
+			secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
+			secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());
+			secondPassAreaProgram.setUniform("lightDiffuse", areaLight.getColor());
+			secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
 
 			// TODO: Add textures to arealights
 //			try {

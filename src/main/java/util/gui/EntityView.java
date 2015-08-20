@@ -15,7 +15,7 @@ import engine.World;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.RemoveEntityCommand;
 import renderer.material.Material;
 import util.gui.input.TransformablePanel;

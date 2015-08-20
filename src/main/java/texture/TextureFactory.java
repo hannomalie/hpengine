@@ -30,7 +30,7 @@ import javax.imageio.ImageIO;
 import engine.World;
 import renderer.DeferredRenderer;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import renderer.material.Material;
 

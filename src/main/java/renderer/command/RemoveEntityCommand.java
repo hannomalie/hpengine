@@ -2,7 +2,6 @@ package renderer.command;
 
 import engine.World;
 import engine.model.Entity;
-import renderer.Result;
 
 public class RemoveEntityCommand implements Command {
 

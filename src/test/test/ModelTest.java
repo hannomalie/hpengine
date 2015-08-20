@@ -14,12 +14,12 @@ import org.lwjgl.util.vector.Vector4f;
 import java.io.File;
 import java.util.List;
 
-public class ModelTest extends test.TestWithRenderer {
+public class ModelTest extends test.TestWithWorld {
 	
 	@Test
 	public void loadsCorrectly() throws Exception {
 		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
-		Entity entity = renderer.getEntityFactory().getEntity(box.get(0));
+		Entity entity = world.getEntityFactory().getEntity(box.get(0));
 		VertexBuffer buffer = entity.getComponent(ModelComponent.class).getVertexBuffer();
 		int verticesCount = buffer.getVerticesCount();
 		// Korrekter Vertices count
@@ -62,7 +62,7 @@ public class ModelTest extends test.TestWithRenderer {
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
 		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
-		Entity entity = renderer.getEntityFactory().getEntity(sphere.get(0));
+		Entity entity = world.getEntityFactory().getEntity(sphere.get(0));
 		
 		entity.setPosition(new Vector3f(0, 0, 0));
 		

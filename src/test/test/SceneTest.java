@@ -25,7 +25,7 @@ public class SceneTest extends TestWithWorld {
 		Scene scene = new Scene();
 		scene.init(world);
 		world.setScene(scene);
-		Entity entity = renderer.getEntityFactory().getEntity();
+		Entity entity = world.getEntityFactory().getEntity();
 		scene.add(entity);
 		Assert.assertEquals(1, world.getScene().getEntities().size());
 		Assert.assertTrue(scene.write(SCENENAME));

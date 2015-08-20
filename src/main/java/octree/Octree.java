@@ -184,6 +184,8 @@ public class Octree implements LifeCycle, Serializable {
 	 *
 	 */
 	public static class Node implements Serializable {
+		private static final long serialVersionUID = 1L;
+
 		Octree octree;
 		Node parent;
 		public Node[] children = new Node[8];

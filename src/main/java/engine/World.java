@@ -7,8 +7,8 @@ import component.InputControllerComponent;
 import component.ModelComponent;
 import config.Config;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import engine.model.Model;
-import javafx.scene.paint.Stop;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -16,9 +16,9 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
-import renderer.GBuffer;
+import renderer.drawstrategy.GBuffer;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import renderer.light.DirectionalLight;
 import renderer.material.Material;
@@ -131,6 +131,7 @@ public class World {
 
 	ScriptManager scriptManager;
 	PhysicsFactory physicsFactory;
+	EntityFactory entityFactory;
 	Scene scene;
 	private int entityCount = 10;
 	public volatile int PICKING_CLICK = 0;
@@ -150,13 +151,16 @@ public class World {
 	public World(String sceneName, boolean headless) {
 		Thread.currentThread().setName("World Main");
 		initWorkDir();
-		renderer = new DeferredRenderer(this, headless);
+		entityFactory = new EntityFactory(this);
+		renderer = new DeferredRenderer(headless);
+		renderer.init(this);
 		while(!renderer.isInitialized()) {
 
 		}
 		glWatch = new OpenGLStopWatch();
 		scriptManager = new ScriptManager(this);
 		physicsFactory = new PhysicsFactory(this);
+
 		Scene scene;
 		if(sceneName != null) {
 			scene = Scene.read(renderer, sceneName);
@@ -311,7 +315,7 @@ public class World {
 					try {
 						float random = (float) (Math.random() -0.5);
 						Vector3f position = new Vector3f(i*20,random*i+j,j*20);
-						Entity entity = renderer.getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
+						Entity entity = getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
 						entity.getComponent(ModelComponent.class).setMaterial(mat.getName());
 						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 						scale.scale(new Random().nextFloat()*14);
@@ -336,7 +340,7 @@ public class World {
 //				if(model.getMaterial().getName().contains("fabric")) {
 //					model.setMaterial(mirror);
 //				}
-				Entity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
+				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
 //				physicsFactory.addMeshPhysicsComponent(entity, 0);
 				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
 				entity.setScale(scale);
@@ -344,7 +348,7 @@ public class World {
 			}
 			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
 			for (Model model : skyBox) {
-				Entity entity = renderer.getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
+				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
 				entity.setScale(scale);
 				entities.add(entity);
@@ -516,4 +520,7 @@ public class World {
 		return scriptManager;
 	}
 
+	public EntityFactory getEntityFactory() {
+		return entityFactory;
+	}
 }

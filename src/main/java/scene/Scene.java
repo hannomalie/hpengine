@@ -4,26 +4,19 @@ import camera.Camera;
 import engine.World;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
-import javafx.scene.paint.Stop;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
-import org.nustaq.serialization.FSTObjectInput;
-import org.nustaq.serialization.FSTObjectOutput;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import renderer.light.*;
-import util.stopwatch.StopWatch;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.SynchronousQueue;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Scene implements LifeCycle, Serializable {

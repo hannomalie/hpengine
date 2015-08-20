@@ -1,4 +1,4 @@
-package renderer;
+package renderer.command;
 
 public class Result<RETURN_TYPE> {
 

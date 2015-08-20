@@ -1,7 +1,6 @@
 package renderer.command;
 
 import engine.World;
-import renderer.Result;
 import util.stopwatch.GPUProfiler;
 
 public class DumpAveragesCommand implements Command {

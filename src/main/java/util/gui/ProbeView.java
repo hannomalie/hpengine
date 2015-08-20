@@ -15,7 +15,7 @@ import com.alee.managers.notification.WebNotificationPopup;
 import engine.World;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbe.Update;

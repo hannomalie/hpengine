@@ -1,4 +1,4 @@
-package renderer;
+package renderer.fps;
 
 
 public class FPSCounter {

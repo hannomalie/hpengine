@@ -11,8 +11,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import engine.World;
-import engine.model.Entity;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import renderer.light.AreaLight;
 

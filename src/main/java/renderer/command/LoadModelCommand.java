@@ -3,9 +3,7 @@ package renderer.command;
 import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
-import org.lwjgl.util.vector.Vector3f;
 import renderer.Renderer;
-import renderer.Result;
 import renderer.command.LoadModelCommand.EntityListResult;
 
 import java.io.File;
@@ -29,7 +27,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
 			List<Model> models = renderer.getOBJLoader().loadTexturedModel(file);
 			List<Entity> entities = new ArrayList<Entity>();
 
-			entities.addAll(renderer.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
+			entities.addAll(world.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
 //			entities.add(renderer.getEntityFactory().getEntity(name, models));
 
 //			for (int i = 0; i < models.size(); i++) {

@@ -64,7 +64,7 @@ public class EntityFactory {
 //		} catch (IOException e) {
 //			Logger.getGlobal().info(String.format("File not found for %s", name));
 
-			entity = new Entity(world, renderer.getMaterialFactory(), position, name, model, material.getName());
+			entity = new Entity(world, world.getRenderer().getMaterialFactory(), position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
 //		} catch (ClassNotFoundException e) {

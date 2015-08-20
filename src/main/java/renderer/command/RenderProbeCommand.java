@@ -3,7 +3,6 @@ package renderer.command;
 import engine.Transform;
 import engine.World;
 import engine.model.Transformable;
-import renderer.Result;
 import scene.EnvironmentProbe;
 
 public class RenderProbeCommand implements Command<Result>, Transformable {

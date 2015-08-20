@@ -9,7 +9,6 @@ layout(binding=6) uniform samplerCube globalEnvironmentMap;
 layout(binding=7) uniform samplerCubeArray probes;
 layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap;
-layout(binding=10) uniform sampler2D finalMap; // what gets drawn to the screen
 layout(binding=11) uniform sampler2D aoScattering;
 
 layout(std430, binding=0) buffer myBlock

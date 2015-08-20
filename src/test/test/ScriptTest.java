@@ -17,7 +17,7 @@ public class ScriptTest extends TestWithWorld {
     @Test
     public void localDefines() {
         ScriptComponent component = new ScriptComponent();
-        Entity entity = world.getRenderer().getEntityFactory().getEntity().addComponent(component);
+        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
         entity.init(world);
         component.setInt("myInt", 5);
 
@@ -32,7 +32,7 @@ public class ScriptTest extends TestWithWorld {
 
         String script = "var myInt = myInt;";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = world.getRenderer().getEntityFactory().getEntity().addComponent(component);
+        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
         entity.init(world);
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
@@ -49,7 +49,7 @@ public class ScriptTest extends TestWithWorld {
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = world.getRenderer().getEntityFactory().getEntity().addComponent(component);
+        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
         entity.init(world);
 
         entity.update(0.1f);

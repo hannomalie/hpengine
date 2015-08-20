@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 import engine.World;
 import renderer.Renderer;
-import renderer.Result;
+import renderer.command.Result;
 import renderer.command.Command;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
