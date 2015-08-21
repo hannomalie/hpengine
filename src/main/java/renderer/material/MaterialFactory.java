@@ -35,41 +35,38 @@ public class MaterialFactory {
 		initDefaultMaterials();
 	}
 
-
-	private Material white;
-	private Material stone;
-	private Material stone2;
-	private Material wood;
-	private Material stoneWet;
-	private Material mirror;
-
 	private void initDefaultMaterials() {
 
-		white = getMaterial("default", new HashMap<MAP, String>() {{
+		getMaterial("default", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/default.dds");
 		}});
 
-		stone = getMaterial("stone", new HashMap<MAP, String>() {{
+		getMaterial("stone", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png");
 			put(MAP.NORMAL, "hp/assets/textures/stone_normal.png");
 		}});
 
-		stone2 = getMaterial("stone2", new HashMap<MAP, String>() {{
+		getMaterial("stone2", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/brick.png");
 			put(MAP.NORMAL, "hp/assets/textures/brick_normal.png");
 		}});
 
-		wood = getMaterial("wood", new HashMap<MAP, String>() {{
+		getMaterial("wood", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/wood_diffuse.png");
 			put(MAP.NORMAL, "hp/assets/textures/wood_normal.png");
 		}});
-		stoneWet = getMaterial("stoneWet", new HashMap<MAP, String>() {{
+		getMaterial("stoneWet", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png");
 			put(MAP.NORMAL, "hp/assets/textures/stone_normal.png");
 			put(MAP.REFLECTION, "hp/assets/textures/stone_reflection.png");
 		}});
-		mirror = getMaterial("mirror", new HashMap<MAP, String>() {{
+		getMaterial("mirror", new HashMap<MAP, String>() {{
 			put(MAP.REFLECTION, "hp/assets/textures/default.dds");
+		}});
+		getMaterial("stoneParallax", new HashMap<MAP, String>() {{
+			put(MAP.DIFFUSE, "hp/assets/models/textures/bricks_parallax.jpg");
+			put(MAP.HEIGHT, "hp/assets/models/textures/bricks_parallax_height.jpg");
+			put(MAP.NORMAL, "hp/assets/models/textures/bricks_parallax_normal.png");
 		}});
 	}
 

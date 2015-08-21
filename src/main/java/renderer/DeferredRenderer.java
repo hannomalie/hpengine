@@ -2,6 +2,7 @@ package renderer;
 
 import camera.Camera;
 import config.Config;
+import engine.OpenGLTimeStepThread;
 import engine.TimeStepThread;
 import engine.World;
 import engine.model.*;
@@ -113,6 +114,7 @@ public class DeferredRenderer implements Renderer {
 	private String currentState = "";
 
 	private ExecutorService renderThread = Executors.newSingleThreadExecutor();
+	TimeStepThread drawThread;
 	private OpenGLContext openGLContext;
 
 	public DeferredRenderer(boolean headless) {
@@ -124,7 +126,10 @@ public class DeferredRenderer implements Renderer {
 		Renderer.super.init(world);
 		DeferredRenderer renderer = this;
 
-		TimeStepThread drawThread = new TimeStepThread("Renderer") {
+		drawThread = new TimeStepThread("Renderer") {
+			public void cleanUp() {
+				renderer.destroy();
+			}
 			public void update(float seconds) {
 				Thread.currentThread().setName("Renderer");
 				if (!initialized) {
@@ -165,10 +170,13 @@ public class DeferredRenderer implements Renderer {
 				initialized = true;
 
 				//TODO: throws illegalstateexception
-				while (Display.isCreated() && !Display.isCloseRequested()) {
+				if (Display.isCreated() && !Display.isCloseRequested()) {
 					if (world.isInitialized()) {
-						setCurrentState("BEFORE DRAW");
-						draw();
+						if(world.getScene().isInitialized())
+						{
+							setCurrentState("BEFORE DRAW");
+							draw(world);
+						}
 						Display.update();
 						setCurrentState("AFTER DRAW");
 
@@ -179,18 +187,7 @@ public class DeferredRenderer implements Renderer {
 				}
 			}
 		};
-
 		renderThread.submit(drawThread);
-	}
-	private void setUpGBuffer() {
-		DeferredRenderer.exitOnGLError("Before setupGBuffer");
-
-		gBuffer = new GBuffer(world, this);
-
-		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
-		
-		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
 
 	private void setupOpenGL(boolean headless) {
@@ -219,7 +216,7 @@ public class DeferredRenderer implements Renderer {
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				frame.setVisible(true);
 				frame.setVisible(false);
-				openGLContext.setParent(canvas);
+//				openGLContext.attach(canvas);
 			}
 
 		} catch (LWJGLException e) {
@@ -244,6 +241,16 @@ public class DeferredRenderer implements Renderer {
 
 		DeferredRenderer.exitOnGLError("setupOpenGL");
 //		CLUtil.initialize();
+	}
+	private void setUpGBuffer() {
+		DeferredRenderer.exitOnGLError("Before setupGBuffer");
+
+		gBuffer = new GBuffer(world, this);
+
+		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
 	
 	private void initIdentityMatrixBuffer() {
@@ -305,8 +312,8 @@ public class DeferredRenderer implements Renderer {
 	// I need this to force probe redrawing after engine startup....TODO: Find better solution
 	int counter = 0;
 
-	private void draw() {
-		StopWatch.getInstance().start("Draw");
+	public void draw(World world) {
+		GPUProfiler.startFrame();
 		setLastFrameTime();
 
 		if (World.DRAWLINES_ENABLED) {
@@ -325,7 +332,7 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if(counter < 20) {
-			getLightFactory().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+			world.getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
 			World.CONTINUOUS_DRAW_PROBES = true;
 			counter++;
 		} else if(counter == 20) {
@@ -334,25 +341,20 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		fpsCounter.update();
-		StopWatch.getInstance().stopAndPrintMS();
+		GPUProfiler.endFrame();
+
+		dumpTimings();
+
+		frameCount++;
 
 //		Renderer.exitOnGLError("draw in render");
 	}
 
-	public void draw(Camera camera, World world, List<Entity> entities) {
-		GPUProfiler.startFrame();
-		draw(null, world.getScene().getOctree(), camera, entities);
-	    GPUTaskProfile tp;
-	    while((tp = GPUProfiler.getFrameResults()) != null){
-	        tp.dump(); //Dumps the frame to System.out.
-	    }
-		GPUProfiler.endFrame();
-	    
-	    frameCount++;
-	}
-	
-	private void draw(RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
-		currentDrawStrategy.draw(world);
+	private void dumpTimings() {
+		GPUTaskProfile tp;
+		while((tp = GPUProfiler.getFrameResults()) != null){
+			tp.dump(); //Dumps the frame to System.out.
+		}
 	}
 
 	@Override
@@ -461,22 +463,12 @@ public class DeferredRenderer implements Renderer {
 		if(frame != null) {
 			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 		}
+		System.exit(0);
 	}
 
 	private void destroyOpenGL() {
-		// Delete the shaders
-//		materialProgram.delete();
-//
-//		DeferredRenderer.exitOnGLError("destroyOpenGL");
-		addCommand(new Command<Result<Object>>() {
-			@Override
-			public Result<Object> execute(World world) {
-				if(!Display.isCloseRequested()) {
-					Display.destroy();
-				}
-				return new Result<Object>(true);
-			}
-		});
+		drawThread.stopRequested = true;
+		Display.destroy();
 	}
 
 	private static long lastFrameTime = 0l;
@@ -683,17 +675,17 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void executeRenderProbeCommands(Octree octree, Camera camera, DirectionalLight light) {
+	public void executeRenderProbeCommands() {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(camera).ifPresent(command -> {
-			command.getProbe().draw(octree, command.isUrgent());
+		renderProbeCommandQueue.takeNearest(world.getActiveCamera()).ifPresent(command -> {
+			command.getProbe().draw(world, command.isUrgent());
 		});
 		counter++;
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-				command.getProbe().draw(octree, command.isUrgent());
+				command.getProbe().draw(world, command.isUrgent());
 			});
 			counter++;
 		}
@@ -753,7 +745,7 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void endFrame() {
 
-		DirectionalLight light = getLightFactory().getDirectionalLight();
+		DirectionalLight light = world.getScene().getDirectionalLight();
 		light.setHasMoved(false);
 		for (Entity entity : getLightFactory().getPointLights()) {
 			entity.setHasMoved(false);

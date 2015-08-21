@@ -39,11 +39,11 @@ public class EnvironmentProbe extends Entity {
 		super.init(world);
 	}
 
-	public void draw(Octree octree) {
-		draw(octree, false);
+	public void draw(World world) {
+		draw(world, false);
 	};
-	public void draw(Octree octree, boolean urgent) {
-		sampler.drawCubeMap(octree, urgent);
+	public void draw(World world, boolean urgent) {
+		sampler.drawCubeMap(world, urgent);
 	};
 	
 	public void drawDebug(Program program) {

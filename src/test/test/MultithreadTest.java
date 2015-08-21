@@ -6,7 +6,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.SharedDrawable;
-import util.OpenGLThread;
+import renderer.OpenGLThread;
 
 public class MultithreadTest extends TestWithRenderer {
 	static volatile boolean success1 = false;

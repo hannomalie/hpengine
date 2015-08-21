@@ -8,6 +8,9 @@ import renderer.material.MaterialFactory;
 public interface LifeCycle {
 
     default void init(World world) { setWorld(world); }
+
+    boolean isInitialized();
+
     default void update(float seconds) { }
     @SuppressWarnings("unused")
     default void destroy(World world) { }

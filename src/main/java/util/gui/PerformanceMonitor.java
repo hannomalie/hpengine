@@ -85,7 +85,11 @@ public class PerformanceMonitor {
 //			frame.add(waterfallChartPanel);
 			frame.pack();
 		}
-		frame.setVisible(true);
+		frame.setVisible(false);
+	}
+
+	public void toggleVisibility() {
+		frame.setVisible(!frame.isVisible());
 	}
 
 	private ChartPanel addFPSChart(Renderer myRenderer) {

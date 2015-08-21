@@ -108,7 +108,8 @@ public class Transform implements Serializable {
 		return getPosition();
 	}
 	public void setPosition(Vector3f position) {
-		this.position = position;
+//		this.position = position;
+		this.position.set(position);
 		setDirty(true);
 	}
 	public Vector3f getScale() {
@@ -121,7 +122,8 @@ public class Transform implements Serializable {
 		return getScale();
 	}
 	public void setScale(Vector3f scale) {
-		this.scale = scale;
+//		this.scale = scale;
+		this.scale.set(scale);
 		setDirty(true);
 	}
 	public void setScale(float scale) {
@@ -138,8 +140,9 @@ public class Transform implements Serializable {
 		return getOrientation();
 	}
 	public void setOrientation(Quaternion orientation) {
-		this.orientation = orientation;
+//		this.orientation = orientation;
 		setDirty(true);
+		this.orientation.set(orientation);
 	}
 	public Vector3f getViewDirection() {
 		Vector4f temp = Matrix4f.transform(getTransformation(), VIEW_V4, null);

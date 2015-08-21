@@ -313,7 +313,7 @@ public class DebugFrame {
 						SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
 							@Override
 							public Result execute(World world) {
-								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world.getScene().getOctree());
+								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world);
 								return new Result() { @Override public boolean isSuccessful() { return true; } };
 							}
 						});
@@ -461,10 +461,14 @@ public class DebugFrame {
 			}
     		
     	});
-        WebMenuItem refreshAll = new WebMenuItem("Refresh");
-        refreshAll.addActionListener(e -> {
-    		init(world);
-    	});
+		WebMenuItem refreshAll = new WebMenuItem("Refresh");
+		refreshAll.addActionListener(e -> {
+			init(world);
+		});
+		WebMenuItem toggleFPS = new WebMenuItem("Toggle FPS");
+		toggleFPS.addActionListener(e -> {
+			performanceMonitor.toggleVisibility();
+		});
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
         loadMaterial.addActionListener(e -> {
         	File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\materials\\", choser -> {
@@ -589,7 +593,8 @@ public class DebugFrame {
         menuBar.add(runScriptMenuItem);
         menuBar.add(saveScriptMenuItem);
         menuBar.add(resetProfiling);
-        menuBar.add(refreshAll);
+		menuBar.add(refreshAll);
+		menuBar.add(toggleFPS);
         menuBar.add(sceneViewFilterField);
 		menuBar.add(progressBar);
 		progressBar.setIndeterminate(false);
@@ -794,7 +799,6 @@ public class DebugFrame {
 		});
 		toggleUseGI.addActionListener(e -> {
 			World.USE_GI = !World.USE_GI;
-			System.out.println("XXXXXXXXXX");
 		});
 		toggleUseSSR.addActionListener(e -> {
 			World.useSSR = !World.useSSR;
@@ -908,9 +912,9 @@ public class DebugFrame {
 			@Override public void onValueChange(int value, int delta) {
 				World.EXPOSURE = value;
 			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) world.getRenderer().getLightFactory().getDirectionalLight().getScatterFactor()) {
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) world.getScene().getDirectionalLight().getScatterFactor()) {
 				@Override public void onValueChange(int value, int delta) {
-					world.getRenderer().getLightFactory().getDirectionalLight().setScatterFactor((float)value);
+					world.getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {

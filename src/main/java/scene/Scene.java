@@ -17,6 +17,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class Scene implements LifeCycle, Serializable {
@@ -27,7 +30,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	List<PointLightSerializationProxy> pointlightProxies = new ArrayList<>();
 	List<AreaLightSerializationProxy> arealightProxies = new ArrayList<>();
-	DirectionalLightSerializationProxy directionalLight = new DirectionalLightSerializationProxy();
+	DirectionalLight directionalLight = new DirectionalLight();
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
@@ -42,6 +45,7 @@ public class Scene implements LifeCycle, Serializable {
 		this.name = name;
 	}
 
+	@Override
 	public void init(World world) {
 		LifeCycle.super.init(world);
 		renderer = world.getRenderer();
@@ -53,7 +57,7 @@ public class Scene implements LifeCycle, Serializable {
 			world.getRenderer().addCommand(new Command<Result>() {
 				@Override
 				public Result execute(World world) {
-					world.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(octree);
+					world.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(world);
 					return new Result() { @Override public boolean isSuccessful() { return true; } };
 				}
 			});
@@ -70,7 +74,7 @@ public class Scene implements LifeCycle, Serializable {
 			renderer.getLightFactory().getAreaLight(areaLightSerializationProxy);
 		}
 		
-		renderer.getLightFactory().setDirectionalLight(directionalLight);
+		directionalLight.init(world);
 	}
 	
 	public void write() {
@@ -146,7 +150,6 @@ public class Scene implements LifeCycle, Serializable {
 		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
 		arealightProxies.clear();
 		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
-		directionalLight = new DirectionalLightSerializationProxy(renderer.getLightFactory().getDirectionalLight());
 	}
 
     private static void handleEvolution(Scene scene, Renderer renderer) {
@@ -156,24 +159,33 @@ public class Scene implements LifeCycle, Serializable {
 		if(scene.getAreaLights() == null) {
 			scene.setAreaLights(new ArrayList<AreaLightSerializationProxy>());
 		}
-		if(scene.directionalLight == null) {
-			scene.directionalLight = new DirectionalLightSerializationProxy();
-		}
     }
 
 	public static String getDirectory() {
 		return World.WORKDIR_NAME + "/assets/scenes/";
 	}
 	public void addAll(List<Entity> entities) {
-		octree.insert(entities);
+//		initializationWrapped(() -> {
+			octree.insert(entities);
+//			return null;
+//		});
 	}
 	public void add(Entity entity) {
-		octree.insert(entity);
+//		initializationWrapped(() -> {
+			octree.insert(entity);
+//			return null;
+//		});
 	}
 	public void update(float seconds) {
 		for (Entity entity : octree.getEntities()) {
 			entity.update(seconds);
 		}
+	}
+
+	private void initializationWrapped (Supplier<Void> supplier) {
+		initialized = false;
+		supplier.get();
+		initialized = true;
 	}
 
 	@Override
@@ -231,5 +243,9 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	public List<AreaLightSerializationProxy> getAreaLights() {
 		return arealightProxies;
+	}
+
+	public DirectionalLight getDirectionalLight() {
+		return directionalLight;
 	}
 }

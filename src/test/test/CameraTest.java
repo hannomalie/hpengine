@@ -14,7 +14,7 @@ public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void rotation() {
-		Camera camera = new Camera(renderer);
+		Camera camera = new Camera();
 		Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
 		
 		camera.rotate(new Vector3f(0,1,0), 90f);
@@ -36,7 +36,7 @@ public class CameraTest extends TestWithRenderer {
 	@Test
 	public void inFrustum() {
 		Matrix4f projectionMatrix = Util.createPerpective(60, 16/9, 0.1f, 100f);
-		Camera camera = new Camera(renderer, projectionMatrix, 0.1f, 100f, 60, 16/9);
+		Camera camera = new Camera(projectionMatrix, 0.1f, 100f, 60, 16/9);
 		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(camera.getViewDirection())));
 		
 		Frustum frustum = camera.getFrustum();

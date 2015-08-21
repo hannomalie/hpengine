@@ -70,7 +70,7 @@ public class EnvironmentSampler extends Camera {
 	private RenderTarget renderTarget;
 	
 	public EnvironmentSampler(World world, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) {
-		super(world.getRenderer());
+		super();
 		init(world);
 		this.world = world;
 		this.renderer = world.getRenderer();
@@ -133,18 +133,19 @@ public class EnvironmentSampler extends Camera {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
-	public void drawCubeMap(Octree octree, boolean urgent) {
-		drawCubeMapSides(octree, urgent);
+	public void drawCubeMap(World world, boolean urgent) {
+		drawCubeMapSides(world, urgent);
 	}
 	
-	private void drawCubeMapSides(Octree octree, boolean urgent) {
+	private void drawCubeMapSides(World world, boolean urgent) {
+		Octree octree = world.getScene().getOctree();
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = getOrientation();
 		Vector3f initialPosition = getPosition();
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
+		DirectionalLight light = world.getScene().getDirectionalLight();
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, light.getShadowMapId());
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
@@ -429,7 +430,7 @@ public class EnvironmentSampler extends Camera {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = renderer.getLightFactory().getDirectionalLight();
+		DirectionalLight light = world.getScene().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", World.AMBIENT_LIGHT);

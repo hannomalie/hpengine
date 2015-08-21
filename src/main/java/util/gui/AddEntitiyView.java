@@ -1,20 +1,5 @@
 package util.gui;
 
-import java.awt.Component;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import engine.World;
-import renderer.command.LoadModelCommand;
-import renderer.command.LoadModelCommand.EntityListResult;
-
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
@@ -28,6 +13,17 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
+import engine.World;
+import renderer.command.LoadModelCommand;
+import renderer.command.LoadModelCommand.EntityListResult;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 public class AddEntitiyView extends WebPanel {
 
@@ -74,7 +70,10 @@ public class AddEntitiyView extends WebPanel {
 						new SwingWorkerWithProgress<EntityListResult>(world.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
-								SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(new LoadModelCommand(chosenFile, nameField.getText()));
+
+								SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(
+										new LoadModelCommand(chosenFile, nameField.getText()));
+
 								return queue.poll(5, TimeUnit.MINUTES);
 							}
 

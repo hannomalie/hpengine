@@ -21,7 +21,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	@Override
 	public Result execute(World world) {
 		
-		probe.draw(world.getScene().getOctree(), urgent);
+		probe.draw(world, urgent);
 		
 		return new Result();
 	}

@@ -54,7 +54,7 @@ public interface Renderer extends LifeCycle {
 
     void destroy();
 
-    void draw(Camera camera, World world, List<Entity> entities);
+    void draw(World world);
 
     void update(World world, float seconds);
 
@@ -112,7 +112,7 @@ public interface Renderer extends LifeCycle {
 
     GBuffer getGBuffer();
 
-    void executeRenderProbeCommands(Octree octree, Camera camera, DirectionalLight light);
+    void executeRenderProbeCommands();
 
     void drawToQuad(int colorReflectivenessMap);
 

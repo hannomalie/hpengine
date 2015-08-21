@@ -13,12 +13,14 @@ public abstract class BaseComponent implements Component, Serializable {
     transient private Renderer renderer;
 
     private Entity entity;
+    private boolean initialized;
 
     public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
 
     public void init(World world) {
         setWorld(world);
         setRenderer(world.getRenderer());
+        initialized = true;
     }
 
 
@@ -38,6 +40,10 @@ public abstract class BaseComponent implements Component, Serializable {
         this.world = world;
     }
 
+    @Override
+    public boolean isInitialized() {
+        return initialized;
+    }
     @Override
     public Entity getEntity() {
         return entity;

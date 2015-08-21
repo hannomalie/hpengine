@@ -1,12 +1,15 @@
 package renderer.light;
 
 import camera.Camera;
+import component.InputControllerComponent;
 import component.ModelComponent;
+import engine.Transform;
 import engine.World;
 import engine.model.Entity;
 import engine.model.Model;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
@@ -23,6 +26,7 @@ import shader.Program;
 import util.Util;
 
 import java.io.File;
+import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -43,9 +47,70 @@ public class DirectionalLight extends Entity {
 	private float scatterFactor;
 	private Camera camera;
 
+	public DirectionalLight() {
+		this(true);
+	}
+
 	public DirectionalLight(boolean castsShadows) {
-		this.castsShadows = castsShadows;
-		setOrientationFromAxisAngle(new Vector4f(1, 0, 0, 90));
+		setOrientation(new Quaternion(0.3f, -0.7f, 0.6f, 0.3f));
+		setColor(new Vector3f(1f, 0.76f, 0.49f));
+		setScatterFactor(1f);
+
+		Matrix4f projectionMatrix = Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f);
+		camera = new Camera(projectionMatrix, 0.1f, 500f, 60, 16 / 9);
+		camera.setParent(this);
+		camera.setPerspective(false);
+		camera.setWidth(1500);
+		camera.setHeight(1500);
+		camera.setFar(-5000);
+		camera.setPosition(new Vector3f(12f, 300f, 2f));
+
+		addComponent(new InputControllerComponent() {
+			private static final long serialVersionUID = 1L;
+
+			@Override public void update(float seconds) {
+
+				float moveAmount = seconds;
+				float rotateAmount = seconds;
+
+				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
+					getEntity().move(new Vector3f(0, -moveAmount, 0));
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
+					getEntity().move(new Vector3f(0, moveAmount, 0));
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
+					getEntity().move(new Vector3f(-moveAmount, 0, 0));
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
+					getEntity().move(new Vector3f(moveAmount, 0, 0));
+				}
+			}
+		});
+
+//		try {
+//			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+//			box = getWorld().getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
+//			box.setScale(0.4f);
+//			ModelComponent modelComponent = new ModelComponent(model);
+//			modelComponent.init(world);
+//			addComponent(modelComponent);
+//			camera.addComponent(modelComponent);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	public boolean isCastsShadows() {
@@ -65,6 +130,7 @@ public class DirectionalLight extends Entity {
 	@Override
 	public void init(World world) {
 		super.init(world);
+		initialized = false;
 		Renderer renderer = world.getRenderer();
 
 		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
@@ -80,34 +146,8 @@ public class DirectionalLight extends Entity {
 									.setInternalFormat(GL30.GL_RGBA32F)
 									.setTextureFilter(GL11.GL_NEAREST))
 							.build();
-		Matrix4f projectionMatrix = Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f);
-		camera = new Camera(renderer, projectionMatrix, 0.1f, 500f, 60, 16 / 9);
-		camera.setParent(this);
-		camera.setPerspective(false);
-		camera.setWidth(1500);
-		camera.setHeight(1500);
-		camera.setFar(-5000);
-//		setPosition(new Vector3f(12f, 80f, 2f));
-		camera.setPosition(new Vector3f(12f, 300f, 2f));
-		Quaternion quat = new Quaternion(0.77555925f, 0.22686659f, 0.36588323f, 0.46171495f);
-//		quat.setFromAxisAngle(new Vector4f(0,-1,0,0));
-		setOrientation(quat);
 
-		this.color = new Vector3f(1f, 0.76f, 0.49f);
-		setScatterFactor(1f);
-
-
-		try {
-			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-			box = getWorld().getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
-			box.setScale(0.4f);
-			ModelComponent modelComponent = new ModelComponent(model);
-			modelComponent.init(world);
-			addComponent(modelComponent);
-			camera.addComponent(modelComponent);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		initialized = true;
 	}
 
 	public void drawAsMesh(Camera camera) {
@@ -120,7 +160,6 @@ public class DirectionalLight extends Entity {
 	}
 
 	public void drawShadowMap(Octree octree) {
-		camera.update(0.1f);
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_CULL_FACE);
@@ -197,5 +236,30 @@ public class DirectionalLight extends Entity {
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {
 		return camera.getViewProjectionMatrixAsBuffer();
+	}
+
+	private static class SerializationProxy implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private final float scatterFactor;
+		private final Vector3f color;
+		private Transform transform;
+
+		public SerializationProxy(DirectionalLight directionalLight) {
+			transform = directionalLight.getTransform();
+			color = directionalLight.getColor();
+			scatterFactor = directionalLight.getScatterFactor();
+		}
+
+		private Object readResolve() {
+			DirectionalLight light = new DirectionalLight();
+			light.setColor(color);
+			light.setTransform(transform);
+			light.setScatterFactor(scatterFactor);
+			return light;
+		}
+	}
+
+	private Object writeReplace() {
+		return new SerializationProxy(this);
 	}
 }

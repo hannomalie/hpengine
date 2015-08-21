@@ -27,12 +27,12 @@ public class MainLightView extends EntityView {
 	private DirectionalLight light;
 
 	public MainLightView(World world, DebugFrame debugFrame) {
-		super(world, debugFrame, world.getRenderer().getLightFactory().getDirectionalLight());
+		super(world, debugFrame, world.getScene().getDirectionalLight());
 	}
 
 	@Override
 	protected void init(World world, Entity entity) {
-		this.light = world.getRenderer().getLightFactory().getDirectionalLight();
+		this.light = world.getScene().getDirectionalLight();
 		super.init(world, entity);
 	}
 

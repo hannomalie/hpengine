@@ -167,6 +167,7 @@ public class World {
 		} else {
 			scene = new Scene();
 		}
+		setScene(scene);
 		long start = System.currentTimeMillis();
 		System.out.println(start);
 		setScene(scene);
@@ -175,8 +176,9 @@ public class World {
 		float rotationDelta = 5f;
 		float scaleDelta = 0.1f;
 		float posDelta = 1f;
-		camera = (Camera) new Camera(renderer).
+		camera = (Camera) new Camera().
 					addComponent(new InputControllerComponent() {
+							 private static final long serialVersionUID = 1L;
 							 @Override
 							 public void update(float seconds) {
 
@@ -219,7 +221,9 @@ public class World {
 						 }
 					);
 		camera.init(this);
+		camera.setPosition(new Vector3f(0, 20, 0));
 		activeCamera = camera;
+		// TODO: Check if this is still necessary
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
 //		try {
@@ -264,8 +268,6 @@ public class World {
 //			Display.update();
 			StopWatch.getInstance().stopAndPrintMS();
 		}
-
-		System.out.println("XXXXXXXXXXXXXXXXXXXX");
 
 		renderer.addCommand(new Command<Result<Object>>() {
 			@Override
@@ -395,7 +397,7 @@ public class World {
 			STRG_PRESSED_LAST_FRAME = false;
 		}
 		
-		DirectionalLight directionalLight = renderer.getLightFactory().getDirectionalLight();
+		DirectionalLight directionalLight = scene.getDirectionalLight();
 
 //		System.out.println("LightPosition: " + lightPosition);
 //		for (Entity entity : entities) {
@@ -408,7 +410,7 @@ public class World {
 //		renderer.update(this, seconds);
 //		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
-		activeCamera.update(seconds);
+		camera.update(seconds);
 
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
@@ -442,7 +444,6 @@ public class World {
 	
 	private void loopCycle(float seconds) {
 		update(seconds);
-//		draw();
 		scene.endFrame(activeCamera);
 		renderer.endFrame();
 	}
@@ -471,6 +472,7 @@ public class World {
 				return new Result(new Object());
 			}
 		});
+		Result waitForIt = result.poll();
 		restoreWorldCamera();
 	}
 

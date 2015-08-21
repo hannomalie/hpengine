@@ -11,15 +11,12 @@ import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 
 import engine.World;
-import renderer.DeferredRenderer;
 import util.CompressionUtils;
-import util.OpenGLThread;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 
 /**

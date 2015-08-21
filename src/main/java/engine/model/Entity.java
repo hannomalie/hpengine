@@ -38,6 +38,8 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	protected transient World world;
 
+	protected boolean initialized = false;
+
 	protected String name = "Entity_" + System.currentTimeMillis();
 
 	private Entity parent = null;
@@ -72,6 +74,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		for(Entity child: children) {
 			child.init(world);
 		}
+		initialized = true;
 //		children.parallelStream().forEach(child -> child.init(world));
 	}
 
@@ -163,6 +166,9 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	public void update(float seconds) {
 		for (Component c : components.values()) {
 			c.update(seconds);
+		}
+		for (Entity child: getChildren()) {
+			child.update(seconds);
 		}
 	}
 
@@ -365,6 +371,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 //		GL30.glBindVertexArray(0);
 //		GL30.glDeleteVertexArrays(vaoId);
 //		
+	}
+
+	@Override
+	public boolean isInitialized() {
+		return initialized;
 	}
 
 	public void setHasMoved(boolean value) { transform.setHasMoved(value); }

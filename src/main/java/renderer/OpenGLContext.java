@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 public class OpenGLContext {
 
     private Canvas canvas;
+    private boolean attached;
 
     OpenGLContext() throws LWJGLException {
         this(false);
@@ -43,6 +44,7 @@ public class OpenGLContext {
             public void handleMessage(int source, int type, int id, int severity, String message) {
                 if(severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
                     Logger.getGlobal().severe(message);
+                    new RuntimeException().printStackTrace();
                 }
             }
         };
@@ -58,8 +60,20 @@ public class OpenGLContext {
         GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
     }
 
-    public void setParent(Canvas canvas) throws LWJGLException {
+    public void attach(Canvas canvas) throws LWJGLException {
         Display.setParent(canvas);
+        attached = true;
+    }
+    public void detach() throws LWJGLException {
+        Display.setParent(null);
+        attached = false;
+    }
+    public void attachOrDetach(Canvas canvas) throws LWJGLException {
+        if(attached) {
+            detach();
+        } else {
+            attach(canvas);
+        }
     }
 
 }

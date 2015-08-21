@@ -23,8 +23,6 @@ public class Camera extends Entity {
 	private Matrix4f projectionMatrix = null;
 	private Matrix4f viewProjectionMatrix = null;
 
-	private Renderer renderer;
-
 	private Frustum frustum;
 
 	private float near = 0.1f;
@@ -36,21 +34,20 @@ public class Camera extends Entity {
 
 	private boolean isPerspective = true;
 	
-	public Camera(Renderer renderer) {
-		this(renderer, Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
+	public Camera() {
+		this(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
-	public Camera(Renderer renderer, float near, float far, float fov, float ratio) {
-		this(renderer, Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), near, far, fov, ratio);
+	public Camera(float near, float far, float fov, float ratio) {
+		this(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), near, far, fov, ratio);
 	}
 
-	public Camera(Renderer renderer, Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
+	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
 		this.name = "Camera_" +  System.currentTimeMillis();
 		this.near = near;
 		this.far = far;
 		this.fov = fov;
 		this.ratio = ratio;
-		this.renderer = renderer;
 		this.projectionMatrix = projectionMatrix;
 
 		frustum = new Frustum(this);

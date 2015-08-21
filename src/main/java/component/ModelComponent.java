@@ -95,7 +95,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         currentProgram.setUniform("eyePosition", camera.getPosition());
-        currentProgram.setUniform("lightDirection", world.getRenderer().getLightFactory().getDirectionalLight().getViewDirection());
+        currentProgram.setUniform("lightDirection", world.getScene().getDirectionalLight().getViewDirection());
         currentProgram.setUniform("near", camera.getNear());
         currentProgram.setUniform("far", camera.getFar());
         currentProgram.setUniform("time", (int)System.currentTimeMillis());

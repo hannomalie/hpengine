@@ -86,7 +86,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private void draw(World world, RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
         LightFactory lightFactory = renderer.getLightFactory();
         EnvironmentProbeFactory environmentProbeFactory = renderer.getEnvironmentProbeFactory();
-        DirectionalLight light = lightFactory.getDirectionalLight();
+        DirectionalLight light = world.getScene().getDirectionalLight();
 
         GPUProfiler.start("First pass");
         drawFirstPass(world, camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights());
@@ -94,7 +94,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (!World.DEBUGDRAW_PROBES) {
             environmentProbeFactory.drawAlternating(octree, camera, light, renderer.getFrameCount());
-            renderer.executeRenderProbeCommands(octree, camera, light);
+            renderer.executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
 //			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
             {
@@ -177,7 +177,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //				if (!light.isInFrustum(camera)) { continue;}
                 light.drawAsMesh(camera);
             }
-            renderer.getLightFactory().getDirectionalLight().drawAsMesh(camera);
+            world.getScene().getDirectionalLight().drawAsMesh(camera);
 
 //            renderer.drawLine(renderer.getLightFactory().getDirectionalLight().getWorldPosition(),
 //                    renderer.getLightFactory().getDirectionalLight().getCamera().getWorldPosition());

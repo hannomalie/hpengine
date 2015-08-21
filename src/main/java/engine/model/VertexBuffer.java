@@ -9,6 +9,10 @@ import renderer.Renderer;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
+import static org.lwjgl.opengl.GL11.glFlush;
+import static org.lwjgl.opengl.GL32.glFenceSync;
+import static org.lwjgl.opengl.GL32.glWaitSync;
+
 public class VertexBuffer {
 
 	public enum Usage {
@@ -36,7 +40,6 @@ public class VertexBuffer {
 
 	private Vector4f min;
 	private Vector4f max;
-
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
 		this(values, channels, Usage.STATIC);
@@ -142,7 +145,7 @@ public class VertexBuffer {
 		setUpAttributes();
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
 		GL30.glBindVertexArray(0);
-		
+
 		return this;
 	}
 	

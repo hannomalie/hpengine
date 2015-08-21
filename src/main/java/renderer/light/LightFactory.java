@@ -83,41 +83,7 @@ public class LightFactory {
 								.add(new ColorAttachmentDefinition())
 								.build();
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
-		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
-		this.getDirectionalLight().init(world);
-		this.getDirectionalLight().addComponent(new InputControllerComponent() {
-
-			@Override public void update(float seconds) {
-
-				float moveAmount = seconds;
-				float rotateAmount = seconds;
-
-				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
-					getEntity().move(new Vector3f(0, -moveAmount, 0));
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
-					getEntity().move(new Vector3f(0, moveAmount, 0));
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
-					getEntity().move(new Vector3f(-moveAmount, 0, 0));
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
-					getEntity().move(new Vector3f(moveAmount, 0, 0));
-				}
-			}
-		});
+		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 			int renderedTextureTemp = GL11.glGenTextures();
@@ -434,18 +400,5 @@ public class LightFactory {
 		pointLights.clear();
 		areaLights.clear();
 		tubeLights.clear();
-	}
-
-	public DirectionalLight getDirectionalLight() {
-		return light;
-	}
-
-	private void setDirectionalLight(DirectionalLight light) {
-		this.light = light;
-	}
-	public void setDirectionalLight(DirectionalLightSerializationProxy lightProxy) {
-		this.light.setPosition(lightProxy.getPosition());
-		this.light.setOrientation(lightProxy.getOrientation());
-		this.light.setColor(lightProxy.getColor());
 	}
 }

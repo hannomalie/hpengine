@@ -34,7 +34,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         super(renderer);
     }
 
-    public void drawDebug(Camera camera, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public void drawDebug(Camera camera, World world, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         ///////////// firstpass
         GBuffer gBuffer = renderer.getGBuffer();
 
@@ -137,7 +137,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         ////////////////////
 
-        drawSecondPass(camera, renderer.getLightFactory().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
+        drawSecondPass(camera, world.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
         GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);

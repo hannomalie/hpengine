@@ -428,7 +428,7 @@ void main(void) {
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	
 	float ambient = normalAmbient.a;
-	//ambient += 0.01;
+	ambient += 0.001;
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
 	
 	//out_DiffuseSpecular.rgb = normalWorld/2+1;

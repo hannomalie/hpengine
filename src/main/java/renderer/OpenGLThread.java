@@ -1,4 +1,4 @@
-package util;
+package renderer;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
