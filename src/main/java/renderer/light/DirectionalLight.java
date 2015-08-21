@@ -16,7 +16,9 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
 import renderer.material.Material;
 import renderer.material.Material.MAP;
+import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
+import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
 import util.Util;
 
@@ -71,7 +73,13 @@ public class DirectionalLight extends Entity {
 
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
-		renderTarget = new RenderTarget(2048, 2048, GL30.GL_RGBA32F, 1f, 1f, 1f, 1f, GL11.GL_NEAREST, 3);
+		renderTarget = new RenderTargetBuilder().setWidth(2048)
+							.setHeight(2048)
+							.setClearRGBA(1f, 1f, 1f, 1f)
+							.add(3, new ColorAttachmentDefinition()
+									.setInternalFormat(GL30.GL_RGBA32F)
+									.setTextureFilter(GL11.GL_NEAREST))
+							.build();
 		Matrix4f projectionMatrix = Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f);
 		camera = new Camera(renderer, projectionMatrix, 0.1f, 500f, 60, 16 / 9);
 		camera.setParent(this);

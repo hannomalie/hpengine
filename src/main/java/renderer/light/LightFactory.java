@@ -11,13 +11,14 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
 import renderer.material.Material;
+import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
+import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
 import util.Util;
 import util.stopwatch.GPUProfiler;
@@ -77,7 +78,10 @@ public class LightFactory {
 			e.printStackTrace();
 		}
 
-		this.renderTarget = new RenderTarget(AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION);
+		this.renderTarget = new RenderTargetBuilder().setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
+								.setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
+								.add(new ColorAttachmentDefinition())
+								.build();
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		this.camera = new Camera(renderer, Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 		this.getDirectionalLight().init(world);

@@ -12,8 +12,9 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.PixelBufferObject;
 import renderer.Renderer;
 import renderer.material.Material;
+import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
-import shader.Program;
+import renderer.rendertarget.RenderTargetBuilder;
 import shader.StorageBuffer;
 import util.Util;
 
@@ -60,11 +61,27 @@ public class GBuffer {
 		this.world = world;
 		this.renderer = renderer;
 
-		gBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 5);
-		reflectionBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, 0,0,0,0, GL11.GL_LINEAR, 2);
-		laBuffer = new RenderTarget((int) (Config.WIDTH * SECONDPASSSCALE) , (int) (Config.HEIGHT * SECONDPASSSCALE), GL30.GL_RGBA16F, 2);
-		finalBuffer = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8, 1);
-		halfScreenBuffer = new RenderTarget(Config.WIDTH/2, Config.HEIGHT/2, GL30.GL_RGBA16F, 1);
+		gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
+						.add(5, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.build();
+		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
+						.add(2, new ColorAttachmentDefinition()
+								.setInternalFormat(GL30.GL_RGBA16F)
+								.setTextureFilter(GL11.GL_LINEAR))
+						.setClearRGBA(0, 0, 0, 0)
+						.build();
+		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.WIDTH * SECONDPASSSCALE))
+						.setHeight((int) (Config.HEIGHT * SECONDPASSSCALE))
+						.add(2, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.build();
+		finalBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
+						.add(new ColorAttachmentDefinition()
+								.setInternalFormat(GL11.GL_RGBA8))
+						.build();
+		halfScreenBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH / 2).setHeight(Config.HEIGHT / 2)
+						.add(new ColorAttachmentDefinition()
+								.setInternalFormat(GL30.GL_RGBA16F))
+						.build();
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 

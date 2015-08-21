@@ -20,8 +20,10 @@ import renderer.DeferredRenderer;
 import renderer.drawstrategy.GBuffer;
 import renderer.Renderer;
 import renderer.light.*;
+import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import renderer.rendertarget.RenderTarget;
+import renderer.rendertarget.RenderTargetBuilder;
 import scene.AABB;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
@@ -120,7 +122,11 @@ public class EnvironmentSampler extends Camera {
 		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, renderer.getEnvironmentProbeFactory().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
 
 
-		renderTarget = new RenderTarget(EnvironmentProbeFactory.RESOLUTION/2, EnvironmentProbeFactory.RESOLUTION/2, cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat());
+		renderTarget = new RenderTargetBuilder().setWidth(EnvironmentProbeFactory.RESOLUTION / 2)
+								.setHeight(EnvironmentProbeFactory.RESOLUTION / 2)
+								.add(new ColorAttachmentDefinition()
+										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
+								.build();
 		
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		World.getEventBus().register(this);

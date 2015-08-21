@@ -1,8 +1,6 @@
 package renderer;
 
 import camera.Camera;
-import com.bulletphysics.dynamics.DynamicsWorld;
-import component.ModelComponent;
 import config.Config;
 import engine.TimeStepThread;
 import engine.World;
@@ -28,7 +26,9 @@ import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.light.PointLight;
 import renderer.material.MaterialFactory;
+import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
+import renderer.rendertarget.RenderTargetBuilder;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import shader.Program;
@@ -142,7 +142,10 @@ public class DeferredRenderer implements Renderer {
 					renderer.debugDrawStrategy = new DebugDrawStrategy(renderer);
 					renderer.currentDrawStrategy = simpleDrawStrategy;
 
-					fullScreenTarget = new RenderTarget(Config.WIDTH, Config.HEIGHT, GL11.GL_RGBA8);
+					fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
+												.setHeight(Config.HEIGHT)
+												.add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
+												.build();
 					materialFactory = new MaterialFactory(renderer);
 					lightFactory = new LightFactory(world);
 					environmentProbeFactory = new EnvironmentProbeFactory(world);
