@@ -16,10 +16,8 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
 import renderer.light.AreaLight;
-import renderer.light.LightFactory;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
-import shader.Program;
 import texture.CubeMap;
 
 import java.nio.FloatBuffer;
@@ -71,9 +69,9 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             for (Entity entity : visibleEntities) {
                 linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
             }
             renderer.drawLines(linesProgram);
             // draw coord system for entity
@@ -84,9 +82,9 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
                 Vector4f right = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, 0.0f), null);
                 Vector4f up = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, 0.0f), null);
 
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
             }
             renderer.drawLines(linesProgram);
             linesProgram.setUniform("diffuseColor", new Vector3f(0.5f,0.5f,0));
@@ -95,9 +93,9 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
                 Vector4f right = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getRightDirection().x, entity.getRightDirection().y, entity.getRightDirection().z, 0.0f), null);
                 Vector4f up = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getUpDirection().x, entity.getUpDirection().y, entity.getUpDirection().z, 0.0f), null);
 
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
             }
             renderer.drawLines(linesProgram);
         }
@@ -124,12 +122,12 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
             renderer.getEnvironmentProbeFactory().drawDebug(linesProgram, octree);
         }
 
-        renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
-        renderer.drawLine(new Vector3f(), new Vector3f(0,15,0));
-        renderer.drawLine(new Vector3f(), new Vector3f(0,0,-15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
+        renderer.batchLine(new Vector3f(), new Vector3f(15, 0, 0));
+        renderer.batchLine(new Vector3f(), new Vector3f(0, 15, 0));
+        renderer.batchLine(new Vector3f(), new Vector3f(0, 0, -15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
         dynamicsWorld.debugDrawWorld();
         renderer.drawLines(linesProgram);
 

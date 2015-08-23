@@ -35,6 +35,10 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
     public DebugDrawStrategy(Renderer renderer) {
         super(renderer);
         linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+
+        Transform transform = new Transform();
+        transform.init();
+        identityMatrixBuffer = transform.getTransformationBuffer();
     }
 
     @Override
@@ -48,7 +52,6 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
 
 
     public void drawDebug(Camera camera, World world, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-        ///////////// firstpass
         GBuffer gBuffer = renderer.getGBuffer();
 
         gBuffer.use(true);
@@ -84,9 +87,9 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             for (Entity entity : visibleEntities) {
                 linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
-                renderer.drawLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
+                renderer.batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
             }
             renderer.drawLines(linesProgram);
             // draw coord system for entity
@@ -97,25 +100,30 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
                 Vector4f right = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, 0.0f), null);
                 Vector4f up = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, 0.0f), null);
 
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
             }
             renderer.drawLines(linesProgram);
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
+            for (Entity entity : visibleEntities) {
+                linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
+                renderer.batchVector(entity.getViewDirection(), 0.1f);
+                renderer.drawLines(linesProgram);
+            }
             linesProgram.setUniform("diffuseColor", new Vector3f(0.5f,0.5f,0));
             for (Entity entity : visibleEntities) {
                 Vector4f view = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getViewDirection().x, entity.getViewDirection().y, entity.getViewDirection().z, 0.0f), null);
                 Vector4f right = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getRightDirection().x, entity.getRightDirection().y, entity.getRightDirection().z, 0.0f), null);
                 Vector4f up = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getUpDirection().x, entity.getUpDirection().y, entity.getUpDirection().z, 0.0f), null);
 
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                renderer.drawLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
+                renderer.batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
+                renderer.drawLines(linesProgram);
             }
-            renderer.drawLines(linesProgram);
         }
 
-        linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
         if (World.DRAWLIGHTS_ENABLED) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,1));
             for (Entity entity : pointLights) {
@@ -124,6 +132,24 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             for (Entity entity : tubeLights) {
                 entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
             }
+            for (AreaLight entity : areaLights) {
+                entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
+
+                renderer.batchLine(new Vector3f(),
+                        Vector3f.add(new Vector3f(), new Vector3f(entity.getViewDirection()), null));
+                linesProgram.setUniform("diffuseColor", new Vector3f(1,0,1));
+                linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
+                renderer.drawLines(linesProgram);
+            }
+
+            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
+            renderer.batchLine(new Vector3f(), world.getScene().getDirectionalLight().getCamera().getWorldPosition());
+            renderer.batchLine(world.getScene().getDirectionalLight().getCamera().getWorldPosition(),
+                               Vector3f.add(world.getScene().getDirectionalLight().getCamera().getWorldPosition(),
+                                       (Vector3f) new Vector3f(world.getScene().getDirectionalLight().getCamera().getViewDirection()).scale(10f),
+                                       null));
+            renderer.drawLines(linesProgram);
         }
 
         if (Octree.DRAW_LINES) {
@@ -137,12 +163,14 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             renderer.getEnvironmentProbeFactory().drawDebug(linesProgram, octree);
         }
 
-        renderer.drawLine(new Vector3f(), new Vector3f(15,0,0));
-        renderer.drawLine(new Vector3f(), new Vector3f(0,15,0));
-        renderer.drawLine(new Vector3f(), new Vector3f(0,0,-15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
-        renderer.drawLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
+        linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
+        renderer.batchLine(new Vector3f(), new Vector3f(15, 0, 0));
+        renderer.batchLine(new Vector3f(), new Vector3f(0, 15, 0));
+        renderer.batchLine(new Vector3f(), new Vector3f(0, 0, -15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
+        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
+        renderer.drawLines(linesProgram);
         dynamicsWorld.debugDrawWorld();
         renderer.drawLines(linesProgram);
 

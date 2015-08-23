@@ -80,6 +80,11 @@ public class Octree implements LifeCycle, Serializable {
 		rootNode.span();
 	}
 
+	@Override
+	public boolean isInitialized() {
+		return true;
+	}
+
 	public List<Entity> getEntitiesForNode(Node node) { return Collections.unmodifiableList(entityNodeMappings.entrySet().stream().filter(pair -> pair.getValue().equals(node))
 																					.map(pair -> pair.getKey()).collect(Collectors.toList()));}
 	
@@ -166,6 +171,7 @@ public class Octree implements LifeCycle, Serializable {
 		};
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
 		buffer.drawDebug();
+		buffer.delete();
 	}
 
 	@Override

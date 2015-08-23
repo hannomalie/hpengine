@@ -59,7 +59,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 positionView, in vec3 position, in
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = -normalize(-positionView);
 	//V = ViewVector;
- 	vec3 L = -normalize((vec4(lightDirection, 0)).xyz);
+ 	vec3 L = normalize((vec4(lightDirection, 0)).xyz);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
     vec3 P = position;

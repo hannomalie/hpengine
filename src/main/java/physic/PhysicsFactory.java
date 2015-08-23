@@ -170,9 +170,9 @@ public class PhysicsFactory {
 			
 			@Override
 			public void drawLine(Vector3f arg0, Vector3f arg1, Vector3f arg2) {
-				world.getRenderer().drawLine(
-						new org.lwjgl.util.vector.Vector3f(arg0.x,  arg0.y, arg0.z),
-						new org.lwjgl.util.vector.Vector3f(arg1.x,  arg1.y, arg1.z));
+				world.getRenderer().batchLine(
+						new org.lwjgl.util.vector.Vector3f(arg0.x, arg0.y, arg0.z),
+						new org.lwjgl.util.vector.Vector3f(arg1.x, arg1.y, arg1.z));
 			}
 			
 			@Override

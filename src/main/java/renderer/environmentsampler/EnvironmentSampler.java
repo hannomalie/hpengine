@@ -362,7 +362,7 @@ public class EnvironmentSampler extends Camera {
 		FloatBuffer projectionMatrix = getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getCamera().getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("currentProbe", probe.getIndex());
 		secondPassDirectionalProgram.setUniform("activeProbeCount", renderer.getEnvironmentProbeFactory().getProbes().size());
@@ -675,7 +675,7 @@ public class EnvironmentSampler extends Camera {
 		secondPassAreaProgram.use();
 		secondPassAreaProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassAreaProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassAreaProgram.setUniform("secondPassScale", 1);
+		secondPassAreaProgram.setUniform("secondPassScale", 1f);
 		secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GL11.glDisable(GL11.GL_CULL_FACE);

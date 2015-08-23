@@ -59,7 +59,7 @@ public class AreaLightView extends EntityView {
 			world.restoreWorldCamera();
         });}});
         addRemoveButton(webComponentPanel);
-        
+
 		panels.add(webComponentPanel);
 		addAttributesPanel(panels);
 		return panels;

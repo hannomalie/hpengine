@@ -11,6 +11,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -43,8 +44,7 @@ public class LightFactory {
 	private List<PointLight> pointLights = new ArrayList<>();
 	private List<TubeLight> tubeLights = new ArrayList<>();
 	private List<AreaLight> areaLights = new ArrayList<>();
-	private DirectionalLight light = new DirectionalLight(true);
-	
+
 	private int pointLightsForwardMaxCount = 20;
 	private FloatBuffer pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
 	private FloatBuffer pointLightColors = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
@@ -78,9 +78,12 @@ public class LightFactory {
 			e.printStackTrace();
 		}
 
-		this.renderTarget = new RenderTargetBuilder().setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
+		this.renderTarget = new RenderTargetBuilder()
+                                .setWidth(AREALIGHT_SHADOWMAP_RESOLUTION)
 								.setHeight(AREALIGHT_SHADOWMAP_RESOLUTION)
-								.add(new ColorAttachmentDefinition())
+								.add(new ColorAttachmentDefinition()
+                                        .setInternalFormat(GL30.GL_RGBA32F)
+                                        .setTextureFilter(GL11.GL_NEAREST))
 								.build();
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
@@ -99,6 +102,12 @@ public class LightFactory {
 			areaLightDepthMaps.add(renderedTextureTemp);
 		}
 	}
+
+    public void update(float seconds) {
+        for (AreaLight areaLight : areaLights) {
+            areaLight.update(seconds);
+        }
+    }
 	
 	public PointLight getPointLight(Model model) {
 		return getPointLight(new Vector3f(), model);
@@ -323,6 +332,7 @@ public class LightFactory {
 		GPUProfiler.start("Arealight shadowmaps");
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		renderTarget.use(true);
 		
 		for(int i = 0; i < Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size()); i++) {
@@ -333,13 +343,10 @@ public class LightFactory {
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 			
 			AreaLight light = areaLights.get(i);
-			camera.setPosition(light.getPosition().negate(null));
-			camera.setOrientation(light.getOrientation());
-			camera.rotate(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
+			Camera camera = light;
 
-			List<Entity> visibles = octree.getVisible(camera);
-//			if(visibles.stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty()) { continue; }
-//			if(!light.hasMoved()) { continue; }
+			List<Entity> visibles = octree.getEntities();//getVisible(camera);
+
 			areaShadowPassProgram.use();
 			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
@@ -348,10 +355,7 @@ public class LightFactory {
 			
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					entityBuffer.rewind();
-					e.getModelMatrix().store(entityBuffer);
-					entityBuffer.rewind();
-					areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", entityBuffer);
+					areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
 					modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());

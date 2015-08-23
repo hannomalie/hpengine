@@ -24,14 +24,14 @@ public class TubeLight extends Entity {
 	private Vector3f color;
 
 	protected TubeLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
-		super(world, materialFactory, position, generateName(), model, materialName);
+		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
 		init(world);
 	}
 	public TubeLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector3f color, float length, float radius) {
-		super(world, materialFactory, position, generateName(), model, model.getMaterial().getName());
+		super(materialFactory, position, generateName(), model, model.getMaterial().getName());
 		setColor(color);
 		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
 		init(world);

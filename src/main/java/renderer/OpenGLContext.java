@@ -26,12 +26,11 @@ public class OpenGLContext {
 
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
-//				.withProfileCompatibility(true)
-//				.withForwardCompatible(true)
+				.withProfileCompatibility(true)
+				.withForwardCompatible(true)
                 .withProfileCore(true)
                 .withDebug(true)
                 ;
-//				.withProfileCore(true);
 
         Display.setDisplayMode(new org.lwjgl.opengl.DisplayMode(Config.WIDTH, Config.HEIGHT));
         Display.setVSyncEnabled(false);

@@ -6,7 +6,6 @@ import java.util.Random;
 import camera.Camera;
 import engine.World;
 import engine.model.Entity;
-import octree.Octree;
 import renderer.environmentsampler.EnvironmentSampler;
 import renderer.Renderer;
 import shader.Program;
@@ -49,26 +48,26 @@ public class EnvironmentProbe extends Entity {
 	public void drawDebug(Program program) {
 		List<Vector3f> points = box.getPoints();
 		for (int i = 0; i < points.size() - 1; i++) {
-			renderer.drawLine(points.get(i), points.get(i+1));
+			renderer.batchLine(points.get(i), points.get(i + 1));
 		}
 
-		renderer.drawLine(points.get(3), points.get(0));
-		renderer.drawLine(points.get(7), points.get(4));
+		renderer.batchLine(points.get(3), points.get(0));
+		renderer.batchLine(points.get(7), points.get(4));
 
-		renderer.drawLine(points.get(0), points.get(6));
-		renderer.drawLine(points.get(1), points.get(7));
-		renderer.drawLine(points.get(2), points.get(4));
-		renderer.drawLine(points.get(3), points.get(5));
+		renderer.batchLine(points.get(0), points.get(6));
+		renderer.batchLine(points.get(1), points.get(7));
+		renderer.batchLine(points.get(2), points.get(4));
+		renderer.batchLine(points.get(3), points.get(5));
 
-		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(5, 0, 0), null));
-		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 5, 0), null));
-		renderer.drawLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 0, -5), null));
+		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(5, 0, 0), null));
+		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 5, 0), null));
+		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 0, -5), null));
 
 		float temp = (float)getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));
 	    renderer.drawLines(program);
 		
-//		renderer.drawLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
+//		renderer.batchLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
 	}
 
 	@Override

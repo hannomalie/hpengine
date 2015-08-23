@@ -179,7 +179,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
             world.getScene().getDirectionalLight().drawAsMesh(camera);
 
-//            renderer.drawLine(renderer.getLightFactory().getDirectionalLight().getWorldPosition(),
+//            renderer.batchLine(renderer.getLightFactory().getDirectionalLight().getWorldPosition(),
 //                    renderer.getLightFactory().getDirectionalLight().getCamera().getWorldPosition());
 //            renderer.drawLines(linesProgram);
 
@@ -270,9 +270,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-        secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
+        secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getCamera().getViewDirection());
+//        System.out.println("Light View Direction: " + directionalLight.getViewDirection());
+//        System.out.println("Cam View Direction: " + directionalLight.getCamera().getViewDirection());
         secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
-//		LOGGER.log(Level.INFO, String.format("DIR LIGHT: %f %f %f", directionalLight.getOrientation().x, directionalLight.getOrientation().y, directionalLight.getOrientation().z));
         renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(secondPassDirectionalProgram);
         GPUProfiler.start("Draw fullscreen buffer");
         renderer.getFullscreenBuffer().draw();
@@ -453,7 +454,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             secondPassAreaProgram.setUniform("lightHeight", areaLight.getHeight());
             secondPassAreaProgram.setUniform("lightRange", areaLight.getRange());
             secondPassAreaProgram.setUniform("lightDiffuse", areaLight.getColor());
-            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
+            secondPassAreaProgram.setUniformAsMatrix4("shadowMatrix", areaLight.getViewProjectionMatrixAsBuffer());
 
             // TODO: Add textures to arealights
 //			try {

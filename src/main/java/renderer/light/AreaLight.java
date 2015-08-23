@@ -1,6 +1,7 @@
 package renderer.light;
 
 import camera.Camera;
+import camera.Frustum;
 import component.ModelComponent;
 import engine.World;
 import engine.model.Entity;
@@ -17,17 +18,23 @@ import java.nio.FloatBuffer;
 import java.util.List;
 
 
-public class AreaLight extends Entity {
+public class AreaLight extends Camera {
 	
 	public static float DEFAULT_RANGE = 1f;
 	private static int counter = 0;
 	private Vector3f color;
-	private RenderTarget renderTarget;
-	
+	transient private RenderTarget renderTarget;
+
 	protected AreaLight(World world, Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
 		super(world, renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
+        projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
+        frustum = new Frustum(this);
 		setColor(color);
 		setScale(scale);
+		setNear(0.1f);
+        setFar(500f);
+        setFov(60f);
+        setRatio(1);
 		init(world);
 		counter++;
 	}
@@ -46,14 +53,6 @@ public class AreaLight extends Entity {
 		return String.format("AreaLight_%d", counter);
 	}
 
-	@Override
-	public void destroy() {
-	}
-	
-	@Override
-	public void update(float seconds) {
-	}
-
 	public void drawAsMesh(Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
@@ -61,7 +60,7 @@ public class AreaLight extends Entity {
 	}
 
 	public void draw(Camera camera, Program program) {
-		program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
+//		program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
@@ -120,9 +119,5 @@ public class AreaLight extends Entity {
 	}
 	public float getHeight() {
 		return (getScale().y);
-	}
-
-	public FloatBuffer getViewProjectionMatrixAsBuffer() {
-		return null; // TODO: RETURN A VIEWPROJECTIONMATRIX
 	}
 }

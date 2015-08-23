@@ -1,11 +1,9 @@
 package engine.model;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.List;
-import java.util.logging.Logger;
 
 import engine.World;
 import org.apache.commons.io.FilenameUtils;
@@ -64,7 +62,7 @@ public class EntityFactory {
 //		} catch (IOException e) {
 //			Logger.getGlobal().info(String.format("File not found for %s", name));
 
-			entity = new Entity(world, world.getRenderer().getMaterialFactory(), position, name, model, material.getName());
+			entity = new Entity(world.getRenderer().getMaterialFactory(), position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
 //		} catch (ClassNotFoundException e) {

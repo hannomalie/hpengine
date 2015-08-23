@@ -145,7 +145,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 		return vec3(1.0,1.0,1.0);
 	} else*/
 	
-	//{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
+//	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
 	
 	float variance = moments.y - (moments.x*moments.x);
 	variance = max(variance,0.0012);
@@ -164,8 +164,8 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 
 //http://renderman.pixar.com/view/cook-torrance-shader
-	vec3 V = normalize(-position);
-	//V = -ViewVector;
+	vec3 V = -normalize(-position);
+	//V = ViewVector;
 	vec3 light_position_eye = (viewMatrix * vec4(lightPosition, 1)).xyz;
 	vec3 light_view_direction_eye = (viewMatrix * vec4(lightViewDirection, 0)).xyz;
 	vec3 light_up_direction_eye = (viewMatrix * vec4(lightUpDirection, 0)).xyz;

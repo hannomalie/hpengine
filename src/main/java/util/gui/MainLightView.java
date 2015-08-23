@@ -143,14 +143,20 @@ public class MainLightView extends EntityView {
         webComponentPanel.addElement(movablePanel);
 
 		webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(light.getCamera().getWidth(),
-																									light.getCamera().getHeight(),
-																									light.getCamera().getFar()
-																)) {
+				light.getCamera().getHeight(),
+				light.getCamera().getFar()
+		)) {
 			@Override
 			public void onValueChange(Vector3f current) {
 				light.getCamera().setWidth(current.x);
 				light.getCamera().setHeight(current.y);
 				light.getCamera().setFar(current.z);
+			}
+		});
+		webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", light.getCamera().getPosition()) {
+			@Override
+			public void onValueChange(Vector3f current) {
+				light.getCamera().setPosition(current);
 			}
 		});
 

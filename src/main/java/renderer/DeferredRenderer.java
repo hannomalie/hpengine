@@ -4,6 +4,7 @@ import camera.Camera;
 import config.Config;
 import engine.OpenGLTimeStepThread;
 import engine.TimeStepThread;
+import engine.Transform;
 import engine.World;
 import engine.model.*;
 import event.StateChangedEvent;
@@ -15,6 +16,7 @@ import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import org.newdawn.slick.TrueTypeFont;
 import renderer.command.Command;
 import renderer.command.RenderProbeCommandQueue;
 import renderer.command.Result;
@@ -82,6 +84,7 @@ public class DeferredRenderer implements Renderer {
 	private static Program renderToQuadProgram;
 	private static Program blurProgram;
 	private static Program bilateralBlurProgram;
+	private static Program linesProgram;
 	private Program lastUsedProgram = null;
 
 	private VertexBuffer fullscreenBuffer;
@@ -254,10 +257,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	private void initIdentityMatrixBuffer() {
-		identityMatrix44Buffer = BufferUtils.createFloatBuffer(16);
-		matrix44Buffer.rewind();
-		new Matrix4f().store(matrix44Buffer);
-		matrix44Buffer.rewind();
+		identityMatrix44Buffer = new Transform().getTransformationBuffer();
 	}
 	
 	private void setupShaders() {
@@ -275,6 +275,7 @@ public class DeferredRenderer implements Renderer {
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
 		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
 		bilateralBlurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
+		linesProgram = programFactory.getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
 		DeferredRenderer.exitOnGLError("setupShaders");
 	}
@@ -323,8 +324,9 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (World.DEBUGFRAME_ENABLED) {
-//			drawToQuad(lightFactory.getDirectionalLight().getShadowMapId(), debugBuffer);
-			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
+//			drawToQuad(world.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+//			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
@@ -516,9 +518,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public void drawLines(Program program) {
-
 //		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-//		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
@@ -533,7 +533,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void drawLine(Vector3f from, Vector3f to) {
+	public void batchLine(Vector3f from, Vector3f to) {
 		linePoints.add(from);
 		linePoints.add(to);
 	}
@@ -556,19 +556,13 @@ public class DeferredRenderer implements Renderer {
 	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 
 	private List<Vector3f> linePoints = new ArrayList<>();
-	private FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	private int rsmSize = 2048/2/2/2/2/2/2/2;
-	private Program firstPassProgram;
-	private Program secondPassPointProgram;
-	private Program secondPassTubeProgram;
-	private Program secondPassAreaProgram;
-	private Program secondPassDirectionalProgram;
-	private Program instantRadiosityProgram;
-	private Program combineProgram;
-	private Program postProcessProgram;
 	private JFrame frame;
 
 	private void updateLights(float seconds) {
+
+		lightFactory.update(seconds);
+
 //		for (PointLight light : pointLights) {
 //			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
 //			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());

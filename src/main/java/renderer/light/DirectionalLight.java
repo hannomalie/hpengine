@@ -34,25 +34,21 @@ import java.util.List;
 public class DirectionalLight extends Entity {
 	
 	private boolean castsShadows = false;
-
-	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
-	
-	private RenderTarget renderTarget;
-	private Entity box;
+	transient FloatBuffer entityBuffer;
 
 	private Vector3f color = new Vector3f(1,1,1);
-
-	private Program directionalShadowPassProgram;
-
 	private float scatterFactor;
-	private Camera camera;
+
+	transient private RenderTarget renderTarget;
+	transient private Entity box;
+	transient private Program directionalShadowPassProgram;
+	transient private Camera camera;
 
 	public DirectionalLight() {
 		this(true);
 	}
 
 	public DirectionalLight(boolean castsShadows) {
-		setOrientation(new Quaternion(0.3f, -0.7f, 0.6f, 0.3f));
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
 
@@ -64,6 +60,7 @@ public class DirectionalLight extends Entity {
 		camera.setHeight(1500);
 		camera.setFar(-5000);
 		camera.setPosition(new Vector3f(12f, 300f, 2f));
+		camera.rotate(new Vector4f(1,0,0, 90));
 
 		addComponent(new InputControllerComponent() {
 			private static final long serialVersionUID = 1L;
@@ -131,15 +128,13 @@ public class DirectionalLight extends Entity {
 	public void init(World world) {
 		super.init(world);
 		initialized = false;
+		entityBuffer = BufferUtils.createFloatBuffer(16);
 		Renderer renderer = world.getRenderer();
-
-		Material white = renderer.getMaterialFactory().getMaterial(new HashMap<MAP,String>(){{
-			put(MAP.DIFFUSE,"hp/assets/textures/default.dds");
-		}});
 
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
-		renderTarget = new RenderTargetBuilder().setWidth(2048)
+		renderTarget = new RenderTargetBuilder()
+							.setWidth(2048)
 							.setHeight(2048)
 							.setClearRGBA(1f, 1f, 1f, 1f)
 							.add(3, new ColorAttachmentDefinition()
@@ -162,7 +157,8 @@ public class DirectionalLight extends Entity {
 	public void drawShadowMap(Octree octree) {
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_FRONT);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 		
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
@@ -213,6 +209,10 @@ public class DirectionalLight extends Entity {
 		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			modelComponent.drawDebug(program, getTransform().getTransformationBuffer());
 		});
+	}
+
+	public Vector3f getDirection () {
+		return camera.getViewDirection();
 	}
 
 	@Override

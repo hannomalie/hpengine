@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import camera.Camera;
 import engine.World;
 import engine.model.DataChannels;
 import engine.model.Entity;
@@ -196,7 +195,7 @@ public class EnvironmentProbeFactory {
 
 			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getRightDirection().scale(probe.getCamera().getNear()), null);
 //			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
-//			renderer.drawLine(clipStart, clipEnd);
+//			renderer.batchLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
 		    renderer.drawLines(program);
@@ -216,7 +215,7 @@ public class EnvironmentProbeFactory {
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-				renderer.drawLine(probe.getCenter(), e.getPosition());
+				renderer.batchLine(probe.getCenter(), e.getPosition());
 			});
 		});
 		buffer.delete();

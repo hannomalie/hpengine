@@ -1,11 +1,13 @@
 package camera;
 
 import config.Config;
+import engine.World;
 import engine.model.Entity;
+import engine.model.Model;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.Renderer;
+import renderer.material.MaterialFactory;
 import util.Util;
 
 import java.nio.FloatBuffer;
@@ -20,10 +22,10 @@ public class Camera extends Entity {
 	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	private Matrix4f projectionMatrix = null;
-	private Matrix4f viewProjectionMatrix = null;
+	protected Matrix4f projectionMatrix = null;
+	protected Matrix4f viewProjectionMatrix = null;
 
-	private Frustum frustum;
+	protected Frustum frustum;
 
 	private float near = 0.1f;
 	private float far = -5000f;
@@ -39,7 +41,7 @@ public class Camera extends Entity {
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
-		this(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), near, far, fov, ratio);
+		this(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
 	}
 
 	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
@@ -51,6 +53,10 @@ public class Camera extends Entity {
 		this.projectionMatrix = projectionMatrix;
 
 		frustum = new Frustum(this);
+	}
+
+	public Camera(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
+		super(materialFactory, position, name, model, material);
 	}
 
 	public void update(float seconds) {
@@ -167,6 +173,14 @@ public class Camera extends Entity {
 
 	public void setFov(float fov) {
 		this.fov = fov;
+	}
+
+	public float getFov() {
+		return fov;
+	}
+
+	public float getRatio() {
+		return ratio;
 	}
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {

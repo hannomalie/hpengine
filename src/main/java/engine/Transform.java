@@ -13,20 +13,19 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class Transform implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public static final Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
 	public static final Vector3f WORLD_UP = new Vector3f(0,1,0);
-	public static final Vector3f WORLD_VIEW = new Vector3f(0,0,1);
+	public static final Vector3f WORLD_VIEW = new Vector3f(0,0,-1);
 	public static final Vector4f WORLD_RIGHT_V4 = new Vector4f(1,0,0,0);
 	public static final Vector4f WORLD_UP_V4 = new Vector4f(0,1,0,0);
-	public static final Vector4f WORLD_VIEW_V4 = new Vector4f(0,0,1,0);
+	public static final Vector4f WORLD_VIEW_V4 = new Vector4f(0,0,-1,0);
 	public static final Vector4f RIGHT_V4 = new Vector4f(1,0,0,0);
 	public static final Vector4f UP_V4 = new Vector4f(0,1,0,0);
-	public static final Vector4f VIEW_V4 = new Vector4f(0,0,1,0);
+	public static final Vector4f VIEW_V4 = new Vector4f(0,0,-1,0);
 	public static Vector3f IDENTITY_LOCAL_WORLD = new Vector3f(1,1,1);
 	public static Vector4f IDENTITY_LOCAL_WORLD_V4 = new Vector4f(1,1,1,1);
 	
@@ -135,7 +134,8 @@ public class Transform implements Serializable {
 	}
 	public Quaternion getWorldOrientation() {
 		if(parent != null) {
-			return Quaternion.mul(parent.getWorldOrientation(), orientation, null);
+            Quaternion result = Quaternion.mul(parent.getWorldOrientation(), orientation, null);
+            return result;
 		}
 		return getOrientation();
 	}
@@ -178,7 +178,7 @@ public class Transform implements Serializable {
 	public void move(Vector3f amount) {
 		Vector3f combined = (Vector3f) getRightDirection().scale(amount.x);
 		Vector3f.add(combined, (Vector3f) getUpDirection().scale(amount.y), combined);
-		Vector3f.add(combined, (Vector3f) getViewDirection().scale(amount.z), combined);
+		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-amount.z), combined);
 		moveInWorld(combined);
 	}
 	public void moveInWorld(Vector3f amount) {
@@ -325,7 +325,7 @@ public class Transform implements Serializable {
 		return viewMatrix;
 	}
 
-	public void init(World world) {
+	public void init() {
 		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		modelMatrixBuffer.rewind();
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
@@ -358,7 +358,7 @@ public class Transform implements Serializable {
 
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		stream.defaultReadObject();
-		init(null);
+		init();
 	}
 
 	public void setOrientationFromAxisAngle(Vector4f orientationFromAxisAngle) {

@@ -7,7 +7,6 @@ import engine.Transform;
 import engine.World;
 import engine.lifecycle.LifeCycle;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -52,12 +51,12 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	protected Entity() { }
 
-	protected Entity(World world, MaterialFactory materialFactory, Model model, String materialName) {
-		this(world, materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	protected Entity(MaterialFactory materialFactory, Model model, String materialName) {
+		this(materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
 	}
 
-	protected Entity(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
-		transform.init(world);
+	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
+		transform.init();
 		addComponent(new ModelComponent(model, materialName));
 		this.name = name;
 		transform.setPosition(position);
@@ -66,7 +65,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	@Override
 	public void init(World world) {
 		LifeCycle.super.init(world);
-		transform.init(world);
+		transform.init();
 
 		for(Component component : components.values()) {
 			component.init(world);

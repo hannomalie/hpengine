@@ -25,7 +25,7 @@ public class PointLight extends Entity implements Serializable {
 	private Vector4f color;
 	
 	protected PointLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
-		super(world, materialFactory, position, generateName(), model, materialName);
+		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(range);
