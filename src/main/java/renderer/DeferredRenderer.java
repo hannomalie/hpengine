@@ -1,8 +1,6 @@
 package renderer;
 
-import camera.Camera;
 import config.Config;
-import engine.OpenGLTimeStepThread;
 import engine.TimeStepThread;
 import engine.Transform;
 import engine.World;
@@ -13,10 +11,8 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import org.newdawn.slick.TrueTypeFont;
 import renderer.command.Command;
 import renderer.command.RenderProbeCommandQueue;
 import renderer.command.Result;
@@ -42,7 +38,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.GPUTaskProfile;
 import util.stopwatch.OpenGLStopWatch;
-import util.stopwatch.StopWatch;
 
 import javax.swing.*;
 import javax.vecmath.Vector2f;
@@ -51,8 +46,10 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -61,7 +58,6 @@ import static log.ConsoleLogger.getLogger;
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = !(java.lang.management.ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
-
 	private final boolean headless;
 	private int frameCount = 0;
 
@@ -134,7 +130,7 @@ public class DeferredRenderer implements Renderer {
 				renderer.destroy();
 			}
 			public void update(float seconds) {
-				Thread.currentThread().setName("Renderer");
+				Thread.currentThread().setName(Renderer.RENDER_THREAD_NAME);
 				if (!initialized) {
 					setCurrentState("INITIALIZING");
 					setupOpenGL(headless);
@@ -776,5 +772,34 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public VertexBuffer getFullscreenBuffer() {
 		return fullscreenBuffer;
+	}
+
+
+	@Override
+	public void doWithOpenGLContext(Runnable runnable) {
+
+		if(util.Util.isRenderThread()) {
+			runnable.run();
+		} else {
+			SynchronousQueue<Result<OpenGLThread>> queue = addCommand(new Command<Result<OpenGLThread>>() {
+				@Override
+				public Result<OpenGLThread> execute(World world) {
+					return new Result(new OpenGLThread("Create texture thread") {
+						@Override
+						public void doRun() {
+							runnable.run();
+						}
+					});
+				}
+			});
+			OpenGLThread thread = null;
+			try {
+				thread = queue.poll(5, TimeUnit.MINUTES).get();
+				thread.start();
+				thread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

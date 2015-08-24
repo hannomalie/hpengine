@@ -29,6 +29,7 @@ import javax.imageio.ImageIO;
 
 import engine.World;
 import renderer.DeferredRenderer;
+import renderer.OpenGLThread;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -115,6 +116,10 @@ public class TextureFactory {
 		}
     }
 
+    public void removeTexture(String path) {
+        TEXTURES.remove(path);
+    }
+
     public Texture getDefaultTexture() {
         return defaultTexture;
     }
@@ -124,9 +129,13 @@ public class TextureFactory {
      *
      * @return A new texture ID
      */
-    private int createTextureID() 
+    private int createTextureID()
     {
-       return GL11.glGenTextures(); 
+        final int[] tempId = {-1};
+
+        renderer.doWithOpenGLContext(() -> tempId[0] = GL11.glGenTextures());
+
+        return tempId[0];
     } 
     
     /**
@@ -149,7 +158,6 @@ public class TextureFactory {
         if (texturePreCompiled(resourceName)) {
         	tex = Texture.read(resourceName, createTextureID());
         	if (tex != null) {
-                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
                 TEXTURES.put(resourceName,tex);
                 return tex;
             }
@@ -326,15 +334,12 @@ public class TextureFactory {
         // convert that image into a byte buffer of texture data 
         ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
         
-        renderer.addCommand(new Command<Result>() {
-			@Override
-			public Result execute(World world) {
-		        texture.upload(textureBuffer, srga);
-		        return new Result(new Object());
-			}
-		});
-//        texture.upload(textureBuffer, srga);
-        
+        texture.upload(textureBuffer, srga);
+
+        if(Texture.COMPILED_TEXTURES) {
+            Texture.write(texture, texture.getPath());
+        }
+
 //        System.out.println("TEXTURE READ NEW IN " + (System.currentTimeMillis() - start + " ms"));
 //        generateMipMaps(texture, Material.MIPMAP_DEFAULT);
         
@@ -646,7 +651,7 @@ public class TextureFactory {
 		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
     }
     
-    public ByteBuffer getTextureData(int textureId, int mipLevel, int width, int height, int format, ByteBuffer pixels) {
+    public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
     	GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;

@@ -140,7 +140,7 @@ public class World {
 	private Camera activeCamera;
 
 	public World() {
-		this(null);
+		this(null, false);
 	}
 	public World(boolean headless) {
 		this(null, headless);

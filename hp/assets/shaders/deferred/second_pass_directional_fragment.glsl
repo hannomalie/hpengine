@@ -420,7 +420,7 @@ void main(void) {
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1);
+	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 	///////////////////
 	
 	finalColor *= visibility;

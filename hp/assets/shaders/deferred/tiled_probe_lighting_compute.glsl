@@ -730,7 +730,8 @@ vec3 N_v(int i, int n, float u) {
 }
 
 float R(int i, int j, float u, float v, int k, int n) {
-	float denom;
+	float denom_float;
+	vec3 denom = vec3(denom_float, denom_float, denom_float);
 	
 	for(int p = 1; p <= k; p++) {
 		for(int q = 1; q <= k; q++) {
@@ -738,7 +739,7 @@ float R(int i, int j, float u, float v, int k, int n) {
 		}
 	}
 	
-	return (N_u(i, n, u) * N_v(j, n, v)) / denom; 
+	return ((N_u(i, n, u) * N_v(j, n, v)) / denom).r; // TODO CHECK THIS .r
 }
 
 float __calculateWeight(vec3 positionWorld, vec3 minimum, vec3 maximum, vec3 minimum2, vec3 maximum2) {

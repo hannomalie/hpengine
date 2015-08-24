@@ -1,10 +1,7 @@
 package renderer;
 
-import camera.Camera;
-import com.bulletphysics.dynamics.DynamicsWorld;
 import engine.World;
 import engine.lifecycle.LifeCycle;
-import engine.model.Entity;
 import engine.model.Model;
 import engine.model.OBJLoader;
 import engine.model.VertexBuffer;
@@ -16,22 +13,20 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.command.Command;
 import renderer.command.Result;
 import renderer.drawstrategy.GBuffer;
-import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
-import shader.AbstractProgram;
 import shader.Program;
 import shader.ProgramFactory;
 import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
 
-import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 
 public interface Renderer extends LifeCycle {
+    String RENDER_THREAD_NAME = "Renderer";
     boolean CHECKERRORS = false;
 
     static void exitOnGLError(String errorMessage) {
@@ -366,4 +361,6 @@ public interface Renderer extends LifeCycle {
             }
         }
     }
+
+    void doWithOpenGLContext(Runnable runnable);
 }

@@ -11,13 +11,13 @@ import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 
 import engine.World;
-import util.CompressionUtils;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+import renderer.OpenGLThread;
+import renderer.Renderer;
+import util.*;
 
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.opengl.EXTTextureCompressionS3TC;
-import org.lwjgl.opengl.EXTTextureSRGB;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 
 /**
  * A texture to be bound within JOGL. This object is responsible for 
@@ -34,9 +34,12 @@ import org.lwjgl.opengl.GL30;
  */
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
+    public static final boolean COMPILED_TEXTURES = false;
 
-	private String path = "";
-	
+    private String path = "";
+
+    private volatile boolean mipmapsGenerated = false;
+
     /** The GL target type */
 	protected int target; 
     /** The GL texture ID */
@@ -59,8 +62,10 @@ public class Texture implements Serializable {
     protected int srcPixelFormat;
     protected int minFilter;
     protected int magFilter;
-    
-	protected Texture() {}
+    private int mipmapCount = -1;
+
+    protected Texture() {
+    }
 	
     /**
      * Create a new texture
@@ -79,7 +84,7 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
-      GL11.glBindTexture(target, textureID); 
+      GL11.glBindTexture(target, textureID);
     }
     
     /**
@@ -178,9 +183,9 @@ public class Texture implements Serializable {
         }
     }
 
-	public void setData(byte[] data) {
-		this.data = data;
-	}
+    public void setData(byte[] data) {
+        this.data = data;
+    }
 
 	public void setDstPixelFormat(int dstPixelFormat) {
 		this.dstPixelFormat = dstPixelFormat;
@@ -206,7 +211,6 @@ public class Texture implements Serializable {
 
 	public ByteBuffer buffer() {
 		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
-//		imageBuffer = ByteBuffer.allocateDirect(data.length);
 		imageBuffer.order(ByteOrder.nativeOrder());
 		imageBuffer.put(data, 0, data.length);
 		imageBuffer.flip();
@@ -214,13 +218,12 @@ public class Texture implements Serializable {
 	}
 
 	public void upload() {
-//		new OpenGLThread() {
-//			@Override
-//			public void doRun() {
-//				upload(buffer());
-//			}
-//		}.start();
-		upload(buffer());
+		new OpenGLThread() {
+			@Override
+			public void doRun() {
+				upload(buffer());
+			}
+		}.start();
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
@@ -228,7 +231,6 @@ public class Texture implements Serializable {
 	}
 	
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
-
         bind();
         if (target == GL11.GL_TEXTURE_2D) 
         { 
@@ -256,8 +258,50 @@ public class Texture implements Serializable {
                       GL11.GL_UNSIGNED_BYTE, 
                       textureBuffer);
 		}
-		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+//        if(mipmapsGenerated) {
+//            uploadMipMaps(internalformat);
+//        } else {
+//            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+//            downloadMipMaps();
+//        }
+        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 	}
+
+    private void downloadMipMaps() {
+        int currentWidth = texWidth/2;
+        int currentHeight = texHeight/2;
+        for(int i = 1; i < mipmapCount; i++) {
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(currentHeight * currentWidth * 4);
+            tempBuffer.rewind();
+            TextureFactory.getTextureData(textureID, i, GL11.GL_RGBA, tempBuffer);
+            tempBuffer.get(data[i]);
+            currentWidth /= 2;
+            currentHeight /= 2;
+        }
+        mipmapsGenerated = true;
+    }
+
+    private void uploadMipMaps(int internalformat) {
+        int currentWidth = texWidth/2;
+        int currentHeight = texHeight/2;
+        for(int i = 1; i < mipmapCount; i++) {
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(currentHeight * currentWidth * 4);
+            tempBuffer.rewind();
+            tempBuffer.put(data[i]);
+            tempBuffer.rewind();
+            GL11.glTexImage2D(target,
+                    0,
+                    internalformat,
+                    get2Fold(currentWidth),
+                    get2Fold(currentHeight),
+                    0,
+                    srcPixelFormat,
+                    GL11.GL_UNSIGNED_BYTE,
+                    tempBuffer);
+            currentWidth /= 2;
+            currentHeight /= 2;
+        }
+    }
 
 	public void setMinFilter(int minFilter) {
 		this.minFilter = minFilter;
@@ -267,9 +311,9 @@ public class Texture implements Serializable {
 		this.magFilter = magFilter;
 	}
 
-	public byte[] getData() {
-		return data;
-	}
+    public byte[] getData() {
+        return data;
+    }
 
 	public static Texture read(String resourceName, int textureId) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
@@ -282,9 +326,7 @@ public class Texture implements Serializable {
 			Texture texture = (Texture) in.readObject();
 			in.close();
 			texture.textureID = textureId;
-//			DeferredRenderer.exitOnGLError("XXX");
 			texture.upload();
-//			DeferredRenderer.exitOnGLError("YYY");
 			return texture;
 		} catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
 			e.printStackTrace();

@@ -21,6 +21,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.bulletphysics.linearmath.Transform;
+import renderer.Renderer;
 
 public class Util {
 	private static Logger LOGGER = getLogger();
@@ -403,5 +404,9 @@ public class Util {
 			if(max.y  > minMax[1].y) { minMax[1].y = min.y; }
 			if(max.z  > minMax[1].z) { minMax[1].z = min.z; }
 		}
+	}
+
+	public static boolean isRenderThread() {
+		return Thread.currentThread().getName().equals(Renderer.RENDER_THREAD_NAME);
 	}
 }
