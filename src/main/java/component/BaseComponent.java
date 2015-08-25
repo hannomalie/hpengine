@@ -1,6 +1,6 @@
 package component;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import renderer.Renderer;
 
@@ -9,7 +9,7 @@ import java.io.Serializable;
 public abstract class BaseComponent implements Component, Serializable {
     private static final long serialVersionUID = -224913983270697337L;
 
-    transient protected World world;
+    transient protected AppContext appContext;
     transient private Renderer renderer;
 
     private Entity entity;
@@ -17,9 +17,9 @@ public abstract class BaseComponent implements Component, Serializable {
 
     public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
 
-    public void init(World world) {
-        setWorld(world);
-        setRenderer(world.getRenderer());
+    public void init(AppContext appContext) {
+        setAppContext(appContext);
+        setRenderer(appContext.getRenderer());
         initialized = true;
     }
 
@@ -32,12 +32,12 @@ public abstract class BaseComponent implements Component, Serializable {
         this.renderer = renderer;
     }
 
-    public World getWorld() {
-        return world;
+    public AppContext getAppContext() {
+        return appContext;
     }
 
-    public void setWorld(World world) {
-        this.world = world;
+    public void setAppContext(AppContext appContext) {
+        this.appContext = appContext;
     }
 
     @Override

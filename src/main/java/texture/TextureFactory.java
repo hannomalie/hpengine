@@ -27,12 +27,8 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import engine.World;
 import renderer.DeferredRenderer;
-import renderer.OpenGLThread;
 import renderer.Renderer;
-import renderer.command.Result;
-import renderer.command.Command;
 import renderer.material.Material;
 
 import org.apache.commons.io.FileUtils;

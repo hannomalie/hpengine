@@ -11,7 +11,7 @@ import javax.swing.*;
 
 import com.alee.laf.checkbox.WebCheckBox;
 import component.ModelComponent;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
 import renderer.Renderer;
@@ -35,23 +35,23 @@ import com.alee.managers.notification.WebNotificationPopup;
 public class EntityView extends WebPanel {
 
 	protected Entity entity;
-	protected World world;
+	protected AppContext appContext;
 	protected WebFormattedTextField nameField;
 	protected DebugFrame debugFrame;
 	protected Renderer renderer;
 
-	public EntityView(World world, DebugFrame debugFrame, Entity entity) {
-		this.world = world;
-		this.renderer = world.getRenderer();
+	public EntityView(AppContext appContext, DebugFrame debugFrame, Entity entity) {
+		this.appContext = appContext;
+		this.renderer = appContext.getRenderer();
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 700);
 		setMargin(20);
 
-		init(world, entity);
+		init(appContext, entity);
 	}
 
-	protected void init(World world, Entity entity) {
+	protected void init(AppContext appContext, Entity entity) {
 		this.entity = entity;
 		List<Component> panels = getPanels();
 
@@ -94,7 +94,7 @@ public class EntityView extends WebPanel {
 	        
 	        WebButton removeEntityButton = new WebButton("Remove Entity");
 	        removeEntityButton.addActionListener(e -> {
-	        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new RemoveEntityCommand((Entity) entity));
+	        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new RemoveEntityCommand((Entity) entity));
 	    		
 	    		Result result = null;
 	    		try {
@@ -114,22 +114,22 @@ public class EntityView extends WebPanel {
 	        webComponentPanel.addElement(removeEntityButton);
 
 			try {
-				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(world.getRenderer().getMaterialFactory().getMaterialsAsList()));
-				Material material = world.getRenderer().getMaterialFactory().getDefaultMaterial();
+				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(appContext.getRenderer().getMaterialFactory().getMaterialsAsList()));
+				Material material = appContext.getRenderer().getMaterialFactory().getDefaultMaterial();
 				if(entity.getComponentOption(ModelComponent.class).isPresent()) {
 					material = entity.getComponent(ModelComponent.class).getMaterial();
 				}
-				materialSelect.setSelectedIndex(world.getRenderer().getMaterialFactory().getMaterialsAsList().indexOf(material));
+				materialSelect.setSelectedIndex(appContext.getRenderer().getMaterialFactory().getMaterialsAsList().indexOf(material));
 				materialSelect.addActionListener(e -> {
 					WebComboBox cb = (WebComboBox) e.getSource();
-					Material selectedMaterial = world.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
+					Material selectedMaterial = appContext.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
 					entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
 					if(entity.hasChildren()) {
 						for (Entity child : entity.getChildren()) {
 							child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
 						}
 					}
-					World.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
+					AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
 				});
 				webComponentPanel.addElement(materialSelect);
 			} catch (NullPointerException e) {
@@ -148,7 +148,7 @@ public class EntityView extends WebPanel {
 				childSelect.addActionListener(e ->{
 					int index = childSelect.getSelectedIndex();
 					Entity newEntity = entity.getChildren().get(index);
-					temp.init(world, newEntity);
+					temp.init(appContext, newEntity);
 				});
 				childSelect.setName("Children");
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Children"), childSelect));
@@ -158,7 +158,7 @@ public class EntityView extends WebPanel {
 				WebButton parentSelectButton = new WebButton(entity.getParent().getName());
 				EntityView temp = this;
 				parentSelectButton.addActionListener(e -> {
-					temp.init(world, entity.getParent());
+					temp.init(appContext, entity.getParent());
 				});
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Parent"), parentSelectButton));
 
@@ -169,10 +169,10 @@ public class EntityView extends WebPanel {
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
 
 			} else {
-				WebComboBox parentSelect = new WebComboBox(new Vector<>(world.getScene().getEntities()));
+				WebComboBox parentSelect = new WebComboBox(new Vector<>(appContext.getScene().getEntities()));
 				parentSelect.addActionListener(e ->{
 					int index = parentSelect.getSelectedIndex();
-					Entity newParent = world.getScene().getEntities().get(index);
+					Entity newParent = appContext.getScene().getEntities().get(index);
 					entity.setParent(newParent);
 				});
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));

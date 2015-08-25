@@ -1,15 +1,15 @@
 package component;
 
 import camera.Camera;
+import config.Config;
+import engine.AppContext;
 import engine.Drawable;
-import engine.World;
 import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.material.Material;
 import shader.Program;
-import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -60,11 +60,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(camera, modelMatrix, firstPassProgram, world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(camera, modelMatrix, firstPassProgram, appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
     public void draw(Camera camera) {
-        draw(camera, getEntity().getModelMatrixAsBuffer(), world.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), world.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(camera, getEntity().getModelMatrixAsBuffer(), appContext.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
@@ -87,22 +87,22 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //		currentProgram = renderer.getLastUsedProgram();
         currentProgram.use();
         currentProgram.setUniform("isInstanced", instanced);
-        currentProgram.setUniform("useParallax", World.useParallax);
-        currentProgram.setUniform("useSteepParallax", World.useSteepParallax);
-        currentProgram.setUniform("useRainEffect", World.RAINEFFECT == 0.0 ? false : true);
-        currentProgram.setUniform("rainEffect", World.RAINEFFECT);
+        currentProgram.setUniform("useParallax", Config.useParallax);
+        currentProgram.setUniform("useSteepParallax", Config.useSteepParallax);
+        currentProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
+        currentProgram.setUniform("rainEffect", Config.RAINEFFECT);
         currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         currentProgram.setUniform("eyePosition", camera.getPosition());
-        currentProgram.setUniform("lightDirection", world.getScene().getDirectionalLight().getViewDirection());
+        currentProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
         currentProgram.setUniform("near", camera.getNear());
         currentProgram.setUniform("far", camera.getFar());
         currentProgram.setUniform("time", (int)System.currentTimeMillis());
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("isSelected", isSelected);
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
-        world.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
+        appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
 
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
@@ -148,8 +148,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
 
     @Override
-    public void init(World world) {
-        super.init(world);
+    public void init(AppContext appContext) {
+        super.init(appContext);
         createFloatArray(model);
 //        world.getRenderer().addCommand(new Command<Result<Object>>() {
 //            @Override

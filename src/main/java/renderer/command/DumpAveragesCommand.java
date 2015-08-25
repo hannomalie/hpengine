@@ -1,6 +1,6 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 import util.stopwatch.GPUProfiler;
 
 public class DumpAveragesCommand implements Command {
@@ -14,7 +14,7 @@ public class DumpAveragesCommand implements Command {
 	}
 	
 	@Override
-	public Result execute(World world) {
+	public Result execute(AppContext appContext) {
 		GPUProfiler.dumpAverages(sampleCount);
 		
 		return new Result() {

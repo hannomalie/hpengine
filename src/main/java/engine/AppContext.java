@@ -20,13 +20,12 @@ import renderer.drawstrategy.GBuffer;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
+import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
 import renderer.material.Material;
 import scene.EnvironmentProbe;
 import scene.Scene;
 import texture.Texture;
-import util.Adjustable;
-import util.Toggable;
 import util.gui.DebugFrame;
 import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
@@ -42,61 +41,37 @@ import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
-public class World {
+public class AppContext {
+
+	private static AppContext instance = null;
+	private TimeStepThread thread;
+
+	public static AppContext getInstance() {
+		if(instance == null) {
+			throw new IllegalStateException("Call AppContext.init() before using it");
+		}
+		return instance;
+	}
+
 	public static final String WORKDIR_NAME = "hp";
 	public static final String ASSETDIR_NAME = "hp/assets";
 	private static EventBus eventBus;
+	ScriptManager scriptManager;
+	PhysicsFactory physicsFactory;
+	EntityFactory entityFactory;
+	Scene scene;
+	private int entityCount = 10;
+	public volatile int PICKING_CLICK = 0;
+	public Renderer renderer;
+	private Camera camera;
+	private Camera activeCamera;
 
 	private static Logger LOGGER = getLogger();
 	private volatile boolean initialized;
 
 	private OpenGLStopWatch glWatch;
 
-	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
-	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;
-	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
-	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
-	public static volatile boolean useInstantRadiosity = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = true;
-	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
-	
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = true;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR_PROBES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
-	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = true;
-	@Toggable(group = "Quality settings") public static volatile boolean SSR_FADE_TO_SCREEN_BORDERS = true;
-	@Toggable(group = "Quality settings") public static volatile boolean SSR_TEMPORAL_FILTERING = true;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
-	
-	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
-	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES = false;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
-	@Toggable(group = "Quality settings") public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
-	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
-	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
-	@Toggable(group = "Debug") public static volatile boolean VSYNC_ENABLED = true;
-
-	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
-	
-	@Toggable(group = "Effects") public static volatile boolean SCATTERING = true;
-	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
-	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
-	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
-	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
-	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = true;
-	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
-	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = true;
-	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
-
 	public static void main(String[] args) {
-		final World world;
-		
 		String sceneName = "sponza";
 		boolean debug = true;
 		for (String string : args) {
@@ -113,43 +88,32 @@ public class World {
 			}
 		}
 
-//		world = new World(sceneName);
-		world = new World();
+		init();
+
+//		if(sceneName != null) {
+//			Scene scene = Scene.read(AppContext.getInstance().getRenderer(), sceneName);
+//            AppContext.getInstance().setScene(scene);
+//		}
 
 		WebLookAndFeel.install();
 		if(debug) {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					new DebugFrame(world);
+					new DebugFrame(AppContext.getInstance());
 				}
 			}).start();
 		}
-
-		world.simulate();
 	}
 
-	ScriptManager scriptManager;
-	PhysicsFactory physicsFactory;
-	EntityFactory entityFactory;
-	Scene scene;
-	private int entityCount = 10;
-	public volatile int PICKING_CLICK = 0;
-	public Renderer renderer;
-	private Camera camera;
-	private Camera activeCamera;
+	public static void init() {
+		init(false);
+	}
+	public static void init(boolean headless) {
+		instance = new AppContext(headless);
+	}
 
-	public World() {
-		this(null, false);
-	}
-	public World(boolean headless) {
-		this(null, headless);
-	}
-	public World(String sceneName) {
-		this(sceneName, false);
-	}
-	public World(String sceneName, boolean headless) {
-		Thread.currentThread().setName("World Main");
+	private AppContext(boolean headless) {
 		initWorkDir();
 		entityFactory = new EntityFactory(this);
 		renderer = new DeferredRenderer(headless);
@@ -161,65 +125,64 @@ public class World {
 		scriptManager = new ScriptManager(this);
 		physicsFactory = new PhysicsFactory(this);
 
-		Scene scene;
-		if(sceneName != null) {
-			scene = Scene.read(renderer, sceneName);
-		} else {
-			scene = new Scene();
-		}
-		setScene(scene);
-		long start = System.currentTimeMillis();
-		System.out.println(start);
-		setScene(scene);
-		System.out.println("Duration: " + (System.currentTimeMillis() - start));
-
-		float rotationDelta = 5f;
+		scene = new Scene();
+        AppContext self = this;
+        SynchronousQueue<Result<Object>> queue = renderer.addCommand(new Command<Result<Object>>() {
+            @Override
+            public Result<Object> execute(AppContext appContext) {
+                scene.init(self);
+                return new Result<Object>(true);
+            }
+        });
+        queue.poll();
+		float rotationDelta = 25f;
 		float scaleDelta = 0.1f;
-		float posDelta = 1f;
+		float posDelta = 10f;
 		camera = (Camera) new Camera().
-					addComponent(new InputControllerComponent() {
-							 private static final long serialVersionUID = 1L;
-							 @Override
-							 public void update(float seconds) {
+                addComponent(new InputControllerComponent() {
+                                 private static final long serialVersionUID = 1L;
 
-								 float turbo = 1f;
-								 if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-									 turbo = 3f;
-								 }
+                                 @Override
+                                 public void update(float seconds) {
 
-								 float rotationAmount = 1.1f * turbo * rotationDelta * seconds * World.CAMERA_SPEED;
-								 if (Mouse.isButtonDown(0)) {
-									 getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
-								 }
-								 if (Mouse.isButtonDown(1)) {
-									 getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
-								 }
-								 if (Mouse.isButtonDown(2)) {
-									 getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
-								 }
+                                     float turbo = 1f;
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+                                         turbo = 3f;
+                                     }
 
-								 float moveAmount = turbo * posDelta * seconds * World.CAMERA_SPEED;
-								 if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-									 getEntity().move(new Vector3f(0, 0, -moveAmount));
-								 }
-								 if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-									 getEntity().move(new Vector3f(-moveAmount, 0, 0));
-								 }
-								 if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-									 getEntity().move(new Vector3f(0, 0, moveAmount));
-								 }
-								 if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-									 getEntity().move(new Vector3f(moveAmount, 0, 0));
-								 }
-								 if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-									 getEntity().move(new Vector3f(0, -moveAmount, 0));
-								 }
-								 if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-									 getEntity().move(new Vector3f(0, moveAmount, 0));
-								 }
-							 }
+                                     float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
+                                     if (Mouse.isButtonDown(0)) {
+                                         getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
+                                     }
+                                     if (Mouse.isButtonDown(1)) {
+                                         getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
+                                     }
+                                     if (Mouse.isButtonDown(2)) {
+                                         getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
+                                     }
+
+                                     float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+                                         getEntity().move(new Vector3f(0, 0, -moveAmount));
+                                     }
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+                                         getEntity().move(new Vector3f(-moveAmount, 0, 0));
+                                     }
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+                                         getEntity().move(new Vector3f(0, 0, moveAmount));
+                                     }
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+                                         getEntity().move(new Vector3f(moveAmount, 0, 0));
+                                     }
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+                                         getEntity().move(new Vector3f(0, -moveAmount, 0));
+                                     }
+                                     if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+                                         getEntity().move(new Vector3f(0, moveAmount, 0));
 						 }
-					);
+					 }
+				 }
+			);
 		camera.init(this);
 		camera.setPosition(new Vector3f(0, 20, 0));
 		activeCamera = camera;
@@ -231,9 +194,8 @@ public class World {
 //		} catch (Exception e) {
 //			e.printStackTrace();
 //		}
-		renderer.init(scene.getOctree());
-
 		initialized = true;
+		simulate();
 	}
 
 	private void initWorkDir() {
@@ -260,29 +222,21 @@ public class World {
 	
 	public void simulate() {
 
-		while (!Display.isCloseRequested()) {
-			this.loopCycle(renderer.getElapsedSeconds());
-//			Display.sync(60);
+		AppContext self = this;
 
-			StopWatch.getInstance().start("Display update");
-//			Display.update();
-			StopWatch.getInstance().stopAndPrintMS();
-		}
-
-		renderer.addCommand(new Command<Result<Object>>() {
+		thread = new TimeStepThread("World Main", 0.001f){
 			@Override
-			public Result<Object> execute(World world) {
-				world.getRenderer().destroy();
-				return new Result<Object>(new Object());
+			public void update(float seconds) {
+				self.update(seconds);
 			}
-		});
-		
+		};
+		thread.start();
 	}
 	
 	public void destroy() {
 		SynchronousQueue<Result<Object>> queue = renderer.addCommand(new Command<Result<Object>>() {
 			@Override
-			public Result<Object> execute(World world) {
+			public Result<Object> execute(AppContext world) {
 				world.getRenderer().destroy();
 				return new Result<Object>(new Object());
 			}
@@ -297,7 +251,7 @@ public class World {
 		Renderer.exitOnGLError("loadDummies");
 
 		try {
-			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
+			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj"));
 //			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
 			for (int i = 0; i < entityCount; i++) {
 				for (int j = 0; j < entityCount; j++) {
@@ -336,7 +290,7 @@ public class World {
 
 			StopWatch.getInstance().start("Load Sponza");
 //			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
-			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sponza.obj"));
+			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
 			for (Model model : sponza) {
 //				model.setMaterial(mirror);
 //				if(model.getMaterial().getName().contains("fabric")) {
@@ -348,7 +302,7 @@ public class World {
 				entity.setScale(scale);
 				entities.add(entity);
 			}
-			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/skybox.obj"));
+			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj"));
 			for (Model model : skyBox) {
 				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
@@ -372,20 +326,6 @@ public class World {
 
 		StopWatch.getInstance().start("Controls update");
 
-//		if (Mouse.isButtonDown(0)) {
-//			List<Model> sphere;
-//			try {
-//				sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
-////				Entity shot = renderer.getEntityFactory().getEntity(camera.getPosition(), sphere.get(0));
-//				PointLight pointLight = renderer.getLightFactory().getPointLight(camera.getPosition(), sphere.get(0));
-//				PhysicsComponent physicsBall = physicsFactory.addBallPhysicsComponent(pointLight);
-//				physicsBall.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(5,0,5));
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//			
-//		}
-
 		if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
 			if(Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
 				PICKING_CLICK = 1;
@@ -399,16 +339,8 @@ public class World {
 		
 		DirectionalLight directionalLight = scene.getDirectionalLight();
 
-//		System.out.println("LightPosition: " + lightPosition);
-//		for (Entity entity : entities) {
-//			float random = (float) (Math.random() -1f );
-//			entity.getPosition().x += 0.01 * random;
-//		}
 		StopWatch.getInstance().stopAndPrintMS();
 		physicsFactory.update(seconds);
-//		StopWatch.getInstance().start("Renderer update");
-//		renderer.update(this, seconds);
-//		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Camera update");
 		camera.update(seconds);
 
@@ -428,9 +360,11 @@ public class World {
 
 		StopWatch.getInstance().start("Entities update");
 		scene.update(seconds);
-//		RecursiveAction task = new RecursiveEntityUpdate(entities, 0, entities.size(), seconds);
-//		fjpool.invoke(task);
+        renderer.getLightFactory().update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
+
+        scene.endFrame(activeCamera);
+        renderer.endFrame();
 
 		Renderer.exitOnGLError("update");
 	}
@@ -442,11 +376,6 @@ public class World {
 		}
 	}
 	
-	private void loopCycle(float seconds) {
-		update(seconds);
-		scene.endFrame(activeCamera);
-		renderer.endFrame();
-	}
 
 	public Renderer getRenderer() {
 		return renderer;
@@ -465,7 +394,7 @@ public class World {
 		this.scene = scene;
 		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
 			@Override
-			public Result execute(World world) {
+			public Result execute(AppContext world) {
 				StopWatch.getInstance().start("Scene init");
 				scene.init(world);
 				StopWatch.getInstance().stopAndPrintMS();
@@ -503,7 +432,7 @@ public class World {
 	}
 
 	private static void setEventBus(EventBus eventBus) {
-		World.eventBus = eventBus;
+		AppContext.eventBus = eventBus;
 	}
 
 	public void setRenderer(Renderer renderer) {
@@ -525,4 +454,8 @@ public class World {
 	public EntityFactory getEntityFactory() {
 		return entityFactory;
 	}
+
+    public FPSCounter getFPSCounter() {
+        return thread.getFpsCounter();
+    }
 }

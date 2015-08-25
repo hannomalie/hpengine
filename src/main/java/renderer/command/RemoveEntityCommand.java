@@ -1,6 +1,6 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 
 public class RemoveEntityCommand implements Command {
@@ -12,8 +12,8 @@ public class RemoveEntityCommand implements Command {
 	}
 	
 	@Override
-	public Result execute(World world) {
-		boolean result = world.getScene().removeEntity(entity);
+	public Result execute(AppContext appContext) {
+		boolean result = appContext.getScene().removeEntity(entity);
 		if (result) {
 			return new Result() {
 				@Override

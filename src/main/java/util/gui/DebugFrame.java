@@ -28,7 +28,8 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
-import engine.World;
+import config.Config;
+import engine.AppContext;
 import engine.model.Entity;
 import event.EntitySelectedEvent;
 import event.GlobalDefineChangedEvent;
@@ -123,18 +124,18 @@ public class DebugFrame {
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
 	private WebButton dumpAverages = new WebButton("Dump Averages");
-	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", World.useParallax);
-	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", World.useSteepParallax);
-	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
-	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
-	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", World.useInstantRadiosity);
-	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
-	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
+	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.useParallax);
+	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.useSteepParallax);
+	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
+	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.useFrustumCulling);
+	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.useInstantRadiosity);
+	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.DRAWLINES_ENABLED);
+	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", Config.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
-	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
+	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", Config.DRAW_PROBES);
 	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
-	private WebToggleButton toggleUseGI = new WebToggleButton("GI", World.USE_GI);
-	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", World.useSSR);
+	private WebToggleButton toggleUseGI = new WebToggleButton("GI", Config.USE_GI);
+	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", Config.useSSR);
 	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
 	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
@@ -148,12 +149,12 @@ public class DebugFrame {
 	private WebButtonGroup sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
 	
 	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
-	private WebToggleButton toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", World.DEBUGDRAW_PROBES);
-	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", World.DEBUGDRAW_PROBES_WITH_CONTENT);
-	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
-	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
-	private WebToggleButton toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
-	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", World.AUTO_EXPOSURE_ENABLED);
+	private WebToggleButton toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", Config.DEBUGDRAW_PROBES);
+	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
+	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
+	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
+	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.VSYNC_ENABLED);
+	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
 
 	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
 	private WebToggleButton toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
@@ -169,23 +170,23 @@ public class DebugFrame {
 	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	private WebFileChooser fileChooser;
 	private WebFrame addEntityFrame;
-	private World world;
+	private AppContext appContext;
 	private PerformanceMonitor performanceMonitor;
 	private WebProgressBar progressBar = new WebProgressBar();
 
-	public DebugFrame(World world) {
-		World.getEventBus().register(this);
-		init(world);
+	public DebugFrame(AppContext appContext) {
+		AppContext.getEventBus().register(this);
+		init(appContext);
 	}
 
-	private void init(World world) {
-		this.world = world;
+	private void init(AppContext appContext) {
+		this.appContext = appContext;
 	    List<Component> mainButtonElements = new ArrayList<>();
 		tabbedPane = new WebTabbedPane();
 		fileChooser = new WebFileChooser(new File(getClass().getResource("").getPath()));
 		
-		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
-		TextureFactory textureFactory = world.getRenderer().getTextureFactory();
+		MaterialFactory materialFactory = appContext.getRenderer().getMaterialFactory();
+		TextureFactory textureFactory = appContext.getRenderer().getTextureFactory();
 		
 		mainFrame.getContentPane().removeAll();
 		mainFrame.setLayout(new BorderLayout(5,5));
@@ -197,7 +198,7 @@ public class DebugFrame {
 		}
 		console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
 		console.setCodeFoldingEnabled(true);
-		AutoCompletion ac = new AutoCompletion(world.getScriptManager().getProvider());
+		AutoCompletion ac = new AutoCompletion(appContext.getScriptManager().getProvider());
 		ac.install(console);
 		
 		createMainLightsTab();
@@ -205,19 +206,19 @@ public class DebugFrame {
 		createTubeLightsTab();
 		createAreaLightsTab();
 
-		createMaterialPane(world);
+		createMaterialPane(appContext);
 
 		sceneViewFilterField.addActionListener(e -> {
 			TreeModel model = scene.getModel();
 			scene.setModel(null);
 			scene.setModel(model);
 		});
-		addOctreeSceneObjects(world);
+		addOctreeSceneObjects(appContext);
 		
-		addProbes(world);
+		addProbes(appContext);
 
 		createInputs();
-		initActionListeners(world, mainButtonElements);
+		initActionListeners(appContext, mainButtonElements);
         
 		WebMenuBar menuBar = new WebMenuBar ();
 		WebMenu menuScene = new WebMenu("Scene");
@@ -225,10 +226,10 @@ public class DebugFrame {
         {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
-	        	String initialSelectionValue = world.getScene().getName() != "" ? world.getScene().getName() : "default";
+	        	String initialSelectionValue = appContext.getScene().getName() != "" ? appContext.getScene().getName() : "default";
 				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
 	        	if(selection != null) {
-	        		boolean success = world.getScene().write(selection.toString());
+	        		boolean success = appContext.getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 	                notificationPopup.setIcon(NotificationIcon.clock);
 	                notificationPopup.setDisplayTime( 2000 );
@@ -248,13 +249,13 @@ public class DebugFrame {
 	    		if(chosenFile != null) {
 
 					String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-					new SwingWorkerWithProgress<Result>(world.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
+					new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
 						@Override
 						public Result doInBackground() throws Exception {
-							Scene newScene = Scene.read(world.getRenderer(), sceneName);
-							SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+							Scene newScene = Scene.read(appContext.getRenderer(), sceneName);
+							SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 								@Override
-								public Result execute(World world) {
+								public Result execute(AppContext world) {
 									world.setScene(newScene);
 									return new Result(true);
 								}
@@ -272,8 +273,8 @@ public class DebugFrame {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
 	    			Scene newScene = new Scene();
-	    			world.setScene(newScene);
-	    			init(world);
+	    			appContext.setScene(newScene);
+	    			init(appContext);
         	});
 
 	        menuScene.add(sceneNewMenuItem);
@@ -285,7 +286,7 @@ public class DebugFrame {
         		
 	    		addEntityFrame = new WebFrame("Add Entity");
 	    		addEntityFrame.setSize(600, 300);
-	    		addEntityFrame.add(new AddEntitiyView(world, addEntityFrame, this));
+	    		addEntityFrame.add(new AddEntitiyView(appContext, addEntityFrame, this));
 	    		addEntityFrame.setVisible(true);
 	    		
         	});
@@ -296,7 +297,7 @@ public class DebugFrame {
         	WebMenuItem entitiyLoadMenuItem = new WebMenuItem ( "Load existing" );
         	entitiyLoadMenuItem.addActionListener(e -> {
         		
-        		world.getScene().addAll(LoadEntitiyView.showDialog(world));
+        		appContext.getScene().addAll(LoadEntitiyView.showDialog(appContext));
         		refreshSceneTree();
         	});
 
@@ -307,12 +308,12 @@ public class DebugFrame {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
 
-				new SwingWorkerWithProgress<Result>(world.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
+				new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+						SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 							@Override
-							public Result execute(World world) {
+							public Result execute(AppContext world) {
 								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world);
 								return new Result() { @Override public boolean isSuccessful() { return true; } };
 							}
@@ -336,9 +337,9 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
-					public Result execute(World world) {
+					public Result execute(AppContext world) {
 						world.getRenderer().getLightFactory().getPointLight(50);
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
@@ -364,9 +365,9 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
-					public Result execute(World world) {
+					public Result execute(AppContext world) {
 						world.getRenderer().getLightFactory().getTubeLight();
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
@@ -392,9 +393,9 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
-					public Result execute(World world) {
+					public Result execute(AppContext world) {
 						world.getRenderer().getLightFactory().getAreaLight(50,50,20);
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
@@ -421,7 +422,7 @@ public class DebugFrame {
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
-				world.getScriptManager().eval(console.getText());
+				appContext.getScriptManager().eval(console.getText());
 			} catch (ScriptException e1) {
 				showError("Line " + e1.getLineNumber() + " contains errors.");
 				e1.printStackTrace();
@@ -440,9 +441,9 @@ public class DebugFrame {
         
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-    		SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+    		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 				@Override
-				public Result execute(World world) {
+				public Result execute(AppContext world) {
 					GPUProfiler.reset();
 					return new Result();
 				}});
@@ -463,7 +464,7 @@ public class DebugFrame {
     	});
 		WebMenuItem refreshAll = new WebMenuItem("Refresh");
 		refreshAll.addActionListener(e -> {
-			init(world);
+			init(appContext);
 		});
 		WebMenuItem toggleFPS = new WebMenuItem("Toggle FPS");
 		toggleFPS.addActionListener(e -> {
@@ -475,10 +476,10 @@ public class DebugFrame {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+				SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 
 					@Override
-					public Result execute(World world) {
+					public Result execute(AppContext world) {
 						System.out.println(chosenFile.getName());
 						world.getRenderer().getMaterialFactory().get(chosenFile.getName());
 						return new Result();
@@ -508,7 +509,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath()));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath()));
 					
 					TextureResult result = null;
 					try {
@@ -534,7 +535,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
 					
 					TextureResult result = null;
 					try {
@@ -562,7 +563,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = world.getRenderer().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
 					
 					TextureResult result = null;
 					try {
@@ -643,17 +644,17 @@ public class DebugFrame {
 		toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 		toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
 		dumpAverages = new WebButton("Dump Averages");
-		toggleParallax = new WebToggleButton("Parallax", World.useParallax);
-		toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", World.useAmbientOcclusion);
-		toggleFrustumCulling = new WebToggleButton("Frustum Culling", World.useFrustumCulling);
-		toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", World.useInstantRadiosity);
-		toggleDrawLines = new WebToggleButton("Draw Lines", World.DRAWLINES_ENABLED);
-		toggleDrawScene = new WebToggleButton("Draw Scene", World.DRAWSCENE_ENABLED);
+		toggleParallax = new WebToggleButton("Parallax", Config.useParallax);
+		toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
+		toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.useFrustumCulling);
+		toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.useInstantRadiosity);
+		toggleDrawLines = new WebToggleButton("Draw Lines", Config.DRAWLINES_ENABLED);
+		toggleDrawScene = new WebToggleButton("Draw Scene", Config.DRAWSCENE_ENABLED);
 		toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
-		toggleDrawProbes = new WebToggleButton("Draw Probes", World.DRAW_PROBES);
+		toggleDrawProbes = new WebToggleButton("Draw Probes", Config.DRAW_PROBES);
 		forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
-		toggleUseGI = new WebToggleButton("GI", World.USE_GI);
-		toggleUseSSR = new WebToggleButton("SSR", World.useSSR);
+		toggleUseGI = new WebToggleButton("GI", Config.USE_GI);
+		toggleUseSSR = new WebToggleButton("SSR", Config.useSSR);
 		toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
 		toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
@@ -665,12 +666,12 @@ public class DebugFrame {
 		toggleSampleCount64 = new WebToggleButton("64", GBuffer.IMPORTANCE_SAMPLE_COUNT == 64);
 		sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
 		toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
-		toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", World.DEBUGDRAW_PROBES);
-		toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", World.DEBUGDRAW_PROBES_WITH_CONTENT);
-		toggleDebugFrame = new WebToggleButton("Debug Frame", World.DEBUGFRAME_ENABLED);
-		toggleDrawLights = new WebToggleButton("Draw Lights", World.DRAWLIGHTS_ENABLED);
-		toggleVSync = new WebToggleButton("VSync", World.VSYNC_ENABLED);
-		toggleAutoExposure = new WebToggleButton("Auto Exposure", World.AUTO_EXPOSURE_ENABLED);
+		toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", Config.DEBUGDRAW_PROBES);
+		toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
+		toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
+		toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
+		toggleVSync = new WebToggleButton("VSync", Config.VSYNC_ENABLED);
+		toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
 		toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
 		toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
 		toggleProbeDrawCountThree = new WebToggleButton("3", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 3);
@@ -682,7 +683,7 @@ public class DebugFrame {
 		WebTextField sceneViewFilterField = new WebTextField(15);
 		WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	}
-	private void initActionListeners(World world,
+	private void initActionListeners(AppContext appContext,
 	List<Component> mainButtonElements) {
 //		toggleFileReload.addActionListener( e -> {
 //			FileMonitor.getInstance().running = !FileMonitor.getInstance().running;
@@ -690,10 +691,10 @@ public class DebugFrame {
 //		});
 		toggleProfiler.addActionListener( e -> {
 			
-			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+			SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>(){
 
 				@Override
-				public Result execute(World world) {
+				public Result execute(AppContext world) {
 					GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
 					return new Result() { @Override public boolean isSuccessful() { return true; } };
 				}
@@ -713,10 +714,10 @@ public class DebugFrame {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 			
-			SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>(){
+			SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>(){
 
 				@Override
-				public Result execute(World world) {
+				public Result execute(AppContext world) {
 					GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
 					return new Result();
 				}
@@ -736,10 +737,10 @@ public class DebugFrame {
 		});
 		//////////////////////////////
 		Map<String, List<Component>> toggleButtonsWithGroups = new HashMap<>();
-		for (Field field : World.class.getDeclaredFields()) {
+		for (Field field : Config.class.getDeclaredFields()) {
 			for (Annotation annotation : field.getDeclaredAnnotations()) {
 				if(annotation instanceof Toggable) {
-					createWebToggableButton(world, toggleButtonsWithGroups, field, annotation);
+					createWebToggableButton(appContext, toggleButtonsWithGroups, field, annotation);
 				} else if(annotation instanceof Adjustable) {
 // TODO: FEINSCHLIFF
 //					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
@@ -754,112 +755,112 @@ public class DebugFrame {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-			world.getRenderer().addCommand(new DumpAveragesCommand(1000));
+			appContext.getRenderer().addCommand(new DumpAveragesCommand(1000));
 		});
 		
 		toggleParallax.addActionListener( e -> {
-			World.useParallax = !World.useParallax;
-			World.useSteepParallax = false;
+			Config.useParallax = !Config.useParallax;
+			Config.useSteepParallax = false;
 		});
 		
 		toggleSteepParallax.addActionListener(e -> {
-			World.useSteepParallax = !World.useSteepParallax;
-			World.useParallax = false;
+			Config.useSteepParallax = !Config.useSteepParallax;
+			Config.useParallax = false;
 		});
 
 		toggleAmbientOcclusion.addActionListener(e -> {
-			World.useAmbientOcclusion = !World.useAmbientOcclusion;
-			world.getEventBus().post(new GlobalDefineChangedEvent());
+			Config.useAmbientOcclusion = !Config.useAmbientOcclusion;
+			appContext.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
-			World.useFrustumCulling = !World.useFrustumCulling;
+			Config.useFrustumCulling = !Config.useFrustumCulling;
 		});
 		toggleInstantRadiosity.addActionListener(e -> {
-			World.useInstantRadiosity = !World.useInstantRadiosity;
+			Config.useInstantRadiosity = !Config.useInstantRadiosity;
 		});
 
 		toggleDrawLines.addActionListener(e -> {
-			World.DRAWLINES_ENABLED = !World.DRAWLINES_ENABLED;
+			Config.DRAWLINES_ENABLED = !Config.DRAWLINES_ENABLED;
 		});
 		toggleDrawScene.addActionListener(e -> {
-			World.DRAWSCENE_ENABLED = !World.DRAWSCENE_ENABLED;
+			Config.DRAWSCENE_ENABLED = !Config.DRAWSCENE_ENABLED;
 		});
 
 		toggleDrawOctree.addActionListener(e -> {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-			world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+			appContext.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});
 		toggleDrawProbes.addActionListener(e -> {
-			World.DRAW_PROBES = !World.DRAW_PROBES;
+			Config.DRAW_PROBES = !Config.DRAW_PROBES;
 		});
 		toggleUseGI.addActionListener(e -> {
-			World.USE_GI = !World.USE_GI;
+			Config.USE_GI = !Config.USE_GI;
 		});
 		toggleUseSSR.addActionListener(e -> {
-			World.useSSR = !World.useSSR;
+			Config.useSSR = !Config.useSSR;
 		});
 		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
 			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
 		});
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
-			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
-			World.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
-			World.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
+			AppContext.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
 		});
 		toggleDebugDrawProbes.addActionListener(e -> {
-			World.DEBUGDRAW_PROBES = !World.DEBUGDRAW_PROBES;
+			Config.DEBUGDRAW_PROBES = !Config.DEBUGDRAW_PROBES;
 		});
 		toggleDebugDrawProbesWithContent.addActionListener(e -> {
-			World.DEBUGDRAW_PROBES_WITH_CONTENT = !World.DEBUGDRAW_PROBES_WITH_CONTENT;
+			Config.DEBUGDRAW_PROBES_WITH_CONTENT = !Config.DEBUGDRAW_PROBES_WITH_CONTENT;
 		});
 
 		toggleDebugFrame.addActionListener(e -> {
-			World.DEBUGFRAME_ENABLED = !World.DEBUGFRAME_ENABLED;
+			Config.DEBUGFRAME_ENABLED = !Config.DEBUGFRAME_ENABLED;
 		});
 
 		toggleDrawLights.addActionListener(e -> {
-			World.DRAWLIGHTS_ENABLED = !World.DRAWLIGHTS_ENABLED;
+			Config.DRAWLIGHTS_ENABLED = !Config.DRAWLIGHTS_ENABLED;
 		});
 		toggleVSync.addActionListener(e -> {
-			World.VSYNC_ENABLED = !World.VSYNC_ENABLED;
-			world.getRenderer().addCommand(new Command<Result>() {
+			Config.VSYNC_ENABLED = !Config.VSYNC_ENABLED;
+			appContext.getRenderer().addCommand(new Command<Result>() {
 
 				@Override
-				public Result execute(World world) {
-					Display.setVSyncEnabled(World.VSYNC_ENABLED);
+				public Result execute(AppContext appContext) {
+					Display.setVSyncEnabled(Config.VSYNC_ENABLED);
 					return new Result();
 				}
 			});
 		});
 		toggleAutoExposure.addActionListener(e -> {
-			World.AUTO_EXPOSURE_ENABLED = !World.AUTO_EXPOSURE_ENABLED;
-			if(!World.AUTO_EXPOSURE_ENABLED) { World.EXPOSURE = 5; }
+			Config.AUTO_EXPOSURE_ENABLED = !Config.AUTO_EXPOSURE_ENABLED;
+			if(!Config.AUTO_EXPOSURE_ENABLED) { Config.EXPOSURE = 5; }
 		});
 
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
 	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
 	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
 	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
-	    ambientOcclusionRadiusSlider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * 10000f));
+	    ambientOcclusionRadiusSlider.setValue((int) (Config.AMBIENTOCCLUSION_RADIUS * 10000f));
 	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
 	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
 	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
@@ -869,7 +870,7 @@ public class DebugFrame {
 				WebSlider slider = (WebSlider) e.getSource();
 				int value = slider.getValue();
 				float valueAsFactor = ((float) value) / 10000;
-				World.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
+				Config.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
 			}
 		});
 
@@ -877,7 +878,7 @@ public class DebugFrame {
 	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
 	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
 	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-	    ambientOcclusionTotalStrengthSlider.setValue((int) (World.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
+	    ambientOcclusionTotalStrengthSlider.setValue((int) (Config.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
 	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
 	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
 	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
@@ -887,7 +888,7 @@ public class DebugFrame {
 				WebSlider slider = (WebSlider) e.getSource();
 				int value = slider.getValue();
 				float valueAsFactor = ((float) value) / 100;
-				World.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
+				Config.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
 			}
 		});
 
@@ -908,24 +909,24 @@ public class DebugFrame {
 		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
-			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) World.EXPOSURE) {
+			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.EXPOSURE) {
 			@Override public void onValueChange(int value, int delta) {
-				World.EXPOSURE = value;
+				Config.EXPOSURE = value;
 			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) world.getScene().getDirectionalLight().getScatterFactor()) {
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) appContext.getScene().getDirectionalLight().getScatterFactor()) {
 				@Override public void onValueChange(int value, int delta) {
-					world.getScene().getDirectionalLight().setScatterFactor((float)value);
+					appContext.getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
-			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.RAINEFFECT)) {
+			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.RAINEFFECT)) {
 				@Override public void onValueChange(int value, int delta) {
-					World.RAINEFFECT = (float) value/100;
-					World.getEventBus().post(new GlobalDefineChangedEvent());
+					Config.RAINEFFECT = (float) value/100;
+					AppContext.getEventBus().post(new GlobalDefineChangedEvent());
 				}
 			},
-			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100*World.CAMERA_SPEED)) {
+			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.CAMERA_SPEED)) {
 				@Override public void onValueChange(int value, int delta) {
-					World.CAMERA_SPEED = (float) value/100;
+					Config.CAMERA_SPEED = (float) value/100;
 				}
 			}
 		));
@@ -941,11 +942,11 @@ public class DebugFrame {
         mainPane = new WebScrollPane(buttonGridPanel);
 	}
 
-	private void createWebSlider(World world,
+	private void createWebSlider(AppContext appContext,
 			Map<String, List<Component>> toggleButtonsWithGroups, Field field,
 			Annotation annotation) {
 		try {
-			float f = field.getFloat(world);
+			float f = field.getFloat(appContext);
 			Adjustable adjustable = (Adjustable) annotation;
 			
 			List<Component> groupList;
@@ -961,7 +962,7 @@ public class DebugFrame {
 			slider.setMaximum ( adjustable.maximum() );
 			slider.setMinorTickSpacing ( adjustable.minorTickSpacing() );
 			slider.setMajorTickSpacing ( adjustable.majorTickSpacing() );
-			slider.setValue((int) (World.AMBIENTOCCLUSION_RADIUS * adjustable.factor()));
+			slider.setValue((int) (Config.AMBIENTOCCLUSION_RADIUS * adjustable.factor()));
 			slider.setPaintTicks ( true );
 			slider.setPaintLabels ( true );
 			slider.addChangeListener(new ChangeListener() {
@@ -969,7 +970,7 @@ public class DebugFrame {
 				@Override
 				public void stateChanged(ChangeEvent e) {
 					try {
-						float currentValue = field.getFloat(world);
+						float currentValue = field.getFloat(appContext);
 					} catch (IllegalArgumentException | IllegalAccessException e2) {
 						e2.printStackTrace();
 					}
@@ -978,8 +979,8 @@ public class DebugFrame {
 					int value = slider.getValue();
 					float valueAsFactor = ((float) value) / adjustable.factor();
 					try {
-						field.setFloat(world, valueAsFactor);
-						World.getEventBus().post(new GlobalDefineChangedEvent());
+						field.setFloat(appContext, valueAsFactor);
+						AppContext.getEventBus().post(new GlobalDefineChangedEvent());
 					} catch (IllegalArgumentException | IllegalAccessException e1) {
 						e1.printStackTrace();
 					}
@@ -995,11 +996,11 @@ public class DebugFrame {
 		}
 	}
 
-	private void createWebToggableButton(World world,
+	private void createWebToggableButton(AppContext appContext,
 			Map<String, List<Component>> toggleButtonsWithGroups,
 			Field field, Annotation annotation) {
 		try {
-			boolean b = field.getBoolean(world);
+			boolean b = field.getBoolean(appContext);
 			Toggable toggable = (Toggable) annotation;
 			List<Component> groupList;
 			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
@@ -1012,9 +1013,9 @@ public class DebugFrame {
 			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
 				boolean currentValue;
 				try {
-					currentValue = field.getBoolean(world);
-					field.setBoolean(world, !currentValue);
-					World.getEventBus().post(new GlobalDefineChangedEvent());
+					currentValue = field.getBoolean(appContext);
+					field.setBoolean(appContext, !currentValue);
+					AppContext.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -1030,7 +1031,7 @@ public class DebugFrame {
 
 	private void initPerformanceChart() {
 		if(performanceMonitor == null) {
-			performanceMonitor = new PerformanceMonitor(world.getRenderer());
+			performanceMonitor = new PerformanceMonitor(appContext.getRenderer());
 		}
 		performanceMonitor.init();
 	}
@@ -1138,14 +1139,14 @@ public class DebugFrame {
 
 	private void createMainLightsTab() {
 		DebugFrame debugFrame = this;
-		mainLightPane = new JScrollPane(new MainLightView(world, debugFrame));
+		mainLightPane = new JScrollPane(new MainLightView(appContext, debugFrame));
 	}
 	
 	private void createPointLightsTab() {
 		DebugFrame debugFrame = this;
 		TableModel pointLightsTableModel = new AbstractTableModel() {
 
-			List<PointLight> lights = world.getRenderer().getLightFactory().getPointLights();
+			List<PointLight> lights = appContext.getRenderer().getLightFactory().getPointLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -1197,12 +1198,12 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						PointLight selectedLight = world.getRenderer().getLightFactory().getPointLights().get(selectedRow[i]);
+						PointLight selectedLight = appContext.getRenderer().getLightFactory().getPointLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(1000, 600);
-						entityViewFrame.add(new PointLightView(world, debugFrame, (PointLight) selectedLight));
+						entityViewFrame.add(new PointLightView(appContext, debugFrame, (PointLight) selectedLight));
 						entityViewFrame.setVisible(true);
 					}
 				}
@@ -1214,7 +1215,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel tubeLightsTableModel = new AbstractTableModel() {
 
-			List<TubeLight> lights = world.getRenderer().getLightFactory().getTubeLights();
+			List<TubeLight> lights = appContext.getRenderer().getLightFactory().getTubeLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -1265,12 +1266,12 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						TubeLight selectedLight = world.getRenderer().getLightFactory().getTubeLights().get(selectedRow[i]);
+						TubeLight selectedLight = appContext.getRenderer().getLightFactory().getTubeLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(1000, 600);
-						entityViewFrame.add(new TubeLightView(world, debugFrame, (TubeLight) selectedLight));
+						entityViewFrame.add(new TubeLightView(appContext, debugFrame, (TubeLight) selectedLight));
 						entityViewFrame.setVisible(true);
 					}
 				}
@@ -1282,7 +1283,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel areaLightsTableModel = new AbstractTableModel() {
 
-			List<AreaLight> lights = world.getRenderer().getLightFactory().getAreaLights();
+			List<AreaLight> lights = appContext.getRenderer().getLightFactory().getAreaLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -1333,15 +1334,15 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						AreaLight selectedLight = world.getRenderer().getLightFactory().getAreaLights().get(selectedRow[i]);
+						AreaLight selectedLight = appContext.getRenderer().getLightFactory().getAreaLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(1000, 600);
 						System.out.println(selectedLight.getName());
 						System.out.println(selectedRow[0]);
-						System.out.println(world.getRenderer().getLightFactory().getAreaLights().size());
-						entityViewFrame.add(new AreaLightView(world, debugFrame, selectedLight));
+						System.out.println(appContext.getRenderer().getLightFactory().getAreaLights().size());
+						entityViewFrame.add(new AreaLightView(appContext, debugFrame, selectedLight));
 						entityViewFrame.setVisible(true);
 					}
 				}
@@ -1349,9 +1350,9 @@ public class DebugFrame {
 		});
 	}
 
-	private void createMaterialPane(World world) {
+	private void createMaterialPane(AppContext appContext) {
 		DebugFrame debugFrame = this;
-		MaterialFactory materialFactory = world.getRenderer().getMaterialFactory();
+		MaterialFactory materialFactory = appContext.getRenderer().getMaterialFactory();
 		TableModel materialDataModel = new AbstractTableModel() {
 
 
@@ -1360,7 +1361,7 @@ public class DebugFrame {
 			}
 
 			public int getRowCount() {
-				return world.getRenderer().getMaterialFactory().MATERIALS.size();
+				return appContext.getRenderer().getMaterialFactory().MATERIALS.size();
 			}
 
 			public Object getValueAt(int row, int col) {
@@ -1390,7 +1391,7 @@ public class DebugFrame {
 	        	materialViewFrame.getContentPane().removeAll();
 	        	materialViewFrame.pack();
 	        	materialViewFrame.setSize(600, 600);
-	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, world, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
+	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, appContext, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
 	        	scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 	        	materialViewFrame.add(scrollPane);
 	            materialViewFrame.setVisible(true);
@@ -1440,10 +1441,10 @@ public class DebugFrame {
 		};
 	}
 
-	private void addSceneObjects(World world) {
+	private void addSceneObjects(AppContext appContext) {
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene");
 		
-		for (Entity e : world.getScene().getEntities()) {
+		for (Entity e : appContext.getScene().getEntities()) {
 			DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode(e.getName());
 			
 			Material material = e.getComponent(ModelComponent.class).getMaterial();
@@ -1463,7 +1464,7 @@ public class DebugFrame {
 		
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, world, this, entityViewFrame);
+		new SetSelectedListener(scene, appContext, this, entityViewFrame);
 	}
 
 	private void addCheckStateListener(WebCheckBoxTree<DefaultMutableTreeNode> scene) {
@@ -1491,29 +1492,29 @@ public class DebugFrame {
 		});
 	}
 
-	private void addProbes(World world) {
-		List<EnvironmentProbe> probes = world.getRenderer().getEnvironmentProbeFactory().getProbes();
+	private void addProbes(AppContext appContext) {
+		List<EnvironmentProbe> probes = appContext.getRenderer().getEnvironmentProbeFactory().getProbes();
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Probes (" + probes.size() + ")");
 		for (EnvironmentProbe environmentProbe : probes) {
 			top.add(new DefaultMutableTreeNode(environmentProbe));
 		}
 		this.probes = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(this.probes);
-		new SetSelectedListener(this.probes, world, this, probeViewFrame);
+		new SetSelectedListener(this.probes, appContext, this, probeViewFrame);
 
 		tabbedPane.remove(probesPane);
 		probesPane = new JScrollPane(this.probes);
 		tabbedPane.addTab("Probes", probesPane);
 	}
 	
-	private void addOctreeSceneObjects(World world) {
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + world.getScene().getEntities().size() + " entities)");
+	private void addOctreeSceneObjects(AppContext appContext) {
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + appContext.getScene().getEntities().size() + " entities)");
 		
-		addOctreeChildren(top, world.getScene().getOctree().rootNode);
-		System.out.println("Added " + world.getScene().getEntities().size());
+		addOctreeChildren(top, appContext.getScene().getOctree().rootNode);
+		System.out.println("Added " + appContext.getScene().getEntities().size());
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, world, this, entityViewFrame);
+		new SetSelectedListener(scene, appContext, this, entityViewFrame);
 		scene.setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(scene) {
             private JLabel lblNull = new JLabel("");
 
@@ -1593,20 +1594,20 @@ public class DebugFrame {
 
 	public void refreshSceneTree() {
 		System.out.println("Refreshing");
-		addOctreeSceneObjects(world);
+		addOctreeSceneObjects(appContext);
 	}
 
 	public void refreshTextureTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(texturePane);
-		createTexturePane(world.getRenderer().getTextureFactory());
+		createTexturePane(appContext.getRenderer().getTextureFactory());
 		tabbedPane.addTab("Texture", texturePane);
 	}
 	
 	public void refreshMaterialTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(materialPane);
-		createMaterialPane(world);
+		createMaterialPane(appContext);
 		tabbedPane.addTab("Material", materialPane);
 	}
 	
@@ -1631,7 +1632,7 @@ public class DebugFrame {
 	public void refreshProbeTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(probesPane);
-		addProbes(world);
+		addProbes(appContext);
 		tabbedPane.addTab("Probes", probesPane);
 	}
 	
@@ -1661,7 +1662,7 @@ public class DebugFrame {
 		entityViewFrame.getContentPane().removeAll();
 		entityViewFrame.pack();
 		entityViewFrame.setSize(600, 700);
-		entityViewFrame.add(new EntityView(world, debugFrame, (Entity) e.getEntity()));
+		entityViewFrame.add(new EntityView(appContext, debugFrame, (Entity) e.getEntity()));
 		entityViewFrame.setVisible(true);
 //    	entityViewFrame.toBack();
 	}

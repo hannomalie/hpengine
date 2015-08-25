@@ -1,9 +1,9 @@
 package renderer;
 
 import config.Config;
+import engine.AppContext;
 import engine.TimeStepThread;
 import engine.Transform;
-import engine.World;
 import engine.model.*;
 import event.StateChangedEvent;
 import octree.Octree;
@@ -109,7 +109,7 @@ public class DeferredRenderer implements Renderer {
 	private RenderTarget halfScreenTarget;
 
 	private int maxTextureUnits;
-	private World world;
+	private AppContext appContext;
 	private String currentState = "";
 
 	private ExecutorService renderThread = Executors.newSingleThreadExecutor();
@@ -121,11 +121,11 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void init(World world) {
-		Renderer.super.init(world);
+	public void init(AppContext appContext) {
+		Renderer.super.init(appContext);
 		DeferredRenderer renderer = this;
 
-		drawThread = new TimeStepThread("Renderer") {
+		drawThread = new TimeStepThread("Renderer", 0.0f) {
 			public void cleanUp() {
 				renderer.destroy();
 			}
@@ -134,12 +134,12 @@ public class DeferredRenderer implements Renderer {
 				if (!initialized) {
 					setCurrentState("INITIALIZING");
 					setupOpenGL(headless);
-					renderer.world = world;
-					world.setRenderer(renderer);
+					renderer.appContext = appContext;
+					appContext.setRenderer(renderer);
 					objLoader = new OBJLoader(renderer);
 					textureFactory = new TextureFactory(renderer);
 					DeferredRenderer.exitOnGLError("After TextureFactory");
-					programFactory = new ProgramFactory(world);
+					programFactory = new ProgramFactory(appContext);
 					setupShaders();
 					setUpGBuffer();
 					renderer.simpleDrawStrategy = new SimpleDrawStrategy(renderer);
@@ -151,13 +151,13 @@ public class DeferredRenderer implements Renderer {
 												.add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
 												.build();
 					materialFactory = new MaterialFactory(renderer);
-					lightFactory = new LightFactory(world);
-					environmentProbeFactory = new EnvironmentProbeFactory(world);
+					lightFactory = new LightFactory(appContext);
+					environmentProbeFactory = new EnvironmentProbeFactory(appContext);
 					gBuffer.init(renderer);
 
 					sphereModel = null;
 					try {
-						sphereModel = objLoader.loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+						sphereModel = objLoader.loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 						sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -170,17 +170,18 @@ public class DeferredRenderer implements Renderer {
 
 				//TODO: throws illegalstateexception
 				if (Display.isCreated() && !Display.isCloseRequested()) {
-					if (world.isInitialized()) {
-						if(world.getScene().isInitialized())
+					if (appContext.isInitialized()) {
+						if(appContext.getScene().isInitialized())
 						{
 							setCurrentState("BEFORE DRAW");
-							draw(world);
+							draw(appContext);
 						}
 						Display.update();
 						setCurrentState("AFTER DRAW");
 
 						setCurrentState("BEFORE UPDATE");
-						renderer.update(world, seconds);
+//						System.out.println(seconds);
+						renderer.update(appContext, seconds);
 						setCurrentState("AFTER UPDATE");
 					}
 				}
@@ -244,7 +245,7 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = new GBuffer(world, this);
+		gBuffer = new GBuffer(appContext, this);
 
 		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -280,7 +281,7 @@ public class DeferredRenderer implements Renderer {
 	public void init(Octree octree) {
 		addCommand(new Command() {
 			@Override
-			public Result execute(World world) {
+			public Result execute(AppContext appContext) {
 
 				environmentProbeFactory.drawInitial(octree);
 
@@ -296,30 +297,29 @@ public class DeferredRenderer implements Renderer {
 		});
 	}
 
-	public void update(World world, float seconds) {
+	public void update(AppContext appContext, float seconds) {
 		try {
-			executeCommands(world);
+			executeCommands(appContext);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		updateLights(seconds);
 	}
 
 
 	// I need this to force probe redrawing after engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public void draw(World world) {
+	public void draw(AppContext appContext) {
 		GPUProfiler.startFrame();
 		setLastFrameTime();
 
-		if (World.DRAWLINES_ENABLED) {
-			debugDrawStrategy.draw(world);
+		if (Config.DRAWLINES_ENABLED) {
+			debugDrawStrategy.draw(appContext);
 		} else {
-			simpleDrawStrategy.draw(world);
+			simpleDrawStrategy.draw(appContext);
 		}
 
-		if (World.DEBUGFRAME_ENABLED) {
+		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
 //			drawToQuad(world.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
@@ -330,11 +330,11 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if(counter < 20) {
-			world.getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
-			World.CONTINUOUS_DRAW_PROBES = true;
+			appContext.getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+			Config.CONTINUOUS_DRAW_PROBES = true;
 			counter++;
 		} else if(counter == 20) {
-			World.CONTINUOUS_DRAW_PROBES = false;
+			Config.CONTINUOUS_DRAW_PROBES = false;
 			counter++;
 		}
 
@@ -474,7 +474,8 @@ public class DeferredRenderer implements Renderer {
 	private FPSCounter fpsCounter = new FPSCounter();
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
-		Display.setTitle("FPS: " + (int)(fpsCounter.getFPS()) + " | " + fpsCounter.getMsPerFrame() + " ms" + " Renderstate: " + getCurrentState());
+		Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms" , fpsCounter.getFPS(), fpsCounter.getMsPerFrame(),
+				AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -555,22 +556,6 @@ public class DeferredRenderer implements Renderer {
 	private int rsmSize = 2048/2/2/2/2/2/2/2;
 	private JFrame frame;
 
-	private void updateLights(float seconds) {
-
-		lightFactory.update(seconds);
-
-//		for (PointLight light : pointLights) {
-//			double sinusX = 10f*Math.sin(100000000f/System.currentTimeMillis());
-//			double sinusY = 1f*Math.sin(100000000f/System.currentTimeMillis());
-//			light.move(new Vector3f((float)sinusX,(float)sinusY, 0f));
-//			light.update();
-//		}
-		 RecursiveAction task = new RecursiveUpdate(lightFactory.getPointLights(), 0, lightFactory.getPointLights().size(), seconds);
-//         long start = System.currentTimeMillis();
-         fjpool.invoke(task);
-//         System.out.println("Parallel processing time: "    + (System.currentTimeMillis() - start)+ " ms");
-	}
-	
 	private class RecursiveUpdate extends RecursiveAction {
 		final int LIMIT = 3;
 		int result;
@@ -647,11 +632,11 @@ public class DeferredRenderer implements Renderer {
 	}
 
 
-	private void executeCommands(World world) throws Exception {
+	private void executeCommands(AppContext appContext) throws Exception {
         Command command = workQueue.poll();
         while(command != null) {
 			setCurrentState("BEFORE EXECUTION " + command.getClass().getSimpleName());
-        	Result result = command.execute(world);
+        	Result result = command.execute(appContext);
 			setCurrentState("AFTER EXECUTION " + command.getClass().getSimpleName());
             SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
             try {
@@ -668,14 +653,14 @@ public class DeferredRenderer implements Renderer {
 	public void executeRenderProbeCommands() {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(world.getActiveCamera()).ifPresent(command -> {
-			command.getProbe().draw(world, command.isUrgent());
+		renderProbeCommandQueue.takeNearest(appContext.getActiveCamera()).ifPresent(command -> {
+			command.getProbe().draw(appContext, command.isUrgent());
 		});
 		counter++;
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-				command.getProbe().draw(world, command.isUrgent());
+				command.getProbe().draw(appContext, command.isUrgent());
 			});
 			counter++;
 		}
@@ -735,7 +720,7 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void endFrame() {
 
-		DirectionalLight light = world.getScene().getDirectionalLight();
+		DirectionalLight light = appContext.getScene().getDirectionalLight();
 		light.setHasMoved(false);
 		for (Entity entity : getLightFactory().getPointLights()) {
 			entity.setHasMoved(false);
@@ -747,7 +732,7 @@ public class DeferredRenderer implements Renderer {
 
 	private void setCurrentState(String newState) {
 		currentState = newState;
-		World.getEventBus().post(new StateChangedEvent(newState));
+		AppContext.getEventBus().post(new StateChangedEvent(newState));
 	}
 
 	protected void finalize() throws Throwable {
@@ -755,13 +740,13 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public void setWorld(World world) {
-		this.world = world;
+	public void setAppContext(AppContext appContext) {
+		this.appContext = appContext;
 	}
 
 	@Override
-	public World getWorld() {
-		return world;
+	public AppContext getAppContext() {
+		return appContext;
 	}
 
 	@Override
@@ -783,7 +768,7 @@ public class DeferredRenderer implements Renderer {
 		} else {
 			SynchronousQueue<Result<OpenGLThread>> queue = addCommand(new Command<Result<OpenGLThread>>() {
 				@Override
-				public Result<OpenGLThread> execute(World world) {
+				public Result<OpenGLThread> execute(AppContext world) {
 					return new Result(new OpenGLThread("Create texture thread") {
 						@Override
 						public void doRun() {

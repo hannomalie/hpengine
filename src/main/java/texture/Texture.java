@@ -10,11 +10,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 
-import engine.World;
+import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLThread;
-import renderer.Renderer;
 import util.*;
 
 import org.apache.commons.io.FilenameUtils;
@@ -393,7 +392,7 @@ public class Texture implements Serializable {
 	}
 	
 	public static String getDirectory() {
-		return World.WORKDIR_NAME + "/assets/textures/";
+		return AppContext.WORKDIR_NAME + "/assets/textures/";
 	}
 	
 	public String getPath() {

@@ -9,7 +9,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
 import renderer.Renderer;
@@ -141,7 +141,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		
 		SynchronousQueue<Result> queue = renderer.addCommand(new Command<Result>(){
 			@Override
-			public Result execute(World world) {
+			public Result execute(AppContext world) {
 				self.unload();
 				self.load();
 				return new Result();
@@ -251,7 +251,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 
 	public static String getDirectory() {
-		return World.WORKDIR_NAME + "/assets/shaders/deferred/";
+		return AppContext.WORKDIR_NAME + "/assets/shaders/deferred/";
 	}
 
 	public void addDefine(String name, Object define) {

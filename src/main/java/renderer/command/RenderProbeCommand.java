@@ -1,7 +1,7 @@
 package renderer.command;
 
 import engine.Transform;
-import engine.World;
+import engine.AppContext;
 import engine.model.Transformable;
 import scene.EnvironmentProbe;
 
@@ -19,9 +19,9 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	}
 	
 	@Override
-	public Result execute(World world) {
+	public Result execute(AppContext appContext) {
 		
-		probe.draw(world, urgent);
+		probe.draw(appContext, urgent);
 		
 		return new Result();
 	}

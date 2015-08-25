@@ -9,16 +9,16 @@ public class ScriptTest extends TestWithWorld {
 
     @Test
     public void globalDefines() {
-        world.getScriptManager().getGlobalContext().put("myInt", 2);
+        appContext.getScriptManager().getGlobalContext().put("myInt", 2);
 
-        Assert.assertEquals(2, world.getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(2, appContext.getScriptManager().getGlobalContext().get("myInt"));
     }
 
     @Test
     public void localDefines() {
         ScriptComponent component = new ScriptComponent();
-        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
-        entity.init(world);
+        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
+        entity.init(appContext);
         component.setInt("myInt", 5);
 
         Assert.assertEquals(5, component.getContext().getAttribute("myInt"));
@@ -26,31 +26,31 @@ public class ScriptTest extends TestWithWorld {
 
     @Test
     public void globalScopeFromLocalScope() {
-        world.getScriptManager().getGlobalContext().put("myInt", 242);
+        appContext.getScriptManager().getGlobalContext().put("myInt", 242);
 
-        Assert.assertEquals(242, world.getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(242, appContext.getScriptManager().getGlobalContext().get("myInt"));
 
         String script = "var myInt = myInt;";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
-        entity.init(world);
+        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
+        entity.init(appContext);
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
     }
 
     @Test
     public void scriptUpdateFunctionCall() {
-        world.getScriptManager().getGlobalContext().put("initCalled", false);
-        world.getScriptManager().getGlobalContext().put("updateCalled", false);
+        appContext.getScriptManager().getGlobalContext().put("initCalled", false);
+        appContext.getScriptManager().getGlobalContext().put("updateCalled", false);
 
-        Assert.assertEquals(false, world.getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(false, world.getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(false, appContext.getScriptManager().getGlobalContext().get("initCalled"));
+        Assert.assertEquals(false, appContext.getScriptManager().getGlobalContext().get("updateCalled"));
 
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = world.getEntityFactory().getEntity().addComponent(component);
-        entity.init(world);
+        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
+        entity.init(appContext);
 
         entity.update(0.1f);
 
@@ -61,7 +61,7 @@ public class ScriptTest extends TestWithWorld {
 //        }
 
         component.update(0.1f);
-        Assert.assertEquals(true, world.getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(true, world.getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(true, appContext.getScriptManager().getGlobalContext().get("initCalled"));
+        Assert.assertEquals(true, appContext.getScriptManager().getGlobalContext().get("updateCalled"));
     }
 }

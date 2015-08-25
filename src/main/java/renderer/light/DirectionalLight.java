@@ -3,32 +3,26 @@ package renderer.light;
 import camera.Camera;
 import component.InputControllerComponent;
 import component.ModelComponent;
+import engine.AppContext;
 import engine.Transform;
-import engine.World;
 import engine.model.Entity;
-import engine.model.Model;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
-import renderer.material.Material;
-import renderer.material.Material.MAP;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
 import util.Util;
 
-import java.io.File;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
-import java.util.HashMap;
 import java.util.List;
 
 public class DirectionalLight extends Entity {
@@ -125,11 +119,11 @@ public class DirectionalLight extends Entity {
 	}
 
 	@Override
-	public void init(World world) {
-		super.init(world);
+	public void init(AppContext appContext) {
+		super.init(appContext);
 		initialized = false;
 		entityBuffer = BufferUtils.createFloatBuffer(16);
-		Renderer renderer = world.getRenderer();
+		Renderer renderer = appContext.getRenderer();
 
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 

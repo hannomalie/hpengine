@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import engine.World;
+import config.Config;
+import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
@@ -34,7 +35,7 @@ public class EnvironmentProbeFactory {
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
-	private final World world;
+	private final AppContext appContext;
 
 	private Renderer renderer;
 	
@@ -50,9 +51,9 @@ public class EnvironmentProbeFactory {
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
-	public EnvironmentProbeFactory(World world) {
-		this.world = world;
-		this.renderer = world.getRenderer();
+	public EnvironmentProbeFactory(AppContext appContext) {
+		this.appContext = appContext;
+		this.renderer = appContext.getRenderer();
 		this.environmentMapsArray = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR);
 		this.environmentMapsArray1 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
 		this.environmentMapsArray2 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
@@ -80,7 +81,7 @@ public class EnvironmentProbeFactory {
 		return getProbe(center, new Vector3f(size, size, size), update, weight);
 	}
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) {
-		EnvironmentProbe probe = new EnvironmentProbe(world, center, size, RESOLUTION, update, getProbes().size(), weight);
+		EnvironmentProbe probe = new EnvironmentProbe(appContext, center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
 		return probe;
@@ -134,7 +135,7 @@ public class EnvironmentProbeFactory {
 		draw(octree, false);
 	}
 	public void draw(Octree octree, boolean urgent) {
-		if(!World.DRAW_PROBES) { return; }
+		if(!Config.DRAW_PROBES) { return; }
 		
 		prepareProbeRendering();
 		
@@ -150,7 +151,7 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void drawAlternating(Octree octree, Entity camera, DirectionalLight light, int frameCount) {
-		if(!World.DRAW_PROBES) { return; }
+		if(!Config.DRAW_PROBES) { return; }
 
 		prepareProbeRendering();
 		
@@ -299,7 +300,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { World.getEventBus().unregister(p.getSampler()); });
+		probes.forEach( p -> { AppContext.getEventBus().unregister(p.getSampler()); });
 		probes.clear();
 	}
 }

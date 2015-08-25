@@ -4,7 +4,7 @@ import camera.Camera;
 import component.Component;
 import component.ModelComponent;
 import engine.Transform;
-import engine.World;
+import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -35,7 +35,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 
 	private Transform transform = new Transform();
 
-	protected transient World world;
+	protected transient AppContext appContext;
 
 	protected boolean initialized = false;
 
@@ -63,15 +63,15 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	@Override
-	public void init(World world) {
-		LifeCycle.super.init(world);
+	public void init(AppContext appContext) {
+		LifeCycle.super.init(appContext);
 		transform.init();
 
 		for(Component component : components.values()) {
-			component.init(world);
+			component.init(appContext);
 		}
 		for(Entity child: children) {
-			child.init(world);
+			child.init(appContext);
 		}
 		initialized = true;
 //		children.parallelStream().forEach(child -> child.init(world));
@@ -172,13 +172,13 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	@Override
-	public void setWorld(World world) {
-		this.world = world;
+	public void setAppContext(AppContext appContext) {
+		this.appContext = appContext;
 	}
 
 	@Override
-	public World getWorld() {
-		return world;
+	public AppContext getAppContext() {
+		return appContext;
 	}
 
 	public HashMap<String,Component> getComponents() {
@@ -332,7 +332,7 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	public static String getDirectory() {
-		return World.WORKDIR_NAME + "/assets/entities/";
+		return AppContext.WORKDIR_NAME + "/assets/entities/";
 	}
 	public boolean equals(Object other) {
 		if (!(other instanceof Entity)) {

@@ -1,7 +1,7 @@
 package renderer.drawstrategy;
 
 import config.Config;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import org.lwjgl.BufferUtils;
@@ -55,10 +55,10 @@ public class GBuffer {
 	private StorageBuffer storageBuffer;
 
 	private final int exposureIndex = 0;
-	private World world;
+	private AppContext appContext;
 
-	public GBuffer(World world, Renderer renderer) {
-		this.world = world;
+	public GBuffer(AppContext appContext, Renderer renderer) {
+		this.appContext = appContext;
 		this.renderer = renderer;
 
 		gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
@@ -95,11 +95,11 @@ public class GBuffer {
 	public void init(Renderer renderer) {
 		probeBox = null;
 		try {
-			probeBox = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
+			probeBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
 			Material probeBoxMaterial = renderer.getMaterialFactory().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);
-			probeBoxEntity = world.getEntityFactory().getEntity(probeBox, probeBoxMaterial);
+			probeBoxEntity = appContext.getEntityFactory().getEntity(probeBox, probeBoxMaterial);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

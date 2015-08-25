@@ -1,27 +1,27 @@
 package engine.lifecycle;
 
 
-import engine.World;
+import engine.AppContext;
 import engine.model.EntityFactory;
 import renderer.material.MaterialFactory;
 
 public interface LifeCycle {
 
-    default void init(World world) { setWorld(world); }
+    default void init(AppContext appContext) { setAppContext(appContext); }
 
     boolean isInitialized();
 
     default void update(float seconds) { }
     @SuppressWarnings("unused")
-    default void destroy(World world) { }
+    default void destroy(AppContext appContext) { }
 
-    void setWorld(World world);
-    World getWorld();
+    void setAppContext(AppContext appContext);
+    AppContext getAppContext();
 
     default MaterialFactory getMaterialFactory() {
-        return getWorld().getRenderer().getMaterialFactory();
+        return getAppContext().getRenderer().getMaterialFactory();
     }
     default EntityFactory getEntityFactory() {
-        return getWorld().getEntityFactory();
+        return getAppContext().getEntityFactory();
     }
 }

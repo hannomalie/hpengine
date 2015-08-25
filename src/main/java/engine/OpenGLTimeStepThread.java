@@ -13,7 +13,7 @@ public abstract class OpenGLTimeStepThread extends TimeStepThread {
     private String name;
 
     public OpenGLTimeStepThread(String name) {
-        super(name);
+        super(name, 0.0f);
         this.name = name;
 
         try {

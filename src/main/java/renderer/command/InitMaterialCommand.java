@@ -1,6 +1,6 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 import renderer.command.InitMaterialCommand.MaterialResult;
 import renderer.material.Material;
 
@@ -13,8 +13,8 @@ public class InitMaterialCommand implements Command<MaterialResult> {
 	}
 
 	@Override
-	public MaterialResult execute(World world) {
-		material.init(world.getRenderer());
+	public MaterialResult execute(AppContext appContext) {
+		material.init(appContext.getRenderer());
 		MaterialResult result = new MaterialResult(material);
 		return result;
 	}

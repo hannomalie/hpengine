@@ -5,7 +5,7 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 import component.ModelComponent;
 import config.Config;
 import engine.Transform;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
@@ -42,16 +42,16 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
     }
 
     @Override
-    public void draw(World world) {
-        LightFactory lightFactory = world.getRenderer().getLightFactory();
-        drawDebug(world.getActiveCamera(), world, world.getPhysicsFactory().getDynamicsWorld(),
-                world.getScene().getOctree(), world.getScene().getEntities(),
+    public void draw(AppContext appContext) {
+        LightFactory lightFactory = appContext.getRenderer().getLightFactory();
+        drawDebug(appContext.getActiveCamera(), appContext, appContext.getPhysicsFactory().getDynamicsWorld(),
+                appContext.getScene().getOctree(), appContext.getScene().getEntities(),
                 lightFactory.getPointLights(), lightFactory.getTubeLights(),
-                lightFactory.getAreaLights(), world.getRenderer().getEnvironmentMap());
+                lightFactory.getAreaLights(), appContext.getRenderer().getEnvironmentMap());
     }
 
 
-    public void drawDebug(Camera camera, World world, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public void drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         GBuffer gBuffer = renderer.getGBuffer();
 
         gBuffer.use(true);
@@ -65,10 +65,10 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         linesProgram.setUniform("eyePosition", camera.getPosition());
 
-        if(World.DRAWSCENE_ENABLED) {
+        if(Config.DRAWSCENE_ENABLED) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
             List<Entity> visibleEntities = new ArrayList<>();
-            if (World.useFrustumCulling) {
+            if (Config.useFrustumCulling) {
                 visibleEntities.addAll(octree.getVisible(camera));
                 for (int i = 0; i < visibleEntities.size(); i++) {
                     if (!visibleEntities.get(i).isInFrustum(camera)) {
@@ -124,7 +124,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             }
         }
 
-        if (World.DRAWLIGHTS_ENABLED) {
+        if (Config.DRAWLIGHTS_ENABLED) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,1));
             for (Entity entity : pointLights) {
                 entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
@@ -144,10 +144,10 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
 
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            renderer.batchLine(new Vector3f(), world.getScene().getDirectionalLight().getCamera().getWorldPosition());
-            renderer.batchLine(world.getScene().getDirectionalLight().getCamera().getWorldPosition(),
-                               Vector3f.add(world.getScene().getDirectionalLight().getCamera().getWorldPosition(),
-                                       (Vector3f) new Vector3f(world.getScene().getDirectionalLight().getCamera().getViewDirection()).scale(10f),
+            renderer.batchLine(new Vector3f(), appContext.getScene().getDirectionalLight().getCamera().getWorldPosition());
+            renderer.batchLine(appContext.getScene().getDirectionalLight().getCamera().getWorldPosition(),
+                               Vector3f.add(appContext.getScene().getDirectionalLight().getCamera().getWorldPosition(),
+                                       (Vector3f) new Vector3f(appContext.getScene().getDirectionalLight().getCamera().getViewDirection()).scale(10f),
                                        null));
             renderer.drawLines(linesProgram);
         }
@@ -157,7 +157,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             octree.drawDebug(renderer, camera, linesProgram);
         }
 
-        if (World.DRAW_PROBES) {
+        if (Config.DRAW_PROBES) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
             renderer.getEnvironmentProbeFactory().drawDebug(linesProgram, octree);
@@ -178,7 +178,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         ////////////////////
 
-        drawSecondPass(camera, world.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
+        drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
         GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);

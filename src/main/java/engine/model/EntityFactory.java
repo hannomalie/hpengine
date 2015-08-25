@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.List;
 
-import engine.World;
+import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -15,17 +15,17 @@ import renderer.material.Material;
 
 public class EntityFactory {
 	private Renderer renderer;
-	private World world;
+	private AppContext appContext;
 	
-	public EntityFactory(World world) {
-		this.world = world;
-		this.renderer = world.getRenderer();
+	public EntityFactory(AppContext appContext) {
+		this.appContext = appContext;
+		this.renderer = appContext.getRenderer();
 	}
 
 
 	public Entity getEntity() {
 		Entity entity = new Entity();
-		entity.init(world);
+		entity.init(appContext);
 		return entity;
 	}
 
@@ -37,7 +37,7 @@ public class EntityFactory {
 				Entity child = getEntity(model);
 				child.setParent(entity);
 			}
-			entity.init(world);
+			entity.init(appContext);
 			return entity;
 		} else {
 			return getEntity(new Vector3f(), name, models.get(0), models.get(0).getMaterial());
@@ -62,14 +62,14 @@ public class EntityFactory {
 //		} catch (IOException e) {
 //			Logger.getGlobal().info(String.format("File not found for %s", name));
 
-			entity = new Entity(world.getRenderer().getMaterialFactory(), position, name, model, material.getName());
+			entity = new Entity(appContext.getRenderer().getMaterialFactory(), position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
 //		} catch (ClassNotFoundException e) {
 //			e.printStackTrace();
 //		}
 
-		entity.init(world);
+		entity.init(appContext);
 		return entity;
 	}
 
@@ -106,7 +106,7 @@ public class EntityFactory {
 		in = new ObjectInputStream(fis);
 		Entity entity = (Entity) in.readObject();
 		handleEvolution(entity);
-		entity.init(world);
+		entity.init(appContext);
 		in.close();
 
 		return entity;

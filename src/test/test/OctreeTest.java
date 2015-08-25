@@ -89,7 +89,7 @@ public class OctreeTest extends TestWithWorld {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 0);
-		octree.init(world);
+		octree.init(appContext);
 		octree.insert(entity);
 		Assert.assertFalse(octree.rootNode.hasChildren());
 		Assert.assertEquals(octree.rootNode.getCenter(), new Vector3f());
@@ -184,7 +184,7 @@ public class OctreeTest extends TestWithWorld {
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
-		octree.init(world);
+		octree.init(appContext);
 		octree.insert(entityBottomLeftBack);
 		octree.insert(entityTopRightFront);
 //		Assert.assertEquals(1, octree.getCurrentDeepness());
@@ -225,7 +225,7 @@ public class OctreeTest extends TestWithWorld {
 		getLogger().setLevel(Level.OFF);
 		
 		Octree octree = new Octree(new Vector3f(), 2000f, 7);
-		octree.init(world);
+		octree.init(appContext);
 		Random random = new Random();
 		final int entityCount = 10000;
 		List<Entity> toAdd = new ArrayList<>();

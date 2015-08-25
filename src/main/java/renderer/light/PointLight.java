@@ -5,7 +5,7 @@ import java.util.List;
 
 import camera.Camera;
 import component.ModelComponent;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import renderer.material.MaterialFactory;
@@ -24,12 +24,12 @@ public class PointLight extends Entity implements Serializable {
 	private static int counter = 0;
 	private Vector4f color;
 	
-	protected PointLight(World world, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
+	protected PointLight(AppContext appContext, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
 		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		counter++;
 		setScale(range);
-		init(world);
+		init(appContext);
 	}
 	
 	private static String generateName() {

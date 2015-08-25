@@ -1,7 +1,7 @@
 package test;
 
 import component.ModelComponent;
-import engine.World;
+import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.Model;
@@ -18,8 +18,8 @@ public class ModelTest extends test.TestWithWorld {
 	
 	@Test
 	public void loadsCorrectly() throws Exception {
-		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
-		Entity entity = world.getEntityFactory().getEntity(box.get(0));
+		List<Model> box = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj"));
+		Entity entity = appContext.getEntityFactory().getEntity(box.get(0));
 		VertexBuffer buffer = entity.getComponent(ModelComponent.class).getVertexBuffer();
 		int verticesCount = buffer.getVerticesCount();
 		// Korrekter Vertices count
@@ -61,8 +61,8 @@ public class ModelTest extends test.TestWithWorld {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj"));
-		Entity entity = world.getEntityFactory().getEntity(sphere.get(0));
+		List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj"));
+		Entity entity = appContext.getEntityFactory().getEntity(sphere.get(0));
 		
 		entity.setPosition(new Vector3f(0, 0, 0));
 		

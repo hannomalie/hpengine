@@ -1,7 +1,7 @@
 package renderer.drawstrategy;
 
-import engine.World;
+import engine.AppContext;
 
 public interface DrawStrategy {
-    void draw(World world);
+    void draw(AppContext appContext);
 }

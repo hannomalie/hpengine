@@ -8,7 +8,7 @@ import java.util.List;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import engine.World;
+import engine.AppContext;
 import renderer.light.TubeLight;
 
 import org.lwjgl.util.vector.Vector4f;
@@ -18,8 +18,8 @@ import com.alee.laf.colorchooser.WebColorChooserPanel;
 public class TubeLightView extends EntityView {
 	private TubeLight light;
 
-	public TubeLightView(World world, DebugFrame debugFrame, TubeLight light) {
-		super(world, debugFrame, light);
+	public TubeLightView(AppContext appContext, DebugFrame debugFrame, TubeLight light) {
+		super(appContext, debugFrame, light);
 		this.light = light;
 	}
 

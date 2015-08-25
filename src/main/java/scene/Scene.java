@@ -1,7 +1,7 @@
 package scene;
 
 import camera.Camera;
-import engine.World;
+import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
 import octree.Octree;
@@ -17,8 +17,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -34,7 +32,7 @@ public class Scene implements LifeCycle, Serializable {
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
-	transient private World world;
+	transient private AppContext appContext;
 	transient Renderer renderer;
 	private ArrayList<Entity> entities = new ArrayList<>();
 
@@ -46,18 +44,18 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	@Override
-	public void init(World world) {
-		LifeCycle.super.init(world);
-		renderer = world.getRenderer();
+	public void init(AppContext appContext) {
+		LifeCycle.super.init(appContext);
+		renderer = appContext.getRenderer();
 		renderer.getEnvironmentProbeFactory().clearProbes();
-		octree.init(world);
-		entities.forEach(entity -> entity.init(world));
+		octree.init(appContext);
+		entities.forEach(entity -> entity.init(appContext));
 		addAll(entities);
 		for (ProbeData data : probes) {
-			world.getRenderer().addCommand(new Command<Result>() {
+			appContext.getRenderer().addCommand(new Command<Result>() {
 				@Override
-				public Result execute(World world) {
-					world.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(world);
+				public Result execute(AppContext appContext) {
+					appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
 					return new Result() { @Override public boolean isSuccessful() { return true; } };
 				}
 			});
@@ -74,7 +72,7 @@ public class Scene implements LifeCycle, Serializable {
 			renderer.getLightFactory().getAreaLight(areaLightSerializationProxy);
 		}
 		
-		directionalLight.init(world);
+		directionalLight.init(appContext);
 	}
 	
 	public void write() {
@@ -162,7 +160,7 @@ public class Scene implements LifeCycle, Serializable {
     }
 
 	public static String getDirectory() {
-		return World.WORKDIR_NAME + "/assets/scenes/";
+		return AppContext.WORKDIR_NAME + "/assets/scenes/";
 	}
 	public void addAll(List<Entity> entities) {
 //		initializationWrapped(() -> {
@@ -189,13 +187,13 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	@Override
-	public void setWorld(World world) {
-		this.world = world;
+	public void setAppContext(AppContext appContext) {
+		this.appContext = appContext;
 	}
 
 	@Override
-	public World getWorld() {
-		return world;
+	public AppContext getAppContext() {
+		return appContext;
 	}
 
 	public void endFrame(Camera camera) {

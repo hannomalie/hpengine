@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import engine.World;
+import engine.AppContext;
 import renderer.command.Result;
 import renderer.command.Command;
 import renderer.light.AreaLight;
@@ -28,8 +28,8 @@ import com.alee.managers.notification.WebNotificationPopup;
 public class AreaLightView extends EntityView {
 	private AreaLight light;
 
-	public AreaLightView(World world, DebugFrame debugFrame, AreaLight light) {
-		super(world, debugFrame, light);
+	public AreaLightView(AppContext appContext, DebugFrame debugFrame, AreaLight light) {
+		super(appContext, debugFrame, light);
 		this.light = light;
 	}
 
@@ -53,10 +53,10 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-        	world.setActiveCamera(world.getRenderer().getLightFactory().getCameraForAreaLight(light));
+        	appContext.setActiveCamera(appContext.getRenderer().getLightFactory().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-			world.restoreWorldCamera();
+			appContext.restoreWorldCamera();
         });}});
         addRemoveButton(webComponentPanel);
 
@@ -68,10 +68,10 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 
 				@Override
-				public Result execute(World world) {
+				public Result execute(AppContext world) {
 					world.getRenderer().getLightFactory().getAreaLights().remove(light);
 					return new Result();
 				}

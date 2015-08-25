@@ -13,7 +13,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
-import engine.World;
+import engine.AppContext;
 import renderer.command.LoadModelCommand;
 import renderer.command.LoadModelCommand.EntityListResult;
 
@@ -27,13 +27,13 @@ import java.util.concurrent.TimeUnit;
 
 public class AddEntitiyView extends WebPanel {
 
-	private World world;
+	private AppContext appContext;
 	private WebFormattedTextField nameField;
 	private DebugFrame debugFrame;
 	private WebFrame parentFrame;
 
-	public AddEntitiyView(World world, WebFrame addEntityFrame, DebugFrame debugFrame) {
-		this.world = world;
+	public AddEntitiyView(AppContext appContext, WebFrame addEntityFrame, DebugFrame debugFrame) {
+		this.appContext = appContext;
 		this.debugFrame = debugFrame;
 		this.parentFrame = addEntityFrame;
 		setUndecorated(true);
@@ -67,11 +67,11 @@ public class AddEntitiyView extends WebPanel {
 				for (File chosenFile : chosenFiles) {
 					if (chosenFile != null) {
 
-						new SwingWorkerWithProgress<EntityListResult>(world.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
+						new SwingWorkerWithProgress<EntityListResult>(appContext.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
 
-								SynchronousQueue<EntityListResult> queue = world.getRenderer().addCommand(
+								SynchronousQueue<EntityListResult> queue = appContext.getRenderer().addCommand(
 										new LoadModelCommand(chosenFile, nameField.getText()));
 
 								return queue.poll(5, TimeUnit.MINUTES);
@@ -79,7 +79,7 @@ public class AddEntitiyView extends WebPanel {
 
 							@Override
 							public void done(EntityListResult result) {
-								world.getScene().addAll(result.entities);
+								appContext.getScene().addAll(result.entities);
 								debugFrame.refreshSceneTree();
 							}
 						}.execute();

@@ -1,8 +1,7 @@
 package util.script;
 
 import component.ScriptComponent;
-import engine.World;
-import jdk.nashorn.api.scripting.NashornScriptEngine;
+import engine.AppContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
@@ -12,13 +11,13 @@ import javax.script.*;
 public class ScriptManager {
 
 	private final ScriptContext globalContext;
-	private World world;
+	private AppContext appContext;
 	private ScriptEngine engine;
 	private DefaultCompletionProvider provider;
 	private Bindings globalBindings;
 
-	public ScriptManager(World world) {
-		this.world = world;
+	public ScriptManager(AppContext appContext) {
+		this.appContext = appContext;
 		NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
 		engine = factory.getScriptEngine(new String[] { "--global-per-engine" });
 		globalContext = engine.getContext();
@@ -34,12 +33,12 @@ public class ScriptManager {
 	}
 
 	private void defineGlobals() {
-		define("world", world);
-		define("renderer", world.getRenderer());
-		define("entityFactory", world.getEntityFactory());
-		define("materialFactory", world.getRenderer().getMaterialFactory());
-		define("textureFactory", world.getRenderer().getTextureFactory());
-		define("objLoader", world.getRenderer().getOBJLoader());
+		define("world", appContext);
+		define("renderer", appContext.getRenderer());
+		define("entityFactory", appContext.getEntityFactory());
+		define("materialFactory", appContext.getRenderer().getMaterialFactory());
+		define("textureFactory", appContext.getRenderer().getTextureFactory());
+		define("objLoader", appContext.getRenderer().getOBJLoader());
 	}
 	
 	public void define(String name, Object object) {
@@ -69,7 +68,7 @@ public class ScriptManager {
 
 	public ScriptContext createContext() {
 		ScriptContext context = new SimpleScriptContext();
-		context.setBindings(world.getScriptManager().getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
+		context.setBindings(appContext.getScriptManager().getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
 		context.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
 		return context;
 	}
@@ -84,7 +83,7 @@ public class ScriptManager {
 
 			engine.setContext(scriptComponent.getContext());
 			scriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("entity", scriptComponent.getEntity());
-			((Invocable)engine).invokeFunction("init", world);
+			((Invocable)engine).invokeFunction("init", appContext);
 
 		} catch (ScriptException e) {
 			e.printStackTrace();

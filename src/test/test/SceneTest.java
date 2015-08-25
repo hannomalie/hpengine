@@ -11,7 +11,7 @@ public class SceneTest extends TestWithWorld {
 	@Test
 	public void writeAndRead() throws Exception {
 		Scene scene = new Scene();
-		scene.init(world);
+		scene.init(appContext);
 		Assert.assertTrue(scene.write(SCENENAME));
 
 		Scene loadedScene = Scene.read(renderer, SCENENAME);
@@ -23,17 +23,17 @@ public class SceneTest extends TestWithWorld {
 	@Test
 	public void loadScene() throws Exception {
 		Scene scene = new Scene();
-		scene.init(world);
-		world.setScene(scene);
-		Entity entity = world.getEntityFactory().getEntity();
+		scene.init(appContext);
+		appContext.setScene(scene);
+		Entity entity = appContext.getEntityFactory().getEntity();
 		scene.add(entity);
-		Assert.assertEquals(1, world.getScene().getEntities().size());
+		Assert.assertEquals(1, appContext.getScene().getEntities().size());
 		Assert.assertTrue(scene.write(SCENENAME));
 
 		Scene loadedScene = Scene.read(renderer, SCENENAME);
-		loadedScene.init(world);
-		world.setScene(loadedScene);
+		loadedScene.init(appContext);
+		appContext.setScene(loadedScene);
 
-		Assert.assertEquals(1, world.getScene().getEntities().size());
+		Assert.assertEquals(1, appContext.getScene().getEntities().size());
 	}
 }

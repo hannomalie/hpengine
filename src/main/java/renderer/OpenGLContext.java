@@ -1,7 +1,6 @@
 package renderer;
 
 import config.Config;
-import engine.World;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
 
@@ -37,7 +36,7 @@ public class OpenGLContext {
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAtrributes);
         Display.setResizable(false);
-        Display.setVSyncEnabled(World.VSYNC_ENABLED);
+        Display.setVSyncEnabled(Config.VSYNC_ENABLED);
         KHRDebugCallback.Handler handler = new KHRDebugCallback.Handler() {
             @Override
             public void handleMessage(int source, int type, int id, int severity, String message) {

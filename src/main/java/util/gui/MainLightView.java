@@ -9,7 +9,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.alee.laf.button.WebButton;
-import engine.World;
+import config.Config;
+import engine.AppContext;
 import engine.model.Entity;
 import renderer.light.DirectionalLight;
 import util.gui.input.SliderInput;
@@ -26,14 +27,14 @@ import com.alee.laf.slider.WebSlider;
 public class MainLightView extends EntityView {
 	private DirectionalLight light;
 
-	public MainLightView(World world, DebugFrame debugFrame) {
-		super(world, debugFrame, world.getScene().getDirectionalLight());
+	public MainLightView(AppContext appContext, DebugFrame debugFrame) {
+		super(appContext, debugFrame, appContext.getScene().getDirectionalLight());
 	}
 
 	@Override
-	protected void init(World world, Entity entity) {
-		this.light = world.getScene().getDirectionalLight();
-		super.init(world, entity);
+	protected void init(AppContext appContext, Entity entity) {
+		this.light = appContext.getScene().getDirectionalLight();
+		super.init(appContext, entity);
 	}
 
 	@Override
@@ -55,7 +56,7 @@ public class MainLightView extends EntityView {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				Color color = ambientLightColorChooserPanel.getColor();
-				World.AMBIENT_LIGHT.set(new Vector3f(color.getRed()/255.f,
+				Config.AMBIENT_LIGHT.set(new Vector3f(color.getRed()/255.f,
 						color.getGreen()/255.f,
 						color.getBlue()/255.f));
 			}
@@ -161,10 +162,10 @@ public class MainLightView extends EntityView {
 		});
 
 		webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-			world.setActiveCamera(light.getCamera());
+			appContext.setActiveCamera(light.getCamera());
 		});}});
 		webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-			world.restoreWorldCamera();
+			appContext.restoreWorldCamera();
 		});}});
 
         panels.add(webComponentPanel);

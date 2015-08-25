@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -25,7 +25,7 @@ public class LoadEntitiyView extends WebPanel {
 
 	private LoadEntitiyView() { }
 	
-	public static List<Entity> showDialog(World world) {
+	public static List<Entity> showDialog(AppContext appContext) {
 		
 		Customizer<WebFileChooser> customizer = new Customizer<WebFileChooser>() {
 			@Override
@@ -39,14 +39,14 @@ public class LoadEntitiyView extends WebPanel {
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
-				Entity entity = world.getEntityFactory().readWithoutInit(chosenFile.getName());
+				Entity entity = appContext.getEntityFactory().readWithoutInit(chosenFile.getName());
 				if(entity == null) {
 					showError(chosenFile);
 					continue;
 				}
-				SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+				SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
-					public Result execute(World world) {
+					public Result execute(AppContext world) {
 						entity.init(world);
 						return new Result() {
 							@Override

@@ -19,7 +19,8 @@ import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
 import component.ModelComponent;
 import component.PhysicsComponent;
-import engine.World;
+import config.Config;
+import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import org.lwjgl.BufferUtils;
@@ -35,15 +36,15 @@ import java.util.List;
 
 public class PhysicsFactory {
 	
-	private World world;
+	private AppContext appContext;
 	private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
 
-	public PhysicsFactory(World world) {
-		this(world, new Vector3f(0,-20,0));
+	public PhysicsFactory(AppContext appContext) {
+		this(appContext, new Vector3f(0,-20,0));
 	}
-	public PhysicsFactory(World world, Vector3f gravity) {
-		this.world = world;
+	public PhysicsFactory(AppContext appContext, Vector3f gravity) {
+		this.appContext = appContext;
 		setupBullet(gravity);
 	}
 	
@@ -163,14 +164,14 @@ public class PhysicsFactory {
 			
 			@Override
 			public int getDebugMode() {
-				if(World.DRAWLINES_ENABLED) {
+				if(Config.DRAWLINES_ENABLED) {
 					return 1;
 				} else { return 0; }
 			}
 			
 			@Override
 			public void drawLine(Vector3f arg0, Vector3f arg1, Vector3f arg2) {
-				world.getRenderer().batchLine(
+				appContext.getRenderer().batchLine(
 						new org.lwjgl.util.vector.Vector3f(arg0.x, arg0.y, arg0.z),
 						new org.lwjgl.util.vector.Vector3f(arg1.x, arg1.y, arg1.z));
 			}

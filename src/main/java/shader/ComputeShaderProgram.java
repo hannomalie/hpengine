@@ -7,7 +7,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import engine.World;
+import engine.AppContext;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -109,7 +109,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		
 		SynchronousQueue<Result> queue = renderer.addCommand(new Command<Result>(){
 			@Override
-			public Result execute(World world) {
+			public Result execute(AppContext world) {
 				self.unload();
 				self.load();
 				return new Result();

@@ -12,7 +12,7 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.command.Result;
@@ -33,13 +33,13 @@ import java.util.concurrent.TimeUnit;
 public class ProbeView extends WebPanel {
 
 	private EnvironmentProbe probe;
-	private World world;
+	private AppContext appContext;
 	private WebFormattedTextField nameField;
 	private DebugFrame debugFrame;
 
-	public ProbeView(World world, DebugFrame debugFrame, EnvironmentProbe selected) {
+	public ProbeView(AppContext appContext, DebugFrame debugFrame, EnvironmentProbe selected) {
 		this.probe = selected;
-		this.world = world;
+		this.appContext = appContext;
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 600);
@@ -65,10 +65,10 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = world.getRenderer().addCommand(new Command<Result>() {
+        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 
 				@Override
-				public Result execute(World world) {
+				public Result execute(AppContext world) {
 					world.getRenderer().getEnvironmentProbeFactory().remove(probe);
 					return new Result(true);
 				}
@@ -92,10 +92,10 @@ public class ProbeView extends WebPanel {
 
         webComponentPanel.addElement(removeProbeButton);
         webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-        	world.setActiveCamera(probe.getSampler());
+        	appContext.setActiveCamera(probe.getSampler());
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-        	world.restoreWorldCamera();
+        	appContext.restoreWorldCamera();
         });}});
 
         webComponentPanel.addElement(new MovablePanel<Entity>(probe));
@@ -110,10 +110,10 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				world.getRenderer().addCommand(new Command<Result>() {
+				appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
-					public Result execute(World world) {
-						world.getRenderer().getEnvironmentProbeFactory().updateBuffers();
+					public Result execute(AppContext appContext) {
+						appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();
 						return new Result();
 					}
 				});

@@ -1,6 +1,6 @@
 package renderer.material;
 
-import engine.World;
+import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -296,7 +296,7 @@ public class Material implements Serializable {
 	}
 
 	public static String getDirectory() {
-		return World.WORKDIR_NAME + "/assets/materials/";
+		return AppContext.WORKDIR_NAME + "/assets/materials/";
 	}
 
 	public MaterialInfo getMaterialInfo() {

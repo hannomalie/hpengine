@@ -1,10 +1,10 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 
 
 public interface Command<T extends Result> {
 
-	T execute(World world);
+	T execute(AppContext appContext);
 
 }

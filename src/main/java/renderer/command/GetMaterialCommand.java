@@ -1,6 +1,6 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 import renderer.command.InitMaterialCommand.MaterialResult;
 import renderer.material.Material;
 import renderer.material.MaterialFactory.MaterialInfo;
@@ -14,8 +14,8 @@ public class GetMaterialCommand implements Command<MaterialResult> {
 	}
 	
 	@Override
-	public MaterialResult execute(World world) {
-		Material material = world.getRenderer().getMaterialFactory().getMaterial(materialInfo);
+	public MaterialResult execute(AppContext appContext) {
+		Material material = appContext.getRenderer().getMaterialFactory().getMaterial(materialInfo);
 		return new MaterialResult(material);
 	}
 

@@ -1,6 +1,6 @@
 package renderer.command;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import renderer.Renderer;
@@ -20,14 +20,14 @@ public class LoadModelCommand implements Command<EntityListResult> {
 		this.name = name;
 	}
 
-	public EntityListResult execute(World world) {
-		Renderer renderer = world.getRenderer();
+	public EntityListResult execute(AppContext appContext) {
+		Renderer renderer = appContext.getRenderer();
 		EntityListResult result = new EntityListResult();
 		try {
 			List<Model> models = renderer.getOBJLoader().loadTexturedModel(file);
 			List<Entity> entities = new ArrayList<Entity>();
 
-			entities.addAll(world.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
+			entities.addAll(appContext.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
 //			entities.add(renderer.getEntityFactory().getEntity(name, models));
 
 //			for (int i = 0; i < models.size(); i++) {

@@ -17,7 +17,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import component.ModelComponent;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
 import org.apache.commons.io.FileUtils;
@@ -46,23 +46,23 @@ import java.util.stream.Collectors;
 public class MaterialView extends WebPanel {
 
 	private Material material;
-	private World world;
+	private AppContext appContext;
 	private DebugFrame parent;
 	private WebTextField nameField;
 	private Entity entity;
 
-	public MaterialView(DebugFrame parent, World world, Material material, Entity entity) {
+	public MaterialView(DebugFrame parent, AppContext appContext, Material material, Entity entity) {
 		this.parent = parent;
 		this.entity = entity;
-		this.world = world;
+		this.appContext = appContext;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
 		
 		init(material);
 	}
-	public MaterialView(DebugFrame parent, World world, Material material) {
-		this(parent, world, material, null);
+	public MaterialView(DebugFrame parent, AppContext appContext, Material material) {
+		this(parent, appContext, material, null);
 	}
 
 	private void init(Material material) {
@@ -79,7 +79,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-        		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new GetMaterialCommand(newInfo));
+        		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().addCommand(new GetMaterialCommand(newInfo));
         		MaterialResult result = null;
         		try {
         			result = queue.poll(1, TimeUnit.MINUTES);
@@ -115,8 +115,8 @@ public class MaterialView extends WebPanel {
         this.add(saveButton, BorderLayout.SOUTH);
 	}
 
-	public MaterialView(World world, Material material) {
-		this(null, world, material);
+	public MaterialView(AppContext appContext, Material material) {
+		this(null, appContext, material);
 	}
 
 	private void addTexturePanel(List<Component> panels) {
@@ -175,7 +175,7 @@ public class MaterialView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
-	        	World.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent());
 	        });
 	        
 	        WebButton removeTextureButton = new WebButton("Remove");
@@ -202,14 +202,14 @@ public class MaterialView extends WebPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				material.setDiffuse(current);
-	        	World.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent());
 			}
 		});
         webComponentPanel.addElement(new ColorChooserButton("Diffuse", new ColorChooserFrame() {
 			@Override
 			public void onColorChange(Vector3f color) {
 				material.setDiffuse(color);
-	        	World.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent());
 			}
 		}));
 
@@ -252,7 +252,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					roughnessInput.setValue(((float)value/100f));
     					material.setRoughness(((float)value/100f));
-    		        	World.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
                 GroupPanel groupPanelRoughness = new GroupPanel ( 4, new WebLabel("Roughness"), roughnessInput, roughnessSliderInput );
@@ -274,7 +274,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					metallicInput.setValue(((float)value/100f));
     					material.setMetallic(((float)value/100f));
-    		        	World.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -297,7 +297,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					ambientInput.setValue(((float)value/100f));
     					material.setAmbient(((float)value/100f));
-    		        	World.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -418,7 +418,7 @@ public class MaterialView extends WebPanel {
         		Object selection = WebOptionPane.showInputDialog( this, "Vertexshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
 	        	if(selection != null) {
 	        		try {
-						world.getRenderer().getProgramFactory().copyDefaultVertexShaderToFile(selection.toString());
+						appContext.getRenderer().getProgramFactory().copyDefaultVertexShaderToFile(selection.toString());
 						material.setVertexShader(selection.toString() + ".glsl");
 			        	addMaterialInitCommand(material);
 					} catch (Exception e1) {
@@ -463,7 +463,7 @@ public class MaterialView extends WebPanel {
         		Object selection = WebOptionPane.showInputDialog( this, "Fragmentshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
 	        	if(selection != null) {
 	        		try {
-						world.getRenderer().getProgramFactory().copyDefaultFragmentShaderToFile(selection.toString());
+						appContext.getRenderer().getProgramFactory().copyDefaultFragmentShaderToFile(selection.toString());
 						material.setFragmentShader(selection.toString() + ".glsl");
 			        	addMaterialInitCommand(material);
 					} catch (Exception e1) {
@@ -498,7 +498,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		SynchronousQueue<MaterialResult> queue = world.getRenderer().addCommand(new InitMaterialCommand(material));
+		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().addCommand(new InitMaterialCommand(material));
 		
 		MaterialResult result = null;
 		try {
@@ -520,7 +520,7 @@ public class MaterialView extends WebPanel {
 	}
 
 	private List<Texture> getAllTexturesSorted() {
-        List<Texture> temp = (List<Texture>) world.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+        List<Texture> temp = (List<Texture>) appContext.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
 			@Override
 			public int compare(Texture o1, Texture o2) {
 				return (o1.getPath().compareTo(o2.getPath()));

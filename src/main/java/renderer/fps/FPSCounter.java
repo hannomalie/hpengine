@@ -13,7 +13,7 @@ public class FPSCounter {
 		lastFrameTimes[lastFrameTimes.length-1] = getTime();
 	}
 	private static long getTime() {
-		return System.currentTimeMillis();
+		return System.nanoTime();
 	}
 	
 	public float getFPS() {
@@ -22,7 +22,7 @@ public class FPSCounter {
 	}
 	
 	public float getMsPerFrame() {
-		return (lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length;
+		return ((lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length) / 1000000f;
 	}
 	
 }

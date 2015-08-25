@@ -1,6 +1,6 @@
 package test;
 
-import engine.World;
+import engine.AppContext;
 import engine.model.Face;
 import engine.model.Model;
 import org.junit.Assert;
@@ -65,7 +65,7 @@ public class OBJLoaderTest extends TestWithRenderer {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-		List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sponza.obj"));
+		List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}

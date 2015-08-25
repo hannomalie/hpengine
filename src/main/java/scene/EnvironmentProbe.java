@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 import camera.Camera;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import renderer.environmentsampler.EnvironmentSampler;
 import renderer.Renderer;
@@ -28,22 +28,22 @@ public class EnvironmentProbe extends Entity {
 	private float weight;
 	
 
-	protected EnvironmentProbe(World world, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) {
-		this.renderer = world.getRenderer();
+	protected EnvironmentProbe(AppContext appContext, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) {
+		this.renderer = appContext.getRenderer();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(world, this, center, resolution, resolution, probeIndex);
-		sampler.init(world);
+		sampler = new EnvironmentSampler(appContext, this, center, resolution, resolution, probeIndex);
+		sampler.init(appContext);
 		this.setWeight(weight);
-		super.init(world);
+		super.init(appContext);
 	}
 
-	public void draw(World world) {
-		draw(world, false);
-	};
-	public void draw(World world, boolean urgent) {
-		sampler.drawCubeMap(world, urgent);
-	};
+	public void draw(AppContext appContext) {
+		draw(appContext, false);
+	}
+	public void draw(AppContext appContext, boolean urgent) {
+		sampler.drawCubeMap(appContext, urgent);
+	}
 	
 	public void drawDebug(Program program) {
 		List<Vector3f> points = box.getPoints();
@@ -95,7 +95,7 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	private void resetAllProbes() {
-		world.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+		appContext.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}

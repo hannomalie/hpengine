@@ -1,14 +1,12 @@
 package renderer.light;
 
 import camera.Camera;
-import component.InputControllerComponent;
 import component.ModelComponent;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
@@ -58,19 +56,19 @@ public class LightFactory {
 	private FloatBuffer areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 
-	private World world;
+	private AppContext appContext;
 	private Renderer renderer;
 	private Model sphereModel;
 	private Model cubeModel;
 	
-	public LightFactory(World world) {
-		this.world = world;
-		this.renderer = world.getRenderer();
+	public LightFactory(AppContext appContext) {
+		this.appContext = appContext;
+		this.renderer = appContext.getRenderer();
 		sphereModel = null;
 		try {
-			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 			sphereModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
-			cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+			cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
 			cubeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -107,6 +105,9 @@ public class LightFactory {
         for (AreaLight areaLight : areaLights) {
             areaLight.update(seconds);
         }
+        for (PointLight pointLight : pointLights) {
+            pointLight.update(seconds);
+        }
     }
 	
 	public PointLight getPointLight(Model model) {
@@ -134,7 +135,7 @@ public class LightFactory {
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getDefaultMaterial();
 		
-		PointLight light = new PointLight(world, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
+		PointLight light = new PointLight(appContext, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
 		pointLights.add(light);
 		updatePointLightArrays();
 		return light;
@@ -207,7 +208,7 @@ public class LightFactory {
 		return getTubeLight(200.0f, 50.0f);
 	}
 	public TubeLight getTubeLight(float length, float radius) {
-		TubeLight tubeLight = new TubeLight(world, renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		TubeLight tubeLight = new TubeLight(appContext, renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
 		tubeLights.add(tubeLight);
 		return tubeLight;
 	}
@@ -229,7 +230,7 @@ public class LightFactory {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(world, renderer, position, cubeModel, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(appContext, renderer, position, cubeModel, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		areaLights.add(areaLight);
 		return areaLight;

@@ -1,7 +1,7 @@
 package camera;
 
 import config.Config;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import org.lwjgl.BufferUtils;
@@ -55,7 +55,7 @@ public class Camera extends Entity {
 		frustum = new Frustum(this);
 	}
 
-	public Camera(World world, MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
+	public Camera(AppContext appContext, MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
 		super(materialFactory, position, name, model, material);
 	}
 

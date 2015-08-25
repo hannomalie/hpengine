@@ -1,6 +1,6 @@
 package renderer;
 
-import engine.World;
+import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Model;
 import engine.model.OBJLoader;
@@ -49,9 +49,9 @@ public interface Renderer extends LifeCycle {
 
     void destroy();
 
-    void draw(World world);
+    void draw(AppContext appContext);
 
-    void update(World world, float seconds);
+    void update(AppContext appContext, float seconds);
 
     float getElapsedSeconds();
 

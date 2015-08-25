@@ -1,13 +1,13 @@
 package test;
 
-import engine.World;
+import engine.AppContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import renderer.Renderer;
 
 public class TestWithWorld {
 
-	public static World world;
+	public static AppContext appContext;
 	public static Renderer renderer;
 
 	public TestWithWorld() {
@@ -16,12 +16,13 @@ public class TestWithWorld {
 	
 	@BeforeClass
 	public static void init() {
-		world = new World(true);
-		renderer = world.getRenderer();
+        AppContext.init(true);
+		appContext = AppContext.getInstance();
+		renderer = appContext.getRenderer();
 	}
 	
 	@AfterClass
 	public static void kill() {
-		world.destroy();
+		appContext.destroy();
 	}
 }

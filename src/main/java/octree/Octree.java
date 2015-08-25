@@ -1,7 +1,7 @@
 package octree;
 
 import camera.Camera;
-import engine.World;
+import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.DataChannels;
 import engine.model.Entity;
@@ -15,8 +15,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
@@ -53,7 +51,7 @@ public class Octree implements LifeCycle, Serializable {
 
 	private transient Map<Entity, Octree.Node> entityNodeMappings = new ConcurrentHashMap<>();
 
-	transient private World world;
+	transient private AppContext appContext;
 
 	public Octree(Renderer renderer) {
 		this(new Vector3f());
@@ -72,8 +70,8 @@ public class Octree implements LifeCycle, Serializable {
 		this.size = size;
 	}
 
-	public void init(World world) {
-		LifeCycle.super.init(world);
+	public void init(AppContext appContext) {
+		LifeCycle.super.init(appContext);
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
@@ -175,13 +173,13 @@ public class Octree implements LifeCycle, Serializable {
 	}
 
 	@Override
-	public void setWorld(World world) {
-		this.world = world;
+	public void setAppContext(AppContext appContext) {
+		this.appContext = appContext;
 	}
 
 	@Override
-	public World getWorld() {
-		return world;
+	public AppContext getAppContext() {
+		return appContext;
 	}
 
 	/**

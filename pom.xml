@@ -40,7 +40,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>engine.World</mainClass>
+                            <mainClass>engine.AppContext</mainClass>
                         </manifest>
                     </archive>
                     <finalName>hpengine</finalName>
@@ -60,7 +60,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>engine.World</mainClass>
+                            <mainClass>engine.AppContext</mainClass>
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
@@ -127,7 +127,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>engine.World</mainClass>
+                            <mainClass>engine.AppContext</mainClass>
                             <arguments>
                                 <argument>-Djava.library.path="${basedir}/target"</argument>
                             </arguments>

@@ -5,7 +5,7 @@ import com.bulletphysics.dynamics.DynamicsWorld;
 import component.ModelComponent;
 import config.Config;
 import engine.Transform;
-import engine.World;
+import engine.AppContext;
 import engine.model.Entity;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
@@ -32,7 +32,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         super(renderer);
     }
 
-    public void drawDebug(Camera camera, World world, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public void drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         ///////////// firstpass
         GBuffer gBuffer = renderer.getGBuffer();
 
@@ -47,10 +47,10 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         linesProgram.setUniform("eyePosition", camera.getPosition());
 
-        if(World.DRAWSCENE_ENABLED) {
+        if(Config.DRAWSCENE_ENABLED) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
             List<Entity> visibleEntities = new ArrayList<>();
-            if (World.useFrustumCulling) {
+            if (Config.useFrustumCulling) {
                 visibleEntities.addAll(octree.getVisible(camera));
                 for (int i = 0; i < visibleEntities.size(); i++) {
                     if (!visibleEntities.get(i).isInFrustum(camera)) {
@@ -101,7 +101,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         }
 
         linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-        if (World.DRAWLIGHTS_ENABLED) {
+        if (Config.DRAWLIGHTS_ENABLED) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,1));
             for (Entity entity : pointLights) {
                 entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
@@ -116,7 +116,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
             octree.drawDebug(renderer, camera, linesProgram);
         }
 
-        if (World.DRAW_PROBES) {
+        if (Config.DRAW_PROBES) {
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
             renderer.getEnvironmentProbeFactory().drawDebug(linesProgram, octree);
@@ -135,7 +135,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         ////////////////////
 
-        drawSecondPass(camera, world.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
+        drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
         GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);

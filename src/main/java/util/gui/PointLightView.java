@@ -9,7 +9,7 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import engine.World;
+import engine.AppContext;
 import renderer.light.PointLight;
 
 import org.lwjgl.util.vector.Vector4f;
@@ -19,8 +19,8 @@ import com.alee.laf.colorchooser.WebColorChooserPanel;
 public class PointLightView extends EntityView {
 	private PointLight light;
 
-	public PointLightView(World world, DebugFrame debugFrame, PointLight light) {
-		super(world, debugFrame, light);
+	public PointLightView(AppContext appContext, DebugFrame debugFrame, PointLight light) {
+		super(appContext, debugFrame, light);
 		this.light = light;
 	}
 
