@@ -320,9 +320,9 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
+//			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
 //			drawToQuad(world.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
-//			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
@@ -660,8 +660,8 @@ public class DeferredRenderer implements Renderer {
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-				command.getProbe().draw(appContext, command.isUrgent());
-			});
+                command.getProbe().draw(appContext, command.isUrgent());
+            });
 			counter++;
 		}
 		counter = 0;
@@ -760,31 +760,83 @@ public class DeferredRenderer implements Renderer {
 	}
 
 
+    @Override
+    public void doWithOpenGLContext(Runnable runnable) {
+        doWithOpenGLContext(runnable, true);
+    }
 	@Override
-	public void doWithOpenGLContext(Runnable runnable) {
+	public void doWithOpenGLContext(Runnable runnable, boolean andBlock) {
 
 		if(util.Util.isRenderThread()) {
 			runnable.run();
 		} else {
-			SynchronousQueue<Result<OpenGLThread>> queue = addCommand(new Command<Result<OpenGLThread>>() {
-				@Override
-				public Result<OpenGLThread> execute(AppContext world) {
-					return new Result(new OpenGLThread("Create texture thread") {
-						@Override
-						public void doRun() {
-							runnable.run();
-						}
-					});
-				}
-			});
-			OpenGLThread thread = null;
-			try {
-				thread = queue.poll(5, TimeUnit.MINUTES).get();
-				thread.start();
-				thread.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+//			SynchronousQueue<Result<OpenGLThread>> queue = addCommand(new Command<Result<OpenGLThread>>() {
+//				@Override
+//				public Result<OpenGLThread> execute(AppContext world) {
+//					return new Result(new OpenGLThread("Create texture thread") {
+//						@Override
+//						public void doRun() {
+//							runnable.run();
+//						}
+//					});
+//				}
+//			});
+//			OpenGLThread thread = null;
+//			try {
+//				thread = queue.poll(5, TimeUnit.MINUTES).get();
+//				thread.start();
+//                if(andBlock) {
+//                    thread.join();
+//                }
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+
+            SynchronousQueue<Result<Object>> queue = appContext.getRenderer().addCommand(new Command<Result<Object>>() {
+                 @Override
+                 public Result<Object> execute(AppContext appContext) {
+                     runnable.run();
+                     return new Result<Object>(true);
+                 }
+             }
+            );
+            try {
+                queue.poll(5, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 	}
+
+    @Override
+    public <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable) {
+        if(util.Util.isRenderThread()) {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            final TYPE[] temp = (TYPE[])new Object[1];
+            SynchronousQueue<Result<Object>> queue = appContext.getRenderer().addCommand(new Command<Result<Object>>() {
+                 @Override
+                 public Result<Object> execute(AppContext appContext) {
+                     try {
+                         temp[0] = callable.call();
+                     } catch (Exception e) {
+                         e.printStackTrace();
+                     }
+                     return new Result<Object>(true);
+                 }
+             }
+            );
+            try {
+                queue.poll(5, TimeUnit.MINUTES);
+                return temp[0];
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
 }

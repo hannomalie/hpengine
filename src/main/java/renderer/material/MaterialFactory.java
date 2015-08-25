@@ -71,7 +71,7 @@ public class MaterialFactory {
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
- 	Material material = MATERIALS.get(materialInfo.name);
+ 		Material material = MATERIALS.get(materialInfo.name);
 		if(material != null) {
 			return material;
 		}

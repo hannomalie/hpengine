@@ -10,13 +10,19 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import engine.AppContext;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.Sys;
 import org.lwjgl.opengl.*;
+import renderer.DeferredRenderer;
 import renderer.OpenGLThread;
 import util.*;
 
 import org.apache.commons.io.FilenameUtils;
+
+import javax.sound.midi.SysexMessage;
 
 /**
  * A texture to be bound within JOGL. This object is responsible for 
@@ -56,7 +62,7 @@ public class Texture implements Serializable {
     /** The ratio of the height of the image to the texture */
     protected float heightRatio;
     
-    protected byte[] data;
+    protected volatile byte[] data;
     protected int dstPixelFormat;
     protected int srcPixelFormat;
     protected int minFilter;
@@ -83,7 +89,9 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
-      GL11.glBindTexture(target, textureID);
+        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+            GL11.glBindTexture(target, textureID);
+        });
     }
     
     /**
@@ -223,6 +231,10 @@ public class Texture implements Serializable {
 				upload(buffer());
 			}
 		}.start();
+
+//        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+//            upload(buffer());
+//        });
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
@@ -230,40 +242,47 @@ public class Texture implements Serializable {
 	}
 	
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
-        bind();
-        if (target == GL11.GL_TEXTURE_2D) 
-        { 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR); 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter); 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT); 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-//            GL11.glTexParameteri(target, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
-        }
+        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
 
-        int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-    	//internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
-        if(srgba) {
-        	internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-        	//internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
-        }
-		synchronized (data) {
-			GL11.glTexImage2D(target,
-                      0, 
-                      internalformat,
-                      get2Fold(getImageWidth()), 
-                      get2Fold(getImageHeight()), 
-                      0, 
-                      srcPixelFormat, 
-                      GL11.GL_UNSIGNED_BYTE, 
-                      textureBuffer);
-		}
+            bind();
+            if (target == GL11.GL_TEXTURE_2D)
+            {
+                GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+                GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+//            GL11.glTexParameteri(target, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
+            }
+
+            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+            if(srgba) {
+                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+                //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+            }
+            synchronized (data) {
+                GL11.glTexImage2D(target,
+                        0,
+                        internalformat,
+                        get2Fold(getImageWidth()),
+                        get2Fold(getImageHeight()),
+                        0,
+                        srcPixelFormat,
+                        GL11.GL_UNSIGNED_BYTE,
+                        textureBuffer);
+            }
 //        if(mipmapsGenerated) {
 //            uploadMipMaps(internalformat);
 //        } else {
 //            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 //            downloadMipMaps();
 //        }
-        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+//            System.out.println("Finished tex upload " + textureID);
+//            ReflectionToStringBuilder reflectionToStringBuilder = new ReflectionToStringBuilder(this);
+//            reflectionToStringBuilder.setExcludeFieldNames(new String[]{"data"});
+//            System.out.println(ReflectionToStringBuilder.toString(data));
+        });
 	}
 
     private void downloadMipMaps() {

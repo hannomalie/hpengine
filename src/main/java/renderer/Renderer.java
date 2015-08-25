@@ -23,6 +23,7 @@ import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.SynchronousQueue;
 
 public interface Renderer extends LifeCycle {
@@ -363,4 +364,8 @@ public interface Renderer extends LifeCycle {
     }
 
     void doWithOpenGLContext(Runnable runnable);
+
+    void doWithOpenGLContext(Runnable runnable, boolean andBlock);
+
+    <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable);
 }

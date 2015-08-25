@@ -14,6 +14,8 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import engine.AppContext;
+import engine.model.Entity;
+import engine.model.Model;
 import renderer.command.LoadModelCommand;
 import renderer.command.LoadModelCommand.EntityListResult;
 
@@ -71,10 +73,12 @@ public class AddEntitiyView extends WebPanel {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
 
-								SynchronousQueue<EntityListResult> queue = appContext.getRenderer().addCommand(
-										new LoadModelCommand(chosenFile, nameField.getText()));
+//								SynchronousQueue<EntityListResult> queue = appContext.getRenderer().addCommand(
+//										new LoadModelCommand(chosenFile, nameField.getText()));
+//
+//								return queue.poll(5, TimeUnit.MINUTES);
 
-								return queue.poll(5, TimeUnit.MINUTES);
+                                return new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
 							}
 
 							@Override

@@ -23,12 +23,16 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
+import engine.AppContext;
 import renderer.DeferredRenderer;
 import renderer.Renderer;
+import renderer.command.Command;
+import renderer.command.Result;
 import renderer.material.Material;
 
 import org.apache.commons.io.FileUtils;
@@ -127,12 +131,11 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        final int[] tempId = {-1};
-
-        renderer.doWithOpenGLContext(() -> tempId[0] = GL11.glGenTextures());
-
-        return tempId[0];
-    } 
+        return renderer.calculateWithOpenGLContext(() -> {
+                return GL11.glGenTextures();
+            }
+        );
+    }
     
     /**
      * Load a texture

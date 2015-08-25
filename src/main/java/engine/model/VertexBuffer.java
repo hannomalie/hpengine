@@ -1,13 +1,17 @@
 package engine.model;
 
+import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
+import renderer.command.Command;
+import renderer.command.Result;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
+import java.util.concurrent.SynchronousQueue;
 
 import static org.lwjgl.opengl.GL11.glFlush;
 import static org.lwjgl.opengl.GL32.glFenceSync;
@@ -30,8 +34,8 @@ public class VertexBuffer {
 		}
 	}
 
-	private int vertexBuffer = 0;
-	private int vertexArray = 0;
+	private volatile int vertexBuffer = 0;
+	private volatile int vertexArray = 0;
 	private FloatBuffer buffer;
 	private int verticesCount;
 	public EnumSet<DataChannels> channels;
@@ -134,18 +138,34 @@ public class VertexBuffer {
 	}
 	
 	public VertexBuffer upload() {
-		// VBO
-		vertexBuffer = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
-		buffer.rewind();
+//        SynchronousQueue<Result<Object>> queue = AppContext.getInstance().getRenderer().addCommand(new Command<Result<Object>>() {
+//            @Override
+//            public Result<Object> execute(AppContext appContext) {
+//                vertexBuffer = GL15.glGenBuffers();
+//                vertexArray = GL30.glGenVertexArrays();
+//
+//                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+//                buffer.rewind();
+//                GL30.glBindVertexArray(vertexArray);
+//                setUpAttributes();
+//                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+//                GL30.glBindVertexArray(0);
+//                return new Result<Object>(true);
+//            }
+//        });
+//        queue.poll();
 
-		// VAO, yea
-		vertexArray = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(vertexArray);
-		setUpAttributes();
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-		GL30.glBindVertexArray(0);
+		AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+            vertexBuffer = GL15.glGenBuffers();
+            vertexArray = GL30.glGenVertexArrays();
 
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+            buffer.rewind();
+            GL30.glBindVertexArray(vertexArray);
+            setUpAttributes();
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+            GL30.glBindVertexArray(0);
+		});
 		return this;
 	}
 	

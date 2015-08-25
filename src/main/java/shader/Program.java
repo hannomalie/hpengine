@@ -65,45 +65,47 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-		clearUniforms();
-		setId(GL20.glCreateProgram());
-		
-		try {
-			GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
-		} catch (Exception e) {
+		AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+			clearUniforms();
+			setId(GL20.glCreateProgram());
+
 			try {
-				GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, GL20.GL_VERTEX_SHADER));
-			} catch (Exception e1) {
-				System.err.println("Not able to load default vertex shader, so what else could be done...");
-//				System.exit(-1);
-			}
-		}
-		try {
-			GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
-		} catch (Exception e) {
-			try {
-				GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
-			} catch (Exception e1) {
-				System.err.println("Not able to load default vertex shader, so what else could be done...");
-//				System.exit(-1);
-			}
-		}
-		if (geometryShaderName != null && geometryShaderName != "") {
-			try {
-				GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+				GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
 			} catch (Exception e) {
-				System.err.println("Not able to load geometry shader, so what else could be done...");
+				try {
+					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, GL20.GL_VERTEX_SHADER));
+				} catch (Exception e1) {
+					System.err.println("Not able to load default vertex shader, so what else could be done...");
 //				System.exit(-1);
+				}
 			}
-		}
-		
-		bindShaderAttributeChannels();
-		
-		GL20.glLinkProgram(id);
-		GL20.glValidateProgram(id);
+			try {
+				GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+			} catch (Exception e) {
+				try {
+					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+				} catch (Exception e1) {
+					System.err.println("Not able to load default vertex shader, so what else could be done...");
+//				System.exit(-1);
+				}
+			}
+			if (geometryShaderName != null && geometryShaderName != "") {
+				try {
+					GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+				} catch (Exception e) {
+					System.err.println("Not able to load geometry shader, so what else could be done...");
+//				System.exit(-1);
+				}
+			}
+
+			bindShaderAttributeChannels();
+
+			GL20.glLinkProgram(id);
+			GL20.glValidateProgram(id);
 
 //		use(); // CAN CAUSE INVALID OPERATION - TODO: CHECK OUT WHY
-		addFileListeners();
+			addFileListeners();
+		});
 	}
 	
 	private void addFileListeners() {

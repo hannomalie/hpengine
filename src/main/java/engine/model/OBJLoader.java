@@ -1,5 +1,6 @@
 package engine.model;
 
+import engine.AppContext;
 import renderer.Renderer;
 import renderer.material.Material;
 import renderer.material.Material.MAP;
@@ -134,13 +135,14 @@ public class OBJLoader {
             	renderer.getMaterialFactory().putAll(parseMaterialLib(line, f));
             } else if (line.startsWith("usemtl ")) {
 		    	  String materialName = line.replaceAll("usemtl ", "");
-		    	  currentMaterial = renderer.getMaterialFactory().get(materialName);
+				currentMaterial = AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> renderer.getMaterialFactory().get(materialName));
+//		    	  currentMaterial = renderer.getMaterialFactory().get(materialName);
 		    	  if(currentMaterial == null) {
 		    		  LOGGER.log(Level.INFO, "No material found!!!");
 		    		  currentMaterial = renderer.getMaterialFactory().getDefaultMaterial();
 		    	  }
 		    	  if(currentState != State.READING_FACE) {
-		    		  model.setMaterial(currentMaterial);  
+		    		  model.setMaterial(currentMaterial);
 		    	  } else {
 		    		  model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
 			    	  model.setMaterial(currentMaterial);

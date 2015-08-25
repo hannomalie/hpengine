@@ -110,10 +110,11 @@ public class AppContext {
 		init(false);
 	}
 	public static void init(boolean headless) {
-		instance = new AppContext(headless);
+		new AppContext(headless);
 	}
 
 	private AppContext(boolean headless) {
+        instance = this;
 		initWorkDir();
 		entityFactory = new EntityFactory(this);
 		renderer = new DeferredRenderer(headless);
@@ -320,7 +321,6 @@ public class AppContext {
 	}
 	
 
-	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
 	private boolean STRG_PRESSED_LAST_FRAME = false;
 	private void update(float seconds) {
 
@@ -369,14 +369,6 @@ public class AppContext {
 		Renderer.exitOnGLError("update");
 	}
 
-	private void fireRenderProbeCommands() {
-//		if(!CONTINUOUS_DRAW_PROBES) { return; }
-		for(EnvironmentProbe probe: renderer.getEnvironmentProbeFactory().getProbes()) {
-			renderer.addRenderProbeCommand(probe, true);
-		}
-	}
-	
-
 	public Renderer getRenderer() {
 		return renderer;
 	}
@@ -401,7 +393,7 @@ public class AppContext {
 				return new Result(new Object());
 			}
 		});
-		Result waitForIt = result.poll();
+        result.poll();
 		restoreWorldCamera();
 	}
 

@@ -25,17 +25,8 @@ public class LoadModelCommand implements Command<EntityListResult> {
 		EntityListResult result = new EntityListResult();
 		try {
 			List<Model> models = renderer.getOBJLoader().loadTexturedModel(file);
-			List<Entity> entities = new ArrayList<Entity>();
-
+			List<Entity> entities = new ArrayList<>();
 			entities.addAll(appContext.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
-//			entities.add(renderer.getEntityFactory().getEntity(name, models));
-
-//			for (int i = 0; i < models.size(); i++) {
-//				Model model = models.get(i);
-//				String counter = i == 0 ? "" : "_" +i + model.getName() ;
-//				entities.add(renderer.getEntityFactory().getEntity(new Vector3f(), name + counter, model, model.getMaterial()));
-//			}
-			
 			return new EntityListResult(entities);
 			
 		} catch (IOException e) {
