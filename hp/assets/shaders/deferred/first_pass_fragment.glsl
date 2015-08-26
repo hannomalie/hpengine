@@ -14,18 +14,6 @@ uniform bool isSelected = false;
 uniform bool useParallax;
 uniform bool useSteepParallax;
 
-uniform float normalMapWidth = 1;
-uniform float normalMapHeight = 1;
-
-uniform float diffuseMapWidth = 1;
-uniform float diffuseMapHeight = 1;
-
-uniform float specularMapWidth = 1;
-uniform float specularMapHeight = 1;
-
-uniform float roughnessMapWidth = 1;
-uniform float roughnessMapHeight = 1;
-
 uniform float parallaxScale = 0.04;
 uniform float parallaxBias = 0.02;
 
@@ -264,8 +252,8 @@ void main(void) {
 	out_position = viewMatrix * position_world;
 	
 #ifdef use_normalMap
-		UV.x = UV.x * normalMapWidth;
-		UV.y = UV.y * normalMapHeight;
+		UV.x = UV.x;
+		UV.y = UV.y;
 		//UV = UV + time/2000.0;
 #endif
 
@@ -386,8 +374,8 @@ void main(void) {
 	vec4 color = vec4(materialDiffuseColor, 1);
 #ifdef use_diffuseMap
 	UV = texCoord;
-	UV.x = texCoord.x * diffuseMapWidth;
-	UV.y = texCoord.y * diffuseMapHeight;
+	UV.x = texCoord.x;
+	UV.y = texCoord.y;
 	UV += uvParallax;
 	color = texture(diffuseMap, UV);
 	if(color.a<0.1)
@@ -404,16 +392,16 @@ void main(void) {
 
 	out_position.w = materialRoughness;
 #ifdef use_roughnessMap
-	UV.x = texCoord.x * roughnessMapWidth;
-	UV.y = texCoord.y * roughnessMapHeight;
+	UV.x = texCoord.x;
+	UV.y = texCoord.y;
 	UV = texCoord + uvParallax;
 	float r = texture2D(roughnessMap, UV).x;
 	out_position.w = materialRoughness*r;
 #endif
 	
 #ifdef use_specularMap
-	UV.x = texCoord.x * specularMapWidth;
-	UV.y = texCoord.y * specularMapHeight;
+	UV.x = texCoord.x * specular;
+	UV.y = texCoord.y * specular;
 	UV = texCoord + uvParallax;
 	vec3 specularSample = texture2D(specularMap, UV).xyz;
 	float glossiness = length(specularSample)/length(vec3(1,1,1));

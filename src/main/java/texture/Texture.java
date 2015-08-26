@@ -24,19 +24,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import javax.sound.midi.SysexMessage;
 
-/**
- * A texture to be bound within JOGL. This object is responsible for 
- * keeping track of a given OpenGL texture and for calculating the
- * texturing mapping coordinates of the full image.
- * 
- * Since textures need to be powers of 2 the actual texture may be
- * considerably bigged that the source image and hence the texture
- * mapping coordinates need to be adjusted to matchup drawing the
- * sprite against the texture.
- *
- * @author Kevin Glass
- * @author Brian Matzon
- */
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = false;
@@ -45,23 +32,11 @@ public class Texture implements Serializable {
 
     private volatile boolean mipmapsGenerated = false;
 
-    /** The GL target type */
-	protected int target; 
-    /** The GL texture ID */
+	protected int target;
     transient protected int textureID;
-	/** The height of the image */
     protected int height;
-    /** The width of the image */
     protected int width;
-    /** The width of the texture */
-    protected int texWidth;
-    /** The height of the texture */
-    protected int texHeight;
-    /** The ratio of the width of the image to the texture */
-    protected float widthRatio;
-    /** The ratio of the height of the image to the texture */
-    protected float heightRatio;
-    
+
     protected volatile byte[] data;
     protected int dstPixelFormat;
     protected int srcPixelFormat;
@@ -93,102 +68,21 @@ public class Texture implements Serializable {
             GL11.glBindTexture(target, textureID);
         });
     }
-    
-    /**
-     * Set the height of the image
-     *
-     * @param height The height of the image
-     */
+
     public void setHeight(int height) {
         this.height = height;
-        setHeight();
     }
-    
-    /**
-     * Set the width of the image
-     *
-     * @param width The width of the image
-     */
     public void setWidth(int width) {
         this.width = width;
-        setWidth();
     }
     
-    /**
-     * Get the height of the original image
-     *
-     * @return The height of the original image
-     */
-    public int getImageHeight() {
+    public int getHeight() {
         return height;
     }
-    
-    /** 
-     * Get the width of the original image
-     *
-     * @return The width of the original image
-     */
-    public int getImageWidth() {
+    public int getWidth() {
         return width;
     }
     
-    /**
-     * Get the height of the physical texture
-     *
-     * @return The height of physical texture
-     */
-    public float getHeight() {
-        return heightRatio;
-    }
-    
-    /**
-     * Get the width of the physical texture
-     *
-     * @return The width of physical texture
-     */
-    public float getWidth() {
-        return widthRatio;
-    }
-    
-    /**
-     * Set the height of this texture 
-     *
-     * @param texHeight The height of the texture
-     */
-    public void setTextureHeight(int texHeight) {
-        this.texHeight = texHeight;
-        setHeight();
-    }
-    
-    /**
-     * Set the width of this texture 
-     *
-     * @param texWidth The width of the texture
-     */
-    public void setTextureWidth(int texWidth) {
-        this.texWidth = texWidth;
-        setWidth();
-    }
-    
-    /**
-     * Set the height of the texture. This will update the
-     * ratio also.
-     */
-    private void setHeight() {
-        if (texHeight != 0) {
-            heightRatio = ((float) height)/texHeight;
-        }
-    }
-    
-    /**
-     * Set the width of the texture. This will update the
-     * ratio also.
-     */
-    private void setWidth() {
-        if (texWidth != 0) {
-            widthRatio = ((float) width)/texWidth;
-        }
-    }
 
     public void setData(byte[] data) {
         this.data = data;
@@ -202,20 +96,6 @@ public class Texture implements Serializable {
 		this.srcPixelFormat = srcPixelFormat;
 	}
 	
-    /**
-     * Get the closest greater power of 2 to the fold number
-     * 
-     * @param fold The target number
-     * @return The power of 2
-     */
-    protected int get2Fold(int fold) {
-        int ret = 2;
-        while (ret < fold) {
-            ret *= 2;
-        }
-        return ret;
-    }
-
 	public ByteBuffer buffer() {
 		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
 		imageBuffer.order(ByteOrder.nativeOrder());
@@ -264,8 +144,8 @@ public class Texture implements Serializable {
                 GL11.glTexImage2D(target,
                         0,
                         internalformat,
-                        get2Fold(getImageWidth()),
-                        get2Fold(getImageHeight()),
+                        getWidth(),
+                        getHeight(),
                         0,
                         srcPixelFormat,
                         GL11.GL_UNSIGNED_BYTE,
@@ -282,8 +162,8 @@ public class Texture implements Serializable {
 	}
 
     private void downloadMipMaps() {
-        int currentWidth = texWidth/2;
-        int currentHeight = texHeight/2;
+        int currentWidth = width/2;
+        int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
             ByteBuffer tempBuffer = BufferUtils.createByteBuffer(currentHeight * currentWidth * 4);
             tempBuffer.rewind();
@@ -296,8 +176,8 @@ public class Texture implements Serializable {
     }
 
     private void uploadMipMaps(int internalformat) {
-        int currentWidth = texWidth/2;
-        int currentHeight = texHeight/2;
+        int currentWidth = width/2;
+        int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
             ByteBuffer tempBuffer = BufferUtils.createByteBuffer(currentHeight * currentWidth * 4);
             tempBuffer.rewind();
@@ -306,8 +186,8 @@ public class Texture implements Serializable {
             GL11.glTexImage2D(target,
                     0,
                     internalformat,
-                    get2Fold(currentWidth),
-                    get2Fold(currentHeight),
+                    currentWidth,
+                    currentHeight,
                     0,
                     srcPixelFormat,
                     GL11.GL_UNSIGNED_BYTE,

@@ -1427,7 +1427,7 @@ public class DebugFrame {
 				List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
 						.toArray());
 				texture.Texture texture = (texture.Texture) textures.get(row);
-				return String.format("Texture %d x %d", texture.getImageWidth(), texture.getImageHeight());
+				return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
 			}
 
 			public String getColumnName(int column) {

@@ -52,13 +52,13 @@ public class OBJLoaderTest extends TestWithRenderer {
 	@Test
 	public void loadTextureFromJar() throws IOException {
 		texture.Texture texture = renderer.getTextureFactory().getTexture("src/assets/textures/stone_diffuse.png");
-		Assert.assertEquals(512, texture.getImageHeight());
+		Assert.assertEquals(512, texture.getHeight());
 	}
 	
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
 		texture.Texture texture = renderer.getTextureFactory().getTexture("C://default.png");
-		Assert.assertEquals(1, texture.getImageHeight());
+		Assert.assertEquals(1, texture.getHeight());
 	}
 	
 	@Test

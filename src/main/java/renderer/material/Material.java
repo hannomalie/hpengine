@@ -145,8 +145,6 @@ public class Material implements Serializable {
 			Texture texture = entry.getValue();
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
 			texture.bind();
-			program.setUniform(map.shaderVariableName + "Width", texture.getWidth());
-			program.setUniform(map.shaderVariableName + "Height", texture.getHeight());
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), program.getId(), map.textureSlot));
 		}
 

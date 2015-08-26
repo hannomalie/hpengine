@@ -415,36 +415,26 @@ public class TextureFactory {
         ByteBuffer imageBuffer = null; 
         WritableRaster raster;
         BufferedImage texImage;
-        
-        int texWidth = 2;
-        int texHeight = 2;
-        
-        // find the closest power of 2 for the width and height
-        // of the produced texture
-        while (texWidth < bufferedImage.getWidth()) {
-            texWidth *= 2;
-        }
-        while (texHeight < bufferedImage.getHeight()) {
-            texHeight *= 2;
-        }
-        
-        texture.setTextureHeight(texHeight);
-        texture.setTextureWidth(texWidth);
+
+        int width = bufferedImage.getWidth();
+        texture.setWidth(width);
+        int height = bufferedImage.getHeight();
+        texture.setHeight(height);
         
         // create a raster that can be used by OpenGL as a source
         // for a texture
         if (bufferedImage.getColorModel().hasAlpha()) {
-            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,texWidth,texHeight,4,null);
+            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,width,height,4,null);
             texImage = new BufferedImage(glAlphaColorModel,raster,false,new Hashtable());
         } else {
-            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,texWidth,texHeight,3,null);
+            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,width,height,3,null);
             texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
         }
             
         // copy the source image into the produced image
         Graphics g = texImage.getGraphics();
         g.setColor(new Color(0f,0f,0f,0f));
-        g.fillRect(0,0,texWidth,texHeight);
+        g.fillRect(0,0,width,height);
         g.drawImage(bufferedImage,0,0,null);
         
         // build a byte buffer from the temporary image 
@@ -475,8 +465,8 @@ public class TextureFactory {
             texHeight *= 2;
         }
 
-    	cubeMap.setTextureHeight(texHeight);
-    	cubeMap.setTextureWidth(texWidth);
+        cubeMap.setWidth(texWidth);
+    	cubeMap.setHeight(texHeight);
 
     	int tileWidthPoT = get2Fold(texWidth/4);
     	int tileHeightPoT = get2Fold(texHeight/3);
