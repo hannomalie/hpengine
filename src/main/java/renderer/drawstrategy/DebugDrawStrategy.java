@@ -54,6 +54,8 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
     public void drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         GBuffer gBuffer = renderer.getGBuffer();
 
+        renderer.getLightFactory().renderAreaLightShadowMaps(octree);
+
         gBuffer.use(true);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_BLEND);
@@ -135,8 +137,9 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             for (AreaLight entity : areaLights) {
                 entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
 
-                renderer.batchLine(new Vector3f(),
-                        Vector3f.add(new Vector3f(), new Vector3f(entity.getViewDirection()), null));
+                renderer.batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(0.1f));
+                renderer.batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(0.1f));
+                renderer.batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(0.1f));
                 linesProgram.setUniform("diffuseColor", new Vector3f(1,0,1));
                 linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
                 renderer.drawLines(linesProgram);
@@ -164,12 +167,13 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         }
 
         linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-        renderer.batchLine(new Vector3f(), new Vector3f(15, 0, 0));
-        renderer.batchLine(new Vector3f(), new Vector3f(0, 15, 0));
-        renderer.batchLine(new Vector3f(), new Vector3f(0, 0, -15));
-        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getViewDirection())).scale(15));
-        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getRightDirection())).scale(15));
-        renderer.batchLine(new Vector3f(), (Vector3f) ((Vector3f) (camera.getUpDirection())).scale(15));
+        renderer.batchLine(new Vector3f(-1000, 0, 0), new Vector3f(1000, 0, 0));
+        renderer.batchLine(new Vector3f(0, -1000, 0), new Vector3f(0, 1000, 0));
+        renderer.batchLine(new Vector3f(0, 0, -1000), new Vector3f(0, 0, 1000));
+//        renderer.batchLine(new Vector3f(), (Vector3f) camera.getViewDirection().scale(15));
+//        renderer.batchLine(new Vector3f(), (Vector3f) camera.getRightDirection().scale(15));
+//        renderer.batchLine(new Vector3f(), (Vector3f) camera.getUpDirection().scale(15));
+
         renderer.drawLines(linesProgram);
         dynamicsWorld.debugDrawWorld();
         renderer.drawLines(linesProgram);

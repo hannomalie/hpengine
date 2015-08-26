@@ -52,7 +52,7 @@ void main()
 	
 	float dx = dFdx(depth);
 	float dy = dFdy(depth);
-	moment2 += 0.25*(dx*dx+dy*dy);
+	//moment2 += 0.25*(dx*dx+dy*dy);
     //out_Color = vec4(moment1,moment2,packColor(normal_world),1);
     
     out_Color = vec4(moment1,moment2,0,0);//encode(normal_world));

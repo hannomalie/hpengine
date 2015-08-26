@@ -59,7 +59,8 @@ public class LightFactory {
 	private AppContext appContext;
 	private Renderer renderer;
 	private Model sphereModel;
-	private Model cubeModel;
+    private Model cubeModel;
+    private Model planeModel;
 	
 	public LightFactory(AppContext appContext) {
 		this.appContext = appContext;
@@ -68,8 +69,10 @@ public class LightFactory {
 		try {
 			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 			sphereModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
-			cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-			cubeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
+            cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+            cubeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
+            planeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
+            planeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -89,7 +92,7 @@ public class LightFactory {
 		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 			int renderedTextureTemp = GL11.glGenTextures();
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, AREALIGHT_SHADOWMAP_RESOLUTION, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 
 			
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -230,7 +233,7 @@ public class LightFactory {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(appContext, renderer, position, cubeModel, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(appContext, renderer, position, planeModel, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		areaLights.add(areaLight);
 		return areaLight;

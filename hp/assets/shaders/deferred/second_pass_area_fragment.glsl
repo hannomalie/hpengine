@@ -116,18 +116,57 @@ vec2 hammersley2d(uint i, int N) {
 	return vec2(float(i)/float(N), radicalInverse_VdC(i));
 }
 
-vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDistance) {
+vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDistance, float NdotL) {
 	vec3 result = vec3(0,0,0);
 	float blurDistance = clamp(inBlurDistance, 0.0, 0.002);
 	const int N = 16;
 	const float bias = 0.005;
 	for (int i = 0; i < N; i++) {
-		result += (texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/50).x > referenceDepth - bias ? 1 : 0);
+		float texel = (texture(sampler, texCoords + (hammersley2d(i, N)-0.5)/50).x);
+		result += texel < referenceDepth - bias ? 0 : 1;
 	}
 	return result/N;
 }
+float reduceLightBleeding(float p_max, float amount)
+{
+    return clamp((p_max-amount)/ (1.0-amount), 0.0, 1.0);
+}
+vec3 VSM(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDistance, float NdotL) {
+	vec4 shadowMapSample = blur(shadowMap, texCoords, 0.00125);
+	float M1 = shadowMapSample.x;
+	float M2 = shadowMapSample.y;
+	float M12 = M1 * M1;
 
-vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
+	float p = 0.0;
+	float lightIntensity = 1.0;
+	const float u_minVariance = 0.00001;
+	const float u_lightBleedingLimit = 0.1;
+	if(referenceDepth >= M1)
+	{
+		// standard deviation
+		float sigma2 = M2 - M12;
+
+		// when standard deviation is smaller than epsilon
+		if(sigma2 < u_minVariance)
+		{
+			sigma2 = u_minVariance;
+		}
+
+		// chebyshev inequality - upper bound on the
+		// probability that fragment is occluded
+		float intensity = sigma2 / (sigma2 + pow(referenceDepth - M1, 2));
+
+		// reduce light bleeding
+		lightIntensity = reduceLightBleeding(intensity, u_lightBleedingLimit);
+	}
+
+	/////////////////////////////////////////////////////////
+
+	return vec3(lightIntensity);
+}
+
+
+vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, float NdotL)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
   	  	float fadeOut = 1-max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y));
@@ -140,13 +179,16 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	
 	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
 	
-	float bias = 0.0053;
-	/*if (dist <= momentsUnblurred.x + bias) {
-		return vec3(1.0,1.0,1.0);
-	} else*/
+//	float bias = 0.0053;
+//	if (momentsUnblurred.x + bias < dist) {
+//		return vec3(0.0,0.0,0.0);
+//	} else {
+//		return vec3(1,1,1);
+//	}
 	
-//	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.0025); }
-	
+	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.001, NdotL); }
+//	{ return VSM(shadowMap, ShadowCoordPostW.xy, dist, 0.25, NdotL); }
+
 	float variance = moments.y - (moments.x*moments.x);
 	variance = max(variance,0.0012);
 
@@ -155,8 +197,8 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords)
 	
 	//p_max = linstep(0.2, 1.0, p_max);
 
-	float darknessFactor = 120.0;
-	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
+	float darknessFactor = 320.0;
+	p_max = clamp(exp(-darknessFactor * (dist - moments.x)), 0.0, 1.0);
 
 	return vec3(p_max,p_max,p_max);
 }
@@ -182,7 +224,7 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	lVector[3] = normalize(leftBottom - position);
 	lVector[2] = normalize(rightBottom - position); // clockwise oriented all the lights rectangle points
 	float tmp = dot( lVector[ 0 ], cross( ( leftBottom - leftUpper ).xyz, ( rightUpper - leftUpper ).xyz ) );
-	if ( tmp > 0.0 ) {
+	if ( tmp < 0.0 ) {
 		discard;
 	} else {
 		vec3 lightVec = vec3( 0.0 );
@@ -193,8 +235,8 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 			lightVec += acos( dot( v0, v1 ) ) * normalize( cross( v0, v1 ) );
 	
 		}
-		
-	 	vec3 L = lightVec;
+
+	 	vec3 L = -lightVec;
 	    vec3 H = normalize(L + V);
     	vec3 N = normal;
 	    vec3 P = position;
@@ -269,8 +311,8 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	    vec2 shadowMapTexCoords = nearest2D / vec2(512, 512); // TODO: NO HARDCODED VALUES, DAMMIT
         shadowMapTexCoords += 1;
 	    shadowMapTexCoords /=2;
-		vec3 visibility = getVisibility(depthInLightSpace, positionShadow, texCoords);
-        
+		vec3 visibility = getVisibility(depthInLightSpace, positionShadow, texCoords, NdotL);
+
         float specular = clamp(F*D*G/(4*(NdotL*NdotV)), 0.0, 1.0);
         
 		return visibility * (diffuse * diffuseColor + diffuse * specularColor * specular * clamp(length(overheadVec2), 0.0, 1.0));

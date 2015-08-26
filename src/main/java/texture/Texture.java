@@ -278,10 +278,6 @@ public class Texture implements Serializable {
 //            downloadMipMaps();
 //        }
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-//            System.out.println("Finished tex upload " + textureID);
-//            ReflectionToStringBuilder reflectionToStringBuilder = new ReflectionToStringBuilder(this);
-//            reflectionToStringBuilder.setExcludeFieldNames(new String[]{"data"});
-//            System.out.println(ReflectionToStringBuilder.toString(data));
         });
 	}
 

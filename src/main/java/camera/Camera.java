@@ -55,7 +55,7 @@ public class Camera extends Entity {
 		frustum = new Frustum(this);
 	}
 
-	public Camera(AppContext appContext, MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
+	public Camera(MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
 		super(materialFactory, position, name, model, material);
 	}
 

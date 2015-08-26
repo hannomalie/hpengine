@@ -4,6 +4,7 @@ import camera.Camera;
 import camera.Frustum;
 import component.ModelComponent;
 import engine.AppContext;
+import engine.model.Entity;
 import engine.model.Model;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -24,15 +25,18 @@ public class AreaLight extends Camera {
 	transient private RenderTarget renderTarget;
 
 	protected AreaLight(AppContext appContext, Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(appContext, renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
+		super(renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
         projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);
 		setScale(scale);
-		setNear(0.1f);
-        setFar(500f);
-        setFov(60f);
+		setNear(1f);
+        setFar(5000f);
+        setFov(90f);
         setRatio(1);
+        Entity plane = AppContext.getInstance().getEntityFactory().getEntity(model);
+        plane.setPosition(new Vector3f(0, 0, -getNear()));
+        plane.setParent(this);
 		init(appContext);
 		counter++;
 	}
@@ -55,10 +59,14 @@ public class AreaLight extends Camera {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
+        for(Entity entity : getChildren()) {
+            entity.getComponentOption(ModelComponent.class).ifPresent(component ->{
+                component.draw(camera);
+            });
+        }
 	}
 
 	public void draw(Camera camera, Program program) {
-//		program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});

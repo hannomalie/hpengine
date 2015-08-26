@@ -184,9 +184,11 @@ public class VertexBuffer {
 	}
 	
 	public void drawDebug() {
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
 		GL30.glBindVertexArray(vertexArray);
-		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 	}
 
 	public void drawInstanced(int instanceCount) {

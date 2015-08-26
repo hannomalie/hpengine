@@ -236,6 +236,7 @@ public class Transform implements Serializable {
 		temp.setIdentity();
 		Matrix4f.translate(position, temp, temp);
 		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
+        temp.scale(new Vector3f(1,1,1));
 
 		if(parent != null) {
 			parentMatrix = parent.getTranslationRotation();
