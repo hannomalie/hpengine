@@ -18,7 +18,7 @@ import java.util.logging.Level;
 
 import static log.ConsoleLogger.getLogger;
 
-public class OctreeTest extends TestWithWorld {
+public class OctreeTest extends TestWithAppContext {
 	
 	@Test
 	public void generatingBox() {

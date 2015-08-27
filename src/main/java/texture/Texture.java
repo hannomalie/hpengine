@@ -1,32 +1,23 @@
 package texture;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import engine.AppContext;
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
+import org.lwjgl.opengl.EXTTextureSRGB;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+import renderer.OpenGLThread;
+import util.CompressionUtils;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
-import engine.AppContext;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.Sys;
-import org.lwjgl.opengl.*;
-import renderer.DeferredRenderer;
-import renderer.OpenGLThread;
-import util.*;
-
-import org.apache.commons.io.FilenameUtils;
-
-import javax.sound.midi.SysexMessage;
-
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
-    public static final boolean COMPILED_TEXTURES = false;
+    public static final boolean COMPILED_TEXTURES = true;
 
     private String path = "";
 
@@ -98,23 +89,26 @@ public class Texture implements Serializable {
 	
 	public ByteBuffer buffer() {
 		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
-		imageBuffer.order(ByteOrder.nativeOrder());
+//		imageBuffer.order(ByteOrder.nativeOrder());
 		imageBuffer.put(data, 0, data.length);
 		imageBuffer.flip();
 		return imageBuffer;
 	}
 
-	public void upload() {
-		new OpenGLThread() {
-			@Override
-			public void doRun() {
-				upload(buffer());
-			}
-		}.start();
+    public void upload() {
+        upload(false);
+    }
+	public void upload(boolean srgba) {
+//		new OpenGLThread() {
+//			@Override
+//			public void doRun() {
+//				upload(buffer());
+//			}
+//		}.start();
 
-//        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-//            upload(buffer());
-//        });
+        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+            upload(buffer(), srgba);
+        });
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
@@ -158,7 +152,7 @@ public class Texture implements Serializable {
 //            downloadMipMaps();
 //        }
             GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        });
+        }, false);
 	}
 
     private void downloadMipMaps() {
@@ -209,7 +203,10 @@ public class Texture implements Serializable {
         return data;
     }
 
-	public static Texture read(String resourceName, int textureId) {
+    public static Texture read(String resourceName, int textureId) {
+        return read(resourceName, textureId, false);
+    }
+    public static Texture read(String resourceName, int textureId, boolean srgba) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
@@ -220,7 +217,7 @@ public class Texture implements Serializable {
 			Texture texture = (Texture) in.readObject();
 			in.close();
 			texture.textureID = textureId;
-			texture.upload();
+			texture.upload(srgba);
 			return texture;
 		} catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
 			e.printStackTrace();

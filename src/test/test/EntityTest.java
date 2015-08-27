@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.List;
 
-public class EntityTest extends test.TestWithWorld {
+public class EntityTest extends TestWithAppContext {
 
 	@Test
 	public void writeAndRead() throws Exception {

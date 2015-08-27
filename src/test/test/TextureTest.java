@@ -8,7 +8,7 @@ import util.stopwatch.StopWatch;
 
 import java.io.IOException;
 
-public class TextureTest extends TestWithRenderer {
+public class TextureTest extends TestWithAppContext {
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
@@ -19,10 +19,11 @@ public class TextureTest extends TestWithRenderer {
 		String filename = "wood_diffuse.hptexture";
 
 		Assert.assertTrue(Texture.write(texture, filename));
+
+        Assert.assertTrue(appContext.getRenderer().getTextureFactory().removeTexture("hp/assets/textures/wood_diffuse.png"));
 	      
-        texture = renderer.getTextureFactory().getTexture(filename);
+        texture = renderer.getTextureFactory().getTexture("hp/assets/textures/wood_diffuse.png");
 	    
-		StopWatch.ACTIVE = false;
 	    Assert.assertArrayEquals(data, texture.getData());
 	    
 	}

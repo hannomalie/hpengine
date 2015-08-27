@@ -116,8 +116,12 @@ public class TextureFactory {
 		}
     }
 
-    public void removeTexture(String path) {
-        TEXTURES.remove(path);
+    public boolean removeTexture(String path) {
+        if(TEXTURES.containsKey(path)) {
+            TEXTURES.remove(path);
+            return !TEXTURES.containsKey(path);
+        }
+        return true;
     }
 
     public Texture getDefaultTexture() {
@@ -155,7 +159,7 @@ public class TextureFactory {
         }
         
         if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName, createTextureID());
+        	tex = Texture.read(resourceName, createTextureID(), srgba);
         	if (tex != null) {
                 TEXTURES.put(resourceName,tex);
                 return tex;
@@ -452,24 +456,13 @@ public class TextureFactory {
         
         WritableRaster raster;
         BufferedImage texImage;
-        
-        int texWidth = 2;
-        int texHeight = 2;
-        
-        // find the closest power of 2 for the width and height
-        // of the produced texture
-        while (texWidth < bufferedImage.getWidth()) {
-            texWidth *= 2;
-        }
-        while (texHeight < bufferedImage.getHeight()) {
-            texHeight *= 2;
-        }
 
-        cubeMap.setWidth(texWidth);
-    	cubeMap.setHeight(texHeight);
 
-    	int tileWidthPoT = get2Fold(texWidth/4);
-    	int tileHeightPoT = get2Fold(texHeight/3);
+        int width = cubeMap.getWidth();
+        int height = cubeMap.getHeight();
+
+        int tileWidth = (width /4);
+        int tileHeight = (height /3);
     	
         for(int i = 0; i < 6; i++) {
 
@@ -477,18 +470,18 @@ public class TextureFactory {
         	Vector2f[] topLeftBottomRight = getRectForFaceIndex(i, bufferedImage.getWidth(), bufferedImage.getHeight());
             
             if (bufferedImage.getColorModel().hasAlpha()) {
-                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidthPoT,tileHeightPoT,4,null);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidth,tileHeight,4,null);
                 texImage = new BufferedImage(glAlphaColorModel,raster,false,new Hashtable());
             } else {
-                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidthPoT,tileHeightPoT,3,null);
+                raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,tileWidth,tileHeight,3,null);
                 texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
             }
             
             Graphics g = texImage.getGraphics();
             g.setColor(new Color(0f,0f,0f,0f));
-            g.fillRect(0,0,tileWidthPoT,tileHeightPoT);
+            g.fillRect(0,0,tileWidth,tileHeight);
             
-            g.drawImage(bufferedImage,0,0,get2Fold(texWidth/4), get2Fold(texHeight/3)/2, (int)topLeftBottomRight[0].x,(int)topLeftBottomRight[0].y,
+            g.drawImage(bufferedImage,0,0, tileWidth, tileHeight, (int)topLeftBottomRight[0].x,(int)topLeftBottomRight[0].y,
 					  (int)topLeftBottomRight[1].x,(int)topLeftBottomRight[1].y, null);
 
 //            try {

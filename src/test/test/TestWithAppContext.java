@@ -5,24 +5,24 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import renderer.Renderer;
 
-public class TestWithWorld {
+public class TestWithAppContext {
 
-	public static AppContext appContext;
 	public static Renderer renderer;
+    public static AppContext appContext;
 
-	public TestWithWorld() {
+    public TestWithAppContext() {
 		super();
 	}
 	
 	@BeforeClass
 	public static void init() {
         AppContext.init(true);
-		appContext = AppContext.getInstance();
-		renderer = appContext.getRenderer();
+        appContext = AppContext.getInstance();
+		renderer = AppContext.getInstance().getRenderer();
 	}
 	
 	@AfterClass
 	public static void kill() {
-		appContext.destroy();
+        AppContext.getInstance().destroy();
 	}
 }

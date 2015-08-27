@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import scene.Scene;
 
-public class SceneTest extends TestWithWorld {
+public class SceneTest extends TestWithAppContext {
 	private static final String SCENENAME = "__testscene";
 
 	@Test

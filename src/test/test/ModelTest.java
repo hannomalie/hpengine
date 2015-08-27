@@ -14,7 +14,7 @@ import org.lwjgl.util.vector.Vector4f;
 import java.io.File;
 import java.util.List;
 
-public class ModelTest extends test.TestWithWorld {
+public class ModelTest extends TestWithAppContext {
 	
 	@Test
 	public void loadsCorrectly() throws Exception {

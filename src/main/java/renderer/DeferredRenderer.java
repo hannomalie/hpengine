@@ -466,7 +466,11 @@ public class DeferredRenderer implements Renderer {
 
 	private void destroyOpenGL() {
 		drawThread.stopRequested = true;
-		Display.destroy();
+        try {
+            Display.destroy();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
 	}
 
 	private static long lastFrameTime = 0l;

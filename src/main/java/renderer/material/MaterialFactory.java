@@ -119,7 +119,11 @@ public class MaterialFactory {
 		MaterialMap textures = new MaterialMap();
 		
 		for (MAP map : hashMap.keySet()) {
-			textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map)));
+			boolean srgba = false;
+			if(map.equals(MAP.DIFFUSE)) {
+				srgba = true;
+			}
+			textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map), srgba));
 		}
 		MaterialInfo info = new MaterialInfo(textures);
 		info.name = name;

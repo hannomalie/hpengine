@@ -5,7 +5,7 @@ import engine.model.Entity;
 import junit.framework.Assert;
 import org.junit.Test;
 
-public class ScriptTest extends TestWithWorld {
+public class ScriptTest extends TestWithAppContext {
 
     @Test
     public void globalDefines() {

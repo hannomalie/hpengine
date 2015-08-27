@@ -2,6 +2,7 @@ package renderer;
 
 import config.Config;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 
 import java.awt.*;
@@ -47,7 +48,7 @@ public class OpenGLContext {
             }
         };
         GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
-
+        Keyboard.create();
 
 //		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
