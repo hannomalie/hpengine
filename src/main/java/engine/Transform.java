@@ -29,9 +29,9 @@ public class Transform implements Serializable {
 	public static Vector3f IDENTITY_LOCAL_WORLD = new Vector3f(1,1,1);
 	public static Vector4f IDENTITY_LOCAL_WORLD_V4 = new Vector4f(1,1,1,1);
 	
-	private transient Transform parent;
-	private transient Matrix4f parentMatrix;
-	private transient List<Transform> children;
+	private Transform parent;
+	private Matrix4f parentMatrix = new Matrix4f();
+	private List<Transform> children = new ArrayList<>();
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
 	private Quaternion orientation = new Quaternion();
@@ -54,6 +54,7 @@ public class Transform implements Serializable {
 		modelMatrixBuffer.rewind();
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		viewMatrixBuffer.rewind();
+		parentMatrix = new Matrix4f();
 	}
 	
 	public Transform getParent() {
@@ -359,7 +360,10 @@ public class Transform implements Serializable {
 
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		stream.defaultReadObject();
-		init();
+		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		modelMatrixBuffer.rewind();
+		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		viewMatrixBuffer.rewind();
 	}
 
 	public void setOrientationFromAxisAngle(Vector4f orientationFromAxisAngle) {

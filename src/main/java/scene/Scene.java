@@ -7,6 +7,7 @@ import engine.model.Entity;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.Renderer;
 import renderer.command.Result;
@@ -178,6 +179,7 @@ public class Scene implements LifeCycle, Serializable {
 		for (Entity entity : octree.getEntities()) {
 			entity.update(seconds);
 		}
+		directionalLight.update(seconds);
 	}
 
 	private void initializationWrapped (Supplier<Void> supplier) {

@@ -355,7 +355,6 @@ public class AppContext {
                 return new Result(true);
             });
 		}
-		directionalLight.update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
 		StopWatch.getInstance().start("Entities update");

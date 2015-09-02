@@ -10,6 +10,8 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.material.MaterialFactory;
 import util.Util;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 
@@ -18,9 +20,9 @@ import static log.ConsoleLogger.getLogger;
 public class Camera extends Entity {
 	private static Logger LOGGER = getLogger();
 
-	FloatBuffer viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
-	FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
-	FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	transient FloatBuffer viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	transient FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	transient FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	protected Matrix4f projectionMatrix = null;
 	protected Matrix4f viewProjectionMatrix = null;
@@ -185,5 +187,18 @@ public class Camera extends Entity {
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {
 		return viewProjectionMatrixBuffer;
+	}
+
+
+	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+		in.defaultReadObject();
+		viewProjectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
+		lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
+	}
+
+
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		oos.defaultWriteObject();
 	}
 }

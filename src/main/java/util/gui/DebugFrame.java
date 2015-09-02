@@ -249,19 +249,12 @@ public class DebugFrame {
 	    		if(chosenFile != null) {
 
 					String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-					new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
+					new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
 						@Override
-						public Result doInBackground() throws Exception {
+						public Result<Scene> doInBackground() throws Exception {
 							Scene newScene = Scene.read(appContext.getRenderer(), sceneName);
-							SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
-								@Override
-								public Result execute(AppContext world) {
-									world.setScene(newScene);
-									return new Result(true);
-								}
-							});
-
-							return queue.poll(5, TimeUnit.MINUTES);
+							AppContext.getInstance().setScene(newScene);
+							return new Result(newScene);
 						}
 					}.execute();
 	    		}

@@ -2,6 +2,9 @@ package camera;
 
 import static log.ConsoleLogger.getLogger;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 
@@ -10,7 +13,9 @@ import scene.AABB;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector3f;
 
-public class Frustum {
+public class Frustum implements Serializable {
+    private static final long serialVersionUID = 1;
+
 	private static Logger LOGGER = getLogger();
 	public static final int RIGHT   = 0;            // The RIGHT side of the frustum
     public static final int LEFT    = 1;            // The LEFT      side of the frustum
@@ -43,7 +48,7 @@ public class Frustum {
 	
 	Vector3f fc = new Vector3f(); // far plane center
 	
-	private FloatBuffer buffer = BufferUtils.createFloatBuffer(4*6);
+	private transient FloatBuffer buffer = BufferUtils.createFloatBuffer(4*6);
 
 	public Frustum(Camera camera) {
 		calculate(camera);
@@ -272,4 +277,15 @@ public class Frustum {
 //		return (pointInFrustum(aabb.getBottomLeftBackCorner().x, aabb.getBottomLeftBackCorner().y, aabb.getBottomLeftBackCorner().z) ||
 //				pointInFrustum(aabb.getTopRightForeCorner().x, aabb.getTopRightForeCorner().y, aabb.getTopRightForeCorner().z));
 	}
+
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        buffer = BufferUtils.createFloatBuffer(4*6);
+    }
+
+
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+        oos.defaultWriteObject();
+    }
 }

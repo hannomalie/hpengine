@@ -8,6 +8,7 @@ import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLThread;
 import renderer.material.Material;
 import shader.Program;
 
@@ -16,10 +17,15 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class ModelComponent extends BaseComponent implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
+
+    private static ExecutorService service = Executors.newFixedThreadPool(4);
 
     private Model model;
 
@@ -150,15 +156,18 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     @Override
     public void init(AppContext appContext) {
         super.init(appContext);
-        createFloatArray(model);
-//        world.getRenderer().addCommand(new Command<Result<Object>>() {
+//        Thread thread = new OpenGLThread(getEntity().getName() + " model init") {
 //            @Override
-//            public Result<Object> execute(World world) {
+//            public void doRun() {
+//                createFloatArray(model);
 //                createVertexBuffer();
-//                return new Result(new Object());
+//                initialized = true;
 //            }
-//        });
+//        };
+//        service.submit(thread);
+        createFloatArray(model);
         createVertexBuffer();
+        initialized = true;
     }
 
     public void createFloatArray(Model model) {

@@ -25,7 +25,6 @@ import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.slider.WebSlider;
 
 public class MainLightView extends EntityView {
-	private DirectionalLight light;
 
 	public MainLightView(AppContext appContext, DebugFrame debugFrame) {
 		super(appContext, debugFrame, appContext.getScene().getDirectionalLight());
@@ -33,7 +32,6 @@ public class MainLightView extends EntityView {
 
 	@Override
 	protected void init(AppContext appContext, Entity entity) {
-		this.light = appContext.getScene().getDirectionalLight();
 		super.init(appContext, entity);
 	}
 
@@ -45,6 +43,7 @@ public class MainLightView extends EntityView {
 		lightColorChooserPanel.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
+				DirectionalLight light = appContext.getScene().getDirectionalLight();
 				Color color = lightColorChooserPanel.getColor();
 				light.setColor(new Vector3f(color.getRed()/255.f,
 						color.getGreen()/255.f,
@@ -143,26 +142,29 @@ public class MainLightView extends EntityView {
 
         webComponentPanel.addElement(movablePanel);
 
-		webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(light.getCamera().getWidth(),
-				light.getCamera().getHeight(),
-				light.getCamera().getFar()
+		webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(
+				appContext.getScene().getDirectionalLight().getCamera().getWidth(),
+				appContext.getScene().getDirectionalLight().getCamera().getHeight(),
+				appContext.getScene().getDirectionalLight().getCamera().getFar()
 		)) {
 			@Override
 			public void onValueChange(Vector3f current) {
+				DirectionalLight light = appContext.getScene().getDirectionalLight();
 				light.getCamera().setWidth(current.x);
 				light.getCamera().setHeight(current.y);
 				light.getCamera().setFar(current.z);
 			}
 		});
-		webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", light.getCamera().getPosition()) {
+		webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position",
+				appContext.getScene().getDirectionalLight().getCamera().getPosition()) {
 			@Override
 			public void onValueChange(Vector3f current) {
-				light.getCamera().setPosition(current);
+				appContext.getScene().getDirectionalLight().getCamera().setPosition(current);
 			}
 		});
 
 		webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-			appContext.setActiveCamera(light.getCamera());
+			appContext.setActiveCamera(appContext.getScene().getDirectionalLight().getCamera());
 		});}});
 		webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			appContext.restoreWorldCamera();

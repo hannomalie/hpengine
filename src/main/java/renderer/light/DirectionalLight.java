@@ -36,7 +36,7 @@ public class DirectionalLight extends Entity {
 	transient private RenderTarget renderTarget;
 	transient private Entity box;
 	transient private Program directionalShadowPassProgram;
-	transient private Camera camera;
+	private Camera camera;
 
 	public DirectionalLight() {
 		this(true);
@@ -149,6 +149,7 @@ public class DirectionalLight extends Entity {
 	}
 
 	public void drawShadowMap(Octree octree) {
+		if(!isInitialized()) { return; }
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glCullFace(GL11.GL_FRONT);
@@ -230,30 +231,5 @@ public class DirectionalLight extends Entity {
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {
 		return camera.getViewProjectionMatrixAsBuffer();
-	}
-
-	private static class SerializationProxy implements Serializable {
-		private static final long serialVersionUID = 1L;
-		private final float scatterFactor;
-		private final Vector3f color;
-		private Transform transform;
-
-		public SerializationProxy(DirectionalLight directionalLight) {
-			transform = directionalLight.getTransform();
-			color = directionalLight.getColor();
-			scatterFactor = directionalLight.getScatterFactor();
-		}
-
-		private Object readResolve() {
-			DirectionalLight light = new DirectionalLight();
-			light.setColor(color);
-			light.setTransform(transform);
-			light.setScatterFactor(scatterFactor);
-			return light;
-		}
-	}
-
-	private Object writeReplace() {
-		return new SerializationProxy(this);
 	}
 }

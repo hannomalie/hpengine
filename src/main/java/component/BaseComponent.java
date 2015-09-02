@@ -4,6 +4,8 @@ import engine.AppContext;
 import engine.model.Entity;
 import renderer.Renderer;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public abstract class BaseComponent implements Component, Serializable {
@@ -13,7 +15,7 @@ public abstract class BaseComponent implements Component, Serializable {
     transient private Renderer renderer;
 
     private Entity entity;
-    private boolean initialized;
+    protected boolean initialized;
 
     public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
 
