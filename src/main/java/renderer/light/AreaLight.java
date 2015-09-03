@@ -32,7 +32,7 @@ public class AreaLight extends Camera {
 		setScale(scale);
 		setNear(1f);
         setFar(5000f);
-        setFov(90f);
+        setFov(180f);
         setRatio(1);
         Entity plane = AppContext.getInstance().getEntityFactory().getEntity(model);
         plane.setPosition(new Vector3f(0, 0, -getNear()));

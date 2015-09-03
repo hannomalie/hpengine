@@ -168,9 +168,13 @@ vec3 VSM(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDi
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, float NdotL)
 {
+	float fadeOut = 1;
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-  	  	float fadeOut = 1-max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y));
-		return vec3(0,0,0);
+  	  	const float fadeRange = 0.21;
+  	  	float maxOutside = max(distance(0.5, ShadowCoordPostW.x), distance(0.5, ShadowCoordPostW.y)) - 0.5;
+  	  	fadeOut = 1-clamp(maxOutside/fadeRange, 0,1);
+  	  	clamp(ShadowCoordPostW.x, 0, 1);
+  	  	clamp(ShadowCoordPostW.y, 0, 1);
 	}
 	
 	vec4 shadowMapSample = texture2D(shadowMap,ShadowCoordPostW.xy);
@@ -186,7 +190,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW, vec2 texCoords, float Ndot
 //		return vec3(1,1,1);
 //	}
 	
-	{ return PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.001, NdotL); }
+	{ return fadeOut*PCF(shadowMap, ShadowCoordPostW.xy, dist, 0.001, NdotL); }
 //	{ return VSM(shadowMap, ShadowCoordPostW.xy, dist, 0.25, NdotL); }
 
 	float variance = moments.y - (moments.x*moments.x);
