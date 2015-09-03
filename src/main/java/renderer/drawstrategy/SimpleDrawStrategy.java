@@ -89,7 +89,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         DirectionalLight light = appContext.getScene().getDirectionalLight();
 
         GPUProfiler.start("First pass");
-        drawFirstPass(appContext, camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights());
+        drawFirstPass(appContext, camera, octree, lightFactory.getPointLights(), lightFactory.getTubeLights(), appContext.getScene().getAreaLights());
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -105,7 +105,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             lightFactory.renderAreaLightShadowMaps(octree);
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
-            drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), lightFactory.getAreaLights(), renderer.getEnvironmentMap());
+            drawSecondPass(camera, light, lightFactory.getPointLights(), lightFactory.getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
             GPUProfiler.end();
             GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
             GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);

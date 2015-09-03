@@ -729,7 +729,7 @@ public class DeferredRenderer implements Renderer {
 		for (Entity entity : getLightFactory().getPointLights()) {
 			entity.setHasMoved(false);
 		}
-		for (Entity entity : getLightFactory().getAreaLights()) {
+		for (Entity entity : appContext.getScene().getAreaLights()) {
 			entity.setHasMoved(false);
 		}
 	}

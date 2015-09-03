@@ -41,7 +41,6 @@ public class LightFactory {
 	
 	private List<PointLight> pointLights = new ArrayList<>();
 	private List<TubeLight> tubeLights = new ArrayList<>();
-	private List<AreaLight> areaLights = new ArrayList<>();
 
 	private int pointLightsForwardMaxCount = 20;
 	private FloatBuffer pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
@@ -105,9 +104,6 @@ public class LightFactory {
 	}
 
     public void update(float seconds) {
-        for (AreaLight areaLight : areaLights) {
-            areaLight.update(seconds);
-        }
         for (PointLight pointLight : pointLights) {
             pointLight.update(seconds);
         }
@@ -226,20 +222,18 @@ public class LightFactory {
 		return getAreaLight(position, new Quaternion(), new Vector3f(1, 1, 1), width, height, range);
 	}
 
-	public AreaLight getAreaLight(AreaLightSerializationProxy proxy) {
-		return getAreaLight(proxy.getPosition(), proxy.getOrientation(), proxy.getColor(), proxy.getWidth(), proxy.getHeight(), proxy.getRadius());
-	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, float width, float height, float range) {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
 		AreaLight areaLight = new AreaLight(appContext, renderer, position, planeModel, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
-		areaLights.add(areaLight);
 		return areaLight;
 	}
 	
 	private void updateAreaLightArrays() {
+		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
+
 		float[] positions = new float[areaLightsForwardMaxCount*3];
 		float[] colors = new float[areaLightsForwardMaxCount*3];
 		float[] widthHeightRanges = new float[areaLightsForwardMaxCount*3];
@@ -304,13 +298,6 @@ public class LightFactory {
 		}
 		return result;
 	}
-	public List<AreaLightSerializationProxy> getAreaLightProxies() {
-		List<AreaLightSerializationProxy> result = new ArrayList<>();
-		for (AreaLight areaLight : areaLights) {
-			result.add(new AreaLightSerializationProxy(areaLight));
-		}
-		return result;
-	}
 
 	public void setPointLights(List<PointLight> pointLights) {
 		this.pointLights = pointLights;
@@ -324,15 +311,9 @@ public class LightFactory {
 		this.tubeLights = tubeLights;
 	}
 
-	public List<AreaLight> getAreaLights() {
-		return areaLights;
-	}
-
-	public void setAreaLights(List<AreaLight> areaLights) {
-		this.areaLights = areaLights;
-	}
-	
 	public void renderAreaLightShadowMaps(Octree octree) {
+		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
+
 		GPUProfiler.start("Arealight shadowmaps");
 		GL11.glDepthMask(true);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
@@ -372,7 +353,7 @@ public class LightFactory {
 	}
 	
 	public int getDepthMapForAreaLight(AreaLight light) {
-		int index = areaLights.indexOf(light);
+		int index = appContext.getScene().getAreaLights().indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 		
 		return areaLightDepthMaps.get(index);
@@ -406,7 +387,6 @@ public class LightFactory {
 
 	public void clearAll() {
 		pointLights.clear();
-		areaLights.clear();
 		tubeLights.clear();
 	}
 }

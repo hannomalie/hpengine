@@ -72,7 +72,7 @@ public class AreaLightView extends EntityView {
 
 				@Override
 				public Result execute(AppContext world) {
-					world.getRenderer().getLightFactory().getAreaLights().remove(light);
+					AppContext.getInstance().getScene().getAreaLights().remove(light);
 					return new Result();
 				}
         	});

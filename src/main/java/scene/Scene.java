@@ -7,7 +7,6 @@ import engine.model.Entity;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.Renderer;
 import renderer.command.Result;
@@ -28,7 +27,7 @@ public class Scene implements LifeCycle, Serializable {
 	List<ProbeData> probes = new ArrayList<>();
 
 	List<PointLightSerializationProxy> pointlightProxies = new ArrayList<>();
-	List<AreaLightSerializationProxy> arealightProxies = new ArrayList<>();
+	List<AreaLight> areaLights = new ArrayList<>();
 	DirectionalLight directionalLight = new DirectionalLight();
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
@@ -57,7 +56,12 @@ public class Scene implements LifeCycle, Serializable {
 				@Override
 				public Result execute(AppContext appContext) {
 					appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
-					return new Result() { @Override public boolean isSuccessful() { return true; } };
+					return new Result() {
+						@Override
+						public boolean isSuccessful() {
+							return true;
+						}
+					};
 				}
 			});
 		}
@@ -69,8 +73,8 @@ public class Scene implements LifeCycle, Serializable {
 		for(PointLightSerializationProxy pointLightSerializationProxy : pointlightProxies) {
 			renderer.getLightFactory().getPointLight(pointLightSerializationProxy);
 		}
-		for(AreaLightSerializationProxy areaLightSerializationProxy : arealightProxies) {
-			renderer.getLightFactory().getAreaLight(areaLightSerializationProxy);
+		for(AreaLight areaLight : areaLights) {
+			areaLight.init(appContext);
 		}
 		
 		directionalLight.init(appContext);
@@ -79,7 +83,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void write() {
 		write(name);
 	}
-	
+
 	public boolean write(String name) {
 		String fileName = FilenameUtils.getBaseName(name);
 		this.name = fileName;
@@ -147,16 +151,11 @@ public class Scene implements LifeCycle, Serializable {
 	private void gatherLights() {
 		pointlightProxies.clear();
 		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
-		arealightProxies.clear();
-		arealightProxies.addAll(renderer.getLightFactory().getAreaLightProxies());
 	}
 
     private static void handleEvolution(Scene scene, Renderer renderer) {
 		if(scene.getPointlights() == null) {
 			scene.setPointLights(new ArrayList<PointLightSerializationProxy>());
-		}
-		if(scene.getAreaLights() == null) {
-			scene.setAreaLights(new ArrayList<AreaLightSerializationProxy>());
 		}
     }
 
@@ -176,6 +175,9 @@ public class Scene implements LifeCycle, Serializable {
 //		});
 	}
 	public void update(float seconds) {
+		for (AreaLight areaLight : areaLights) {
+			areaLight.update(seconds);
+		}
 		for (Entity entity : octree.getEntities()) {
 			entity.update(seconds);
 		}
@@ -238,11 +240,8 @@ public class Scene implements LifeCycle, Serializable {
 		return pointlightProxies;
 	}
 	
-	public void setAreaLights(List<AreaLightSerializationProxy> list) {
-		arealightProxies = list;
-	}
-	public List<AreaLightSerializationProxy> getAreaLights() {
-		return arealightProxies;
+	public List<AreaLight> getAreaLights() {
+		return areaLights;
 	}
 
 	public DirectionalLight getDirectionalLight() {

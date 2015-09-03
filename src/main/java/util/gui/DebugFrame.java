@@ -389,7 +389,7 @@ public class DebugFrame {
         		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
-						world.getRenderer().getLightFactory().getAreaLight(50,50,20);
+						appContext.getScene().getAreaLights().add(world.getRenderer().getLightFactory().getAreaLight(50,50,20));
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
         		
@@ -1276,7 +1276,7 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel areaLightsTableModel = new AbstractTableModel() {
 
-			List<AreaLight> lights = appContext.getRenderer().getLightFactory().getAreaLights();
+			List<AreaLight> lights = appContext.getScene().getAreaLights();
 
 			public int getColumnCount() {
 				return 3;
@@ -1327,14 +1327,14 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						AreaLight selectedLight = appContext.getRenderer().getLightFactory().getAreaLights().get(selectedRow[i]);
+						AreaLight selectedLight = appContext.getScene().getAreaLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
 						entityViewFrame.setSize(1000, 600);
 						System.out.println(selectedLight.getName());
 						System.out.println(selectedRow[0]);
-						System.out.println(appContext.getRenderer().getLightFactory().getAreaLights().size());
+						System.out.println(appContext.getScene().getAreaLights().size());
 						entityViewFrame.add(new AreaLightView(appContext, debugFrame, selectedLight));
 						entityViewFrame.setVisible(true);
 					}

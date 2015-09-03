@@ -47,7 +47,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         drawDebug(appContext.getActiveCamera(), appContext, appContext.getPhysicsFactory().getDynamicsWorld(),
                 appContext.getScene().getOctree(), appContext.getScene().getEntities(),
                 lightFactory.getPointLights(), lightFactory.getTubeLights(),
-                lightFactory.getAreaLights(), appContext.getRenderer().getEnvironmentMap());
+                appContext.getInstance().getScene().getAreaLights(), appContext.getRenderer().getEnvironmentMap());
     }
 
 

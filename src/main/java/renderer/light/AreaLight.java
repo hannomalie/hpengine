@@ -20,7 +20,6 @@ import java.util.List;
 public class AreaLight extends Camera {
 	
 	public static float DEFAULT_RANGE = 1f;
-	private static int counter = 0;
 	private Vector3f color;
 	transient private RenderTarget renderTarget;
 
@@ -38,7 +37,6 @@ public class AreaLight extends Camera {
         plane.setPosition(new Vector3f(0, 0, -getNear()));
         plane.setParent(this);
 		init(appContext);
-		counter++;
 	}
 	
 	public void setColor(Vector3f color) {
@@ -52,7 +50,7 @@ public class AreaLight extends Camera {
 		return color;
 	}
 	private static String generateName() {
-		return String.format("AreaLight_%d", counter);
+		return String.format("AreaLight_%d", System.currentTimeMillis());
 	}
 
 	public void drawAsMesh(Camera camera) {

@@ -174,7 +174,7 @@ public class EnvironmentSampler extends Camera {
 					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
 			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !renderer.getLightFactory().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !appContext.getScene().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
@@ -207,7 +207,7 @@ public class EnvironmentSampler extends Camera {
 				GPUProfiler.start("Second pass");
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawSecondPass(i, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), renderer.getLightFactory().getAreaLights(), renderer.getEnvironmentMap());
+				drawSecondPass(i, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {
@@ -255,7 +255,7 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());
 		
-		cubeMapProgram.setUniform("activeAreaLightCount", renderer.getLightFactory().getAreaLights().size());
+		cubeMapProgram.setUniform("activeAreaLightCount", appContext.getScene().getAreaLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", renderer.getLightFactory().getAreaLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", renderer.getLightFactory().getAreaLightColors());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", renderer.getLightFactory().getAreaLightWidthHeightRanges());
@@ -263,8 +263,8 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", renderer.getLightFactory().getAreaLightUpDirections());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", renderer.getLightFactory().getAreaLightRightDirections());
 		
-		for(int i = 0; i < Math.min(renderer.getLightFactory().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
-			AreaLight areaLight = renderer.getLightFactory().getAreaLights().get(i);
+		for(int i = 0; i < Math.min(appContext.getScene().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight =appContext.getScene().getAreaLights().get(i);
 			GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9 + i);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
 			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", renderer.getLightFactory().getShadowMatrixForAreaLight(areaLight));
