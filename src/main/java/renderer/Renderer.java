@@ -368,4 +368,6 @@ public interface Renderer extends LifeCycle {
     void doWithOpenGLContext(Runnable runnable, boolean andBlock);
 
     <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable);
+
+    OpenGLContext getOpenGLContext();
 }

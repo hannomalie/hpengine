@@ -4,25 +4,40 @@ import config.Config;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
+import renderer.constants.BlendMode;
+import renderer.constants.GlCap;
+import renderer.constants.GlDepthFunc;
+import renderer.constants.GlTextureTarget;
 
 import java.awt.*;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 public class OpenGLContext {
 
+    private Renderer renderer = null;
     private Canvas canvas;
     private boolean attached;
 
-    OpenGLContext() throws LWJGLException {
-        this(false);
+    private static OpenGLContext instance;
+    public static OpenGLContext getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("OpenGL context not initialized. Init a renderer first.");
+        }
+        return instance;
     }
 
-    OpenGLContext(boolean headless) throws LWJGLException {
-        this(null, headless);
+    OpenGLContext(Renderer renderer) throws LWJGLException {
+        this(renderer, false);
     }
-    OpenGLContext(Canvas canvas, boolean headless) throws LWJGLException {
+
+    OpenGLContext(Renderer renderer, boolean headless) throws LWJGLException {
+        this(renderer, null, headless);
+    }
+    OpenGLContext(Renderer renderer, Canvas canvas, boolean headless) throws LWJGLException {
 
         this.canvas = canvas;
+        this.renderer = renderer;
 
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
@@ -36,6 +51,7 @@ public class OpenGLContext {
         Display.setVSyncEnabled(false);
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAtrributes);
+        this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         Display.setResizable(false);
         Display.setVSyncEnabled(Config.VSYNC_ENABLED);
         KHRDebugCallback.Handler handler = new KHRDebugCallback.Handler() {
@@ -57,6 +73,8 @@ public class OpenGLContext {
 
         // Map the internal OpenGL coordinate system to the entire screen
         GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
+
+        instance = this;
     }
 
     public void attach(Canvas canvas) throws LWJGLException {
@@ -75,4 +93,81 @@ public class OpenGLContext {
         }
     }
 
+    public void enable(GlCap cap) {
+        cap.enable();
+    }
+    public void disable(GlCap cap) {
+        cap.disable();
+    }
+
+    private int activeTexture = -1;
+    public void activeTexture(int textureUnitIndex) {
+        int textureIndexGLInt = GL13.GL_TEXTURE0 + textureUnitIndex;
+        if(activeTexture != textureIndexGLInt) {
+            GL13.glActiveTexture(textureIndexGLInt);
+        }
+    }
+
+    private HashMap<Integer, Integer> textureBindings = new HashMap<>();
+    public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
+        if(!textureBindings.containsKey(textureUnitIndex) ||
+           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
+            activeTexture(textureUnitIndex);
+            GL11.glBindTexture(target.glTarget, textureId);
+            textureBindings.put(textureUnitIndex, textureId);
+        }
+    }
+
+    public void viewPort(int x, int y, int width, int height) {
+        GL11.glViewport(x, y, width, height);
+    }
+
+    public void clearColorBuffer() {
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+    }
+
+    public void clearDepthBuffer() {
+        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+    }
+
+    public void clearDepthAndColorBuffer() {
+        clearDepthBuffer();
+        clearColorBuffer();
+    }
+
+    private int currentFrameBuffer = -1;
+    public void bindFrameBuffer(int frameBuffer) {
+        if(currentFrameBuffer != frameBuffer) {
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
+            currentFrameBuffer = frameBuffer;
+        }
+    }
+
+    private boolean depthMask = false;
+    public void depthMask(boolean flag) {
+        if(depthMask != flag) {
+            GL11.glDepthMask(flag);
+            depthMask = flag;
+        }
+    }
+    public void depthFunc(GlDepthFunc func) {
+        GL11.glDepthFunc(func.glFunc);
+    }
+
+    int currentReadBuffer = -1;
+    public void readBuffer(int colorAttachmentIndex) {
+        int colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex;
+        if(currentReadBuffer != colorAttachment) {
+            GL11.glReadBuffer(colorAttachment);
+        }
+    }
+
+    private BlendMode currentBlendMode = BlendMode.FUNC_ADD;
+    public void blendEquation(BlendMode mode) {
+        GL14.glBlendEquation(mode.mode);
+    }
+
+    public void blendFunc(BlendMode.Factor sfactor, BlendMode.Factor dfactor) {
+        GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor);
+    }
 }

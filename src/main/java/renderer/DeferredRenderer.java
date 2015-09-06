@@ -16,6 +16,8 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.command.Command;
 import renderer.command.RenderProbeCommandQueue;
 import renderer.command.Result;
+import renderer.constants.GlCap;
+import renderer.constants.GlTextureTarget;
 import renderer.drawstrategy.DebugDrawStrategy;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
@@ -193,7 +195,7 @@ public class DeferredRenderer implements Renderer {
 	private void setupOpenGL(boolean headless) {
 		try {
 
-			openGLContext = new OpenGLContext(headless);
+			openGLContext = new OpenGLContext(this, headless);
 
 			if(headless)
 			{
@@ -248,7 +250,7 @@ public class DeferredRenderer implements Renderer {
 		gBuffer = new GBuffer(appContext, this);
 
 		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-		GL11.glEnable(GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		openGLContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 		DeferredRenderer.exitOnGLError("setupGBuffer");
 	}
@@ -261,7 +263,7 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 		try {
 			cubeMap = textureFactory.getCubeMap("hp/assets/textures/skybox.png");
-			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			openGLContext.activeTexture(0);
 			textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
 //			cubeMap = new DynamicCubeMap(1024, 1024);
 //			DeferredRenderer.exitOnGLError("setup cubemap");
@@ -366,12 +368,10 @@ public class DeferredRenderer implements Renderer {
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		openGLContext.disable(GlCap.DEPTH_TEST);
 
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
+		openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+		openGLContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}
@@ -843,4 +843,9 @@ public class DeferredRenderer implements Renderer {
         }
         return null;
     }
+
+	@Override
+	public OpenGLContext getOpenGLContext() {
+		return openGLContext;
+	}
 }
