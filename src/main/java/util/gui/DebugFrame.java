@@ -333,7 +333,7 @@ public class DebugFrame {
         		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
-						world.getRenderer().getLightFactory().getPointLight(50);
+						appContext.getScene().addPointLight(world.getRenderer().getLightFactory().getPointLight(50));
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
         		
@@ -361,7 +361,7 @@ public class DebugFrame {
         		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
-						world.getRenderer().getLightFactory().getTubeLight();
+						appContext.getScene().addTubeLight(world.getRenderer().getLightFactory().getTubeLight());
 						return new Result() { @Override public boolean isSuccessful() { return true; } };
 					}});
         		
@@ -1139,26 +1139,24 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel pointLightsTableModel = new AbstractTableModel() {
 
-			List<PointLight> lights = appContext.getRenderer().getLightFactory().getPointLights();
-
 			public int getColumnCount() {
 				return 3;
 			}
 
 			public int getRowCount() {
-				return lights.size();
+				return appContext.getScene().getPointLights().size();
 			}
 
 			public Object getValueAt(int row, int col) {
 				if (col == 0) {
-					PointLight light = lights.get(row);
+					PointLight light = appContext.getScene().getPointLights().get(row);
 					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 					
 				} else if (col == 1) {
-					return vectorToString(lights.get(row).getPosition());
+					return vectorToString(appContext.getScene().getPointLights().get(row).getPosition());
 					
 				} else if (col == 2) {
-					return vectorToString(lights.get(row).getColor());
+					return vectorToString(appContext.getScene().getPointLights().get(row).getColor());
 					
 				}
 				return "";
@@ -1191,7 +1189,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						PointLight selectedLight = appContext.getRenderer().getLightFactory().getPointLights().get(selectedRow[i]);
+						PointLight selectedLight = appContext.getScene().getPointLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();
@@ -1208,26 +1206,24 @@ public class DebugFrame {
 		DebugFrame debugFrame = this;
 		TableModel tubeLightsTableModel = new AbstractTableModel() {
 
-			List<TubeLight> lights = appContext.getRenderer().getLightFactory().getTubeLights();
-
 			public int getColumnCount() {
 				return 3;
 			}
 
 			public int getRowCount() {
-				return lights.size();
+				return appContext.getScene().getTubeLights().size();
 			}
 
 			public Object getValueAt(int row, int col) {
 				if (col == 0) {
-					TubeLight light = lights.get(row);
+					TubeLight light = appContext.getScene().getTubeLights().get(row);
 					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 					
 				} else if (col == 1) {
-					return vectorToString(lights.get(row).getPosition());
+					return vectorToString(appContext.getScene().getTubeLights().get(row).getPosition());
 					
 				} else if (col == 2) {
-					return vectorToString(lights.get(row).getColor());
+					return vectorToString(appContext.getScene().getTubeLights().get(row).getColor());
 					
 				}
 				return "";
@@ -1259,7 +1255,7 @@ public class DebugFrame {
 
 				for (int i = 0; i < selectedRow.length; i++) {
 					for (int j = 0; j < selectedColumns.length; j++) {
-						TubeLight selectedLight = appContext.getRenderer().getLightFactory().getTubeLights().get(selectedRow[i]);
+						TubeLight selectedLight = appContext.getScene().getTubeLights().get(selectedRow[i]);
 						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 						entityViewFrame.getContentPane().removeAll();
 						entityViewFrame.pack();

@@ -381,7 +381,6 @@ public class AppContext {
 	}
 
 	public void setScene(Scene scene) {
-		renderer.getLightFactory().clearAll();
 		this.scene = scene;
 		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
 			@Override

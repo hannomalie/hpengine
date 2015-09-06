@@ -726,7 +726,7 @@ public class DeferredRenderer implements Renderer {
 
 		DirectionalLight light = appContext.getScene().getDirectionalLight();
 		light.setHasMoved(false);
-		for (Entity entity : getLightFactory().getPointLights()) {
+		for (Entity entity : appContext.getScene().getPointLights()) {
 			entity.setHasMoved(false);
 		}
 		for (Entity entity : appContext.getScene().getAreaLights()) {

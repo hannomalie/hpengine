@@ -86,7 +86,8 @@ vec4 calculateClosestPointAndAttenuation(vec3 light_position_eye, vec3 light_sta
 	return vec4(closestPoint, clamp(attenuation,0,1));	
 }
 
-float evaluateCookTorranceForLightPosition(vec3 V, vec3 light_position_eye, vec3 position, vec3 normal, float roughness, float metallic) {
+vec3 evaluateCookTorranceForLightPosition(vec3 V, vec3 light_position_eye, vec3 position, vec3 normal, float roughness, float metallic,
+										   vec3 diffuseColor, vec3 specularColor) {
  	vec3 L = normalize(light_position_eye - position);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normal);
@@ -118,7 +119,10 @@ float evaluateCookTorranceForLightPosition(vec3 V, vec3 light_position_eye, vec3
 	fresnel *= temp;
 	float F = fresnel + F0;
 	
-	return (F*D*G/(NdotL*NdotV));
+	//return (F*D*G/(NdotL*NdotV));
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
+
+	return (cookTorrance * specularColor);
 }
 
 float evaluateDiffuseFactor(vec3 light_position_eye, vec3 position, vec3 normal) {
@@ -130,7 +134,7 @@ float evaluateDiffuseFactor(vec3 light_position_eye, vec3 position, vec3 normal)
     return NdotL;
 }
 
-vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic) {
+vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
 	vec3 V = -normalize(position);
 	//vec3 V = -ViewVector;
@@ -147,12 +151,12 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
     //float specularAtStart = evaluateCookTorranceForLightPosition(V, light_start_eye, position, normal, roughness);
     //float specularAtEnd = evaluateCookTorranceForLightPosition(V, light_end_eye, position, normal, roughness);
 	//float specularResult = mix(specularAtStart, specularAtEnd, blender);
-	float specularResult = evaluateCookTorranceForLightPosition(V, closestPointAttenuation.xyz, position, normal, roughness, metallic);
+	vec3 specularResult = evaluateCookTorranceForLightPosition(V, closestPointAttenuation.xyz, position, normal, roughness, metallic, diffuseColor, specularColor);
 	
 	//float diffuseFactorAtStart = evaluateDiffuseFactor(light_start_eye, position, normal);
 	//float diffuseFactorAtEnd = evaluateDiffuseFactor(light_end_eye, position, normal);
 	//vec3 diff = mix(diffuseFactorAtStart, diffuseFactorAtEnd, blender) * lightDiffuse.rgb;
-	vec3 diff = evaluateDiffuseFactor(closestPointAttenuation.xyz, position, normal) * lightDiffuse.rgb;
+	vec3 diff = diffuseColor * evaluateDiffuseFactor(closestPointAttenuation.xyz, position, normal) * lightDiffuse.rgb;
 	
     float F0 = 0.02;
 	// Specular in the range of 0.02 - 0.2
@@ -170,7 +174,7 @@ vec4 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	
 	specularResult = clamp(specularAdjust*specularResult,0,1);
 	//return vec4(specularResult,specularResult,specularResult,specularResult);
-	return atten_factor* vec4((diff), specularResult);
+	return atten_factor * ((diff + specularResult));
 }
 
 void main(void) {
@@ -186,7 +190,12 @@ void main(void) {
 	vec3 probeColor = probeColorDepth.rgb;
 	float roughness = texture2D(positionMap, st).w;
 	float metallic = texture2D(diffuseMap, st).w;
-	
+
+	float glossiness = (1-roughness);
+	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
+  	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
+
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
   	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
@@ -203,9 +212,9 @@ void main(void) {
 	
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
-	vec4 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic);
+	vec3 finalColor = cookTorrance(V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	
-	out_DiffuseSpecular = 4 * finalColor;
+	out_DiffuseSpecular.rgb = 4 * finalColor;
 	//out_DiffuseSpecular.rgba = vec4(roughness,roughness,roughness,roughness);
 	out_AOReflection = vec4(0,0,0,0);
 }

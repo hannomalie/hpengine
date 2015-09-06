@@ -38,9 +38,6 @@ public class LightFactory {
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	private Program areaShadowPassProgram;
 	private Camera camera;
-	
-	private List<PointLight> pointLights = new ArrayList<>();
-	private List<TubeLight> tubeLights = new ArrayList<>();
 
 	private int pointLightsForwardMaxCount = 20;
 	private FloatBuffer pointLightPositions = BufferUtils.createFloatBuffer(pointLightsForwardMaxCount * 3);
@@ -104,9 +101,6 @@ public class LightFactory {
 	}
 
     public void update(float seconds) {
-        for (PointLight pointLight : pointLights) {
-            pointLight.update(seconds);
-        }
     }
 	
 	public PointLight getPointLight(Model model) {
@@ -127,15 +121,11 @@ public class LightFactory {
 	public PointLight getPointLight(float range) {
 		return getPointLight(new Vector3f(), sphereModel, new Vector4f(1,1,1,1), range);
 	}
-
-	public PointLight getPointLight(PointLightSerializationProxy proxy) {
-		return getPointLight(proxy.getPosition(), sphereModel, proxy.getColor(), proxy.getRadius());
-	}
 	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getDefaultMaterial();
 		
 		PointLight light = new PointLight(appContext, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
-		pointLights.add(light);
+		light.init(appContext);
 		updatePointLightArrays();
 		return light;
 	}
@@ -144,8 +134,8 @@ public class LightFactory {
 		float[] colors = new float[pointLightsForwardMaxCount*3];
 		float[] radiuses = new float[pointLightsForwardMaxCount];
 		
-		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, pointLights.size()); i++) {
-			PointLight light = pointLights.get(i);
+		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, appContext.getScene().getPointLights().size()); i++) {
+			PointLight light =  appContext.getScene().getPointLights().get(i);
 			positions[3*i] = light.getPosition().x;
 			positions[3*i+1] = light.getPosition().y;
 			positions[3*i+2] = light.getPosition().z;
@@ -208,7 +198,6 @@ public class LightFactory {
 	}
 	public TubeLight getTubeLight(float length, float radius) {
 		TubeLight tubeLight = new TubeLight(appContext, renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
-		tubeLights.add(tubeLight);
 		return tubeLight;
 	}
 
@@ -288,29 +277,6 @@ public class LightFactory {
 		areaLightRightDirections.rewind();
 	}
 
-	public List<PointLight> getPointLights() {
-		return pointLights;
-	}
-	public List<PointLightSerializationProxy> getPointLightProxies() {
-		List<PointLightSerializationProxy> result = new ArrayList<>();
-		for (PointLight pointLight : pointLights) {
-			result.add(new PointLightSerializationProxy(pointLight));
-		}
-		return result;
-	}
-
-	public void setPointLights(List<PointLight> pointLights) {
-		this.pointLights = pointLights;
-	}
-
-	public List<TubeLight> getTubeLights() {
-		return tubeLights;
-	}
-
-	public void setTubeLights(List<TubeLight> tubeLights) {
-		this.tubeLights = tubeLights;
-	}
-
 	public void renderAreaLightShadowMaps(Octree octree) {
 		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
 
@@ -383,10 +349,5 @@ public class LightFactory {
 //		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
 //		c.updateShadow();
 		return light.getViewProjectionMatrixAsBuffer();
-	}
-
-	public void clearAll() {
-		pointLights.clear();
-		tubeLights.clear();
 	}
 }

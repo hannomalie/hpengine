@@ -26,15 +26,16 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new ArrayList<>();
 
-	List<PointLightSerializationProxy> pointlightProxies = new ArrayList<>();
-	List<AreaLight> areaLights = new ArrayList<>();
-	DirectionalLight directionalLight = new DirectionalLight();
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	transient private AppContext appContext;
 	transient Renderer renderer;
 	private ArrayList<Entity> entities = new ArrayList<>();
+	private List<PointLight> pointLights = new ArrayList<>();
+	private List<TubeLight> tubeLights = new ArrayList<>();
+	private List<AreaLight> areaLights = new ArrayList<>();
+	private DirectionalLight directionalLight = new DirectionalLight();
 
 	public Scene() {
 		octree = new Octree(new Vector3f(), 600, 5);
@@ -65,13 +66,13 @@ public class Scene implements LifeCycle, Serializable {
 				}
 			});
 		}
-		initLights(renderer);
+		initLights();
 		initialized = true;
 		renderer.init(octree);
 	}
-	private void initLights(Renderer renderer) {
-		for(PointLightSerializationProxy pointLightSerializationProxy : pointlightProxies) {
-			renderer.getLightFactory().getPointLight(pointLightSerializationProxy);
+	private void initLights() {
+		for(PointLight pointLight : pointLights) {
+			pointLight.init(appContext);
 		}
 		for(AreaLight areaLight : areaLights) {
 			areaLight.init(appContext);
@@ -100,7 +101,6 @@ public class Scene implements LifeCycle, Serializable {
 				if(probes.contains(probeData)) { continue; }
 				probes.add(probeData);
 			}
-			gatherLights();
 			out.writeObject(this);
 //			FSTObjectOutput newOut = new FSTObjectOutput(out);
 //			newOut.writeObject(this);
@@ -148,15 +148,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
 
-	private void gatherLights() {
-		pointlightProxies.clear();
-		pointlightProxies.addAll(renderer.getLightFactory().getPointLightProxies());
-	}
-
     private static void handleEvolution(Scene scene, Renderer renderer) {
-		if(scene.getPointlights() == null) {
-			scene.setPointLights(new ArrayList<PointLightSerializationProxy>());
-		}
     }
 
 	public static String getDirectory() {
@@ -175,6 +167,9 @@ public class Scene implements LifeCycle, Serializable {
 //		});
 	}
 	public void update(float seconds) {
+		for (PointLight pointLight : pointLights) {
+			pointLight.update(seconds);
+		}
 		for (AreaLight areaLight : areaLights) {
 			areaLight.update(seconds);
 		}
@@ -233,18 +228,27 @@ public class Scene implements LifeCycle, Serializable {
 		this.name = name;
 	}
 
-	public void setPointLights(List<PointLightSerializationProxy> list) {
-		pointlightProxies = list;
-	}
-	public List<PointLightSerializationProxy> getPointlights() {
-		return pointlightProxies;
-	}
-	
 	public List<AreaLight> getAreaLights() {
 		return areaLights;
 	}
 
 	public DirectionalLight getDirectionalLight() {
 		return directionalLight;
+	}
+
+	public List<PointLight> getPointLights() {
+		return pointLights;
+	}
+
+	public List<TubeLight> getTubeLights() {
+		return tubeLights;
+	}
+
+	public void addPointLight(PointLight pointLight) {
+		pointLights.add(pointLight);
+	}
+
+	public void addTubeLight(TubeLight tubeLight) {
+		tubeLights.add(tubeLight);
 	}
 }

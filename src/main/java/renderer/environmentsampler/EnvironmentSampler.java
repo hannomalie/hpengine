@@ -173,7 +173,7 @@ public class EnvironmentSampler extends Camera {
 						}
 					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
-			boolean aPointLightHasMoved = !renderer.getLightFactory().getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean aPointLightHasMoved = !appContext.getScene().getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !appContext.getScene().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
@@ -207,7 +207,7 @@ public class EnvironmentSampler extends Camera {
 				GPUProfiler.start("Second pass");
 				renderer.getEnvironmentProbeFactory().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
 				GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-				drawSecondPass(i, light, renderer.getLightFactory().getPointLights(), renderer.getLightFactory().getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
+				drawSecondPass(i, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {
@@ -250,7 +250,7 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		cubeMapProgram.setUniform("probePosition", probe.getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
-		cubeMapProgram.setUniform("activePointLightCount", renderer.getLightFactory().getPointLights().size());
+		cubeMapProgram.setUniform("activePointLightCount", appContext.getScene().getPointLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", renderer.getLightFactory().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", renderer.getLightFactory().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", renderer.getLightFactory().getPointLightRadiuses());

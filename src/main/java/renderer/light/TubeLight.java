@@ -20,13 +20,11 @@ import org.lwjgl.util.vector.Vector4f;
 public class TubeLight extends Entity {
 	
 	public static float DEFAULT_RANGE = 1f;
-	private static int counter = 0;
 	private Vector3f color;
 
 	protected TubeLight(AppContext appContext, MaterialFactory materialFactory, Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
 		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
-		counter++;
 		setScale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...mäh
 		init(appContext);
 	}
@@ -38,7 +36,7 @@ public class TubeLight extends Entity {
 	}
 	
 	private static String generateName() {
-		return String.format("TubeLight_%d", counter);
+		return String.format("TubeLight_%d", System.currentTimeMillis());
 	}
 
 	public void setColor(Vector3f color) {

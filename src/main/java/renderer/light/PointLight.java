@@ -21,19 +21,17 @@ public class PointLight extends Entity implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	public static float DEFAULT_RANGE = 1f;
-	private static int counter = 0;
 	private Vector4f color;
 	
 	protected PointLight(AppContext appContext, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
 		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
-		counter++;
 		setScale(range);
 		init(appContext);
 	}
 	
 	private static String generateName() {
-		return String.format("PointLight_%d", counter);
+		return String.format("PointLight_%d", System.currentTimeMillis());
 	}
 
 	public void setColor(Vector4f color) {
@@ -45,12 +43,14 @@ public class PointLight extends Entity implements Serializable {
 	}
 
 	public void drawAsMesh(Camera camera) {
+		if(!isInitialized()) { return; }
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 
 	public void draw(Program program) {
+		if(!isInitialized()) { return; }
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().draw();
@@ -58,6 +58,7 @@ public class PointLight extends Entity implements Serializable {
 	}
 
 	public void drawAgain(Program program) {
+		if(!isInitialized()) { return; }
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
 			modelComponent.getVertexBuffer().drawAgain();
@@ -107,9 +108,5 @@ public class PointLight extends Entity implements Serializable {
 			return true;
 		}
 		return false;
-	}
-	
-	private Object writeReplace() {
-		return new PointLightSerializationProxy(this);
 	}
 }
