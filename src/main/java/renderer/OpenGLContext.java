@@ -110,12 +110,13 @@ public class OpenGLContext {
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        if(!textureBindings.containsKey(textureUnitIndex) ||
-           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
+        // TODO: Use when no bypassing calls to bindtexture any more
+//        if(!textureBindings.containsKey(textureUnitIndex) ||
+//           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
             activeTexture(textureUnitIndex);
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
-        }
+//        }
     }
 
     public void viewPort(int x, int y, int width, int height) {
