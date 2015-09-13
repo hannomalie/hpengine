@@ -6,8 +6,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -22,6 +25,7 @@ import org.lwjgl.util.vector.Vector4f;
 
 import com.bulletphysics.linearmath.Transform;
 import renderer.Renderer;
+import renderer.material.Material;
 
 public class Util {
 	private static Logger LOGGER = getLogger();
@@ -408,5 +412,18 @@ public class Util {
 
 	public static boolean isRenderThread() {
 		return Thread.currentThread().getName().equals(Renderer.RENDER_THREAD_NAME);
+	}
+
+	public static <T> T[] toArray(Collection<T> values, Class<T> clazz) {
+		T[] array = (T[]) Array.newInstance(clazz, values.size());
+
+		Iterator<T> iterator = values.iterator();
+
+		int counter = 0;
+		while(iterator.hasNext()) {
+			array[counter] = iterator.next();
+			counter++;
+		}
+		return array;
 	}
 }

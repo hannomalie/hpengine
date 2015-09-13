@@ -1292,7 +1292,14 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		}
 		
 		if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
-		
+
+		const bool USE_GLOBAL_ENVIRONMENT_MAP = false;
+		if(USE_GLOBAL_ENVIRONMENT_MAP && overlappingVolumesCount == 0) {
+			result.diffuseColor = textureLod(globalEnvironmentMap, normalWorld, 8).rgb;
+			result.specularColor = textureLod(globalEnvironmentMap, reflect(V, normalWorld), roughness*8).rgb;
+			return result;
+		}
+
 		for(int i = 0; i < overlappingVolumesCount; i++) {
 			ProbeSample s = importanceSampleProjectedCubeMap(indices[i], positionWorld, normalWorld, reflect(V, normalWorld), V, roughness, metallic, color);
 			float blendFactor = blendFactors[i];//clamp(blendFactors[i], 0.0f, 1.0f);

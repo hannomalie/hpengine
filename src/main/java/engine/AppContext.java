@@ -9,6 +9,7 @@ import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -22,7 +23,9 @@ import renderer.command.Result;
 import renderer.drawstrategy.GBuffer;
 import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
+import renderer.light.PointLight;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
 import scene.Scene;
 import texture.Texture;
@@ -59,7 +62,7 @@ public class AppContext {
 	PhysicsFactory physicsFactory;
 	EntityFactory entityFactory;
 	Scene scene;
-	private int entityCount = 10;
+	private int entityCount = 5;
 	public volatile int PICKING_CLICK = 0;
 	public Renderer renderer;
 	private Camera camera;
@@ -71,7 +74,7 @@ public class AppContext {
 	private OpenGLStopWatch glWatch;
 
 	public static void main(String[] args) {
-		String sceneName = "sponza";
+		String sceneName = null;
 		boolean debug = true;
 		for (String string : args) {
 			if("debug=false".equals(string)) {
@@ -89,10 +92,13 @@ public class AppContext {
 
 		init();
 
-//		if(sceneName != null) {
-//			Scene scene = Scene.read(AppContext.getInstance().getRenderer(), sceneName);
-//            AppContext.getInstance().setScene(scene);
-//		}
+		if(sceneName != null) {
+			Scene scene = Scene.read(AppContext.getInstance().getRenderer(), sceneName);
+            AppContext.getInstance().setScene(scene);
+		}
+        else {
+            AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
+        }
 
 		WebLookAndFeel.install();
 		if(debug) {
@@ -105,7 +111,7 @@ public class AppContext {
 		}
 	}
 
-	public static void init() {
+    public static void init() {
 		init(false);
 	}
 	public static void init(boolean headless) {
@@ -238,80 +244,78 @@ public class AppContext {
 			@Override
 			public Result<Object> execute(AppContext world) {
 				world.getRenderer().destroy();
-				return new Result<Object>(new Object());
+				return new Result<>(new Object());
 			}
 		});
 		queue.poll();
 		System.exit(0);
 	}
 
-	private List<Entity> loadDummies() {
+	private List<Entity> loadTestScene() {
 		List<Entity> entities = new ArrayList<>();
 		
-		Renderer.exitOnGLError("loadDummies");
+		Renderer.exitOnGLError("loadTestScene");
 
 		try {
-			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj"));
-//			List<Model> sphere = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj"));
-			for (int i = 0; i < entityCount; i++) {
-				for (int j = 0; j < entityCount; j++) {
-					Material mat = renderer.getMaterialFactory().get("mirror");
-					if (i%4 == 1) {
-						mat = renderer.getMaterialFactory().get("stone");
-					}
-					if (i%4 == 2) {
-						mat = renderer.getMaterialFactory().get("wood");
-					}
-					if (i%4 == 3) {
-						mat = renderer.getMaterialFactory().get("stone2");
-					}
-					if (i%4 == 4) {
-						mat = renderer.getMaterialFactory().get("mirror");
-					}
-					try {
-						float random = (float) (Math.random() -0.5);
-						Vector3f position = new Vector3f(i*20,random*i+j,j*20);
-						Entity entity = getEntityFactory().getEntity(position, "Entity_" + sphere.get(0).getName() + Entity.count++, sphere.get(0), mat);
-						entity.getComponent(ModelComponent.class).setMaterial(mat.getName());
-						Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-						scale.scale(new Random().nextFloat()*14);
-						entity.setScale(scale);
-						
-//						PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
-//						physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
-//						physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
-						
-						entities.add(entity);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
+			Model skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+            entities.add(getEntityFactory().getEntity(new Vector3f(), skyBox));
+
+			Model sphere = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+
+            for (int i = 0; i < entityCount; i++) {
+                for (int j = 0; j < entityCount; j++) {
+                    for (int k = 0; k < entityCount; k++) {
+
+                        MaterialFactory.MaterialInfo materialInfo = new MaterialFactory.MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
+                                .setRoughness((float) i / entityCount)
+                                .setMetallic((float) j / entityCount)
+                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0));
+                        Material mat = renderer.getMaterialFactory().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
+
+                        try {
+                            Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
+                            Entity entity = getEntityFactory().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
+                            PointLight pointLight = getRenderer().getLightFactory().getPointLight(10);
+                            pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
+                            scene.addPointLight(pointLight);
+//							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
+//							scale.scale(new Random().nextFloat()*14);
+//							entity.setScale(scale);
+//
+//							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+//							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
+//							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
+
+                            entities.add(entity);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
 			}
 
-			StopWatch.getInstance().start("Load Sponza");
-//			List<Model> sponza = OBJLoader.loadTexturedModel(new File("C:\\san-miguel-converted\\san-miguel.obj"));
-			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
-			for (Model model : sponza) {
-//				model.setMaterial(mirror);
-//				if(model.getMaterial().getName().contains("fabric")) {
-//					model.setMaterial(mirror);
-//				}
-				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
-//				physicsFactory.addMeshPhysicsComponent(entity, 0);
-				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-				entity.setScale(scale);
-				entities.add(entity);
-			}
-			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj"));
-			for (Model model : skyBox) {
-				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
-				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
-				entity.setScale(scale);
-				entities.add(entity);
-			}
+//			StopWatch.getInstance().start("Load Sponza");
+//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
+//			for (Model model : sponza) {
+////				model.setMaterial(mirror);
+////				if(model.getMaterial().getName().contains("fabric")) {
+////					model.setMaterial(mirror);
+////				}
+//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
+////				physicsFactory.addMeshPhysicsComponent(entity, 0);
+//				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+//				entity.setScale(scale);
+//				entities.add(entity);
+//			}
+//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj"));
+//			for (Model model : skyBox) {
+//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
+//				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
+//				entity.setScale(scale);
+//				entities.add(entity);
+//			}
+//			StopWatch.getInstance().stopAndPrintMS();
 
-			StopWatch.getInstance().stopAndPrintMS();
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

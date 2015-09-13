@@ -15,8 +15,10 @@ import renderer.light.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -24,17 +26,17 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	String name = "";
-	List<ProbeData> probes = new ArrayList<>();
+	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	transient private AppContext appContext;
 	transient Renderer renderer;
-	private ArrayList<Entity> entities = new ArrayList<>();
-	private List<PointLight> pointLights = new ArrayList<>();
-	private List<TubeLight> tubeLights = new ArrayList<>();
-	private List<AreaLight> areaLights = new ArrayList<>();
+	private List<Entity> entities = new CopyOnWriteArrayList<>();
+	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
+	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
+	private List<AreaLight> areaLights = new CopyOnWriteArrayList<>();
 	private DirectionalLight directionalLight = new DirectionalLight();
 
 	public Scene() {
@@ -167,9 +169,11 @@ public class Scene implements LifeCycle, Serializable {
 //		});
 	}
 	public void update(float seconds) {
-		for (PointLight pointLight : pointLights) {
-			pointLight.update(seconds);
+		Iterator<PointLight> pointLightsIterator = pointLights.iterator();
+		while (pointLightsIterator.hasNext()) {
+			pointLightsIterator.next().update(seconds);
 		}
+
 		for (AreaLight areaLight : areaLights) {
 			areaLight.update(seconds);
 		}

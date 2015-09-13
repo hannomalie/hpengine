@@ -103,28 +103,25 @@ public class LightFactory {
     public void update(float seconds) {
     }
 	
-	public PointLight getPointLight(Model model) {
-		return getPointLight(new Vector3f(), model);
+	public PointLight getPointLight() {
+		return getPointLight(new Vector3f());
 	}
 	
-	public PointLight getPointLight(Vector3f position, Model model) {
-		return getPointLight(position, model, new Vector4f(1,1,1,1), PointLight.DEFAULT_RANGE);
+	public PointLight getPointLight(Vector3f position) {
+		return getPointLight(position, new Vector4f(1,1,1,1), PointLight.DEFAULT_RANGE);
 	}
 
-	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity) {
-		return getPointLight(position, model, colorIntensity, PointLight.DEFAULT_RANGE);
+	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity) {
+		return getPointLight(position, colorIntensity, PointLight.DEFAULT_RANGE);
 	}
 
-	public PointLight getPointLight() {
-		return getPointLight(sphereModel);
-	}
 	public PointLight getPointLight(float range) {
-		return getPointLight(new Vector3f(), sphereModel, new Vector4f(1,1,1,1), range);
+		return getPointLight(new Vector3f(), new Vector4f(1,1,1,1), range);
 	}
-	public PointLight getPointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
+	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity, float range) {
 		Material material = renderer.getMaterialFactory().getDefaultMaterial();
 		
-		PointLight light = new PointLight(appContext, renderer.getMaterialFactory(), position, model, colorIntensity, range, material.getName());
+		PointLight light = new PointLight(appContext, renderer.getMaterialFactory(), position, sphereModel, colorIntensity, range, material.getName());
 		light.init(appContext);
 		updatePointLightArrays();
 		return light;

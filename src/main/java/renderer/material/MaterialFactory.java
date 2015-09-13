@@ -8,14 +8,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.common.eventbus.Subscribe;
+import engine.AppContext;
+import event.MaterialAddedEvent;
+import event.MaterialChangedEvent;
 import renderer.Renderer;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
+import shader.Bufferable;
 import shader.Program;
+import shader.StorageBuffer;
+import shader.UniformBlock;
 import texture.Texture;
 
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import util.Util;
 
 public class MaterialFactory {
 
@@ -27,12 +35,18 @@ public class MaterialFactory {
 
 	private Material defaultMaterial;
 
+	private StorageBuffer materialBuffer;
+
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
+		materialBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(1000));
+
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
 		defaultMaterial = getMaterialWithoutRead(defaultTemp);
 		initDefaultMaterials();
+
+		AppContext.getEventBus().register(this);
 	}
 
 	private void initDefaultMaterials() {
@@ -52,22 +66,22 @@ public class MaterialFactory {
 		}});
 
 		getMaterial("wood", new HashMap<MAP, String>() {{
-			put(MAP.DIFFUSE, "hp/assets/textures/wood_diffuse.png");
-			put(MAP.NORMAL, "hp/assets/textures/wood_normal.png");
-		}});
+            put(MAP.DIFFUSE, "hp/assets/textures/wood_diffuse.png");
+            put(MAP.NORMAL, "hp/assets/textures/wood_normal.png");
+        }});
 		getMaterial("stoneWet", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/stone_diffuse.png");
 			put(MAP.NORMAL, "hp/assets/textures/stone_normal.png");
 			put(MAP.REFLECTION, "hp/assets/textures/stone_reflection.png");
 		}});
 		getMaterial("mirror", new HashMap<MAP, String>() {{
-			put(MAP.REFLECTION, "hp/assets/textures/default.dds");
-		}});
+            put(MAP.REFLECTION, "hp/assets/textures/default.dds");
+        }});
 		getMaterial("stoneParallax", new HashMap<MAP, String>() {{
-			put(MAP.DIFFUSE, "hp/assets/models/textures/bricks_parallax.jpg");
-			put(MAP.HEIGHT, "hp/assets/models/textures/bricks_parallax_height.jpg");
-			put(MAP.NORMAL, "hp/assets/models/textures/bricks_parallax_normal.png");
-		}});
+            put(MAP.DIFFUSE, "hp/assets/models/textures/bricks_parallax.jpg");
+            put(MAP.HEIGHT, "hp/assets/models/textures/bricks_parallax_height.jpg");
+            put(MAP.NORMAL, "hp/assets/models/textures/bricks_parallax_normal.png");
+        }});
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
@@ -91,6 +105,7 @@ public class MaterialFactory {
 		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
 		Material.write(material, materialInfo.name);
+		AppContext.getEventBus().post(new MaterialAddedEvent());
 		return material;
 	}
 
@@ -150,8 +165,12 @@ public class MaterialFactory {
 		}
 		return material;
 	}
-	
-	public static final class MaterialInfo implements Serializable {
+
+    public StorageBuffer getMaterialBuffer() {
+        return materialBuffer;
+    }
+
+    public static final class MaterialInfo implements Serializable {
 		private static final long serialVersionUID = 3564429930446909410L;
 		public MaterialInfo(MaterialMap maps) {
 			this.maps = maps;
@@ -173,7 +192,7 @@ public class MaterialFactory {
 			this.maps = materialInfo.maps;
 			this.environmentMapType = materialInfo.environmentMapType;
 			this.name = materialInfo.name;
-			this.diffuse = materialInfo.diffuse;
+			this.diffuse = new Vector3f(materialInfo.diffuse);
 			this.roughness = materialInfo.roughness;
 			this.metallic = materialInfo.metallic;
 			this.ambient = materialInfo.ambient;
@@ -237,6 +256,21 @@ public class MaterialFactory {
 		public void setFragmentShader(String fragmentShader) {
 			this.fragmentShader = fragmentShader;
 		}
+
+		public MaterialInfo setRoughness(float roughness) {
+			this.roughness = roughness;
+			return this;
+		}
+
+		public MaterialInfo setMetallic(float metallic) {
+			this.metallic = metallic;
+			return this;
+		}
+
+		public MaterialInfo setDiffuse(Vector3f diffuse) {
+			this.diffuse.set(diffuse);
+			return this;
+		}
 	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
@@ -289,5 +323,18 @@ public class MaterialFactory {
 		});
 		
 		return sortedList;
+	}
+
+	@Subscribe
+	public void bufferMaterials(MaterialAddedEvent event) {
+		renderer.doWithOpenGLContext(() -> {
+			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+		});
+	}
+	@Subscribe
+	public void bufferMaterials(MaterialChangedEvent event) {
+		renderer.doWithOpenGLContext(() -> {
+			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+		});
 	}
 }

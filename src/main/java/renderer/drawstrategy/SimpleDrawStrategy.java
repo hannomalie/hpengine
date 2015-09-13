@@ -678,6 +678,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
+//        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
         GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);

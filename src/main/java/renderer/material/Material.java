@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.Renderer;
 import renderer.material.MaterialFactory.MaterialInfo;
+import shader.Bufferable;
 import shader.Program;
 import shader.ProgramFactory;
 import shader.ShaderDefine;
@@ -22,14 +23,14 @@ import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
-public class Material implements Serializable {
+public class Material implements Serializable, Bufferable {
 	private static final long serialVersionUID = 1L;
 	
 	public static boolean MIPMAP_DEFAULT = true;
 	public static int TEXTUREINDEX = 0;
 	
 	private static Logger LOGGER = getLogger();
-	
+
 	public enum MAP {
 		DIFFUSE("diffuseMap", 0),
 		NORMAL("normalMap", 1),
@@ -60,8 +61,6 @@ public class Material implements Serializable {
 
 	transient private Renderer renderer;
 
-	protected Material() { }
-	
 	public void init(Renderer renderer) {
 		this.renderer = renderer;
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
@@ -84,12 +83,14 @@ public class Material implements Serializable {
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
 			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
 		}
-		
+
 		Program firstPassProgram = null;
-		
+
 		firstPassProgram = getFirstpassProgramForShaderDefinitions(renderer, firstPassProgram);
 		setProgram(firstPassProgram);
 	}
+
+	protected Material() { }
 
 	private Program getFirstpassProgramForShaderDefinitions(Renderer renderer, Program firstPassProgram) {
 		String definesString = ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet());
@@ -327,6 +328,28 @@ public class Material implements Serializable {
 	
 	public ENVIRONMENTMAPTYPE getEnvironmentMapType() {
 		return this.materialInfo.environmentMapType;
+	}
+
+
+//	@Override
+//	public int getSizePerObject() {
+//		return -1;
+//	}
+
+	@Override
+	public float[] get() {
+		float[] floats = new float[9];
+		int index = 0;
+		floats[index++] = materialInfo.diffuse.x;
+		floats[index++] = materialInfo.diffuse.y;
+		floats[index++] = materialInfo.diffuse.z;
+		floats[index++] = materialInfo.metallic;
+		floats[index++] = materialInfo.roughness;
+		floats[index++] = materialInfo.ambient;
+		floats[index++] = materialInfo.parallaxBias;
+		floats[index++] = materialInfo.parallaxScale;
+		floats[index++] = materialInfo.transparency;
+		return floats;
 	}
 
 }

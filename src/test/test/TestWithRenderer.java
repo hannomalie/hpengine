@@ -16,13 +16,13 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		AppContext.init();
+		AppContext.init(true);
 		appContext = AppContext.getInstance();
 		renderer = appContext.getRenderer();
 	}
 	
 	@AfterClass
 	public static void kill() {
-		renderer.destroy();
+		appContext.destroy();
 	}
 }

@@ -194,9 +194,6 @@ public class DeferredRenderer implements Renderer {
 
 	private void setupOpenGL(boolean headless) {
 		try {
-
-			openGLContext = new OpenGLContext(this, headless);
-
 			if(headless)
 			{
 				Canvas canvas = new Canvas();
@@ -216,10 +213,12 @@ public class DeferredRenderer implements Renderer {
 				frame.getContentPane().add(canvas, BorderLayout.CENTER);
 				frame.pack();
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				frame.setVisible(true);
+//				frame.setVisible(true);
 				frame.setVisible(false);
+				Display.setParent(canvas);
 //				openGLContext.attach(canvas);
 			}
+			openGLContext = new OpenGLContext(this, headless);
 
 		} catch (LWJGLException e) {
 			e.printStackTrace();

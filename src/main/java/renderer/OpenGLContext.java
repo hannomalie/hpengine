@@ -4,6 +4,7 @@ import config.Config;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.DisplayMode;
 import renderer.constants.BlendMode;
 import renderer.constants.GlCap;
 import renderer.constants.GlDepthFunc;
@@ -40,17 +41,17 @@ public class OpenGLContext {
         this.renderer = renderer;
 
         PixelFormat pixelFormat = new PixelFormat();
-        ContextAttribs contextAtrributes = new ContextAttribs(4, 3)
+        ContextAttribs contextAttributes = new ContextAttribs(4, 3)
 				.withProfileCompatibility(true)
 				.withForwardCompatible(true)
                 .withProfileCore(true)
                 .withDebug(true)
                 ;
 
-        Display.setDisplayMode(new org.lwjgl.opengl.DisplayMode(Config.WIDTH, Config.HEIGHT));
+        Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
         Display.setVSyncEnabled(false);
         Display.setTitle("DeferredRenderer");
-        Display.create(pixelFormat, contextAtrributes);
+        Display.create(pixelFormat, contextAttributes);
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         Display.setResizable(false);
         Display.setVSyncEnabled(Config.VSYNC_ENABLED);

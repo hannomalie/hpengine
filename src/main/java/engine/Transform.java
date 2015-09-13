@@ -352,9 +352,11 @@ public class Transform implements Serializable {
 	}
 
 	public FloatBuffer getTransformationBuffer() {
+		recalculateIfDirty();
 		return modelMatrixBuffer.asReadOnlyBuffer();
 	}
 	public FloatBuffer getTranslationRotationBuffer() {
+		recalculateIfDirty();
 		return viewMatrixBuffer.asReadOnlyBuffer();
 	}
 
