@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import engine.AppContext;
 import engine.model.DataChannels;
@@ -233,9 +235,10 @@ public class Program extends AbstractProgram implements Reloadable {
 
 		if (GL20.glGetShader(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not compile shader: " + filename);
-			System.err.println("Dynamic code takes " + newlineCount + " lines");
-			System.err.println(GL20.glGetShaderInfoLog(shaderID, 10000));
-//			System.exit(-1);
+//			System.err.println("Dynamic code takes " + newlineCount + " lines");
+			String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID, 10000);
+			shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount);
+			System.err.println(shaderInfoLog);
 			throw new Exception();
 		}
 		
@@ -243,7 +246,21 @@ public class Program extends AbstractProgram implements Reloadable {
 		
 		return shaderID;
 	}
-	
+
+	private static String replaceLineNumbersWithDynamicLinesAdded(String shaderInfoLog, int newlineCount) {
+
+		Pattern loCPattern = Pattern.compile("\\((\\w+)\\) :");
+		Matcher loCMatcher = loCPattern.matcher(shaderInfoLog);
+
+		while (loCMatcher.find()) {
+			String oldLineNumber = loCMatcher.group(1);
+			int newLineNumber = Integer.parseInt(oldLineNumber) - newlineCount;
+			shaderInfoLog = shaderInfoLog.replaceAll(String.format("\\(%s\\) :", oldLineNumber), String.format("(%d) :", newLineNumber));
+		}
+
+		return shaderInfoLog;
+	}
+
 	public static int loadShader(String filename, int type) throws Exception {
 		return loadShader(filename, type, "");
 	}

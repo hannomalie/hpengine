@@ -8,19 +8,21 @@ layout(std430, binding=0) buffer myBlock
   float exposure;
 };
 
-//struct Material {
-//	vec3 diffuse;
-//	float metallic;
-//	float roughness;
-//	float ambient;
-//	float parallaxBias;
-//	float parallaxScale;
-//	float transparency;
-//};
-//
-//layout(std430, binding=1) buffer _materials {
-//	Material materials[100];
-//};
+struct Material {
+	float diffuseR;
+	float diffuseg;
+	float diffuseB;
+	float metallic;
+	float roughness;
+	float ambient;
+	float parallaxBias;
+	float parallaxScale;
+	float transparency;
+};
+
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 
 uniform float worldExposure = 5;
 
@@ -490,4 +492,6 @@ void main()
 		exposure = (exposure + (targetExposure - exposure) * 0.015f);
 		//out_color.r = 1;
 	}
+
+//	out_color.r = materials[1].ambient;
 }

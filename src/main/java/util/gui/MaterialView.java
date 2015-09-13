@@ -320,7 +320,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					transparencyInput.setValue(((float)value/100f));
     					material.setTransparency(((float)value/100f));
-    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    		        	appContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -343,7 +343,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxScaleInput.setValue(((float)value/100f));
     					material.setParallaxScale(((float)value/100f));
-    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    		        	appContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -366,7 +366,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxBiasInput.setValue(((float)value/100f));
     					material.setParallaxBias(((float)value/100f));
-    		        	//World.getEventBus().post(new MaterialChangedEvent());
+    		        	appContext.getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -517,6 +517,7 @@ public class MaterialView extends WebPanel {
 			}
 			init(result.material);
 		}
+		AppContext.getEventBus().post(new MaterialChangedEvent());
 	}
 
 	private List<Texture> getAllTexturesSorted() {
