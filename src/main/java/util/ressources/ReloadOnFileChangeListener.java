@@ -15,7 +15,8 @@ public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChan
 	@Override
 	public void onFileChangeAction(File arg0) {
 		if(shouldReload(arg0)) {
-			System.out.println("Reloading......." + arg0.getAbsolutePath());
+			System.out.println("Reloading....... " + owner.getName());
+			System.out.println("because " + arg0.getAbsolutePath() + " was changed.");
 			owner.reload();
 		}
 	}

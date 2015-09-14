@@ -8,7 +8,7 @@ import shader.StorageBuffer;
 
 import java.nio.FloatBuffer;
 
-public class StorageBufferTest extends TestWithRenderer {
+public class StorageBufferTest extends TestWithAppContext {
 
 	@Test
 	public void storageBuffersGetsCorrectValues() {

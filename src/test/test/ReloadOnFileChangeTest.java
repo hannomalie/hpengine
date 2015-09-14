@@ -33,6 +33,11 @@ public class ReloadOnFileChangeTest extends TestWithRenderer {
 			public void unload() {
 				
 			}
+
+			@Override
+			public String getName() {
+				return "Dummy";
+			}
 		}
 		
 		DummyReloadable loadable = new DummyReloadable();

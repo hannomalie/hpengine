@@ -17,6 +17,7 @@ import event.GlobalDefineChangedEvent;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
+import util.TypedTuple;
 import util.Util;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
@@ -81,16 +82,20 @@ public class Program extends AbstractProgram implements Reloadable {
 //				System.exit(-1);
 				}
 			}
+//			try {
 			try {
 				GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
 			} catch (Exception e) {
-				try {
-					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
-				} catch (Exception e1) {
-					System.err.println("Not able to load default vertex shader, so what else could be done...");
-//				System.exit(-1);
-				}
+				e.printStackTrace();
 			}
+//			} catch (Exception e) {
+//				try {
+//					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+//				} catch (Exception e1) {
+//					System.err.println("Not able to load default fragment shader, so what else could be done...");
+////				System.exit(-1);
+//				}
+//			}
 			if (geometryShaderName != null && geometryShaderName != "") {
 				try {
 					GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
@@ -119,6 +124,10 @@ public class Program extends AbstractProgram implements Reloadable {
 			@Override
 			public boolean shouldReload(File changedFile) {
 				String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
+				if(fileName.startsWith("globals")) {
+					return true;
+				}
+
 				if(fragmentShaderName != null && fragmentShaderName.startsWith(fileName) ||
 				   vertexShaderName != null && vertexShaderName.startsWith(fileName)) {
 					return true;
@@ -163,7 +172,13 @@ public class Program extends AbstractProgram implements Reloadable {
 			System.out.println("Program not reloaded");
 		}
 	}
-	
+
+	@Override
+	public String getName() {
+		return new StringJoiner(", ").add(fragmentShaderName).add(vertexShaderName)
+				.toString();
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		if (!(other instanceof Program) || other == null) {
@@ -224,9 +239,13 @@ public class Program extends AbstractProgram implements Reloadable {
 //		System.out.println(shaderSource);
 		
 		try {
-			shaderSource += FileUtils.readFileToString(new File(getDirectory() + filename));//Util.loadAsTextFile(filename);
+			String shaderFileAsText = FileUtils.readFileToString(new File(getDirectory() + filename));
+			TypedTuple<String, Integer> tuple = replaceIncludes(shaderFileAsText, newlineCount);
+			shaderFileAsText = tuple.getLeft();
+			newlineCount = tuple.getRight();
+			shaderSource += shaderFileAsText;
 		} catch (IOException e) {
-			shaderSource += Util.loadAsTextFile(filename);
+			e.printStackTrace();
 		}
 		
 		shaderID = GL20.glCreateShader(type);
@@ -245,6 +264,22 @@ public class Program extends AbstractProgram implements Reloadable {
 		Renderer.exitOnGLError("loadShader");
 		
 		return shaderID;
+	}
+
+	private static TypedTuple<String, Integer> replaceIncludes(String shaderFileAsText, int currentNewLineCount) throws IOException {
+
+		Pattern includePattern = Pattern.compile("//include\\((.*)\\)");
+		Matcher includeMatcher = includePattern.matcher(shaderFileAsText);
+
+		while (includeMatcher.find()) {
+			String filename = includeMatcher.group(1);
+			String fileToInclude = FileUtils.readFileToString(new File(getDirectory() + filename));
+			currentNewLineCount += Util.countNewLines(fileToInclude);
+			shaderFileAsText = shaderFileAsText.replaceAll(String.format("//include\\(%s\\)", filename),
+					fileToInclude);
+		}
+
+		return new TypedTuple<>(shaderFileAsText, new Integer(currentNewLineCount));
 	}
 
 	private static String replaceLineNumbersWithDynamicLinesAdded(String shaderInfoLog, int newlineCount) {
@@ -270,7 +305,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 
 	public static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/shaders/deferred/";
+		return AppContext.WORKDIR_NAME + "/assets/shaders/";
 	}
 
 	public void addDefine(String name, Object define) {

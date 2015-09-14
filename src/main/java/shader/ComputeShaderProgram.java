@@ -3,6 +3,7 @@ package shader;
 import static log.ConsoleLogger.getLogger;
 
 import java.io.File;
+import java.util.StringJoiner;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -78,6 +79,10 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 			@Override
 			public boolean shouldReload(File changedFile) {
 				String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
+				if(fileName.startsWith("globals.glsl")) {
+					return true;
+				}
+
 				if(computeShaderName != null && computeShaderName.startsWith(fileName)) {
 					return true;
 				}
@@ -126,6 +131,12 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		} catch (Exception e1) {
 			System.out.println("Program not reloaded");
 		}
+	}
+
+	@Override
+	public String getName() {
+		return new StringJoiner(", ").add(computeShaderName)
+				.toString();
 	}
 
 	@Override

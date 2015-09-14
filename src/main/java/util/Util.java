@@ -426,4 +426,10 @@ public class Util {
 		}
 		return array;
 	}
+
+	public static int countNewLines(String content) {
+		String findStr = "\n";
+		int newlineCount = (content.split(findStr, -1).length-1);
+		return newlineCount;
+	}
 }
