@@ -16,6 +16,7 @@ import engine.model.VertexBuffer;
 import octree.Octree;
 import renderer.DeferredRenderer;
 import renderer.Renderer;
+import renderer.constants.GlCap;
 import renderer.light.DirectionalLight;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import scene.EnvironmentProbe.Update;
@@ -28,6 +29,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
+
+import static renderer.constants.GlCap.CULL_FACE;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class EnvironmentProbeFactory {
 	public static final int MAX_PROBES = 25;
@@ -181,9 +185,9 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void prepareProbeRendering() {
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glEnable(GL11.GL_CULL_FACE);
+		renderer.getOpenGLContext().depthMask(true);
+		renderer.getOpenGLContext().enable(DEPTH_TEST);
+		renderer.getOpenGLContext().enable(CULL_FACE);
 		cubeMapArrayRenderTarget.use(false);
 	}
 	

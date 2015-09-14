@@ -15,6 +15,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
+import renderer.constants.GlCap;
 import renderer.light.AreaLight;
 import renderer.light.LightFactory;
 import renderer.light.PointLight;
@@ -25,6 +26,9 @@ import texture.CubeMap;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static renderer.constants.GlCap.BLEND;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DebugDrawStrategy extends SimpleDrawStrategy {
 
@@ -57,8 +61,8 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         renderer.getLightFactory().renderAreaLightShadowMaps(octree);
 
         gBuffer.use(true);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDisable(GL11.GL_BLEND);
+        openGLContext.disable(DEPTH_TEST);
+        openGLContext.disable(BLEND);
 
         linesProgram.use();
         linesProgram.setUniform("screenWidth", (float) Config.WIDTH);
@@ -178,19 +182,19 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         dynamicsWorld.debugDrawWorld();
         renderer.drawLines(linesProgram);
 
-        GL11.glDepthMask(false);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        openGLContext.depthMask(false);
+        openGLContext.disable(DEPTH_TEST);
         ////////////////////
 
         drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
-        GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
-        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        openGLContext.viewPort(0,0, Config.WIDTH, Config.HEIGHT);
+        openGLContext.clearDepthAndColorBuffer();
+
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         renderer.drawToQuad(renderer.getGBuffer().getPositionMap()); // the first color attachment
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().enable(DEPTH_TEST);
     }
 }

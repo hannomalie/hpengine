@@ -15,6 +15,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
+import renderer.constants.CullMode;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
@@ -24,6 +25,10 @@ import util.Util;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.List;
+
+import static renderer.constants.CullMode.FRONT;
+import static renderer.constants.GlCap.CULL_FACE;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DirectionalLight extends Entity {
 	
@@ -150,10 +155,10 @@ public class DirectionalLight extends Entity {
 
 	public void drawShadowMap(Octree octree) {
 		if(!isInitialized()) { return; }
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glCullFace(GL11.GL_FRONT);
-		GL11.glEnable(GL11.GL_CULL_FACE);
+		appContext.getRenderer().getOpenGLContext().depthMask(true);
+		appContext.getRenderer().getOpenGLContext().enable(DEPTH_TEST);
+		appContext.getRenderer().getOpenGLContext().cullFace(FRONT);
+		appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
 		
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
@@ -174,7 +179,7 @@ public class DirectionalLight extends Entity {
 				modelComponent.getVertexBuffer().draw();
 			});
 		}
-		GL11.glEnable(GL11.GL_CULL_FACE);
+		appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
 	}
 
 	public int getShadowMapId() {

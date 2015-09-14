@@ -2,12 +2,14 @@ package texture;
 
 import java.nio.FloatBuffer;
 
+import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
+import renderer.constants.GlTextureTarget;
 
 @SuppressWarnings("serial")
 public class DynamicCubeMap extends CubeMap {
@@ -18,7 +20,7 @@ public class DynamicCubeMap extends CubeMap {
 		this.textureID = createTextureID();
 		FloatBuffer dummy = BufferUtils.createFloatBuffer(width*height * 4);
 
-		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, textureID);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
@@ -46,6 +48,6 @@ public class DynamicCubeMap extends CubeMap {
     }
 
     public void bind() {
-      GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, textureID);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
     }
 }

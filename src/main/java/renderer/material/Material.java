@@ -6,6 +6,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.Renderer;
+import renderer.constants.GlTextureTarget;
 import renderer.material.MaterialFactory.MaterialInfo;
 import shader.Bufferable;
 import shader.Program;
@@ -159,10 +160,7 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesInactive() {
 		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
-//			texture.bind();
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-//			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), materialProgram.getId(), map.textureSlot));
+			renderer.getOpenGLContext().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
 		}
 		
 	}

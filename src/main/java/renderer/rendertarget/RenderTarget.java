@@ -6,6 +6,8 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
+import engine.AppContext;
+import renderer.constants.GlTextureTarget;
 import util.Util;
 
 import org.lwjgl.BufferUtils;
@@ -52,7 +54,7 @@ public class RenderTarget {
 
             int renderedTextureTemp = GL11.glGenTextures();
 
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -88,7 +90,7 @@ public class RenderTarget {
             new RuntimeException().printStackTrace();
             System.exit(0);
         }
-        GL11.glClearColor(clearR, clearG, clearB, clearA);
+        AppContext.getInstance().getRenderer().getOpenGLContext().clearColor(clearR, clearG, clearB, clearA);
     }
 
     public void resizeTextures() {
@@ -99,7 +101,7 @@ public class RenderTarget {
 
             int renderedTextureTemp = renderedTextures[i];
 
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -125,9 +127,9 @@ public class RenderTarget {
 
     public void use(boolean clear) {
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-        GL11.glViewport(0, 0, width, height);
+        AppContext.getInstance().getRenderer().getOpenGLContext().viewPort(0, 0, width, height);
         if (clear) {
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            AppContext.getInstance().getRenderer().getOpenGLContext().clearDepthAndColorBuffer();
         }
     }
 

@@ -1293,7 +1293,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 		
 		if(overlappingVolumesCount == 1) { blendFactors[0] = 1.0f; SumBlendFactor = 1.0f;}
 
-		const bool USE_GLOBAL_ENVIRONMENT_MAP = false;
+		const bool USE_GLOBAL_ENVIRONMENT_MAP = true;
 		if(USE_GLOBAL_ENVIRONMENT_MAP && overlappingVolumesCount == 0) {
 			result.diffuseColor = textureLod(globalEnvironmentMap, normalWorld, 8).rgb;
 			result.specularColor = textureLod(globalEnvironmentMap, reflect(V, normalWorld), roughness*8).rgb;

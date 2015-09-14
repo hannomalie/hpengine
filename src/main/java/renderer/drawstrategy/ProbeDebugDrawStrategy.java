@@ -24,6 +24,9 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static renderer.constants.GlCap.BLEND;
+import static renderer.constants.GlCap.DEPTH_TEST;
+
 public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
 
     private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
@@ -37,8 +40,8 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
 
         gBuffer.use(true);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDisable(GL11.GL_BLEND);
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
+        renderer.getOpenGLContext().disable(BLEND);
 
         linesProgram.use();
         linesProgram.setUniform("screenWidth", (float) Config.WIDTH);
@@ -132,18 +135,17 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         renderer.drawLines(linesProgram);
 
         GL11.glDepthMask(false);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
         ////////////////////
 
         drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
-        GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
-        GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+        renderer.getOpenGLContext().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
+        renderer.getOpenGLContext().clearDepthAndColorBuffer();
 
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         renderer.drawToQuad(renderer.getGBuffer().getPositionMap()); // the first color attachment
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().enable(DEPTH_TEST);
     }
 }

@@ -1,20 +1,19 @@
 package texture;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.List;
-
+import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import renderer.constants.GlTextureTarget;
+
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.List;
+
+import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 public class CubeMap extends Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -23,7 +22,7 @@ public class CubeMap extends Texture implements Serializable {
 
 	protected CubeMap() {}
 	
-	public CubeMap(String path, int target, int textureID) {
+	public CubeMap(String path, GlTextureTarget target, int textureID) {
 		super(path, target, textureID);
 	}
 	
@@ -32,11 +31,11 @@ public class CubeMap extends Texture implements Serializable {
         bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
         {
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, minFilter); 
-            GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-            GL11.glTexParameteri (target, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri (target, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri (target, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
+            GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+            GL11.glTexParameteri (target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         }
 
 
@@ -143,5 +142,9 @@ public class CubeMap extends Texture implements Serializable {
 	@Override
 	public String toString() {
 		return "(Cubemap)" + getPath();
+	}
+
+	public void bind(int unit) {
+		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
 	}
 }

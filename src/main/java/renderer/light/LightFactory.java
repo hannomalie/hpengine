@@ -14,6 +14,8 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
+import renderer.constants.GlCap;
+import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
@@ -27,6 +29,10 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static renderer.constants.BlendMode.FUNC_ADD;
+import static renderer.constants.GlCap.CULL_FACE;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class LightFactory {
 
@@ -87,7 +93,7 @@ public class LightFactory {
 
 		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 			int renderedTextureTemp = GL11.glGenTextures();
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderedTextureTemp);
+			renderer.getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 
 			
@@ -278,18 +284,17 @@ public class LightFactory {
 		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
 
 		GPUProfiler.start("Arealight shadowmaps");
-		GL11.glDepthMask(true);
-		GL11.glEnable(GL11.GL_DEPTH_TEST);
-		GL11.glDisable(GL11.GL_CULL_FACE);
+		renderer.getOpenGLContext().depthMask(true);
+		renderer.getOpenGLContext().enable(DEPTH_TEST);
+		renderer.getOpenGLContext().disable(CULL_FACE);
 		renderTarget.use(true);
 		
 		for(int i = 0; i < Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size()); i++) {
 
 			renderTarget.setTargetTexture(areaLightDepthMaps.get(i), 0);
 
-			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-			
+			renderer.getOpenGLContext().clearDepthAndColorBuffer();
+
 			AreaLight light = areaLights.get(i);
 			Camera camera = light;
 

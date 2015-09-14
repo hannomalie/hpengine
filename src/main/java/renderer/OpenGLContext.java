@@ -1,18 +1,19 @@
 package renderer;
 
 import config.Config;
+import engine.AppContext;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
-import renderer.constants.BlendMode;
-import renderer.constants.GlCap;
-import renderer.constants.GlDepthFunc;
-import renderer.constants.GlTextureTarget;
+import renderer.constants.*;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.logging.Logger;
+
+import static renderer.constants.GlCap.CULL_FACE;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class OpenGLContext {
 
@@ -67,13 +68,11 @@ public class OpenGLContext {
         GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
         Keyboard.create();
 
-//		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glEnable(GL11.GL_CULL_FACE);
-//		GL11.glDisable(GL11.GL_CULL_FACE);
+        enable(DEPTH_TEST);
+        enable(CULL_FACE);
 
         // Map the internal OpenGL coordinate system to the entire screen
-        GL11.glViewport(0, 0, Config.WIDTH, Config.HEIGHT);
+        viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
 
         instance = this;
     }
@@ -103,14 +102,27 @@ public class OpenGLContext {
 
     private int activeTexture = -1;
     public void activeTexture(int textureUnitIndex) {
-        int textureIndexGLInt = GL13.GL_TEXTURE0 + textureUnitIndex;
+        int textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex);
         if(activeTexture != textureIndexGLInt) {
             GL13.glActiveTexture(textureIndexGLInt);
         }
     }
+    private int getCleanedTextureUnitValue(int textureUnit) {
+        return textureUnit - GL13.GL_TEXTURE0;
+    }
+    private int getOpenGLTextureUnitValue(int textureUnitIndex) {
+        return GL13.GL_TEXTURE0 + textureUnitIndex;
+    }
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
+    public void bindTexture(GlTextureTarget target, int textureId) {
+        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+            GL11.glBindTexture(target.glTarget, textureId);
+            textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
+        });
+    }
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
+        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -118,6 +130,7 @@ public class OpenGLContext {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
 //        }
+        });
     }
 
     public void viewPort(int x, int y, int width, int height) {
@@ -171,5 +184,18 @@ public class OpenGLContext {
 
     public void blendFunc(BlendMode.Factor sfactor, BlendMode.Factor dfactor) {
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor);
+    }
+
+    public void cullFace(CullMode mode) {
+        GL11.glCullFace(mode.glMode);
+    }
+
+    public void clearColor(float r, float g, float b, float a) {
+        GL11.glClearColor(r, g, b, a);
+    }
+
+    public void bindImageTexture(int unit, int textureId, int level, boolean layered, int layer, int access, int internalFormat) {
+        // TODO: create access enum
+        GL42.glBindImageTexture(unit, textureId, level, layered, layer, access, internalFormat);
     }
 }

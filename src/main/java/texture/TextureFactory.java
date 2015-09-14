@@ -33,6 +33,7 @@ import renderer.DeferredRenderer;
 import renderer.Renderer;
 import renderer.command.Command;
 import renderer.command.Result;
+import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
 
 import org.apache.commons.io.FileUtils;
@@ -45,6 +46,9 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector2f;
+
+import static renderer.constants.GlTextureTarget.TEXTURE_2D;
+import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -95,7 +99,7 @@ public class TextureFactory {
 
 //    	loadAllAvailableTextures();
 
-        defaultTexture = getTexture("hp/assets/models/textures/gi_flag.png");
+        defaultTexture = getTexture("hp/assets/models/textures/gi_flag.png", true);
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
     }
     
@@ -153,7 +157,7 @@ public class TextureFactory {
     }
     public Texture getTexture(String resourceName, boolean srgba) {
         Texture tex = TEXTURES.get(resourceName);
-        
+
         if (tex != null) {
             return tex;
         }
@@ -168,7 +172,6 @@ public class TextureFactory {
 
         try {
             tex = getTexture(resourceName,
-                    GL11.GL_TEXTURE_2D, // target
                     GL11.GL_RGBA,     // dst pixel format
                     GL11.GL_LINEAR, // min filter (unused)
                     GL11.GL_LINEAR, false, srgba);
@@ -211,7 +214,6 @@ public class TextureFactory {
         }
         
         tex = getCubeMap(resourceName,
-        				 GL13.GL_TEXTURE_CUBE_MAP, // target
                          GL11.GL_RGBA,     // dst pixel format
                          GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, false);
@@ -238,7 +240,6 @@ public class TextureFactory {
         }
         
         tex = getTexture(resourceName,
-                         GL11.GL_TEXTURE_2D, // target
                          GL11.GL_RGBA,     // dst pixel format
                          GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, true);
@@ -265,7 +266,6 @@ public class TextureFactory {
         }
         
         tex = getCubeMap(resourceName,
-                         GL13.GL_TEXTURE_CUBE_MAP, // target
                          GL11.GL_RGBA,     // dst pixel format
                          GL11.GL_LINEAR, // min filter (unused)
                          GL11.GL_LINEAR, true);
@@ -279,7 +279,6 @@ public class TextureFactory {
      * disk.
      *
      * @param resourceName The location of the resource to load
-     * @param target The GL target to load the texture against
      * @param dstPixelFormat The pixel format of the screen
      * @param minFilter The minimising filter
      * @param magFilter The magnification filter
@@ -288,25 +287,24 @@ public class TextureFactory {
      * @throws IOException Indicates a failure to access the resource
      */
     public Texture getTexture(String resourceName, 
-            int target, 
-            int dstPixelFormat, 
+            int dstPixelFormat,
             int minFilter, 
             int magFilter, boolean asStream) throws IOException {
     	
-    	return getTexture(resourceName, target, dstPixelFormat, minFilter, magFilter, asStream, false);
+    	return getTexture(resourceName, dstPixelFormat, minFilter, magFilter, asStream, false);
     }
 
-    public Texture getTexture(String resourceName, 
-                              int target, 
-                              int dstPixelFormat, 
+    public Texture getTexture(String resourceName,
+                              int dstPixelFormat,
                               int minFilter, 
                               int magFilter, boolean asStream, boolean srga) throws IOException 
     { 
         int srcPixelFormat = 0;
-        
-        // create the texture ID for this texture 
-        Texture texture = new Texture(resourceName, target,createTextureID()); 
-        
+        GlTextureTarget target = TEXTURE_2D;
+
+        // create the texture ID for this texture
+        Texture texture = new Texture(resourceName, target, createTextureID());
+
         texture.bind();
         
 //        long start = System.currentTimeMillis();
@@ -350,21 +348,21 @@ public class TextureFactory {
     }
     
     private CubeMap getCubeMap(String resourceName, 
-					            int target, 
-					            int dstPixelFormat, 
+					            int dstPixelFormat,
 					            int minFilter, 
 					            int magFilter, boolean asStream) throws IOException {
-    	
-    	
+
+        GlTextureTarget target = TEXTURE_CUBE_MAP;
+
     	 int srcPixelFormat = 0;
          
          // create the texture ID for this texture 
          int textureID = createTextureID(); 
          CubeMap cubeMap = new CubeMap(resourceName, target, textureID); 
          
-         // bind this texture 
-         GL11.glBindTexture(target, textureID);
-         
+         // bind this texture
+        renderer.getOpenGLContext().bindTexture(target, textureID);
+
          BufferedImage bufferedImage = null;
          if (asStream) {
              bufferedImage = loadImageAsStream(resourceName);
@@ -615,35 +613,34 @@ public class TextureFactory {
         generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
     }
     public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
+        renderer.getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
     public void enableMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId); 
+        renderer.getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, textureId);
+        renderer.getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
 		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
     }
     
     public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
-    	GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;
     }
     
     public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
     	int copyTextureId = GL11.glGenTextures();
-		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, copyTextureId);
-		
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
+
 		for(int i = 0; i < 6; i++) {
 			GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		}

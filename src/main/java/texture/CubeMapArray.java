@@ -1,6 +1,8 @@
 package texture;
 
+import engine.AppContext;
 import renderer.Renderer;
+import renderer.constants.GlTextureTarget;
 import scene.EnvironmentProbeFactory;
 
 import org.lwjgl.opengl.GL11;
@@ -59,19 +61,17 @@ public class CubeMapArray {
 	}
 
 	public void bind() {
-		GL11.glBindTexture(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, textureId);
+		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 
 	public void bind(int unit) {
-		GL13.glActiveTexture(unit);
-		GL11.glBindTexture(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, textureId);
+		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 	public void bind(int layer, int unit) {
 		bind(layer, unit, 0);
 	}
 	public void bind(int layer, int unit, int level) {
-		GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit);
-		GL42.glBindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
+		AppContext.getInstance().getRenderer().getOpenGLContext().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
 	}
 
 	public int getTextureID() {

@@ -6,7 +6,9 @@ import static org.lwjgl.opengl.GL21.*;
 
 import java.nio.ByteBuffer;
 
+import engine.AppContext;
 import org.lwjgl.BufferUtils;
+import renderer.constants.GlTextureTarget;
 
 public class PixelBufferObject {
 	
@@ -35,10 +37,10 @@ public class PixelBufferObject {
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id);
 	}
 	
-	public void readPixelsFromTexture(int textureId, int mipmapLevel, int target, int format, int type) {
+	public void readPixelsFromTexture(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type) {
 		bind();
-		glBindTexture(target, textureId);
-		glGetTexImage(target, mipmapLevel, format, type, buffer);
+		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureId);
+		glGetTexImage(target.glTarget, mipmapLevel, format, type, buffer);
 		unbind();
 	}
 	

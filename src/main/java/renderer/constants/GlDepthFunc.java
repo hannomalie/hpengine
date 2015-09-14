@@ -3,7 +3,7 @@ package renderer.constants;
 import org.lwjgl.opengl.GL11;
 
 public enum GlDepthFunc {
-    LESS(GL11.GL_LESS);
+    LESS(GL11.GL_LESS), LEQUAL(GL11.GL_LEQUAL);
 
     public final int glFunc;
 

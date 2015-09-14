@@ -8,12 +8,15 @@ import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLThread;
+import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.zip.DataFormatException;
+
+import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -23,7 +26,7 @@ public class Texture implements Serializable {
 
     private volatile boolean mipmapsGenerated = false;
 
-	protected int target;
+	protected GlTextureTarget target;
     transient protected int textureID;
     protected int height;
     protected int width;
@@ -40,11 +43,10 @@ public class Texture implements Serializable {
 	
     /**
      * Create a new texture
-     *
-     * @param target The GL target 
+     * @param target The GL target
      * @param textureID The GL texture ID
      */
-    public Texture(String path, int target,int textureID) {
+    public Texture(String path, GlTextureTarget target, int textureID) {
         this.target = target;
         this.textureID = textureID;
         this.path = path;
@@ -55,9 +57,10 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
-        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-            GL11.glBindTexture(target, textureID);
-        });
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureID);
+    }
+    public void bind(int unit) {
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, target, textureID);
     }
 
     public void setHeight(int height) {
@@ -117,14 +120,13 @@ public class Texture implements Serializable {
 	
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
         AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-
             bind();
-            if (target == GL11.GL_TEXTURE_2D)
+            if (target == TEXTURE_2D)
             {
-                GL11.glTexParameteri(target, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-                GL11.glTexParameteri(target, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-                GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                GL11.glTexParameteri(target, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 //            GL11.glTexParameteri(target, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
             }
 
@@ -135,7 +137,7 @@ public class Texture implements Serializable {
                 //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
             }
             synchronized (data) {
-                GL11.glTexImage2D(target,
+                GL11.glTexImage2D(target.glTarget,
                         0,
                         internalformat,
                         getWidth(),
@@ -177,7 +179,7 @@ public class Texture implements Serializable {
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
-            GL11.glTexImage2D(target,
+            GL11.glTexImage2D(target.glTarget,
                     0,
                     internalformat,
                     currentWidth,

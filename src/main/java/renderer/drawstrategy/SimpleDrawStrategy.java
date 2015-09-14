@@ -14,7 +14,9 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.*;
+import renderer.constants.CullMode;
 import renderer.constants.GlCap;
+import renderer.constants.GlTextureTarget;
 import renderer.light.*;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
@@ -32,6 +34,7 @@ import java.util.List;
 
 import static renderer.constants.BlendMode.*;
 import static renderer.constants.BlendMode.Factor.*;
+import static renderer.constants.CullMode.BACK;
 import static renderer.constants.GlCap.BLEND;
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -242,8 +245,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         gBuffer.getLightAccumulationBuffer().use(true);
 //		laBuffer.resizeTextures();
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
-        GL11.glClearColor(0, 0, 0, 0);
-        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+        AppContext.getInstance().getRenderer().getOpenGLContext().clearColor(0, 0, 0, 0);
+        AppContext.getInstance().getRenderer().getOpenGLContext().clearColorBuffer();
 
         GPUProfiler.start("Activate GBuffer textures");
         openGLContext.bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -298,8 +301,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         renderer.getTextureFactory().generateMipMaps(gBuffer.getAmbientOcclusionMapId());
         GPUProfiler.end();
 
-        GL11.glDisable(GL11.GL_BLEND);
-//		GL11.glEnable(GL11.GL_CULL_FACE);
+        renderer.getOpenGLContext().disable(BLEND);
 
         gBuffer.getLightAccumulationBuffer().unuse();
 
@@ -307,9 +309,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (Config.USE_GI) {
             GL11.glDepthMask(false);
-            GL11.glDisable(GL11.GL_DEPTH_TEST);
-            GL11.glDisable(GL11.GL_BLEND);
-            GL11.glCullFace(GL11.GL_BACK);
+            renderer.getOpenGLContext().disable(DEPTH_TEST);
+            renderer.getOpenGLContext().disable(BLEND);
+            renderer.getOpenGLContext().cullFace(BACK);
             renderReflectionsAndAO(viewMatrix, projectionMatrix);
         } else {
             gBuffer.getReflectionBuffer().use(true);
@@ -427,8 +429,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     private void doAreaLights(List<AreaLight> areaLights, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
 
-        GL11.glDisable(GL11.GL_CULL_FACE);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().disable(CULL_FACE);
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
         if(areaLights.isEmpty()) { return; }
 
         GPUProfiler.start("Area lights: " + areaLights.size());
@@ -466,8 +468,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
             renderer.getFullscreenBuffer().draw();
 //			areaLight.getVertexBuffer().drawDebug();
         }
@@ -478,12 +479,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private void doInstantRadiosity(DirectionalLight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
         if(Config.useInstantRadiosity) {
             GPUProfiler.start("Instant Radiosity");
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapColorMapId()); // object's color
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(7, TEXTURE_2D, directionalLight.getShadowMapWorldPositionId());
+            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(8, TEXTURE_2D, directionalLight.getShadowMapColorMapId());
             instantRadiosityProgram.use();
             instantRadiosityProgram.setUniform("screenWidth", (float) Config.WIDTH);
             instantRadiosityProgram.setUniform("screenHeight", (float) Config.HEIGHT);
@@ -491,8 +489,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             instantRadiosityProgram.setUniform("lightDiffuse", directionalLight.getColor());
             instantRadiosityProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
             instantRadiosityProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-            GL11.glDisable(GL11.GL_CULL_FACE);
-            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            renderer.getOpenGLContext().disable(CULL_FACE);
+            renderer.getOpenGLContext().disable(DEPTH_TEST);
             renderer.getFullscreenBuffer().draw();
             GPUProfiler.end();
         }
@@ -502,19 +500,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         if(!Config.useAmbientOcclusion && !Config.SCATTERING) { return; }
         GBuffer gBuffer = renderer.getGBuffer();
         GPUProfiler.start("Scattering and AO");
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getPositionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getMotionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapId()); // momentum 1, momentum 2
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind(8);
 
         gBuffer.getHalfScreenBuffer().use(true);
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
@@ -533,7 +525,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
         renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(aoScatteringProgram);
         renderer.getFullscreenBuffer().draw();
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().enable(DEPTH_TEST);
         renderer.getTextureFactory().generateMipMaps(gBuffer.getHalfScreenBuffer().getRenderedTexture());
         GPUProfiler.end();
     }
@@ -543,42 +535,29 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
         RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getPositionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getMotionMap()); // specular
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getFinalMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-        renderer.getEnvironmentMap().bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-        reflectionBuffer.getRenderedTexture(0);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
-        renderer.getEnvironmentMap().bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 10);
-        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, reflectionBuffer.getRenderedTexture());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
+        renderer.getEnvironmentMap().bind(6);
+//        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
+//        reflectionBuffer.getRenderedTexture(0);
+        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind(8);
+        renderer.getEnvironmentMap().bind(9);
+        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind(10);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
 
         int copyTextureId = GL11.glGenTextures();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+        renderer.getOpenGLContext().bindTexture(11, TEXTURE_2D, copyTextureId);
         GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA16F, reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         GL43.glCopyImageSubData(reflectionBuffer.getRenderedTexture(), GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
                 copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
                 reflectionBuffer.getWidth(), reflectionBuffer.getHeight(), 1);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, copyTextureId);
+        renderer.getOpenGLContext().bindTexture(11, TEXTURE_2D, copyTextureId);
 
         if(!USE_COMPUTESHADER_FOR_REFLECTIONS) {
             reflectionBuffer.use(true);
@@ -637,30 +616,19 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         combineProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 
         finalBuffer.use(true);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        renderer.getOpenGLContext().disable(DEPTH_TEST);
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getLightAccumulationBuffer().getRenderedTexture(1)); // ao, reflection
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getMotionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getPositionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 5);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-        renderer.getEnvironmentMap().bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getReflectionMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 9);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getRefractedMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 11);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
+        renderer.getOpenGLContext().bindTexture(0, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        renderer.getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
+        renderer.getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getLightAccumulationBuffer().getRenderedTexture(1));
+        renderer.getOpenGLContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        renderer.getOpenGLContext().bindTexture(4, TEXTURE_2D, gBuffer.getPositionMap());
+        renderer.getOpenGLContext().bindTexture(5, TEXTURE_2D, gBuffer.getNormalMap());
+        renderer.getEnvironmentMap().bind(6);
+        renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray().bind(7);
+        renderer.getOpenGLContext().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
+        renderer.getOpenGLContext().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
+        renderer.getOpenGLContext().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
 
         renderer.getFullscreenBuffer().draw();
 
@@ -672,17 +640,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Post processing");
         postProcessProgram.use();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, finalBuffer.getRenderedTexture(0)); // output color
+        renderer.getOpenGLContext().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
         postProcessProgram.setUniform("worldExposure", Config.EXPOSURE);
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getNormalMap());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 2);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getMotionMap());
+        renderer.getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+        renderer.getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         renderer.getFullscreenBuffer().draw();
 
         GPUProfiler.end();
