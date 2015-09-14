@@ -270,3 +270,71 @@ vec3 cookTorrance(in vec3 lightDirectionView, in vec3 lightDiffuse, in float att
 
 	return attenuation * (diff + cookTorrance * lightDiffuse.rgb * specularColor);
 }
+vec3 cookTorranceCubeMap(samplerCube cubemap,
+                  in vec3 ViewVectorWorld, in vec3 positionWorld, in vec3 normalWorld,
+                  float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
+//http://renderman.pixar.com/view/cook-torrance-shader
+//http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
+	vec3 V = normalize(ViewVectorWorld);
+ 	vec3 L = normalize(-normalWorld);
+    vec3 H = normalize(L + V);
+    vec3 N = normalize(normalWorld);
+    vec3 P = positionWorld;
+    float NdotH = clamp(dot(N, H), 0.0, 1.0);
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    float NdotL = clamp(dot(N, L), 0.0, 1.0);
+    float VdotH = clamp(dot(V, H), 0.0, 1.0);
+
+	// UE4 roughness mapping graphicrants.blogspot.de/2013/03/08/specular-brdf-reference.html
+	//roughness = (roughness+1)/2;
+	float alpha = roughness*roughness;
+	float alphaSquare = alpha*alpha;
+
+	// GGX
+	//http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+	float denom = (NdotH*NdotH*(alphaSquare-1))+1;
+	float D = alphaSquare/(3.1416*denom*denom);
+
+	float G = min(1, min((2*NdotH*NdotV/VdotH), (2*NdotH*NdotL/VdotH)));
+
+    // Schlick
+    float F0 = 0.02;
+	// Specular in the range of 0.02 - 0.2, electrics up to 1 and mostly above 0.5
+	// http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float glossiness = (1-roughness);
+	float maxSpecular = mix(0.2, 1.0, metallic);
+	F0 = max(F0, (glossiness*maxSpecular));
+	//F0 = max(F0, metallic*0.2);
+    float fresnel = 1; fresnel -= dot(L, H);
+	fresnel = pow(fresnel, 5.0);
+	//http://seblagarde.wordpress.com/2011/08/17/feeding-a-physical-based-lighting-mode/
+	float temp = 1.0; temp -= F0;
+	fresnel *= temp;
+	float F = fresnel + F0;
+
+    vec3 lightDiffuse = textureLod(cubemap, normalWorld, roughness * 8).rgb;
+    vec3 lightSpecular = textureLod(cubemap, reflect(V, normalWorld), roughness * 8).rgb;
+	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
+
+	/////////////////////////
+	// OREN-NAYAR
+	/*{
+		float angleVN = acos(NdotV);
+	    float angleLN = acos(NdotL);
+	    float alpha = max(angleVN, angleLN);
+	    float beta = min(angleVN, angleLN);
+	    float gamma = dot(V - N * dot(V, L), L - N * NdotL);
+	    float roughnessSquared = alpha;
+	    float A = 1.0 - 0.5 * (roughnessSquared / (roughnessSquared + 0.57));
+	    float B = 0.45 * (roughnessSquared / (roughnessSquared + 0.09));
+	    float C = sin(alpha) * tan(beta);
+	    diff *= (A + B * max(0.0, gamma) * C);
+    }*/
+	/////////////////////////
+
+	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
+
+	float cookTorrance = clamp((F*D/(4*(NdotL*NdotV))), 0.0, 1.0);
+
+	return (diff + cookTorrance * lightSpecular * specularColor);
+}

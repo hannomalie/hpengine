@@ -39,10 +39,8 @@ in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_environment;
 layout(location=1)out vec4 out_refracted;
 
-const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
-				2.0/16.0, 4.0/16.0, 2.0/16.0,
-				1.0/16.0, 2.0/16.0, 1.0/16.0 };
-				
+
+//include(globals.glsl)
 
 vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
 	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
@@ -78,10 +76,6 @@ struct ProbeSample {
 	vec3 specularColor;
 	vec3 refractedColor;
 };
-
-float rand(vec2 co){
-	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
-}
 
 bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
 	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
@@ -485,6 +479,18 @@ vec3 EnvDFGPolynomial(vec3 specularColor, float gloss, float ndotv ) {
 float dotSaturate(vec3 a, vec3 b) {
 	return clamp(dot(a, b),0,1);
 }
+
+vec3 cubeMapLighting(samplerCube cubemap, vec3 positionWorld, vec3 normalWorld, vec3 reflectedWorld, vec3 v, float roughness, float metallic, vec3 color) {
+  vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
+  vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
+  float glossiness = pow((1-roughness), 4);// (1-roughness);
+  vec3 specularColor = mix(vec3(0.04,0.04,0.04), maxSpecular, glossiness);
+
+  return cookTorranceCubeMap(cubemap,
+						v, positionWorld, normalWorld,
+						roughness, metallic, diffuseColor, specularColor);
+}
+
 
 ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3 normal, vec3 reflected, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
@@ -1295,8 +1301,11 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 
 		const bool USE_GLOBAL_ENVIRONMENT_MAP = true;
 		if(USE_GLOBAL_ENVIRONMENT_MAP && overlappingVolumesCount == 0) {
-			result.diffuseColor = textureLod(globalEnvironmentMap, normalWorld, 8).rgb;
-			result.specularColor = textureLod(globalEnvironmentMap, reflect(V, normalWorld), roughness*8).rgb;
+//			result.diffuseColor = textureLod(globalEnvironmentMap, normalWorld, 8).rgb;
+//			result.specularColor = textureLod(globalEnvironmentMap, reflect(V, normalWorld), roughness*8).rgb;
+			result.diffuseColor = cubeMapLighting(globalEnvironmentMap, positionWorld,
+									normalWorld, reflect(V, normalWorld), V,
+									roughness, metallic, color);
 			return result;
 		}
 

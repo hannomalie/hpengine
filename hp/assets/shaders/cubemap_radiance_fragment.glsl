@@ -1,6 +1,6 @@
 layout(binding = 8) uniform samplerCube currentCubemap;
 
-uniform currentTargetMipmap = 0;
+uniform int currentTargetMipmap = 0;
 
 uniform float screenWidth;
 uniform float screenHeight;
@@ -281,7 +281,7 @@ ProbeSample importanceSampleCubeMap(int index, vec3 positionWorld, vec3 normal, 
 void main()
 {
 	vec2 st = pass_TextureCoord;
-	ivec2 storePos = ivec2(texCoord * vec2(screenWidth, screenHeight));
+	ivec2 storePos = ivec2(st * vec2(screenWidth, screenHeight));
 	
 	vec4[8] results;
 	
