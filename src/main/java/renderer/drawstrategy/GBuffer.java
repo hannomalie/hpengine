@@ -125,6 +125,9 @@ public class GBuffer {
 	public int getMotionMap() {
 		return gBuffer.getRenderedTexture(3);
 	}
+	public int getVisibilityMap() {
+		return gBuffer.getRenderedTexture(4);
+	}
 
 	public int getFinalMap() {
 		return finalBuffer.getRenderedTexture(0);

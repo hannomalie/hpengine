@@ -255,6 +255,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         openGLContext.bindTexture(4, TEXTURE_CUBE_MAP, cubeMap.getTextureID());
         openGLContext.bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+        openGLContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
@@ -349,6 +350,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassPointProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
         secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+        secondPassPointProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         GPUProfiler.end();
 
         GPUProfiler.start("Draw lights");

@@ -8,17 +8,7 @@ layout(std430, binding=0) buffer myBlock
   float exposure;
 };
 
-struct Material {
-	float diffuseR;
-	float diffuseg;
-	float diffuseB;
-	float metallic;
-	float roughness;
-	float ambient;
-	float parallaxBias;
-	float parallaxScale;
-	float transparency;
-};
+//include(globals_structs.glsl)
 
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];

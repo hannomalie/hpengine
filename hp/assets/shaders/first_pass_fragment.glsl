@@ -9,6 +9,7 @@ layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
 uniform int entityIndex;
+uniform int materialIndex;
 uniform bool isSelected = false;
 
 uniform bool useParallax;
@@ -63,7 +64,7 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 //include(globals.glsl)
 
-void main(void) {	
+void main(void) {
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
 	//V = normalize((eyePos_world.xyz - position_world.xyz).xyz);
 	vec2 UV = texCoord;
@@ -239,7 +240,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,depth,entityIndex);
+  	out_visibility = vec4(1,depth,materialIndex,entityIndex);
   	
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

@@ -5,6 +5,7 @@ layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D specularMap;
 layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=5) uniform sampler2D probe;
+layout(binding=7) uniform sampler2D visibilityMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -21,6 +22,13 @@ uniform vec3 lightSpecular;
 
 in vec4 position_clip;
 in vec4 position_view;
+
+
+//include(globals_structs.glsl)
+
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 
 struct Pointlight {
 	vec3 _position;
@@ -138,10 +146,21 @@ void main(void) {
 	vec3 lightDiffuse = lightDiffuse;
 
 	float attenuation = calculateAttenuation(length(lightPositionView - positionView));
+	vec3 finalColor;
 
-	vec3 finalColor = cookTorrance(lightDirectionView, lightDiffuse,
-								attenuation, V, positionView, normalView,
-								roughness, metallic, diffuseColor, specularColor);
-	
+	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
+	Material material = materials[materialIndex];
+
+	if(int(material.materialtype) == 1) {
+		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
+        								attenuation, V, positionView, normalView,
+        								roughness, 0, diffuseColor, specularColor);
+		finalColor += attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
+	} else {
+		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
+											attenuation, V, positionView, normalView,
+											roughness, metallic, diffuseColor, specularColor);
+	}
+
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 }

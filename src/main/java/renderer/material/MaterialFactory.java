@@ -25,6 +25,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import util.Util;
 
+import static renderer.material.Material.*;
+import static renderer.material.Material.MaterialType.DEFAULT;
+
 public class MaterialFactory {
 
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
@@ -94,7 +97,7 @@ public class MaterialFactory {
 			materialInfo.name = "Material_" + count++;
 		}
 		
-		material = read(Material.getDirectory() + materialInfo.name);
+		material = read(getDirectory() + materialInfo.name);
 		
 		if(material != null) {
 			return material;
@@ -104,7 +107,7 @@ public class MaterialFactory {
 		material.setMaterialInfo(new MaterialInfo(materialInfo));
 		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
-		Material.write(material, materialInfo.name);
+		write(material, materialInfo.name);
 		AppContext.getEventBus().post(new MaterialAddedEvent());
 		return material;
 	}
@@ -122,7 +125,7 @@ public class MaterialFactory {
 		material = new Material();
 		material.setMaterialInfo(materialInfo);
 		initMaterial(material);
-		Material.write(material, materialInfo.name);
+		write(material, materialInfo.name);
 		return material;
 	}
 
@@ -172,6 +175,7 @@ public class MaterialFactory {
 
     public static final class MaterialInfo implements Serializable {
 		private static final long serialVersionUID = 3564429930446909410L;
+
 		public MaterialInfo(MaterialMap maps) {
 			this.maps = maps;
 		}
@@ -203,6 +207,7 @@ public class MaterialFactory {
 			this.fragmentShader = materialInfo.fragmentShader;
 			this.parallaxScale = materialInfo.parallaxScale;
 			this.parallaxBias = materialInfo.parallaxBias;
+			this.materialType = materialInfo.materialType;
 		}
 
 		public MaterialMap maps = new MaterialMap();
@@ -215,6 +220,7 @@ public class MaterialFactory {
 		public float transparency = 0;
 		public float parallaxScale = 0.04f;
 		public float parallaxBias = 0.02f;
+		public MaterialType materialType = DEFAULT;
 		
 		public boolean textureLess;
 		transient public Program firstPassProgram;
@@ -289,7 +295,7 @@ public class MaterialFactory {
 		ObjectInputStream in = null;
 		try {
 //			System.out.println(new File(Material.getDirectory() + fileName + ".hpmaterial").exists());
-			fis = new FileInputStream(Material.getDirectory() + fileName + ".hpmaterial");
+			fis = new FileInputStream(getDirectory() + fileName + ".hpmaterial");
 			in = new ObjectInputStream(fis);
 			Material material = (Material) in.readObject();
 			in.close();
@@ -323,6 +329,10 @@ public class MaterialFactory {
 		});
 		
 		return sortedList;
+	}
+
+	public int indexOf(Material material) {
+		return new ArrayList<Material>(MATERIALS.values()).indexOf(material);
 	}
 
 	@Subscribe

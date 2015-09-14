@@ -1301,8 +1301,6 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 
 		const bool USE_GLOBAL_ENVIRONMENT_MAP = true;
 		if(USE_GLOBAL_ENVIRONMENT_MAP && overlappingVolumesCount == 0) {
-//			result.diffuseColor = textureLod(globalEnvironmentMap, normalWorld, 8).rgb;
-//			result.specularColor = textureLod(globalEnvironmentMap, reflect(V, normalWorld), roughness*8).rgb;
 			result.diffuseColor = cubeMapLighting(globalEnvironmentMap, positionWorld,
 									normalWorld, reflect(V, normalWorld), V,
 									roughness, metallic, color);

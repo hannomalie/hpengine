@@ -2,7 +2,6 @@ package renderer.material;
 
 import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.Renderer;
@@ -25,6 +24,12 @@ import java.util.logging.Logger;
 import static log.ConsoleLogger.getLogger;
 
 public class Material implements Serializable, Bufferable {
+	public enum MaterialType {
+		DEFAULT,
+		FOLIAGE,
+		UNLIT
+	}
+
 	private static final long serialVersionUID = 1L;
 	
 	public static boolean MIPMAP_DEFAULT = true;
@@ -137,6 +142,8 @@ public class Material implements Serializable, Bufferable {
 		program.setUniform("materialTransparency", getTransparency());
 		program.setUniform("parallaxScale", getParallaxScale());
 		program.setUniform("parallaxBias", getParallaxBias());
+		program.setUniform("materialIndex", AppContext.getInstance().getRenderer()
+				.getMaterialFactory().indexOf(this));
 		
 		if (!program.needsTextures()) {
 			return;
@@ -303,7 +310,14 @@ public class Material implements Serializable, Bufferable {
 	public void setMaterialInfo(MaterialInfo materialInfo) {
 		this.materialInfo = materialInfo;
 	}
-	
+
+	public MaterialType getMaterialType() {
+		return materialInfo.materialType;
+	}
+
+	public void setMaterialType(MaterialType materialType) {
+		this.materialInfo.materialType = materialType;
+	}
 
 	@Override
 	public boolean equals(Object other) {
@@ -336,7 +350,7 @@ public class Material implements Serializable, Bufferable {
 
 	@Override
 	public float[] get() {
-		float[] floats = new float[9];
+		float[] floats = new float[10];
 		int index = 0;
 		floats[index++] = materialInfo.diffuse.x;
 		floats[index++] = materialInfo.diffuse.y;
@@ -347,6 +361,7 @@ public class Material implements Serializable, Bufferable {
 		floats[index++] = materialInfo.parallaxBias;
 		floats[index++] = materialInfo.parallaxScale;
 		floats[index++] = materialInfo.transparency;
+		floats[index++] = materialInfo.materialType.ordinal();
 		return floats;
 	}
 

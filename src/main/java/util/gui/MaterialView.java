@@ -375,16 +375,27 @@ public class MaterialView extends WebPanel {
             }
         }
 
-        {
-            WebComboBox environmentMapInput = new WebComboBox((EnumSet.allOf(ENVIRONMENTMAPTYPE.class)).toArray());
-            environmentMapInput.addActionListener(e -> {
-            	ENVIRONMENTMAPTYPE selected = (ENVIRONMENTMAPTYPE) environmentMapInput.getSelectedItem();
-            	material.setEnvironmentMapType(selected);
-            });
-            environmentMapInput.setSelectedItem(material.getEnvironmentMapType());
-            GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Environment map type"), environmentMapInput );
-            webComponentPanel.addElement(groupPanelEnironmentMapType);
-        }
+		{
+			WebComboBox materialTypeInput = new WebComboBox((EnumSet.allOf(Material.MaterialType.class)).toArray());
+			materialTypeInput.addActionListener(e -> {
+				Material.MaterialType selected = (Material.MaterialType) materialTypeInput.getSelectedItem();
+				material.setMaterialType(selected);
+				appContext.getEventBus().post(new MaterialChangedEvent());
+			});
+			materialTypeInput.setSelectedItem(material.getMaterialType());
+			GroupPanel materialTypePanel = new GroupPanel(4, new WebLabel("Maeterial Type"), materialTypeInput);
+			webComponentPanel.addElement(materialTypePanel);
+		}
+		{
+			WebComboBox environmentMapInput = new WebComboBox((EnumSet.allOf(ENVIRONMENTMAPTYPE.class)).toArray());
+			environmentMapInput.addActionListener(e -> {
+				ENVIRONMENTMAPTYPE selected = (ENVIRONMENTMAPTYPE) environmentMapInput.getSelectedItem();
+				material.setEnvironmentMapType(selected);
+			});
+			environmentMapInput.setSelectedItem(material.getEnvironmentMapType());
+			GroupPanel groupPanelEnironmentMapType = new GroupPanel ( 4, new WebLabel("Environment map type"), environmentMapInput );
+			webComponentPanel.addElement(groupPanelEnironmentMapType);
+		}
 		
 		panels.add(webComponentPanel);
 	}

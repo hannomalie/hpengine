@@ -6,8 +6,14 @@ layout(binding=3) uniform sampler2D motionMap;
 layout(binding=4) uniform samplerCube environmentMap;
 
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
+layout(binding=7) uniform sampler2D visibilityMap;
 
 layout(binding=8) uniform samplerCubeArray probes;
+
+//include(globals_structs.glsl)
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
@@ -328,6 +334,16 @@ void main(void) {
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 	///////////////////
+
+
+	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
+	Material material = materials[materialIndex];
+	if(int(material.materialtype) == 1) {
+		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
+									1, V, positionView, normalView,
+									roughness, 0, diffuseColor, specularColor);
+		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
+	}
 	
 	finalColor *= visibility;
 
