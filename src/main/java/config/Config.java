@@ -8,7 +8,7 @@ public final class Config {
 	
 	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
-	public static Vector3f AMBIENT_LIGHT = new Vector3f(1f, 1f, 1f);
+	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f, 0.11f);
 
 	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;

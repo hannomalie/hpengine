@@ -37,6 +37,7 @@ import shader.ProgramFactory;
 import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
+import util.*;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.GPUTaskProfile;
 import util.stopwatch.OpenGLStopWatch;
@@ -264,8 +265,6 @@ public class DeferredRenderer implements Renderer {
 			cubeMap = textureFactory.getCubeMap("hp/assets/textures/skybox.png");
 			openGLContext.activeTexture(0);
 			textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
-//			cubeMap = new DynamicCubeMap(1024, 1024);
-//			DeferredRenderer.exitOnGLError("setup cubemap");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -380,11 +379,17 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("BLURRRRRRR");
 		int copyTextureId = GL11.glGenTextures();
 		getOpenGLContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-		
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		
+
+		GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
+//		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+
 		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);

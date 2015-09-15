@@ -355,7 +355,7 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
 	
-	vec4 AOscattering = textureLod(aoScattering, st, 1);
+	vec4 AOscattering = textureLod(aoScattering, st, 3);
 	vec3 scattering = AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;

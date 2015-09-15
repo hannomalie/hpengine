@@ -158,8 +158,8 @@ void main(void) {
 		finalColor += attenuation * lightDiffuse * diffuseColor * clamp(dot(-normalView, lightDirectionView), 0, 1);
 	} else {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
-											attenuation, V, positionView, normalView,
-											roughness, metallic, diffuseColor, specularColor);
+										attenuation, V, positionView, normalView,
+										roughness, metallic, diffuseColor, specularColor);
 	}
 
 	out_DiffuseSpecular.rgb = 4 * finalColor;

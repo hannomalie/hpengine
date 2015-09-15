@@ -195,11 +195,6 @@ public class AppContext {
 		// TODO: Check if this is still necessary
 		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
 		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
-//		try {
-//			renderer.getLightFactory().getDirectionalLight().init(renderer);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 		initialized = true;
 		simulate();
 	}

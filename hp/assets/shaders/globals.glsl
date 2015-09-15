@@ -314,7 +314,7 @@ vec3 cookTorranceCubeMap(samplerCube cubemap,
 
     vec3 lightDiffuse = textureLod(cubemap, normalWorld, roughness * 8).rgb;
     vec3 lightSpecular = textureLod(cubemap, reflect(V, normalWorld), roughness * 8).rgb;
-	vec3 diff = diffuseColor * lightDiffuse.rgb * NdotL;
+	vec3 diff = diffuseColor * lightDiffuse.rgb;
 
 	/////////////////////////
 	// OREN-NAYAR
@@ -334,7 +334,7 @@ vec3 cookTorranceCubeMap(samplerCube cubemap,
 
 	diff = diff * (1-fresnel); // enegy conservation between diffuse and spec http://www.gamedev.net/topic/638197-cook-torrance-brdf-general/
 
-	float cookTorrance = clamp((F*D/(4*(NdotL*NdotV))), 0.0, 1.0);
+	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 
 	return (diff + cookTorrance * lightSpecular * specularColor);
 }

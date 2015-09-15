@@ -763,7 +763,7 @@ public class DebugFrame {
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			Config.useAmbientOcclusion = !Config.useAmbientOcclusion;
-			appContext.getEventBus().post(new GlobalDefineChangedEvent());
+//			appContext.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {

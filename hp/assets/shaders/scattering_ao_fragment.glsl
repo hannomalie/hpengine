@@ -394,7 +394,7 @@ float getAmbientOcclusion(vec2 st) {
 			      //if there is coherence, calculate occlusion:
 			      if (coherence2 > 0){
 			          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
-			          sum += clamp(pformfactor2*0.2,0.0,1.0);//ao intensity; 
+			          sum += clamp(pformfactor2*0.5,0.0,1.0);//ao intensity;
 			      }
 		      }
 		   }
