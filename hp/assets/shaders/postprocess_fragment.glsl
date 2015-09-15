@@ -21,6 +21,9 @@ uniform bool AUTO_EXPOSURE_ENABLED = true;
 uniform bool usePostProcessing = true;
 //uniform float exposure = 5;
 
+uniform vec3 cameraRightDirection;
+uniform vec3 cameraViewDirection;
+
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
@@ -420,7 +423,50 @@ vec4 PostFX(sampler2D tex, vec2 uv)
   c.a = 1.0;
   return c;
 }
+vec3 textureDistorted(
+  in sampler2D tex,
+  in vec2 texcoord,
+  in vec2 direction, // direction of distortion
+  in vec3 distortion // per-channel distortion factor
+) {
+	const float mipmap = 4;
+	float r = textureLod(tex, texcoord + direction * distortion.r, mipmap).r;
+	float g = textureLod(tex, texcoord + direction * distortion.g, mipmap).g;
+	float b = textureLod(tex, texcoord + direction * distortion.b, mipmap).b;
+ 	return vec3(r, g, b);
+}
+vec3 calculateLensflare(vec2 texcoord) {
+	float uGhostDispersal = 0.3f;
+	int uGhosts = 4;
+	float uHaloWidth = 0.25f;
+	float uDistortion = 0.1f;
 
+	vec3 camx = -cameraRightDirection;
+	vec3 camz = cameraViewDirection;
+	float camrot = dot(camx, vec3(0,0,1)) + dot(camz, vec3(0,-1,0));
+	uHaloWidth += 0.1*-camrot;
+
+	vec2 ghostTexcoord = -texcoord + vec2(1.0);
+	vec2 texelSize = 1.0 / vec2(textureSize(renderedTexture, 0));
+	vec2 ghostVec = (vec2(0.5) - ghostTexcoord) * uGhostDispersal;
+	vec2 haloVec = normalize(ghostVec) * uHaloWidth;
+
+	vec4 result = vec4(0.0);
+	  for (int i = 0; i < uGhosts; ++i) {
+		 vec2 offset = fract(ghostTexcoord + ghostVec + haloVec * float(i));
+
+		 float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
+         weight = pow(1.0 - weight, 10.0);
+
+		 vec3 distortion = vec3(-texelSize.x * uDistortion, 0.0, texelSize.x * uDistortion);
+		 vec2 direction = normalize(ghostVec);
+
+		vec3 textureSample = textureDistorted(renderedTexture, offset + vec2(0.1*-camrot), direction, distortion) * weight;
+
+		result.rgb += textureSample * textureSample.r;
+	  }
+	return result.rgb;
+}
 
 void main()
 {
@@ -458,7 +504,14 @@ void main()
 		        }
 		    }
 		    out_color.a = 1;
-		    out_color.rgb = mix(out_color.rgb, in_color.rgb, clamp(0.9 - exposure/100.0, 0.0, 1.0));
+		    vec3 brightColor = out_color.rgb;
+		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.9 - exposure/100.0, 0.0, 1.0));
+
+			const bool useLensflare = false;
+			if(useLensflare) {
+				vec3 lensflare = calculateLensflare(texcoord);
+				out_color.rgb += clamp(lensflare, vec3(0), vec3(0.05));
+			}
 	    }
 	} else {
 		const bool useFXAA = true;
