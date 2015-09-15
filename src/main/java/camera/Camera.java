@@ -62,6 +62,7 @@ public class Camera extends Entity {
 	}
 
 	public void update(float seconds) {
+		saveViewMatrixAsLastViewMatrix();
 		super.update(seconds);
 		transform();
 		storeMatrices();
@@ -100,7 +101,7 @@ public class Camera extends Entity {
 
 	public void saveViewMatrixAsLastViewMatrix() {
 		lastViewMatrixBuffer.rewind();
-		lastViewMatrixBuffer.put(getViewMatrixAsBuffer());
+		lastViewMatrixBuffer.put(getViewMatrixAsBuffer(false));
 		lastViewMatrixBuffer.rewind();
 	}
 

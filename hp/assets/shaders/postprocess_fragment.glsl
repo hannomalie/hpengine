@@ -1,7 +1,7 @@
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
-layout(binding=3) uniform sampler2D motionMap; // motionVec
+layout(binding=3) uniform sampler2D motionMap;
 
 layout(std430, binding=0) buffer myBlock
 { 
@@ -24,11 +24,13 @@ uniform bool usePostProcessing = true;
 uniform vec3 cameraRightDirection;
 uniform vec3 cameraViewDirection;
 
+uniform float seconds;
+
 in vec2 pass_TextureCoord;
 out vec4 out_color;
 
 float calculateMotionBlur(vec2 uv) {
-	return 10*(texture2D(motionMap, uv).x);
+	return 10*(length(texture2D(motionMap, uv).xy));
 }
 ///////////////////////////////////////
 // http://facepunch.com/showthread.php?t=1401594
@@ -290,8 +292,8 @@ vec3 DoDOF(in vec2 uv, in vec2 texelSize, in sampler2D color_depth)
 		blur = abs(a-b)*c;
 	}
 	
-	blur = max(calculateMotionBlur(uv), blur);
-	blur = clamp(blur, 0, 1);
+	blur = calculateMotionBlur(uv)*seconds + blur;
+	blur = clamp(blur, 0, 2);
 	
 	// calculation of pattern for ditering
 	

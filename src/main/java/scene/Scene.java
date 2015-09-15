@@ -203,8 +203,6 @@ public class Scene implements LifeCycle, Serializable {
 		for (Entity entity : octree.getEntities()) {
 			entity.setHasMoved(false);
 		}
-
-		camera.saveViewMatrixAsLastViewMatrix();
 	}
 	public Octree getOctree() {
 		return octree;

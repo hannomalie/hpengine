@@ -190,7 +190,10 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	public FloatBuffer getViewMatrixAsBuffer() {
-		return transform.getTranslationRotationBuffer();
+		return getViewMatrixAsBuffer(true);
+	}
+	public FloatBuffer getViewMatrixAsBuffer(boolean recalculateBefore) {
+		return transform.getTranslationRotationBuffer(recalculateBefore);
 	}
 
 	public void setTransform(Transform transform) {
