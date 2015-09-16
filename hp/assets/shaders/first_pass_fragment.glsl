@@ -72,6 +72,9 @@ void main(void) {
 	vec4 position_clip_post_w = position_clip/position_clip.w; 
 	vec4 position_clip_last_post_w = position_clip_last/position_clip_last.w;
 	vec2 motionVec = (position_clip_post_w.xy) - (position_clip_last_post_w.xy);
+
+//	motionVec.x = length(distance(position_clip_last.xyz, position_clip.xyz));
+
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;

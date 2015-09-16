@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import com.google.common.eventbus.Subscribe;
@@ -34,7 +36,7 @@ public class MaterialFactory {
 	public static int count = 0;
 	
 	private Renderer renderer;
-	public Map<String, Material> MATERIALS = new HashMap<>();
+	public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
 
 	private Material defaultMaterial;
 

@@ -153,7 +153,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
-	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.VSYNC_ENABLED);
+	private WebToggleButton toggleVSync = new WebToggleButton("Lock FPS", Config.LOCK_FPS);
 	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
 
 	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
@@ -274,27 +274,27 @@ public class DebugFrame {
         }
 		WebMenu menuEntity = new WebMenu("Entity");
         {
-        	WebMenuItem entitiyAddMenuItem = new WebMenuItem ( "Add new" );
-        	entitiyAddMenuItem.addActionListener(e -> {
-        		
-	    		addEntityFrame = new WebFrame("Add Entity");
-	    		addEntityFrame.setSize(600, 300);
-	    		addEntityFrame.add(new AddEntitiyView(appContext, addEntityFrame, this));
-	    		addEntityFrame.setVisible(true);
-	    		
-        	});
+        	WebMenuItem entityAddMenuItem = new WebMenuItem ( "Add new" );
+        	entityAddMenuItem.addActionListener(e -> {
 
-        	menuEntity.add(entitiyAddMenuItem);
+				addEntityFrame = new WebFrame("Add Entity");
+				addEntityFrame.setSize(600, 300);
+				addEntityFrame.add(new AddEntityView(appContext, addEntityFrame, this));
+				addEntityFrame.setVisible(true);
+
+			});
+
+        	menuEntity.add(entityAddMenuItem);
         }
         {
-        	WebMenuItem entitiyLoadMenuItem = new WebMenuItem ( "Load existing" );
-        	entitiyLoadMenuItem.addActionListener(e -> {
-        		
-        		appContext.getScene().addAll(LoadEntitiyView.showDialog(appContext));
-        		refreshSceneTree();
-        	});
+        	WebMenuItem entityLoadMenuItem = new WebMenuItem ( "Load existing" );
+        	entityLoadMenuItem.addActionListener(e -> {
 
-        	menuEntity.add(entitiyLoadMenuItem);
+				appContext.getScene().addAll(LoadEntitiyView.showDialog(appContext));
+				refreshSceneTree();
+			});
+
+        	menuEntity.add(entityLoadMenuItem);
         }
 		WebMenu menuProbe = new WebMenu("Probe");
         {
@@ -663,7 +663,7 @@ public class DebugFrame {
 		toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
 		toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
 		toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
-		toggleVSync = new WebToggleButton("VSync", Config.VSYNC_ENABLED);
+		toggleVSync = new WebToggleButton("Lock FPS", Config.LOCK_FPS);
 		toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
 		toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
 		toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
@@ -834,12 +834,12 @@ public class DebugFrame {
 			Config.DRAWLIGHTS_ENABLED = !Config.DRAWLIGHTS_ENABLED;
 		});
 		toggleVSync.addActionListener(e -> {
-			Config.VSYNC_ENABLED = !Config.VSYNC_ENABLED;
+			Config.LOCK_FPS = !Config.LOCK_FPS;
 			appContext.getRenderer().addCommand(new Command<Result>() {
-
 				@Override
 				public Result execute(AppContext appContext) {
-					Display.setVSyncEnabled(Config.VSYNC_ENABLED);
+					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
+					appContext.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
 					return new Result();
 				}
 			});

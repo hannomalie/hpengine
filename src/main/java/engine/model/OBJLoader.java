@@ -276,7 +276,6 @@ public class OBJLoader {
 
 	private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, MAP map) {
 		currentMaterialInfo.maps.put(map, renderer.getTextureFactory().getTexture(path+name, map == MAP.DIFFUSE));
-//		LOGGER.log(Level.INFO, String.format("%s to %s as %s",path+name, currentMaterialInfo.name, map ));
 	}
 
 	private void parseName(String line, Model model) {

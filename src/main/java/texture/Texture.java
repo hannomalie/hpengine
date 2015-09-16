@@ -8,9 +8,11 @@ import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
 
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -18,21 +20,22 @@ import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = true;
+    private transient boolean srgba;
 
     private String path = "";
 
     private volatile boolean mipmapsGenerated = false;
 
-	protected GlTextureTarget target;
+	protected GlTextureTarget target = TEXTURE_2D;
     transient protected int textureID;
     protected int height;
     protected int width;
 
     protected volatile byte[] data;
-    protected int dstPixelFormat;
-    protected int srcPixelFormat;
-    protected int minFilter;
-    protected int magFilter;
+    protected int dstPixelFormat = GL11.GL_RGBA;
+    protected int srcPixelFormat = GL11.GL_RGBA;
+    protected int minFilter = GL11.GL_LINEAR;
+    protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
 
     protected Texture() {
@@ -40,15 +43,23 @@ public class Texture implements Serializable {
 	
     /**
      * Create a new texture
-     * @param target The GL target
      * @param textureID The GL texture ID
      */
-    public Texture(String path, GlTextureTarget target, int textureID) {
-        this.target = target;
-        this.textureID = textureID;
-        this.path = path;
+    public Texture(String path, int textureID) {
+        this(path, textureID, false);
     }
-    
+
+    public Texture(String path, int id, boolean srgba) {
+        this(path, TEXTURE_2D, id, srgba);
+    }
+
+    public Texture(String path, GlTextureTarget target, int id, boolean srgba) {
+        this.target = target;
+        this.textureID = id;
+        this.path = path;
+        this.srgba = srgba;
+    }
+
     /**
      * Bind the specified GL context to a texture
      *
@@ -116,43 +127,86 @@ public class Texture implements Serializable {
 	}
 	
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
-        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-            bind();
-            if (target == TEXTURE_2D)
-            {
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
-            }
+        new OpenGLThread() {
+            @Override
+            public void doRun() {
+                AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+                    bind();
+                    if (target == TEXTURE_2D)
+                    {
+                        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+                        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+                    }
 
-            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-            //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
-            if(srgba) {
-                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-                //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+                    int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+                    //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+                    if(srgba) {
+                        internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+                        //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+                    }
+                    synchronized (data) {
+                        GL11.glTexImage2D(target.glTarget,
+                                0,
+                                internalformat,
+                                getWidth(),
+                                getHeight(),
+                                0,
+                                srcPixelFormat,
+                                GL11.GL_UNSIGNED_BYTE,
+                                textureBuffer);
+                    }
+        //        if(mipmapsGenerated) {
+        //            uploadMipMaps(internalformat);
+        //        } else {
+        //            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+        //            downloadMipMaps();
+        //        }
+                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                }, false);
             }
-            synchronized (data) {
-                GL11.glTexImage2D(target.glTarget,
-                        0,
-                        internalformat,
-                        getWidth(),
-                        getHeight(),
-                        0,
-                        srcPixelFormat,
-                        GL11.GL_UNSIGNED_BYTE,
-                        textureBuffer);
-            }
-//        if(mipmapsGenerated) {
-//            uploadMipMaps(internalformat);
-//        } else {
+        }.start();
+
+//        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+//            bind();
+//            if (target == TEXTURE_2D)
+//            {
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+//            }
+//
+//            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+//            //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+//            if(srgba) {
+//                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+//                //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
+//            }
+//            synchronized (data) {
+//                GL11.glTexImage2D(target.glTarget,
+//                        0,
+//                        internalformat,
+//                        getWidth(),
+//                        getHeight(),
+//                        0,
+//                        srcPixelFormat,
+//                        GL11.GL_UNSIGNED_BYTE,
+//                        textureBuffer);
+//            }
+////        if(mipmapsGenerated) {
+////            uploadMipMaps(internalformat);
+////        } else {
+////            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+////            downloadMipMaps();
+////        }
 //            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-//            downloadMipMaps();
-//        }
-            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        }, false);
+//        }, false);
 	}
 
     private void downloadMipMaps() {
@@ -319,4 +373,87 @@ public class Texture implements Serializable {
 				magTextureFilter == GL11.GL_NEAREST_MIPMAP_LINEAR ||
 				magTextureFilter == GL11.GL_NEAREST_MIPMAP_NEAREST);
 	}
+
+    public void readAndUpload() {
+        new Thread(() -> {
+            try {
+                System.out.println("Thread started ...");
+                FileInputStream fis = new FileInputStream(getDirectory() + FilenameUtils.getBaseName(path) + ".hptexture");
+                ObjectInputStream in = new ObjectInputStream(fis);
+                Texture texture = (Texture) in.readObject();
+                in.close();
+                init(texture);
+                System.out.println("Data: " + getData().length);
+                upload();
+                System.out.println("Uploaded");
+            } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void init(Texture texture) {
+        setData(texture.getData());
+        setWidth(texture.getWidth());
+        setHeight(texture.getHeight());
+        setTarget(texture.getTarget());
+        setDstPixelFormat(texture.getDstPixelFormat());
+        setSrcPixelFormat(texture.getSrcPixelFormat());
+        setMinFilter(texture.getMinFilter());
+        setMagFilter(texture.getMagFilter());
+    }
+
+    public void convertAndUpload() {
+        new Thread(() -> {
+            try {
+                BufferedImage bufferedImage = AppContext.getInstance().getRenderer().getTextureFactory().loadImage(path);
+                setWidth(bufferedImage.getWidth());
+                setHeight(bufferedImage.getHeight());
+                setMinFilter(minFilter);
+                setMagFilter(magFilter);
+
+                if (bufferedImage.getColorModel().hasAlpha()) {
+                    srcPixelFormat = GL11.GL_RGBA;
+                } else {
+                    srcPixelFormat = GL11.GL_RGB;
+                }
+
+                setDstPixelFormat(dstPixelFormat);
+                setSrcPixelFormat(srcPixelFormat);
+
+                // convert that image into a byte buffer of texture data
+                ByteBuffer textureBuffer = AppContext.getInstance().getRenderer().getTextureFactory().
+                        convertImageData(bufferedImage, this);
+
+                upload(textureBuffer, srgba);
+            } catch (IOException | NullPointerException e) {
+                e.printStackTrace();
+                Logger.getGlobal().severe("Texture not found: " + path + ". Default texture returned...");
+            }
+        }).start();
+    }
+
+    public GlTextureTarget getTarget() {
+        return target;
+    }
+
+    public void setTarget(GlTextureTarget target) {
+        this.target = target;
+    }
+
+    public int getDstPixelFormat() {
+        return dstPixelFormat;
+    }
+
+    public int getSrcPixelFormat() {
+        return srcPixelFormat;
+    }
+
+    public int getMinFilter() {
+        return minFilter;
+    }
+
+    public int getMagFilter() {
+        return magFilter;
+    }
 }

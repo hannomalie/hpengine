@@ -141,9 +141,9 @@ public class AppContext {
             }
         });
         queue.poll();
-		float rotationDelta = 25f;
+		float rotationDelta = 125f;
 		float scaleDelta = 0.1f;
-		float posDelta = 10f;
+		float posDelta = 100f;
 		camera = (Camera) new Camera().
                 addComponent(new InputControllerComponent() {
                                  private static final long serialVersionUID = 1L;

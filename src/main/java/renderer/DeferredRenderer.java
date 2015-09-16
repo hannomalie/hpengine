@@ -22,10 +22,8 @@ import renderer.drawstrategy.DebugDrawStrategy;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.drawstrategy.SimpleDrawStrategy;
-import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
-import renderer.light.PointLight;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
@@ -37,7 +35,6 @@ import shader.ProgramFactory;
 import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
-import util.*;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.GPUTaskProfile;
 import util.stopwatch.OpenGLStopWatch;
@@ -116,7 +113,8 @@ public class DeferredRenderer implements Renderer {
 	private String currentState = "";
 
 	private ExecutorService renderThread = Executors.newSingleThreadExecutor();
-	TimeStepThread drawThread;
+
+	private TimeStepThread drawThread;
 	private OpenGLContext openGLContext;
 
 	public DeferredRenderer(boolean headless) {
@@ -128,7 +126,7 @@ public class DeferredRenderer implements Renderer {
 		Renderer.super.init(appContext);
 		DeferredRenderer renderer = this;
 
-		drawThread = new TimeStepThread("Renderer", 0.0f) {
+		drawThread = new TimeStepThread("Renderer", Config.LOCK_FPS ? 0.03f : 0.0f) {
 			public void cleanUp() {
 				renderer.destroy();
 			}
@@ -183,7 +181,6 @@ public class DeferredRenderer implements Renderer {
 						setCurrentState("AFTER DRAW");
 
 						setCurrentState("BEFORE UPDATE");
-//						System.out.println(seconds);
 						renderer.update(appContext, seconds);
 						setCurrentState("AFTER UPDATE");
 					}
@@ -338,7 +335,6 @@ public class DeferredRenderer implements Renderer {
 			counter++;
 		}
 
-		fpsCounter.update();
 		GPUProfiler.endFrame();
 
 		dumpTimings();
@@ -393,7 +389,7 @@ public class DeferredRenderer implements Renderer {
 		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
-		
+
 		float scaleForShaderX = (float) (Config.WIDTH / width);
 		float scaleForShaderY = (float) (Config.HEIGHT / height);
 		// TODO: Reset texture sizes after upscaling!!!
@@ -473,10 +469,9 @@ public class DeferredRenderer implements Renderer {
 
 	private static long lastFrameTime = 0l;
 
-	private FPSCounter fpsCounter = new FPSCounter();
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
-		Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms" , fpsCounter.getFPS(), fpsCounter.getMsPerFrame(),
+		Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms" , drawThread.getFpsCounter().getFPS(), drawThread.getFpsCounter().getMsPerFrame(),
 				AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
 	}
 	private long getTime() {
@@ -557,43 +552,6 @@ public class DeferredRenderer implements Renderer {
 	private List<Vector3f> linePoints = new ArrayList<>();
 	private int rsmSize = 2048/2/2/2/2/2/2/2;
 	private JFrame frame;
-
-	private class RecursiveUpdate extends RecursiveAction {
-		final int LIMIT = 3;
-		int result;
-		int start, end;
-		List<PointLight> lights;
-		private float seconds;
-
-		RecursiveUpdate(List<PointLight> lights, int start, int end, float seconds) {
-			this.start = start;
-			this.end = end;
-			this.lights = lights;
-			this.seconds = seconds;
-		}
-
-		@Override
-		protected void compute() {
-			if ((end - start) < LIMIT) {
-				for (int i = start; i < end; i++) {
-//					double x =  Math.sin(System.currentTimeMillis() / 1000);
-//					double z =  Math.cos(System.currentTimeMillis() / 1000);
-//					lights.get(i).move(new Vector3f((float)x , 0, (float)z));
-//					lights.get(i).update(1);
-					lights.get(i).update(seconds);
-				}
-			} else {
-				int mid = (start + end) / 2;
-				RecursiveUpdate left = new RecursiveUpdate(lights, start, mid, seconds);
-				RecursiveUpdate right = new RecursiveUpdate(lights, mid, end, seconds);
-				left.fork();
-				right.fork();
-				left.join();
-				right.join();
-			}
-		}
-
-	}
 
 	@Override
 	public MaterialFactory getMaterialFactory() {
@@ -702,7 +660,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	public float getCurrentFPS() {
-		return fpsCounter.getFPS();
+		return drawThread.getFpsCounter().getFPS();
 	}
 
 	public int getFrameCount() {
@@ -841,6 +799,11 @@ public class DeferredRenderer implements Renderer {
         }
         return null;
     }
+
+	@Override
+	public TimeStepThread getDrawThread() {
+		return drawThread;
+	}
 
 	@Override
 	public OpenGLContext getOpenGLContext() {

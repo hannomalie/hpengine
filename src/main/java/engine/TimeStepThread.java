@@ -1,5 +1,6 @@
 package engine;
 
+import renderer.Renderer;
 import renderer.fps.FPSCounter;
 
 public abstract class TimeStepThread extends Thread {
@@ -9,7 +10,7 @@ public abstract class TimeStepThread extends Thread {
     private FPSCounter fpsCounter = new FPSCounter();
 
     public boolean stopRequested = false;
-    private float minimumCycleTimeInSeconds;
+    private volatile float minimumCycleTimeInSeconds;
 
     //TODO: Consider this public
     private TimeStepThread(String name) {
@@ -34,7 +35,7 @@ public abstract class TimeStepThread extends Thread {
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;
 
-            float seconds = ((float) ns) / 1000000f;
+            float seconds = ns / 1000f / 1000f / 1000f;
             try {
                 update(seconds);
 
@@ -49,10 +50,13 @@ public abstract class TimeStepThread extends Thread {
     }
 
     private void waitIfNecessary(float actualS) {
-        float newActualS = actualS;
-        while(newActualS < minimumCycleTimeInSeconds) {
-            float step = 0.001f;
-            newActualS += step;
+        float secondsLeft = (minimumCycleTimeInSeconds - actualS);
+        if(secondsLeft <= 0) { return; }
+
+        long nanoSecondsLeft = (long) (secondsLeft * 1000 * 1000 * 1000);
+        long startTime = System.nanoTime();
+        long targetTime = (startTime + nanoSecondsLeft);
+        while(System.nanoTime() < targetTime) {
         }
     }
 

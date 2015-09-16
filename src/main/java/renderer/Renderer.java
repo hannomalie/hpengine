@@ -1,6 +1,7 @@
 package renderer;
 
 import engine.AppContext;
+import engine.TimeStepThread;
 import engine.lifecycle.LifeCycle;
 import engine.model.Model;
 import engine.model.OBJLoader;
@@ -368,6 +369,8 @@ public interface Renderer extends LifeCycle {
     void doWithOpenGLContext(Runnable runnable, boolean andBlock);
 
     <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable);
+
+    TimeStepThread getDrawThread();
 
     OpenGLContext getOpenGLContext();
 }

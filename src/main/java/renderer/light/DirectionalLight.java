@@ -66,8 +66,8 @@ public class DirectionalLight extends Entity {
 
 			@Override public void update(float seconds) {
 
-				float moveAmount = seconds;
-				float rotateAmount = seconds;
+				float moveAmount = 100* seconds;
+				float rotateAmount = 100*seconds;
 
 				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
 					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);

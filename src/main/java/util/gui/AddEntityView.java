@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-public class AddEntitiyView extends WebPanel {
+public class AddEntityView extends WebPanel {
 
 	private AppContext appContext;
 	private WebFormattedTextField nameField;
 	private DebugFrame debugFrame;
 	private WebFrame parentFrame;
 
-	public AddEntitiyView(AppContext appContext, WebFrame addEntityFrame, DebugFrame debugFrame) {
+	public AddEntityView(AppContext appContext, WebFrame addEntityFrame, DebugFrame debugFrame) {
 		this.appContext = appContext;
 		this.debugFrame = debugFrame;
 		this.parentFrame = addEntityFrame;
@@ -72,18 +72,13 @@ public class AddEntitiyView extends WebPanel {
 						new SwingWorkerWithProgress<EntityListResult>(appContext.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
-
-//								SynchronousQueue<EntityListResult> queue = appContext.getRenderer().addCommand(
-//										new LoadModelCommand(chosenFile, nameField.getText()));
-//
-//								return queue.poll(5, TimeUnit.MINUTES);
-
-                                return new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
+								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
+								appContext.getScene().addAll(result.entities);
+								return result;
 							}
 
 							@Override
 							public void done(EntityListResult result) {
-								appContext.getScene().addAll(result.entities);
 								debugFrame.refreshSceneTree();
 							}
 						}.execute();

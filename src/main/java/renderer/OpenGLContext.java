@@ -50,12 +50,10 @@ public class OpenGLContext {
                 ;
 
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
-        Display.setVSyncEnabled(false);
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         Display.setResizable(false);
-        Display.setVSyncEnabled(Config.VSYNC_ENABLED);
         KHRDebugCallback.Handler handler = new KHRDebugCallback.Handler() {
             @Override
             public void handleMessage(int source, int type, int id, int severity, String message) {

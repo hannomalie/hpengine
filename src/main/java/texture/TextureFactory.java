@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
@@ -140,7 +141,7 @@ public class TextureFactory {
     private int createTextureID()
     {
         return renderer.calculateWithOpenGLContext(() -> {
-                return GL11.glGenTextures();
+                return getTextureId();
             }
         );
     }
@@ -156,34 +157,31 @@ public class TextureFactory {
     	return getTexture(resourceName, false);
     }
     public Texture getTexture(String resourceName, boolean srgba) {
-        Texture tex = TEXTURES.get(resourceName);
-
-        if (tex != null) {
-            return tex;
+        if(textureLoaded(resourceName)) {
+            return TEXTURES.get(resourceName);
         }
-        
+
         if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName, createTextureID(), srgba);
-        	if (tex != null) {
-                TEXTURES.put(resourceName,tex);
-                return tex;
-            }
+            Texture texture = new Texture(resourceName, getTextureId(), srgba);
+            TEXTURES.put(resourceName, texture);
+            texture.readAndUpload();
+            return texture;
         }
 
-        try {
-            tex = getTexture(resourceName,
-                    GL11.GL_RGBA,     // dst pixel format
-                    GL11.GL_LINEAR, // min filter (unused)
-                    GL11.GL_LINEAR, false, srgba);
-        } catch (IOException e) {
-            Logger.getGlobal().severe("Texture not found: " + resourceName + ". Default texture returned...");
-            tex = defaultTexture;
-        }
-
-        TEXTURES.put(resourceName,tex);
-        return tex;
+        Texture texture = new Texture(resourceName, getTextureId(), srgba);
+        TEXTURES.put(resourceName, texture);
+        texture.convertAndUpload();
+        return texture;
     }
-    
+
+    private static int getTextureId() {
+        return AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> GL11.glGenTextures());
+    }
+
+    private boolean textureLoaded(String resourceName) {
+        return TEXTURES.containsKey(resourceName);
+    }
+
     public boolean texturePreCompiled(String resourceName) {
     	String fileName = FilenameUtils.getBaseName(resourceName);
     	File f = new File(Texture.getDirectory() + fileName + ".hptexture");
@@ -223,130 +221,6 @@ public class TextureFactory {
         return tex;
     }
 
-	public Texture getTextureAsStream(String resourceName) throws IOException {
-    	Texture tex = (Texture) TEXTURES.get(resourceName);
-        
-        if (tex != null) {
-            return tex;
-        }
-        
-        if (texturePreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName, createTextureID());
-        	if (tex != null) {
-                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
-                TEXTURES.put(resourceName,tex);
-                return tex;
-            }
-        }
-        
-        tex = getTexture(resourceName,
-                         GL11.GL_RGBA,     // dst pixel format
-                         GL11.GL_LINEAR_MIPMAP_LINEAR, // min filter (unused)
-                         GL11.GL_LINEAR, true);
-        
-        TEXTURES.put(resourceName,tex);
-
-        return tex;
-    }
-	
-	public CubeMap getCubeMapAsStream(String resourceName) throws IOException {
-    	Texture tex = (Texture) TEXTURES.get(resourceName+ "_cube");
-        
-        if (tex != null && tex instanceof CubeMap) {
-            return (CubeMap) tex;
-        }
-        
-        if (cubeMapPreCompiled(resourceName)) {
-        	tex = Texture.read(resourceName, createTextureID());
-        	if (tex != null) {
-                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
-                TEXTURES.put(resourceName+ "_cube",tex);
-                return (CubeMap) tex;
-            }
-        }
-        
-        tex = getCubeMap(resourceName,
-                         GL11.GL_RGBA,     // dst pixel format
-                         GL11.GL_LINEAR, // min filter (unused)
-                         GL11.GL_LINEAR, true);
-        
-        TEXTURES.put(resourceName+ "_cube",tex);
-        return (CubeMap) tex;
-    }
-    
-    /**
-     * Load a texture into OpenGL from a image reference on
-     * disk.
-     *
-     * @param resourceName The location of the resource to load
-     * @param dstPixelFormat The pixel format of the screen
-     * @param minFilter The minimising filter
-     * @param magFilter The magnification filter
-     * @param asStream 
-     * @return The loaded texture
-     * @throws IOException Indicates a failure to access the resource
-     */
-    public Texture getTexture(String resourceName, 
-            int dstPixelFormat,
-            int minFilter, 
-            int magFilter, boolean asStream) throws IOException {
-    	
-    	return getTexture(resourceName, dstPixelFormat, minFilter, magFilter, asStream, false);
-    }
-
-    public Texture getTexture(String resourceName,
-                              int dstPixelFormat,
-                              int minFilter, 
-                              int magFilter, boolean asStream, boolean srga) throws IOException 
-    { 
-        int srcPixelFormat = 0;
-        GlTextureTarget target = TEXTURE_2D;
-
-        // create the texture ID for this texture
-        Texture texture = new Texture(resourceName, target, createTextureID());
-
-        texture.bind();
-        
-//        long start = System.currentTimeMillis();
-        
-        BufferedImage bufferedImage = null;
-        if (asStream) {
-            bufferedImage = loadImageAsStream(resourceName);
-        } else {
-            bufferedImage = loadImage(resourceName);	
-        }
-        if(bufferedImage == null) {
-            throw new IOException("Image not found " + resourceName);
-        }
-        texture.setWidth(bufferedImage.getWidth());
-        texture.setHeight(bufferedImage.getHeight());
-        texture.setMinFilter(minFilter);
-        texture.setMagFilter(magFilter);
-        
-        if (bufferedImage.getColorModel().hasAlpha()) {
-            srcPixelFormat = GL11.GL_RGBA;
-        } else {
-            srcPixelFormat = GL11.GL_RGB;
-        }
-
-        texture.setDstPixelFormat(dstPixelFormat);
-        texture.setSrcPixelFormat(srcPixelFormat);
-        
-        // convert that image into a byte buffer of texture data 
-        ByteBuffer textureBuffer = convertImageData(bufferedImage,texture);
-        
-        texture.upload(textureBuffer, srga);
-
-        if(Texture.COMPILED_TEXTURES) {
-            Texture.write(texture, texture.getPath());
-        }
-
-//        System.out.println("TEXTURE READ NEW IN " + (System.currentTimeMillis() - start + " ms"));
-//        generateMipMaps(texture, Material.MIPMAP_DEFAULT);
-        
-        return texture; 
-    }
-    
     private CubeMap getCubeMap(String resourceName, 
 					            int dstPixelFormat,
 					            int minFilter, 
@@ -391,21 +265,6 @@ public class TextureFactory {
          return cubeMap; 
 	}
     
-	
-    /**
-     * Get the closest greater power of 2 to the fold number
-     * 
-     * @param fold The target number
-     * @return The power of 2
-     */
-    private int get2Fold(int fold) {
-        int ret = 2;
-        while (ret < fold) {
-            ret *= 2;
-        }
-        return ret;
-    } 
-    
     /**
      * Convert the buffered image to a texture
      *
@@ -413,7 +272,7 @@ public class TextureFactory {
      * @param texture The texture to store the data into
      * @return A buffer containing the data
      */
-    private ByteBuffer convertImageData(BufferedImage bufferedImage,Texture texture) { 
+    public ByteBuffer convertImageData(BufferedImage bufferedImage, Texture texture) {
         ByteBuffer imageBuffer = null; 
         WritableRaster raster;
         BufferedImage texImage;
@@ -464,7 +323,6 @@ public class TextureFactory {
     	
         for(int i = 0; i < 6; i++) {
 
-            //Vector2f[] topLeftBottomRight = getRectForFaceIndex(i, texWidth, texHeight);
         	Vector2f[] topLeftBottomRight = getRectForFaceIndex(i, bufferedImage.getWidth(), bufferedImage.getHeight());
             
             if (bufferedImage.getColorModel().hasAlpha()) {
@@ -494,7 +352,6 @@ public class TextureFactory {
             byteArrays.add(data);
             
     		ByteBuffer tempBuffer = ByteBuffer.allocateDirect(data.length);
-    		tempBuffer = ByteBuffer.allocateDirect(data.length);
     		tempBuffer.order(ByteOrder.nativeOrder());
     		tempBuffer.put(data, 0, data.length);
     		tempBuffer.flip();
@@ -555,7 +412,7 @@ public class TextureFactory {
      * @return The loaded buffered image
      * @throws IOException Indicates a failure to find a resource
      */
-    private BufferedImage loadImage(String ref) throws IOException 
+    public BufferedImage loadImage(String ref) throws IOException
     {
         URL url = TextureFactory.class.getClassLoader().getResource(ref);
         
@@ -569,7 +426,7 @@ public class TextureFactory {
         return bufferedImage;
     }
 
-    private BufferedImage loadImageAsStream(String ref) throws IOException 
+    public BufferedImage loadImageAsStream(String ref) throws IOException
     { 
         BufferedImage bufferedImage = null;
 		try {
@@ -638,7 +495,7 @@ public class TextureFactory {
     }
     
     public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
-    	int copyTextureId = GL11.glGenTextures();
+    	int copyTextureId = getTextureId();
         AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
 
 		for(int i = 0; i < 6; i++) {
