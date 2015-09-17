@@ -9,4 +9,8 @@ struct Material {
 	float parallaxScale;
 	float transparency;
 	float materialtype;
+
+	float hasDiffuseMap;
+	float hasNormalMap;
+	float hasSpecularMap;
 };

@@ -12,6 +12,7 @@ import shader.Program;
 import shader.ProgramFactory;
 import shader.ShaderDefine;
 import texture.Texture;
+import util.stopwatch.GPUProfiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -135,16 +136,9 @@ public class Material implements Serializable, Bufferable {
 	}
 	
 	public void setTexturesActive(Program program) {
-		program.setUniform("materialDiffuseColor", getDiffuse());
-		program.setUniform("materialRoughness", getRoughness());
-		program.setUniform("materialMetallic", getMetallic());
-		program.setUniform("materialAmbient", getAmbient());
-		program.setUniform("materialTransparency", getTransparency());
-		program.setUniform("parallaxScale", getParallaxScale());
-		program.setUniform("parallaxBias", getParallaxBias());
 		program.setUniform("materialIndex", AppContext.getInstance().getRenderer()
 				.getMaterialFactory().indexOf(this));
-		
+
 		if (!program.needsTextures()) {
 			return;
 		}
@@ -153,14 +147,7 @@ public class Material implements Serializable, Bufferable {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			texture.bind(map.textureSlot);
-//			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), program.getId(), map.textureSlot));
 		}
-
-//		List<EnvironmentProbe> surroundingProbes = renderer.getEnvironmentProbeFactory().getProbesForEntity(entity);
-//		int probeIndex1 = surroundingProbes.size() >= 1 ? surroundingProbes.get(0).getIndex() : -1;
-//		program.setUniform("probeIndex1", probeIndex1);
-//		int probeIndex2 = surroundingProbes.size() >= 2 ? surroundingProbes.get(1).getIndex() : -1;
-//		program.setUniform("probeIndex2", probeIndex2);
 	}
 
 	public void setTexturesInactive() {
@@ -349,7 +336,7 @@ public class Material implements Serializable, Bufferable {
 
 	@Override
 	public float[] get() {
-		float[] floats = new float[10];
+		float[] floats = new float[13];
 		int index = 0;
 		floats[index++] = materialInfo.diffuse.x;
 		floats[index++] = materialInfo.diffuse.y;
@@ -361,6 +348,9 @@ public class Material implements Serializable, Bufferable {
 		floats[index++] = materialInfo.parallaxScale;
 		floats[index++] = materialInfo.transparency;
 		floats[index++] = materialInfo.materialType.ordinal();
+		floats[index++] = hasDiffuseMap() ? 1 : 0;
+		floats[index++] = hasNormalMap() ? 1 : 0;
+		floats[index++] = hasSpecularMap() ? 1 : 0;
 		return floats;
 	}
 

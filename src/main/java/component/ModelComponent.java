@@ -108,6 +108,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("isSelected", isSelected);
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
+        currentProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
 
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);

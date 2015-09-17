@@ -15,18 +15,10 @@ uniform bool isSelected = false;
 uniform bool useParallax;
 uniform bool useSteepParallax;
 
-uniform float parallaxScale = 0.04;
-uniform float parallaxBias = 0.02;
-
-uniform vec3 materialDiffuseColor = vec3(0,0,0);
-uniform vec3 materialSpecularColor = vec3(0,0,0);
-uniform float materialSpecularCoefficient = 0;
-uniform float materialRoughness = 0;
-uniform float materialMetallic = 0;
-uniform float materialAmbient = 0;
-uniform float materialTransparency = 0;
-uniform int probeIndex1 = 0;
-uniform int probeIndex2 = 0;
+//include(globals_structs.glsl)
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -65,6 +57,19 @@ layout(location=4)out vec4 out_visibility; // visibility
 //include(globals.glsl)
 
 void main(void) {
+
+	Material material = materials[materialIndex];
+	vec3 materialDiffuseColor = vec3(material.diffuseR,
+									 material.diffuseG,
+									 material.diffuseB);
+	float materialRoughness = material.roughness;
+	float materialMetallic = material.metallic;
+	float materialAmbient = material.ambient;
+	float parallaxBias = material.parallaxBias;
+	float parallaxScale = material.parallaxScale;
+	float materialTransparency = material.transparency;
+
+
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
 	//V = normalize((eyePos_world.xyz - position_world.xyz).xyz);
 	vec2 UV = texCoord;
