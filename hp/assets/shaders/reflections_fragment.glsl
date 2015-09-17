@@ -480,7 +480,7 @@ float dotSaturate(vec3 a, vec3 b) {
 	return clamp(dot(a, b),0,1);
 }
 
-vec3 cubeMapLighting(samplerCube cubemap, vec3 positionWorld, vec3 normalWorld, vec3 reflectedWorld, vec3 v, float roughness, float metallic, vec3 color) {
+vec3[2] cubeMapLighting(samplerCube cubemap, vec3 positionWorld, vec3 normalWorld, vec3 reflectedWorld, vec3 v, float roughness, float metallic, vec3 color) {
   vec3 diffuseColor = mix(color, vec3(0.0,0.0,0.0), metallic);
   vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
   float glossiness = pow((1-roughness), 4);// (1-roughness);
@@ -1301,9 +1301,11 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 
 		const bool USE_GLOBAL_ENVIRONMENT_MAP = true;
 		if(USE_GLOBAL_ENVIRONMENT_MAP && overlappingVolumesCount == 0) {
-			result.diffuseColor = cubeMapLighting(globalEnvironmentMap, positionWorld,
+			vec3[2] diffuseSpecular = cubeMapLighting(globalEnvironmentMap, positionWorld,
 									normalWorld, reflect(V, normalWorld), V,
 									roughness, metallic, color);
+			result.diffuseColor = diffuseSpecular[0];
+			result.specularColor = diffuseSpecular[1];
 			return result;
 		}
 

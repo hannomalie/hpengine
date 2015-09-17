@@ -438,8 +438,8 @@ vec3 textureDistorted(
  	return vec3(r, g, b);
 }
 vec3 calculateLensflare(vec2 texcoord) {
-	float uGhostDispersal = 0.3f;
-	int uGhosts = 4;
+	float uGhostDispersal = 0.53f;
+	int uGhosts = 2;
 	float uHaloWidth = 0.25f;
 	float uDistortion = 0.1f;
 
@@ -512,7 +512,7 @@ void main()
 			const bool useLensflare = false;
 			if(useLensflare) {
 				vec3 lensflare = calculateLensflare(texcoord);
-				out_color.rgb += clamp(lensflare, vec3(0), vec3(0.05));
+				out_color.rgb += clamp(lensflare, vec3(0), vec3(0.075));
 			}
 	    }
 	} else {

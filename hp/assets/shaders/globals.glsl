@@ -270,7 +270,7 @@ vec3 cookTorrance(in vec3 lightDirectionView, in vec3 lightDiffuse, in float att
 
 	return attenuation * (diff + cookTorrance * lightDiffuse.rgb * specularColor);
 }
-vec3 cookTorranceCubeMap(samplerCube cubemap,
+vec3[2] cookTorranceCubeMap(samplerCube cubemap,
                   in vec3 ViewVectorWorld, in vec3 positionWorld, in vec3 normalWorld,
                   float roughness, float metallic, vec3 diffuseColor, vec3 specularColor) {
 //http://renderman.pixar.com/view/cook-torrance-shader
@@ -336,5 +336,8 @@ vec3 cookTorranceCubeMap(samplerCube cubemap,
 
 	float cookTorrance = clamp((F*D*G/(4*(NdotL*NdotV))), 0.0, 1.0);
 
-	return (diff + cookTorrance * lightSpecular * specularColor);
+    vec3[2] result;
+    result[0] = diff;
+    result[1] = 1 * lightSpecular * specularColor;
+	return result;
 }
