@@ -152,8 +152,7 @@ public class Material implements Serializable, Bufferable {
 		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
-			GL13.glActiveTexture(GL13.GL_TEXTURE0 + map.textureSlot);
-			texture.bind();
+			texture.bind(map.textureSlot);
 //			LOGGER.log(Level.INFO, String.format("Setting %s (index %d) for Program %d to %d", map, texture.getTextureID(), program.getId(), map.textureSlot));
 		}
 

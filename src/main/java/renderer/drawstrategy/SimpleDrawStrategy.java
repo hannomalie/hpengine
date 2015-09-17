@@ -298,7 +298,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
 
         GPUProfiler.start("MipMap generation AO and light buffer");
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        renderer.getOpenGLContext().activeTexture(0);
         renderer.getTextureFactory().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
         renderer.getTextureFactory().generateMipMaps(gBuffer.getAmbientOcclusionMapId());
         GPUProfiler.end();
@@ -660,13 +660,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-
     private void debugDrawProbes(Camera camera) {
         Entity probeBoxEntity = renderer.getGBuffer().getProbeBoxEntity();
 
         probeFirstpassProgram.use();
         renderer.getEnvironmentProbeFactory().bindEnvironmentProbePositions(probeFirstpassProgram);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
+        renderer.getOpenGLContext().activeTexture(8);
         renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind();
         probeFirstpassProgram.setUniform("showContent", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
 
