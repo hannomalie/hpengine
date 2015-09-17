@@ -9,6 +9,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLThread;
+import renderer.constants.GlCap;
 import renderer.material.Material;
 import shader.Program;
 
@@ -114,6 +115,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
 
+        if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+            getRenderer().getOpenGLContext().disable(GlCap.CULL_FACE);
+        } else {
+            getRenderer().getOpenGLContext().enable(GlCap.CULL_FACE);
+        }
         if(instanced) {
             vertexBuffer.drawInstanced(10);
         } else {

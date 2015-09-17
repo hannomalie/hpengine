@@ -132,6 +132,7 @@ public class EntityView extends WebPanel {
 					AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
 				});
 				webComponentPanel.addElement(materialSelect);
+
 			} catch (NullPointerException e) {
 				Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
 			}

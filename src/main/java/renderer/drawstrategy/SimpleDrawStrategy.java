@@ -363,7 +363,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
 
             Vector3f distance = new Vector3f();
-            Vector3f.sub(light.getPosition(), camPosition, distance); // <----- biggest Hack ever! TODO: Check where this fuckup with the cam goes on.... :(
+            Vector3f.sub(light.getPosition(), camPosition, distance);
             float lightRadius = light.getRadius();
 
             // camera is inside light

@@ -102,12 +102,12 @@ public class MaterialFactory {
 		material = read(getDirectory() + materialInfo.name);
 		
 		if(material != null) {
+			AppContext.getEventBus().post(new MaterialAddedEvent());
 			return material;
 		}
 		
 		material = new Material();
 		material.setMaterialInfo(new MaterialInfo(materialInfo));
-		//material.transparency = materialInfo.transparency;
 		initMaterial(material);
 		write(material, materialInfo.name);
 		AppContext.getEventBus().post(new MaterialAddedEvent());

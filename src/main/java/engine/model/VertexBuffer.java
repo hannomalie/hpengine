@@ -5,6 +5,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLThread;
 import renderer.Renderer;
 import renderer.command.Command;
 import renderer.command.Result;
@@ -78,7 +79,7 @@ public class VertexBuffer {
 		this.vertices = vertices;
 
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
-				
+
 		for (int i = 0; i < verticesCount; i++) {
 			int currentOffset = 0;
 			for (DataChannels channel : channels) {
@@ -88,7 +89,7 @@ public class VertexBuffer {
 				currentOffset += channel.getSize();
 			}
 		}
-		
+
 		buffer.rewind();
 		return buffer;
 	}
@@ -156,16 +157,17 @@ public class VertexBuffer {
 //        queue.poll();
 
 		AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-            vertexBuffer = GL15.glGenBuffers();
-            vertexArray = GL30.glGenVertexArrays();
+			vertexBuffer = GL15.glGenBuffers();
+			vertexArray = GL30.glGenVertexArrays();
 
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
-            buffer.rewind();
-            GL30.glBindVertexArray(vertexArray);
-            setUpAttributes();
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-            GL30.glBindVertexArray(0);
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+			buffer.rewind();
+			GL30.glBindVertexArray(vertexArray);
+			setUpAttributes();
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+			GL30.glBindVertexArray(0);
 		});
+
 		return this;
 	}
 	
