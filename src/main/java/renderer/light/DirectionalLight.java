@@ -43,6 +43,8 @@ public class DirectionalLight extends Entity {
 	transient private Program directionalShadowPassProgram;
 	private Camera camera;
 
+	private transient boolean needsShadowMapRedraw = true;
+
 	public DirectionalLight() {
 		this(true);
 	}
@@ -144,6 +146,12 @@ public class DirectionalLight extends Entity {
 		initialized = true;
 	}
 
+	@Override
+	public void update(float seconds) {
+		if(hasMoved()) {setNeedsShadowMapRedraw(true);}
+		super.update(seconds);
+	}
+
 	public void drawAsMesh(Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
 			component.draw(camera, getTransform().getTransformationBuffer(), 0);
@@ -155,6 +163,7 @@ public class DirectionalLight extends Entity {
 
 	public void drawShadowMap(Octree octree) {
 		if(!isInitialized()) { return; }
+		if(!needsShadowMapRedraw) { return; }
 		appContext.getRenderer().getOpenGLContext().depthMask(true);
 		appContext.getRenderer().getOpenGLContext().enable(DEPTH_TEST);
 		appContext.getRenderer().getOpenGLContext().cullFace(FRONT);
@@ -180,9 +189,11 @@ public class DirectionalLight extends Entity {
 			});
 		}
 		appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
+		setNeedsShadowMapRedraw(false);
 	}
 
 	public int getShadowMapId() {
+		if(!initialized) { return -1; }
 		return renderTarget.getRenderedTexture();
 	}
 	public int getShadowMapWorldPositionId() {
@@ -236,5 +247,13 @@ public class DirectionalLight extends Entity {
 
 	public FloatBuffer getViewProjectionMatrixAsBuffer() {
 		return camera.getViewProjectionMatrixAsBuffer();
+	}
+
+	public boolean isNeedsShadowMapRedraw() {
+		return needsShadowMapRedraw;
+	}
+
+	public void setNeedsShadowMapRedraw(boolean needsShadowMapRedraw) {
+		this.needsShadowMapRedraw = needsShadowMapRedraw;
 	}
 }

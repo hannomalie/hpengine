@@ -570,7 +570,6 @@ public class EnvironmentSampler extends Camera {
 //		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
 		secondPassPointProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassPointProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassPointProgram.setUniform("secondPassScale", 1);
 		secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		GPUProfiler.end();

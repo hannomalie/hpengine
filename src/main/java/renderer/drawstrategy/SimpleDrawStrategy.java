@@ -31,6 +31,7 @@ import util.stopwatch.GPUProfiler;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static renderer.constants.BlendMode.*;
 import static renderer.constants.BlendMode.Factor.*;
@@ -110,7 +111,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             environmentProbeFactory.drawAlternating(octree, camera, light, renderer.getFrameCount());
             renderer.executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
-//			if(light.hasMoved() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
+			if(light.isNeedsShadowMapRedraw() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
             {
                 GPUProfiler.start("Directional shadowmap");
                 light.drawShadowMap(octree);

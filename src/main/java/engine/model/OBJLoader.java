@@ -136,7 +136,6 @@ public class OBJLoader {
             } else if (line.startsWith("usemtl ")) {
 		    	  String materialName = line.replaceAll("usemtl ", "");
 				currentMaterial = AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> renderer.getMaterialFactory().get(materialName));
-//		    	  currentMaterial = renderer.getMaterialFactory().get(materialName);
 		    	  if(currentMaterial == null) {
 		    		  LOGGER.log(Level.INFO, "No material found!!!");
 		    		  currentMaterial = renderer.getMaterialFactory().getDefaultMaterial();

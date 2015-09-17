@@ -165,24 +165,24 @@ public class DeferredRenderer implements Renderer {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
+					initialized = true;
 				}
-
-				initialized = true;
 
 				//TODO: throws illegalstateexception
 				if (Display.isCreated() && !Display.isCloseRequested()) {
 					if (appContext.isInitialized()) {
+						GPUProfiler.startFrame();
 						if(appContext.getScene().isInitialized())
 						{
-							setCurrentState("BEFORE DRAW");
 							draw(appContext);
 						}
 						Display.update();
-						setCurrentState("AFTER DRAW");
 
-						setCurrentState("BEFORE UPDATE");
+						GPUProfiler.start("Update");
 						renderer.update(appContext, seconds);
-						setCurrentState("AFTER UPDATE");
+						GPUProfiler.end();
+						GPUProfiler.endFrame();
+						dumpTimings();
 					}
 				}
 			}
@@ -307,7 +307,6 @@ public class DeferredRenderer implements Renderer {
 	int counter = 0;
 
 	public void draw(AppContext appContext) {
-		GPUProfiler.startFrame();
 		setLastFrameTime();
 
 		if (Config.DRAWLINES_ENABLED) {
@@ -334,10 +333,6 @@ public class DeferredRenderer implements Renderer {
 			Config.CONTINUOUS_DRAW_PROBES = false;
 			counter++;
 		}
-
-		GPUProfiler.endFrame();
-
-		dumpTimings();
 
 		frameCount++;
 
@@ -679,15 +674,14 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void endFrame() {
-
-		DirectionalLight light = appContext.getScene().getDirectionalLight();
-		light.setHasMoved(false);
 		for (Entity entity : appContext.getScene().getPointLights()) {
 			entity.setHasMoved(false);
 		}
 		for (Entity entity : appContext.getScene().getAreaLights()) {
 			entity.setHasMoved(false);
 		}
+
+		appContext.getScene().getDirectionalLight().setHasMoved(false);
 	}
 
 	private void setCurrentState(String newState) {

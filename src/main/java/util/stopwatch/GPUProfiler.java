@@ -22,6 +22,7 @@ public class GPUProfiler {
 
 	private static ArrayList<GPUTaskProfile> completedFrames;
 	private static ArrayList<Record> collectedTimes;
+	private static boolean startFrameCalledThisFrame = false;
 
 	static {
 		init();
@@ -37,6 +38,7 @@ public class GPUProfiler {
 	}
 
 	public static void startFrame() {
+		startFrameCalledThisFrame = true;
 
 		if (currentTask != null) {
 			tasks.clear();
@@ -63,8 +65,9 @@ public class GPUProfiler {
 	}
 
 	public static void endFrame() {
-
 		if (PROFILING_ENABLED) {
+			if(!startFrameCalledThisFrame || currentTask == null) { return; }
+
 			if (currentTask.getParent() != null) {
 				tasks.clear();
 				return;
