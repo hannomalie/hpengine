@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.TimeStepThread;
 import engine.Transform;
 import engine.model.*;
+import event.PointLightMovedEvent;
 import event.StateChangedEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
@@ -674,14 +675,19 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void endFrame() {
-		for (Entity entity : appContext.getScene().getPointLights()) {
-			entity.setHasMoved(false);
-		}
 		for (Entity entity : appContext.getScene().getAreaLights()) {
 			entity.setHasMoved(false);
 		}
 
 		appContext.getScene().getDirectionalLight().setHasMoved(false);
+		boolean pointLightMovePosted = false;
+		for (Entity entity : appContext.getScene().getPointLights()) {
+			if(!pointLightMovePosted && entity.hasMoved()) {
+				AppContext.getEventBus().post(new PointLightMovedEvent());
+				pointLightMovePosted = true;
+			}
+			entity.setHasMoved(false);
+		}
 	}
 
 	private void setCurrentState(String newState) {

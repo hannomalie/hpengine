@@ -15,11 +15,6 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-uniform vec3 lightPosition;
-uniform float lightRadius;
-uniform vec3 lightDiffuse;
-uniform vec3 lightSpecular;
-
 in vec4 position_clip;
 in vec4 position_view;
 
@@ -29,18 +24,12 @@ in vec4 position_view;
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
+layout(std430, binding=2) buffer _lights {
+	float pointLightCount;
+	PointLight pointLights[100];
+};
 
-struct Pointlight {
-	vec3 _position;
-	float _radius;
-	vec3 _diffuse;
-	vec3 _specular;
-};
-//uniform int lightCount;
 uniform int currentLightIndex;
-layout(std140) uniform pointlights {
-	Pointlight lights[1000];
-};
 
 out vec4 out_DiffuseSpecular;
 out vec4 out_AOReflection;
@@ -66,31 +55,12 @@ vec3 decodeNormal(vec2 enc) {
     return vec3(scth.y*scphi.x, scth.x*scphi.x, scphi.y);
 }
 
-float calculateAttenuation(float dist) {
+float calculateAttenuation(float lightRadius, float dist) {
     float distDivRadius = (dist / lightRadius);
     float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
     atten_factor = pow(atten_factor, 2);
     return atten_factor;
 }
-float __calculateAttenuation(float dist) {
-    float distDivRadius = (dist / lightRadius);
-    float atten_factor = clamp(1.0f - pow(distDivRadius,4), 0.0, 1.0);
-    atten_factor = pow(atten_factor, 2);
-    return 100*atten_factor/(dist*dist); // TODO: Figure out the 100...
-}
-float _calculateAttenuation(float dist) {
-	float cutoff = lightRadius;
-	float r = lightRadius/10;
-	float d = max(dist - r, 0);
-	
-	float denom = d/r + 1;
-    float attenuation = 1 / (denom*denom);
-    attenuation = (attenuation - cutoff) / (1 - cutoff);
-    attenuation = max(attenuation, 0);
-    
-    return attenuation;
-}
-
 
 float chiGGX(float v)
 {
@@ -129,7 +99,7 @@ void main(void) {
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	vec3 V = normalize(inverse(viewMatrix) * dir).xyz;
-	V = positionView;
+	V = -positionView;
 
 	//skip background
 	if (positionView.z > -0.0001) {
@@ -141,11 +111,12 @@ void main(void) {
 	vec4 specular = texture2D(specularMap, st);
 	float depth = texture2D(normalMap, st).w;
 
-	vec3 lightPositionView = (viewMatrix * vec4(lightPosition, 1)).xyz;
-	vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
-	vec3 lightDiffuse = lightDiffuse;
+	PointLight pointLight = pointLights[currentLightIndex];
+	vec3 lightPositionView = (viewMatrix * vec4(pointLight.positionX, pointLight.positionY, pointLight.positionZ, 1)).xyz;
+	vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
 
-	float attenuation = calculateAttenuation(length(lightPositionView - positionView));
+	vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
+	float attenuation = calculateAttenuation(pointLight.radius, length(lightPositionView - positionView));
 	vec3 finalColor;
 
 	int materialIndex = int(textureLod(visibilityMap, st, 0).b);

@@ -134,7 +134,7 @@ public class StorageBuffer {
             tempBuffer = BufferUtils.createFloatBuffer(bufferable[0].getSizePerObject() * bufferable.length);
             for (int i = 0; i < bufferable.length; i++) {
                 Bufferable currentBufferable = bufferable[i];
-                int currentOffset = offset + i * currentBufferable.getSizePerObject();
+                int currentOffset = i * currentBufferable.getSizePerObject();
                 float[] currentBufferableArray = currentBufferable.get();
                 for (int z = 0; z < currentBufferableArray.length; z++) {
                     tempBuffer.put(currentOffset + z, currentBufferableArray[z]);

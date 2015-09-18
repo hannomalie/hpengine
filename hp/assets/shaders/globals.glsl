@@ -210,6 +210,7 @@ vec3 cookTorrance(in vec3 lightDirectionView, in vec3 lightDiffuse, in float att
 //http://renderman.pixar.com/view/cook-torrance-shader
 //http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/
 	vec3 V = normalize(ViewVector);
+	V = -normalize(positionView);
  	vec3 L = normalize(lightDirectionView);
     vec3 H = normalize(L + V);
     vec3 N = normalize(normalView);

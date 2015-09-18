@@ -365,15 +365,19 @@ public class Util {
 		}
 		return count;
 	}
-	
-	public static void printFloatBuffer(FloatBuffer buffer) {
+
+	public static void printFloatBuffer(FloatBuffer values) {
+		printFloatBuffer(values, 4);
+	}
+
+	public static void printFloatBuffer(FloatBuffer buffer, int columns) {
 		buffer.rewind();
 		StringBuilder builder = new StringBuilder();
 		int columnCounter = 1;
 		while (buffer.hasRemaining()) {
 			builder.append(buffer.get());
 			builder.append(" ");
-			if(columnCounter%4==0) { builder.append(System.lineSeparator()); }
+			if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
 			columnCounter++;
 		}
 		buffer.rewind();

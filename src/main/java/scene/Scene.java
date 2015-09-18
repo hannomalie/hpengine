@@ -4,6 +4,7 @@ import camera.Camera;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
+import event.LightChangedEvent;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -248,6 +249,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	public void addPointLight(PointLight pointLight) {
 		pointLights.add(pointLight);
+		AppContext.getEventBus().post(new LightChangedEvent());
 	}
 
 	public void addTubeLight(TubeLight tubeLight) {

@@ -9,6 +9,7 @@ import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import renderer.material.MaterialFactory;
+import shader.Bufferable;
 import shader.Program;
 import util.Util;
 
@@ -17,7 +18,8 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 
-public class PointLight extends Entity implements Serializable {
+public class PointLight extends Entity implements Serializable, Bufferable
+{
 	private static final long serialVersionUID = 1L;
 	
 	public static float DEFAULT_RANGE = 1f;
@@ -77,30 +79,6 @@ public class PointLight extends Entity implements Serializable {
 		return getTransform().getScale().x;
 	}
 	
-	public static float[] convert(List<PointLight> list) {
-		final int elementsPerLight = 10;
-		int elementCount = list.size() * elementsPerLight;
-		float[] result = new float[elementCount];
-		
-		for(int i = 0; i < list.size(); i++) {
-			PointLight light = list.get(i);
-			result[i] = light.getPosition().x;
-			result[i+1] = light.getPosition().y;
-			result[i+2] = light.getPosition().z;
-			
-			result[i+3] = light.getScale().x;
-			
-			result[i+4] = light.getColor().x;
-			result[i+5] = light.getColor().y;
-			result[i+6] = light.getColor().z;
-			
-			result[i+7] = light.getColor().x;
-			result[i+8] = light.getColor().y;
-			result[i+9] = light.getColor().z;
-		}
-		return result;
-	}
-
 	@Override
 	public boolean isInFrustum(Camera camera) {
 		if (camera.getFrustum().sphereInFrustum(getPosition().x, getPosition().y, getPosition().z, getRadius())) {
@@ -108,5 +86,22 @@ public class PointLight extends Entity implements Serializable {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public float[] get() {
+		float[] floats = new float[7];
+		int index = 0;
+		Vector3f worldPosition = getPosition();
+		floats[index++] = worldPosition.x;
+		floats[index++] = worldPosition.y;
+		floats[index++] = worldPosition.z;
+		floats[index++] = getRadius();
+		Vector4f color = getColor();
+		floats[index++] = color.x;
+		floats[index++] = color.y;
+		floats[index++] = color.z;
+
+		return floats;
 	}
 }

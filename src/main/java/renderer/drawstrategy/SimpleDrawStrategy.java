@@ -13,8 +13,9 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.*;
-import renderer.constants.CullMode;
+import renderer.DeferredRenderer;
+import renderer.OpenGLContext;
+import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
 import renderer.light.*;
@@ -33,12 +34,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static renderer.constants.BlendMode.*;
-import static renderer.constants.BlendMode.Factor.*;
+import static renderer.constants.BlendMode.FUNC_ADD;
+import static renderer.constants.BlendMode.Factor.ONE;
 import static renderer.constants.CullMode.BACK;
-import static renderer.constants.GlCap.BLEND;
-import static renderer.constants.GlCap.CULL_FACE;
-import static renderer.constants.GlCap.DEPTH_TEST;
+import static renderer.constants.GlCap.*;
 import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
@@ -170,9 +169,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
                 }
-//				entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-//					modelComponent.draw(cameraEntity);
-//				});
             }
         }
         GPUProfiler.end();
@@ -352,6 +348,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassPointProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
+        secondPassPointProgram.bindShaderStorageBuffer(2, AppContext.getInstance().getRenderer().getLightFactory().getLightBuffer());
         GPUProfiler.end();
 
         GPUProfiler.start("Draw lights");
@@ -376,10 +373,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 GL11.glDepthFunc(GL11.GL_LEQUAL);
             }
 
-//			secondPassPointProgram.setUniform("currentLightIndex", i);
-            secondPassPointProgram.setUniform("lightPosition", light.getPosition());
-            secondPassPointProgram.setUniform("lightRadius", lightRadius);
-            secondPassPointProgram.setUniform("lightDiffuse", light.getColor().x, light.getColor().y, light.getColor().z);
+			secondPassPointProgram.setUniform("currentLightIndex", i);
 
             if(firstLightDrawn) {
                 light.drawAgain(secondPassPointProgram);

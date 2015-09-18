@@ -14,3 +14,13 @@ struct Material {
 	float hasNormalMap;
 	float hasSpecularMap;
 };
+
+struct PointLight {
+	float positionX;
+	float positionY;
+	float positionZ;
+	float radius;
+	float colorR;
+	float colorG;
+	float colorB;
+};

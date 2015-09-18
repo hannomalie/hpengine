@@ -16,6 +16,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
 import renderer.constants.CullMode;
+import renderer.material.Material;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
@@ -174,12 +175,15 @@ public class DirectionalLight extends Entity {
 		directionalShadowPassProgram.use();
 		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-//		directionalShadowPassProgram.setUniform("near", camera.getNear());
-//		directionalShadowPassProgram.setUniform("far", camera.getFar());
-		
-		for (Entity e : visibles) {
 
+		for (Entity e : visibles) {
 			e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+
+				if (modelComponent.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+					appContext.getRenderer().getOpenGLContext().disable(CULL_FACE);
+				} else {
+					appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
+				}
 				directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
 				modelComponent.getMaterial().setTexturesActive(directionalShadowPassProgram);
 				directionalShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());

@@ -1,10 +1,13 @@
 package renderer.light;
 
 import camera.Camera;
+import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
+import event.LightChangedEvent;
+import event.PointLightMovedEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -14,13 +17,13 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
-import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
+import shader.StorageBuffer;
 import util.Util;
 import util.stopwatch.GPUProfiler;
 
@@ -30,7 +33,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static renderer.constants.BlendMode.FUNC_ADD;
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 
@@ -63,6 +65,8 @@ public class LightFactory {
 	private Model sphereModel;
     private Model cubeModel;
     private Model planeModel;
+
+	private StorageBuffer lightBuffer;
 	
 	public LightFactory(AppContext appContext) {
 		this.appContext = appContext;
@@ -104,6 +108,9 @@ public class LightFactory {
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 			areaLightDepthMaps.add(renderedTextureTemp);
 		}
+
+		lightBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(1000));
+		AppContext.getEventBus().register(this);
 	}
 
     public void update(float seconds) {
@@ -351,5 +358,27 @@ public class LightFactory {
 //		c.rotateWorld(new Vector4f(0, 1, 0, 180)); // TODO: CHECK THIS SHIT UP
 //		c.updateShadow();
 		return light.getViewProjectionMatrixAsBuffer();
+	}
+
+	private void bufferLights() {
+		List<PointLight> pointLights = appContext.getScene().getPointLights();
+		lightBuffer.putValues(pointLights.size());
+		renderer.doWithOpenGLContext(() -> {
+			lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));
+		});
+	}
+
+	@Subscribe
+	public void bufferLights(LightChangedEvent event) {
+		bufferLights();
+	}
+
+	@Subscribe
+	public void bufferLights(PointLightMovedEvent event) {
+		bufferLights();
+	}
+
+	public StorageBuffer getLightBuffer() {
+		return lightBuffer;
 	}
 }
