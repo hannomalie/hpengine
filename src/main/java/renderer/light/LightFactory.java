@@ -8,6 +8,7 @@ import engine.model.Entity;
 import engine.model.Model;
 import event.LightChangedEvent;
 import event.PointLightMovedEvent;
+import event.SceneInitEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -362,10 +363,13 @@ public class LightFactory {
 
 	private void bufferLights() {
 		List<PointLight> pointLights = appContext.getScene().getPointLights();
-		lightBuffer.putValues(pointLights.size());
 		renderer.doWithOpenGLContext(() -> {
-			lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));
+			lightBuffer.putValues(0, pointLights.size());
+			if(pointLights.size() > 0) {
+				lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));
+			}
 		});
+		Util.printFloatBuffer(lightBuffer.getValues());
 	}
 
 	@Subscribe
@@ -375,6 +379,11 @@ public class LightFactory {
 
 	@Subscribe
 	public void bufferLights(PointLightMovedEvent event) {
+		bufferLights();
+	}
+
+	@Subscribe
+	public void bufferLights(SceneInitEvent event) {
 		bufferLights();
 	}
 

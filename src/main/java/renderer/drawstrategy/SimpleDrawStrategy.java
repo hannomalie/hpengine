@@ -59,6 +59,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private Program reflectionProgram;
     private Program linesProgram;
     private Program probeFirstpassProgram;
+    private ComputeShaderProgram secondPassPointComputeProgram;
     private ComputeShaderProgram tiledProbeLightingProgram;
     private ComputeShaderProgram tiledDirectLightingProgram;
 
@@ -73,6 +74,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
         secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
         instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+
+        secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
         combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
         postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
@@ -284,14 +287,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.end();
 
-        doPointLights(camera, pointLights, camPosition, viewMatrix, projectionMatrix);
-
         doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
 
         doAreaLights(areaLights, viewMatrix, projectionMatrix);
 
         doInstantRadiosity(directionalLight, viewMatrix, projectionMatrix);
 
+        doPointLights(viewMatrix, projectionMatrix);
 
         GPUProfiler.start("MipMap generation AO and light buffer");
         renderer.getOpenGLContext().activeTexture(0);
@@ -325,66 +327,31 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(0), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);
 //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(1), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);
 
-        GL11.glCullFace(GL11.GL_BACK);
-        GL11.glDepthFunc(GL11.GL_LESS);
+        renderer.getOpenGLContext().cullFace(BACK);
+        renderer.getOpenGLContext().depthFunc(LESS);
         GPUProfiler.end();
     }
 
-    private void doPointLights(Camera camera, List<PointLight> pointLights,
-                               Vector3f camPosition, FloatBuffer viewMatrix,
-                               FloatBuffer projectionMatrix) {
-
-        if(pointLights.isEmpty()) { return; }
-
-        GPUProfiler.start("Pointlights");
-        secondPassPointProgram.use();
-
-        GPUProfiler.start("Set shared uniforms");
-//		secondPassPointProgram.setUniform("lightCount", pointLights.size());
-//		secondPassPointProgram.setUniformAsBlock("pointlights", PointLight.convert(pointLights));
-        secondPassPointProgram.setUniform("screenWidth", (float) Config.WIDTH);
-        secondPassPointProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        secondPassPointProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
-        secondPassPointProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-        secondPassPointProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-        secondPassPointProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
-        secondPassPointProgram.bindShaderStorageBuffer(2, AppContext.getInstance().getRenderer().getLightFactory().getLightBuffer());
-        GPUProfiler.end();
-
-        GPUProfiler.start("Draw lights");
-        boolean firstLightDrawn = false;
-        for (int i = 0 ; i < pointLights.size(); i++) {
-            PointLight light = pointLights.get(i);
-            if(!light.isInFrustum(camera)) {
-                continue;
-            }
-
-            Vector3f distance = new Vector3f();
-            Vector3f.sub(light.getPosition(), camPosition, distance);
-            float lightRadius = light.getRadius();
-
-            // camera is inside light
-            if (distance.length() < lightRadius) {
-                GL11.glCullFace(GL11.GL_FRONT);
-                GL11.glDepthFunc(GL11.GL_GEQUAL);
-            } else {
-                // camera is outside light, cull back sides
-                GL11.glCullFace(GL11.GL_BACK);
-                GL11.glDepthFunc(GL11.GL_LEQUAL);
-            }
-
-			secondPassPointProgram.setUniform("currentLightIndex", i);
-
-            if(firstLightDrawn) {
-                light.drawAgain(secondPassPointProgram);
-            } else {
-                light.draw(secondPassPointProgram);
-            }
-            firstLightDrawn = true;
-        }
-        GPUProfiler.end();
+    private void doPointLights(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+        GPUProfiler.start("Seconds pass PointLights");
+        openGLContext.bindTexture(0, TEXTURE_2D, renderer.getGBuffer().getPositionMap());
+        openGLContext.bindTexture(1, TEXTURE_2D, renderer.getGBuffer().getNormalMap());
+        openGLContext.bindTexture(2, TEXTURE_2D, renderer.getGBuffer().getColorReflectivenessMap());
+        openGLContext.bindTexture(3, TEXTURE_2D, renderer.getGBuffer().getMotionMap());
+        openGLContext.bindTexture(4, TEXTURE_2D, renderer.getGBuffer().getLightAccumulationMapOneId());
+        // TODO: Add glbindimagetexture to openglcontext class
+        GL42.glBindImageTexture(4, renderer.getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
+        secondPassPointComputeProgram.use();
+        secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.WIDTH);
+        secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.HEIGHT);
+        secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
+        secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+        secondPassPointComputeProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
+        secondPassPointComputeProgram.bindShaderStorageBuffer(2, AppContext.getInstance().getRenderer().getLightFactory().getLightBuffer());
+        secondPassPointComputeProgram.dispatchCompute(Config.WIDTH / 16, Config.HEIGHT / 16, 1);
         GPUProfiler.end();
     }
+
     private void doTubeLights(List<TubeLight> tubeLights,
                               Vector4f camPositionV4, FloatBuffer viewMatrix,
                               FloatBuffer projectionMatrix) {

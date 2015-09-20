@@ -262,7 +262,8 @@ public class AppContext {
                     for (int k = 0; k < entityCount; k++) {
 
                         MaterialFactory.MaterialInfo materialInfo = new MaterialFactory.MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
-                                .setRoughness((float) i / entityCount)
+								.setDiffuse(new Vector3f(1,1,1))
+								.setRoughness((float) i / entityCount)
                                 .setMetallic((float) j / entityCount)
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0));
                         Material mat = renderer.getMaterialFactory().getMaterial(materialInfo.setName("Default_" + i + "_" + j));

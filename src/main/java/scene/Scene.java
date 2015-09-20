@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
 import event.LightChangedEvent;
+import event.SceneInitEvent;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -72,6 +73,7 @@ public class Scene implements LifeCycle, Serializable {
 		initLights();
 		initialized = true;
 		renderer.init(octree);
+		appContext.getEventBus().post(new SceneInitEvent());
 	}
 	private void initLights() {
 		for(PointLight pointLight : pointLights) {

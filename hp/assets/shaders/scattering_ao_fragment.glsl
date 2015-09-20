@@ -311,6 +311,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 currentPosition = startPosition;
 	 
 	vec3 accumFog = vec3(0,0,0);
+	vec3 accumFogShadow = vec3(0,0,0);
 	 
 	for (int i = 0; i < NB_STEPS; i++)
 	{
@@ -322,18 +323,19 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
     	float ditherValue = ditherPattern[int(gl_FragCoord.x) % 4 + int(gl_FragCoord.y) % 4];
     	
 		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
-		 
+
+		 float NdotL = clamp(dot(rayDirection, lightDirection), 0, 1);
 		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
-			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
+			accumFog += ComputeScattering(NdotL);
 		} else {
-			accumFog += 0.125f * ComputeScattering(dot(rayDirection, lightDirection));
+			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
 		}
 
 		currentPosition += step;
 	}
 	accumFog /= NB_STEPS;
-	return accumFog * lightDiffuse;
+	return (accumFog * lightDiffuse) + accumFogShadow;
 }
 
 float getAmbientOcclusion(vec2 st) {
@@ -390,6 +392,7 @@ void main(void) {
 	vec3 positionView = texture2D(positionMap, st).xyz;
   	
   	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
+
   	if(useAmbientOcclusion) {
 		out_AOScattering.r = getAmbientOcclusion(st);
   	} else {

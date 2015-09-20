@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import engine.AppContext;
+import org.lwjgl.opengl.GL42;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -101,6 +102,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 
 	public void dispatchCompute(int num_groups_x, int num_groups_y, int num_groups_z) {
 		GL43.glDispatchCompute(num_groups_x, num_groups_y, num_groups_z);
+//		GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
 	}
 
 	public void unload() {
