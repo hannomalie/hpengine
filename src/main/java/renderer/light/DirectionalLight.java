@@ -32,7 +32,8 @@ import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DirectionalLight extends Entity {
-	
+	public static final int SHADOWMAP_RESOLUTION = 2048;
+
 	private boolean castsShadows = false;
 	transient FloatBuffer entityBuffer;
 
@@ -136,8 +137,8 @@ public class DirectionalLight extends Entity {
 		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
 		renderTarget = new RenderTargetBuilder()
-							.setWidth(2048)
-							.setHeight(2048)
+							.setWidth(SHADOWMAP_RESOLUTION)
+							.setHeight(SHADOWMAP_RESOLUTION)
 							.setClearRGBA(1f, 1f, 1f, 1f)
 							.add(3, new ColorAttachmentDefinition()
 									.setInternalFormat(GL30.GL_RGBA32F)
