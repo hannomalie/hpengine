@@ -1,5 +1,63 @@
 #define kPI 3.1415926536f
 
+const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
+				2.0/16.0, 4.0/16.0, 2.0/16.0,
+				1.0/16.0, 2.0/16.0, 1.0/16.0 };
+
+
+vec4 blur(sampler2DArray sampler, vec3 texCoords, float inBlurDistance) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.025);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * texture(sampler, texCoords + vec3(-blurDistance, -blurDistance, 0));
+	result += kernel[1] * texture(sampler, texCoords + vec3(0, -blurDistance, 0));
+	result += kernel[2] * texture(sampler, texCoords + vec3(blurDistance, -blurDistance, 0));
+
+	result += kernel[3] * texture(sampler, texCoords + vec3(-blurDistance, 0, 0));
+	result += kernel[4] * texture(sampler, texCoords + vec3(0, 0, 0));
+	result += kernel[5] * texture(sampler, texCoords + vec3(blurDistance, 0, 0));
+
+	result += kernel[6] * texture(sampler, texCoords + vec3(-blurDistance, blurDistance, 0));
+	result += kernel[7] * texture(sampler, texCoords + vec3(0, -blurDistance, 0));
+	result += kernel[8] * texture(sampler, texCoords + vec3(blurDistance, blurDistance, 0));
+
+	return result;
+}
+
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
+	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[2] * texture(sampler, texCoords + vec2(blurDistance, -blurDistance));
+
+	result += kernel[3] * texture(sampler, texCoords + vec2(-blurDistance));
+	result += kernel[4] * texture(sampler, texCoords + vec2(0, 0));
+	result += kernel[5] * texture(sampler, texCoords + vec2(blurDistance, 0));
+
+	result += kernel[6] * texture(sampler, texCoords + vec2(-blurDistance, blurDistance));
+	result += kernel[7] * texture(sampler, texCoords + vec2(0, -blurDistance));
+	result += kernel[8] * texture(sampler, texCoords + vec2(blurDistance, blurDistance));
+
+	return result;
+}
+
+vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipmap) {
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
+	vec4 result = vec4(0,0,0,0);
+	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipmap);
+	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipmap);
+	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipmap);
+
+	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipmap);
+	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipmap);
+	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipmap);
+
+	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipmap);
+	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipmap);
+	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipmap);
+
+	return result;
+}
 vec3 mod289(vec3 x)
 {
 	return x-floor(x * (1.0 / 289.0)) * 289.0;
@@ -200,9 +258,6 @@ const vec3 pSphere[16] = vec3[](vec3(0.53812504, 0.18565957, -0.43192),vec3(0.13
 float rand(vec2 co){
 	return 0.5+(fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453))*0.5;
 }
-const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
-				2.0/16.0, 4.0/16.0, 2.0/16.0,
-				1.0/16.0, 2.0/16.0, 1.0/16.0 };
 
 vec3 cookTorrance(in vec3 lightDirectionView, in vec3 lightDiffuse, in float attenuation,
                   in vec3 ViewVector, in vec3 positionView, in vec3 normalView,

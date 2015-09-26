@@ -6,8 +6,9 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D diffuseMap;
 layout(binding=3) uniform sampler2D specularMap;
 layout(binding=4, rgba16f) uniform image2D out_DiffuseSpecular;
-layout(binding=5) uniform sampler2D probe;
-layout(binding=7) uniform sampler2D visibilityMap;
+layout(binding=5) uniform sampler2D visibilityMap;
+layout(binding=6) uniform sampler2DArray pointLightShadowMapsFront;
+layout(binding=7) uniform sampler2DArray pointLightShadowMapsBack;
 
 
 uniform float screenWidth = 1280;
@@ -82,6 +83,59 @@ bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
 
 }
 
+float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+
+const bool USE_POINTLIGHT_SHADOWMAPPING = false;
+
+	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
+
+	const float NearPlane = 0.0001;
+	float FarPlane = pointLight.radius*2;
+
+	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+	vec3 positionInPointLightSpace = positionWorld - pointLightPositionWorld;
+
+	float L = length(positionInPointLightSpace.xyz);
+	vec3 projectedPosition = positionInPointLightSpace / L;
+
+	float currentDepth = (L - NearPlane) / (FarPlane - NearPlane);
+	vec3 projectedPositionTextureSpace =  projectedPosition.xyz * 0.5 + 0.5;
+
+	float depthToCompareWith;
+	vec4 moments;
+
+	float bias = 0.001;
+	bool isBack = positionInPointLightSpace.z < 0;
+	if(isBack){
+		vec2 vTexBack;
+		vTexBack.x =  ((projectedPosition.x /  (1.0f - projectedPosition.z)) * 0.5f + 0.5f);
+		vTexBack.y =  ((projectedPosition.y /  (1.0f - projectedPosition.z)) * 0.5f + 0.5f);
+		depthToCompareWith = texture(pointLightShadowMapsBack, vec3(vTexBack, pointLightIndex)).r;
+		moments = blur(pointLightShadowMapsBack, vec3(vTexBack, pointLightIndex), 0.005);
+
+	} else
+	{
+		vec2 vTexFront;
+		vTexFront.x =  ((projectedPosition.x /  (1.0f + projectedPosition.z)) * 0.5f + 0.5f);
+		vTexFront.y =  ((projectedPosition.y /  (1.0f + projectedPosition.z)) * 0.5f + 0.5f);
+		depthToCompareWith = texture(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex)).r;
+		moments = blur(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex), 0.005);
+	}
+
+
+	float litFactor = (depthToCompareWith + bias) < currentDepth ? 0.3 : 1;
+	const float SHADOW_EPSILON = 0.001;
+	float E_x2 = moments.y;
+	float Ex_2 = moments.x * moments.x;
+	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
+	float m_d = (moments.x - currentDepth);
+	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
+
+	litFactor = max(litFactor, p + 0.05f);
+
+	return litFactor;
+}
+
 void main(void) {
 	
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
@@ -112,7 +166,6 @@ void main(void) {
 	float depthFloat = texture2D(normalMap, st).w;
 	depthFloat = textureLod(visibilityMap, st, 0).g;
 	uint depth = uint(depthFloat * 0xFFFFFFFF);
-
 
 	atomicMin(minDepth, depth);
 	atomicMax(maxDepth, depth);
@@ -176,7 +229,8 @@ void main(void) {
 	barrier();
 	vec3 finalColor = vec3(0,0,0);
 	for(int i = 0; i < currentArrayIndex; i++) {
-		PointLight pointLight = pointLights[pointLightIndicesForTile[i]];
+		uint lightIndex = pointLightIndicesForTile[i];
+		PointLight pointLight = pointLights[lightIndex];
 //	for(int i = 0; i < uint(pointLightCount); i++) {
 //		PointLight pointLight = pointLights[i];
 		vec3 lightPositionView = (viewMatrix * vec4(pointLight.positionX, pointLight.positionY, pointLight.positionZ, 1)).xyz;
@@ -198,6 +252,10 @@ void main(void) {
 											attenuation, V, positionView, normalView,
 											roughness, metallic, diffuseColor, specularColor);
 		}
+
+		float visibility = getVisibility(positionWorld, lightIndex, pointLight);
+
+		finalColor *= visibility;
 	}
 	barrier();
 //	if (gl_LocalInvocationID.x == 0 || gl_LocalInvocationID.y == 0 ||

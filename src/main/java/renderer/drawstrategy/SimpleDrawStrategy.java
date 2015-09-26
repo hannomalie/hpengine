@@ -120,6 +120,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 GPUProfiler.end();
             }
             lightFactory.renderAreaLightShadowMaps(octree);
+            lightFactory.renderPointLightShadowMaps(octree);
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
             drawSecondPass(camera, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
@@ -339,6 +340,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(2, TEXTURE_2D, renderer.getGBuffer().getColorReflectivenessMap());
         openGLContext.bindTexture(3, TEXTURE_2D, renderer.getGBuffer().getMotionMap());
         openGLContext.bindTexture(4, TEXTURE_2D, renderer.getGBuffer().getLightAccumulationMapOneId());
+        openGLContext.bindTexture(5, TEXTURE_2D, renderer.getGBuffer().getVisibilityMap());
+        openGLContext.bindTexture(6, TEXTURE_2D_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayFront());
+        openGLContext.bindTexture(7, TEXTURE_2D_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayBack());
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, renderer.getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();

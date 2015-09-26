@@ -47,41 +47,6 @@ uniform float ambientOcclusionTotalStrength = 0.38;
 uniform float ambientOcclusionStrength = 0.7;
 uniform float ambientOcclusionFalloff = 0.001;
 
-vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
-	vec4 result = vec4(0,0,0,0);
-	result += kernel[0] * texture(sampler, texCoords + vec2(-blurDistance, -blurDistance));
-	result += kernel[1] * texture(sampler, texCoords + vec2(0, -blurDistance));
-	result += kernel[2] * texture(sampler, texCoords + vec2(blurDistance, -blurDistance));
-	
-	result += kernel[3] * texture(sampler, texCoords + vec2(-blurDistance));
-	result += kernel[4] * texture(sampler, texCoords + vec2(0, 0));
-	result += kernel[5] * texture(sampler, texCoords + vec2(blurDistance, 0));
-	
-	result += kernel[6] * texture(sampler, texCoords + vec2(-blurDistance, blurDistance));
-	result += kernel[7] * texture(sampler, texCoords + vec2(0, -blurDistance));
-	result += kernel[8] * texture(sampler, texCoords + vec2(blurDistance, blurDistance));
-	
-	return result;
-}
-
-vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipmap) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);
-	vec4 result = vec4(0,0,0,0);
-	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipmap);
-	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipmap);
-	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipmap);
-	
-	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipmap);
-	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipmap);
-	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipmap);
-	
-	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipmap);
-	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipmap);
-	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipmap);
-	
-	return result;
-}
 
 float maxDepth(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
 	float blurDistance = clamp(inBlurDistance, 0.0, 0.0025);

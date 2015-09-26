@@ -42,24 +42,6 @@ layout(location=1)out vec4 out_refracted;
 
 //include(globals.glsl)
 
-vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
-	vec4 result = vec4(0,0,0,0);
-	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
-	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
-	result += kernel[2] * textureLod(sampler, texCoords + vec2(blurDistance, -blurDistance), mipLevel);
-	
-	result += kernel[3] * textureLod(sampler, texCoords + vec2(-blurDistance), mipLevel);
-	result += kernel[4] * textureLod(sampler, texCoords + vec2(0, 0), mipLevel);
-	result += kernel[5] * textureLod(sampler, texCoords + vec2(blurDistance, 0), mipLevel);
-	
-	result += kernel[6] * textureLod(sampler, texCoords + vec2(-blurDistance, blurDistance), mipLevel);
-	result += kernel[7] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
-	result += kernel[8] * textureLod(sampler, texCoords + vec2(blurDistance, blurDistance), mipLevel);
-	
-	return result;
-}
-
 vec3 Uncharted2Tonemap(vec3 x)
 {
     float A = 0.15;

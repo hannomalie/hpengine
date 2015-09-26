@@ -14,6 +14,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -40,12 +41,16 @@ import static renderer.constants.GlCap.DEPTH_TEST;
 public class LightFactory {
 
 	public static int MAX_AREALIGHT_SHADOWMAPS = 2;
+	public static int MAX_POINTLIGHT_SHADOWMAPS = 2;
 	public static int AREALIGHT_SHADOWMAP_RESOLUTION = 512;
+	private final int pointLightDepthMapsArrayFront;
+	private final int pointLightDepthMapsArrayBack;
 	private RenderTarget renderTarget;
 	private List<Integer> areaLightDepthMaps = new ArrayList<>();
 	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
 	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	private Program areaShadowPassProgram;
+	private Program pointShadowPassProgram;
 	private Camera camera;
 
 	private int pointLightsForwardMaxCount = 20;
@@ -94,21 +99,37 @@ public class LightFactory {
                                         .setTextureFilter(GL11.GL_NEAREST))
 								.build();
 		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+		this.pointShadowPassProgram = renderer.getProgramFactory().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 			int renderedTextureTemp = GL11.glGenTextures();
 			renderer.getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-
-			
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 			areaLightDepthMaps.add(renderedTextureTemp);
 		}
+
+
+// TODO: Use wrapper
+		pointLightDepthMapsArrayFront = GL11.glGenTextures();
+		renderer.getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
+		GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+
+		pointLightDepthMapsArrayBack = GL11.glGenTextures();
+		renderer.getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayBack);
+		GL42.glTexStorage3D(GL30.GL_TEXTURE_2D_ARRAY, 1, GL11.GL_RGBA16, AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+		GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 
 		lightBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(1000));
 		AppContext.getEventBus().register(this);
@@ -296,7 +317,7 @@ public class LightFactory {
 		renderer.getOpenGLContext().enable(DEPTH_TEST);
 		renderer.getOpenGLContext().disable(CULL_FACE);
 		renderTarget.use(true);
-		
+
 		for(int i = 0; i < Math.min(MAX_AREALIGHT_SHADOWMAPS, areaLights.size()); i++) {
 
 			renderTarget.setTargetTexture(areaLightDepthMaps.get(i), 0);
@@ -313,7 +334,7 @@ public class LightFactory {
 			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 //			directionalShadowPassProgram.setUniform("near", camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", camera.getFar());
-			
+
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 					areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
@@ -327,11 +348,56 @@ public class LightFactory {
 		}
 		GPUProfiler.end();
 	}
-	
+
+	public void renderPointLightShadowMaps(Octree octree) {
+		GPUProfiler.start("PointLight shadowmaps");
+		renderer.getOpenGLContext().depthMask(true);
+		renderer.getOpenGLContext().enable(DEPTH_TEST);
+		renderer.getOpenGLContext().disable(CULL_FACE);
+		renderTarget.use(true);
+
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, AppContext.getInstance().getScene().getPointLights().size()); i++) {
+			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i);
+			renderer.getOpenGLContext().clearDepthAndColorBuffer();
+			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
+			List<Entity> visibles = octree.getEntities();
+			pointShadowPassProgram.use();
+			pointShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
+			pointShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
+			pointShadowPassProgram.setUniform("isBack", false);
+
+			for (Entity e : visibles) {
+				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+					pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+					modelComponent.getMaterial().setTexturesActive(pointShadowPassProgram);
+					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
+					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+
+					modelComponent.getVertexBuffer().draw();
+				});
+			}
+
+			pointShadowPassProgram.setUniform("isBack", true);
+			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayBack, i);
+			renderer.getOpenGLContext().clearDepthAndColorBuffer();
+			for (Entity e : visibles) {
+				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+					pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+					modelComponent.getMaterial().setTexturesActive(pointShadowPassProgram);
+					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
+					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+
+					modelComponent.getVertexBuffer().draw();
+				});
+			}
+		}
+		GPUProfiler.end();
+	}
+
 	public int getDepthMapForAreaLight(AreaLight light) {
 		int index = appContext.getScene().getAreaLights().indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
-		
+
 		return areaLightDepthMaps.get(index);
 	}
 
@@ -369,7 +435,7 @@ public class LightFactory {
 				lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));
 			}
 		});
-		Util.printFloatBuffer(lightBuffer.getValues());
+//		Util.printFloatBuffer(lightBuffer.getValues());
 	}
 
 	@Subscribe
@@ -389,5 +455,12 @@ public class LightFactory {
 
 	public StorageBuffer getLightBuffer() {
 		return lightBuffer;
+	}
+
+	public int getPointLightDepthMapsArrayFront() {
+		return pointLightDepthMapsArrayFront;
+	}
+	public int getPointLightDepthMapsArrayBack() {
+		return pointLightDepthMapsArrayBack;
 	}
 }
