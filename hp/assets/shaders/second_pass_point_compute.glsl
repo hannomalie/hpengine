@@ -85,7 +85,7 @@ bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
 
 float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 
-const bool USE_POINTLIGHT_SHADOWMAPPING = false;
+	const bool USE_POINTLIGHT_SHADOWMAPPING = true;
 
 	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
 
@@ -113,25 +113,52 @@ const bool USE_POINTLIGHT_SHADOWMAPPING = false;
 		depthToCompareWith = texture(pointLightShadowMapsBack, vec3(vTexBack, pointLightIndex)).r;
 		moments = blur(pointLightShadowMapsBack, vec3(vTexBack, pointLightIndex), 0.005);
 
+
+//		moments = texture(pointLightShadowMapsFront, vec3(vTexBack, pointLightIndex));
+//		moments.xyz -= pointLightPositionWorld;
+//		float L = length(moments.xyz);
+//		moments /= L;
+//		moments.z += 1;
+//		moments.x /= moments.z;
+//		moments.y /= moments.z;
+//		moments.z = (L - NearPlane) / (FarPlane - NearPlane);
+//		moments.w = 1;
+//		depthToCompareWith = moments.z;
+
 	} else
 	{
 		vec2 vTexFront;
 		vTexFront.x =  ((projectedPosition.x /  (1.0f + projectedPosition.z)) * 0.5f + 0.5f);
 		vTexFront.y =  ((projectedPosition.y /  (1.0f + projectedPosition.z)) * 0.5f + 0.5f);
 		depthToCompareWith = texture(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex)).r;
-		moments = blur(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex), 0.005);
+		moments = blur(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex), 0.025);
+
+
+//		moments = texture(pointLightShadowMapsFront, vec3(vTexFront, pointLightIndex));
+//		moments.xyz -= pointLightPositionWorld;
+//		float L = length(moments.xyz);
+//		moments /= L;
+//		moments.z += 1;
+//		moments.x /= moments.z;
+//		moments.y /= moments.z;
+//		moments.z = (L - NearPlane) / (FarPlane - NearPlane);
+//		moments.w = 1;
+//		depthToCompareWith = moments.z;
 	}
 
 
 	float litFactor = (depthToCompareWith + bias) < currentDepth ? 0.3 : 1;
-	const float SHADOW_EPSILON = 0.001;
+
+	const bool SOFT_SHADOWS = false;
+	if(!SOFT_SHADOWS) { return litFactor; }
+	const float SHADOW_EPSILON = 0.0005;
 	float E_x2 = moments.y;
 	float Ex_2 = moments.x * moments.x;
 	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
 	float m_d = (moments.x - currentDepth);
 	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
 
-	litFactor = max(litFactor, p + 0.05f);
+	litFactor = max(litFactor, p + 0.0025f);
 
 	return litFactor;
 }

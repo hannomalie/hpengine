@@ -760,11 +760,13 @@ public class DeferredRenderer implements Renderer {
                  }
              }
             );
-            try {
-                queue.poll(5, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+			if(andBlock) {
+				try {
+					queue.poll(5, TimeUnit.MINUTES);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
         }
 	}
 

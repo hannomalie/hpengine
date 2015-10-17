@@ -44,7 +44,7 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		materialBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(1000));
+		materialBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(10000));
 
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);

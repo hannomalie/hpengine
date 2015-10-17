@@ -431,22 +431,22 @@ vec3 textureDistorted(
   in vec2 direction, // direction of distortion
   in vec3 distortion // per-channel distortion factor
 ) {
-	const float mipmap = 4;
+	const float mipmap = 7;
 	float r = textureLod(tex, texcoord + direction * distortion.r, mipmap).r;
 	float g = textureLod(tex, texcoord + direction * distortion.g, mipmap).g;
 	float b = textureLod(tex, texcoord + direction * distortion.b, mipmap).b;
  	return vec3(r, g, b);
 }
 vec3 calculateLensflare(vec2 texcoord) {
-	float uGhostDispersal = 0.53f;
-	int uGhosts = 2;
-	float uHaloWidth = 0.25f;
-	float uDistortion = 0.1f;
+	float uGhostDispersal = 0.053f;
+	int uGhosts = 3;
+	float uHaloWidth = 0.0025f;
+	float uDistortion = 0.0001f;
 
 	vec3 camx = -cameraRightDirection;
 	vec3 camz = cameraViewDirection;
 	float camrot = dot(camx, vec3(0,0,1)) + dot(camz, vec3(0,-1,0));
-	uHaloWidth += 0.1*-camrot;
+//	uHaloWidth += 0.1*-camrot;
 
 	vec2 ghostTexcoord = -texcoord + vec2(1.0);
 	vec2 texelSize = 1.0 / vec2(textureSize(renderedTexture, 0));
@@ -458,14 +458,15 @@ vec3 calculateLensflare(vec2 texcoord) {
 		 vec2 offset = fract(ghostTexcoord + ghostVec + haloVec * float(i));
 
 		 float weight = length(vec2(0.5) - offset) / length(vec2(0.5));
-         weight = pow(1.0 - weight, 10.0);
+         weight = pow(1.0 - weight, 1.5);
 
 		 vec3 distortion = vec3(-texelSize.x * uDistortion, 0.0, texelSize.x * uDistortion);
 		 vec2 direction = normalize(ghostVec);
 
-		vec3 textureSample = textureDistorted(renderedTexture, offset + vec2(0.1*-camrot), direction, distortion) * weight;
+		vec3 textureSample = textureDistorted(renderedTexture, offset, direction, distortion) * weight;
 
-		result.rgb += textureSample * textureSample.r;
+		float luminance = (0.2126*textureSample.r + 0.7152*textureSample.g + 0.0722*textureSample.b);
+		result.rgb += textureSample * luminance;
 	  }
 	return result.rgb;
 }
@@ -507,12 +508,13 @@ void main()
 		    }
 		    out_color.a = 1;
 		    vec3 brightColor = out_color.rgb;
+
 		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.9 - exposure/100.0, 0.0, 1.0));
 
-			const bool useLensflare = false;
+			const bool useLensflare = true;
 			if(useLensflare) {
 				vec3 lensflare = calculateLensflare(texcoord);
-				out_color.rgb += clamp(lensflare, vec3(0), vec3(0.075));
+				out_color.rgb += lensflare;
 			}
 	    }
 	} else {

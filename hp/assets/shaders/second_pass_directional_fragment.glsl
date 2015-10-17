@@ -168,89 +168,6 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
-/////////////////////
-
-float ComputeScattering(float lightDotView)
-{
-	const float G_SCATTERING = 0.000005;
-	const float PI = 3.1415926536f;
-	float result = 1.0f - G_SCATTERING;
-	result *= result;
-	result /= (4.0f * PI * pow(1.0f + G_SCATTERING * G_SCATTERING - (2.0f * G_SCATTERING) * lightDotView, 1.5f));
-	return result;
-}
-
-bool isInside(vec3 position, vec3 minPosition, vec3 maxPosition) {
-	return(all(greaterThanEqual(position, minPosition)) && all(lessThanEqual(position, maxPosition))); 
-}
-
-
-float[16] ditherPattern = { 0.0f, 0.5f, 0.125f, 0.625f,
-							0.75f, 0.22f, 0.875f, 0.375f,
-							0.1875f, 0.6875f, 0.0625f, 0.5625,
-							0.9375f, 0.4375f, 0.8125f, 0.3125};
-
-vec3 scatter(vec3 worldPos, vec3 startPosition) {
-	const int NB_STEPS = 40;
-	 
-	vec3 rayVector = worldPos.xyz - startPosition;
-	 
-	float rayLength = length(rayVector);
-	vec3 rayDirection = rayVector / rayLength;
-	 
-	float stepLength = rayLength / NB_STEPS;
-	 
-	vec3 step = rayDirection * stepLength;
-	 
-	vec3 currentPosition = startPosition;
-	 
-	vec3 accumFog = vec3(0,0,0);
-	 
-	for (int i = 0; i < NB_STEPS; i++)
-	{
-		vec4 shadowPos = shadowMatrix * vec4(currentPosition, 1.0f);
-		vec4 worldInShadowCameraSpace = shadowPos;
-		worldInShadowCameraSpace /= worldInShadowCameraSpace.w;
-    	vec2 shadowmapTexCoord = (worldInShadowCameraSpace.xy * 0.5 + 0.5);
-    	
-    	float ditherValue = ditherPattern[int(gl_FragCoord.x) % 4 + int(gl_FragCoord.y) % 4];
-    	
-	  	/*if (shadowmapTexCoord.x < 0 || shadowmapTexCoord.x > 1 || shadowmapTexCoord.y < 0 || shadowmapTexCoord.y > 1) {
-			continue;
-		}*/
-		float shadowMapValue = textureLod(shadowMap, shadowmapTexCoord,0).r;
-		 
-		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
-		{
-			accumFog += ComputeScattering(dot(rayDirection, lightDirection));
-		} else {
-			vec3 probeColor;// = textureLod(probes, vec4(0,-1, 0, 0), 10).rgb;
-			
-			for(int z = 0; z < activeProbeCount; z++) {
-				vec3 currentEnvironmentMapMin = environmentMapMin[z];
-				vec3 currentEnvironmentMapMax = environmentMapMax[z];
-				vec3 halfExtents = (currentEnvironmentMapMax - currentEnvironmentMapMin)/2;
-				vec3 probeCenter = currentEnvironmentMapMin + halfExtents;
-				if(isInside(currentPosition, currentEnvironmentMapMin, currentEnvironmentMapMax)) {
-					float mipmap = 2;
-					probeColor = textureLod(probes, vec4(vec3(0,1,0), z), mipmap).rgb/6;
-					probeColor +=textureLod(probes, vec4(vec3(0,-1,0), z), mipmap).rgb/6;
-					probeColor +=textureLod(probes, vec4(vec3(1,0,0), z), mipmap).rgb/6;
-					probeColor +=textureLod(probes, vec4(vec3(-1,0,0), z), mipmap).rgb/6;
-					probeColor +=textureLod(probes, vec4(vec3(0,0,1), z), mipmap).rgb/6;
-					probeColor +=textureLod(probes, vec4(vec3(0,0,-1), z), mipmap).rgb/6;
-					accumFog += ComputeScattering(dot(rayDirection, rayVector)) *1*probeColor;
-					break;
-				}
-			}
-		}
-
-		currentPosition += step;
-	}
-	accumFog /= NB_STEPS;
-	return accumFog * lightDiffuse;
-}
-
 void main(void) {
 	
 	vec2 st;
@@ -289,7 +206,7 @@ void main(void) {
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
 	vec3 lightDirectionView = (viewMatrix * vec4(lightDirection, 0)).xyz;
-	vec3 finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
+	vec3 finalColor;
 	
 	/////////////////// SHADOWMAP
 	float visibility = 1.0;
@@ -308,6 +225,8 @@ void main(void) {
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
 		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
+	} else {
+		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
 	}
 	
 	finalColor *= visibility;
