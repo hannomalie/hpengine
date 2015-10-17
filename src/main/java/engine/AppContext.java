@@ -96,9 +96,9 @@ public class AppContext {
 			Scene scene = Scene.read(AppContext.getInstance().getRenderer(), sceneName);
             AppContext.getInstance().setScene(scene);
 		}
-        else {
-            AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
-        }
+//        else {
+//            AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
+//        }
 
 		WebLookAndFeel.install();
 		if(debug) {
@@ -246,7 +246,7 @@ public class AppContext {
 		System.exit(0);
 	}
 
-	private List<Entity> loadTestScene() {
+	public List<Entity> loadTestScene() {
 		List<Entity> entities = new ArrayList<>();
 		
 		Renderer.exitOnGLError("loadTestScene");
@@ -361,6 +361,10 @@ public class AppContext {
         renderer.getLightFactory().update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
+//		renderer.doWithOpenGLContext(() -> {
+//			renderer.draw(this);
+//			Display.update();
+//		}, false);
         scene.endFrame(activeCamera);
         renderer.endFrame();
 

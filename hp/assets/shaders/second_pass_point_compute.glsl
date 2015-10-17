@@ -9,6 +9,7 @@ layout(binding=4, rgba16f) uniform image2D out_DiffuseSpecular;
 layout(binding=5) uniform sampler2D visibilityMap;
 layout(binding=6) uniform sampler2DArray pointLightShadowMapsFront;
 layout(binding=7) uniform sampler2DArray pointLightShadowMapsBack;
+layout(binding=8) uniform samplerCubeArray pointLightShadowMapsCube;
 
 
 uniform float screenWidth = 1280;
@@ -17,6 +18,8 @@ uniform float screenHeight = 720;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+
+uniform int maxPointLightShadowmaps = 2;
 
 //include(globals_structs.glsl)
 
@@ -78,14 +81,26 @@ shared uint minDepth = 0xFFFFFFFF;
 shared uint maxDepth = 0;
 
 bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-
 	return all(distance(positionSphere, positionToTest) < radius);
-
 }
 
 float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
+	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
 
-const bool USE_POINTLIGHT_SHADOWMAPPING = false;
+	vec3 fragToLight = positionWorld - pointLightPositionWorld;
+    float closestDepth = textureLod(pointLightShadowMapsCube, vec4(fragToLight,pointLightIndex), 0).r;
+    closestDepth *= 250.0;
+    float currentDepth = length(fragToLight);
+    float bias = 0.05;
+    float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
+
+}
+float _getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+
+	const bool USE_POINTLIGHT_SHADOWMAPPING = false;
 
 	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
 

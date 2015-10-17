@@ -2,68 +2,65 @@ package renderer.rendertarget;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 import engine.AppContext;
+import org.lwjgl.opengl.*;
+import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import texture.CubeMap;
 import util.Util;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL30;
 
 import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 public class CubeRenderTarget extends RenderTarget {
 
-	private CubeMap cubeMap;
-
-	public CubeRenderTarget(int width, int height, CubeMap cubeMap) {
-		this.width = width;
-		this.height = height;
-		this.clearR = 0;
-		this.clearG = 0f;
-		this.clearB = 0f;
-		this.clearA = 0;
-		this.cubeMap = cubeMap;
-		int colorBufferCount = 1;
+	public CubeRenderTarget(CubeRenderTargetBuilder builder) {
+		this.width = builder.width;
+		this.height = builder.height;
+		this.clearR = builder.clearR;
+		this.clearG = builder.clearR;
+		this.clearB = builder.clearB;
+		this.clearA = builder.clearA;
+		int colorBufferCount = builder.colorAttachments.size();
 		renderedTextures = new int[colorBufferCount];
-		
+
 		framebufferLocation = GL30.glGenFramebuffers();
 		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		
-//		GL11.glBindTexture(GL13.GL_TEXTURE_CUBE_MAP, cubeMap.getTextureID());
 
-//		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
+		scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
+
 		for (int i = 0; i < colorBufferCount; i++) {
-
-			GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubeMap.getTextureID(), 0);
-//		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+			int internalFormat = builder.colorAttachments.get(i).internalFormat;
+			int cubeMap = AppContext.getInstance().getRenderer().getTextureFactory().getCubeMap(width, height, internalFormat);
+			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMap, 0);
+			renderedTextures[i] = cubeMap;
+			scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
 		}
-//	    GL20.glDrawBuffers(scratchBuffer);
-		
-		depthbufferLocation = GL30.glGenRenderbuffers();
-		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
-		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
-		
-//		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		
+
+		if(builder.useDepthBuffer) {
+			int depthCubeMap = AppContext.getInstance().getRenderer().getTextureFactory().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
+			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
+		}
+		GL20.glDrawBuffers(scratchBuffer);
+
 		//TODO: Make this more pretty
 		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
 		if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
-			System.out.println("CubeRenderTarget fucked up with " + framebuffercheck);
-			System.out.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
+			System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
+			System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
 			System.exit(0);
 		}
 	}
-	
-	public void setCubeMapFace(int index) {
-		AppContext.getInstance().getRenderer().getOpenGLContext().clearDepthBuffer();
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
-		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
-	}
+//
+//	public void setCubeMapFace(int index) {
+//		AppContext.getInstance().getRenderer().getOpenGLContext().clearDepthBuffer();
+//		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+//		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
+//	}
 
 	public void saveBuffer(String path) {
 		Util.saveImage(getBuffer(), path);
@@ -93,14 +90,6 @@ public class CubeRenderTarget extends RenderTarget {
 	}
 
 	public int getRenderedTexture() {
-		return cubeMap.getTextureID();
-	}
-	
-	public CubeMap getCubeMap() {
-		return cubeMap;
-	}
-
-	public void setCubeMap(CubeMap cubeMap) {
-		this.cubeMap = cubeMap;
+		return renderedTextures[0];
 	}
 }

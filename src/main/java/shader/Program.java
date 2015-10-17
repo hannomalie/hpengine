@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import engine.AppContext;
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
+import org.lwjgl.util.glu.GLU;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -51,7 +52,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	private FileAlterationObserver observerFragmentShader;
 	private Renderer renderer;
 
-	protected Program(Renderer renderer, String geometryShaderName, String vertexShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
+	protected Program(Renderer renderer, String vertexShaderName, String geometryShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
@@ -79,42 +80,38 @@ public class Program extends AbstractProgram implements Reloadable {
 					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, GL20.GL_VERTEX_SHADER));
 				} catch (Exception e1) {
 					System.err.println("Not able to load default vertex shader, so what else could be done...");
-//				System.exit(-1);
 				}
 			}
-//			try {
 			try {
 				GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-//			} catch (Exception e) {
-//				try {
-//					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
-//				} catch (Exception e1) {
-//					System.err.println("Not able to load default fragment shader, so what else could be done...");
-////				System.exit(-1);
-//				}
-//			}
 			if (geometryShaderName != null && geometryShaderName != "") {
 				try {
 					GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+					System.out.println("Attach geometryshader " + GLU.gluErrorString(GL11.glGetError()));
 				} catch (Exception e) {
-					System.err.println("Not able to load geometry shader, so what else could be done...");
-//				System.exit(-1);
+					System.out.println("Not able to load geometry shader, so what else could be done...");
 				}
 			}
 
 			bindShaderAttributeChannels();
 
 			GL20.glLinkProgram(id);
+			printError("Link program");
 			GL20.glValidateProgram(id);
+			printError("Validate program");
 
 //		use(); // CAN CAUSE INVALID OPERATION - TODO: CHECK OUT WHY
 			addFileListeners();
 		});
 	}
-	
+
+	private void printError(String text) {
+		System.out.println(text + " " + GLU.gluErrorString(GL11.glGetError()));
+	}
+
 	private void addFileListeners() {
 		
 		clearListeners();
@@ -129,7 +126,8 @@ public class Program extends AbstractProgram implements Reloadable {
 				}
 
 				if(fragmentShaderName != null && fragmentShaderName.startsWith(fileName) ||
-				   vertexShaderName != null && vertexShaderName.startsWith(fileName)) {
+					vertexShaderName != null && vertexShaderName.startsWith(fileName) ||
+					geometryShaderName != null && geometryShaderName.startsWith(fileName)) {
 					return true;
 				}
 				return false;

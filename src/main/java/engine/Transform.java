@@ -324,7 +324,7 @@ public class Transform implements Serializable {
 
 	public Matrix4f getViewMatrix() {
 		recalculateIfDirty();
-		return viewMatrix;
+		return new Matrix4f(viewMatrix);
 	}
 
 	public void init() {

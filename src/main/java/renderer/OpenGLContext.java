@@ -196,4 +196,8 @@ public class OpenGLContext {
         // TODO: create access enum
         GL42.glBindImageTexture(unit, textureId, level, layered, layer, access, internalFormat);
     }
+
+    public int genTextures() {
+        return GL11.glGenTextures();
+    }
 }

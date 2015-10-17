@@ -343,6 +343,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(5, TEXTURE_2D, renderer.getGBuffer().getVisibilityMap());
         openGLContext.bindTexture(6, TEXTURE_2D_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayFront());
         openGLContext.bindTexture(7, TEXTURE_2D_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayBack());
+        openGLContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayCube());
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, renderer.getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
@@ -350,6 +351,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.HEIGHT);
         secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
+        secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", LightFactory.MAX_POINTLIGHT_SHADOWMAPS);
         secondPassPointComputeProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         secondPassPointComputeProgram.bindShaderStorageBuffer(2, AppContext.getInstance().getRenderer().getLightFactory().getLightBuffer());
         secondPassPointComputeProgram.dispatchCompute(Config.WIDTH / 16, Config.HEIGHT / 16, 1);
@@ -597,6 +599,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         renderer.getOpenGLContext().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
         renderer.getOpenGLContext().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
         renderer.getOpenGLContext().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
+        renderer.getOpenGLContext().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, renderer.getLightFactory().getPointLightDepthMapsArrayCube());
 
         renderer.getFullscreenBuffer().draw();
 

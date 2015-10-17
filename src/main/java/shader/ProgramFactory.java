@@ -28,14 +28,14 @@ public class ProgramFactory {
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) {
-		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
+		Program program = new Program(renderer, vertexShaderFilename, null, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;
 	}
 	
 	public Program getProgram(String defines) {
-		Program program = new Program(renderer, null, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
+		Program program = new Program(renderer, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;
@@ -47,9 +47,12 @@ public class ProgramFactory {
 		AppContext.getEventBus().register(program);
 		return program;
 	}
-	
+
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		Program program = new Program(renderer, null, vertexShaderFilename, fragmentShaderFileName, channels, needsTextures, "");
+		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, channels, needsTextures);
+	}
+	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
+		Program program = new Program(renderer, vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;

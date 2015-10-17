@@ -181,6 +181,10 @@ public class VertexBuffer {
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
+	public void drawStrips() {
+		GL30.glBindVertexArray(vertexArray);
+		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, verticesCount);
+	}
 	public void drawAgain() {
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}

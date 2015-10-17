@@ -29,8 +29,8 @@ public class RenderTarget {
     protected float clearG;
     protected float clearB;
     protected float clearA;
-    private List<ColorAttachmentDefinition> colorAttachments;
-    private IntBuffer scratchBuffer;
+    protected List<ColorAttachmentDefinition> colorAttachments;
+    protected IntBuffer scratchBuffer;
 
     protected RenderTarget() {
     }

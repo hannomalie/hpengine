@@ -1,11 +1,12 @@
 package renderer.rendertarget;
 
 import config.Config;
+import util.AbstractBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class RenderTargetBuilder {
+public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, RenderTarget> {
     int width = Config.WIDTH;
     int height = Config.HEIGHT;
     float clearR = 0.0f;
@@ -17,32 +18,32 @@ public class RenderTargetBuilder {
 
     public RenderTargetBuilder setWidth(int width) {
         this.width = width;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setHeight(int height) {
         this.height = height;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setClearR(float clearR) {
         this.clearR = clearR;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setClearG(float clearG) {
         this.clearG = clearG;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setClearB(float clearB) {
         this.clearB = clearB;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setClearA(float clearA) {
         this.clearA = clearA;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder setClearRGBA(float r, float g, float b, float a) {
@@ -51,7 +52,7 @@ public class RenderTargetBuilder {
 
     public RenderTargetBuilder removeDepthAttachment() {
         useDepthBuffer = false;
-        return this;
+        return me();
     }
 
     public RenderTargetBuilder add(ColorAttachmentDefinition attachmentDefinition) {
@@ -61,10 +62,16 @@ public class RenderTargetBuilder {
         for(int i = 0; i < times; i++) {
             this.colorAttachments.add(attachmentDefinition);
         }
-        return this;
+        return me();
     }
 
+    @Override
     public RenderTarget build() {
         return new RenderTarget(this);
+    }
+
+    @Override
+    protected RenderTargetBuilder me() {
+        return this;
     }
 }

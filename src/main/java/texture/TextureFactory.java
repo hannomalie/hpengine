@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 
 import engine.AppContext;
+import org.lwjgl.opengl.*;
 import renderer.DeferredRenderer;
 import renderer.Renderer;
 import renderer.command.Command;
@@ -40,12 +41,6 @@ import renderer.material.Material;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector2f;
 
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -174,7 +169,7 @@ public class TextureFactory {
         return texture;
     }
 
-    private static int getTextureId() {
+    public static int getTextureId() {
         return AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> GL11.glGenTextures());
     }
 
@@ -498,15 +493,17 @@ public class TextureFactory {
     	int copyTextureId = getTextureId();
         AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
 
-		for(int i = 0; i < 6; i++) {
-			GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-		}
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE); 
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL14.GL_GENERATE_MIPMAP, GL11.GL_TRUE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+
+//		for(int i = 0; i < 6; i++) {
+//			GL11.glTexImage2D(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//		}
+        GL42.glTexStorage2D(TEXTURE_CUBE_MAP.glTarget, 1, internalFormat, width, height);
 		
 		GL43.glCopyImageSubData(sourceTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
 				copyTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
@@ -519,4 +516,22 @@ public class TextureFactory {
 		GL11.glDeleteTextures(id);
     }
 
+    //TODO: Add texture filters as params
+    public int getCubeMap(int width, int height, int format) {
+        int textureId = createTextureID();
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
+
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, 0);
+        GL30.glGenerateMipmap(TEXTURE_CUBE_MAP.glTarget);
+
+        GL42.glTexStorage2D(TEXTURE_CUBE_MAP.glTarget, 1, format, width, height);
+
+        return textureId;
+    }
 }

@@ -317,13 +317,23 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
-			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+//			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
-//			drawToQuad(light.getShadowMapId(), debugBuffer);
+            int cubemapView = getOpenGLContext().genTextures();
+            GL43.glTextureView(cubemapView, GlTextureTarget.TEXTURE_CUBE_MAP.glTarget, lightFactory.getPointLightDepthMapsArrayCube(),
+                    GL11.GL_RGBA16, 0, 1, 0, 6);
+
+            for(int i = 0; i < 6; i++) {
+                int faceView = getOpenGLContext().genTextures();
+                GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, cubemapView,
+                        GL11.GL_RGBA16, 0, 1, i, 1);
+				drawToQuad(faceView, sixDebugBuffers.get(i));
+                GL11.glDeleteTextures(faceView);
+			}
+            GL11.glDeleteTextures(cubemapView);
 		}
 
 		if(counter < 20) {
@@ -760,11 +770,13 @@ public class DeferredRenderer implements Renderer {
                  }
              }
             );
-            try {
-                queue.poll(5, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+			if(andBlock) {
+				try {
+					queue.poll(5, TimeUnit.MINUTES);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
         }
 	}
 

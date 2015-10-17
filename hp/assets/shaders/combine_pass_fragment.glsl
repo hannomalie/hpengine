@@ -10,6 +10,7 @@ layout(binding=7) uniform samplerCubeArray probes;
 layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap;
 layout(binding=11) uniform sampler2D aoScattering;
+layout(binding=12) uniform samplerCubeArray pointLightShadowMaps;
 
 layout(std430, binding=0) buffer myBlock
 {
@@ -409,6 +410,7 @@ void main(void) {
 	//out_color.rgb = color;
 	//out_color.rgb = scattering.rgb;
 	//out_color.rgb = refracted.rgb;
+//	out_color.rgb = textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).rgb;
 
 	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
 	const bool useSphericalHarmonicLighting = false;

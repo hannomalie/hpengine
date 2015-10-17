@@ -241,26 +241,48 @@ public class DebugFrame {
 	        menuScene.add(sceneSaveMenuItem);
         }
         {
-        	WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
-			Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("HP scenes", "hpscene"));
+            WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load" );
+            Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("HP scenes", "hpscene"));
 
-        	sceneLoadMenuItem.addActionListener(e -> {
-				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", customizer);
-	    		if(chosenFile != null) {
+            sceneLoadMenuItem.addActionListener(e -> {
+                File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", customizer);
+                if(chosenFile != null) {
 
-					String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-					new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
-						@Override
-						public Result<Scene> doInBackground() throws Exception {
-							Scene newScene = Scene.read(appContext.getRenderer(), sceneName);
-							AppContext.getInstance().setScene(newScene);
-							return new Result(newScene);
-						}
-					}.execute();
-	    		}
-        	});
+                    String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
+                    new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
+                        @Override
+                        public Result<Scene> doInBackground() throws Exception {
+                            Scene newScene = Scene.read(appContext.getRenderer(), sceneName);
+                            AppContext.getInstance().setScene(newScene);
+                            return new Result(newScene);
+                        }
+                    }.execute();
+                }
+            });
 
-	        menuScene.add(sceneLoadMenuItem);
+            menuScene.add(sceneLoadMenuItem);
+        }
+        {
+            WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load Testscene" );
+
+            sceneLoadMenuItem.addActionListener(e -> {
+                new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load test scene"){
+                    @Override
+                    public Result<Scene> doInBackground() throws Exception {
+                        Scene newScene = new Scene();
+                        newScene.addAll(AppContext.getInstance().loadTestScene());
+                        AppContext.getInstance().setScene(newScene);
+                        return new Result(newScene);
+                    }
+
+                    @Override
+                    public void done(Result<Scene> result) {
+                        init(appContext);
+                    }
+                }.execute();
+            });
+
+            menuScene.add(sceneLoadMenuItem);
         }
         {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
