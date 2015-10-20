@@ -29,6 +29,12 @@ void main()
 	vec4 result;
 	result = vec4(moment1, moment2,0,0);
 	out_Color = result;
+
+//	if(gl_Layer == 0) {
+//	    out_Color.r = 1;
+//	} else if(gl_Layer == 1) {
+//	    out_Color.g = 1;
+//	}
 //	out_Color = vec4(pass_WorldPosition.xyz,0);
 //	out_Color = vec4(gl_FragCoord.xy/vec2(512,512),0,0);
 

@@ -45,6 +45,7 @@ import org.lwjgl.util.vector.Vector2f;
 
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
+import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -518,20 +519,44 @@ public class TextureFactory {
 
     //TODO: Add texture filters as params
     public int getCubeMap(int width, int height, int format) {
+        return getTexture(width, height, format, TEXTURE_CUBE_MAP);
+    }
+
+    public int getCubeMapArray(int width, int height, int format) {
+        return getTexture(width, height, format, TEXTURE_CUBE_MAP_ARRAY, 1);
+    }
+    public int getCubeMapArray(int width, int height, int format, int depth) {
+        return getTexture(width, height, format, TEXTURE_CUBE_MAP_ARRAY, depth);
+    }
+
+    public int getTexture(int width, int height, int format, GlTextureTarget target) {
+        return getTexture(width, height, format, target, 1);
+    }
+
+    public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
         int textureId = createTextureID();
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
+        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureId);
 
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-        GL11.glTexParameteri(TEXTURE_CUBE_MAP.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, 0);
-        GL30.glGenerateMipmap(TEXTURE_CUBE_MAP.glTarget);
+        setupTextureParameters(target);
 
-        GL42.glTexStorage2D(TEXTURE_CUBE_MAP.glTarget, 1, format, width, height);
+        if(target == TEXTURE_CUBE_MAP_ARRAY) {
+            GL42.glTexStorage3D(target.glTarget, 1, format, width, height, 6*depth);
+        } else {
+            GL42.glTexStorage2D(target.glTarget, 1, format, width, height);
+        }
 
         return textureId;
     }
+
+    private void setupTextureParameters(GlTextureTarget target) {
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, 0);
+        GL30.glGenerateMipmap(target.glTarget);
+    }
+
 }

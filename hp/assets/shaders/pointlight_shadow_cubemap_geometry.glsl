@@ -7,6 +7,10 @@ in float vs_clip[3];
 in vec2 vs_pass_texCoord[3];
 
 uniform mat4[6] viewProjectionMatrices;
+uniform mat4[6] viewMatrices;
+uniform mat4[6] projectionMatrices;
+
+uniform int lightIndex = 0;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -42,15 +46,14 @@ const mat4 rotationMatrices[6] = {
 void main() {
 
   for(int layer = 0; layer < 6; layer++) {
-    gl_Layer = layer;
+    gl_Layer = 6*lightIndex + layer;
 
     for(int i = 0; i < 3; i++) { // You used triangles, so it's always 3
       vec3 positionWorld = vs_pass_WorldPosition[i].xyz;
-//      vec4 positionViewSpace = rotationMatrices[i] * vec4(positionWorld - pointLightPositionWorld,1);
-      vec4 positionViewSpace = vec4(positionWorld - pointLightPositionWorld,1);
 //      vec4 projectedPosition = projectionMatrix * viewMatrix * vec4(vs_pass_WorldPosition[i].xyz,1);
-      vec4 projectedPosition = viewProjectionMatrices[layer] * vec4(positionWorld,1);
-//           projectedPosition = projectionMatrix * vec4(positionViewSpace.xyz,1);
+//      vec4 projectedPosition = viewProjectionMatrices[layer] * vec4(positionWorld,1);
+//      positionWorld = (rotationMatrices[layer] * vec4(positionWorld, 1)).xyz;
+      vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
       pass_WorldPosition = vec4(positionWorld,1);
       pass_ProjectedPosition = projectedPosition;
 //      pass_ProjectedPosition = projectionMatrix *(positionViewSpace);

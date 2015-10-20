@@ -322,18 +322,17 @@ public class DeferredRenderer implements Renderer {
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
-            int cubemapView = getOpenGLContext().genTextures();
-            GL43.glTextureView(cubemapView, GlTextureTarget.TEXTURE_CUBE_MAP.glTarget, lightFactory.getPointLightDepthMapsArrayCube(),
-                    GL11.GL_RGBA16, 0, 1, 0, 6);
 
+            int[] faceViews = new int[6];
             for(int i = 0; i < 6; i++) {
-                int faceView = getOpenGLContext().genTextures();
-                GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, cubemapView,
+                faceViews[i] = getOpenGLContext().genTextures();
+                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayCube(),
                         GL11.GL_RGBA16, 0, 1, i, 1);
-				drawToQuad(faceView, sixDebugBuffers.get(i));
-                GL11.glDeleteTextures(faceView);
+				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
 			}
-            GL11.glDeleteTextures(cubemapView);
+            for(int i = 0; i < 6; i++) {
+                GL11.glDeleteTextures(faceViews[i]);
+            }
 		}
 
 		if(counter < 20) {
