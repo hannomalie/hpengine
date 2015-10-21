@@ -90,10 +90,11 @@ float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLi
 
 	vec3 fragToLight = positionWorld - pointLightPositionWorld;
     float closestDepth = textureLod(pointLightShadowMapsCube, vec4(fragToLight,pointLightIndex), 0).r;
-    closestDepth *= 250.0;
+//    closestDepth *= 250.0;
     float currentDepth = length(fragToLight);
-    float bias = 0.05;
-    float shadow = currentDepth -  bias > closestDepth ? 1.0 : 0.0;
+    float bias = 1;
+//    return closestDepth/100;
+    float shadow = currentDepth + bias > closestDepth ? 1.0 : 0.0;
 
     return shadow;
 

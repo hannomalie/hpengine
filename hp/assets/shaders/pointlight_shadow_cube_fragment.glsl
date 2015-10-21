@@ -20,9 +20,9 @@ void main()
 	float depth = pass_ProjectedPosition.z/pass_ProjectedPosition.w;
 
     float lightDistance = length(pass_WorldPosition.xyz - pointLightPositionWorld);
-    lightDistance = lightDistance / 250.0;
+//    lightDistance = lightDistance / 250.0;
     depth = lightDistance;
-    gl_FragDepth = lightDistance;
+//    gl_FragDepth = lightDistance;
 
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;

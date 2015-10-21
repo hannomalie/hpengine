@@ -14,7 +14,7 @@ float linearizeDepth(in float depth)
 
 void main()
 {
-	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 1);
+	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 0);
 	//float temp = 0.5*(in_color.r);
 	//temp *= temp;
 	//float temp = 50*(in_color.g);
