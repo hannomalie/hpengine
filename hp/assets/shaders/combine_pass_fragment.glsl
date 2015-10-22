@@ -410,7 +410,7 @@ void main(void) {
 	//out_color.rgb = color;
 	//out_color.rgb = scattering.rgb;
 	//out_color.rgb = refracted.rgb;
-//	out_color.rgb = textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).rgb;
+//	out_color.rgb = vec3(textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).r, 0, 0)*0.005f;
 
 	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
 	const bool useSphericalHarmonicLighting = false;
