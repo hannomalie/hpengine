@@ -14,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class OBJLoaderTest extends TestWithRenderer {
+public class OBJLoaderTest extends TestWithAppContext {
 
 	@Test
 	public void parseVertex() {

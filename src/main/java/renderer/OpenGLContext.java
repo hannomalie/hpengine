@@ -43,8 +43,8 @@ public class OpenGLContext {
 
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAttributes = new ContextAttribs(4, 3)
-				.withProfileCompatibility(true)
-				.withForwardCompatible(true)
+//				.withProfileCompatibility(true)
+//				.withForwardCompatible(true)
                 .withProfileCore(true)
                 .withDebug(true)
                 ;
@@ -195,5 +195,9 @@ public class OpenGLContext {
     public void bindImageTexture(int unit, int textureId, int level, boolean layered, int layer, int access, int internalFormat) {
         // TODO: create access enum
         GL42.glBindImageTexture(unit, textureId, level, layered, layer, access, internalFormat);
+    }
+
+    public int genTextures() {
+        return GL11.glGenTextures();
     }
 }

@@ -59,7 +59,11 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
 
         renderer.getLightFactory().renderAreaLightShadowMaps(octree);
-        renderer.getLightFactory().renderPointLightShadowMaps(octree);
+        if(Config.USE_DPSM) {
+            renderer.getLightFactory().renderPointLightShadowMaps_dpsm(octree);
+        } else {
+            renderer.getLightFactory().renderPointLightShadowMaps(octree);
+        }
 
         gBuffer.use(true);
         openGLContext.disable(DEPTH_TEST);

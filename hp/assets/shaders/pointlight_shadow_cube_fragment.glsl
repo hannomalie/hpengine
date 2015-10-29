@@ -1,5 +1,7 @@
 layout(binding=0) uniform sampler2D diffuseMap;
 
+uniform vec3 pointLightPositionWorld;
+
 in vec4 pass_WorldPosition;
 in vec4 pass_ProjectedPosition;
 in float clip;
@@ -16,14 +18,24 @@ void main()
         discard;
 
 	float depth = pass_ProjectedPosition.z/pass_ProjectedPosition.w;
-//	depth = (gl_FragCoord.z);
+
+    float lightDistance = length(pass_WorldPosition.xyz - pointLightPositionWorld);
+//    lightDistance = lightDistance / 250.0;
+    depth = lightDistance;
+//    gl_FragDepth = lightDistance;
 
 	float moment1 = (depth);
 	float moment2 = moment1 * moment1;
 	vec4 result;
 	result = vec4(moment1, moment2,0,0);
 	out_Color = result;
-//	out_Color = vec4(1,0,0,0);
+
+//	if(gl_Layer == 0) {
+//	    out_Color.r = 1;
+//	} else if(gl_Layer == 1) {
+//	    out_Color.g = 1;
+//	}
+//	out_Color = vec4(pass_WorldPosition.xyz,0);
 //	out_Color = vec4(gl_FragCoord.xy/vec2(512,512),0,0);
 
 //	float dx = dFdx(depth);

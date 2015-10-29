@@ -23,7 +23,6 @@ void main()
 	pass_ProjectedPosition.xyz = pass_WorldPosition.xyz - pointLightPositionWorld;
 	if(isBack) { pass_ProjectedPosition.z = -pass_ProjectedPosition.z; }
 
-
 	float L = length(pass_ProjectedPosition.xyz);
 	pass_ProjectedPosition /= L;
 	clip = pass_ProjectedPosition.z;
@@ -31,7 +30,7 @@ void main()
 	pass_ProjectedPosition.x = pass_ProjectedPosition.x / pass_ProjectedPosition.z;
 	pass_ProjectedPosition.y = pass_ProjectedPosition.y / pass_ProjectedPosition.z;
 	const float NearPlane = 0.0001;
-	float FarPlane = pointLightRadius*2;
+	float FarPlane = pointLightRadius;
 	pass_ProjectedPosition.z = (L - NearPlane) / (FarPlane - NearPlane);
     pass_ProjectedPosition.w = 1;
 

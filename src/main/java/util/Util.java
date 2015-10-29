@@ -1,7 +1,16 @@
 package util;
 
-import static log.ConsoleLogger.getLogger;
+import camera.Camera;
+import com.bulletphysics.linearmath.Transform;
+import org.lwjgl.Sys;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+import renderer.Renderer;
 
+import javax.imageio.ImageIO;
+import javax.vecmath.Quat4f;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -14,18 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
-import javax.vecmath.Quat4f;
-
-import org.lwjgl.Sys;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
-
-import com.bulletphysics.linearmath.Transform;
-import renderer.Renderer;
-import renderer.material.Material;
+import static log.ConsoleLogger.getLogger;
 
 public class Util {
 	private static Logger LOGGER = getLogger();
@@ -435,5 +433,56 @@ public class Util {
 		String findStr = "\n";
 		int newlineCount = (content.split(findStr, -1).length-1);
 		return newlineCount;
+	}
+
+	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
+		Camera camera = new Camera();
+		camera.setProjectionMatrix(Util.createPerpective(90, 1, 0.1f, 250f));
+		camera.setPosition(position);
+		Matrix4f projectionMatrix = camera.getProjectionMatrix();
+
+		Matrix4f[] resultViewMatrices = new Matrix4f[6];
+		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
+
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, -90));
+			camera.update(0);
+		resultViewMatrices[0] = camera.getViewMatrix();
+		resultProjectionMatrices[0] = projectionMatrix;
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, 90));
+			camera.update(0);
+		resultViewMatrices[1] = camera.getViewMatrix();
+		resultProjectionMatrices[1] = projectionMatrix;
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
+			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
+			camera.update(0);
+		resultViewMatrices[2] = camera.getViewMatrix();
+		resultProjectionMatrices[2] = projectionMatrix;
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
+            camera.rotateWorld(new Vector4f(0, 1, 0, 180));
+			camera.update(0);
+		resultViewMatrices[3] = camera.getViewMatrix();
+		resultProjectionMatrices[3] = projectionMatrix;
+			camera.setOrientation(new Quaternion().setIdentity());
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
+			camera.update(0);
+		resultViewMatrices[4] = camera.getViewMatrix();
+		resultProjectionMatrices[4] = projectionMatrix;
+			camera.setOrientation(new Quaternion().setIdentity());
+//			camera.rotateWorld(new Vector4f(0,1,0, 180));
+			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.update(0);
+		resultViewMatrices[5] = camera.getViewMatrix();
+		resultProjectionMatrices[5] = projectionMatrix;
+
+		return new TypedTuple<>(resultViewMatrices, resultProjectionMatrices);
 	}
 }

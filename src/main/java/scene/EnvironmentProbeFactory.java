@@ -69,7 +69,7 @@ public class EnvironmentProbeFactory {
 			System.err.println("ERROR: " + errorString);
 		}
 
-		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}

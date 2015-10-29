@@ -9,6 +9,7 @@ layout(binding=4, rgba16f) uniform image2D out_DiffuseSpecular;
 layout(binding=5) uniform sampler2D visibilityMap;
 layout(binding=6) uniform sampler2DArray pointLightShadowMapsFront;
 layout(binding=7) uniform sampler2DArray pointLightShadowMapsBack;
+layout(binding=8) uniform samplerCubeArray pointLightShadowMapsCube;
 
 
 uniform float screenWidth = 1280;
@@ -17,6 +18,8 @@ uniform float screenHeight = 720;
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
+
+uniform int maxPointLightShadowmaps = 2;
 
 //include(globals_structs.glsl)
 
@@ -78,19 +81,17 @@ shared uint minDepth = 0xFFFFFFFF;
 shared uint maxDepth = 0;
 
 bool isInsideSphere(vec3 positionToTest, vec3 positionSphere, float radius) {
-
 	return all(distance(positionSphere, positionToTest) < radius);
-
 }
 
-float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+
+float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
 
 	const bool USE_POINTLIGHT_SHADOWMAPPING = true;
-
 	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
 
 	const float NearPlane = 0.0001;
-	float FarPlane = pointLight.radius*2;
+	float FarPlane = pointLight.radius;
 
 	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
 	vec3 positionInPointLightSpace = positionWorld - pointLightPositionWorld;
@@ -147,11 +148,10 @@ float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLi
 	}
 
 
-	float litFactor = (depthToCompareWith + bias) < currentDepth ? 0.3 : 1;
 
-	const bool SOFT_SHADOWS = false;
-	if(!SOFT_SHADOWS) { return litFactor; }
-	const float SHADOW_EPSILON = 0.0005;
+	float litFactor = (depthToCompareWith + bias) < currentDepth ? 0.0 : 1;
+	return litFactor;
+	const float SHADOW_EPSILON = 0.001;
 	float E_x2 = moments.y;
 	float Ex_2 = moments.x * moments.x;
 	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
@@ -162,9 +162,38 @@ float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLi
 
 	return litFactor;
 }
+float getVisibilityCubemap(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	if(pointLightIndex > maxPointLightShadowmaps) { return 1.0f; }
+	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
 
+	vec3 fragToLight = positionWorld - pointLightPositionWorld;
+    vec4 textureSample = textureLod(pointLightShadowMapsCube, vec4(fragToLight, pointLightIndex), 0);
+    float closestDepth = textureSample.r;
+    vec2 moments = textureSample.xy;
+//    closestDepth *= 250.0;
+    float currentDepth = length(fragToLight);
+    float bias = 0.2;
+    float shadow = currentDepth - bias < closestDepth ? 1.0 : 0.0;
+
+	const float SHADOW_EPSILON = 0.001;
+	float E_x2 = moments.y;
+	float Ex_2 = moments.x * moments.x;
+	float variance = min(max(E_x2 - Ex_2, 0.0) + SHADOW_EPSILON, 1.0);
+	float m_d = (moments.x - currentDepth);
+	float p = variance / (variance + m_d * m_d); //Chebychev's inequality
+	shadow = max(shadow, p + 0.05f);
+
+    return shadow;
+}
+
+float getVisibility(vec3 positionWorld, uint pointLightIndex, PointLight pointLight) {
+	if(USE_DPSM) {
+		return getVisibilityDPSM(positionWorld, pointLightIndex, pointLight);
+	} else {
+		return getVisibilityCubemap(positionWorld, pointLightIndex, pointLight);
+	}
+}
 void main(void) {
-	
 	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 workGroup = ivec2(gl_WorkGroupID);
 	ivec2 workGroupSize = ivec2(gl_WorkGroupSize.xy);

@@ -9,6 +9,7 @@ import renderer.OpenGLThread;
 import renderer.Renderer;
 import renderer.command.Command;
 import renderer.command.Result;
+import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
@@ -180,6 +181,10 @@ public class VertexBuffer {
 	public void draw() {
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+	}
+	public void drawStrips() {
+		GL30.glBindVertexArray(vertexArray);
+		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, verticesCount);
 	}
 	public void drawAgain() {
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);

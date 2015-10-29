@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import renderer.PixelBufferObject;
+import renderer.constants.GlTextureTarget;
 
 import java.nio.FloatBuffer;
 
@@ -47,7 +48,7 @@ public class PixelBufferTest extends TestWithRenderer {
 		////
 		
 		PixelBufferObject pixelBufferObject = new PixelBufferObject(1, 1);
-		pixelBufferObject.readPixelsFromTexture(textureId, 0, GL11.GL_TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
+		pixelBufferObject.readPixelsFromTexture(textureId, 0, GlTextureTarget.TEXTURE_2D, GL11.GL_RGBA, GL11.GL_FLOAT);
 
 		float[] result = pixelBufferObject.mapBuffer();
 		Assert.assertEquals(0.5f, result[0], 0.01f);

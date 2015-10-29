@@ -74,6 +74,7 @@ public enum ShaderDefine {
 		appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + Config.SSR_TEMPORAL_FILTERING);
 		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + Config.USE_BLOOM);
 		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + Config.USE_PCF);
+		appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + Config.USE_DPSM);
 		
 		return builder.toString();
 	}

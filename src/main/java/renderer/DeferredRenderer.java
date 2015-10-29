@@ -317,13 +317,32 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(lightFactory.getDepthMapForAreaLight(lightFactory.getAreaLights().get(0)), debugBuffer);
-			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+//			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
-//			drawToQuad(light.getShadowMapId(), debugBuffer);
+
+//			int faceView = getOpenGLContext().genTextures();
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
+//					GL30.GL_RGBA16F, 0, 1, 0, 1);
+//			drawToQuad(faceView, sixDebugBuffers.get(0));
+//			faceView = getOpenGLContext().genTextures();
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayFront(),
+//					GL30.GL_RGBA16F, 0, 1, 0, 1);
+//			drawToQuad(faceView, sixDebugBuffers.get(1));
+//			GL11.glDeleteTextures(faceView);
+
+            int[] faceViews = new int[6];
+            for(int i = 0; i < 6; i++) {
+                faceViews[i] = getOpenGLContext().genTextures();
+                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getCubemapArrayRenderTarget().getDepthBufferTexture(),
+						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
+				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
+			}
+            for(int i = 0; i < 6; i++) {
+                GL11.glDeleteTextures(faceViews[i]);
+            }
 		}
 
 		if(counter < 20) {
