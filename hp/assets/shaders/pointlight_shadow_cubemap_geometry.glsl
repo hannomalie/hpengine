@@ -25,21 +25,43 @@ void main() {
 
   for(int layer = 0; layer < 6; layer++) {
     gl_Layer = 6*lightIndex + layer;
-
-    for(int i = 0; i < 3; i++) { // You used triangles, so it's always 3
-      vec3 positionWorld = vs_pass_WorldPosition[i].xyz;
-//      vec4 projectedPosition = viewProjectionMatrices[layer] * vec4(positionWorld,1);
-//      vec4 projectedPosition = projectionMatrix * viewMatrix * vec4(vs_pass_WorldPosition[i].xyz,1);
-      vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
-      pass_WorldPosition = vec4(positionWorld,1);
-      pass_ProjectedPosition = projectedPosition;
-//      pass_ProjectedPosition = projectionMatrix *(positionViewSpace);
-
-      gl_Position = projectedPosition;
-      clip = 1.0;
-      EmitVertex();
+    /////////////// FRUSTUM AND BACKFACE CULLING
+    vec4 vertex[3];
+    int outOfBound[6] = {0, 0, 0, 0, 0, 0};
+    for (int i=0; i<3; ++i) {
+        vertex[i] = projectionMatrices[layer] * viewMatrices[layer] * vec4(vs_pass_WorldPosition[i].xyz, 1);
+        if (vertex[i].x > +vertex[i].w) ++outOfBound[0];
+        if (vertex[i].x < -vertex[i].w) ++outOfBound[1];
+        if (vertex[i].y > +vertex[i].w) ++outOfBound[2];
+        if (vertex[i].y < -vertex[i].w) ++outOfBound[3];
+        if (vertex[i].z > +vertex[i].w) ++outOfBound[4];
+        if (vertex[i].z < -vertex[i].w) ++outOfBound[5];
+    }
+    bool inFrustum = true;
+    for (int i=0; i<6; ++i) {
+        if (outOfBound[i] == 3) inFrustum = false;
     }
 
-    EndPrimitive();
-  }
+    vec3 normal = cross(vs_pass_WorldPosition[2].xyz - vs_pass_WorldPosition[0].xyz, vs_pass_WorldPosition[0].xyz - vs_pass_WorldPosition[1].xyz);
+    vec3 view = pointLightPositionWorld - vs_pass_WorldPosition[0].xyz;
+    bool frontFace = dot(normal, view) > 0.f;
+    ////////////////////
+
+// frustum culling seems to make it worse if no instancing present
+//if(inFrustum && frontFace) {
+    if(frontFace) {
+        for(int i = 0; i < 3; i++) { // You used triangles, so it's always 3
+              vec3 positionWorld = vs_pass_WorldPosition[i].xyz;
+              vec4 projectedPosition = projectionMatrices[layer] * viewMatrices[layer] * vec4(positionWorld,1);
+              pass_WorldPosition = vec4(positionWorld,1);
+              pass_ProjectedPosition = projectedPosition;
+
+              gl_Position = projectedPosition;
+              clip = 1.0;
+              EmitVertex();
+            }
+
+            EndPrimitive();
+          }
+    }
 }
