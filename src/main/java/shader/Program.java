@@ -258,7 +258,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			System.err.println(shaderInfoLog);
 			throw new Exception();
 		}
-		
+//		System.out.println(shaderSource);
 		Renderer.exitOnGLError("loadShader");
 		
 		return shaderID;

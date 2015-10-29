@@ -1,5 +1,5 @@
 layout(triangles) in;
-layout(triangle_strip, max_vertices = 18) out;
+layout(triangle_strip, max_vertices = 18) out; // 6 faces * 3 vertices per cubemap
 
 in vec4 vs_pass_WorldPosition[3];
 in vec4 vs_pass_ProjectedPosition[3];
@@ -20,28 +20,6 @@ uniform vec3 pointLightPositionWorld;
 out vec4 pass_WorldPosition;
 out vec4 pass_ProjectedPosition;
 out float clip;
-
-mat4 rotationMatrix(vec3 axis, float angle)
-{
-    axis = normalize(axis);
-    float s = sin(angle);
-    float c = cos(angle);
-    float oc = 1.0 - c;
-
-    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
-                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
-                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
-                0.0,                                0.0,                                0.0,                                1.0);
-}
-
-const mat4 rotationMatrices[6] = {
-  rotationMatrix(vec3(0,0,1), 180) * rotationMatrix(vec3(0,1,0), -90),
-  rotationMatrix(vec3(0,0,1), 180) * rotationMatrix(vec3(0,1,0), 90),
-  rotationMatrix(vec3(0,0,1), 180) * rotationMatrix(vec3(1,0,0), 90) * rotationMatrix(vec3(0,1,0), 180),
-  rotationMatrix(vec3(0,0,1), 180) * rotationMatrix(vec3(1,0,0), -90),
-  rotationMatrix(vec3(0,0,1), 180) * rotationMatrix(vec3(0,1,0), -180),
-  rotationMatrix(vec3(0,0,1), 180)
-};
 
 void main() {
 

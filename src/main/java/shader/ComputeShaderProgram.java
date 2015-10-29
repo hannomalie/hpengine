@@ -40,6 +40,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		
 		observerShader = new FileAlterationObserver(Program.getDirectory());
 		load();
+		addFileListeners();
 	}
 
 	@Override
@@ -67,8 +68,6 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		}
 		
 		System.out.println("ComputeShader load " + GLU.gluErrorString(GL11.glGetError()));
-		
-		addFileListeners();
 	}
 	
 

@@ -23,7 +23,7 @@ void main()
 	vec4 result;
 	result = vec4(moment1, moment2,0,0);
 	out_Color = result;
-	out_Color = vec4(1,0,0,0);
+//	out_Color = vec4(1,0,0,0);
 //	out_Color = vec4(gl_FragCoord.xy/vec2(512,512),0,0);
 
 //	float dx = dFdx(depth);

@@ -18,7 +18,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 
 	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
-	public CubeMapArrayRenderTarget(int width, int height, CubeMapArray... cubeMapArray) {
+	public CubeMapArrayRenderTarget(int width, int height, int depth, CubeMapArray... cubeMapArray) {
 		this.width = width;
 		this.height = height;
 		this.clearR = 0;
@@ -38,16 +38,14 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		for (int i = 0; i < colorBufferCount; i++) {
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, cubeMapArrays.get(i).getTextureID(), 0);
 		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+			renderedTextures[i] = cubeMapArrays.get(i).getTextureID();
 		}
-	    GL20.glDrawBuffers(scratchBuffer);
+		GL20.glDrawBuffers(scratchBuffer);
 
-//		depthbufferLocation = GL30.glGenRenderbuffers();
-//		GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-//		GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
-//		GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
-        CubeMapArray depthCubeMapArray = new CubeMapArray(AppContext.getInstance().getRenderer(), 1, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
+        CubeMapArray depthCubeMapArray = new CubeMapArray(AppContext.getInstance().getRenderer(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
         int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
+		depthbufferLocation = depthCubeMapArray.getTextureID();
 
 		//TODO: Make this more pretty
 		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);

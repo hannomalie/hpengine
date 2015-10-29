@@ -9,6 +9,7 @@ import renderer.OpenGLThread;
 import renderer.Renderer;
 import renderer.command.Command;
 import renderer.command.Result;
+import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
