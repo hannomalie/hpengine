@@ -326,7 +326,7 @@ public class DebugFrame {
 				new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+						SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 							@Override
 							public Result execute(AppContext world) {
 								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world);
@@ -352,7 +352,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
 						appContext.getScene().addPointLight(world.getRenderer().getLightFactory().getPointLight(50));
@@ -380,7 +380,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
 						appContext.getScene().addTubeLight(world.getRenderer().getLightFactory().getTubeLight());
@@ -408,7 +408,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
 						appContext.getScene().getAreaLights().add(world.getRenderer().getLightFactory().getAreaLight(50,50,20));
@@ -456,7 +456,7 @@ public class DebugFrame {
         
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-    		SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+    		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 				@Override
 				public Result execute(AppContext world) {
 					GPUProfiler.reset();
@@ -491,7 +491,7 @@ public class DebugFrame {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+				SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 
 					@Override
 					public Result execute(AppContext world) {
@@ -524,7 +524,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath()));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddTextureCommand(chosenFile.getPath()));
 					
 					TextureResult result = null;
 					try {
@@ -550,7 +550,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
 					
 					TextureResult result = null;
 					try {
@@ -578,7 +578,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
+					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
 					
 					TextureResult result = null;
 					try {
@@ -706,7 +706,7 @@ public class DebugFrame {
 //		});
 		toggleProfiler.addActionListener( e -> {
 			
-			SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>(){
+			SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>(){
 
 				@Override
 				public Result execute(AppContext world) {
@@ -729,7 +729,7 @@ public class DebugFrame {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 			
-			SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>(){
+			SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>(){
 
 				@Override
 				public Result execute(AppContext world) {
@@ -770,7 +770,7 @@ public class DebugFrame {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-			appContext.getRenderer().addCommand(new DumpAveragesCommand(1000));
+			appContext.getRenderer().getOpenGLContext().addCommand(new DumpAveragesCommand(1000));
 		});
 		
 		toggleParallax.addActionListener( e -> {
@@ -855,17 +855,17 @@ public class DebugFrame {
 		toggleDrawLights.addActionListener(e -> {
 			Config.DRAWLIGHTS_ENABLED = !Config.DRAWLIGHTS_ENABLED;
 		});
-		toggleVSync.addActionListener(e -> {
-			Config.LOCK_FPS = !Config.LOCK_FPS;
-			appContext.getRenderer().addCommand(new Command<Result>() {
-				@Override
-				public Result execute(AppContext appContext) {
-					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
-					appContext.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
-					return new Result();
-				}
-			});
-		});
+//		toggleVSync.addActionListener(e -> {
+//			Config.LOCK_FPS = !Config.LOCK_FPS;
+//			appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
+//				@Override
+//				public Result execute(AppContext appContext) {
+//					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
+//					appContext.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
+//					return new Result();
+//				}
+//			});
+//		});
 		toggleAutoExposure.addActionListener(e -> {
 			Config.AUTO_EXPOSURE_ENABLED = !Config.AUTO_EXPOSURE_ENABLED;
 			if(!Config.AUTO_EXPOSURE_ENABLED) { Config.EXPOSURE = 5; }

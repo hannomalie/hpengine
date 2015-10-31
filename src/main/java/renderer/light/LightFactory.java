@@ -146,7 +146,7 @@ public class LightFactory {
 			areaLightDepthMaps.add(renderedTextureTemp);
 		}
 
-		lightBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(1000));
+		lightBuffer = renderer.getOpenGLContext().calculateWithOpenGLContext(() -> new StorageBuffer(1000));
 		AppContext.getEventBus().register(this);
 	}
 
@@ -500,7 +500,7 @@ public class LightFactory {
 
 	private void bufferLights() {
 		List<PointLight> pointLights = appContext.getScene().getPointLights();
-		renderer.doWithOpenGLContext(() -> {
+		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
 			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
 				lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));

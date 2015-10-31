@@ -75,8 +75,6 @@ public interface Renderer extends LifeCycle {
 
     void drawLines(Program firstPassProgram);
 
-    <OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command);
-
     ProgramFactory getProgramFactory();
 
     LightFactory getLightFactory();
@@ -363,14 +361,6 @@ public interface Renderer extends LifeCycle {
             }
         }
     }
-
-    void doWithOpenGLContext(Runnable runnable);
-
-    void doWithOpenGLContext(Runnable runnable, boolean andBlock);
-
-    <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable);
-
-    TimeStepThread getDrawThread();
 
     OpenGLContext getOpenGLContext();
 }

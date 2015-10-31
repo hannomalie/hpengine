@@ -23,7 +23,6 @@ import renderer.drawstrategy.DebugDrawStrategy;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.drawstrategy.SimpleDrawStrategy;
-import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
@@ -127,68 +126,41 @@ public class DeferredRenderer implements Renderer {
 		Renderer.super.init(appContext);
 		DeferredRenderer renderer = this;
 
-		drawThread = new TimeStepThread("Renderer", Config.LOCK_FPS ? 0.03f : 0.0f) {
-			public void cleanUp() {
-				renderer.destroy();
-			}
-			public void update(float seconds) {
-				Thread.currentThread().setName(Renderer.RENDER_THREAD_NAME);
-				if (!initialized) {
-					setCurrentState("INITIALIZING");
-					setupOpenGL(headless);
-					renderer.appContext = appContext;
-					appContext.setRenderer(renderer);
-					objLoader = new OBJLoader(renderer);
-					textureFactory = new TextureFactory(renderer);
-					DeferredRenderer.exitOnGLError("After TextureFactory");
-					programFactory = new ProgramFactory(appContext);
-					setupShaders();
-					setUpGBuffer();
-					renderer.simpleDrawStrategy = new SimpleDrawStrategy(renderer);
-					renderer.debugDrawStrategy = new DebugDrawStrategy(renderer);
-					renderer.currentDrawStrategy = simpleDrawStrategy;
+        if (!initialized) {
+            setCurrentState("INITIALIZING");
+            setupOpenGL(headless);
+            renderer.appContext = appContext;
+            appContext.setRenderer(renderer);
+            objLoader = new OBJLoader(renderer);
+            textureFactory = new TextureFactory(renderer);
+            DeferredRenderer.exitOnGLError("After TextureFactory");
+            programFactory = new ProgramFactory(appContext);
+            setupShaders();
+            setUpGBuffer();
+            renderer.simpleDrawStrategy = new SimpleDrawStrategy(renderer);
+            renderer.debugDrawStrategy = new DebugDrawStrategy(renderer);
+            renderer.currentDrawStrategy = simpleDrawStrategy;
 
-					fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
-												.setHeight(Config.HEIGHT)
-												.add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
-												.build();
-					materialFactory = new MaterialFactory(renderer);
-					lightFactory = new LightFactory(appContext);
-					environmentProbeFactory = new EnvironmentProbeFactory(appContext);
-					gBuffer.init(renderer);
+            fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
+                                        .setHeight(Config.HEIGHT)
+                                        .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
+                                        .build();
+            materialFactory = new MaterialFactory(renderer);
+            lightFactory = new LightFactory(appContext);
+            environmentProbeFactory = new EnvironmentProbeFactory(appContext);
+            gBuffer.init(renderer);
 
-					sphereModel = null;
-					try {
-						sphereModel = objLoader.loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-						sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
-					} catch (IOException e) {
-						e.printStackTrace();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					initialized = true;
-				}
-
-				//TODO: throws illegalstateexception
-				if (Display.isCreated() && !Display.isCloseRequested()) {
-					if (appContext.isInitialized()) {
-						GPUProfiler.startFrame();
-						if(appContext.getScene().isInitialized())
-						{
-							draw(appContext);
-						}
-						Display.update();
-
-						GPUProfiler.start("Update");
-						renderer.update(appContext, seconds);
-						GPUProfiler.end();
-						GPUProfiler.endFrame();
-						dumpTimings();
-					}
-				}
-			}
-		};
-		renderThread.submit(drawThread);
+            sphereModel = null;
+            try {
+                sphereModel = objLoader.loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+                sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            initialized = true;
+        }
 	}
 
 	private void setupOpenGL(boolean headless) {
@@ -259,14 +231,17 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
-		try {
-			cubeMap = textureFactory.getCubeMap("hp/assets/textures/skybox.png");
-			openGLContext.activeTexture(0);
-			textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+        cubeMap = getOpenGLContext().calculateWithOpenGLContext(() -> {
+            try {
+                return textureFactory.getCubeMap("hp/assets/textures/skybox.png");
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+            return null;
+        });
+        openGLContext.activeTexture(0);
+        textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
+
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
 		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
 		bilateralBlurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
@@ -277,30 +252,25 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void init(Octree octree) {
-		addCommand(new Command() {
-			@Override
-			public Result execute(AppContext appContext) {
-
-				environmentProbeFactory.drawInitial(octree);
-
-				final int initialDrawCount = 10;
-				for(int i = 0; i < initialDrawCount; i++) {
-					for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
-						addRenderProbeCommand(probe, true);
-					}
-				}
-
-				return new Result(new Object());
-			}
-		});
+//		addCommand(new Command() {
+//			@Override
+//			public Result execute(AppContext appContext) {
+//
+//				environmentProbeFactory.drawInitial(octree);
+//
+//				final int initialDrawCount = 10;
+//				for(int i = 0; i < initialDrawCount; i++) {
+//					for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
+//						addRenderProbeCommand(probe, true);
+//					}
+//				}
+//
+//				return new Result(new Object());
+//			}
+//		});
 	}
 
 	public void update(AppContext appContext, float seconds) {
-		try {
-			executeCommands(appContext);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 
@@ -503,17 +473,19 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
-		if(IGNORE_GL_ERRORS) { return; }
-		int errorValue = GL11.glGetError();
-		
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			new Exception().printStackTrace(System.err);
-			System.err.println("ERROR - " + errorMessage + ": " + errorString);
-			
-			if (Display.isCreated()) Display.destroy();
-			System.exit(-1);
-		}
+        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+            if(IGNORE_GL_ERRORS) { return; }
+            int errorValue = GL11.glGetError();
+
+            if (errorValue != GL11.GL_NO_ERROR) {
+                String errorString = GLU.gluErrorString(errorValue);
+                new Exception().printStackTrace(System.err);
+                System.err.println("ERROR - " + errorMessage + ": " + errorString);
+
+                if (Display.isCreated()) Display.destroy();
+                System.exit(-1);
+            }
+        });
 	}
 
 	@Override
@@ -597,32 +569,6 @@ public class DeferredRenderer implements Renderer {
 		return sphereModel;
 	}
 
-
-	@Override
-	public <OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command) {
-		SynchronousQueue<RESULT_TYPE> queue = new SynchronousQueue<>();
-	    commandQueueMap.put(command, (SynchronousQueue<Result<? extends Object>>) queue);
-	    workQueue.offer(command);
-	    return queue;
-	}
-
-
-	private void executeCommands(AppContext appContext) throws Exception {
-        Command command = workQueue.poll();
-        while(command != null) {
-			setCurrentState("BEFORE EXECUTION " + command.getClass().getSimpleName());
-        	Result result = command.execute(appContext);
-			setCurrentState("AFTER EXECUTION " + command.getClass().getSimpleName());
-            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
-            try {
-				queue.offer(result);
-
-			} catch (NullPointerException e) {
-				Logger.getGlobal().info("Got null for command " + command.toString());
-			}
-			command = workQueue.poll();
-        }
-	}
 
 	@Override
 	public void executeRenderProbeCommands() {
@@ -736,94 +682,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public VertexBuffer getFullscreenBuffer() {
 		return fullscreenBuffer;
-	}
-
-
-    @Override
-    public void doWithOpenGLContext(Runnable runnable) {
-        doWithOpenGLContext(runnable, true);
-    }
-	@Override
-	public void doWithOpenGLContext(Runnable runnable, boolean andBlock) {
-
-		if(util.Util.isRenderThread()) {
-			runnable.run();
-		} else {
-//			SynchronousQueue<Result<OpenGLThread>> queue = addCommand(new Command<Result<OpenGLThread>>() {
-//				@Override
-//				public Result<OpenGLThread> execute(AppContext world) {
-//					return new Result(new OpenGLThread("Create texture thread") {
-//						@Override
-//						public void doRun() {
-//							runnable.run();
-//						}
-//					});
-//				}
-//			});
-//			OpenGLThread thread = null;
-//			try {
-//				thread = queue.poll(5, TimeUnit.MINUTES).get();
-//				thread.start();
-//                if(andBlock) {
-//                    thread.join();
-//                }
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-
-            SynchronousQueue<Result<Object>> queue = appContext.getRenderer().addCommand(new Command<Result<Object>>() {
-                 @Override
-                 public Result<Object> execute(AppContext appContext) {
-                     runnable.run();
-                     return new Result<Object>(true);
-                 }
-             }
-            );
-			if(andBlock) {
-				try {
-					queue.poll(5, TimeUnit.MINUTES);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-        }
-	}
-
-    @Override
-    public <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable) {
-        if(util.Util.isRenderThread()) {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            final TYPE[] temp = (TYPE[])new Object[1];
-            SynchronousQueue<Result<Object>> queue = appContext.getRenderer().addCommand(new Command<Result<Object>>() {
-                 @Override
-                 public Result<Object> execute(AppContext appContext) {
-                     try {
-                         temp[0] = callable.call();
-                     } catch (Exception e) {
-                         e.printStackTrace();
-                     }
-                     return new Result<Object>(true);
-                 }
-             }
-            );
-            try {
-                queue.poll(5, TimeUnit.MINUTES);
-                return temp[0];
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-	@Override
-	public TimeStepThread getDrawThread() {
-		return drawThread;
 	}
 
 	@Override

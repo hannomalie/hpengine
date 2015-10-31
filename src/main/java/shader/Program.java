@@ -69,7 +69,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-		AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
 			clearUniforms();
 			setId(GL20.glCreateProgram());
 
@@ -150,7 +150,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 		
-		SynchronousQueue<Result> queue = renderer.addCommand(new Command<Result>(){
+		SynchronousQueue<Result> queue = renderer.getOpenGLContext().addCommand(new Command<Result>(){
 			@Override
 			public Result execute(AppContext world) {
 				self.unload();

@@ -7,7 +7,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.Renderer;
+import renderer.OpenGLContext;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
@@ -412,8 +412,8 @@ public class Util {
 		}
 	}
 
-	public static boolean isRenderThread() {
-		return Thread.currentThread().getName().equals(Renderer.RENDER_THREAD_NAME);
+	public static boolean isOpenGLThread() {
+		return Thread.currentThread().getName().equals(OpenGLContext.OPENGL_THREAD_NAME);
 	}
 
 	public static <T> T[] toArray(Collection<T> values, Class<T> clazz) {

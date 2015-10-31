@@ -42,20 +42,24 @@ public class ProgramFactory {
 	}
 
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
-		ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
-		LOADED_PROGRAMS.add(program);
-		AppContext.getEventBus().register(program);
-		return program;
+        return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> {
+            ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
+            LOADED_PROGRAMS.add(program);
+            AppContext.getEventBus().register(program);
+            return program;
+        });
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
 		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, channels, needsTextures);
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		Program program = new Program(renderer, vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
-		LOADED_PROGRAMS.add(program);
-		AppContext.getEventBus().register(program);
-		return program;
+		return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> {
+            Program program = new Program(renderer, vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
+            LOADED_PROGRAMS.add(program);
+            AppContext.getEventBus().register(program);
+            return program;
+        });
 	}
 
 	public void copyDefaultFragmentShaderToFile(String name) throws IOException {

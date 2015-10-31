@@ -19,7 +19,7 @@ public abstract class OpenGLThread extends Thread {
 	}
 	public OpenGLThread(String name) {
 		this.name = name;
-		drawable = AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> new SharedDrawable(Display.getDrawable()));
+		drawable = AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> new SharedDrawable(Display.getDrawable()));
 		initialized = true;
 	}
 

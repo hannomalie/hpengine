@@ -94,7 +94,7 @@ public class EntityView extends WebPanel {
 	        
 	        WebButton removeEntityButton = new WebButton("Remove Entity");
 	        removeEntityButton.addActionListener(e -> {
-	        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new RemoveEntityCommand((Entity) entity));
+	        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new RemoveEntityCommand((Entity) entity));
 	    		
 	    		Result result = null;
 	    		try {

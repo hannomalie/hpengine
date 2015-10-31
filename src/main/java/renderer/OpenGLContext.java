@@ -2,14 +2,19 @@ package renderer;
 
 import config.Config;
 import engine.AppContext;
+import engine.TimeStepThread;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
+import renderer.command.Command;
+import renderer.command.Result;
 import renderer.constants.*;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 import static renderer.constants.GlCap.CULL_FACE;
@@ -17,11 +22,18 @@ import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class OpenGLContext {
 
+    public static String OPENGL_THREAD_NAME;
+    private final TimeStepThread openGLThread;
     private Renderer renderer = null;
     private Canvas canvas;
     private boolean attached;
 
     private static OpenGLContext instance;
+
+    private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
+    private Map<Command<? extends Result<?>>, SynchronousQueue<Result<? extends Object>>> commandQueueMap = new ConcurrentHashMap<>();
+
+
     public static OpenGLContext getInstance() {
         if(instance == null) {
             throw new IllegalStateException("OpenGL context not initialized. Init a renderer first.");
@@ -38,6 +50,30 @@ public class OpenGLContext {
     }
     OpenGLContext(Renderer renderer, Canvas canvas, boolean headless) throws LWJGLException {
 
+        openGLThread = new TimeStepThread("OpenGLContext", 0.0f) {
+
+            @Override
+            public void update(float seconds) {
+                if (!isInitialized()) {
+                    try {
+                        init(renderer, canvas);
+                    } catch (LWJGLException e) {
+                        e.printStackTrace();
+                        System.exit(-1);
+                    }
+                } else {
+                    instance.update(seconds);
+                }
+            }
+        };
+        openGLThread.start();
+
+        while(!isInitialized()) {
+
+        }
+    }
+
+    private void init(Renderer renderer, Canvas canvas) throws LWJGLException {
         this.canvas = canvas;
         this.renderer = renderer;
 
@@ -73,6 +109,29 @@ public class OpenGLContext {
         viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
 
         instance = this;
+    }
+
+    public void update(float seconds) {
+        try {
+            executeCommands();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeCommands() throws Exception {
+        Command command = workQueue.poll();
+        while(command != null) {
+            Result result = command.execute(AppContext.getInstance());
+            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
+            try {
+                queue.offer(result);
+
+            } catch (NullPointerException e) {
+                Logger.getGlobal().info("Got null for command " + command.toString());
+            }
+            command = workQueue.poll();
+        }
     }
 
     public void attach(Canvas canvas) throws LWJGLException {
@@ -114,13 +173,13 @@ public class OpenGLContext {
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     public void bindTexture(GlTextureTarget target, int textureId) {
-        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
     }
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -199,5 +258,92 @@ public class OpenGLContext {
 
     public int genTextures() {
         return GL11.glGenTextures();
+    }
+
+    public boolean isInitialized() {
+        return instance != null;
+    }
+
+    private void executeCommands(AppContext appContext) throws Exception {
+        Command command = workQueue.poll();
+        while(command != null) {
+            Result result = command.execute(appContext);
+            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
+            try {
+                queue.offer(result);
+
+            } catch (NullPointerException e) {
+                Logger.getGlobal().info("Got null for command " + command.toString());
+            }
+            command = workQueue.poll();
+        }
+    }
+
+    public <OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command) {
+        SynchronousQueue<RESULT_TYPE> queue = new SynchronousQueue<>();
+        commandQueueMap.put(command, (SynchronousQueue<Result<? extends Object>>) queue);
+        workQueue.offer(command);
+        return queue;
+    }
+
+    public void doWithOpenGLContext(Runnable runnable) {
+        doWithOpenGLContext(runnable, true);
+    }
+    public void doWithOpenGLContext(Runnable runnable, boolean andBlock) {
+
+        if(util.Util.isOpenGLThread()) {
+            runnable.run();
+        } else {
+            SynchronousQueue<Result<Object>> queue = addCommand(new Command<Result<Object>>() {
+                @Override
+                public Result<Object> execute(AppContext appContext) {
+                    runnable.run();
+                    return new Result<Object>(true);
+                }
+            }
+            );
+            if(andBlock) {
+                try {
+                    queue.poll(5, TimeUnit.MINUTES);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable) {
+        if(util.Util.isOpenGLThread()) {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            final TYPE[] temp = (TYPE[])new Object[1];
+            SynchronousQueue<Result<Object>> queue = addCommand(new Command<Result<Object>>() {
+                     @Override
+                     public Result<Object> execute(AppContext appContext) {
+                         try {
+                             temp[0] = callable.call();
+                         } catch (Exception e) {
+                             e.printStackTrace();
+                         }
+                         return new Result<Object>(true);
+                     }
+                 }
+            );
+            try {
+                queue.poll(5, TimeUnit.MINUTES);
+                return temp[0];
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public TimeStepThread getDrawThread() {
+        return openGLThread;
     }
 }

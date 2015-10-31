@@ -14,7 +14,7 @@ public abstract class OpenGLTimeStepThread extends TimeStepThread {
     private String name;
 
     public OpenGLTimeStepThread(String name) {
-        this(name, AppContext.getInstance().getRenderer().calculateWithOpenGLContext(
+        this(name, AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(
                 () -> new SharedDrawable(Display.getDrawable())
         ));
     }

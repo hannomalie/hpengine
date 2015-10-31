@@ -136,9 +136,9 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        return renderer.calculateWithOpenGLContext(() -> {
-                return getTextureId();
-            }
+        return renderer.getOpenGLContext().calculateWithOpenGLContext(() -> {
+                    return getTextureId();
+                }
         );
     }
     
@@ -171,7 +171,7 @@ public class TextureFactory {
     }
 
     public static int getTextureId() {
-        return AppContext.getInstance().getRenderer().calculateWithOpenGLContext(() -> GL11.glGenTextures());
+        return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> GL11.glGenTextures());
     }
 
     private boolean textureLoaded(String resourceName) {

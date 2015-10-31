@@ -44,7 +44,7 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+				SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext world) {
 						entity.init(world);

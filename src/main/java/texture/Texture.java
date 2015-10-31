@@ -117,7 +117,7 @@ public class Texture implements Serializable {
 //			}
 //		}.start();
 
-        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
             upload(buffer(), srgba);
         });
 	}
@@ -130,7 +130,7 @@ public class Texture implements Serializable {
         new OpenGLThread() {
             @Override
             public void doRun() {
-                AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+                AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
                     bind();
                     if (target == TEXTURE_2D)
                     {

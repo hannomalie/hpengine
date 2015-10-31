@@ -124,16 +124,14 @@ public class AppContext {
 		entityFactory = new EntityFactory(this);
 		renderer = new DeferredRenderer(headless);
 		renderer.init(this);
-		while(!renderer.isInitialized()) {
 
-		}
 		glWatch = new OpenGLStopWatch();
 		scriptManager = new ScriptManager(this);
 		physicsFactory = new PhysicsFactory(this);
 
 		scene = new Scene();
         AppContext self = this;
-        SynchronousQueue<Result<Object>> queue = renderer.addCommand(new Command<Result<Object>>() {
+        SynchronousQueue<Result<Object>> queue = renderer.getOpenGLContext().addCommand(new Command<Result<Object>>() {
             @Override
             public Result<Object> execute(AppContext appContext) {
                 scene.init(self);
@@ -235,13 +233,13 @@ public class AppContext {
 	}
 	
 	public void destroy() {
-		SynchronousQueue<Result<Object>> queue = renderer.addCommand(new Command<Result<Object>>() {
-			@Override
-			public Result<Object> execute(AppContext world) {
-				world.getRenderer().destroy();
-				return new Result<>(new Object());
-			}
-		});
+		SynchronousQueue<Result<Object>> queue = renderer.getOpenGLContext().addCommand(new Command<Result<Object>>() {
+            @Override
+            public Result<Object> execute(AppContext world) {
+                world.getRenderer().destroy();
+                return new Result<>(new Object());
+            }
+        });
 		queue.poll();
 		System.exit(0);
 	}
@@ -346,10 +344,10 @@ public class AppContext {
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
 		if(directionalLight.hasMoved()) {
-			renderer.addCommand(world -> {
-				for(EnvironmentProbe probe: renderer.getEnvironmentProbeFactory().getProbes()) {
-					renderer.addRenderProbeCommand(probe, true);
-				}
+			renderer.getOpenGLContext().addCommand(world -> {
+                for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
+                    renderer.addRenderProbeCommand(probe, true);
+                }
                 renderer.getEnvironmentProbeFactory().draw(scene.getOctree(), true);
                 return new Result(true);
             });
@@ -361,10 +359,10 @@ public class AppContext {
         renderer.getLightFactory().update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
-//		renderer.doWithOpenGLContext(() -> {
-//			renderer.draw(this);
-//			Display.update();
-//		}, false);
+		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+            renderer.draw(this);
+            Display.update();
+        }, false);
         scene.endFrame(activeCamera);
         renderer.endFrame();
 
@@ -385,7 +383,7 @@ public class AppContext {
 
 	public void setScene(Scene scene) {
 		this.scene = scene;
-		SynchronousQueue<Result> result = renderer.addCommand(new Command<Result>() {
+		SynchronousQueue<Result> result = renderer.getOpenGLContext().addCommand(new Command<Result>() {
 			@Override
 			public Result execute(AppContext world) {
 				StopWatch.getInstance().start("Scene init");

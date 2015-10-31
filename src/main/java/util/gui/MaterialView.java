@@ -79,7 +79,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-        		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().addCommand(new GetMaterialCommand(newInfo));
+        		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new GetMaterialCommand(newInfo));
         		MaterialResult result = null;
         		try {
         			result = queue.poll(1, TimeUnit.MINUTES);
@@ -509,7 +509,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().addCommand(new InitMaterialCommand(material));
+		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new InitMaterialCommand(material));
 		
 		MaterialResult result = null;
 		try {

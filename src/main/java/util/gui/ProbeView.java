@@ -65,7 +65,7 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 
 				@Override
 				public Result execute(AppContext world) {
@@ -110,7 +110,7 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				appContext.getRenderer().addCommand(new Command<Result>() {
+				appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 					@Override
 					public Result execute(AppContext appContext) {
 						appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();

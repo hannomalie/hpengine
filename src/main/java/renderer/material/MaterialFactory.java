@@ -44,7 +44,7 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		materialBuffer = renderer.calculateWithOpenGLContext(() -> new StorageBuffer(2000));
+		materialBuffer = renderer.getOpenGLContext().calculateWithOpenGLContext(() -> new StorageBuffer(2000));
 
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
@@ -339,13 +339,13 @@ public class MaterialFactory {
 
 	@Subscribe
 	public void bufferMaterials(MaterialAddedEvent event) {
-		renderer.doWithOpenGLContext(() -> {
-			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
-		});
+		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+            materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+        });
 	}
 	@Subscribe
 	public void bufferMaterials(MaterialChangedEvent event) {
-		renderer.doWithOpenGLContext(() -> {
+		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
 			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
 		});
 	}

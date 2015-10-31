@@ -157,7 +157,7 @@ public class VertexBuffer {
 //        });
 //        queue.poll();
 
-		AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
+		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
 			vertexBuffer = GL15.glGenBuffers();
 			vertexArray = GL30.glGenVertexArrays();
 

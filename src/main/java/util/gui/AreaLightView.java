@@ -68,7 +68,7 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = appContext.getRenderer().addCommand(new Command<Result>() {
+        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
 
 				@Override
 				public Result execute(AppContext world) {
