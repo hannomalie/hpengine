@@ -3,6 +3,7 @@ package util.gui;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -44,31 +45,20 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-					@Override
-					public Result execute(AppContext world) {
-						entity.init(world);
-						return new Result() {
-							@Override
-							public boolean isSuccessful() {
-								return true;
-							}
-						};
-					}
-					
+				CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					entity.init(AppContext.getInstance());
+					return true;
 				});
-    				
-				Result result = null;
+
+				Boolean result;
 				try {
-					result = queue.poll(1, TimeUnit.MINUTES);
+					result = future.get(1, TimeUnit.MINUTES);
+					if(result.equals(Boolean.TRUE)) {
+						entitiesToAdd.add(entity);
+					}
 				} catch (Exception e1) {
 					e1.printStackTrace();
 					showError(chosenFile);
-				}
-				if (result == null || !result.isSuccessful()) {
-					showError(chosenFile);
-				} else {
-					entitiesToAdd.add(entity);
 				}
 			}
 		}

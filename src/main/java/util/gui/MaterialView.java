@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -79,22 +80,19 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-        		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new GetMaterialCommand(newInfo));
-        		MaterialResult result = null;
-        		try {
-        			result = queue.poll(1, TimeUnit.MINUTES);
+				CompletableFuture<MaterialResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					return new GetMaterialCommand(newInfo).execute(appContext);
+				});
+				MaterialResult result;
+				try {
+        			result = future.get(1, TimeUnit.MINUTES);
+					if(result.equals(Boolean.TRUE)) {
+						showNotification(NotificationIcon.plus, "Material changed");
+					} else {
+						showNotification(NotificationIcon.error, "Not able to change material");
+					}
         		} catch (Exception e1) {
         			e1.printStackTrace();
-        			showNotification(NotificationIcon.error, "Not able to change material");
-        		}
-        		if (!result.isSuccessful()) {
-        			showNotification(NotificationIcon.error, "Not able to change material");
-        		} else {
-        			showNotification(NotificationIcon.plus, "Material changed/created");
-            		toSave = result.material;
-        			if(parent != null) {
-        				parent.refreshMaterialTab();	
-        			}
         		}
 
         	} else {
@@ -509,26 +507,28 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		SynchronousQueue<MaterialResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new InitMaterialCommand(material));
-		
-		MaterialResult result = null;
+		CompletableFuture<MaterialResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			return new InitMaterialCommand(material).execute(appContext);
+		});
+
+		MaterialResult result;
 		try {
-			result = queue.poll(1, TimeUnit.MINUTES);
+			result = future.get(1, TimeUnit.MINUTES);
+			if(result.equals(Boolean.TRUE)) {
+				showNotification(NotificationIcon.plus, "Material changed");
+
+				if(parent != null) {
+					parent.refreshMaterialTab();
+				}
+				init(result.material);
+				AppContext.getEventBus().post(new MaterialChangedEvent());
+			} else {
+				showNotification(NotificationIcon.error, "Not able to change material");
+			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
 			showNotification(NotificationIcon.error, "Not able to change material");
 		}
-		
-		if (!result.isSuccessful()) {
-			showNotification(NotificationIcon.error, "Not able to change material");
-		} else {
-			showNotification(NotificationIcon.plus, "Material changed");
-			if(parent != null) {
-				parent.refreshMaterialTab();	
-			}
-			init(result.material);
-		}
-		AppContext.getEventBus().post(new MaterialChangedEvent());
 	}
 
 	private List<Texture> getAllTexturesSorted() {

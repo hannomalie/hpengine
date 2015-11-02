@@ -5,6 +5,7 @@ import static log.ConsoleLogger.getLogger;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -149,22 +150,18 @@ public class Program extends AbstractProgram implements Reloadable {
 	
 	public void reload() {
 		final Program self = this;
-		
-		SynchronousQueue<Result> queue = renderer.getOpenGLContext().addCommand(new Command<Result>(){
-			@Override
-			public Result execute(AppContext world) {
-				self.unload();
-				self.load();
-				return new Result();
-			}
+
+		CompletableFuture<Boolean> future = renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+			self.unload();
+			self.load();
+			return true;
 		});
-		Result result = null;
 		try {
-			result = queue.poll(5, TimeUnit.MINUTES);
-			if (!result.isSuccessful()) {
-				System.out.println("Program not reloaded");
-			} else {
+			Boolean result = future.get(5, TimeUnit.MINUTES);
+			if (result.equals(Boolean.TRUE)) {
 				System.out.println("Program reloaded");
+			} else {
+				System.out.println("Program not reloaded");
 			}
 		} catch (Exception e1) {
 			System.out.println("Program not reloaded");

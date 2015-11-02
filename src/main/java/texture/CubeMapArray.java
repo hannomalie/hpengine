@@ -26,23 +26,25 @@ public class CubeMapArray {
 	 * @param textureCount the actual number of cubemap textures you want to allocate
 	 */
 	public CubeMapArray(Renderer renderer, int textureCount, int magTextureFilter, int internalFormat) {
-		textureId = GL11.glGenTextures();
-		bind();
+		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+			textureId = GL11.glGenTextures();
+			bind();
 
-		this.renderer = renderer;
-		mipMapCount = EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT;
-		this.internalFormat = internalFormat;
-		GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, textureCount*6);
+			this.renderer = renderer;
+			mipMapCount = EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT;
+			this.internalFormat = internalFormat;
+			GL42.glTexStorage3D(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, mipMapCount, internalFormat, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, textureCount*6);
 
-		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, magTextureFilter);
-		GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MIN_FILTER, magTextureFilter);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+			GL11.glTexParameteri(GL40.GL_TEXTURE_CUBE_MAP_ARRAY, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
 
-        if(Texture.filterRequiresMipmaps(magTextureFilter)) {
-			GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
-		}
+			if(Texture.filterRequiresMipmaps(magTextureFilter)) {
+				GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
+			}
+		});
 	}
 	
 	/**

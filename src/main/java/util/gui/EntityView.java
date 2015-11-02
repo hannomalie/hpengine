@@ -3,6 +3,7 @@ package util.gui;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -94,11 +95,13 @@ public class EntityView extends WebPanel {
 	        
 	        WebButton removeEntityButton = new WebButton("Remove Entity");
 	        removeEntityButton.addActionListener(e -> {
-	        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new RemoveEntityCommand((Entity) entity));
+				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					return new RemoveEntityCommand((Entity) entity).execute(appContext);
+				});
 	    		
 	    		Result result = null;
 	    		try {
-	    			result = queue.poll(1, TimeUnit.MINUTES);
+	    			result = future.get(1, TimeUnit.MINUTES);
 	    		} catch (Exception e1) {
 	    			e1.printStackTrace();
 	    			showNotification(NotificationIcon.error, "Not able to remove entity");

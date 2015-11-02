@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -68,30 +69,24 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
+			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				return AppContext.getInstance().getScene().getAreaLights().remove(light);
+			});
 
-				@Override
-				public Result execute(AppContext world) {
-					AppContext.getInstance().getScene().getAreaLights().remove(light);
-					return new Result();
+			Boolean result;
+			try {
+				result = future.get(1, TimeUnit.MINUTES);
+
+				if(result.equals(Boolean.TRUE)) {
+					showNotification(NotificationIcon.plus, "Light removed");
+				} else {
+					showNotification(NotificationIcon.error, "Not able to remove light");
 				}
-        	});
-    		
-    		Result result = null;
-    		try {
-    			result = queue.poll(1, TimeUnit.MINUTES);
-    		} catch (Exception e1) {
-    			e1.printStackTrace();
-    			showNotification(NotificationIcon.error, "Not able to remove light");
-    		}
-    		
-    		if (!result.isSuccessful()) {
-    			showNotification(NotificationIcon.error, "Not able to remove light");
-    		} else {
-    			showNotification(NotificationIcon.plus, "Light removed");
-    			if(debugFrame != null) { debugFrame.refreshAreaLightsTab(); }
-    		}
-        });
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				showNotification(NotificationIcon.error, "Not able to remove light");
+			}
+		});
 		
 		webComponentPanel.addElement(removeProbeButton);
 	}

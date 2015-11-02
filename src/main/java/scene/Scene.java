@@ -57,17 +57,8 @@ public class Scene implements LifeCycle, Serializable {
 		entities.forEach(entity -> entity.init(appContext));
 		addAll(entities);
 		for (ProbeData data : probes) {
-			appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-				@Override
-				public Result execute(AppContext appContext) {
+			appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
 					appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
-					return new Result() {
-						@Override
-						public boolean isSuccessful() {
-							return true;
-						}
-					};
-				}
 			});
 		}
 		initLights();

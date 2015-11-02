@@ -28,25 +28,27 @@ public class CubeMap extends Texture implements Serializable {
 	
 	public void upload() {
 
-        bind();
+		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
-        {
-            GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
-            GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-            GL11.glTexParameteri (target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        }
+			{
+				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
+				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+				GL11.glTexParameteri (target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+			}
 
 
-        ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(dataList.get(0).length);
+			ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(dataList.get(0).length);
 
-        load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, buffer(perFaceBuffer, dataList.get(1))); //1
-		load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, buffer(perFaceBuffer, dataList.get(0))); //0
-        load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, buffer(perFaceBuffer, dataList.get(2)));
-        load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, buffer(perFaceBuffer, dataList.get(3)));
-        load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, buffer(perFaceBuffer, dataList.get(4)));
-        load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, buffer(perFaceBuffer, dataList.get(5)));
+			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, buffer(perFaceBuffer, dataList.get(1))); //1
+			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, buffer(perFaceBuffer, dataList.get(0))); //0
+			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, buffer(perFaceBuffer, dataList.get(2)));
+			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, buffer(perFaceBuffer, dataList.get(3)));
+			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, buffer(perFaceBuffer, dataList.get(4)));
+			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, buffer(perFaceBuffer, dataList.get(5)));
+		});
 	}
 	
 	public ByteBuffer buffer(ByteBuffer buffer, byte[] values) {

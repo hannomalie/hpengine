@@ -1,5 +1,6 @@
 package renderer;
 
+import com.sun.org.apache.bcel.internal.generic.RET;
 import config.Config;
 import engine.AppContext;
 import engine.TimeStepThread;
@@ -10,11 +11,16 @@ import org.lwjgl.opengl.DisplayMode;
 import renderer.command.Command;
 import renderer.command.Result;
 import renderer.constants.*;
+import shader.ComputeShaderProgram;
+import util.commandqueue.CommandQueue;
+import util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static renderer.constants.GlCap.CULL_FACE;
@@ -22,17 +28,17 @@ import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class OpenGLContext {
 
-    public static String OPENGL_THREAD_NAME;
+    public static String OPENGL_THREAD_NAME = "OpenGLContext";
+
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     private final TimeStepThread openGLThread;
     private Renderer renderer = null;
     private Canvas canvas;
     private boolean attached;
 
-    private static OpenGLContext instance;
-
-    private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
-    private Map<Command<? extends Result<?>>, SynchronousQueue<Result<? extends Object>>> commandQueueMap = new ConcurrentHashMap<>();
-
+    private static volatile OpenGLContext instance;
+    private CommandQueue commandQueue = new CommandQueue();
 
     public static OpenGLContext getInstance() {
         if(instance == null) {
@@ -50,10 +56,11 @@ public class OpenGLContext {
     }
     OpenGLContext(Renderer renderer, Canvas canvas, boolean headless) throws LWJGLException {
 
-        openGLThread = new TimeStepThread("OpenGLContext", 0.0f) {
+        openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
 
             @Override
             public void update(float seconds) {
+                Thread.currentThread().setName(OPENGL_THREAD_NAME);
                 if (!isInitialized()) {
                     try {
                         init(renderer, canvas);
@@ -66,7 +73,7 @@ public class OpenGLContext {
                 }
             }
         };
-        openGLThread.start();
+        executorService.submit(openGLThread);
 
         while(!isInitialized()) {
 
@@ -113,24 +120,9 @@ public class OpenGLContext {
 
     public void update(float seconds) {
         try {
-            executeCommands();
+            commandQueue.executeCommands();
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private void executeCommands() throws Exception {
-        Command command = workQueue.poll();
-        while(command != null) {
-            Result result = command.execute(AppContext.getInstance());
-            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
-            try {
-                queue.offer(result);
-
-            } catch (NullPointerException e) {
-                Logger.getGlobal().info("Got null for command " + command.toString());
-            }
-            command = workQueue.poll();
         }
     }
 
@@ -161,7 +153,7 @@ public class OpenGLContext {
     public void activeTexture(int textureUnitIndex) {
         int textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex);
         if(activeTexture != textureIndexGLInt) {
-            GL13.glActiveTexture(textureIndexGLInt);
+            doWithOpenGLContext(() -> GL13.glActiveTexture(textureIndexGLInt));
         }
     }
     private int getCleanedTextureUnitValue(int textureUnit) {
@@ -248,7 +240,9 @@ public class OpenGLContext {
     }
 
     public void clearColor(float r, float g, float b, float a) {
-        GL11.glClearColor(r, g, b, a);
+        doWithOpenGLContext(() -> {
+            GL11.glClearColor(r, g, b, a);
+        });
     }
 
     public void bindImageTexture(int unit, int textureId, int level, boolean layered, int layer, int access, int internalFormat) {
@@ -257,62 +251,30 @@ public class OpenGLContext {
     }
 
     public int genTextures() {
-        return GL11.glGenTextures();
+        return calculateWithOpenGLContext(() -> {
+            return GL11.glGenTextures();
+        });
     }
 
     public boolean isInitialized() {
         return instance != null;
     }
 
-    private void executeCommands(AppContext appContext) throws Exception {
-        Command command = workQueue.poll();
-        while(command != null) {
-            Result result = command.execute(appContext);
-            SynchronousQueue<Result<?>> queue = commandQueueMap.get(command);
-            try {
-                queue.offer(result);
-
-            } catch (NullPointerException e) {
-                Logger.getGlobal().info("Got null for command " + command.toString());
-            }
-            command = workQueue.poll();
-        }
-    }
-
-    public <OBJECT_TYPE, RESULT_TYPE extends Result<OBJECT_TYPE>> SynchronousQueue<RESULT_TYPE> addCommand(Command<RESULT_TYPE> command) {
-        SynchronousQueue<RESULT_TYPE> queue = new SynchronousQueue<>();
-        commandQueueMap.put(command, (SynchronousQueue<Result<? extends Object>>) queue);
-        workQueue.offer(command);
-        return queue;
-    }
-
     public void doWithOpenGLContext(Runnable runnable) {
         doWithOpenGLContext(runnable, true);
     }
     public void doWithOpenGLContext(Runnable runnable, boolean andBlock) {
-
-        if(util.Util.isOpenGLThread()) {
+        CompletableFuture<Object> future = doWithOpenGLContext((Callable<Object>) () -> {
             runnable.run();
-        } else {
-            SynchronousQueue<Result<Object>> queue = addCommand(new Command<Result<Object>>() {
-                @Override
-                public Result<Object> execute(AppContext appContext) {
-                    runnable.run();
-                    return new Result<Object>(true);
-                }
-            }
-            );
-            if(andBlock) {
-                try {
-                    queue.poll(5, TimeUnit.MINUTES);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+            return new Object();
+        });
+
+        if(andBlock) {
+            future.join();
         }
     }
 
-    public <TYPE> TYPE calculateWithOpenGLContext(Callable<TYPE> callable) {
+    public <RETURN_TYPE> RETURN_TYPE calculateWithOpenGLContext(Callable<RETURN_TYPE> callable) {
         if(util.Util.isOpenGLThread()) {
             try {
                 return callable.call();
@@ -320,26 +282,40 @@ public class OpenGLContext {
                 e.printStackTrace();
             }
         } else {
-            final TYPE[] temp = (TYPE[])new Object[1];
-            SynchronousQueue<Result<Object>> queue = addCommand(new Command<Result<Object>>() {
-                     @Override
-                     public Result<Object> execute(AppContext appContext) {
-                         try {
-                             temp[0] = callable.call();
-                         } catch (Exception e) {
-                             e.printStackTrace();
-                         }
-                         return new Result<Object>(true);
-                     }
-                 }
-            );
+            CompletableFuture<RETURN_TYPE> future = doWithOpenGLContext(callable);
             try {
-                queue.poll(5, TimeUnit.MINUTES);
-                return temp[0];
+                return future.get();
             } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
                 e.printStackTrace();
             }
         }
+
+        return null;
+    }
+
+    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> doWithOpenGLContext(Callable<RETURN_TYPE> callable) {
+
+        if(util.Util.isOpenGLThread()) {
+            try {
+                CompletableFuture<RETURN_TYPE> result = new CompletableFuture();
+                result.complete(callable.call());
+                return result;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            CompletableFuture future = commandQueue.addCommand(new FutureCallable() {
+                                                                   @Override
+                                                                   public RETURN_TYPE execute() throws Exception {
+                                                                       return callable.call();
+                                                                   }
+                                                               }
+            );
+            return future;
+        }
+
         return null;
     }
 

@@ -96,7 +96,7 @@ public class TextureFactory {
 
 //    	loadAllAvailableTextures();
 
-        defaultTexture = getTexture("hp/assets/models/textures/gi_flag.png", true);
+        defaultTexture = getTexture("hp\\assets\\models\\textures\\gi_flag.png", true);
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
     }
     
@@ -449,15 +449,17 @@ public class TextureFactory {
     }
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
-        texture.bind();
-    	if (mipmap) {
-    		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-    		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-    		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-    	}
+        renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+            texture.bind();
+            if (mipmap) {
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+            }
 
-    	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
-    	GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+        });
     }
     public void generateMipMaps(int textureId) {
         generateMipMaps(textureId, GL11.GL_LINEAR_MIPMAP_LINEAR);
@@ -478,10 +480,12 @@ public class TextureFactory {
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        renderer.getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+        renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+            renderer.getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
+            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
+        });
     }
     
     public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {

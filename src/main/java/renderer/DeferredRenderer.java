@@ -23,6 +23,7 @@ import renderer.drawstrategy.DebugDrawStrategy;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.drawstrategy.SimpleDrawStrategy;
+import renderer.fps.FPSCounter;
 import renderer.light.LightFactory;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
@@ -51,6 +52,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
@@ -112,12 +114,12 @@ public class DeferredRenderer implements Renderer {
 	private AppContext appContext;
 	private String currentState = "";
 
-	private ExecutorService renderThread = Executors.newSingleThreadExecutor();
-
 	private TimeStepThread drawThread;
 	private OpenGLContext openGLContext;
+	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
+    private FPSCounter fpsCounter = new FPSCounter();
 
-	public DeferredRenderer(boolean headless) {
+    public DeferredRenderer(boolean headless) {
 		this.headless = headless;
 	}
 
@@ -217,12 +219,14 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = new GBuffer(appContext, this);
+		gBuffer = getOpenGLContext().calculateWithOpenGLContext(() -> new GBuffer(appContext, this));
 
-		setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-		openGLContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+		getOpenGLContext().doWithOpenGLContext(() -> {
+			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
+			openGLContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
-		DeferredRenderer.exitOnGLError("setupGBuffer");
+			DeferredRenderer.exitOnGLError("setupGBuffer");
+		});
 	}
 	
 	private void initIdentityMatrixBuffer() {
@@ -233,7 +237,7 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
         cubeMap = getOpenGLContext().calculateWithOpenGLContext(() -> {
             try {
-                return textureFactory.getCubeMap("hp/assets/textures/skybox.png");
+                return textureFactory.getCubeMap("hp\\assets\\textures\\skybox.png");
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
@@ -247,7 +251,7 @@ public class DeferredRenderer implements Renderer {
 		bilateralBlurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
 		linesProgram = programFactory.getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
-		DeferredRenderer.exitOnGLError("setupShaders");
+//		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
 	@Override
@@ -325,8 +329,7 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		frameCount++;
-
-//		Renderer.exitOnGLError("draw in render");
+		Display.update();
 	}
 
 	private void dumpTimings() {
@@ -456,8 +459,12 @@ public class DeferredRenderer implements Renderer {
 
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
-		Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms" , drawThread.getFpsCounter().getFPS(), drawThread.getFpsCounter().getMsPerFrame(),
-				AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+        fpsCounter.update();
+		getOpenGLContext().doWithOpenGLContext(() -> {
+			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms",
+					fpsCounter.getFPS(), fpsCounter.getMsPerFrame(),
+					AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+		});
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -621,7 +628,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	public float getCurrentFPS() {
-		return drawThread.getFpsCounter().getFPS();
+		return getOpenGLContext().getDrawThread().getFpsCounter().getFPS();
 	}
 
 	public int getFrameCount() {
@@ -636,23 +643,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public String getCurrentState() {
 		return currentState;
-	}
-
-	@Override
-	public void endFrame() {
-		for (Entity entity : appContext.getScene().getAreaLights()) {
-			entity.setHasMoved(false);
-		}
-
-		appContext.getScene().getDirectionalLight().setHasMoved(false);
-		boolean pointLightMovePosted = false;
-		for (Entity entity : appContext.getScene().getPointLights()) {
-			if(!pointLightMovePosted && entity.hasMoved()) {
-				AppContext.getEventBus().post(new PointLightMovedEvent());
-				pointLightMovePosted = true;
-			}
-			entity.setHasMoved(false);
-		}
 	}
 
 	private void setCurrentState(String newState) {
@@ -687,5 +677,36 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public OpenGLContext getOpenGLContext() {
 		return openGLContext;
+	}
+
+    @Override
+    public void endFrame() {
+        for (Entity entity : appContext.getScene().getAreaLights()) {
+            entity.setHasMoved(false);
+        }
+
+        appContext.getScene().getDirectionalLight().setHasMoved(false);
+        boolean pointLightMovePosted = false;
+        for (Entity entity : appContext.getScene().getPointLights()) {
+            if(!pointLightMovePosted && entity.hasMoved()) {
+                AppContext.getEventBus().post(new PointLightMovedEvent());
+                pointLightMovePosted = true;
+            }
+            entity.setHasMoved(false);
+        }
+
+        GPUProfiler.endFrame();
+        frameStarted.getAndDecrement();
+    }
+
+	@Override
+	public void startFrame() {
+		frameStarted.getAndIncrement();
+        GPUProfiler.startFrame();
+	}
+
+	@Override
+	public boolean isFrameFinished() {
+        return frameStarted.get() == 0;
 	}
 }

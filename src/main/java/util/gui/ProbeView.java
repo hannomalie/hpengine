@@ -27,6 +27,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -65,28 +66,22 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-        	SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-
-				@Override
-				public Result execute(AppContext world) {
-					world.getRenderer().getEnvironmentProbeFactory().remove(probe);
-					return new Result(true);
-				}
-        	});
+			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				return AppContext.getInstance().getRenderer().getEnvironmentProbeFactory().remove(probe);
+			});
     		
-    		Result result = null;
+    		Boolean result = null;
     		try {
-    			result = queue.poll(1, TimeUnit.MINUTES);
+    			result = future.get(1, TimeUnit.MINUTES);
+				if(result.equals(Boolean.TRUE)) {
+					showNotification(NotificationIcon.plus, "Probe removed");
+					if(debugFrame != null) { debugFrame.refreshProbeTab(); }
+				} else {
+					showNotification(NotificationIcon.error, "Not able to remove probe");
+				}
     		} catch (Exception e1) {
     			e1.printStackTrace();
-    			showNotification(NotificationIcon.error, "Not able to remove probe");
-    		}
-    		
-    		if (!result.isSuccessful()) {
-    			showNotification(NotificationIcon.error, "Not able to remove probe");
-    		} else {
-    			showNotification(NotificationIcon.plus, "Probe removed");
-    			if(debugFrame != null) { debugFrame.refreshProbeTab(); }
+				showNotification(NotificationIcon.error, "Not able to remove probe");
     		}
         });
 
@@ -110,12 +105,8 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-					@Override
-					public Result execute(AppContext appContext) {
-						appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();
-						return new Result();
-					}
+				appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();
 				});
 			}
 		});

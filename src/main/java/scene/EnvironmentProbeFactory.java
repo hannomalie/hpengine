@@ -62,13 +62,6 @@ public class EnvironmentProbeFactory {
 		this.environmentMapsArray1 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
 		this.environmentMapsArray2 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
 		this.environmentMapsArray3 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
-
-		int errorValue = GL11.glGetError();
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR: " + errorString);
-		}
-
 		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
 		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
@@ -282,8 +275,8 @@ public class EnvironmentProbeFactory {
 		}).collect(Collectors.toList());
 	}
 
-	public void remove(EnvironmentProbe probe) {
-		probes.remove(probe);
+	public boolean remove(EnvironmentProbe probe) {
+		return probes.remove(probe);
 	}
 
 	public CubeMapArrayRenderTarget getCubeMapArrayRenderTarget() {

@@ -86,6 +86,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -326,15 +327,12 @@ public class DebugFrame {
 				new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-							@Override
-							public Result execute(AppContext world) {
-								world.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(world);
-								return new Result() { @Override public boolean isSuccessful() { return true; } };
-							}
+						CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+							appContext.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(appContext);
+							return new Result<>(true);
 						});
 
-						return queue.poll(5, TimeUnit.MINUTES);
+						return future.get(5, TimeUnit.MINUTES);
 					}
 
 					@Override
@@ -352,21 +350,19 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-					@Override
-					public Result execute(AppContext world) {
-						appContext.getScene().addPointLight(world.getRenderer().getLightFactory().getPointLight(50));
-						return new Result() { @Override public boolean isSuccessful() { return true; } };
-					}});
+				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					appContext.getScene().addPointLight(appContext.getRenderer().getLightFactory().getPointLight(50));
+					return new Result(true);
+				});
         		
         		Result result = null;
 				try {
-					result = queue.poll(5, TimeUnit.MINUTES);
+					result = future.get(5, TimeUnit.SECONDS);
 				} catch (Exception e1) {
 					showError("Failed to add light");
 				}
 				
-				if (!result.isSuccessful()) {
+				if (result == null || !result.isSuccessful()) {
 					showError("Failed to add light");
 				} else {
 					showSuccess("Added light");
@@ -380,16 +376,14 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-					@Override
-					public Result execute(AppContext world) {
-						appContext.getScene().addTubeLight(world.getRenderer().getLightFactory().getTubeLight());
-						return new Result() { @Override public boolean isSuccessful() { return true; } };
-					}});
+				CompletableFuture<Result<Boolean>> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					appContext.getScene().addTubeLight(appContext.getRenderer().getLightFactory().getTubeLight());
+					return new Result<>(true);
+				});
         		
         		Result result = null;
 				try {
-					result = queue.poll(5, TimeUnit.MINUTES);
+					result = future.get(5, TimeUnit.MINUTES);
 				} catch (Exception e1) {
 					showError("Failed to add light");
 				}
@@ -408,16 +402,14 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-        		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-					@Override
-					public Result execute(AppContext world) {
-						appContext.getScene().getAreaLights().add(world.getRenderer().getLightFactory().getAreaLight(50,50,20));
-						return new Result() { @Override public boolean isSuccessful() { return true; } };
-					}});
+				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					appContext.getScene().getAreaLights().add(appContext.getRenderer().getLightFactory().getAreaLight(50, 50, 20));
+					return new Result(true);
+				});
         		
         		Result result = null;
 				try {
-					result = queue.poll(5, TimeUnit.MINUTES);
+					result = future.get(5, TimeUnit.MINUTES);
 				} catch (Exception e1) {
 					showError("Failed to add light");
 				}
@@ -456,16 +448,14 @@ public class DebugFrame {
         
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-    		SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-				@Override
-				public Result execute(AppContext world) {
-					GPUProfiler.reset();
-					return new Result();
-				}});
+			CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				GPUProfiler.reset();
+				return new Result(true);
+			});
     		
     		Result result = null;
 			try {
-				result = queue.poll(5, TimeUnit.MINUTES);
+				result = future.get(5, TimeUnit.MINUTES);
 			} catch (Exception e1) {
 				showError("Failed to reset profiler");
 			}
@@ -491,18 +481,14 @@ public class DebugFrame {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
-
-					@Override
-					public Result execute(AppContext world) {
-						System.out.println(chosenFile.getName());
-						world.getRenderer().getMaterialFactory().get(chosenFile.getName());
-						return new Result();
-					}
+				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					System.out.println(chosenFile.getName());
+					appContext.getRenderer().getMaterialFactory().get(chosenFile.getName());
+					return new Result(true);
 				});
 				Result result = null;
 				try {
-					result = queue.poll(5, TimeUnit.SECONDS);
+					result = future.get(5, TimeUnit.SECONDS);
 				} catch (Exception e1) {
 					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 				}
@@ -524,11 +510,12 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddTextureCommand(chosenFile.getPath()));
-					
+					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+						return new AddTextureCommand(chosenFile.getPath()).execute(appContext);
+					});
 					TextureResult result = null;
 					try {
-						result = queue.poll(5, TimeUnit.MINUTES);
+						result = future.get(5, TimeUnit.MINUTES);
 					} catch (Exception e1) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					}
@@ -550,11 +537,12 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddTextureCommand(chosenFile.getPath(), true));
-					
+					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+						return new AddTextureCommand(chosenFile.getPath(), true).execute(appContext);
+					});
 					TextureResult result = null;
 					try {
-						result = queue.poll(5, TimeUnit.MINUTES);
+						result = future.get(5, TimeUnit.MINUTES);
 					} catch (Exception e1) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					}
@@ -578,11 +566,13 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					SynchronousQueue<TextureResult> queue = appContext.getRenderer().getOpenGLContext().addCommand(new AddCubeMapCommand(chosenFile.getPath()));
+					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+						return new AddCubeMapCommand(chosenFile.getPath()).execute(appContext);
+					});
 					
 					TextureResult result = null;
 					try {
-						result = queue.poll(5, TimeUnit.MINUTES);
+						result = future.get(5, TimeUnit.MINUTES);
 					} catch (Exception e1) {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					}
@@ -705,22 +695,17 @@ public class DebugFrame {
 //			toggleFileReload.setSelected(FileMonitor.getInstance().running);
 //		});
 		toggleProfiler.addActionListener( e -> {
-			
-			SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>(){
 
-				@Override
-				public Result execute(AppContext world) {
-					GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
-					return new Result() { @Override public boolean isSuccessful() { return true; } };
-				}
+			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
+				return true;
 			});
-			Result result = null;
 			try {
-				result = queue.poll(5, TimeUnit.MINUTES);
-				if (!result.isSuccessful()) {
-					showError("Profiling can't be switched");
-				} else {
+				Boolean result = future.get(5, TimeUnit.MINUTES);
+				if (result.equals(Boolean.TRUE)) {
 					showSuccess("Profiling switched");
+				} else {
+					showError("Profiling not switched");
 				}
 			} catch (Exception e1) {
 				showError("Profiling can't be switched");
@@ -728,22 +713,18 @@ public class DebugFrame {
 			
 		});
 		toggleProfilerPrint.addActionListener( e -> {
-			
-			SynchronousQueue<Result> queue = appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>(){
 
-				@Override
-				public Result execute(AppContext world) {
-					GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
-					return new Result();
-				}
+			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+				return true;
 			});
-			Result result = null;
+			Boolean result = null;
 			try {
-				result = queue.poll(5, TimeUnit.MINUTES);
-				if (!result.isSuccessful()) {
-					showError("Printing can't be switched");
-				} else {
+				result = future.get(5, TimeUnit.MINUTES);
+				if (result.equals(Boolean.TRUE)) {
 					showSuccess("Printing switched");
+				} else {
+					showError("Printing can't be switched");
 				}
 			} catch (Exception e1) {
 				showError("Profiling can't be switched");
@@ -770,7 +751,9 @@ public class DebugFrame {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-			appContext.getRenderer().getOpenGLContext().addCommand(new DumpAveragesCommand(1000));
+			appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					new DumpAveragesCommand(1000).execute(appContext);
+			});
 		});
 		
 		toggleParallax.addActionListener( e -> {

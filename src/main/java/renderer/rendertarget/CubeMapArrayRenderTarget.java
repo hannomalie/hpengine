@@ -30,30 +30,32 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		}
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
-		
-		framebufferLocation = GL30.glGenFramebuffers();
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-		IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 
-		for (int i = 0; i < colorBufferCount; i++) {
-			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, cubeMapArrays.get(i).getTextureID(), 0);
-		    scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
-			renderedTextures[i] = cubeMapArrays.get(i).getTextureID();
-		}
-		GL20.glDrawBuffers(scratchBuffer);
+		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			framebufferLocation = GL30.glGenFramebuffers();
+			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);
 
-        CubeMapArray depthCubeMapArray = new CubeMapArray(AppContext.getInstance().getRenderer(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
-        int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
-        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
-		depthbufferLocation = depthCubeMapArray.getTextureID();
+			for (int i = 0; i < colorBufferCount; i++) {
+				GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, cubeMapArrays.get(i).getTextureID(), 0);
+				scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
+				renderedTextures[i] = cubeMapArrays.get(i).getTextureID();
+			}
+			GL20.glDrawBuffers(scratchBuffer);
 
-		//TODO: Make this more pretty
-		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-		if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
-			System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
-			System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
-			System.exit(0);
-		}
+			CubeMapArray depthCubeMapArray = new CubeMapArray(AppContext.getInstance().getRenderer(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
+			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
+			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
+			depthbufferLocation = depthCubeMapArray.getTextureID();
+
+			//TODO: Make this more pretty
+			int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
+			if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
+				System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
+				System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
+				System.exit(0);
+			}
+		});
 	}
 
 	public void setCubeMapFace(int cubeMapIndex, int faceIndex) {

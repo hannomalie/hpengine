@@ -37,61 +37,64 @@ public class RenderTarget {
 
     public RenderTarget(RenderTargetBuilder renderTargetBuilder) {
 
-        width = renderTargetBuilder.width;
-        height = renderTargetBuilder.height;
-        colorAttachments = renderTargetBuilder.colorAttachments;
-        useDepthBuffer = renderTargetBuilder.useDepthBuffer;
+        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+            width = renderTargetBuilder.width;
+            height = renderTargetBuilder.height;
+            colorAttachments = renderTargetBuilder.colorAttachments;
+            useDepthBuffer = renderTargetBuilder.useDepthBuffer;
 
-        renderedTextures = new int[colorAttachments.size()];
-        framebufferLocation = GL30.glGenFramebuffers();
+            renderedTextures = new int[colorAttachments.size()];
+            framebufferLocation = GL30.glGenFramebuffers();
 
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 
-        scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
+            scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
-        for (int i = 0; i < colorAttachments.size(); i++) {
-            ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
+            for (int i = 0; i < colorAttachments.size(); i++) {
+                ColorAttachmentDefinition currentAttachment = colorAttachments.get(i);
 
-            int renderedTextureTemp = GL11.glGenTextures();
+                int renderedTextureTemp = GL11.glGenTextures();
 
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
+                AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
 
-            FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
-            float[] borderColors = new float[]{0, 0, 0, 1};
-            borderColorBuffer.put(borderColors);
-            borderColorBuffer.rewind();
-            GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
-            GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
-            scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0 + i);
-            renderedTextures[i] = renderedTextureTemp;
-        }
-        GL20.glDrawBuffers(scratchBuffer);
-
-        if (renderTargetBuilder.useDepthBuffer) {
-            depthbufferLocation = GL30.glGenRenderbuffers();
-            GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
-            GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
-            GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
-        }
-
-        if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
-            System.out.println("RenderTarget fucked up");
-            if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-                System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-            } else if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
-                System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+                FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
+                float[] borderColors = new float[]{0, 0, 0, 1};
+                borderColorBuffer.put(borderColors);
+                borderColorBuffer.rewind();
+                GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
+                GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
+                scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0 + i);
+                renderedTextures[i] = renderedTextureTemp;
             }
-            new RuntimeException().printStackTrace();
-            System.exit(0);
-        }
+            GL20.glDrawBuffers(scratchBuffer);
+
+            if (renderTargetBuilder.useDepthBuffer) {
+                depthbufferLocation = GL30.glGenRenderbuffers();
+                GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthbufferLocation);
+                GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
+                GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthbufferLocation);
+            }
+
+            if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
+                System.out.println("RenderTarget fucked up");
+                if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+                } else if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+                }
+                new RuntimeException().printStackTrace();
+                System.exit(0);
+            }
+        });
+
         AppContext.getInstance().getRenderer().getOpenGLContext().clearColor(clearR, clearG, clearB, clearA);
     }
 
