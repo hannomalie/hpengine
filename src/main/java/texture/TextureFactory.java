@@ -155,7 +155,7 @@ public class TextureFactory {
     }
 
     public static int getTextureId() {
-        return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> GL11.glGenTextures());
+        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> GL11.glGenTextures());
     }
 
     private boolean textureLoaded(String resourceName) {
@@ -473,14 +473,14 @@ public class TextureFactory {
     }
     
     public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
+        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;
     }
     
     public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
     	int copyTextureId = getTextureId();
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
+        OpenGLContext.getInstance().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -523,7 +523,7 @@ public class TextureFactory {
 
     public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
         int textureId = createTextureID();
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureId);
+        OpenGLContext.getInstance().bindTexture(target, textureId);
 
         setupTextureParameters(target);
 

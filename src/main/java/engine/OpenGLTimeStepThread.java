@@ -2,6 +2,7 @@ package engine;
 
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
 
 import java.util.concurrent.Callable;
 
@@ -14,7 +15,7 @@ public abstract class OpenGLTimeStepThread extends TimeStepThread {
     private String name;
 
     public OpenGLTimeStepThread(String name) {
-        this(name, AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(
+        this(name, OpenGLContext.getInstance().calculateWithOpenGLContext(
                 () -> new SharedDrawable(Display.getDrawable())
         ));
     }

@@ -5,6 +5,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.Renderer;
 import renderer.command.Command;
@@ -157,7 +158,7 @@ public class VertexBuffer {
 //        });
 //        queue.poll();
 
-		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			vertexBuffer = GL15.glGenBuffers();
 			vertexArray = GL30.glGenVertexArrays();
 

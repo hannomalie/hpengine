@@ -1,13 +1,13 @@
 package shader;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-
-import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
+import renderer.OpenGLContext;
+
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 public class StorageBuffer {
 
@@ -23,7 +23,7 @@ public class StorageBuffer {
     }
 
     public StorageBuffer(FloatBuffer data) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             id = GL15.glGenBuffers();
             buffer(data);
             unbind();
@@ -51,7 +51,7 @@ public class StorageBuffer {
      */
     public FloatBuffer getValues() {
         final FloatBuffer[] result = new FloatBuffer[1];
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             bind();
             buffer = GL15.glMapBuffer(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_READ_ONLY, null);
             result[0] = buffer.asFloatBuffer(); // TODO: As read-only?
@@ -87,7 +87,7 @@ public class StorageBuffer {
      * @throws IndexOutOfBoundsException
      */
     public void putValues(int offset, FloatBuffer values) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             bind();
             if (offset * 4 + values.capacity() * 4 > size) {
                 throw new IndexOutOfBoundsException(String.format("Can't put values into shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset * 4, values.capacity() * 4));
@@ -130,7 +130,7 @@ public class StorageBuffer {
     }
 
     public void put(int offset, Bufferable... bufferable) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             tempBuffer = BufferUtils.createFloatBuffer(bufferable[0].getSizePerObject() * bufferable.length);
             for (int i = 0; i < bufferable.length; i++) {
                 Bufferable currentBufferable = bufferable[i];

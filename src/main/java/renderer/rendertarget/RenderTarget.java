@@ -7,6 +7,7 @@ import java.nio.IntBuffer;
 import java.util.List;
 
 import engine.AppContext;
+import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
 import util.Util;
 
@@ -37,7 +38,7 @@ public class RenderTarget {
 
     public RenderTarget(RenderTargetBuilder renderTargetBuilder) {
 
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
             colorAttachments = renderTargetBuilder.colorAttachments;
@@ -55,7 +56,7 @@ public class RenderTarget {
 
                 int renderedTextureTemp = GL11.glGenTextures();
 
-                AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+                OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -95,7 +96,7 @@ public class RenderTarget {
             }
         });
 
-        AppContext.getInstance().getRenderer().getOpenGLContext().clearColor(clearR, clearG, clearB, clearA);
+        OpenGLContext.getInstance().clearColor(clearR, clearG, clearB, clearA);
     }
 
     public void resizeTextures() {
@@ -106,7 +107,7 @@ public class RenderTarget {
 
             int renderedTextureTemp = renderedTextures[i];
 
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+            OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -132,9 +133,9 @@ public class RenderTarget {
 
     public void use(boolean clear) {
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
-        AppContext.getInstance().getRenderer().getOpenGLContext().viewPort(0, 0, width, height);
+        OpenGLContext.getInstance().viewPort(0, 0, width, height);
         if (clear) {
-            AppContext.getInstance().getRenderer().getOpenGLContext().clearDepthAndColorBuffer();
+            OpenGLContext.getInstance().clearDepthAndColorBuffer();
         }
     }
 

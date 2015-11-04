@@ -15,6 +15,7 @@ import com.alee.managers.notification.WebNotificationPopup;
 import engine.AppContext;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
 import renderer.command.Result;
 import renderer.command.Command;
 import scene.EnvironmentProbe;
@@ -66,7 +67,7 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 				return AppContext.getInstance().getRenderer().getEnvironmentProbeFactory().remove(probe);
 			});
     		
@@ -105,7 +106,7 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();
 				});
 			}

@@ -250,8 +250,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         gBuffer.getLightAccumulationBuffer().use(true);
 //		laBuffer.resizeTextures();
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
-        AppContext.getInstance().getRenderer().getOpenGLContext().clearColor(0, 0, 0, 0);
-        AppContext.getInstance().getRenderer().getOpenGLContext().clearColorBuffer();
+        OpenGLContext.getInstance().clearColor(0, 0, 0, 0);
+        OpenGLContext.getInstance().clearColorBuffer();
 
         GPUProfiler.start("Activate GBuffer textures");
         openGLContext.bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -445,7 +445,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //			} catch (IOException e) {
 //				e.printStackTrace();
 //			}
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(9, GlTextureTarget.TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
+            OpenGLContext.getInstance().bindTexture(9, GlTextureTarget.TEXTURE_2D, renderer.getLightFactory().getDepthMapForAreaLight(areaLight));
             renderer.getFullscreenBuffer().draw();
 //			areaLight.getVertexBuffer().drawDebug();
         }
@@ -456,9 +456,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private void doInstantRadiosity(DirectionalLight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
         if(Config.useInstantRadiosity) {
             GPUProfiler.start("Instant Radiosity");
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(7, TEXTURE_2D, directionalLight.getShadowMapWorldPositionId());
-            AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(8, TEXTURE_2D, directionalLight.getShadowMapColorMapId());
+            OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, directionalLight.getShadowMapWorldPositionId());
+            OpenGLContext.getInstance().bindTexture(8, TEXTURE_2D, directionalLight.getShadowMapColorMapId());
             instantRadiosityProgram.use();
             instantRadiosityProgram.setUniform("screenWidth", (float) Config.WIDTH);
             instantRadiosityProgram.setUniform("screenHeight", (float) Config.HEIGHT);
@@ -478,11 +478,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
         GPUProfiler.start("Scattering and AO");
         OpenGLContext.getInstance().disable(DEPTH_TEST);
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
         renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind(8);
 
         gBuffer.getHalfScreenBuffer().use(true);
@@ -512,19 +512,19 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
         RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
 
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
+        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
+        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
+        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        OpenGLContext.getInstance().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
+        OpenGLContext.getInstance().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
         renderer.getEnvironmentMap().bind(6);
 //        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //        reflectionBuffer.getRenderedTexture(0);
         renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(3).bind(8);
         renderer.getEnvironmentMap().bind(9);
         renderer.getEnvironmentProbeFactory().getEnvironmentMapsArray(0).bind(10);
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
+        OpenGLContext.getInstance().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
 
         int copyTextureId = GL11.glGenTextures();
         OpenGLContext.getInstance().bindTexture(11, TEXTURE_2D, copyTextureId);

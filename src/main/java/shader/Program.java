@@ -71,7 +71,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			clearUniforms();
 			setId(GL20.glCreateProgram());
 

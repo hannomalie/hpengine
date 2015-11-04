@@ -1,11 +1,11 @@
 package texture;
 
-import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.EXTTextureSRGB;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
+import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
 
 import java.io.*;
@@ -28,7 +28,7 @@ public class CubeMap extends Texture implements Serializable {
 	
 	public void upload() {
 
-		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
 			{
@@ -147,6 +147,6 @@ public class CubeMap extends Texture implements Serializable {
 	}
 
 	public void bind(int unit) {
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
+		OpenGLContext.getInstance().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
 	}
 }

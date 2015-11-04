@@ -15,6 +15,7 @@ import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.RemoveEntityCommand;
@@ -95,7 +96,7 @@ public class EntityView extends WebPanel {
 	        
 	        WebButton removeEntityButton = new WebButton("Remove Entity");
 	        removeEntityButton.addActionListener(e -> {
-				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					return new RemoveEntityCommand((Entity) entity).execute(appContext);
 				});
 	    		

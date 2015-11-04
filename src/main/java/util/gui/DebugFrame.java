@@ -44,6 +44,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
 import renderer.environmentsampler.EnvironmentSampler;
 import renderer.drawstrategy.GBuffer;
 import renderer.command.Result;
@@ -327,7 +328,7 @@ public class DebugFrame {
 				new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+						CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 							appContext.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(appContext);
 							return new Result<>(true);
 						});
@@ -350,7 +351,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					appContext.getScene().addPointLight(appContext.getRenderer().getLightFactory().getPointLight(50));
 					return new Result(true);
 				});
@@ -376,7 +377,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result<Boolean>> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Result<Boolean>> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					appContext.getScene().addTubeLight(appContext.getRenderer().getLightFactory().getTubeLight());
 					return new Result<>(true);
 				});
@@ -402,7 +403,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					appContext.getScene().getAreaLights().add(appContext.getRenderer().getLightFactory().getAreaLight(50, 50, 20));
 					return new Result(true);
 				});
@@ -448,7 +449,7 @@ public class DebugFrame {
         
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-			CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 				GPUProfiler.reset();
 				return new Result(true);
 			});
@@ -481,7 +482,7 @@ public class DebugFrame {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				CompletableFuture<Result> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					System.out.println(chosenFile.getName());
 					appContext.getRenderer().getMaterialFactory().get(chosenFile.getName());
 					return new Result(true);
@@ -510,7 +511,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 						return new AddTextureCommand(chosenFile.getPath()).execute(appContext);
 					});
 					TextureResult result = null;
@@ -537,7 +538,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 						return new AddTextureCommand(chosenFile.getPath(), true).execute(appContext);
 					});
 					TextureResult result = null;
@@ -566,7 +567,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 						return new AddCubeMapCommand(chosenFile.getPath()).execute(appContext);
 					});
 					
@@ -696,7 +697,7 @@ public class DebugFrame {
 //		});
 		toggleProfiler.addActionListener( e -> {
 
-			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
 				return true;
 			});
@@ -714,7 +715,7 @@ public class DebugFrame {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 				GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
 				return true;
 			});
@@ -751,7 +752,7 @@ public class DebugFrame {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-			appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					new DumpAveragesCommand(1000).execute(appContext);
 			});
 		});
@@ -840,7 +841,7 @@ public class DebugFrame {
 		});
 //		toggleVSync.addActionListener(e -> {
 //			Config.LOCK_FPS = !Config.LOCK_FPS;
-//			appContext.getRenderer().getOpenGLContext().addCommand(new Command<Result>() {
+//			OpenGLContext.getInstance().addCommand(new Command<Result>() {
 //				@Override
 //				public Result execute(AppContext appContext) {
 //					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;

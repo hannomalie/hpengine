@@ -10,6 +10,7 @@ import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -57,7 +58,7 @@ public class Scene implements LifeCycle, Serializable {
 		entities.forEach(entity -> entity.init(appContext));
 		addAll(entities);
 		for (ProbeData data : probes) {
-			appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
 			});
 		}

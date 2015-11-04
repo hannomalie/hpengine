@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.CullMode;
 import renderer.material.Material;
@@ -166,10 +167,10 @@ public class DirectionalLight extends Entity {
 	public void drawShadowMap(Octree octree) {
 		if(!isInitialized()) { return; }
 		if(!needsShadowMapRedraw) { return; }
-		appContext.getRenderer().getOpenGLContext().depthMask(true);
-		appContext.getRenderer().getOpenGLContext().enable(DEPTH_TEST);
-		appContext.getRenderer().getOpenGLContext().cullFace(FRONT);
-		appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
+		OpenGLContext.getInstance().depthMask(true);
+		OpenGLContext.getInstance().enable(DEPTH_TEST);
+		OpenGLContext.getInstance().cullFace(FRONT);
+		OpenGLContext.getInstance().enable(CULL_FACE);
 		
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);
@@ -181,9 +182,9 @@ public class DirectionalLight extends Entity {
 			e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 
 				if (modelComponent.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-					appContext.getRenderer().getOpenGLContext().disable(CULL_FACE);
+					OpenGLContext.getInstance().disable(CULL_FACE);
 				} else {
-					appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
+					OpenGLContext.getInstance().enable(CULL_FACE);
 				}
 				directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
 				modelComponent.getMaterial().setTexturesActive(directionalShadowPassProgram);
@@ -193,7 +194,7 @@ public class DirectionalLight extends Entity {
 				modelComponent.getVertexBuffer().draw();
 			});
 		}
-		appContext.getRenderer().getOpenGLContext().enable(CULL_FACE);
+		OpenGLContext.getInstance().enable(CULL_FACE);
 		setNeedsShadowMapRedraw(false);
 	}
 

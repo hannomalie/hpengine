@@ -113,7 +113,6 @@ public class DeferredRenderer implements Renderer {
 	private AppContext appContext;
 	private String currentState = "";
 
-	private OpenGLContext openGLContext;
 	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
 
@@ -187,9 +186,9 @@ public class DeferredRenderer implements Renderer {
 //				frame.setVisible(true);
 				frame.setVisible(false);
 				Display.setParent(canvas);
-//				openGLContext.attach(canvas);
+//				OpenGLContext.getInstance().attach(canvas);
 			}
-			openGLContext = new OpenGLContext(this, headless);
+            new OpenGLContext(headless);
 
 		} catch (LWJGLException e) {
 			e.printStackTrace();
@@ -217,11 +216,11 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = getOpenGLContext().calculateWithOpenGLContext(() -> new GBuffer(appContext, this));
+		gBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new GBuffer(appContext, this));
 
-		getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
-			openGLContext.enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+			OpenGLContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			DeferredRenderer.exitOnGLError("setupGBuffer");
 		});
@@ -233,7 +232,7 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
-        cubeMap = getOpenGLContext().calculateWithOpenGLContext(() -> {
+        cubeMap = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
             try {
                 return textureFactory.getCubeMap("hp\\assets\\textures\\skybox.png");
             } catch (IOException e1) {
@@ -241,7 +240,7 @@ public class DeferredRenderer implements Renderer {
             }
             return null;
         });
-        openGLContext.activeTexture(0);
+        OpenGLContext.getInstance().activeTexture(0);
         textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
 
 		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
@@ -295,11 +294,11 @@ public class DeferredRenderer implements Renderer {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
 
-//			int faceView = getOpenGLContext().genTextures();
+//			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(0));
-//			faceView = getOpenGLContext().genTextures();
+//			faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayFront(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
@@ -307,7 +306,7 @@ public class DeferredRenderer implements Renderer {
 
             int[] faceViews = new int[6];
             for(int i = 0; i < 6; i++) {
-                faceViews[i] = getOpenGLContext().genTextures();
+                faceViews[i] = OpenGLContext.getInstance().genTextures();
                 GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getCubemapArrayRenderTarget().getDepthBufferTexture(),
 						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
 				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
@@ -348,10 +347,10 @@ public class DeferredRenderer implements Renderer {
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-		openGLContext.disable(GlCap.DEPTH_TEST);
+        OpenGLContext.getInstance().disable(GlCap.DEPTH_TEST);
 
-		openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
-		openGLContext.bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
+		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+		OpenGLContext.getInstance().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}
@@ -360,7 +359,7 @@ public class DeferredRenderer implements Renderer {
 	public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
 		GPUProfiler.start("BLURRRRRRR");
 		int copyTextureId = GL11.glGenTextures();
-		getOpenGLContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
 //		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
@@ -380,7 +379,7 @@ public class DeferredRenderer implements Renderer {
 		float scaleForShaderY = (float) (Config.HEIGHT / height);
 		// TODO: Reset texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
-			getOpenGLContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
@@ -389,7 +388,7 @@ public class DeferredRenderer implements Renderer {
 		fullScreenTarget.use(false);
 		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
 
-		openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		blurProgram.use();
 		blurProgram.setUniform("mipmap", mipmap);
@@ -403,7 +402,7 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
 		int copyTextureId = GL11.glGenTextures();
-		openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 		
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -416,7 +415,7 @@ public class DeferredRenderer implements Renderer {
 		float scaleForShaderX = (float) (Config.WIDTH / width);
 		float scaleForShaderY = (float) (Config.HEIGHT / height);
 		if(upscaleToFullscreen) {
-			openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
@@ -425,7 +424,7 @@ public class DeferredRenderer implements Renderer {
 		fullScreenTarget.use(false);
 		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
 
-		openGLContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		bilateralBlurProgram.use();
 		bilateralBlurProgram.setUniform("scaleX", scaleForShaderX);
@@ -445,7 +444,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private void destroyOpenGL() {
-		openGLContext.getDrawThread().stopRequested = true;
+		OpenGLContext.getInstance().getDrawThread().stopRequested = true;
         try {
             Display.destroy();
         } catch (IllegalStateException e) {
@@ -458,7 +457,7 @@ public class DeferredRenderer implements Renderer {
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
         fpsCounter.update();
-		getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms --- Update %03.0f fps | %03.0f ms",
 					fpsCounter.getFPS(), fpsCounter.getMsPerFrame(),
 					AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
@@ -478,7 +477,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             if(IGNORE_GL_ERRORS) { return; }
             int errorValue = GL11.glGetError();
 
@@ -626,7 +625,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	public float getCurrentFPS() {
-		return getOpenGLContext().getDrawThread().getFpsCounter().getFPS();
+        return OpenGLContext.getInstance().getDrawThread().getFpsCounter().getFPS();
 	}
 
 	public int getFrameCount() {
@@ -670,11 +669,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public VertexBuffer getFullscreenBuffer() {
 		return fullscreenBuffer;
-	}
-
-	@Override
-	public OpenGLContext getOpenGLContext() {
-		return openGLContext;
 	}
 
     @Override

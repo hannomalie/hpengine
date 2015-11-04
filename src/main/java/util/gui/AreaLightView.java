@@ -12,6 +12,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import engine.AppContext;
+import renderer.OpenGLContext;
 import renderer.command.Result;
 import renderer.command.Command;
 import renderer.light.AreaLight;
@@ -69,7 +70,7 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 				return AppContext.getInstance().getScene().getAreaLights().remove(light);
 			});
 

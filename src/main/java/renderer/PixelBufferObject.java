@@ -39,7 +39,7 @@ public class PixelBufferObject {
 	
 	public void readPixelsFromTexture(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type) {
 		bind();
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureId);
+        OpenGLContext.getInstance().bindTexture(target, textureId);
 		glGetTexImage(target.glTarget, mipmapLevel, format, type, buffer);
 		unbind();
 	}

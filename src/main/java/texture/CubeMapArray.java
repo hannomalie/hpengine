@@ -60,17 +60,17 @@ public class CubeMapArray {
 	}
 
 	public void bind() {
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+		OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 
 	public void bind(int unit) {
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+		OpenGLContext.getInstance().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 	public void bind(int layer, int unit) {
 		bind(layer, unit, 0);
 	}
 	public void bind(int layer, int unit, int level) {
-		AppContext.getInstance().getRenderer().getOpenGLContext().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
+		OpenGLContext.getInstance().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
 	}
 
 	public int getTextureID() {

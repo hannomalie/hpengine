@@ -23,6 +23,7 @@ import event.MaterialChangedEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
 import renderer.command.GetMaterialCommand;
 import renderer.command.InitMaterialCommand;
 import renderer.command.InitMaterialCommand.MaterialResult;
@@ -80,7 +81,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-				CompletableFuture<MaterialResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					return new GetMaterialCommand(newInfo).execute(appContext);
 				});
 				MaterialResult result;
@@ -507,7 +508,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		CompletableFuture<MaterialResult> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+		CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			return new InitMaterialCommand(material).execute(appContext);
 		});
 

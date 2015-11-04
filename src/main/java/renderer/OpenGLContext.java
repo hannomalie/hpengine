@@ -40,14 +40,14 @@ public class OpenGLContext {
         return instance;
     }
 
-    OpenGLContext(Renderer renderer) throws LWJGLException {
-        this(renderer, false);
+    public OpenGLContext() throws LWJGLException {
+        this(false);
     }
 
-    OpenGLContext(Renderer renderer, boolean headless) throws LWJGLException {
-        this(renderer, null, headless);
+    OpenGLContext(boolean headless) throws LWJGLException {
+        this(null, headless);
     }
-    OpenGLContext(Renderer renderer, Canvas canvas, boolean headless) throws LWJGLException {
+    OpenGLContext(Canvas canvas, boolean headless) throws LWJGLException {
 
         openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
 
@@ -56,7 +56,7 @@ public class OpenGLContext {
                 Thread.currentThread().setName(OPENGL_THREAD_NAME);
                 if (!isInitialized()) {
                     try {
-                        init(renderer, canvas);
+                        init(canvas);
                     } catch (LWJGLException e) {
                         e.printStackTrace();
                         System.exit(-1);
@@ -73,9 +73,8 @@ public class OpenGLContext {
         }
     }
 
-    private void init(Renderer renderer, Canvas canvas) throws LWJGLException {
+    private void init(Canvas canvas) throws LWJGLException {
         this.canvas = canvas;
-        this.renderer = renderer;
 
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAttributes = new ContextAttribs(4, 3)
@@ -158,13 +157,13 @@ public class OpenGLContext {
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     public void bindTexture(GlTextureTarget target, int textureId) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
     }
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {

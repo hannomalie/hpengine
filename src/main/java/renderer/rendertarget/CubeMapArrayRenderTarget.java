@@ -8,6 +8,7 @@ import java.util.List;
 
 import engine.AppContext;
 import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
 import texture.CubeMapArray;
 import util.Util;
@@ -31,7 +32,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
 
-		AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			framebufferLocation = GL30.glGenFramebuffers();
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);

@@ -362,8 +362,6 @@ public interface Renderer extends LifeCycle {
         }
     }
 
-    OpenGLContext getOpenGLContext();
-
     void startFrame();
 
     boolean isFrameFinished();

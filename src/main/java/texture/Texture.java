@@ -4,6 +4,7 @@ import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
@@ -65,10 +66,10 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(target, textureID);
+        OpenGLContext.getInstance().bindTexture(target, textureID);
     }
     public void bind(int unit) {
-        AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(unit, target, textureID);
+        OpenGLContext.getInstance().bindTexture(unit, target, textureID);
     }
 
     public void setHeight(int height) {
@@ -117,7 +118,7 @@ public class Texture implements Serializable {
 //			}
 //		}.start();
 
-        AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             upload(buffer(), srgba);
         });
 	}
@@ -130,7 +131,7 @@ public class Texture implements Serializable {
         new OpenGLThread() {
             @Override
             public void doRun() {
-                AppContext.getInstance().getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+                OpenGLContext.getInstance().doWithOpenGLContext(() -> {
                     bind();
                     if (target == TEXTURE_2D)
                     {

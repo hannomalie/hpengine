@@ -11,6 +11,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import engine.AppContext;
 import engine.model.Entity;
+import renderer.OpenGLContext;
 import renderer.command.Result;
 import renderer.command.Command;
 
@@ -45,7 +46,7 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				CompletableFuture<Boolean> future = appContext.getRenderer().getOpenGLContext().doWithOpenGLContext(() -> {
+				CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					entity.init(AppContext.getInstance());
 					return true;
 				});

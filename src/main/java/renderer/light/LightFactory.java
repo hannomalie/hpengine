@@ -375,7 +375,7 @@ public class LightFactory {
 		OpenGLContext.getInstance().enable(CULL_FACE);
 		cubemapArrayRenderTarget.use(false);
 		OpenGLContext.getInstance().clearDepthAndColorBuffer();
-		AppContext.getInstance().getRenderer().getOpenGLContext().viewPort(0, 0, 2*128, 2*128);
+        OpenGLContext.getInstance().viewPort(0, 0, 2*128, 2*128);
         //TODO: WTF is with the 256...
 
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, AppContext.getInstance().getScene().getPointLights().size()); i++) {

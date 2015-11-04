@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import engine.AppContext;
 import engine.model.DataChannels;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 
 import org.apache.commons.io.FileUtils;
@@ -44,7 +45,7 @@ public class ProgramFactory {
 	}
 
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
-        return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> {
+        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
@@ -56,7 +57,7 @@ public class ProgramFactory {
 		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, channels, needsTextures);
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		return AppContext.getInstance().getRenderer().getOpenGLContext().calculateWithOpenGLContext(() -> {
+		return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
             Program program = new Program(renderer, vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
