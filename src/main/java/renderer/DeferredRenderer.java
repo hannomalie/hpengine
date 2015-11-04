@@ -2,7 +2,6 @@ package renderer;
 
 import config.Config;
 import engine.AppContext;
-import engine.TimeStepThread;
 import engine.Transform;
 import engine.model.*;
 import event.PointLightMovedEvent;
@@ -114,7 +113,6 @@ public class DeferredRenderer implements Renderer {
 	private AppContext appContext;
 	private String currentState = "";
 
-	private TimeStepThread drawThread;
 	private OpenGLContext openGLContext;
 	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
@@ -447,7 +445,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private void destroyOpenGL() {
-		drawThread.stopRequested = true;
+		openGLContext.getDrawThread().stopRequested = true;
         try {
             Display.destroy();
         } catch (IllegalStateException e) {

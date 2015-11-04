@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.light.AreaLight;
 import renderer.light.PointLight;
@@ -40,8 +41,8 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         GBuffer gBuffer = renderer.getGBuffer();
 
         gBuffer.use(true);
-        renderer.getOpenGLContext().disable(DEPTH_TEST);
-        renderer.getOpenGLContext().disable(BLEND);
+        OpenGLContext.getInstance().disable(DEPTH_TEST);
+        OpenGLContext.getInstance().disable(BLEND);
 
         linesProgram.use();
         linesProgram.setUniform("screenWidth", (float) Config.WIDTH);
@@ -135,17 +136,17 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         renderer.drawLines(linesProgram);
 
         GL11.glDepthMask(false);
-        renderer.getOpenGLContext().disable(DEPTH_TEST);
+        OpenGLContext.getInstance().disable(DEPTH_TEST);
         ////////////////////
 
         drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
 
-        renderer.getOpenGLContext().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
-        renderer.getOpenGLContext().clearDepthAndColorBuffer();
+        OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
+        OpenGLContext.getInstance().clearDepthAndColorBuffer();
 
-        renderer.getOpenGLContext().disable(DEPTH_TEST);
+        OpenGLContext.getInstance().disable(DEPTH_TEST);
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         renderer.drawToQuad(renderer.getGBuffer().getPositionMap()); // the first color attachment
-        renderer.getOpenGLContext().enable(DEPTH_TEST);
+        OpenGLContext.getInstance().enable(DEPTH_TEST);
     }
 }

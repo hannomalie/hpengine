@@ -15,6 +15,7 @@ import engine.model.Entity;
 import engine.model.VertexBuffer;
 import octree.Octree;
 import renderer.DeferredRenderer;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.light.DirectionalLight;
@@ -178,9 +179,9 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void prepareProbeRendering() {
-		renderer.getOpenGLContext().depthMask(true);
-		renderer.getOpenGLContext().enable(DEPTH_TEST);
-		renderer.getOpenGLContext().enable(CULL_FACE);
+		OpenGLContext.getInstance().depthMask(true);
+		OpenGLContext.getInstance().enable(DEPTH_TEST);
+		OpenGLContext.getInstance().enable(CULL_FACE);
 		cubeMapArrayRenderTarget.use(false);
 	}
 	

@@ -16,6 +16,7 @@ import engine.AppContext;
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
 import org.lwjgl.util.glu.GLU;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.Command;
@@ -151,7 +152,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-		CompletableFuture<Boolean> future = renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+		CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			self.unload();
 			self.load();
 			return true;

@@ -14,6 +14,7 @@ import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
@@ -44,7 +45,7 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		materialBuffer = renderer.getOpenGLContext().calculateWithOpenGLContext(() -> new StorageBuffer(2000));
+		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(2000));
 
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
@@ -339,13 +340,13 @@ public class MaterialFactory {
 
 	@Subscribe
 	public void bufferMaterials(MaterialAddedEvent event) {
-		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
         });
 	}
 	@Subscribe
 	public void bufferMaterials(MaterialChangedEvent event) {
-		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
 		});
 	}

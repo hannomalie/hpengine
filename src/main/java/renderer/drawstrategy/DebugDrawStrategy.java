@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.light.AreaLight;
@@ -197,9 +198,9 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         openGLContext.viewPort(0,0, Config.WIDTH, Config.HEIGHT);
         openGLContext.clearDepthAndColorBuffer();
 
-        renderer.getOpenGLContext().disable(DEPTH_TEST);
+        OpenGLContext.getInstance().disable(DEPTH_TEST);
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         renderer.drawToQuad(renderer.getGBuffer().getPositionMap()); // the first color attachment
-        renderer.getOpenGLContext().enable(DEPTH_TEST);
+        OpenGLContext.getInstance().enable(DEPTH_TEST);
     }
 }

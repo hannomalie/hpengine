@@ -1,6 +1,5 @@
 package renderer;
 
-import com.sun.org.apache.bcel.internal.generic.RET;
 import config.Config;
 import engine.AppContext;
 import engine.TimeStepThread;
@@ -8,19 +7,13 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
-import renderer.command.Command;
-import renderer.command.Result;
 import renderer.constants.*;
-import shader.ComputeShaderProgram;
 import util.commandqueue.CommandQueue;
 import util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.util.HashMap;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static renderer.constants.GlCap.CULL_FACE;

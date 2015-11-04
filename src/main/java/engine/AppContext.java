@@ -17,6 +17,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.Command;
 import renderer.command.Result;
@@ -132,7 +133,7 @@ public class AppContext {
 
 		scene = new Scene();
         AppContext self = this;
-        renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			scene.init(self);
         }, true);
 		float rotationDelta = 125f;
@@ -229,7 +230,7 @@ public class AppContext {
 	}
 	
 	public void destroy() {
-		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			renderer.destroy();
         }, true);
 		System.exit(0);
@@ -335,7 +336,7 @@ public class AppContext {
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.getInstance().start("Light update");
 		if(directionalLight.hasMoved()) {
-			renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
                 for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
                     renderer.addRenderProbeCommand(probe, true);
                 }
@@ -350,7 +351,7 @@ public class AppContext {
 		StopWatch.getInstance().stopAndPrintMS();
 
 		if(renderer.isFrameFinished()) {
-            renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+            OpenGLContext.getInstance().doWithOpenGLContext(() -> {
                 renderer.startFrame();
                 renderer.draw(this);
                 renderer.endFrame();
@@ -374,7 +375,7 @@ public class AppContext {
 
 	public void setScene(Scene scene) {
 		this.scene = scene;
-		renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			StopWatch.getInstance().start("Scene init");
 			scene.init(this);
 			StopWatch.getInstance().stopAndPrintMS();

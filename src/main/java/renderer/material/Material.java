@@ -4,6 +4,7 @@ import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.material.MaterialFactory.MaterialInfo;
@@ -153,7 +154,7 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesInactive() {
 		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
-			renderer.getOpenGLContext().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
+			OpenGLContext.getInstance().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
 		}
 		
 	}

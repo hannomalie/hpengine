@@ -1,51 +1,35 @@
 package texture;
 
-import java.awt.Color;
-import java.awt.Graphics;
+import engine.AppContext;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.lwjgl.opengl.*;
+import org.lwjgl.util.vector.Vector2f;
+import renderer.DeferredRenderer;
+import renderer.OpenGLContext;
+import renderer.Renderer;
+import renderer.constants.GlTextureTarget;
+import renderer.material.Material;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.color.ColorSpace;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.ComponentColorModel;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferByte;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
+import java.awt.image.*;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.SynchronousQueue;
-import java.util.logging.Logger;
 
-import javax.imageio.ImageIO;
-
-import engine.AppContext;
-import org.lwjgl.opengl.*;
-import renderer.DeferredRenderer;
-import renderer.Renderer;
-import renderer.command.Command;
-import renderer.command.Result;
-import renderer.constants.GlTextureTarget;
-import renderer.material.Material;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.lwjgl.util.vector.Vector2f;
-
-import static renderer.constants.GlTextureTarget.TEXTURE_2D;
-import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
-import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY;
+import static renderer.constants.GlTextureTarget.*;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -136,7 +120,7 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        return renderer.getOpenGLContext().calculateWithOpenGLContext(() -> {
+        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
                     return getTextureId();
                 }
         );
@@ -231,7 +215,7 @@ public class TextureFactory {
          CubeMap cubeMap = new CubeMap(resourceName, target, textureID); 
          
          // bind this texture
-        renderer.getOpenGLContext().bindTexture(target, textureID);
+        OpenGLContext.getInstance().bindTexture(target, textureID);
 
          BufferedImage bufferedImage = null;
          if (asStream) {
@@ -449,7 +433,7 @@ public class TextureFactory {
     }
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
-        renderer.getOpenGLContext().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             texture.bind();
             if (mipmap) {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -468,20 +452,20 @@ public class TextureFactory {
         generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
     }
     public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        renderer.getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
+        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
     public void enableMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        renderer.getOpenGLContext().bindTexture(TEXTURE_2D, textureId);
+        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        renderer.getOpenGLContext().doWithOpenGLContext(() -> {
-            renderer.getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, textureId);
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+            OpenGLContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
             GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
             GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
