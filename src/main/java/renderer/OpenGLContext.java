@@ -1,7 +1,6 @@
 package renderer;
 
 import config.Config;
-import engine.AppContext;
 import engine.TimeStepThread;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -19,36 +18,34 @@ import java.util.logging.Logger;
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 
-public class OpenGLContext {
+public final class OpenGLContext {
 
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    private final TimeStepThread openGLThread;
+    private TimeStepThread openGLThread;
     private Renderer renderer = null;
     private Canvas canvas;
     private boolean attached;
 
     private static volatile OpenGLContext instance;
     private CommandQueue commandQueue = new CommandQueue();
+    private volatile boolean initialized = false;
 
     public static OpenGLContext getInstance() {
         if(instance == null) {
+            instance = new OpenGLContext();
+        } else if(!instance.isInitialized()) {
             throw new IllegalStateException("OpenGL context not initialized. Init a renderer first.");
         }
         return instance;
     }
 
-    public OpenGLContext() throws LWJGLException {
-        this(false);
+    private OpenGLContext() {
     }
 
-    OpenGLContext(boolean headless) throws LWJGLException {
-        this(null, headless);
-    }
-    OpenGLContext(Canvas canvas, boolean headless) throws LWJGLException {
-
+    public void init() throws LWJGLException {
         openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
 
             @Override
@@ -56,7 +53,7 @@ public class OpenGLContext {
                 Thread.currentThread().setName(OPENGL_THREAD_NAME);
                 if (!isInitialized()) {
                     try {
-                        init(canvas);
+                        privateInit();
                     } catch (LWJGLException e) {
                         e.printStackTrace();
                         System.exit(-1);
@@ -68,14 +65,16 @@ public class OpenGLContext {
         };
         executorService.submit(openGLThread);
 
+        waitForInitialization();
+    }
+
+    public final void waitForInitialization() {
         while(!isInitialized()) {
 
         }
     }
 
-    private void init(Canvas canvas) throws LWJGLException {
-        this.canvas = canvas;
-
+    private final void privateInit() throws LWJGLException {
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAttributes = new ContextAttribs(4, 3)
 //				.withProfileCompatibility(true)
@@ -107,7 +106,7 @@ public class OpenGLContext {
         // Map the internal OpenGL coordinate system to the entire screen
         viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
 
-        instance = this;
+        initialized = true;
     }
 
     public void update(float seconds) {
@@ -249,7 +248,7 @@ public class OpenGLContext {
     }
 
     public boolean isInitialized() {
-        return instance != null;
+        return initialized;
     }
 
     public void doWithOpenGLContext(Runnable runnable) {

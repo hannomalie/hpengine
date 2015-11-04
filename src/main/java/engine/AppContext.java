@@ -117,7 +117,7 @@ public class AppContext {
 		init(false);
 	}
 	public static void init(boolean headless) {
-		new AppContext(headless);
+		instance = new AppContext(headless);
 	}
 
 	private AppContext(boolean headless) {

@@ -20,9 +20,4 @@ public class TestWithRenderer {
 		appContext = AppContext.getInstance();
 		renderer = appContext.getRenderer();
 	}
-	
-	@AfterClass
-	public static void kill() {
-		appContext.destroy();
-	}
 }
