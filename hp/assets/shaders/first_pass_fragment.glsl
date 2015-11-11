@@ -1,4 +1,7 @@
 
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
+
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
@@ -48,6 +51,8 @@ in mat3 TBN;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
+uniform uint64_t xxx;
+
 layout(location=0)out vec4 out_position; // position, roughness
 layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
@@ -62,12 +67,12 @@ void main(void) {
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
 									 material.diffuseG,
 									 material.diffuseB);
-	float materialRoughness = material.roughness;
-	float materialMetallic = material.metallic;
-	float materialAmbient = material.ambient;
-	float parallaxBias = material.parallaxBias;
-	float parallaxScale = material.parallaxScale;
-	float materialTransparency = material.transparency;
+	float materialRoughness = float(material.roughness);
+	float materialMetallic = float(material.metallic);
+	float materialAmbient = float(material.ambient);
+	float parallaxBias = float(material.parallaxBias);
+	float parallaxScale = float(material.parallaxScale);
+	float materialTransparency = float(material.transparency);
 
 
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
@@ -93,13 +98,25 @@ void main(void) {
 		UV.y = UV.y;
 		//UV = UV + time/2000.0;
 #endif
+	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
+	vec3 PN_world = normalize(normal_world);
+	vec3 old_PN_world = PN_world;
+
+#ifdef use_normalMap
+#ifdef use_precomputed_tangent_space
+	sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+
+	PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
+#else
+	PN_world = normalize(perturb_normal(old_PN_world, V, UV));
+#endif
+	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
+#endif
+
 
 	vec2 uvParallax = vec2(0,0);
-
 #define use_precomputed_tangent_space_
-	//if (useParallax) {
 #ifdef use_heightMap
-	if (true) {
 		float height = (texture(heightMap, UV).rgb).r;
 
 #ifdef use_precomputed_tangent_space
@@ -113,95 +130,9 @@ void main(void) {
 #endif
 		uvParallax = (v * viewVectorTangentSpace.xy);
 		UV = UV + uvParallax;
-	//} else if (useSteepParallax) {
-	} else {
-   	   // determine required number of layers
-	   const float minLayers = 10;
-	   const float maxLayers = 15;
-	   const float parallaxScale = 0.1;
-	   mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-	   vec3 viewVectorTangentSpace = normalize((inverse(TBN)) * (out_position.rgb));
-	   float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), V)));
-	
-	   // height of each layer
-	   float layerHeight = 1.0 / numLayers;
-	   // depth of current layer
-	   float currentLayerHeight = 0;
-	   // shift of texture coordinates for each iteration
-	   vec2 dtex = parallaxScale * viewVectorTangentSpace.xy / viewVectorTangentSpace.z / numLayers;
-	
-	   // current texture coordinates
-	   vec2 currentTextureCoords = UV;
-	
-	   // depth from heightmap
-	   float heightFromTexture = texture(heightMap, currentTextureCoords).r;
-	
-	   // while point is above surface
-	   while(heightFromTexture > currentLayerHeight) {
-	      // go to the next layer
-	      currentLayerHeight += layerHeight; 
-	      // shift texture coordinates along V
-	      currentTextureCoords -= dtex;
-	      // new depth from heightmap
-	      heightFromTexture = texture(heightMap, currentTextureCoords).r;
-	   }
-	
-	   ///////////////////////////////////////////////////////////
-	   // Start of Relief Parallax Mapping
-	
-	   // decrease shift and height of layer by half
-	   vec2 deltaTexCoord = dtex / 2;
-	   float deltaHeight = layerHeight / 2;
-	
-	   // return to the mid point of previous layer
-	   currentTextureCoords += deltaTexCoord;
-	   currentLayerHeight -= deltaHeight;
-	
-	   // binary search to increase precision of Steep Paralax Mapping
-	   const int numSearches = 5;
-	   for(int i=0; i<numSearches; i++)
-	   {
-	      // decrease shift and height of layer by half
-	      deltaTexCoord /= 2;
-	      deltaHeight /= 2;
-	
-	      // new depth from heightmap
-	      heightFromTexture = texture(heightMap, currentTextureCoords).r;
-	
-	      // shift along or agains vector V
-	      if(heightFromTexture > currentLayerHeight) // below the surface
-	      {
-	         currentTextureCoords -= deltaTexCoord;
-	         currentLayerHeight += deltaHeight;
-	      }
-	      else // above the surface
-	      {
-	         currentTextureCoords += deltaTexCoord;
-	         currentLayerHeight -= deltaHeight;
-	      }
-	   }
-	
-	   // return results
-	   float parallaxHeight = currentLayerHeight;
-	   UV = currentTextureCoords;
-	}
-	
 #endif
-	
-	// NORMAL
-	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
-	vec3 PN_world = normalize(normal_world);
-	vec3 old_PN_world = PN_world;
 
-#ifdef use_normalMap
-#ifdef use_precomputed_tangent_space
-	PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
-#else
-	PN_world = normalize(perturb_normal(old_PN_world, V, UV));
-#endif
-	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
-#endif
-	
+
 	float depth = (position_clip.z / position_clip.w);
 	
 	out_normal = vec4(PN_view, depth);
@@ -214,14 +145,16 @@ void main(void) {
 	UV.x = texCoord.x;
 	UV.y = texCoord.y;
 	UV += uvParallax;
-	color = texture(diffuseMap, UV);
+
+	color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
+
 	if(color.a<0.1)
 	{
 		discard;
 	}
 #endif
   	out_color = color;
-  	out_color.w = materialMetallic;
+  	out_color.w = float(materialMetallic);
   	
 #ifdef use_occlusionMap
 	//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);

@@ -232,8 +232,7 @@ public class AppContext {
 	public void destroy() {
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			renderer.destroy();
-        }, true);
-		System.exit(0);
+        }, false);
 	}
 
 	public List<Entity> loadTestScene() {

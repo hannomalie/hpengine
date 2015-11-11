@@ -91,7 +91,7 @@ float getVisibilityDPSM(vec3 positionWorld, uint pointLightIndex, PointLight poi
 	if(!USE_POINTLIGHT_SHADOWMAPPING) { return 1.0; }
 
 	const float NearPlane = 0.0001;
-	float FarPlane = pointLight.radius;
+	float FarPlane = float(pointLight.radius);
 
 	vec3 pointLightPositionWorld = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
 	vec3 positionInPointLightSpace = positionWorld - pointLightPositionWorld;
@@ -262,7 +262,7 @@ void main(void) {
 		PointLight pointLight = pointLights[lightIndex];
 		vec3 pointLightPosition = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
 		vec4 pos = (viewMatrix * vec4(pointLightPosition, 1.0f));
-		float rad = 2*pointLight.radius;
+		float rad = 2*float(pointLight.radius);
 
 		const int MAX_LIGHTS_PER_TILE = 256;
 		if (lightIndex < uint(pointLightCount) && lightIndex < MAX_LIGHTS_PER_TILE)
@@ -292,7 +292,7 @@ void main(void) {
 		vec3 lightPositionView = (viewMatrix * vec4(pointLight.positionX, pointLight.positionY, pointLight.positionZ, 1)).xyz;
 		vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
 		vec3 lightDirectionView = normalize(vec4(lightPositionView - positionView, 0)).xyz;
-		float attenuation = calculateAttenuation(length(lightPositionView - positionView), pointLight.radius);
+		float attenuation = calculateAttenuation(length(lightPositionView - positionView), float(pointLight.radius));
 
 		int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 		Material material = materials[materialIndex];

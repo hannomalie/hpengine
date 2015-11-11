@@ -25,8 +25,6 @@ public final class OpenGLContext {
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private TimeStepThread openGLThread;
-    private Renderer renderer = null;
-    private Canvas canvas;
     private boolean attached;
 
     private static volatile OpenGLContext instance;
@@ -79,7 +77,7 @@ public final class OpenGLContext {
         ContextAttribs contextAttributes = new ContextAttribs(4, 3)
 //				.withProfileCompatibility(true)
 //				.withForwardCompatible(true)
-                .withProfileCore(true)
+//                .withProfileCore(true)
                 .withDebug(true)
                 ;
 

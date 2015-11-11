@@ -6,6 +6,7 @@ import org.lwjgl.BufferUtils;
 import shader.Bufferable;
 import shader.StorageBuffer;
 
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 public class StorageBufferTest extends TestWithAppContext {
@@ -13,14 +14,14 @@ public class StorageBufferTest extends TestWithAppContext {
 	@Test
 	public void storageBuffersGetsCorrectValues() {
 		
-		FloatBuffer data = BufferUtils.createFloatBuffer(16);
+		DoubleBuffer data = BufferUtils.createDoubleBuffer(16);
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
 		StorageBuffer buffer = new StorageBuffer(data);
-		
-		FloatBuffer result = buffer.getValues();
-		float[] dst = new float[result.capacity()];
+
+        DoubleBuffer result = buffer.getValues();
+		double[] dst = new double[result.capacity()];
 		result.get(dst);
 		
 		for (int i = 0; i < 16; i++) {
@@ -30,15 +31,15 @@ public class StorageBufferTest extends TestWithAppContext {
 
 	@Test
 	public void storageBuffersGetsCorrectRangedValues() {
-		
-		FloatBuffer data = BufferUtils.createFloatBuffer(16);
+
+        DoubleBuffer data = BufferUtils.createDoubleBuffer(16);
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);	
 		}
 		StorageBuffer buffer = new StorageBuffer(data);
-		
-		FloatBuffer result = buffer.getValues(4, 11);
-		float[] dst = new float[result.capacity()];
+
+        DoubleBuffer result = buffer.getValues(4, 11);
+		double[] dst = new double[result.capacity()];
 		result.get(dst);
 		
 		for (int i = 0; i < 8; i++) {
@@ -48,8 +49,8 @@ public class StorageBufferTest extends TestWithAppContext {
 
 	@Test
 	public void storageBufferBuffersCorrectly() {
-		
-		FloatBuffer data = BufferUtils.createFloatBuffer(16);
+
+        DoubleBuffer data = BufferUtils.createDoubleBuffer(16);
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);	
 		}
@@ -57,20 +58,20 @@ public class StorageBufferTest extends TestWithAppContext {
 		StorageBuffer buffer = new StorageBuffer(16);
 		
 		buffer.putValues(data);
-		
-		FloatBuffer result = buffer.getValues(0, 16);
-		float[] dst = new float[result.capacity()];
+
+        DoubleBuffer result = buffer.getValues(0, 16);
+		double[] dst = new double[result.capacity()];
 		result.get(dst);
 		
 		for (int i = 0; i < 16; i++) {
-			Assert.assertTrue(dst[i] == i);
+			Assert.assertTrue(dst[i] == (double) i);
 		}
 	}
 	
 	@Test
 	public void storageBufferBuffersCorrectlyWithOffset() {
-		
-		FloatBuffer data = BufferUtils.createFloatBuffer(12);
+
+        DoubleBuffer data = BufferUtils.createDoubleBuffer(12);
 		for (int i = 0; i < 12; i++) {
 			data.put(i, i+4);
 		}
@@ -78,9 +79,9 @@ public class StorageBufferTest extends TestWithAppContext {
 		StorageBuffer buffer = new StorageBuffer(16);
 		
 		buffer.putValues(4, data);
-		
-		FloatBuffer result = buffer.getValues(4, 12);
-		float[] dst = new float[result.capacity()];
+
+        DoubleBuffer result = buffer.getValues(4, 12);
+		double[] dst = new double[result.capacity()];
 		result.get(dst);
 		
 		for (int i = 0; i < 12; i++) {
@@ -90,19 +91,20 @@ public class StorageBufferTest extends TestWithAppContext {
 
 	@Test
 	public void storageBufferLayoutsCorrectly() {
-		float[] array = new float[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
 		StorageBuffer buffer = new StorageBuffer(64);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override
-			public float[] get() {
+			public double[] get() {
 				return array;
 			}
 		};
 
 		buffer.put(bufferable, bufferable, bufferable, bufferable);
 
-		FloatBuffer result = buffer.getValues();
+
+		FloatBuffer result = buffer.getValuesAsFloats();
 		float[] dst = new float[result.capacity()];
 		result.get(dst);
 

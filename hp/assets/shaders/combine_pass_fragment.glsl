@@ -407,7 +407,7 @@ void main(void) {
 	//out_color.rgb = reflectedColor.rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,0);
-	//out_color.rgb = color;
+//	out_color.rgb = colorMetallic.rgb;
 	//out_color.rgb = scattering.rgb;
 	//out_color.rgb = refracted.rgb;
 //	out_color.rgb = vec3(textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).r, 0, 0)*0.005f;

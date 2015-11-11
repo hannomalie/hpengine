@@ -2,7 +2,6 @@ package renderer.material;
 
 import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
@@ -13,7 +12,6 @@ import shader.Program;
 import shader.ProgramFactory;
 import shader.ShaderDefine;
 import texture.Texture;
-import util.stopwatch.GPUProfiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,8 +33,7 @@ public class Material implements Serializable, Bufferable {
 	private static final long serialVersionUID = 1L;
 	
 	public static boolean MIPMAP_DEFAULT = true;
-	public static int TEXTUREINDEX = 0;
-	
+
 	private static Logger LOGGER = getLogger();
 
 	public enum MAP {
@@ -146,6 +143,7 @@ public class Material implements Serializable, Bufferable {
 				
 		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
+            if(entry.getKey().equals(MAP.DIFFUSE )|| entry.getKey().equals(MAP.NORMAL)) { continue; }
 			Texture texture = entry.getValue();
 			texture.bind(map.textureSlot);
 		}
@@ -330,29 +328,32 @@ public class Material implements Serializable, Bufferable {
 	}
 
 
-//	@Override
-//	public int getSizePerObject() {
-//		return -1;
-//	}
+	@Override
+	public int getSizePerObject() {
+		return 16;
+	}
 
 	@Override
-	public float[] get() {
-		float[] floats = new float[13];
+	public double[] get() {
+		double[] doubles = new double[getSizePerObject()];
 		int index = 0;
-		floats[index++] = materialInfo.diffuse.x;
-		floats[index++] = materialInfo.diffuse.y;
-		floats[index++] = materialInfo.diffuse.z;
-		floats[index++] = materialInfo.metallic;
-		floats[index++] = materialInfo.roughness;
-		floats[index++] = materialInfo.ambient;
-		floats[index++] = materialInfo.parallaxBias;
-		floats[index++] = materialInfo.parallaxScale;
-		floats[index++] = materialInfo.transparency;
-		floats[index++] = materialInfo.materialType.ordinal();
-		floats[index++] = hasDiffuseMap() ? 1 : 0;
-		floats[index++] = hasNormalMap() ? 1 : 0;
-		floats[index++] = hasSpecularMap() ? 1 : 0;
-		return floats;
+		doubles[index++] = materialInfo.diffuse.x;
+		doubles[index++] = materialInfo.diffuse.y;
+		doubles[index++] = materialInfo.diffuse.z;
+		doubles[index++] = materialInfo.metallic;
+		doubles[index++] = materialInfo.roughness;
+		doubles[index++] = materialInfo.ambient;
+		doubles[index++] = materialInfo.parallaxBias;
+		doubles[index++] = materialInfo.parallaxScale;
+		doubles[index++] = materialInfo.transparency;
+		doubles[index++] = materialInfo.materialType.ordinal();
+		doubles[index++] = hasDiffuseMap() ? 1 : 0;
+		doubles[index++] = hasNormalMap() ? 1 : 0;
+		doubles[index++] = hasSpecularMap() ? 1 : 0;
+        doubles[index++] = hasDiffuseMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.DIFFUSE).getHandle()) : 0;
+        doubles[index++] = hasNormalMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.NORMAL).getHandle()) : 0;
+        doubles[index++] = hasSpecularMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.SPECULAR).getHandle()) : 0;
+		return doubles;
 	}
 
 }

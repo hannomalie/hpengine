@@ -1,26 +1,30 @@
 struct Material {
-	float diffuseR;
-	float diffuseG;
-	float diffuseB;
-	float metallic;
-	float roughness;
-	float ambient;
-	float parallaxBias;
-	float parallaxScale;
-	float transparency;
-	float materialtype;
+	double diffuseR;
+	double diffuseG;
+	double diffuseB;
+	double metallic;
+	double roughness;
+	double ambient;
+	double parallaxBias;
+	double parallaxScale;
+	double transparency;
+	double materialtype;
 
-	float hasDiffuseMap;
-	float hasNormalMap;
-	float hasSpecularMap;
+	double hasDiffuseMap;
+	double hasNormalMap;
+	double hasSpecularMap;
+
+	double handleDiffuse;
+    double handleNormal;
+    double handleSpecular;
 };
 
 struct PointLight {
-	float positionX;
-	float positionY;
-	float positionZ;
-	float radius;
-	float colorR;
-	float colorG;
-	float colorB;
+	double positionX;
+	double positionY;
+	double positionZ;
+	double radius;
+	double colorR;
+	double colorG;
+	double colorB;
 };

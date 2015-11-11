@@ -6,6 +6,7 @@ import engine.AppContext;
 import engine.Drawable;
 import engine.model.*;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
@@ -109,6 +110,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("time", (int)System.currentTimeMillis());
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("isSelected", isSelected);
+//        ARBBindlessTexture.glUniformHandleui64ARB(currentProgram.getUniformLocation("xxx"), getMaterial().getMaterialInfo().maps.getTextures().get(Material.MAP.DIFFUSE).getHandle());
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
         currentProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);

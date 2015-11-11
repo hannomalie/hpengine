@@ -1,7 +1,6 @@
 package renderer.light;
 
 import java.io.Serializable;
-import java.util.List;
 
 import camera.Camera;
 import component.ModelComponent;
@@ -89,19 +88,19 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	}
 
 	@Override
-	public float[] get() {
-		float[] floats = new float[7];
+	public double[] get() {
+		double[] doubles = new double[7];
 		int index = 0;
 		Vector3f worldPosition = getPosition();
-		floats[index++] = worldPosition.x;
-		floats[index++] = worldPosition.y;
-		floats[index++] = worldPosition.z;
-		floats[index++] = getRadius();
+		doubles[index++] = worldPosition.x;
+		doubles[index++] = worldPosition.y;
+		doubles[index++] = worldPosition.z;
+		doubles[index++] = getRadius();
 		Vector4f color = getColor();
-		floats[index++] = color.x;
-		floats[index++] = color.y;
-		floats[index++] = color.z;
+		doubles[index++] = color.x;
+		doubles[index++] = color.y;
+		doubles[index++] = color.z;
 
-		return floats;
+		return doubles;
 	}
 }

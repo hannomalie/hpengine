@@ -38,6 +38,7 @@ public class Texture implements Serializable {
     protected int minFilter = GL11.GL_LINEAR;
     protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
+    private long handle =-1L;
 
     protected Texture() {
     }
@@ -168,7 +169,12 @@ public class Texture implements Serializable {
         //        }
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                 }, false);
+                OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                });
             }
+
         }.start();
 
 //        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
@@ -456,5 +462,9 @@ public class Texture implements Serializable {
 
     public int getMagFilter() {
         return magFilter;
+    }
+
+    public long getHandle() {
+        return handle;
     }
 }
