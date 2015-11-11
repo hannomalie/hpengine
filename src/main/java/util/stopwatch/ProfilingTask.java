@@ -10,21 +10,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GPUTaskProfile {
+public class ProfilingTask {
 
-	private GPUTaskProfile parent;
+	private ProfilingTask parent;
 
 	private String name;
 
 	private int startQuery, endQuery;
 
-	private ArrayList<GPUTaskProfile> children;
+	private ArrayList<ProfilingTask> children;
 
-	public GPUTaskProfile() {
+	public ProfilingTask() {
 		children = new ArrayList<>();
 	}
 
-	public GPUTaskProfile init(GPUTaskProfile parent, String name,
+	public ProfilingTask init(ProfilingTask parent, String name,
 			int startQuery) {
 
 		this.parent = parent;
@@ -38,16 +38,16 @@ public class GPUTaskProfile {
 		return this;
 	}
 
-	private void addChild(GPUTaskProfile profilerTask) {
+	private void addChild(ProfilingTask profilerTask) {
 		children.add(profilerTask);
 	}
 
-	public GPUTaskProfile end(int endQuery) {
+	public ProfilingTask end(int endQuery) {
 		this.endQuery = endQuery;
 		return parent;
 	}
 
-	public GPUTaskProfile getParent() {
+	public ProfilingTask getParent() {
 		return parent;
 	}
 
@@ -79,7 +79,7 @@ public class GPUTaskProfile {
 		return getEndTime() - getStartTime();
 	}
 
-	public ArrayList<GPUTaskProfile> getChildren() {
+	public ArrayList<ProfilingTask> getChildren() {
 		return children;
 	}
 
@@ -111,7 +111,7 @@ public class GPUTaskProfile {
 		} else {
 			result.put("Frame", getTimeTaken());
 		}
-		for (GPUTaskProfile gpuTaskProfile : children) {
+		for (ProfilingTask gpuTaskProfile : children) {
 			result.putAll(gpuTaskProfile.getTimesTaken());
 		}	
 		

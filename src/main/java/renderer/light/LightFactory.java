@@ -24,6 +24,7 @@ import renderer.constants.GlDepthFunc;
 import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
 import renderer.rendertarget.*;
+import scene.Scene;
 import shader.Program;
 import shader.StorageBuffer;
 import texture.CubeMapArray;
@@ -329,7 +330,10 @@ public class LightFactory {
 	}
 
 	public void renderAreaLightShadowMaps(Octree octree) {
-		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
+        Scene scene = AppContext.getInstance().getScene();
+        if(scene == null) { return; }
+
+        List<AreaLight> areaLights = scene.getAreaLights();
 
 		GPUProfiler.start("Arealight shadowmaps");
 		OpenGLContext.getInstance().depthMask(true);
@@ -369,6 +373,9 @@ public class LightFactory {
 	}
 
 	public void renderPointLightShadowMaps(Octree octree) {
+        Scene scene = AppContext.getInstance().getScene();
+        if(scene == null) { return; }
+
 		GPUProfiler.start("PointLight shadowmaps");
 		OpenGLContext.getInstance().depthMask(true);
 		OpenGLContext.getInstance().enable(DEPTH_TEST);
@@ -378,7 +385,7 @@ public class LightFactory {
         OpenGLContext.getInstance().viewPort(0, 0, 2*128, 2*128);
         //TODO: WTF is with the 256...
 
-		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, AppContext.getInstance().getScene().getPointLights().size()); i++) {
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
 			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
 			List<Entity> visibles = octree.getEntities();

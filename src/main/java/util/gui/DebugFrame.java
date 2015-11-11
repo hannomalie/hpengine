@@ -88,7 +88,6 @@ import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import static util.Util.vectorToString;
@@ -697,12 +696,11 @@ public class DebugFrame {
 //		});
 		toggleProfiler.addActionListener( e -> {
 
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+			Boolean result = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
 				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
 				return true;
 			});
 			try {
-				Boolean result = future.get(5, TimeUnit.MINUTES);
 				if (result.equals(Boolean.TRUE)) {
 					showSuccess("Profiling switched");
 				} else {
@@ -753,7 +751,7 @@ public class DebugFrame {
 		
 		dumpAverages.addActionListener(e -> {
 			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					new DumpAveragesCommand(1000).execute(appContext);
+                GPUProfiler.requestDump();
 			});
 		});
 		

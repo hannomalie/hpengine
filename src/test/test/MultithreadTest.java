@@ -6,16 +6,18 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.SharedDrawable;
+import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 
 public class MultithreadTest extends TestWithRenderer {
-	static volatile boolean success1 = false;
+    static volatile boolean success1 = false;
+    static volatile boolean success2 = false;
 	
 	@Test
 	public void secondThreadUsesGLContext() throws InterruptedException, LWJGLException {
 		Thread worker =	new Thread(new Runnable() {
 
-			SharedDrawable drawable = new SharedDrawable(Display.getDrawable());
+			SharedDrawable drawable = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new SharedDrawable(Display.getDrawable()));
 			
 			@Override
 			public void run() {
@@ -51,14 +53,13 @@ public class MultithreadTest extends TestWithRenderer {
 			public void doRun() {
 		        int id = GL11.glGenTextures();
 		        if(id != -1) {
-		        	success1 = true;
+		        	success2 = true;
 		        }
 			}
 		};
 		
 		worker.start();
 		worker.join();
-		Assert.assertTrue(success1);
-    	success1 = false;
+		Assert.assertTrue(success2);
 	}
 }
