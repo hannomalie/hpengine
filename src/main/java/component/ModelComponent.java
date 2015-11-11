@@ -13,6 +13,7 @@ import renderer.OpenGLThread;
 import renderer.constants.GlCap;
 import renderer.material.Material;
 import shader.Program;
+import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -110,6 +111,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("isSelected", isSelected);
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
+        // TODO: Remove this from here...
         currentProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
 

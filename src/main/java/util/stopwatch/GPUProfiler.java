@@ -14,17 +14,18 @@ public class GPUProfiler {
 	public static boolean PROFILING_ENABLED = false;
 	public static boolean PRINTING_ENABLED = false;
 
-	private static ArrayList<GPUTaskProfile> tasks;
+	private static ArrayList<ProfilingTask> tasks;
 	private static ArrayList<Integer> queryObjects;
 
 	private static int frameCounter;
-	private static GPUTaskProfile currentTask;
+	private static ProfilingTask currentTask;
 
-	private static ArrayList<GPUTaskProfile> completedFrames;
+	private static ArrayList<ProfilingTask> completedFrames;
 	private static ArrayList<Record> collectedTimes;
 	private static boolean startFrameCalledThisFrame = false;
+    private static volatile boolean dumpRequested = false;
 
-	static {
+    static {
 		init();
 	}
 
@@ -38,14 +39,14 @@ public class GPUProfiler {
 	}
 
 	public static void startFrame() {
-		startFrameCalledThisFrame = true;
+        startFrameCalledThisFrame = true;
 
 		if (currentTask != null) {
 			tasks.clear();
 			return;
 		}
 		if (PROFILING_ENABLED) {
-			currentTask = new GPUTaskProfile().init(null,
+			currentTask = new ProfilingTask().init(null,
 					"Frame " + (++frameCounter), getQuery());
 			tasks.add(currentTask);
 		}
@@ -53,7 +54,7 @@ public class GPUProfiler {
 
 	public static void start(String name) {
 		if (PROFILING_ENABLED && currentTask != null) {
-			currentTask = new GPUTaskProfile().init(currentTask, name, getQuery());
+			currentTask = new ProfilingTask().init(currentTask, name, getQuery());
 			tasks.add(currentTask);
 		}
 	}
@@ -82,12 +83,12 @@ public class GPUProfiler {
 		}
 	}
 
-	public static GPUTaskProfile getFrameResults() {
+	public static ProfilingTask getFrameResults() {
 		if (completedFrames.isEmpty()) {
 			return null;
 		}
 
-		GPUTaskProfile frame = completedFrames.get(0);
+		ProfilingTask frame = completedFrames.get(0);
 		if (frame.resultsAvailable()) {
 			for (Entry<String, Long> entrySet : frame.getTimesTaken().entrySet()) {
 				collectedTimes.add(new Record(entrySet.getKey(), entrySet.getValue()));
@@ -133,6 +134,8 @@ public class GPUProfiler {
 			}
 			System.out.println(String.format("%s\t|  %.5f\t|\t%s", name.substring(0, Math.min(name.length(), 30)), (s.getValue().summedTime / s.getValue().count) / 1000 / 1000f, s.getValue().count));
 		});
+
+        dumpRequested = false;
 	}
 
 	public static Map<String, AverageHelper> calculateAverages(int sampleCount) {
@@ -157,7 +160,15 @@ public class GPUProfiler {
 		init();
 	}
 
-	public static class Record {
+    public static void requestDump() {
+        dumpRequested = true;
+    }
+
+    public static boolean isDumpRequested() {
+        return dumpRequested;
+    }
+
+    public static class Record {
 		public String name = "";
 		public Long time = new Long(0);
 		

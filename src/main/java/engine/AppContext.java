@@ -114,6 +114,7 @@ public class AppContext {
 	}
 
     public static void init() {
+        if(instance != null) { return ; }
 		init(false);
 	}
 	public static void init(boolean headless) {

@@ -15,7 +15,9 @@ public class CameraTest extends TestWithRenderer {
 	@Test
 	public void rotation() {
 		Camera camera = new Camera();
-		Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
+        Assert.assertEquals(new Vector3f(0,1,0), camera.getUpDirection());
+        Assert.assertEquals(new Vector3f(1,0,0), camera.getRightDirection());
+        Assert.assertEquals(new Vector3f(0,0,-1), camera.getViewDirection());
 		
 		camera.rotate(new Vector3f(0,1,0), 90f);
 
@@ -26,9 +28,9 @@ public class CameraTest extends TestWithRenderer {
 
 		Assert.assertEquals(0, camera.getRightDirection().x, epsilon);
 		Assert.assertEquals(0, camera.getRightDirection().y, epsilon);
-		Assert.assertEquals(1, camera.getRightDirection().z, epsilon);
+		Assert.assertEquals(-1, camera.getRightDirection().z, epsilon);
 		
-		Assert.assertEquals(1, ((Vector3f)(camera.getViewDirection())).x, epsilon); // z is 1, not -1!
+		Assert.assertEquals(-1, ((Vector3f)(camera.getViewDirection())).x, epsilon);
 		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).y, epsilon);
 		Assert.assertEquals(0, ((Vector3f)(camera.getViewDirection())).z, epsilon);
 	}
@@ -46,7 +48,7 @@ public class CameraTest extends TestWithRenderer {
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, -1));
 
-		camera.moveInWorld(new Vector3f(0,0,-5));
+		camera.moveInWorld(new Vector3f(0,0,5));
 		frustum.calculate(camera);
 		Helpers.assertEpsilonEqual(new Vector3f(0, 0, -1), camera.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
@@ -66,6 +68,5 @@ public class CameraTest extends TestWithRenderer {
 		Assert.assertFalse(frustum.boxInFrustum(new AABB(new Vector3f(0, 0, -2), 1)));
 		Assert.assertFalse(new AABB(new Vector3f(0, 0, -2), 1).isInFrustum(camera));
 		Assert.assertTrue(new AABB(new Vector3f(0, 0, 0), 10).isInFrustum(camera));
-		
 	}
 }

@@ -8,6 +8,7 @@ public class DumpAveragesCommand implements Command {
 	int sampleCount;
 
 	public DumpAveragesCommand() {
+        this(1000);
 	}
 	public DumpAveragesCommand(int sampleCount) {
 		this.sampleCount = sampleCount;

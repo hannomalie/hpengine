@@ -36,7 +36,7 @@ import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
-import util.stopwatch.GPUTaskProfile;
+import util.stopwatch.ProfilingTask;
 import util.stopwatch.OpenGLStopWatch;
 
 import javax.swing.*;
@@ -123,31 +123,30 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void init(AppContext appContext) {
 		Renderer.super.init(appContext);
-		DeferredRenderer renderer = this;
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupOpenGL(headless);
-            renderer.appContext = appContext;
-            appContext.setRenderer(renderer);
-            objLoader = new OBJLoader(renderer);
-            textureFactory = new TextureFactory(renderer);
+            this.appContext = appContext;
+            appContext.setRenderer(this);
+            objLoader = new OBJLoader(this);
+            textureFactory = new TextureFactory(this);
             DeferredRenderer.exitOnGLError("After TextureFactory");
             programFactory = new ProgramFactory(appContext);
             setupShaders();
             setUpGBuffer();
-            renderer.simpleDrawStrategy = new SimpleDrawStrategy(renderer);
-            renderer.debugDrawStrategy = new DebugDrawStrategy(renderer);
-            renderer.currentDrawStrategy = simpleDrawStrategy;
+            simpleDrawStrategy = new SimpleDrawStrategy(this);
+            debugDrawStrategy = new DebugDrawStrategy(this);
+            currentDrawStrategy = simpleDrawStrategy;
 
             fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
                                         .setHeight(Config.HEIGHT)
                                         .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
                                         .build();
-            materialFactory = new MaterialFactory(renderer);
+            materialFactory = new MaterialFactory(this);
             lightFactory = new LightFactory(appContext);
             environmentProbeFactory = new EnvironmentProbeFactory(appContext);
-            gBuffer.init(renderer);
+            gBuffer.init(this);
 
             sphereModel = null;
             try {
@@ -330,10 +329,13 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private void dumpTimings() {
-		GPUTaskProfile tp;
+		ProfilingTask tp;
 		while((tp = GPUProfiler.getFrameResults()) != null){
 			tp.dump(); //Dumps the frame to System.out.
 		}
+        if(GPUProfiler.isDumpRequested()) {
+            GPUProfiler.dumpAverages();
+        }
 	}
 
 	@Override
@@ -688,6 +690,7 @@ public class DeferredRenderer implements Renderer {
 
         GPUProfiler.endFrame();
         frameStarted.getAndDecrement();
+        dumpTimings();
     }
 
 	@Override
