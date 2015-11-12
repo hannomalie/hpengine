@@ -287,7 +287,7 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
@@ -303,16 +303,16 @@ public class DeferredRenderer implements Renderer {
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
 //			GL11.glDeleteTextures(faceView);
 
-            int[] faceViews = new int[6];
-            for(int i = 0; i < 6; i++) {
-                faceViews[i] = OpenGLContext.getInstance().genTextures();
-                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getCubemapArrayRenderTarget().getDepthBufferTexture(),
-						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
-				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
-			}
-            for(int i = 0; i < 6; i++) {
-                GL11.glDeleteTextures(faceViews[i]);
-            }
+//            int[] faceViews = new int[6];
+//            for(int i = 0; i < 6; i++) {
+//                faceViews[i] = OpenGLContext.getInstance().genTextures();
+//                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getCubemapArrayRenderTarget().getDepthBufferTexture(),
+//						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
+//				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
+//			}
+//            for(int i = 0; i < 6; i++) {
+//                GL11.glDeleteTextures(faceViews[i]);
+//            }
 		}
 
 		if(counter < 20) {
@@ -678,7 +678,6 @@ public class DeferredRenderer implements Renderer {
             entity.setHasMoved(false);
         }
 
-        appContext.getScene().getDirectionalLight().setHasMoved(false);
         boolean pointLightMovePosted = false;
         for (Entity entity : appContext.getScene().getPointLights()) {
             if(!pointLightMovePosted && entity.hasMoved()) {

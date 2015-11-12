@@ -220,7 +220,7 @@ mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
 	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
 	return mat3( T * invmax, B * invmax, N );
 }
-vec3 perturb_normal( vec3 N, vec3 V, vec2 texcoord )
+vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
 {
 	vec3 map = (texture(normalMap, texcoord)).xyz;
 	map = map * 2 - 1;

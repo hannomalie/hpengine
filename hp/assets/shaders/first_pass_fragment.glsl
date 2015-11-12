@@ -103,14 +103,15 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
 #ifdef use_normalMap
-#ifdef use_precomputed_tangent_space
-	sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+    #ifdef use_precomputed_tangent_space
+        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
 
-	PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
-#else
-	PN_world = normalize(perturb_normal(old_PN_world, V, UV));
-#endif
-	PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
+        PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
+    #else
+        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+        PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
+    #endif
+        PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
 #endif
 
 
@@ -147,6 +148,7 @@ void main(void) {
 	UV += uvParallax;
 
 	color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
+//	color = texture(diffuseMap, UV);
 
 	if(color.a<0.1)
 	{
@@ -170,13 +172,13 @@ void main(void) {
 #endif
 	
 #ifdef use_specularMap
-	UV.x = texCoord.x * specular;
-	UV.y = texCoord.y * specular;
-	UV = texCoord + uvParallax;
-	vec3 specularSample = texture2D(specularMap, UV).xyz;
-	float glossiness = length(specularSample)/length(vec3(1,1,1));
-	const float glossinessBias = 1.5;
-	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
+//	UV.x = texCoord.x * specular;
+//	UV.y = texCoord.y * specular;
+//	UV = texCoord + uvParallax;
+//	vec3 specularSample = texture2D(specularMap, UV).xyz;
+//	float glossiness = length(specularSample)/length(vec3(1,1,1));
+//	const float glossinessBias = 1.5;
+//	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
 #endif
 
   	out_motion = vec4(motionVec,depth,materialTransparency);

@@ -1,6 +1,8 @@
 package renderer.material;
 
 import java.io.*;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -347,7 +349,31 @@ public class MaterialFactory {
 	@Subscribe
 	public void bufferMaterials(MaterialChangedEvent event) {
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+            ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
 			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+
+            DoubleBuffer temp = materialBuffer.getValues();
+            for(int i = 0; i < materials.size()*16; i++) {
+
+                int index = i + 1;
+
+                if(index%14 == 0) {
+                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+                } else if(index%15 == 0) {
+                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+                } else if(index%16 == 0) {
+                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+                } else {
+                    System.out.print(temp.get(i));
+                }
+                System.out.print(" ");
+
+                if(index%16 == 0) {
+                    System.out.print(" (index " + ((i/15)-1) + ") ");
+                    System.out.print(materials.get((i / 15) - 1 ).getName());
+                    System.out.println();
+                }
+            }
 		});
 	}
 }

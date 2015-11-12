@@ -146,13 +146,15 @@ public class DirectionalLight extends Entity {
 									.setTextureFilter(GL11.GL_NEAREST))
 							.build();
 
+        setHasMoved(true);
 		initialized = true;
 	}
 
 	@Override
 	public void update(float seconds) {
 		if(hasMoved()) {setNeedsShadowMapRedraw(true);}
-		super.update(seconds);
+//        System.out.println(hasMoved());
+        super.update(seconds);
 	}
 
 	public void drawAsMesh(Camera camera) {

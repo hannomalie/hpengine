@@ -394,7 +394,7 @@ void main(void) {
 
 	//out_color.rgb *= aoReflect.gba;
 	//out_color.rgb = vec3(specularFactor,specularFactor,specularFactor);
-	//out_color.rgb = normalView.xyz;
+//	out_color.rgb = normalView.xyz;
 	//out_color.rgb = vec3(normalView.xyz*0.5+0.5);
 	//out_color.rgb = specularColor.xyz;
 	//out_color.rgb = lightDiffuseSpecular.rgb;

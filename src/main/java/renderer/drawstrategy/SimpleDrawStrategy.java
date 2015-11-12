@@ -113,7 +113,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             environmentProbeFactory.drawAlternating(octree, camera, light, renderer.getFrameCount());
             renderer.executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
-			if(light.isNeedsShadowMapRedraw() || !octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
+//			if(!octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
             {
                 GPUProfiler.start("Directional shadowmap");
                 light.drawShadowMap(octree);
