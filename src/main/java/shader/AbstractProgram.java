@@ -11,12 +11,13 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.google.common.eventbus.Subscribe;
+import renderer.OpenGLContext;
 
 
 public abstract class AbstractProgram {
 
 	protected HashMap<String, Uniform> uniforms = new HashMap<>();
-	protected int id = -1;
+	protected final int id = OpenGLContext.getInstance().createProgramId();
 	
 	public AbstractProgram() { }
 	
@@ -112,8 +113,7 @@ public abstract class AbstractProgram {
 		uniforms.put(uniform.name, uniform);
 	}
 
-	public int getId() { return id; };
-	protected int setId(int id) { return this.id = id; };
+	public int getId() { return id; }
 
 	@Subscribe
 	public void handle(GlobalDefineChangedEvent e) {

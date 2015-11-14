@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import engine.AppContext;
@@ -31,14 +29,14 @@ public class ProgramFactory {
 	}
 
 	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) {
-		Program program = new Program(renderer, vertexShaderFilename, null, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
+		Program program = new Program(vertexShaderFilename, null, fragmentShaderFileName, EnumSet.allOf(DataChannels.class), true, "");
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;
 	}
 	
 	public Program getProgram(String defines) {
-		Program program = new Program(renderer, FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
+		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE, EnumSet.allOf(DataChannels.class), true, defines);
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;
@@ -58,7 +56,7 @@ public class ProgramFactory {
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
 		return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
-            Program program = new Program(renderer, vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
+            Program program = new Program(vertexShaderFilename, geometryShaderFileName, fragmentShaderFileName, channels, needsTextures, "");
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
             return program;
@@ -67,12 +65,15 @@ public class ProgramFactory {
 
 	public void copyDefaultFragmentShaderToFile(String name) throws IOException {
 		name = name.endsWith(".glsl") ? name : name + ".glsl";
-		FileUtils.copyFile(new File(Program.getDirectory() + FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE), new File(Program.getDirectory() + name));
+		FileUtils.copyFile(new File(Shader.getDirectory() + FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE), new File(Shader.getDirectory() + name));
 	}
 	
 	public void copyDefaultVertexShaderToFile(String name) throws IOException {
 		name = name.endsWith(".glsl") ? name : name + ".glsl";
-		FileUtils.copyFile(new File(Program.getDirectory() + FIRSTPASS_DEFAULT_VERTEXSHADER_FILE), new File(Program.getDirectory() + name));
+		FileUtils.copyFile(new File(Shader.getDirectory() + FIRSTPASS_DEFAULT_VERTEXSHADER_FILE), new File(Shader.getDirectory() + name));
 	}
 
+    public VertexShader getDefaultFirstpassVertexShader() {
+        return getDefaultFirstpassVertexShader();
+    }
 }

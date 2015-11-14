@@ -1,20 +1,16 @@
 package shader;
 
 import static log.ConsoleLogger.getLogger;
+import static shader.Shader.*;
 
 import java.io.File;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import engine.AppContext;
-import org.lwjgl.opengl.GL42;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.command.Result;
-import renderer.command.Command;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
 import util.ressources.Reloadable;
@@ -40,7 +36,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		this.computeShaderName = computeShaderName;
 		this.renderer = renderer;
 		
-		observerShader = new FileAlterationObserver(Program.getDirectory());
+		observerShader = new FileAlterationObserver(getDirectory());
 		load();
 		addFileListeners();
 	}
@@ -50,12 +46,12 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		clearUniforms();
 		int computeShaderId = -1;
 		try {
-			computeShaderId = Program.loadShader(computeShaderName, GL43.GL_COMPUTE_SHADER);
+            ShaderSource shaderSource = new ShaderSource(new File(getDirectory() + computeShaderName));
+            computeShaderId = ComputeShader.load(shaderSource).getId();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.out.println("Pre load " + GLU.gluErrorString(GL11.glGetError()));
-		setId(GL20.glCreateProgram());
 		System.out.println("Create program " + GLU.gluErrorString(GL11.glGetError()));
 		GL20.glAttachShader(id, computeShaderId);
 		System.out.println("Attach shader " + GLU.gluErrorString(GL11.glGetError()));
@@ -109,7 +105,6 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void unload() {
 		GL20.glUseProgram(0);
 		GL20.glDeleteProgram(id);
-		setId(-1);
 	}
 	
 	public void reload() {

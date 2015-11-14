@@ -311,4 +311,10 @@ public final class OpenGLContext {
     public TimeStepThread getDrawThread() {
         return openGLThread;
     }
+
+    public int createProgramId() {
+        return calculateWithOpenGLContext(() -> {
+            return GL20.glCreateProgram();
+        });
+    }
 }

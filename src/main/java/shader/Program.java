@@ -1,16 +1,13 @@
 package shader;
 
 import static log.ConsoleLogger.getLogger;
+import static shader.Shader.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import engine.AppContext;
 import engine.model.DataChannels;
@@ -18,15 +15,10 @@ import event.GlobalDefineChangedEvent;
 import org.lwjgl.util.glu.GLU;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.command.Result;
-import renderer.command.Command;
-import util.TypedTuple;
-import util.Util;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
 import util.ressources.Reloadable;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
@@ -52,9 +44,8 @@ public class Program extends AbstractProgram implements Reloadable {
 	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
 
 	private FileAlterationObserver observerFragmentShader;
-	private Renderer renderer;
 
-	protected Program(Renderer renderer, String vertexShaderName, String geometryShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
+	protected Program(String vertexShaderName, String geometryShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
@@ -62,7 +53,6 @@ public class Program extends AbstractProgram implements Reloadable {
 		this.geometryShaderName = geometryShaderName;
 		this.vertexShaderName = vertexShaderName;
 		this.fragmentShaderName = fragmentShaderName;
-		this.renderer = renderer;
 
 		observerFragmentShader = new FileAlterationObserver(getDirectory());
 
@@ -73,25 +63,24 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void load() {
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			clearUniforms();
-			setId(GL20.glCreateProgram());
 
 			try {
-				GL20.glAttachShader(id, loadShader(vertexShaderName, GL20.GL_VERTEX_SHADER));
+                attachShader(VertexShader.load(new ShaderSource(new File(getDirectory() + vertexShaderName))));
 			} catch (Exception e) {
 				try {
-					GL20.glAttachShader(id, loadShader(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, GL20.GL_VERTEX_SHADER));
+                    attachShader(AppContext.getInstance().getRenderer().getProgramFactory().getDefaultFirstpassVertexShader());
 				} catch (Exception e1) {
 					System.err.println("Not able to load default vertex shader, so what else could be done...");
 				}
 			}
 			try {
-				GL20.glAttachShader(id, loadShader(fragmentShaderName, GL20.GL_FRAGMENT_SHADER, fragmentDefines));
+                attachShader(loadShader(FragmentShader.class, new ShaderSource(new File(getDirectory() + fragmentShaderName)), fragmentDefines));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			if (geometryShaderName != null && geometryShaderName != "") {
 				try {
-					GL20.glAttachShader(id, loadShader(geometryShaderName, GL32.GL_GEOMETRY_SHADER));
+                    attachShader(loadShader(GeometryShader.class, new ShaderSource(new File(getDirectory() + geometryShaderName))));
 					System.out.println("Attach geometryshader " + GLU.gluErrorString(GL11.glGetError()));
 				} catch (Exception e) {
 					System.out.println("Not able to load geometry shader, so what else could be done...");
@@ -110,7 +99,11 @@ public class Program extends AbstractProgram implements Reloadable {
 		});
 	}
 
-	private void printError(String text) {
+    private void attachShader(Shader shader) {
+        GL20.glAttachShader(getId(), shader.getId());
+    }
+
+    private void printError(String text) {
 		System.out.println(text + " " + GLU.gluErrorString(GL11.glGetError()));
 	}
 
@@ -222,89 +215,12 @@ public class Program extends AbstractProgram implements Reloadable {
 	public int getId() {
 		return id;
 	}
-	
-	public static int loadShader(String filename, int type, String mapDefinesString) throws Exception {
-		String shaderSource = "";
-		int shaderID = 0;
-		
-		shaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();	
 
-		String findStr = "\n";
-		int newlineCount = (shaderSource.split(findStr, -1).length-1);
-
-//		System.out.println(shaderSource);
-		
-		try {
-			String shaderFileAsText = FileUtils.readFileToString(new File(getDirectory() + filename));
-			TypedTuple<String, Integer> tuple = replaceIncludes(shaderFileAsText, newlineCount);
-			shaderFileAsText = tuple.getLeft();
-			newlineCount = tuple.getRight();
-			shaderSource += shaderFileAsText;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		shaderID = GL20.glCreateShader(type);
-		GL20.glShaderSource(shaderID, shaderSource);
-		GL20.glCompileShader(shaderID);
-
-		if (GL20.glGetShader(shaderID, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-			System.err.println("Could not compile shader: " + filename);
-//			System.err.println("Dynamic code takes " + newlineCount + " lines");
-			String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID, 10000);
-			shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, newlineCount);
-			System.err.println(shaderInfoLog);
-			throw new Exception();
-		}
-//		System.out.println(shaderSource);
-		Renderer.exitOnGLError("loadShader");
-		
-		return shaderID;
-	}
-
-	private static TypedTuple<String, Integer> replaceIncludes(String shaderFileAsText, int currentNewLineCount) throws IOException {
-
-		Pattern includePattern = Pattern.compile("//include\\((.*)\\)");
-		Matcher includeMatcher = includePattern.matcher(shaderFileAsText);
-
-		while (includeMatcher.find()) {
-			String filename = includeMatcher.group(1);
-			String fileToInclude = FileUtils.readFileToString(new File(getDirectory() + filename));
-			currentNewLineCount += Util.countNewLines(fileToInclude);
-			shaderFileAsText = shaderFileAsText.replaceAll(String.format("//include\\(%s\\)", filename),
-					fileToInclude);
-		}
-
-		return new TypedTuple<>(shaderFileAsText, new Integer(currentNewLineCount));
-	}
-
-	private static String replaceLineNumbersWithDynamicLinesAdded(String shaderInfoLog, int newlineCount) {
-
-		Pattern loCPattern = Pattern.compile("\\((\\w+)\\) :");
-		Matcher loCMatcher = loCPattern.matcher(shaderInfoLog);
-
-		while (loCMatcher.find()) {
-			String oldLineNumber = loCMatcher.group(1);
-			int newLineNumber = Integer.parseInt(oldLineNumber) - newlineCount;
-			shaderInfoLog = shaderInfoLog.replaceAll(String.format("\\(%s\\) :", oldLineNumber), String.format("(%d) :", newLineNumber));
-		}
-
-		return shaderInfoLog;
-	}
-
-	public static int loadShader(String filename, int type) throws Exception {
-		return loadShader(filename, type, "");
-	}
-
-	public boolean needsTextures() {
+    public boolean needsTextures() {
 		return needsTextures;
 	}
 
-	public static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/shaders/";
-	}
-
-	public void addDefine(String name, Object define) {
+    public void addDefine(String name, Object define) {
 		localDefines.put(name, define);
 	}
 	public void removeDefine(String name) {
@@ -339,4 +255,5 @@ public class Program extends AbstractProgram implements Reloadable {
 			return "";
 		}
 	}
+
 }

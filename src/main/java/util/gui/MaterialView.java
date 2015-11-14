@@ -31,7 +31,7 @@ import renderer.material.Material;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
 import renderer.material.MaterialFactory.MaterialInfo;
-import shader.Program;
+import shader.Shader;
 import texture.Texture;
 import util.gui.input.*;
 
@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -405,7 +404,7 @@ public class MaterialView extends WebPanel {
         webComponentPanel.setLayout(new FlowLayout());
 		{
         	final WebFileChooserField vertexShaderChooser = new WebFileChooserField ();
-        	vertexShaderChooser.setSelectedFile(new File(Program.getDirectory() + material.getVertexShader()));
+        	vertexShaderChooser.setSelectedFile(new File(Shader.getDirectory() + material.getVertexShader()));
         	vertexShaderChooser.setPreferredWidth ( 200 );
         	vertexShaderChooser.setPreferredHeight( 20 );
         	vertexShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
@@ -415,7 +414,7 @@ public class MaterialView extends WebPanel {
 					File chosenFile = files.get(0);
 					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
 					
-					File shaderFileInWorkDir = new File(Program.getDirectory() + fileName + ".glsl");
+					File shaderFileInWorkDir = new File(Shader.getDirectory() + fileName + ".glsl");
 					
 					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
 					material.setVertexShader(fileName + ".glsl");
@@ -450,7 +449,7 @@ public class MaterialView extends WebPanel {
         }
         {
         	final WebFileChooserField fragmentShaderChooser = new WebFileChooserField ();
-        	fragmentShaderChooser.setSelectedFile(new File(Program.getDirectory() + material.getFragmentShader()));
+        	fragmentShaderChooser.setSelectedFile(new File(Shader.getDirectory() + material.getFragmentShader()));
         	fragmentShaderChooser.setPreferredWidth ( 200 );
         	fragmentShaderChooser.setPreferredHeight( 20 );
         	fragmentShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
@@ -460,7 +459,7 @@ public class MaterialView extends WebPanel {
 					File chosenFile = files.get(0);
 					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
 					
-					File shaderFileInWorkDir = new File(Program.getDirectory() + fileName + ".glsl");
+					File shaderFileInWorkDir = new File(Shader.getDirectory() + fileName + ".glsl");
 					
 					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
 					material.setFragmentShader(fileName + ".glsl");
