@@ -38,6 +38,7 @@ import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -375,6 +376,15 @@ public class LightFactory {
 	public void renderPointLightShadowMaps(Octree octree) {
         Scene scene = AppContext.getInstance().getScene();
         if(scene == null) { return; }
+
+        boolean noNeedToRedraw = octree.getEntities()
+                                        .stream()
+                                        .filter(entity -> entity.hasMoved()).collect(Collectors.toList())
+                                        .isEmpty() &&
+                                        scene.getPointLights().stream()
+                                        .filter(light -> light.hasMoved()).collect(Collectors.toList())
+                                        .isEmpty();
+        if(noNeedToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
 		OpenGLContext.getInstance().depthMask(true);

@@ -27,7 +27,7 @@ layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
 layout(std430, binding=2) buffer _lights {
-	float pointLightCount;
+	double pointLightCount;
 	PointLight pointLights[100];
 };
 

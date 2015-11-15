@@ -89,25 +89,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         }
 
         Program currentProgram = firstPassProgram;
-//		if (!firstPassProgram.equals(renderer.getLastUsedProgram())) {
-//			currentProgram = firstPassProgram;
-//			renderer.setLastUsedProgram(currentProgram);
-//			currentProgram.use();
-//		}
-//		currentProgram = renderer.getLastUsedProgram();
         currentProgram.setUniform("isInstanced", instanced);
-        currentProgram.setUniform("useParallax", Config.useParallax);
-        currentProgram.setUniform("useSteepParallax", Config.useSteepParallax);
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("materialIndex", appContext.getRenderer().getMaterialFactory().indexOf(appContext.getRenderer().getMaterialFactory().get(materialName)));
         currentProgram.setUniform("isSelected", isSelected);
-//        ARBBindlessTexture.glUniformHandleui64ARB(currentProgram.getUniformLocation("xxx"), getMaterial().getMaterialInfo().maps.getTextures().get(Material.MAP.DIFFUSE).getHandle());
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
-//        TODO: Remove this from here...
-//        appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
-
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
-//		renderer.getEnvironmentMap().bind();
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
@@ -119,8 +105,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         } else {
             vertexBuffer.draw();
         }
-
-//		material.setTexturesInactive();
     }
 
     public void drawDebug(Program program, FloatBuffer modelMatrix) {

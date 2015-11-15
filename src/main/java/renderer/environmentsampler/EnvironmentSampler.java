@@ -323,11 +323,25 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().disable(BLEND);
 
 		GPUProfiler.start("Draw entities");
-		for (Entity entity : entities) {
-			entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-				modelComponent.draw(camera, entity.getModelMatrixAsBuffer(), appContext.getScene().getEntities().indexOf(entity));
-			});
-		}
+        Program firstpassDefaultProgram = AppContext.getInstance().getRenderer().getProgramFactory().getFirstpassDefaultProgram();
+        firstpassDefaultProgram.use();
+        firstpassDefaultProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
+        firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
+        firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
+        firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+        firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+        firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
+        firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("near", camera.getNear());
+        firstpassDefaultProgram.setUniform("far", camera.getFar());
+        firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
+
+        for (Entity entity : entities) {
+            if(entity.getComponents().containsKey("ModelComponent")) {
+                ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
+            }
+        }
 		GPUProfiler.end();
 		OpenGLContext.getInstance().enable(CULL_FACE);
 	}

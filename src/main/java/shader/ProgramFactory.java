@@ -65,7 +65,7 @@ public class ProgramFactory {
 
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
         return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
-            ComputeShaderProgram program = new ComputeShaderProgram(renderer, computeShaderLocation);
+            ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)));
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
             return program;

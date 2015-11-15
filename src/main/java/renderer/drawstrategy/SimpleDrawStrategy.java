@@ -114,7 +114,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             environmentProbeFactory.drawAlternating(octree, camera, light, renderer.getFrameCount());
             renderer.executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
-//			if(!octree.getEntities().parallelStream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty())
             {
                 GPUProfiler.start("Directional shadowmap");
                 light.drawShadowMap(octree);
@@ -187,6 +186,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("near", camera.getNear());
             firstpassDefaultProgram.setUniform("far", camera.getFar());
             firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
+            firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
+            firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
 
             for (Entity entity : entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {

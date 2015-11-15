@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.List;
 
+import static renderer.constants.CullMode.BACK;
 import static renderer.constants.CullMode.FRONT;
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -171,7 +172,7 @@ public class DirectionalLight extends Entity {
 		if(!needsShadowMapRedraw) { return; }
 		OpenGLContext.getInstance().depthMask(true);
 		OpenGLContext.getInstance().enable(DEPTH_TEST);
-		OpenGLContext.getInstance().cullFace(FRONT);
+		OpenGLContext.getInstance().cullFace(BACK);
 		OpenGLContext.getInstance().enable(CULL_FACE);
 		
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
@@ -196,7 +197,7 @@ public class DirectionalLight extends Entity {
 				modelComponent.getVertexBuffer().draw();
 			});
 		}
-		OpenGLContext.getInstance().enable(CULL_FACE);
+//		OpenGLContext.getInstance().enable(CULL_FACE);
 		setNeedsShadowMapRedraw(false);
 	}
 

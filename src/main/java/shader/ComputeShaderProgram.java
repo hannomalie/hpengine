@@ -26,16 +26,15 @@ import org.lwjgl.util.glu.GLU;
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
 	private static Logger LOGGER = getLogger();
 	
-	private String computeShaderName;
-	private Renderer renderer;
-	
+	private ShaderSource computeShaderSource;
+    private ComputeShader computeShader;
+
 	private ReloadOnFileChangeListener<ComputeShaderProgram> reloadOnFileChangeListener;
 	private FileAlterationObserver observerShader;
 
-	public ComputeShaderProgram(Renderer renderer, String computeShaderName) {
-		this.computeShaderName = computeShaderName;
-		this.renderer = renderer;
-		
+	public ComputeShaderProgram(ShaderSource computeShaderSource) {
+		this.computeShaderSource = computeShaderSource;
+
 		observerShader = new FileAlterationObserver(getDirectory());
 		load();
 		addFileListeners();
@@ -44,16 +43,14 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	@Override
 	public void load() {
 		clearUniforms();
-		int computeShaderId = -1;
 		try {
-            ShaderSource shaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + computeShaderName));
-            computeShaderId = ComputeShader.load(shaderSource).getId();
+            computeShader = ComputeShader.load(computeShaderSource);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.out.println("Pre load " + GLU.gluErrorString(GL11.glGetError()));
 		System.out.println("Create program " + GLU.gluErrorString(GL11.glGetError()));
-		GL20.glAttachShader(id, computeShaderId);
+		attachShader(computeShader);
 		System.out.println("Attach shader " + GLU.gluErrorString(GL11.glGetError()));
 		GL20.glLinkProgram(id);
 		System.out.println("Link program " + GLU.gluErrorString(GL11.glGetError()));
@@ -61,13 +58,20 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		System.out.println("Validate program " + GLU.gluErrorString(GL11.glGetError()));
 		
 		if (GL20.glGetProgram(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-			System.err.println("Could not compile shader: " + computeShaderName);
+			System.err.println("Could not compile shader: " + computeShaderSource);
 			System.err.println(GL20.glGetProgramInfoLog(id, 10000));
 		}
 		
 		System.out.println("ComputeShader load " + GLU.gluErrorString(GL11.glGetError()));
 	}
-	
+
+    private void attachShader(Shader shader) {
+        GL20.glAttachShader(getId(), shader.getId());
+    }
+
+    private void detachShader(Shader shader) {
+        GL20.glDetachShader(getId(), shader.getId());
+    }
 
 	private void addFileListeners() {
 		
@@ -81,7 +85,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 					return true;
 				}
 
-				if(computeShaderName != null && computeShaderName.startsWith(fileName)) {
+				if(computeShaderSource.getFilename().startsWith(fileName)) {
 					return true;
 				}
 				return false;
@@ -111,7 +115,9 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		final ComputeShaderProgram self = this;
 
 		CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-			self.unload();
+//			self.unload();
+            detachShader(computeShader);
+            computeShader.reload();
 			self.load();
 			return true;
 		});
@@ -130,7 +136,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 
 	@Override
 	public String getName() {
-		return new StringJoiner(", ").add(computeShaderName)
+		return new StringJoiner(", ").add(computeShaderSource.getFilename())
 				.toString();
 	}
 
@@ -142,7 +148,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		
 		ComputeShaderProgram otherProgram = (ComputeShaderProgram) other;
 		
-		if (this.computeShaderName.equals(otherProgram.computeShaderName == null)) {
+		if (this.computeShaderSource.equals(otherProgram.computeShaderSource == null)) {
 			return true;
 		}
 		return false;
@@ -151,7 +157,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	@Override
 	public int hashCode() {
 		int hash = 0;
-		hash += (computeShaderName != null? computeShaderName.hashCode() : 0);
+		hash += (computeShaderSource != null? computeShaderSource.hashCode() : 0);
 		return hash;
 	};
 }
