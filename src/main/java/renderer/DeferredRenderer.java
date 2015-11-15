@@ -133,10 +133,16 @@ public class DeferredRenderer implements Renderer {
             textureFactory = new TextureFactory(this);
             DeferredRenderer.exitOnGLError("After TextureFactory");
             programFactory = new ProgramFactory(appContext);
-            setupShaders();
-            setUpGBuffer();
-            simpleDrawStrategy = new SimpleDrawStrategy(this);
-            debugDrawStrategy = new DebugDrawStrategy(this);
+            try {
+                setupShaders();
+                setUpGBuffer();
+                simpleDrawStrategy = new SimpleDrawStrategy(this);
+                debugDrawStrategy = new DebugDrawStrategy(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.err.println("Cannot init DeferredRenderer");
+                System.exit(-1);
+            }
             currentDrawStrategy = simpleDrawStrategy;
 
             fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
@@ -229,7 +235,7 @@ public class DeferredRenderer implements Renderer {
 		identityMatrix44Buffer = new Transform().getTransformationBuffer();
 	}
 	
-	private void setupShaders() {
+	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
         cubeMap = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
             try {

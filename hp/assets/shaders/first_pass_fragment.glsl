@@ -51,8 +51,6 @@ in mat3 TBN;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
-uniform uint64_t xxx;
-
 layout(location=0)out vec4 out_position; // position, roughness
 layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
@@ -92,46 +90,42 @@ void main(void) {
 	vec2 positionTextureSpace = position_clip_post_w.xy * 0.5 + 0.5;
 
 	out_position = viewMatrix * position_world;
-	
-#ifdef use_normalMap
-		UV.x = UV.x;
-		UV.y = UV.y;
-		//UV = UV + time/2000.0;
-#endif
+
 	vec3 PN_view = normalize(viewMatrix * vec4(normal_world,0)).xyz;
 	vec3 PN_world = normalize(normal_world);
 	vec3 old_PN_world = PN_world;
 
-#ifdef use_normalMap
-    #ifdef use_precomputed_tangent_space
-        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+    #define use_precomputed_tangent_space_
+	if(material.hasDiffuseMap != 0) {
+        #ifdef use_precomputed_tangent_space
+            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
 
-        PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
-    #else
-        sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
-        PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
-    #endif
+            PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
+        #else
+            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+            PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
+        #endif
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
-#endif
+    }
 
 
 	vec2 uvParallax = vec2(0,0);
-#define use_precomputed_tangent_space_
-#ifdef use_heightMap
-		float height = (texture(heightMap, UV).rgb).r;
+	if(material.hasHeightMap != 0) {
+        sampler2D _heightMap = sampler2D(uint64_t(material.handleHeight));
+		float height = (texture(_heightMap, UV).rgb).r;
 
-#ifdef use_precomputed_tangent_space
-		vec3 viewVectorTangentSpace = normalize((TBN) * (V));
-		float v = height * parallaxScale - parallaxBias;
-#else
-		mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
-		vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
-		float v = height * parallaxScale - parallaxBias;
-		v = clamp(0, v, v);
-#endif
+        #ifdef use_precomputed_tangent_space
+            vec3 viewVectorTangentSpace = normalize((TBN) * (V));
+            float v = height * parallaxScale - parallaxBias;
+        #else
+            mat3 TBN = cotangent_frame( normalize(normal_world), V, UV );
+            vec3 viewVectorTangentSpace = -normalize((TBN) * (V));
+            float v = height * parallaxScale - parallaxBias;
+            v = clamp(0, v, v);
+        #endif
 		uvParallax = (v * viewVectorTangentSpace.xy);
 		UV = UV + uvParallax;
-#endif
+	}
 
 
 	float depth = (position_clip.z / position_clip.w);
@@ -141,37 +135,32 @@ void main(void) {
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 	
 	vec4 color = vec4(materialDiffuseColor, 1);
-#ifdef use_diffuseMap
-	UV = texCoord;
-	UV.x = texCoord.x;
-	UV.y = texCoord.y;
-	UV += uvParallax;
 
-	color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
-//	color = texture(diffuseMap, UV);
+	if(material.hasDiffuseMap != 0) {
 
-	if(color.a<0.1)
-	{
-		discard;
+        color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
+    //	color = texture(diffuseMap, UV);
+
+        if(color.a<0.1)
+        {
+            discard;
+        }
 	}
-#endif
   	out_color = color;
   	out_color.w = float(materialMetallic);
   	
-#ifdef use_occlusionMap
-	//out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
-#endif
+	if(material.hasOcclusionMap != 0) {
+	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
+	}
 
 	out_position.w = materialRoughness;
-#ifdef use_roughnessMap
-	UV.x = texCoord.x;
-	UV.y = texCoord.y;
-	UV = texCoord + uvParallax;
-	float r = texture2D(roughnessMap, UV).x;
-	out_position.w = materialRoughness*r;
-#endif
-	
-#ifdef use_specularMap
+	if(material.hasRoughnessMap != 0) {
+        sampler2D _roughnessMap = sampler2D(uint64_t(material.handleRoughness));
+        float r = texture(_roughnessMap, UV).x;
+        out_position.w = materialRoughness*r;
+    }
+
+	if(material.hasSpecularMap != 0) {
 //	UV.x = texCoord.x * specular;
 //	UV.y = texCoord.y * specular;
 //	UV = texCoord + uvParallax;
@@ -179,7 +168,7 @@ void main(void) {
 //	float glossiness = length(specularSample)/length(vec3(1,1,1));
 //	const float glossinessBias = 1.5;
 //	out_position.w = clamp(glossinessBias-glossiness, 0, 1) * (materialRoughness);
-#endif
+    }
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
@@ -199,6 +188,6 @@ void main(void) {
 	{
 		out_color.rgb = vec3(1,0,0);
 	}
-	//out_color.rgb = vec3(1,0,0);
+//	out_color.rgb = vec3(1,0,0);
 	//out_normal.a = 1;
 }

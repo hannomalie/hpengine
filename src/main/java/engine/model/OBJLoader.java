@@ -140,7 +140,9 @@ public class OBJLoader {
                 firstToken = tokens[0];
             }
             if ("mtllib".equals(firstToken)) {
+                long start = System.currentTimeMillis();
                 renderer.getMaterialFactory().putAll(parseMaterialLib(line, f));
+                System.out.println("parsing " + (System.currentTimeMillis() - start));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
                 currentMaterial = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> renderer.getMaterialFactory().get(materialName));
@@ -215,60 +217,64 @@ public class OBJLoader {
 
         try {
             while ((materialLine = materialFileReader.readLine()) != null) {
-                if (materialLine.startsWith("#")) {
+
+                String[] tokens = materialLine.split(" ");
+                String firstToken = tokens[0];
+
+                if (firstToken.startsWith("#")) {
                     continue;
-                } else if (materialLine.startsWith("newmtl ")) {
+                } else if ("newmtl".equals(firstToken)) {
                     String name = materialLine.replaceAll("newmtl ", "");
                     currentMaterialInfo = new MaterialInfo();
                     currentMaterialInfo.name = name;
                     materials.put(currentMaterialInfo.name, currentMaterialInfo);
 
-                } else if (materialLine.startsWith("map_Kd ")) {
+                } else if ("map_Kd".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Kd ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.DIFFUSE);
 
-                } else if (materialLine.startsWith("map_Ka ")) {
+                } else if ("map_Ka".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ka ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.OCCLUSION);
 
-                } else if (materialLine.startsWith("map_Disp ")) {
+                } else if ("map_Disp".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Disp ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.SPECULAR);
 //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 
-                } else if (materialLine.startsWith("map_Ks ")) {
+                } else if ("map_Ks".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ks ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.SPECULAR);
 //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 
-                } else if (materialLine.startsWith("map_Ns ")) {
+                } else if ("map_Ns".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ns ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS);
 
-                } else if (materialLine.startsWith("map_bump ")) {
+                } else if ("map_bump".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_bump ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.NORMAL);
 
-                } else if (materialLine.startsWith("bump ")) {
+                } else if ("bump".equals(firstToken)) {
                     String map = materialLine.replaceAll("bump ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.NORMAL);
 
-                } else if (materialLine.startsWith("map_d ")) {
+                } else if ("map_d".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_d ", "");
                     addHelper(currentMaterialInfo, path, map, MAP.NORMAL);
 
-                } else if (materialLine.startsWith("Kd ")) {
+                } else if ("Kd".equals(firstToken)) {
                     String diffuse = materialLine;
                     currentMaterialInfo.diffuse = parseVertex(diffuse);
-                } else if (materialLine.startsWith("Kr ")) {
+                } else if ("Kr".equals(firstToken)) {
                     String roughness = materialLine.replaceAll("rough ", "");
                     currentMaterialInfo.roughness = parseFloat(roughness);
-                } else if (materialLine.startsWith("Ks ")) {
+                } else if ("Ks".equals(firstToken)) {
                     String specular = materialLine;
                     //currentMaterialInfo.specular = parseVertex(specular);
                     // Physically based tmaterials translate specular to roughness
 //			    	  currentMaterialInfo.roughness = 1-parseVertex(specular).x;
-                } else if (materialLine.startsWith("Ns ")) {
+                } else if ("Ns".equals(firstToken)) {
                     String specularCoefficient = materialLine.replaceAll("Ns ", "");
 //			    	  currentMaterialInfo.roughness = 1-(parseFloat(specularCoefficient)/1000 + 1);
 //			    	  currentMaterialInfo.specularCoefficient = parseFloat(specularCoefficient);

@@ -4,8 +4,8 @@ import camera.Camera;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import component.ModelComponent;
 import config.Config;
-import engine.Transform;
 import engine.AppContext;
+import engine.Transform;
 import engine.model.Entity;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
@@ -32,7 +32,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
 
     private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-    public ProbeDebugDrawStrategy(Renderer renderer) {
+    public ProbeDebugDrawStrategy(Renderer renderer) throws Exception {
         super(renderer);
     }
 

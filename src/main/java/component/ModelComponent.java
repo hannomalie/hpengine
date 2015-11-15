@@ -74,7 +74,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public void draw(Camera camera) {
-        draw(camera, getEntity().getModelMatrixAsBuffer(), appContext.getRenderer().getMaterialFactory().get(materialName).getFirstPassProgram(), appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(camera, getEntity().getModelMatrixAsBuffer(), appContext.getRenderer().getProgramFactory().getFirstpassDefaultProgram(), appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
@@ -95,27 +95,16 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //			currentProgram.use();
 //		}
 //		currentProgram = renderer.getLastUsedProgram();
-        currentProgram.use();
         currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("useParallax", Config.useParallax);
         currentProgram.setUniform("useSteepParallax", Config.useSteepParallax);
-        currentProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
-        currentProgram.setUniform("rainEffect", Config.RAINEFFECT);
-        currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-        currentProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
-        currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        currentProgram.setUniform("eyePosition", camera.getPosition());
-        currentProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
-        currentProgram.setUniform("near", camera.getNear());
-        currentProgram.setUniform("far", camera.getFar());
-        currentProgram.setUniform("time", (int)System.currentTimeMillis());
         currentProgram.setUniform("entityIndex", entityIndex);
+        currentProgram.setUniform("materialIndex", appContext.getRenderer().getMaterialFactory().indexOf(appContext.getRenderer().getMaterialFactory().get(materialName)));
         currentProgram.setUniform("isSelected", isSelected);
 //        ARBBindlessTexture.glUniformHandleui64ARB(currentProgram.getUniformLocation("xxx"), getMaterial().getMaterialInfo().maps.getTextures().get(Material.MAP.DIFFUSE).getHandle());
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
-        // TODO: Remove this from here...
-        currentProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
-        appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
+//        TODO: Remove this from here...
+//        appContext.getRenderer().getMaterialFactory().get(materialName).setTexturesActive(currentProgram);
 
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 6);
 //		renderer.getEnvironmentMap().bind();
@@ -158,11 +147,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     public void setMaterial(String materialName) {
         this.materialName = materialName;
         model.setMaterial(getRenderer().getMaterialFactory().get(materialName));
-    };
-
-    @Override
-    public Program getFirstPassProgram() {
-        return model.getMaterial().getFirstPassProgram();
     }
 
     @Override

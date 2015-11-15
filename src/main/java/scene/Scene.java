@@ -12,12 +12,12 @@ import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.command.Result;
-import renderer.command.Command;
-import renderer.light.*;
+import renderer.light.AreaLight;
+import renderer.light.DirectionalLight;
+import renderer.light.PointLight;
+import renderer.light.TubeLight;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -59,8 +59,12 @@ public class Scene implements LifeCycle, Serializable {
 		addAll(entities);
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
-			});
+                try {
+                    appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
 		}
 		initLights();
 		initialized = true;

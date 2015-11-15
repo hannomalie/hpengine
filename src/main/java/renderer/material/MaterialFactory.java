@@ -47,7 +47,7 @@ public class MaterialFactory {
 
 	public MaterialFactory(Renderer renderer) {
 		this.renderer = renderer;
-		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(2000));
+		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(20000));
 
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
@@ -206,10 +206,6 @@ public class MaterialFactory {
 			this.metallic = materialInfo.metallic;
 			this.ambient = materialInfo.ambient;
 			this.transparency = materialInfo.transparency;
-			this.firstPassProgram = materialInfo.firstPassProgram;
-			this.geometryShader = materialInfo.geometryShader;
-			this.vertexShader = materialInfo.vertexShader;
-			this.fragmentShader = materialInfo.fragmentShader;
 			this.parallaxScale = materialInfo.parallaxScale;
 			this.parallaxBias = materialInfo.parallaxBias;
 			this.materialType = materialInfo.materialType;
@@ -228,44 +224,8 @@ public class MaterialFactory {
 		public MaterialType materialType = DEFAULT;
 		
 		public boolean textureLess;
-		transient public Program firstPassProgram;
-		String geometryShader = "";
-		String vertexShader = "";
-		String fragmentShader = "";
 		public void put(MAP map, Texture texture) {
 			maps.put(map, texture);
-		}
-
-		public boolean hasCustomVertexShader() {
-			return !vertexShader.equals("");
-		}
-
-		public boolean hasCustomFragmentShader() {
-			return !fragmentShader.equals("");
-		}
-
-		public String getGeometryShader() {
-			return geometryShader;
-		}
-
-		public void setGeometryShader(String geometryShader) {
-			this.geometryShader = geometryShader;
-		}
-
-		public String getVertexShader() {
-			return vertexShader;
-		}
-
-		public void setVertexShader(String vertexShader) {
-			this.vertexShader = vertexShader;
-		}
-
-		public String getFragmentShader() {
-			return fragmentShader;
-		}
-
-		public void setFragmentShader(String fragmentShader) {
-			this.fragmentShader = fragmentShader;
 		}
 
 		public MaterialInfo setRoughness(float roughness) {
@@ -282,7 +242,46 @@ public class MaterialFactory {
 			this.diffuse.set(diffuse);
 			return this;
 		}
-	}
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MaterialInfo that = (MaterialInfo) o;
+
+            if (Float.compare(that.roughness, roughness) != 0) return false;
+            if (Float.compare(that.metallic, metallic) != 0) return false;
+            if (Float.compare(that.ambient, ambient) != 0) return false;
+            if (Float.compare(that.transparency, transparency) != 0) return false;
+            if (Float.compare(that.parallaxScale, parallaxScale) != 0) return false;
+            if (Float.compare(that.parallaxBias, parallaxBias) != 0) return false;
+            if (textureLess != that.textureLess) return false;
+            if (maps != null ? !maps.equals(that.maps) : that.maps != null) return false;
+            if (environmentMapType != that.environmentMapType) return false;
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (diffuse != null ? !diffuse.equals(that.diffuse) : that.diffuse != null) return false;
+            return materialType == that.materialType;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = maps != null ? maps.hashCode() : 0;
+            result = 31 * result + (environmentMapType != null ? environmentMapType.hashCode() : 0);
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            result = 31 * result + (diffuse != null ? diffuse.hashCode() : 0);
+            result = 31 * result + (roughness != +0.0f ? Float.floatToIntBits(roughness) : 0);
+            result = 31 * result + (metallic != +0.0f ? Float.floatToIntBits(metallic) : 0);
+            result = 31 * result + (ambient != +0.0f ? Float.floatToIntBits(ambient) : 0);
+            result = 31 * result + (transparency != +0.0f ? Float.floatToIntBits(transparency) : 0);
+            result = 31 * result + (parallaxScale != +0.0f ? Float.floatToIntBits(parallaxScale) : 0);
+            result = 31 * result + (parallaxBias != +0.0f ? Float.floatToIntBits(parallaxBias) : 0);
+            result = 31 * result + (materialType != null ? materialType.hashCode() : 0);
+            result = 31 * result + (textureLess ? 1 : 0);
+            return result;
+        }
+    }
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
@@ -352,28 +351,28 @@ public class MaterialFactory {
             ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
 			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
 
-            DoubleBuffer temp = materialBuffer.getValues();
-            for(int i = 0; i < materials.size()*16; i++) {
-
-                int index = i + 1;
-
-                if(index%14 == 0) {
-                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-                } else if(index%15 == 0) {
-                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-                } else if(index%16 == 0) {
-                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-                } else {
-                    System.out.print(temp.get(i));
-                }
-                System.out.print(" ");
-
-                if(index%16 == 0) {
-                    System.out.print(" (index " + ((i/15)-1) + ") ");
-                    System.out.print(materials.get((i / 15) - 1 ).getName());
-                    System.out.println();
-                }
-            }
+//            DoubleBuffer temp = materialBuffer.getValues();
+//            for(int i = 0; i < materials.size()*16; i++) {
+//
+//                int index = i + 1;
+//
+//                if(index%14 == 0) {
+//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+//                } else if(index%15 == 0) {
+//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+//                } else if(index%16 == 0) {
+//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
+//                } else {
+//                    System.out.print(temp.get(i));
+//                }
+//                System.out.print(" ");
+//
+//                if(index%16 == 0) {
+//                    System.out.print(" (index " + ((i/15)-1) + ") ");
+//                    System.out.print(materials.get((i / 15) - 1 ).getName());
+//                    System.out.println();
+//                }
+//            }
 		});
 	}
 }

@@ -1,23 +1,17 @@
 package scene;
 
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import config.Config;
 import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
 import octree.Octree;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.util.vector.Vector3f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.constants.GlCap;
 import renderer.light.DirectionalLight;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import scene.EnvironmentProbe.Update;
@@ -26,10 +20,9 @@ import shader.Program;
 import texture.CubeMapArray;
 import util.Util;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Vector3f;
+import java.nio.FloatBuffer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -68,17 +61,17 @@ public class EnvironmentProbeFactory {
 		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size) {
+	public EnvironmentProbe getProbe(Vector3f center, float size) throws Exception {
 		return getProbe(center, size, DEFAULT_PROBE_UPDATE, 1.0f);
 	}
-	public EnvironmentProbe getProbe(Vector3f center, float size, float weight) {
+	public EnvironmentProbe getProbe(Vector3f center, float size, float weight) throws Exception {
 		return getProbe(center, size, DEFAULT_PROBE_UPDATE, weight);
 	}
 
-	public EnvironmentProbe getProbe(Vector3f center, float size, Update update, float weight) {
+	public EnvironmentProbe getProbe(Vector3f center, float size, Update update, float weight) throws Exception {
 		return getProbe(center, new Vector3f(size, size, size), update, weight);
 	}
-	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) {
+	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) throws Exception {
 		EnvironmentProbe probe = new EnvironmentProbe(appContext, center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();

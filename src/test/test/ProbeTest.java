@@ -12,7 +12,7 @@ import scene.EnvironmentProbe.Update;
 public class ProbeTest extends TestWithRenderer {
 	
 	@Test
-	public void assignsProbesProperly() {
+	public void assignsProbesProperly() throws Exception {
 		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
 		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
 		

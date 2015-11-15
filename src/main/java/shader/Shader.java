@@ -8,22 +8,23 @@ import renderer.OpenGLContext;
 import renderer.Renderer;
 import util.TypedTuple;
 import util.Util;
+import util.ressources.Reloadable;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public interface Shader {
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws IOException {
+public interface Shader extends Reloadable {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws Exception {
         return loadShader(type, new File(getDirectory() + filename), "");
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file) throws IOException {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file) throws Exception {
         return loadShader(type, file, "");
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, String mapDefinesString) throws IOException {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, String mapDefinesString) throws Exception {
         return loadShader(type, new ShaderSource(file), mapDefinesString);
     }
 
@@ -32,27 +33,32 @@ public interface Shader {
     }
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, ShaderSource shaderSource, String mapDefinesString) {
-		String resultingShaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();
 
-		String findStr = "\n";
-		int newlineCount = (resultingShaderSource.split(findStr, -1).length-1);
+        if (shaderSource == null) {
+            System.out.println("Shadersource null, returning null shader");
+            return null;
+        }
 
-//		System.out.println(resultingShaderSource);
+        String resultingShaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();
+
+        String findStr = "\n";
+        int newlineCount = (resultingShaderSource.split(findStr, -1).length - 1);
 
         String actualShaderSource = shaderSource.getSource();
 
-		try {
+        try {
             TypedTuple<String, Integer> tuple = replaceIncludes(actualShaderSource, newlineCount);
             actualShaderSource = tuple.getLeft();
-			newlineCount = tuple.getRight();
-			resultingShaderSource += actualShaderSource;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+            newlineCount = tuple.getRight();
+            resultingShaderSource += actualShaderSource;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         SHADERTYPE shader = null;
         try {
             shader = type.newInstance();
+            shader.setShaderSource(shaderSource);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,6 +74,8 @@ public interface Shader {
             GL20.glCompileShader(shaderID[0]);
         });
 
+        shaderSource.setResultingShaderSource(resultingShaderSource);
+
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
@@ -81,15 +89,18 @@ public interface Shader {
             }
         });
 
-        if(shaderLoadFailed[0]) {
+        if (shaderLoadFailed[0]) {
             throw new ShaderLoadException(shaderSource);
         }
 
 //		System.out.println(resultingShaderSource);
-		Renderer.exitOnGLError("loadShader");
+        Renderer.exitOnGLError("loadShader");
 
-		return shader;
-	}
+        return shader;
+    }
+
+    void setShaderSource(ShaderSource shaderSource);
+    ShaderSource getShaderSource();
 
     static TypedTuple<String, Integer> replaceIncludes(String shaderFileAsText, int currentNewLineCount) throws IOException {
 
@@ -142,18 +153,44 @@ public interface Shader {
         }
     }
 
-    final class ShaderSource {
-        private final String source;
-        private final String fileName;
-
-        public ShaderSource(String shaderSource) {
-            this.source = shaderSource;
-            this.fileName = "No corresponding file";
+    final class ShaderSourceFactory {
+        public static ShaderSource getShaderSource(String shaderSource) {
+            if("".equals(shaderSource)) {
+                return null;
+            }
+            return new ShaderSource(shaderSource);
         }
 
-        public ShaderSource(File file) throws IOException {
-            source = FileUtils.readFileToString(file);
-            fileName = FilenameUtils.getBaseName(file.getName());
+        public static ShaderSource getShaderSource(File file) {
+            if(file.exists()) {
+                try {
+                    return new ShaderSource(file);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    final class ShaderSource implements Reloadable {
+        private String source;
+        private final String fileName;
+        private final File file;
+        private String resultingShaderSource;
+
+        private ShaderSource(String shaderSource) {
+            this.source = shaderSource;
+            this.fileName = "No corresponding file";
+            file = null;
+        }
+
+        private ShaderSource(File file) throws IOException {
+            this.file = file;
+            this.source = FileUtils.readFileToString(file);
+            this.fileName = FilenameUtils.getBaseName(file.getName());
         }
 
         public String getSource() {
@@ -163,6 +200,45 @@ public interface Shader {
         public String getFilename() {
             return fileName;
         }
+
+        public void setResultingShaderSource(String resultingShaderSource) {
+            this.resultingShaderSource = resultingShaderSource;
+        }
+
+        public String getResultingShaderSource() {
+            return resultingShaderSource;
+        }
+
+        @Override
+        public String getName() {
+            return fileName;
+        }
+
+        @Override
+        public void load() {
+            try {
+                source = FileUtils.readFileToString(file);
+            } catch (IOException e) {
+                System.err.println("Cannot reload shader file, old one is kept (" + getFilename() + ")");
+            }
+        }
+
+        @Override
+        public void unload() {
+
+        }
+
+        @Override
+        public void reload() {
+            if(isFileBased()) {
+               Reloadable.super.reload();
+            }
+        }
+
+        private boolean isFileBased() {
+            return file != null;
+        }
+
     }
 
     class ShaderLoadException extends RuntimeException {

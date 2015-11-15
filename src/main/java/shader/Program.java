@@ -14,7 +14,6 @@ import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
 import org.lwjgl.util.glu.GLU;
 import renderer.OpenGLContext;
-import renderer.Renderer;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
 import util.ressources.Reloadable;
@@ -23,7 +22,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL32;
 
 import com.google.common.eventbus.Subscribe;
 
@@ -35,9 +33,13 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	private Map<String, Object> localDefines = new HashMap<>();
 	
-	private String geometryShaderName;
-	private String vertexShaderName;
-	private String fragmentShaderName;
+	private ShaderSource geometryShaderSource;
+	private ShaderSource vertexShaderSource;
+	private ShaderSource fragmentShaderSource;
+
+    private VertexShader vertexShader;
+    private GeometryShader geometryShader;
+    private FragmentShader fragmentShader;
 
 	private String fragmentDefines;
 
@@ -45,14 +47,15 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	private FileAlterationObserver observerFragmentShader;
 
-	protected Program(String vertexShaderName, String geometryShaderName, String fragmentShaderName, EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
+	protected Program(ShaderSource vertexShaderSource, ShaderSource geometryShaderSource, ShaderSource fragmentShaderSource,
+                      EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
 		this.channels = channels;
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
 		
-		this.geometryShaderName = geometryShaderName;
-		this.vertexShaderName = vertexShaderName;
-		this.fragmentShaderName = fragmentShaderName;
+		this.geometryShaderSource = geometryShaderSource;
+		this.vertexShaderSource = vertexShaderSource;
+		this.fragmentShaderSource = fragmentShaderSource;
 
 		observerFragmentShader = new FileAlterationObserver(getDirectory());
 
@@ -65,28 +68,31 @@ public class Program extends AbstractProgram implements Reloadable {
 			clearUniforms();
 
 			try {
-                attachShader(VertexShader.load(new ShaderSource(new File(getDirectory() + vertexShaderName))));
+                vertexShader = VertexShader.load(vertexShaderSource);
 			} catch (Exception e) {
 				try {
-                    attachShader(AppContext.getInstance().getRenderer().getProgramFactory().getDefaultFirstpassVertexShader());
+                    vertexShader = AppContext.getInstance().getRenderer().getProgramFactory().getDefaultFirstpassVertexShader();
 				} catch (Exception e1) {
 					System.err.println("Not able to load default vertex shader, so what else could be done...");
 				}
 			}
 			try {
-                attachShader(loadShader(FragmentShader.class, new ShaderSource(new File(getDirectory() + fragmentShaderName)), fragmentDefines));
+                fragmentShader = loadShader(FragmentShader.class, fragmentShaderSource, fragmentDefines);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (geometryShaderName != null && geometryShaderName != "") {
+			if (geometryShaderSource != null) {
 				try {
-                    attachShader(loadShader(GeometryShader.class, new ShaderSource(new File(getDirectory() + geometryShaderName))));
+                    geometryShader = loadShader(GeometryShader.class, geometryShaderSource);
 					System.out.println("Attach geometryshader " + GLU.gluErrorString(GL11.glGetError()));
 				} catch (Exception e) {
 					System.out.println("Not able to load geometry shader, so what else could be done...");
 				}
 			}
 
+            attachShader(vertexShader);
+            attachShader(fragmentShader);
+            if(geometryShader != null) attachShader(geometryShader);
 			bindShaderAttributeChannels();
 
 			GL20.glLinkProgram(id);
@@ -101,6 +107,9 @@ public class Program extends AbstractProgram implements Reloadable {
 
     private void attachShader(Shader shader) {
         GL20.glAttachShader(getId(), shader.getId());
+    }
+    private void detachShader(Shader shader) {
+        GL20.glDetachShader(getId(), shader.getId());
     }
 
     private void printError(String text) {
@@ -120,9 +129,9 @@ public class Program extends AbstractProgram implements Reloadable {
 					return true;
 				}
 
-				if(fragmentShaderName != null && fragmentShaderName.startsWith(fileName) ||
-					vertexShaderName != null && vertexShaderName.startsWith(fileName) ||
-					geometryShaderName != null && geometryShaderName.startsWith(fileName)) {
+				if(fragmentShaderSource != null && fragmentShaderSource.getFilename().startsWith(fileName) ||
+					vertexShaderSource != null && vertexShaderSource.getFilename().startsWith(fileName) ||
+					geometryShaderSource != null && geometryShaderSource.getFilename().startsWith(fileName)) {
 					return true;
 				}
 				return false;
@@ -146,7 +155,11 @@ public class Program extends AbstractProgram implements Reloadable {
 		final Program self = this;
 
 		CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-			self.unload();
+//			self.unload();
+            detachShader(vertexShader);
+            detachShader(fragmentShader);
+            if(geometryShader != null) detachShader(geometryShader);
+            fragmentShader.reload();
 			self.load();
 			return true;
 		});
@@ -164,7 +177,7 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	@Override
 	public String getName() {
-		return new StringJoiner(", ").add(fragmentShaderName).add(vertexShaderName)
+		return new StringJoiner(", ").add(fragmentShaderSource.getFilename()).add(vertexShaderSource.getFilename())
 				.toString();
 	}
 
@@ -178,11 +191,10 @@ public class Program extends AbstractProgram implements Reloadable {
 		
 		if (this.channels == otherProgram.channels &&
 			this.needsTextures == otherProgram.needsTextures &&
-				((this.geometryShaderName == null && otherProgram.geometryShaderName == null) ||
-				(this.geometryShaderName == "" && otherProgram.geometryShaderName == "") ||
-				(this.geometryShaderName.equals(otherProgram.geometryShaderName))) &&
-			this.vertexShaderName.equals(otherProgram.vertexShaderName) &&
-			this.fragmentShaderName.equals(otherProgram.fragmentShaderName)) {
+				((this.geometryShaderSource == null && otherProgram.geometryShaderSource == null) ||
+				(this.geometryShaderSource.equals(otherProgram.geometryShaderSource))) &&
+			this.vertexShaderSource.equals(otherProgram.vertexShaderSource) &&
+			this.fragmentShaderSource.equals(otherProgram.fragmentShaderSource)) {
 			return true;
 		}
 		return false;
@@ -192,9 +204,9 @@ public class Program extends AbstractProgram implements Reloadable {
 	public int hashCode() {
 		int hash = 0;
 		hash += (channels != null? channels.hashCode() : 0);
-		hash += (geometryShaderName != null? geometryShaderName.hashCode() : 0);
-		hash += (vertexShaderName != null? vertexShaderName.hashCode() : 0);
-		hash += (fragmentShaderName != null? fragmentShaderName.hashCode() : 0);
+		hash += (geometryShaderSource != null? geometryShaderSource.hashCode() : 0);
+		hash += (vertexShaderSource != null? vertexShaderSource.hashCode() : 0);
+		hash += (fragmentShaderSource != null? fragmentShaderSource.hashCode() : 0);
 		return hash;
 	};
 	

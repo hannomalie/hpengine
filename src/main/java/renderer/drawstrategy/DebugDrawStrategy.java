@@ -24,6 +24,7 @@ import renderer.light.TubeLight;
 import shader.Program;
 import texture.CubeMap;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
 
     protected Program linesProgram;
 
-    public DebugDrawStrategy(Renderer renderer) {
+    public DebugDrawStrategy(Renderer renderer) throws Exception {
         super(renderer);
         linesProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 

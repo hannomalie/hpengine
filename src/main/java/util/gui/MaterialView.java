@@ -73,7 +73,6 @@ public class MaterialView extends WebPanel {
 		
 		addTexturePanel(panels);
         addValuePanels(panels);
-        addShaderChoosers(panels);
 
         WebButton saveButton = new WebButton("Save");
         saveButton.addActionListener(e -> {
@@ -396,104 +395,6 @@ public class MaterialView extends WebPanel {
 		}
 		
 		panels.add(webComponentPanel);
-	}
-
-	private void addShaderChoosers(List<Component> panels) {
-		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
-        webComponentPanel.setElementMargin ( 4 );
-        webComponentPanel.setLayout(new FlowLayout());
-		{
-        	final WebFileChooserField vertexShaderChooser = new WebFileChooserField ();
-        	vertexShaderChooser.setSelectedFile(new File(Shader.getDirectory() + material.getVertexShader()));
-        	vertexShaderChooser.setPreferredWidth ( 200 );
-        	vertexShaderChooser.setPreferredHeight( 20 );
-        	vertexShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
-				
-				@Override
-				public void selectionChanged(List<File> files) {
-					File chosenFile = files.get(0);
-					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-					
-					File shaderFileInWorkDir = new File(Shader.getDirectory() + fileName + ".glsl");
-					
-					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
-					material.setVertexShader(fileName + ".glsl");
-		        	addMaterialInitCommand(material);
-				}
-
-			});
-        	WebButton copyFromDefaultButton = new WebButton("Copy from default");
-        	copyFromDefaultButton.addActionListener(e -> {
-        		Object selection = WebOptionPane.showInputDialog( this, "Vertexshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
-	        	if(selection != null) {
-	        		try {
-						appContext.getRenderer().getProgramFactory().copyDefaultVertexShaderToFile(selection.toString());
-						material.setVertexShader(selection.toString() + ".glsl");
-			        	addMaterialInitCommand(material);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-						showNotification(NotificationIcon.error, "Not able to set vertex shader");
-					}
-	        	}
-        	});
-        	WebButton deleteShaderButton = new WebButton("X");
-        	deleteShaderButton.addActionListener(e -> {
-        		material.setVertexShader("");
-	        	addMaterialInitCommand(material);
-        	});
-            GroupPanel vertexShaderPanel = new GroupPanel ( 4, new WebLabel("VertexShader"), vertexShaderChooser, copyFromDefaultButton, deleteShaderButton);
-            vertexShaderPanel.setPreferredWidth ( 200 );
-            vertexShaderPanel.setPreferredHeight( 20 );
-            vertexShaderPanel.setLayout(new GridLayout(1,2));
-        	webComponentPanel.add(vertexShaderPanel);
-        }
-        {
-        	final WebFileChooserField fragmentShaderChooser = new WebFileChooserField ();
-        	fragmentShaderChooser.setSelectedFile(new File(Shader.getDirectory() + material.getFragmentShader()));
-        	fragmentShaderChooser.setPreferredWidth ( 200 );
-        	fragmentShaderChooser.setPreferredHeight( 20 );
-        	fragmentShaderChooser.addSelectedFilesListener(new FilesSelectionListener() {
-				
-				@Override
-				public void selectionChanged(List<File> files) {
-					File chosenFile = files.get(0);
-					String fileName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-					
-					File shaderFileInWorkDir = new File(Shader.getDirectory() + fileName + ".glsl");
-					
-					copyShaderIfNotPresent(chosenFile, shaderFileInWorkDir);
-					material.setFragmentShader(fileName + ".glsl");
-		        	addMaterialInitCommand(material);
-				}
-
-			});
-        	WebButton copyFromDefaultButton = new WebButton("Copy from default");
-        	copyFromDefaultButton.addActionListener(e -> {
-        		Object selection = WebOptionPane.showInputDialog( this, "Fragmentshader name: ", "Copy Shader", WebOptionPane.QUESTION_MESSAGE, null, null, "default" );
-	        	if(selection != null) {
-	        		try {
-						appContext.getRenderer().getProgramFactory().copyDefaultFragmentShaderToFile(selection.toString());
-						material.setFragmentShader(selection.toString() + ".glsl");
-			        	addMaterialInitCommand(material);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-						showNotification(NotificationIcon.error, "Not able to set fragment shader");
-					}
-	        	}
-        	});
-        	WebButton deleteShaderButton = new WebButton("X");
-        	deleteShaderButton.addActionListener(e -> {
-        		material.setFragmentShader("");
-	        	addMaterialInitCommand(material);
-        	});
-            GroupPanel fragmentShaderPanel = new GroupPanel ( 4, new WebLabel("FragmentShader"), fragmentShaderChooser, copyFromDefaultButton, deleteShaderButton);
-            fragmentShaderPanel.setPreferredWidth ( 200 );
-            fragmentShaderPanel.setPreferredHeight( 20 );
-            fragmentShaderPanel.setLayout(new GridLayout(1,2));
-        	webComponentPanel.add(fragmentShaderPanel);
-        }
-        
-        panels.add(webComponentPanel);
 	}
 
 	private void copyShaderIfNotPresent(File chosenFile, File shaderFileInWorkDir) {

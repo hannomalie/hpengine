@@ -1,17 +1,16 @@
 package scene;
 
-import java.util.List;
-import java.util.Random;
-
 import camera.Camera;
 import engine.AppContext;
 import engine.model.Entity;
-import renderer.environmentsampler.EnvironmentSampler;
-import renderer.Renderer;
-import shader.Program;
-
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.Renderer;
+import renderer.environmentsampler.EnvironmentSampler;
+import shader.Program;
+
+import java.util.List;
+import java.util.Random;
 
 public class EnvironmentProbe extends Entity {
 	
@@ -28,7 +27,7 @@ public class EnvironmentProbe extends Entity {
 	private float weight;
 	
 
-	protected EnvironmentProbe(AppContext appContext, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) {
+	protected EnvironmentProbe(AppContext appContext, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
 		this.renderer = appContext.getRenderer();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);

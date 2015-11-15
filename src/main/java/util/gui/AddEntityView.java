@@ -16,6 +16,7 @@ import com.alee.utils.swing.Customizer;
 import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
+import event.MaterialAddedEvent;
 import renderer.command.LoadModelCommand;
 import renderer.command.LoadModelCommand.EntityListResult;
 
@@ -74,6 +75,7 @@ public class AddEntityView extends WebPanel {
 							public EntityListResult doInBackground() throws Exception {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
 								appContext.getScene().addAll(result.entities);
+                                appContext.getEventBus().post(new MaterialAddedEvent());
 								return result;
 							}
 

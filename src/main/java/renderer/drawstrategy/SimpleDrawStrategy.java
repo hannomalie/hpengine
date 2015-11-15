@@ -29,6 +29,7 @@ import shader.ProgramFactory;
 import texture.CubeMap;
 import util.stopwatch.GPUProfiler;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     OpenGLContext openGLContext;
 
-    public SimpleDrawStrategy(Renderer renderer) {
+    public SimpleDrawStrategy(Renderer renderer) throws Exception {
         super(renderer);
         ProgramFactory programFactory = renderer.getProgramFactory();
         firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
@@ -173,6 +174,20 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if(Config.DRAWSCENE_ENABLED) {
 //			GPUProfiler.start("Depth prepass");
+            Program firstpassDefaultProgram = AppContext.getInstance().getRenderer().getProgramFactory().getFirstpassDefaultProgram();
+            firstpassDefaultProgram.use();
+            firstpassDefaultProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
+            firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
+            firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
+            firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
+            firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
+            firstpassDefaultProgram.setUniform("near", camera.getNear());
+            firstpassDefaultProgram.setUniform("far", camera.getFar());
+            firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
+
             for (Entity entity : entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
@@ -657,7 +672,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
             probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
             probeBoxEntity.getComponent(ModelComponent.class).
-                    draw(camera, probeBoxEntity.getModelMatrixAsBuffer(), probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getFirstPassProgram(), -1);
+                    draw(camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
         }
 
         probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;

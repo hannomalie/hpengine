@@ -42,6 +42,7 @@ import texture.CubeMapArray;
 import util.Util;
 import util.stopwatch.GPUProfiler;
 
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
@@ -86,7 +87,7 @@ public class EnvironmentSampler extends Camera {
 	
 	private RenderTarget renderTarget;
 	
-	public EnvironmentSampler(AppContext appContext, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) {
+	public EnvironmentSampler(AppContext appContext, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
 		super();
 		init(appContext);
 		this.appContext = appContext;

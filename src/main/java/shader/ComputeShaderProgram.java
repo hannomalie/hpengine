@@ -46,7 +46,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		clearUniforms();
 		int computeShaderId = -1;
 		try {
-            ShaderSource shaderSource = new ShaderSource(new File(getDirectory() + computeShaderName));
+            ShaderSource shaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + computeShaderName));
             computeShaderId = ComputeShader.load(shaderSource).getId();
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -41,22 +41,6 @@ public enum ShaderDefine {
 		return builder.toString();
 	}
 
-	public static String getDefinesString(Set<MAP> maps) {
-		StringBuilder builder = new StringBuilder();
-		EnumSet<ShaderDefine> allDefines = EnumSet.allOf(ShaderDefine.class);
-		
-		for (MAP map : maps) {
-			for (ShaderDefine shaderDefine : allDefines) {
-				if (shaderDefine.map == map) {
-					builder.append(shaderDefine.defineString);
-					builder.append("\n");
-				}
-			}
-		}
-		
-		return builder.toString();
-	}
-	
 	public static String getGlobalDefinesString() {
 		StringBuilder builder = new StringBuilder();
 

@@ -7,21 +7,16 @@ import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.material.MaterialFactory.MaterialInfo;
-import shader.Bufferable;
-import shader.Program;
-import shader.ProgramFactory;
-import shader.ShaderDefine;
+import shader.*;
 import texture.Texture;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
+import static shader.Shader.*;
 
 public class Material implements Serializable, Bufferable {
 	public enum MaterialType {
@@ -88,28 +83,9 @@ public class Material implements Serializable, Bufferable {
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
 			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
 		}
-
-		Program firstPassProgram = null;
-
-		firstPassProgram = getFirstpassProgramForShaderDefinitions(renderer, firstPassProgram);
-		setProgram(firstPassProgram);
 	}
 
 	protected Material() { }
-
-	private Program getFirstpassProgramForShaderDefinitions(Renderer renderer, Program firstPassProgram) {
-		String definesString = ShaderDefine.getDefinesString(materialInfo.maps.getTextures().keySet());
-		
-		if(materialInfo.hasCustomVertexShader() && !materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, ProgramFactory.FIRSTPASS_DEFAULT_FRAGMENTSHADER_FILE);
-		} else if(!materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(ProgramFactory.FIRSTPASS_DEFAULT_VERTEXSHADER_FILE, materialInfo.fragmentShader);
-		} else if(materialInfo.hasCustomVertexShader() && materialInfo.hasCustomFragmentShader()) {
-			firstPassProgram = renderer.getProgramFactory().getProgram(materialInfo.vertexShader, materialInfo.fragmentShader);
-		}
-		firstPassProgram = logAndFallBackIfNull(renderer, firstPassProgram, definesString);
-		return firstPassProgram;
-	}
 
 	private Program logAndFallBackIfNull(Renderer renderer, Program firstPassProgram, String definesString) {
 		if(firstPassProgram == null) {
@@ -129,9 +105,10 @@ public class Material implements Serializable, Bufferable {
 	public boolean hasNormalMap() {
 		return materialInfo.maps.getTextures().containsKey(MAP.NORMAL);
 	}
-	public boolean hasDiffuseMap() {
-		return !isTextureLess() && materialInfo.maps.getTextures().containsKey(MAP.DIFFUSE);
-	}
+	public boolean hasDiffuseMap() { return !isTextureLess() && materialInfo.maps.getTextures().containsKey(MAP.DIFFUSE); }
+    public boolean hasHeightMap() { return materialInfo.maps.getTextures().containsKey(MAP.HEIGHT); }
+    public boolean hasOcclusionMap() { return materialInfo.maps.getTextures().containsKey(MAP.OCCLUSION); }
+    public boolean hasRoughnessMap() { return materialInfo.maps.getTextures().containsKey(MAP.ROUGHNESS); }
 	
 	public void setTexturesActive(Program program) {
 		program.setUniform("materialIndex", AppContext.getInstance().getRenderer()
@@ -143,7 +120,6 @@ public class Material implements Serializable, Bufferable {
 				
 		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
-            if(entry.getKey().equals(MAP.DIFFUSE )|| entry.getKey().equals(MAP.NORMAL)) { continue; }
 			Texture texture = entry.getValue();
 			texture.bind(map.textureSlot);
 		}
@@ -175,13 +151,6 @@ public class Material implements Serializable, Bufferable {
 	}
 	public void setDiffuse(Vector3f diffuse) {
 		materialInfo.diffuse = diffuse;
-	}
-	public Program getFirstPassProgram() {
-		return materialInfo.firstPassProgram;
-	}
-
-	public void setProgram(Program firstPassProgram) {
-		materialInfo.firstPassProgram = firstPassProgram;
 	}
 
 	public Vector3f getDiffuse() {
@@ -228,38 +197,6 @@ public class Material implements Serializable, Bufferable {
 		materialInfo.parallaxBias = parallaxBias;
 	}
 
-	public boolean hasCustomVertexShader() {
-		return materialInfo.hasCustomVertexShader();
-	}
-
-	public boolean hasCustomFragmentShader() {
-		return materialInfo.hasCustomFragmentShader();
-	}
-
-	public String getGeometryShader() {
-		return materialInfo.getGeometryShader();
-	}
-
-	public void setGeometryShader(String geometryShader) {
-		materialInfo.setGeometryShader(geometryShader);
-	}
-
-	public String getVertexShader() {
-		return materialInfo.getVertexShader();
-	}
-
-	public void setVertexShader(String vertexShader) {
-		materialInfo.setVertexShader(vertexShader);
-	}
-
-	public String getFragmentShader() {
-		return materialInfo.getFragmentShader();
-	}
-
-	public void setFragmentShader(String fragmentShader) {
-		materialInfo.setFragmentShader(fragmentShader);
-	}
-	
 	public static boolean write(Material material, String resourceName) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
@@ -312,11 +249,7 @@ public class Material implements Serializable, Bufferable {
 		
 		Material m = (Material) other;
 		MaterialInfo mi = m.getMaterialInfo();
-		return (mi.diffuse.equals(materialInfo.diffuse) &&
-//				m.textures.equals(textures) &&
-//				m.name.equals(name) &&
-				mi.roughness == materialInfo.roughness &&
-				mi.firstPassProgram.equals(materialInfo.firstPassProgram));
+		return materialInfo.equals(((Material) other).getMaterialInfo());
 	}
 
 	public void setEnvironmentMapType(ENVIRONMENTMAPTYPE type) {
@@ -330,7 +263,7 @@ public class Material implements Serializable, Bufferable {
 
 	@Override
 	public int getSizePerObject() {
-		return 16;
+		return 22;
 	}
 
 	@Override
@@ -349,10 +282,16 @@ public class Material implements Serializable, Bufferable {
 		doubles[index++] = materialInfo.materialType.ordinal();
 		doubles[index++] = hasDiffuseMap() ? 1 : 0;
 		doubles[index++] = hasNormalMap() ? 1 : 0;
-		doubles[index++] = hasSpecularMap() ? 1 : 0;
+        doubles[index++] = hasSpecularMap() ? 1 : 0;
+        doubles[index++] = hasHeightMap() ? 1 : 0;
+        doubles[index++] = hasOcclusionMap() ? 1 : 0;
+        doubles[index++] = hasRoughnessMap() ? 1 : 0;
         doubles[index++] = hasDiffuseMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.DIFFUSE).getHandle()) : 0;
         doubles[index++] = hasNormalMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.NORMAL).getHandle()) : 0;
         doubles[index++] = hasSpecularMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.SPECULAR).getHandle()) : 0;
+        doubles[index++] = hasHeightMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.HEIGHT).getHandle()) : 0;
+        doubles[index++] = hasOcclusionMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.OCCLUSION).getHandle()) : 0;
+        doubles[index++] = hasRoughnessMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.ROUGHNESS).getHandle()) : 0;
 		return doubles;
 	}
 
