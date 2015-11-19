@@ -3,6 +3,7 @@ package renderer.command;
 import engine.AppContext;
 import renderer.command.AddTextureCommand.TextureResult;
 import texture.Texture;
+import texture.TextureFactory;
 
 public class AddTextureCommand implements Command<TextureResult> {
 
@@ -22,7 +23,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	public TextureResult execute(AppContext appContext) {
 		Texture texture = null;
 		try {
-			texture = appContext.getRenderer().getTextureFactory().getTexture(path, srgba);
+			texture = TextureFactory.getInstance().getTexture(path, srgba);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

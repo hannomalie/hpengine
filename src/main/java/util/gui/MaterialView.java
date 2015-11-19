@@ -33,6 +33,7 @@ import renderer.material.Material.MAP;
 import renderer.material.MaterialFactory.MaterialInfo;
 import shader.Shader;
 import texture.Texture;
+import texture.TextureFactory;
 import util.gui.input.*;
 
 import java.awt.*;
@@ -433,7 +434,7 @@ public class MaterialView extends WebPanel {
 	}
 
 	private List<Texture> getAllTexturesSorted() {
-        List<Texture> temp = (List<Texture>) appContext.getRenderer().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+        List<Texture> temp = (List<Texture>) TextureFactory.getInstance().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
 			@Override
 			public int compare(Texture o1, Texture o2) {
 				return (o1.getPath().compareTo(o2.getPath()));

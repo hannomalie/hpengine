@@ -1,27 +1,27 @@
 package component;
 
 import camera.Camera;
-import config.Config;
 import engine.AppContext;
 import engine.Drawable;
-import engine.model.*;
+import engine.model.DataChannels;
+import engine.model.Face;
+import engine.model.Model;
+import engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
-import renderer.OpenGLThread;
 import renderer.constants.GlCap;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import shader.Program;
-import util.stopwatch.GPUProfiler;
+import shader.ProgramFactory;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -70,11 +70,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(camera, modelMatrix, firstPassProgram, appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
     public void draw(Camera camera) {
-        draw(camera, getEntity().getModelMatrixAsBuffer(), appContext.getRenderer().getProgramFactory().getFirstpassDefaultProgram(), appContext.getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        draw(camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
@@ -91,7 +91,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         Program currentProgram = firstPassProgram;
         currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("entityIndex", entityIndex);
-        currentProgram.setUniform("materialIndex", appContext.getRenderer().getMaterialFactory().indexOf(appContext.getRenderer().getMaterialFactory().get(materialName)));
+        currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
         currentProgram.setUniform("isSelected", isSelected);
         currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
@@ -121,30 +121,21 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
 
     public Material getMaterial() {
-        Material material = getMaterialFactory().get(materialName);
+        Material material = MaterialFactory.getInstance().get(materialName);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
-            return getMaterialFactory().getDefaultMaterial();
+            return MaterialFactory.getInstance().getDefaultMaterial();
         }
         return material;
     }
     public void setMaterial(String materialName) {
         this.materialName = materialName;
-        model.setMaterial(getRenderer().getMaterialFactory().get(materialName));
+        model.setMaterial(MaterialFactory.getInstance().get(materialName));
     }
 
     @Override
-    public void init(AppContext appContext) {
-        super.init(appContext);
-//        Thread thread = new OpenGLThread(getEntity().getName() + " model init") {
-//            @Override
-//            public void doRun() {
-//                createFloatArray(model);
-//                createVertexBuffer();
-//                initialized = true;
-//            }
-//        };
-//        service.submit(thread);
+    public void init() {
+        super.init();
         createFloatArray(model);
         createVertexBuffer();
         initialized = true;

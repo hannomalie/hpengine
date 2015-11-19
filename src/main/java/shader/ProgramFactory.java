@@ -1,17 +1,15 @@
 package shader;
 
+import engine.AppContext;
+import engine.model.DataChannels;
+import org.apache.commons.io.FileUtils;
+import renderer.OpenGLContext;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import engine.AppContext;
-import engine.model.DataChannels;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-
-import org.apache.commons.io.FileUtils;
 
 import static shader.Shader.*;
 
@@ -31,15 +29,22 @@ public class ProgramFactory {
         }
     }
 
-    private Renderer renderer;
-	private AppContext appContext;
-	
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
-	public ProgramFactory(AppContext appContext) {
-		this.appContext = appContext;
-		this.renderer = appContext.getRenderer();
+    private static ProgramFactory instance = null;
+    public static ProgramFactory getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("Call ProgramFactory.init() before using it");
+        }
+        return instance;
+    }
+
+	private ProgramFactory() {
 	}
+
+    public static void init() {
+        instance = new ProgramFactory();
+    }
 
     public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) throws Exception {
         ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + vertexShaderFilename));

@@ -2,6 +2,7 @@ package test;
 
 import component.ScriptComponent;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -17,8 +18,8 @@ public class ScriptTest extends TestWithAppContext {
     @Test
     public void localDefines() {
         ScriptComponent component = new ScriptComponent();
-        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
-        entity.init(appContext);
+        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        entity.init();
         component.setInt("myInt", 5);
 
         Assert.assertEquals(5, component.getContext().getAttribute("myInt"));
@@ -32,8 +33,8 @@ public class ScriptTest extends TestWithAppContext {
 
         String script = "var myInt = myInt;";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
-        entity.init(appContext);
+        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        entity.init();
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
     }
@@ -49,8 +50,8 @@ public class ScriptTest extends TestWithAppContext {
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
         ScriptComponent component = new ScriptComponent(script);
-        Entity entity = appContext.getEntityFactory().getEntity().addComponent(component);
-        entity.init(appContext);
+        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        entity.init();
 
         entity.update(0.1f);
 

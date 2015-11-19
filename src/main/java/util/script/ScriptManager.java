@@ -2,9 +2,15 @@ package util.script;
 
 import component.ScriptComponent;
 import engine.AppContext;
+import engine.model.EntityFactory;
+import engine.model.OBJLoader;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.apache.commons.lang.NotImplementedException;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
+import renderer.Renderer;
+import renderer.material.MaterialFactory;
+import texture.TextureFactory;
 
 import javax.script.*;
 
@@ -34,11 +40,11 @@ public class ScriptManager {
 
 	private void defineGlobals() {
 		define("world", appContext);
-		define("renderer", appContext.getRenderer());
-		define("entityFactory", appContext.getEntityFactory());
-		define("materialFactory", appContext.getRenderer().getMaterialFactory());
-		define("textureFactory", appContext.getRenderer().getTextureFactory());
-		define("objLoader", appContext.getRenderer().getOBJLoader());
+        define("renderer", Renderer.getInstance());
+        define("entityFactory", EntityFactory.getInstance());
+		define("materialFactory", MaterialFactory.getInstance());
+		define("textureFactory", TextureFactory.getInstance());
+		define("objLoader", new OBJLoader());
 	}
 	
 	public void define(String name, Object object) {
@@ -99,4 +105,8 @@ public class ScriptManager {
 			e.printStackTrace();
 		}
 	}
+
+    public static ScriptManager getInstance() {
+        throw new NotImplementedException();
+    }
 }

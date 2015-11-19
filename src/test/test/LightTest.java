@@ -5,13 +5,14 @@ import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.light.AreaLight;
+import renderer.light.LightFactory;
 import renderer.light.TubeLight;
 
 public class LightTest extends TestWithRenderer {
 
 	@Test
 	public void tubeLightHasCorrectProportions() {
-		TubeLight tubeLight = renderer.getLightFactory().getTubeLight();
+        TubeLight tubeLight = LightFactory.getInstance().getTubeLight();
 		
 		Assert.assertEquals(new Vector3f(), tubeLight.getPosition());
 		Assert.assertEquals(200, tubeLight.getLength(), 1.0f);
@@ -28,7 +29,7 @@ public class LightTest extends TestWithRenderer {
 	
 	@Test
 	public void areaLightHasCorrectProportions() {
-		AreaLight areaLight = renderer.getLightFactory().getAreaLight(100,100,200);
+        AreaLight areaLight = LightFactory.getInstance().getAreaLight(100,100,200);
 		
 		Assert.assertEquals(new Vector3f(), areaLight.getPosition());
 		Assert.assertEquals(100, areaLight.getWidth(), 1.0f);

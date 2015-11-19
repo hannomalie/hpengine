@@ -1,20 +1,5 @@
 package util.gui;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import engine.AppContext;
-import engine.model.Entity;
-import renderer.OpenGLContext;
-import renderer.command.Result;
-import renderer.command.Command;
-
 import com.alee.laf.filechooser.WebFileChooser;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
@@ -22,6 +7,17 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
+import engine.AppContext;
+import engine.model.Entity;
+import engine.model.EntityFactory;
+import renderer.OpenGLContext;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class LoadEntitiyView extends WebPanel {
 
@@ -41,13 +37,13 @@ public class LoadEntitiyView extends WebPanel {
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
-				Entity entity = appContext.getEntityFactory().readWithoutInit(chosenFile.getName());
+                Entity entity = EntityFactory.getInstance().readWithoutInit(chosenFile.getName());
 				if(entity == null) {
 					showError(chosenFile);
 					continue;
 				}
 				CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					entity.init(AppContext.getInstance());
+					entity.init();
 					return true;
 				});
 

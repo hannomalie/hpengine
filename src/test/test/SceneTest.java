@@ -1,6 +1,7 @@
 package test;
 
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import scene.Scene;
@@ -11,7 +12,7 @@ public class SceneTest extends TestWithAppContext {
 	@Test
 	public void writeAndRead() throws Exception {
 		Scene scene = new Scene();
-		scene.init(appContext);
+		scene.init();
 		Assert.assertTrue(scene.write(SCENENAME));
 
 		Scene loadedScene = Scene.read(renderer, SCENENAME);
@@ -23,15 +24,15 @@ public class SceneTest extends TestWithAppContext {
 	@Test
 	public void loadScene() throws Exception {
 		Scene scene = new Scene();
-		scene.init(appContext);
+		scene.init();
 		appContext.setScene(scene);
-		Entity entity = appContext.getEntityFactory().getEntity();
+        Entity entity = EntityFactory.getInstance().getEntity();
 		scene.add(entity);
 		Assert.assertEquals(1, appContext.getScene().getEntities().size());
 		Assert.assertTrue(scene.write(SCENENAME));
 
 		Scene loadedScene = Scene.read(renderer, SCENENAME);
-		loadedScene.init(appContext);
+		loadedScene.init();
 		appContext.setScene(loadedScene);
 
 		Assert.assertEquals(1, appContext.getScene().getEntities().size());

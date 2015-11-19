@@ -6,10 +6,9 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import engine.AppContext;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
-import renderer.constants.GlTextureTarget;
+import renderer.Renderer;
 import texture.CubeMapArray;
 import util.Util;
 
@@ -44,7 +43,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			}
 			GL20.glDrawBuffers(scratchBuffer);
 
-			CubeMapArray depthCubeMapArray = new CubeMapArray(AppContext.getInstance().getRenderer(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(Renderer.getInstance(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthbufferLocation = depthCubeMapArray.getTextureID();

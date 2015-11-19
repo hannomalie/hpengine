@@ -1,22 +1,16 @@
 package engine.model;
 
-import engine.AppContext;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-import renderer.material.Material;
-import renderer.material.Material.MAP;
-import renderer.material.MaterialFactory.MaterialInfo;
-
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
+import renderer.material.Material;
+import renderer.material.Material.MAP;
+import renderer.material.MaterialFactory;
+import renderer.material.MaterialFactory.MaterialInfo;
+import texture.TextureFactory;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,11 +28,10 @@ public class OBJLoader {
         READING_MATERIALLIB
     }
 
-    private Renderer renderer;
     private State currentState;
 
-    public OBJLoader(Renderer renderer) {
-        this.renderer = renderer;
+    public OBJLoader() {
+
     }
 
     private static float[] asFloats(Vector3f v) {
@@ -141,14 +134,14 @@ public class OBJLoader {
             }
             if ("mtllib".equals(firstToken)) {
                 long start = System.currentTimeMillis();
-                renderer.getMaterialFactory().putAll(parseMaterialLib(line, f));
+                MaterialFactory.getInstance().putAll(parseMaterialLib(line, f));
                 System.out.println("parsing " + (System.currentTimeMillis() - start));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
-                currentMaterial = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> renderer.getMaterialFactory().get(materialName));
+                currentMaterial = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> MaterialFactory.getInstance().get(materialName));
                 if (currentMaterial == null) {
                     LOGGER.log(Level.INFO, "No material found!!!");
-                    currentMaterial = renderer.getMaterialFactory().getDefaultMaterial();
+                    currentMaterial = MaterialFactory.getInstance().getDefaultMaterial();
                 }
                 if (currentState != State.READING_FACE) {
                     model.setMaterial(currentMaterial);
@@ -288,7 +281,7 @@ public class OBJLoader {
     }
 
     private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, MAP map) {
-        currentMaterialInfo.maps.put(map, renderer.getTextureFactory().getTexture(path + name, map == MAP.DIFFUSE));
+        currentMaterialInfo.maps.put(map, TextureFactory.getInstance().getTexture(path + name, map == MAP.DIFFUSE));
     }
 
     private void parseName(String line, Model model) {

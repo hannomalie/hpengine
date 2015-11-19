@@ -1,31 +1,26 @@
 package engine.model;
 
+import engine.model.Entity.Update;
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector3f;
+import renderer.material.Material;
+import renderer.material.MaterialFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.List;
 
-import engine.AppContext;
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
-
-import engine.model.Entity.Update;
-import renderer.Renderer;
-import renderer.material.Material;
-
 public class EntityFactory {
-	private Renderer renderer;
-	private AppContext appContext;
-	
-	public EntityFactory(AppContext appContext) {
-		this.appContext = appContext;
-		this.renderer = appContext.getRenderer();
+    private static EntityFactory instance;
+
+    private EntityFactory() {
 	}
 
 
 	public Entity getEntity() {
 		Entity entity = new Entity();
-		entity.init(appContext);
+		entity.init();
 		return entity;
 	}
 
@@ -37,7 +32,7 @@ public class EntityFactory {
 				Entity child = getEntity(model);
 				child.setParent(entity);
 			}
-			entity.init(appContext);
+			entity.init();
 			return entity;
 		} else {
 			return getEntity(new Vector3f(), name, models.get(0), models.get(0).getMaterial());
@@ -62,14 +57,14 @@ public class EntityFactory {
 //		} catch (IOException e) {
 //			Logger.getGlobal().info(String.format("File not found for %s", name));
 
-			entity = new Entity(appContext.getRenderer().getMaterialFactory(), position, name, model, material.getName());
+			entity = new Entity(MaterialFactory.getInstance(), position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
 //		} catch (ClassNotFoundException e) {
 //			e.printStackTrace();
 //		}
 
-		entity.init(appContext);
+		entity.init();
 		return entity;
 	}
 
@@ -77,26 +72,6 @@ public class EntityFactory {
 		Entity entity = read(childName);
 		return entity;
 	}
-
-//	public Entity getEntity(Vector3f position, String name, Model model, Material material) {
-//		Entity entity = read(model.getName());
-//		
-//		if(entity != null) {
-//			entity.setPosition(position);
-//			entity.setName(name);
-//		} else {
-//			entity = read(name);
-//			if(entity != null) {
-//				entity.setPosition(position);
-//				return entity;
-//			} else {
-//				entity = new Entity(renderer.getMaterialFactory(), position, name, model, material.getName());	
-//			}
-//		}
-//		Entity.write((Entity) entity, name);
-//		
-//		return entity;
-//	}
 
     public Entity read(String resourceName) throws IOException, ClassNotFoundException {
 		String fileName = FilenameUtils.getBaseName(resourceName);
@@ -106,7 +81,7 @@ public class EntityFactory {
 		in = new ObjectInputStream(fis);
 		Entity entity = (Entity) in.readObject();
 		handleEvolution(entity);
-		entity.init(appContext);
+		entity.init();
 		in.close();
 
 		return entity;
@@ -134,5 +109,16 @@ public class EntityFactory {
 		if(entity.getUpdate() == null) {
 			entity.setUpdate(Update.DYNAMIC);
 		}
+    }
+
+    public static EntityFactory getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("EntityFactory not initialized. Init a renderer first.");
+        }
+        return instance;
+    }
+
+    public static void init() {
+        instance = new EntityFactory();
     }
 }

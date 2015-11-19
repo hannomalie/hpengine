@@ -16,10 +16,9 @@ import engine.AppContext;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
-import renderer.command.Result;
-import renderer.command.Command;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbe.Update;
+import scene.EnvironmentProbeFactory;
 import util.gui.input.MovablePanel;
 import util.gui.input.SliderInput;
 import util.gui.input.WebFormattedVec3Field;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 public class ProbeView extends WebPanel {
@@ -68,7 +66,7 @@ public class ProbeView extends WebPanel {
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
 			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-				return AppContext.getInstance().getRenderer().getEnvironmentProbeFactory().remove(probe);
+				return EnvironmentProbeFactory.getInstance().remove(probe);
 			});
     		
     		Boolean result = null;
@@ -107,7 +105,7 @@ public class ProbeView extends WebPanel {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
 				OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					appContext.getRenderer().getEnvironmentProbeFactory().updateBuffers();
+					EnvironmentProbeFactory.getInstance().updateBuffers();
 				});
 			}
 		});

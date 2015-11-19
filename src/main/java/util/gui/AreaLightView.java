@@ -1,24 +1,5 @@
 package util.gui;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
-
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
-import engine.AppContext;
-import renderer.OpenGLContext;
-import renderer.command.Result;
-import renderer.command.Command;
-import renderer.light.AreaLight;
-
-import org.lwjgl.util.vector.Vector4f;
-
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
@@ -26,6 +7,19 @@ import com.alee.laf.label.WebLabel;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import engine.AppContext;
+import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
+import renderer.light.AreaLight;
+import renderer.light.LightFactory;
+
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class AreaLightView extends EntityView {
 	private AreaLight light;
@@ -55,7 +49,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-        	appContext.setActiveCamera(appContext.getRenderer().getLightFactory().getCameraForAreaLight(light));
+        	appContext.setActiveCamera(LightFactory.getInstance().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			appContext.restoreWorldCamera();

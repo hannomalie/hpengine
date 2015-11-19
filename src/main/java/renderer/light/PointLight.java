@@ -24,11 +24,11 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	public static float DEFAULT_RANGE = 1f;
 	private Vector4f color;
 	
-	protected PointLight(AppContext appContext, MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
+	protected PointLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
 		super(materialFactory, position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		setScale(range);
-		init(appContext);
+		init();
 	}
 	
 	private static String generateName() {

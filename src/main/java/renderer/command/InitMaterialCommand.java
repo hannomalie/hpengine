@@ -14,7 +14,7 @@ public class InitMaterialCommand implements Command<MaterialResult> {
 
 	@Override
 	public MaterialResult execute(AppContext appContext) {
-		material.init(appContext.getRenderer());
+		material.init();
 		MaterialResult result = new MaterialResult(material);
 		return result;
 	}

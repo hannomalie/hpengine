@@ -14,9 +14,8 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import engine.AppContext;
-import engine.model.Entity;
-import engine.model.Model;
 import event.MaterialAddedEvent;
+import renderer.Renderer;
 import renderer.command.LoadModelCommand;
 import renderer.command.LoadModelCommand.EntityListResult;
 
@@ -25,8 +24,6 @@ import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
 
 public class AddEntityView extends WebPanel {
 
@@ -70,7 +67,7 @@ public class AddEntityView extends WebPanel {
 				for (File chosenFile : chosenFiles) {
 					if (chosenFile != null) {
 
-						new SwingWorkerWithProgress<EntityListResult>(appContext.getRenderer(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
+                        new SwingWorkerWithProgress<EntityListResult>(Renderer.getInstance(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());

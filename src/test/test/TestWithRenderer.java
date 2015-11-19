@@ -1,7 +1,6 @@
 package test;
 
 import engine.AppContext;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import renderer.Renderer;
 
@@ -18,6 +17,6 @@ public class TestWithRenderer {
 	public static void init() {
 		AppContext.init(true);
 		appContext = AppContext.getInstance();
-		renderer = appContext.getRenderer();
+        renderer = Renderer.getInstance();
 	}
 }

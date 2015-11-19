@@ -71,7 +71,7 @@ public class Program extends AbstractProgram implements Reloadable {
                 vertexShader = VertexShader.load(vertexShaderSource);
 			} catch (Exception e) {
 				try {
-                    vertexShader = AppContext.getInstance().getRenderer().getProgramFactory().getDefaultFirstpassVertexShader();
+                    vertexShader = ProgramFactory.getInstance().getDefaultFirstpassVertexShader();
 				} catch (Exception e1) {
 					System.err.println("Not able to load default vertex shader, so what else could be done...");
 				}

@@ -1,9 +1,10 @@
 package renderer.command;
 
-import java.io.IOException;
-
 import engine.AppContext;
 import texture.Texture;
+import texture.TextureFactory;
+
+import java.io.IOException;
 
 public class AddCubeMapCommand extends AddTextureCommand {
 
@@ -15,7 +16,7 @@ public class AddCubeMapCommand extends AddTextureCommand {
 	public TextureResult execute(AppContext appContext) {
 		Texture texture = null;
 		try {
-			texture = appContext.getRenderer().getTextureFactory().getCubeMap(path);
+			texture = TextureFactory.getInstance().getCubeMap(path);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

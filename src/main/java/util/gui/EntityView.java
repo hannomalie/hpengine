@@ -4,7 +4,6 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -20,6 +19,7 @@ import renderer.Renderer;
 import renderer.command.Result;
 import renderer.command.RemoveEntityCommand;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import util.gui.input.TransformablePanel;
 
 import com.alee.extended.panel.GridPanel;
@@ -44,7 +44,7 @@ public class EntityView extends WebPanel {
 
 	public EntityView(AppContext appContext, DebugFrame debugFrame, Entity entity) {
 		this.appContext = appContext;
-		this.renderer = appContext.getRenderer();
+        this.renderer = Renderer.getInstance();
 		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 700);
@@ -118,15 +118,15 @@ public class EntityView extends WebPanel {
 	        webComponentPanel.addElement(removeEntityButton);
 
 			try {
-				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(appContext.getRenderer().getMaterialFactory().getMaterialsAsList()));
-				Material material = appContext.getRenderer().getMaterialFactory().getDefaultMaterial();
+				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(MaterialFactory.getInstance().getMaterialsAsList()));
+				Material material = MaterialFactory.getInstance().getDefaultMaterial();
 				if(entity.getComponentOption(ModelComponent.class).isPresent()) {
 					material = entity.getComponent(ModelComponent.class).getMaterial();
 				}
-				materialSelect.setSelectedIndex(appContext.getRenderer().getMaterialFactory().getMaterialsAsList().indexOf(material));
+				materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(material));
 				materialSelect.addActionListener(e -> {
 					WebComboBox cb = (WebComboBox) e.getSource();
-					Material selectedMaterial = appContext.getRenderer().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
+					Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
 					entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
 					if(entity.hasChildren()) {
 						for (Entity child : entity.getChildren()) {

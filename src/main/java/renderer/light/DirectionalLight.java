@@ -22,6 +22,7 @@ import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
+import shader.ProgramFactory;
 import util.Util;
 
 import java.io.Serializable;
@@ -130,13 +131,12 @@ public class DirectionalLight extends Entity {
 	}
 
 	@Override
-	public void init(AppContext appContext) {
-		super.init(appContext);
+	public void init() {
+		super.init();
 		initialized = false;
 		entityBuffer = BufferUtils.createFloatBuffer(16);
-		Renderer renderer = appContext.getRenderer();
 
-		directionalShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+		directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
 		renderTarget = new RenderTargetBuilder()
 							.setWidth(SHADOWMAP_RESOLUTION)

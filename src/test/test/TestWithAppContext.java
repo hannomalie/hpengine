@@ -18,7 +18,7 @@ public class TestWithAppContext {
 	public static void init() {
         AppContext.init(true);
         appContext = AppContext.getInstance();
-		renderer = AppContext.getInstance().getRenderer();
+        renderer = Renderer.getInstance();
 	}
 	
 	@AfterClass

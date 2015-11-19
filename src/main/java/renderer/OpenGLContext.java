@@ -6,6 +6,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.util.glu.GLU;
 import renderer.constants.*;
 import util.commandqueue.CommandQueue;
 import util.commandqueue.FutureCallable;
@@ -41,6 +42,22 @@ public final class OpenGLContext {
     }
 
     private OpenGLContext() {
+    }
+
+    public static void exitOnGLError(String errorMessage) {
+        if (!Renderer.CHECKERRORS) {
+            return;
+        }
+
+        int errorValue = GL11.glGetError();
+
+        if (errorValue != GL11.GL_NO_ERROR) {
+            String errorString = GLU.gluErrorString(errorValue);
+            System.err.println("ERROR - " + errorMessage + ": " + errorString);
+
+            if (Display.isCreated()) Display.destroy();
+            System.exit(-1);
+        }
     }
 
     public void init() throws LWJGLException {

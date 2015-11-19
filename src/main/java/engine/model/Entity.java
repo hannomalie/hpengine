@@ -63,15 +63,15 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 	}
 
 	@Override
-	public void init(AppContext appContext) {
-		LifeCycle.super.init(appContext);
+	public void init() {
+		LifeCycle.super.init();
 		transform.init();
 
 		for(Component component : components.values()) {
-			component.init(appContext);
+			component.init();
 		}
 		for(Entity child: children) {
-			child.init(appContext);
+			child.init();
 		}
 		initialized = true;
 //		children.parallelStream().forEach(child -> child.init(world));
@@ -171,17 +171,11 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 		}
 	}
 
-	@Override
 	public void setAppContext(AppContext appContext) {
 		this.appContext = appContext;
 	}
 
-	@Override
-	public AppContext getAppContext() {
-		return appContext;
-	}
-
-	public HashMap<String,Component> getComponents() {
+    public HashMap<String,Component> getComponents() {
 		return components;
 	};
 

@@ -1,6 +1,7 @@
 package component;
 
 import engine.AppContext;
+import util.script.ScriptManager;
 
 import javax.script.ScriptContext;
 
@@ -23,15 +24,15 @@ public class ScriptComponent extends BaseComponent {
     }
 
     @Override
-    public void init(AppContext appContext) {
-        super.init(appContext);
-        context = appContext.getScriptManager().createContext();
-        appContext.getScriptManager().evalInit(this);
+    public void init() {
+        super.init();
+        context = ScriptManager.getInstance().createContext();
+        ScriptManager.getInstance().evalInit(this);
     }
 
     @Override
     public void update(float seconds) {
-        appContext.getScriptManager().evalUpdate(this, seconds);
+        ScriptManager.getInstance().evalUpdate(this, seconds);
     }
 
     public void setInt(String name, int value) {
@@ -47,6 +48,6 @@ public class ScriptComponent extends BaseComponent {
     }
 
     public void eval(String script) {
-        appContext.getScriptManager().eval(getContext(), script);
+        ScriptManager.getInstance().eval(getContext(), script);
     }
 }

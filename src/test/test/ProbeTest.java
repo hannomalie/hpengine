@@ -8,13 +8,14 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbe.Update;
+import scene.EnvironmentProbeFactory;
 
 public class ProbeTest extends TestWithRenderer {
 	
 	@Test
 	public void assignsProbesProperly() throws Exception {
-		EnvironmentProbe probeNear = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
-		EnvironmentProbe probeFar = renderer.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
+        EnvironmentProbe probeNear = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 20, Update.STATIC, 1);
+        EnvironmentProbe probeFar = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
 		
 		Entity centeredEntity = new Entity() {
 			Transform transform = new Transform();
@@ -35,9 +36,9 @@ public class ProbeTest extends TestWithRenderer {
 
 		Assert.assertTrue(probeNear.contains(centeredEntity.getMinMaxWorld()));
 		Assert.assertTrue(probeFar.contains(centeredEntity.getMinMaxWorld()));
-		Assert.assertEquals(probeNear, renderer.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeNear, EnvironmentProbeFactory.getInstance().getProbeForEntity(centeredEntity).get());
 		
 		centeredEntity.move(new Vector3f(10,0,0));
-		Assert.assertEquals(probeFar, renderer.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeFar, EnvironmentProbeFactory.getInstance().getProbeForEntity(centeredEntity).get());
 	}
 }

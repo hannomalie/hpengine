@@ -25,6 +25,7 @@ import engine.model.DataChannels;
 import engine.model.Entity;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.Renderer;
 import util.Util;
 
 import javax.vecmath.Matrix4f;
@@ -171,7 +172,7 @@ public class PhysicsFactory {
 			
 			@Override
 			public void drawLine(Vector3f arg0, Vector3f arg1, Vector3f arg2) {
-				appContext.getRenderer().batchLine(
+                Renderer.getInstance().batchLine(
 						new org.lwjgl.util.vector.Vector3f(arg0.x, arg0.y, arg0.z),
 						new org.lwjgl.util.vector.Vector3f(arg1.x, arg1.y, arg1.z));
 			}

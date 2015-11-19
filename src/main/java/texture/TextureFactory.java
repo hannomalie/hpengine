@@ -1,6 +1,5 @@
 package texture;
 
-import engine.AppContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -8,7 +7,6 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector2f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
-import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
 
@@ -45,7 +43,19 @@ import static renderer.constants.GlTextureTarget.*;
  * @author Brian Matzon
  */
 public class TextureFactory {
-	private Renderer renderer;
+    private static TextureFactory instance = null;
+
+    public static TextureFactory getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("Call AppContext.init() before using it");
+        }
+        return instance;
+    }
+
+    public static void init() {
+        instance = new TextureFactory();
+    }
+
     /** The table of textures that have been loaded in this loader */
     public Map<String, Texture> TEXTURES = new ConcurrentHashMap<String, Texture>();
 
@@ -61,9 +71,8 @@ public class TextureFactory {
      */
     Texture defaultTexture = null;
 
-    public TextureFactory(Renderer renderer) {
+    public TextureFactory() {
         DeferredRenderer.exitOnGLError("Begin TextureFactory constructor");
-    	this.renderer = renderer;
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,

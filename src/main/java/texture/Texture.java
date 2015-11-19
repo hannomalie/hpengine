@@ -413,7 +413,7 @@ public class Texture implements Serializable {
     public void convertAndUpload() {
         new Thread(() -> {
             try {
-                BufferedImage bufferedImage = AppContext.getInstance().getRenderer().getTextureFactory().loadImage(path);
+                BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
                 setMinFilter(minFilter);
@@ -429,8 +429,7 @@ public class Texture implements Serializable {
                 setSrcPixelFormat(srcPixelFormat);
 
                 // convert that image into a byte buffer of texture data
-                ByteBuffer textureBuffer = AppContext.getInstance().getRenderer().getTextureFactory().
-                        convertImageData(bufferedImage, this);
+                ByteBuffer textureBuffer = TextureFactory.getInstance().convertImageData(bufferedImage, this);
 
                 upload(textureBuffer, srgba);
             } catch (IOException | NullPointerException e) {

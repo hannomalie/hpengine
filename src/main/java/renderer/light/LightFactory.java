@@ -7,25 +7,32 @@ import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
+import engine.model.OBJLoader;
 import event.LightChangedEvent;
 import event.PointLightMovedEvent;
 import event.SceneInitEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.glu.GLU;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.constants.GlDepthFunc;
 import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
-import renderer.rendertarget.*;
+import renderer.material.MaterialFactory;
+import renderer.rendertarget.ColorAttachmentDefinition;
+import renderer.rendertarget.CubeMapArrayRenderTarget;
+import renderer.rendertarget.RenderTarget;
+import renderer.rendertarget.RenderTargetBuilder;
 import scene.Scene;
 import shader.Program;
+import shader.ProgramFactory;
 import shader.StorageBuffer;
 import texture.CubeMapArray;
 import util.TypedTuple;
@@ -34,7 +41,6 @@ import util.stopwatch.GPUProfiler;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +54,19 @@ public class LightFactory {
 	public static int MAX_AREALIGHT_SHADOWMAPS = 2;
 	public static int MAX_POINTLIGHT_SHADOWMAPS = 5;
 	public static int AREALIGHT_SHADOWMAP_RESOLUTION = 512;
-	private int pointLightDepthMapsArrayCube;
+    private static LightFactory instance;
+    public static LightFactory getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("Call AppContext.init() before using it");
+        }
+        return instance;
+    }
+
+    public static void init() {
+        instance = new LightFactory();
+    }
+
+    private int pointLightDepthMapsArrayCube;
 	private int pointLightDepthMapsArrayFront;
 	private int pointLightDepthMapsArrayBack;
 	private RenderTarget renderTarget;
@@ -74,25 +92,21 @@ public class LightFactory {
 	private FloatBuffer areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 
-	private AppContext appContext;
-	private Renderer renderer;
 	private Model sphereModel;
     private Model cubeModel;
     private Model planeModel;
 
 	private StorageBuffer lightBuffer;
 	
-	public LightFactory(AppContext appContext) {
-		this.appContext = appContext;
-		this.renderer = appContext.getRenderer();
+	public LightFactory() {
 		sphereModel = null;
 		try {
-			sphereModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-			sphereModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
-            cubeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-            cubeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
-            planeModel = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
-            planeModel.setMaterial(renderer.getMaterialFactory().getDefaultMaterial());
+			sphereModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+			sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+            cubeModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+            cubeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+            planeModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
+            planeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -109,7 +123,7 @@ public class LightFactory {
 
 		if(Config.USE_DPSM) {
 // TODO: Use wrapper
-			this.pointShadowPassProgram = renderer.getProgramFactory().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
 			pointLightDepthMapsArrayFront = GL11.glGenTextures();
 			OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
@@ -127,15 +141,15 @@ public class LightFactory {
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 		} else {
-			this.pointCubeShadowPassProgram = renderer.getProgramFactory().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
-			CubeMapArray cubeMapArray = new CubeMapArray(renderer, MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F);
+			CubeMapArray cubeMapArray = new CubeMapArray(Renderer.getInstance(), MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F);
 			pointLightDepthMapsArrayCube = cubeMapArray.getTextureID();
 			this.cubemapArrayRenderTarget = new CubeMapArrayRenderTarget(
 					AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);
 		}
 
-		this.areaShadowPassProgram = renderer.getProgramFactory().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPERATELY
@@ -175,10 +189,10 @@ public class LightFactory {
 		return getPointLight(new Vector3f(), new Vector4f(1,1,1,1), range);
 	}
 	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity, float range) {
-		Material material = renderer.getMaterialFactory().getDefaultMaterial();
+		Material material = MaterialFactory.getInstance().getDefaultMaterial();
 		
-		PointLight light = new PointLight(appContext, renderer.getMaterialFactory(), position, sphereModel, colorIntensity, range, material.getName());
-		light.init(appContext);
+		PointLight light = new PointLight(MaterialFactory.getInstance(), position, sphereModel, colorIntensity, range, material.getName());
+		light.init();
 		updatePointLightArrays();
 		return light;
 	}
@@ -187,8 +201,8 @@ public class LightFactory {
 		float[] colors = new float[pointLightsForwardMaxCount*3];
 		float[] radiuses = new float[pointLightsForwardMaxCount];
 		
-		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, appContext.getScene().getPointLights().size()); i++) {
-			PointLight light =  appContext.getScene().getPointLights().get(i);
+		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, AppContext.getInstance().getScene().getPointLights().size()); i++) {
+			PointLight light =  AppContext.getInstance().getScene().getPointLights().get(i);
 			positions[3*i] = light.getPosition().x;
 			positions[3*i+1] = light.getPosition().y;
 			positions[3*i+2] = light.getPosition().z;
@@ -250,7 +264,7 @@ public class LightFactory {
 		return getTubeLight(200.0f, 50.0f);
 	}
 	public TubeLight getTubeLight(float length, float radius) {
-		TubeLight tubeLight = new TubeLight(appContext, renderer.getMaterialFactory(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		TubeLight tubeLight = new TubeLight(MaterialFactory.getInstance(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
 		return tubeLight;
 	}
 
@@ -268,7 +282,7 @@ public class LightFactory {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(appContext, renderer, position, planeModel, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(position, planeModel, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		return areaLight;
 	}
@@ -487,7 +501,7 @@ public class LightFactory {
 	}
 
 	public int getDepthMapForAreaLight(AreaLight light) {
-		int index = appContext.getScene().getAreaLights().indexOf(light);
+		int index = AppContext.getInstance().getScene().getAreaLights().indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 
 		return areaLightDepthMaps.get(index);
@@ -520,7 +534,7 @@ public class LightFactory {
 	}
 
 	private void bufferLights() {
-		List<PointLight> pointLights = appContext.getScene().getPointLights();
+		List<PointLight> pointLights = AppContext.getInstance().getScene().getPointLights();
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
@@ -561,4 +575,5 @@ public class LightFactory {
 	public CubeMapArrayRenderTarget getCubemapArrayRenderTarget() {
 		return cubemapArrayRenderTarget;
 	}
+
 }

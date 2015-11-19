@@ -7,16 +7,21 @@ import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.material.MaterialFactory.MaterialInfo;
-import shader.*;
+import shader.Bufferable;
+import shader.Program;
+import shader.ProgramFactory;
 import texture.Texture;
+import texture.TextureFactory;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
-import static shader.Shader.*;
 
 public class Material implements Serializable, Bufferable {
 	public enum MaterialType {
@@ -59,21 +64,18 @@ public class Material implements Serializable, Bufferable {
 
 	private MaterialInfo materialInfo = new MaterialInfo();
 
-	transient private Renderer renderer;
-
-	public void init(Renderer renderer) {
-		this.renderer = renderer;
+	public void init() {
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
 			String name = materialInfo.maps.getTextureNames().get(map);
 			try {
 				Texture tex;
 				if(map.equals(MAP.ENVIRONMENT)) {
-					tex = renderer.getTextureFactory().getCubeMap(name);
+					tex = TextureFactory.getInstance().getCubeMap(name);
 					if(tex == null) {
-						tex = renderer.getEnvironmentMap();
+						tex = Renderer.getInstance().getEnvironmentMap();
 					}
 				} else {
-					tex = renderer.getTextureFactory().getTexture(name);
+					tex = TextureFactory.getInstance().getTexture(name);
 				}
 				materialInfo.maps.getTextures().put(map, tex);
 			} catch (IOException e) {
@@ -81,16 +83,16 @@ public class Material implements Serializable, Bufferable {
 			}
 		}
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, renderer.getEnvironmentMap());
+			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, Renderer.getInstance().getEnvironmentMap());
 		}
 	}
 
 	protected Material() { }
 
-	private Program logAndFallBackIfNull(Renderer renderer, Program firstPassProgram, String definesString) {
+	private Program logAndFallBackIfNull(Program firstPassProgram, String definesString) {
 		if(firstPassProgram == null) {
 //			System.err.println("File not found for material " + materialInfo.name);
-			firstPassProgram = renderer.getProgramFactory().getProgram(definesString);
+			firstPassProgram = ProgramFactory.getInstance().getProgram(definesString);
 		}
 		return firstPassProgram;
 	}
@@ -111,8 +113,7 @@ public class Material implements Serializable, Bufferable {
     public boolean hasRoughnessMap() { return materialInfo.maps.getTextures().containsKey(MAP.ROUGHNESS); }
 	
 	public void setTexturesActive(Program program) {
-		program.setUniform("materialIndex", AppContext.getInstance().getRenderer()
-				.getMaterialFactory().indexOf(this));
+		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
 
 		if (!program.needsTextures()) {
 			return;

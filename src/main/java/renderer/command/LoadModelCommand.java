@@ -2,8 +2,9 @@ package renderer.command;
 
 import engine.AppContext;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import engine.model.Model;
-import renderer.Renderer;
+import engine.model.OBJLoader;
 import renderer.command.LoadModelCommand.EntityListResult;
 
 import java.io.File;
@@ -21,12 +22,11 @@ public class LoadModelCommand implements Command<EntityListResult> {
     }
 
     public EntityListResult execute(AppContext appContext) {
-        Renderer renderer = appContext.getRenderer();
         EntityListResult result = new EntityListResult();
         try {
-            List<Model> models = renderer.getOBJLoader().loadTexturedModel(file);
+            List<Model> models = new OBJLoader().loadTexturedModel(file);
             List<Entity> entities = new ArrayList<>();
-            entities.addAll(appContext.getEntityFactory().getEntity(name, models).getAllChildrenAndSelf());
+            entities.addAll(EntityFactory.getInstance().getEntity(name, models).getAllChildrenAndSelf());
             return new EntityListResult(entities);
 
         } catch (IOException e) {

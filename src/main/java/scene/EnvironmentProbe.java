@@ -28,16 +28,16 @@ public class EnvironmentProbe extends Entity {
 	
 
 	protected EnvironmentProbe(AppContext appContext, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
-		this.renderer = appContext.getRenderer();
+        this.renderer = Renderer.getInstance();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(appContext, this, center, resolution, resolution, probeIndex);
-		sampler.init(appContext);
+		sampler.init();
 		this.setWeight(weight);
-		super.init(appContext);
+		super.init();
 	}
 
-	public void draw(AppContext appContext) {
+	public void draw() {
 		draw(appContext, false);
 	}
 	public void draw(AppContext appContext, boolean urgent) {
@@ -73,7 +73,7 @@ public class EnvironmentProbe extends Entity {
 	public void move(Vector3f amount) {
 		super.move(amount);
 		resetAllProbes();
-		renderer.getEnvironmentProbeFactory().updateBuffers();
+		EnvironmentProbeFactory.getInstance().updateBuffers();
 		box.move(amount);
 	}
 	
@@ -82,7 +82,7 @@ public class EnvironmentProbe extends Entity {
 		super.moveInWorld(amount);
 		resetAllProbes();
 		box.move(amount);
-		renderer.getEnvironmentProbeFactory().updateBuffers();
+		EnvironmentProbeFactory.getInstance().updateBuffers();
 	}
 	
 	@Override
@@ -90,11 +90,11 @@ public class EnvironmentProbe extends Entity {
 		super.setPosition(position);
 		resetAllProbes();
 		box.setCenter(position);
-		renderer.getEnvironmentProbeFactory().updateBuffers();
+		EnvironmentProbeFactory.getInstance().updateBuffers();
 	}
 
 	private void resetAllProbes() {
-		appContext.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+        EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}
@@ -139,12 +139,12 @@ public class EnvironmentProbe extends Entity {
 	public void setSize(float size) {
 		resetAllProbes();
 		box.setSize(size);
-		renderer.getEnvironmentProbeFactory().updateBuffers();
+		EnvironmentProbeFactory.getInstance().updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
 		resetAllProbes();
 		box.setSize(sizeX, sizeY, sizeZ);
-		renderer.getEnvironmentProbeFactory().updateBuffers();
+		EnvironmentProbeFactory.getInstance().updateBuffers();
 	}
 
 	public Vector3f getSize() {
@@ -161,11 +161,11 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public int getIndex() {
-		return renderer.getEnvironmentProbeFactory().getProbes().indexOf(this);
+		return EnvironmentProbeFactory.getInstance().getProbes().indexOf(this);
 	}
 
 	public Vector3f getDebugColor() {
-		float colorHelper = (float)getIndex()/(float)renderer.getEnvironmentProbeFactory().getProbes().size();
+		float colorHelper = (float)getIndex()/(float)EnvironmentProbeFactory.getInstance().getProbes().size();
 		Random randomGenerator = new Random();
 		randomGenerator.setSeed((long)colorHelper);
 		float random = randomGenerator.nextFloat();

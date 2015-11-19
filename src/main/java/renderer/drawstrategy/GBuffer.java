@@ -3,7 +3,9 @@ package renderer.drawstrategy;
 import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import engine.model.Model;
+import engine.model.OBJLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -12,6 +14,7 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.PixelBufferObject;
 import renderer.Renderer;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
@@ -92,14 +95,14 @@ public class GBuffer {
 		 storageBuffer.putValues(1f,-1f,0f,1f);
 	}
 	
-	public void init(Renderer renderer) {
+	public void init() {
 		probeBox = null;
 		try {
-			probeBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
-			Material probeBoxMaterial = renderer.getMaterialFactory().getDefaultMaterial();
+			probeBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
+			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);
-			probeBoxEntity = appContext.getEntityFactory().getEntity(probeBox, probeBoxMaterial);
+            probeBoxEntity = EntityFactory.getInstance().getEntity(probeBox, probeBoxMaterial);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

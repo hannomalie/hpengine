@@ -70,8 +70,8 @@ public class Octree implements LifeCycle, Serializable {
 		this.size = size;
 	}
 
-	public void init(AppContext appContext) {
-		LifeCycle.super.init(appContext);
+	public void init() {
+		LifeCycle.super.init();
 		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
@@ -172,17 +172,11 @@ public class Octree implements LifeCycle, Serializable {
 		buffer.delete();
 	}
 
-	@Override
 	public void setAppContext(AppContext appContext) {
 		this.appContext = appContext;
 	}
 
-	@Override
-	public AppContext getAppContext() {
-		return appContext;
-	}
-
-	/**
+    /**
 	 * children: index is clockwise 0-3 for top: left front, left back, right back, right front and 4-7 bottom: right back, right front, left front, left back 
 	 * 
 	 *

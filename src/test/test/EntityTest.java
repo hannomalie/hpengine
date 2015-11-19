@@ -2,7 +2,9 @@ package test;
 
 import engine.AppContext;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import engine.model.Model;
+import engine.model.OBJLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,21 +15,21 @@ public class EntityTest extends TestWithAppContext {
 
 	@Test
 	public void writeAndRead() throws Exception {
-		Entity entity = appContext.getEntityFactory().getEntity(renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
+        Entity entity = EntityFactory.getInstance().getEntity(new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
 		entity.setName("default");
 
 		String filename = "default.hpentity";
 
 		Assert.assertTrue(Entity.write(entity, filename));
 
-		Entity loadedEntity = appContext.getEntityFactory().read(filename);
+        Entity loadedEntity = EntityFactory.getInstance().read(filename);
 		Assert.assertTrue(entity.equals(loadedEntity));
 
 	}
 	@Test
 	public void loadParented() throws Exception {
-		List<Model> models = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
-		Entity entity = appContext.getEntityFactory().getEntity("xxx", models);
+        List<Model> models = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+        Entity entity = EntityFactory.getInstance().getEntity("xxx", models);
 		appContext.getScene().add(entity);
 
 		Assert.assertTrue(appContext.getScene().getEntities().contains(entity));

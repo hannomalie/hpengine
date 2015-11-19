@@ -1,12 +1,12 @@
 package renderer;
 
 import config.Config;
+import dagger.Module;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.*;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
-import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
@@ -32,13 +32,13 @@ import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import shader.Program;
 import shader.ProgramFactory;
-import shader.StorageBuffer;
 import texture.CubeMap;
 import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
-import util.stopwatch.ProfilingTask;
 import util.stopwatch.OpenGLStopWatch;
+import util.stopwatch.ProfilingTask;
 
+import javax.inject.Inject;
 import javax.swing.*;
 import javax.vecmath.Vector2f;
 import java.awt.*;
@@ -91,11 +91,6 @@ public class DeferredRenderer implements Renderer {
 	public CubeMap cubeMap;
 
 	private OBJLoader objLoader;
-	private ProgramFactory programFactory;
-	private LightFactory lightFactory;
-	private EnvironmentProbeFactory environmentProbeFactory;
-	private MaterialFactory materialFactory;
-	private TextureFactory textureFactory;
 
 	private Model sphereModel;
 
@@ -110,34 +105,34 @@ public class DeferredRenderer implements Renderer {
 	private RenderTarget halfScreenTarget;
 
 	private int maxTextureUnits;
-	private AppContext appContext;
 	private String currentState = "";
 
 	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
 
+    public DeferredRenderer() {
+        this(false);
+    }
     public DeferredRenderer(boolean headless) {
 		this.headless = headless;
 	}
 
 	@Override
-	public void init(AppContext appContext) {
-		Renderer.super.init(appContext);
+	public void init() {
+		Renderer.super.init();
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupOpenGL(headless);
-            this.appContext = appContext;
-            appContext.setRenderer(this);
-            objLoader = new OBJLoader(this);
-            textureFactory = new TextureFactory(this);
+            objLoader = new OBJLoader();
+            TextureFactory.init();
             DeferredRenderer.exitOnGLError("After TextureFactory");
-            programFactory = new ProgramFactory(appContext);
+            ProgramFactory.init();
             try {
                 setupShaders();
                 setUpGBuffer();
-                simpleDrawStrategy = new SimpleDrawStrategy(this);
-                debugDrawStrategy = new DebugDrawStrategy(this);
+                simpleDrawStrategy = new SimpleDrawStrategy();
+                debugDrawStrategy = new DebugDrawStrategy();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.err.println("Cannot init DeferredRenderer");
@@ -149,15 +144,15 @@ public class DeferredRenderer implements Renderer {
                                         .setHeight(Config.HEIGHT)
                                         .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
                                         .build();
-            materialFactory = new MaterialFactory(this);
-            lightFactory = new LightFactory(appContext);
-            environmentProbeFactory = new EnvironmentProbeFactory(appContext);
-            gBuffer.init(this);
+            MaterialFactory.init();
+            LightFactory.init();
+            EnvironmentProbeFactory.init();
+            gBuffer.init();
 
             sphereModel = null;
             try {
                 sphereModel = objLoader.loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-                sphereModel.setMaterial(getMaterialFactory().getDefaultMaterial());
+                sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -221,7 +216,7 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new GBuffer(appContext, this));
+		gBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new GBuffer(AppContext.getInstance(), this));
 
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
@@ -239,61 +234,41 @@ public class DeferredRenderer implements Renderer {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
         cubeMap = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
             try {
-                return textureFactory.getCubeMap("hp\\assets\\textures\\skybox.png");
+                return TextureFactory.getInstance().getCubeMap("hp\\assets\\textures\\skybox.png");
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
             return null;
         });
         OpenGLContext.getInstance().activeTexture(0);
-        textureFactory.generateMipMapsCubeMap(cubeMap.getTextureID());
+        TextureFactory.getInstance().generateMipMapsCubeMap(cubeMap.getTextureID());
 
-		renderToQuadProgram = programFactory.getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
-		blurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
-		bilateralBlurProgram = programFactory.getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
-		linesProgram = programFactory.getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
+		blurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
+		bilateralBlurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
+		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
 //		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
-	@Override
-	public void init(Octree octree) {
-//		addCommand(new Command() {
-//			@Override
-//			public Result execute(AppContext appContext) {
-//
-//				environmentProbeFactory.drawInitial(octree);
-//
-//				final int initialDrawCount = 10;
-//				for(int i = 0; i < initialDrawCount; i++) {
-//					for (EnvironmentProbe probe : environmentProbeFactory.getProbes()) {
-//						addRenderProbeCommand(probe, true);
-//					}
-//				}
-//
-//				return new Result(new Object());
-//			}
-//		});
-	}
-
-	public void update(AppContext appContext, float seconds) {
+	public void update(float seconds) {
 	}
 
 
 	// I need this to force probe redrawing after engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public void draw(AppContext appContext) {
+	public void draw() {
 		setLastFrameTime();
 
 		if (Config.DRAWLINES_ENABLED) {
-			debugDrawStrategy.draw(appContext);
+			debugDrawStrategy.draw(AppContext.getInstance());
 		} else {
-			simpleDrawStrategy.draw(appContext);
+			simpleDrawStrategy.draw(AppContext.getInstance());
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(appContext.getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
@@ -322,7 +297,7 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if(counter < 20) {
-			appContext.getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+            AppContext.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
 			Config.CONTINUOUS_DRAW_PROBES = true;
 			counter++;
 		} else if(counter == 20) {
@@ -504,11 +479,6 @@ public class DeferredRenderer implements Renderer {
 		return initialized;
 	}
 
-	@Override
-	public float getElapsedSeconds() {
-		return (float)getDeltaInS();
-	}
-
 	public void drawLines(Program program) {
 //		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 		float[] points = new float[linePoints.size() * 3];
@@ -531,16 +501,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	@Override
-	public Program getLastUsedProgram() {
-		return lastUsedProgram;
-	}
-
-	@Override
-	public void setLastUsedProgram(Program program) {
-		this.lastUsedProgram = program;
-	}
-
-	@Override
 	public CubeMap getEnvironmentMap() {
 		return cubeMap;
 	}
@@ -552,30 +512,6 @@ public class DeferredRenderer implements Renderer {
 	private JFrame frame;
 
 	@Override
-	public MaterialFactory getMaterialFactory() {
-		return materialFactory;
-	}
-
-	@Override
-	public TextureFactory getTextureFactory() {
-		return textureFactory;
-	}
-
-	@Override
-	public OBJLoader getOBJLoader() {
-		return objLoader;
-	}
-
-	@Override
-	public LightFactory getLightFactory() {
-		return lightFactory;
-	}
-
-	public void setLightFactory(LightFactory lightFactory) {
-		this.lightFactory = lightFactory;
-	}
-
-	@Override
 	public Model getSphere() {
 		return sphereModel;
 	}
@@ -585,14 +521,14 @@ public class DeferredRenderer implements Renderer {
 	public void executeRenderProbeCommands() {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(appContext.getActiveCamera()).ifPresent(command -> {
-			command.getProbe().draw(appContext, command.isUrgent());
+		renderProbeCommandQueue.takeNearest(AppContext.getInstance().getActiveCamera()).ifPresent(command -> {
+			command.getProbe().draw(AppContext.getInstance(), command.isUrgent());
 		});
 		counter++;
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-                command.getProbe().draw(appContext, command.isUrgent());
+                command.getProbe().draw(AppContext.getInstance(), command.isUrgent());
             });
 			counter++;
 		}
@@ -606,16 +542,6 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
 		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
-	}
-
-	@Override
-	public ProgramFactory getProgramFactory() {
-		return programFactory;
-	}
-
-	@Override
-	public EnvironmentProbeFactory getEnvironmentProbeFactory() {
-		return environmentProbeFactory;
 	}
 
 	@Override
@@ -639,16 +565,6 @@ public class DeferredRenderer implements Renderer {
 		return frameCount;
 	}
 
-	@Override
-	public StorageBuffer getStorageBuffer() {
-		return gBuffer.getStorageBuffer();
-	}
-
-	@Override
-	public String getCurrentState() {
-		return currentState;
-	}
-
 	private void setCurrentState(String newState) {
 		currentState = newState;
 		AppContext.getEventBus().post(new StateChangedEvent(newState));
@@ -658,17 +574,7 @@ public class DeferredRenderer implements Renderer {
 		destroy();
 	}
 
-	@Override
-	public void setAppContext(AppContext appContext) {
-		this.appContext = appContext;
-	}
-
-	@Override
-	public AppContext getAppContext() {
-		return appContext;
-	}
-
-	@Override
+    @Override
 	public GBuffer getGBuffer() {
 		return gBuffer;
 	}
@@ -680,12 +586,12 @@ public class DeferredRenderer implements Renderer {
 
     @Override
     public void endFrame() {
-        for (Entity entity : appContext.getScene().getAreaLights()) {
+        for (Entity entity : AppContext.getInstance().getScene().getAreaLights()) {
             entity.setHasMoved(false);
         }
 
         boolean pointLightMovePosted = false;
-        for (Entity entity : appContext.getScene().getPointLights()) {
+        for (Entity entity : AppContext.getInstance().getScene().getPointLights()) {
             if(!pointLightMovePosted && entity.hasMoved()) {
                 AppContext.getEventBus().post(new PointLightMovedEvent());
                 pointLightMovePosted = true;

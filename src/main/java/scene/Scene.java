@@ -34,8 +34,6 @@ public class Scene implements LifeCycle, Serializable {
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
-	transient private AppContext appContext;
-	transient Renderer renderer;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
 	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
@@ -50,17 +48,16 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	@Override
-	public void init(AppContext appContext) {
-		LifeCycle.super.init(appContext);
-		renderer = appContext.getRenderer();
-		renderer.getEnvironmentProbeFactory().clearProbes();
-		octree.init(appContext);
-		entities.forEach(entity -> entity.init(appContext));
+	public void init() {
+		LifeCycle.super.init();
+		EnvironmentProbeFactory.getInstance().clearProbes();
+		octree.init();
+		entities.forEach(entity -> entity.init());
 		addAll(entities);
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
                 try {
-                    appContext.getRenderer().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(appContext);
+                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -68,18 +65,17 @@ public class Scene implements LifeCycle, Serializable {
 		}
 		initLights();
 		initialized = true;
-		renderer.init(octree);
-		appContext.getEventBus().post(new SceneInitEvent());
+		AppContext.getEventBus().post(new SceneInitEvent());
 	}
 	private void initLights() {
 		for(PointLight pointLight : pointLights) {
-			pointLight.init(appContext);
+			pointLight.init();
 		}
 		for(AreaLight areaLight : areaLights) {
-			areaLight.init(appContext);
+			areaLight.init();
 		}
 		
-		directionalLight.init(appContext);
+		directionalLight.init();
 	}
 	
 	public void write() {
@@ -97,7 +93,7 @@ public class Scene implements LifeCycle, Serializable {
 			entities.clear();
 			entities.addAll(octree.getEntities());
 			probes.clear();
-			for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
+			for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
 				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
 				if(probes.contains(probeData)) { continue; }
 				probes.add(probeData);
@@ -138,7 +134,6 @@ public class Scene implements LifeCycle, Serializable {
 			handleEvolution(scene, renderer);
 			in.close();
 			fis.close();
-			scene.renderer = renderer;
 			scene.octree = new Octree(new Vector3f(), 400, 6);
 			return scene;
 		} catch (IOException | ClassNotFoundException e) {
@@ -188,17 +183,7 @@ public class Scene implements LifeCycle, Serializable {
 		initialized = true;
 	}
 
-	@Override
-	public void setAppContext(AppContext appContext) {
-		this.appContext = appContext;
-	}
-
-	@Override
-	public AppContext getAppContext() {
-		return appContext;
-	}
-
-	public void endFrame(Camera camera) {
+    public void endFrame(Camera camera) {
 		for (Entity entity : octree.getEntities()) {
 			entity.setHasMoved(false);
 		}

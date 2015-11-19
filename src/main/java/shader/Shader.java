@@ -5,7 +5,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
-import renderer.Renderer;
 import util.TypedTuple;
 import util.Util;
 import util.ressources.Reloadable;
@@ -94,7 +93,7 @@ public interface Shader extends Reloadable {
         }
 
 //		System.out.println(resultingShaderSource);
-        Renderer.exitOnGLError("loadShader");
+        OpenGLContext.exitOnGLError("loadShader");
 
         return shader;
     }

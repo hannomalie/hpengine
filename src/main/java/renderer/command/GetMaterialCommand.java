@@ -3,6 +3,7 @@ package renderer.command;
 import engine.AppContext;
 import renderer.command.InitMaterialCommand.MaterialResult;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import renderer.material.MaterialFactory.MaterialInfo;
 
 public class GetMaterialCommand implements Command<MaterialResult> {
@@ -15,7 +16,7 @@ public class GetMaterialCommand implements Command<MaterialResult> {
 	
 	@Override
 	public MaterialResult execute(AppContext appContext) {
-		Material material = appContext.getRenderer().getMaterialFactory().getMaterial(materialInfo);
+		Material material = MaterialFactory.getInstance().getMaterial(materialInfo);
 		return new MaterialResult(material);
 	}
 

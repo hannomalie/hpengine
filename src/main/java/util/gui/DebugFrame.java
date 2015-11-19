@@ -44,18 +44,22 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.OpenGLContext;
-import renderer.environmentsampler.EnvironmentSampler;
-import renderer.drawstrategy.GBuffer;
-import renderer.command.Result;
-import renderer.command.*;
+import renderer.*;
+import renderer.command.AddCubeMapCommand;
+import renderer.command.AddTextureCommand;
 import renderer.command.AddTextureCommand.TextureResult;
+import renderer.command.RenderProbeCommandQueue;
+import renderer.command.Result;
+import renderer.drawstrategy.GBuffer;
+import renderer.environmentsampler.EnvironmentSampler;
 import renderer.light.AreaLight;
+import renderer.light.LightFactory;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
+import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import texture.TextureFactory;
 import util.Adjustable;
@@ -186,8 +190,7 @@ public class DebugFrame {
 		tabbedPane = new WebTabbedPane();
 		fileChooser = new WebFileChooser(new File(getClass().getResource("").getPath()));
 		
-		MaterialFactory materialFactory = appContext.getRenderer().getMaterialFactory();
-		TextureFactory textureFactory = appContext.getRenderer().getTextureFactory();
+		TextureFactory textureFactory = TextureFactory.getInstance();
 		
 		mainFrame.getContentPane().removeAll();
 		mainFrame.setLayout(new BorderLayout(5,5));
@@ -250,10 +253,10 @@ public class DebugFrame {
                 if(chosenFile != null) {
 
                     String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
-                    new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load scene " + sceneName){
+                    new SwingWorkerWithProgress<Result<Scene>>(renderer.Renderer.getInstance(), this, "Load scene...", "Unable to load scene " + sceneName){
                         @Override
                         public Result<Scene> doInBackground() throws Exception {
-                            Scene newScene = Scene.read(appContext.getRenderer(), sceneName);
+                            Scene newScene = Scene.read(renderer.Renderer.getInstance(), sceneName);
                             AppContext.getInstance().setScene(newScene);
                             return new Result(newScene);
                         }
@@ -267,7 +270,7 @@ public class DebugFrame {
             WebMenuItem sceneLoadMenuItem = new WebMenuItem ( "Load Testscene" );
 
             sceneLoadMenuItem.addActionListener(e -> {
-                new SwingWorkerWithProgress<Result<Scene>>(appContext.getRenderer(), this, "Load scene...", "Unable to load test scene"){
+                new SwingWorkerWithProgress<Result<Scene>>(renderer.Renderer.getInstance(), this, "Load scene...", "Unable to load test scene"){
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
                         Scene newScene = new Scene();
@@ -324,11 +327,11 @@ public class DebugFrame {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
 
-				new SwingWorkerWithProgress<Result>(appContext.getRenderer(), this, "Adding Probe...", "Failed to add probe") {
+                new SwingWorkerWithProgress<Result>(renderer.Renderer.getInstance(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-							appContext.getRenderer().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50).draw(appContext);
+							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw();
 							return new Result<>(true);
 						});
 
@@ -351,7 +354,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					appContext.getScene().addPointLight(appContext.getRenderer().getLightFactory().getPointLight(50));
+					appContext.getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
 					return new Result(true);
 				});
         		
@@ -377,7 +380,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result<Boolean>> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					appContext.getScene().addTubeLight(appContext.getRenderer().getLightFactory().getTubeLight());
+					appContext.getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
 					return new Result<>(true);
 				});
         		
@@ -403,7 +406,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-					appContext.getScene().getAreaLights().add(appContext.getRenderer().getLightFactory().getAreaLight(50, 50, 20));
+					appContext.getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
 					return new Result(true);
 				});
         		
@@ -483,7 +486,7 @@ public class DebugFrame {
     		if(chosenFile != null) {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 					System.out.println(chosenFile.getName());
-					appContext.getRenderer().getMaterialFactory().get(chosenFile.getName());
+					MaterialFactory.getInstance().get(chosenFile.getName());
 					return new Result(true);
 				});
 				Result result = null;
@@ -788,7 +791,7 @@ public class DebugFrame {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-			appContext.getRenderer().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+			EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});
@@ -1028,7 +1031,7 @@ public class DebugFrame {
 
 	private void initPerformanceChart() {
 		if(performanceMonitor == null) {
-			performanceMonitor = new PerformanceMonitor(appContext.getRenderer());
+            performanceMonitor = new PerformanceMonitor(renderer.Renderer.getInstance());
 		}
 		performanceMonitor.init();
 	}
@@ -1345,7 +1348,7 @@ public class DebugFrame {
 
 	private void createMaterialPane(AppContext appContext) {
 		DebugFrame debugFrame = this;
-		MaterialFactory materialFactory = appContext.getRenderer().getMaterialFactory();
+		MaterialFactory materialFactory = MaterialFactory.getInstance();
 		TableModel materialDataModel = new AbstractTableModel() {
 
 
@@ -1354,7 +1357,7 @@ public class DebugFrame {
 			}
 
 			public int getRowCount() {
-				return appContext.getRenderer().getMaterialFactory().MATERIALS.size();
+				return MaterialFactory.getInstance().MATERIALS.size();
 			}
 
 			public Object getValueAt(int row, int col) {
@@ -1486,7 +1489,7 @@ public class DebugFrame {
 	}
 
 	private void addProbes(AppContext appContext) {
-		List<EnvironmentProbe> probes = appContext.getRenderer().getEnvironmentProbeFactory().getProbes();
+		List<EnvironmentProbe> probes = EnvironmentProbeFactory.getInstance().getProbes();
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Probes (" + probes.size() + ")");
 		for (EnvironmentProbe environmentProbe : probes) {
 			top.add(new DefaultMutableTreeNode(environmentProbe));
@@ -1593,7 +1596,7 @@ public class DebugFrame {
 	public void refreshTextureTab() {
 		System.out.println("Refreshing");
 		tabbedPane.remove(texturePane);
-		createTexturePane(appContext.getRenderer().getTextureFactory());
+		createTexturePane(TextureFactory.getInstance());
 		tabbedPane.addTab("Texture", texturePane);
 	}
 	

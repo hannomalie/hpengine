@@ -3,13 +3,13 @@ package renderer.light;
 import camera.Camera;
 import camera.Frustum;
 import component.ModelComponent;
-import engine.AppContext;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import engine.model.Model;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.Renderer;
+import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import shader.Program;
 import util.Util;
@@ -23,8 +23,8 @@ public class AreaLight extends Camera {
 	private Vector3f color;
 	transient private RenderTarget renderTarget;
 
-	protected AreaLight(AppContext appContext, Renderer renderer, Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(renderer.getMaterialFactory(), position, generateName(), model, model.getMaterial().getName());
+	protected AreaLight(Vector3f position, Model model, Vector3f color, Vector3f scale) {
+		super(MaterialFactory.getInstance(), position, generateName(), model, model.getMaterial().getName());
         projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);
@@ -33,10 +33,10 @@ public class AreaLight extends Camera {
         setFar(5000f);
         setFov(180f);
         setRatio(1);
-        Entity plane = AppContext.getInstance().getEntityFactory().getEntity(model);
+        Entity plane = EntityFactory.getInstance().getEntity(model);
         plane.setPosition(new Vector3f(0, 0, -getNear()));
         plane.setParent(this);
-		init(appContext);
+		init();
 	}
 	
 	public void setColor(Vector3f color) {

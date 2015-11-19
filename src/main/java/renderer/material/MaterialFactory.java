@@ -1,52 +1,56 @@
 package renderer.material;
 
-import java.io.*;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Logger;
-
 import com.google.common.eventbus.Subscribe;
+import dagger.Module;
 import engine.AppContext;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-import renderer.material.Material.ENVIRONMENTMAPTYPE;
-import renderer.material.Material.MAP;
-import shader.Bufferable;
-import shader.Program;
-import shader.StorageBuffer;
-import shader.UniformBlock;
-import texture.Texture;
-
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
+import renderer.material.Material.ENVIRONMENTMAPTYPE;
+import renderer.material.Material.MAP;
+import renderer.material.Material.MaterialType;
+import shader.StorageBuffer;
+import texture.Texture;
+import texture.TextureFactory;
 import util.Util;
 
-import static renderer.material.Material.*;
+import javax.inject.Inject;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
+
 import static renderer.material.Material.MaterialType.DEFAULT;
+import static renderer.material.Material.getDirectory;
+import static renderer.material.Material.write;
 
 public class MaterialFactory {
-
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
-	
-	private Renderer renderer;
+    private static MaterialFactory instance;
+
+    public static MaterialFactory getInstance() {
+        if(instance == null) {
+            throw new IllegalStateException("Call AppContext.init() before using it");
+        }
+        return instance;
+    }
+    public static void init() {
+        instance = new MaterialFactory();
+    }
+
 	public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
 
 	private Material defaultMaterial;
 
 	private StorageBuffer materialBuffer;
 
-	public MaterialFactory(Renderer renderer) {
-		this.renderer = renderer;
+	private MaterialFactory() {
 		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(20000));
 
 		MaterialInfo defaultTemp = new MaterialInfo();
@@ -146,7 +150,7 @@ public class MaterialFactory {
 			if(map.equals(MAP.DIFFUSE)) {
 				srgba = true;
 			}
-			textures.put(map, renderer.getTextureFactory().getTexture(hashMap.get(map), srgba));
+			textures.put(map, TextureFactory.getInstance().getTexture(hashMap.get(map), srgba));
 		}
 		MaterialInfo info = new MaterialInfo(textures);
 		info.name = name;
@@ -155,7 +159,7 @@ public class MaterialFactory {
 	}
 
 	private void initMaterial(Material material) {
-		material.init(renderer);
+		material.init();
 		MATERIALS.put(material.getName(), material);
 		material.initialized = true;
 	}

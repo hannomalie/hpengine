@@ -4,12 +4,14 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.EventBus;
 import component.InputControllerComponent;
-import component.ModelComponent;
 import config.Config;
+import dagger.Module;
+import dagger.ObjectGraph;
+import dagger.Provides;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
-import org.lwjgl.Sys;
+import engine.model.OBJLoader;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -19,15 +21,15 @@ import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.command.Command;
-import renderer.command.Result;
 import renderer.drawstrategy.GBuffer;
 import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
+import renderer.light.LightFactory;
 import renderer.light.PointLight;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
+import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import texture.Texture;
 import util.gui.DebugFrame;
@@ -38,15 +40,14 @@ import util.stopwatch.StopWatch;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
 public class AppContext {
 
-	private static AppContext instance = null;
+	private static volatile AppContext instance = null;
+
 	private TimeStepThread thread;
 	private volatile boolean frameFinished = true;
 
@@ -62,11 +63,9 @@ public class AppContext {
 	private static EventBus eventBus;
 	ScriptManager scriptManager;
 	PhysicsFactory physicsFactory;
-	EntityFactory entityFactory;
 	Scene scene;
 	private int entityCount = 5;
 	public volatile int PICKING_CLICK = 0;
-	public Renderer renderer;
 	private Camera camera;
 	private Camera activeCamera;
 
@@ -76,6 +75,7 @@ public class AppContext {
 	private OpenGLStopWatch glWatch;
 
 	public static void main(String[] args) {
+
 		String sceneName = null;
 		boolean debug = true;
 		for (String string : args) {
@@ -95,7 +95,7 @@ public class AppContext {
 		init();
 
 		if(sceneName != null) {
-			Scene scene = Scene.read(AppContext.getInstance().getRenderer(), sceneName);
+            Scene scene = Scene.read(Renderer.getInstance(), sceneName);
             AppContext.getInstance().setScene(scene);
 		}
 //        else {
@@ -119,83 +119,85 @@ public class AppContext {
 	}
 	public static void init(boolean headless) {
 		instance = new AppContext(headless);
+        instance.initialize();
+        instance.simulate();
 	}
 
 	private AppContext(boolean headless) {
-        instance = this;
-		initWorkDir();
-		entityFactory = new EntityFactory(this);
-		renderer = new DeferredRenderer(headless);
-		renderer.init(this);
-
-		glWatch = new OpenGLStopWatch();
-		scriptManager = new ScriptManager(this);
-		physicsFactory = new PhysicsFactory(this);
-
-		scene = new Scene();
-        AppContext self = this;
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-			scene.init(self);
-        }, true);
-		float rotationDelta = 125f;
-		float scaleDelta = 0.1f;
-		float posDelta = 100f;
-		camera = (Camera) new Camera().
-                addComponent(new InputControllerComponent() {
-                                 private static final long serialVersionUID = 1L;
-
-                                 @Override
-                                 public void update(float seconds) {
-
-                                     float turbo = 1f;
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-                                         turbo = 3f;
-                                     }
-
-                                     float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Mouse.isButtonDown(0)) {
-                                         getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
-                                     }
-                                     if (Mouse.isButtonDown(1)) {
-                                         getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
-                                     }
-                                     if (Mouse.isButtonDown(2)) {
-                                         getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
-                                     }
-
-                                     float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-                                         getEntity().move(new Vector3f(0, 0, -moveAmount));
-                                     }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-                                         getEntity().move(new Vector3f(-moveAmount, 0, 0));
-                                     }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-                                         getEntity().move(new Vector3f(0, 0, moveAmount));
-                                     }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-                                         getEntity().move(new Vector3f(moveAmount, 0, 0));
-                                     }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
-                                         getEntity().move(new Vector3f(0, -moveAmount, 0));
-                                     }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-                                         getEntity().move(new Vector3f(0, moveAmount, 0));
-						 }
-					 }
-				 }
-			);
-		camera.init(this);
-		camera.setPosition(new Vector3f(0, 20, 0));
-		activeCamera = camera;
-		// TODO: Check if this is still necessary
-		activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
-		activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
-		initialized = true;
-		simulate();
 	}
 
-	private void initWorkDir() {
+    private void initialize() {
+        initWorkDir();
+        EntityFactory.init();
+        Renderer.init(DeferredRenderer.class);
+
+        glWatch = new OpenGLStopWatch();
+        scriptManager = new ScriptManager(this);
+        physicsFactory = new PhysicsFactory(this);
+
+        scene = new Scene();
+        AppContext self = this;
+        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+			scene.init();
+        }, true);
+        float rotationDelta = 125f;
+        float scaleDelta = 0.1f;
+        float posDelta = 100f;
+        camera = (Camera) new Camera().
+addComponent(new InputControllerComponent() {
+private static final long serialVersionUID = 1L;
+
+@Override
+public void update(float seconds) {
+
+float turbo = 1f;
+if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+turbo = 3f;
+}
+
+float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
+if (Mouse.isButtonDown(0)) {
+getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
+}
+if (Mouse.isButtonDown(1)) {
+getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
+}
+if (Mouse.isButtonDown(2)) {
+getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
+}
+
+float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
+if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+getEntity().move(new Vector3f(0, 0, -moveAmount));
+}
+if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+getEntity().move(new Vector3f(-moveAmount, 0, 0));
+}
+if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+getEntity().move(new Vector3f(0, 0, moveAmount));
+}
+if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+getEntity().move(new Vector3f(moveAmount, 0, 0));
+}
+if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+getEntity().move(new Vector3f(0, -moveAmount, 0));
+}
+if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+getEntity().move(new Vector3f(0, moveAmount, 0));
+                         }
+                     }
+                 }
+            );
+        camera.init();
+        camera.setPosition(new Vector3f(0, 20, 0));
+        activeCamera = camera;
+        // TODO: Check if this is still necessary
+        activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
+        activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
+        initialized = true;
+    }
+
+    private void initWorkDir() {
 		ArrayList<File> dirs = new ArrayList<>();
 		dirs.add(new File(WORKDIR_NAME));
 		dirs.add(new File(ASSETDIR_NAME));
@@ -232,20 +234,20 @@ public class AppContext {
 	
 	public void destroy() {
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-			renderer.destroy();
+            Renderer.getInstance().destroy();
         }, false);
 	}
 
 	public List<Entity> loadTestScene() {
 		List<Entity> entities = new ArrayList<>();
 		
-		Renderer.exitOnGLError("loadTestScene");
+		OpenGLContext.exitOnGLError("loadTestScene");
 
 		try {
-			Model skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-            entities.add(getEntityFactory().getEntity(new Vector3f(), skyBox));
+			Model skyBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+            entities.add(EntityFactory.getInstance().getEntity(new Vector3f(), skyBox));
 
-			Model sphere = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+			Model sphere = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -256,12 +258,12 @@ public class AppContext {
 								.setRoughness((float) i / entityCount)
                                 .setMetallic((float) j / entityCount)
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0));
-                        Material mat = renderer.getMaterialFactory().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
+                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = getEntityFactory().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
-                            PointLight pointLight = getRenderer().getLightFactory().getPointLight(10);
+                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
+                            PointLight pointLight = LightFactory.getInstance().getPointLight(10);
                             pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
@@ -337,35 +339,31 @@ public class AppContext {
 		StopWatch.getInstance().start("Light update");
 		if(directionalLight.hasMoved()) {
 			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-                for (EnvironmentProbe probe : renderer.getEnvironmentProbeFactory().getProbes()) {
-                    renderer.addRenderProbeCommand(probe, true);
+                for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
+                    Renderer.getInstance().addRenderProbeCommand(probe, true);
                 }
-                renderer.getEnvironmentProbeFactory().draw(scene.getOctree(), true);
+                EnvironmentProbeFactory.getInstance().draw(scene.getOctree(), true);
             });
 		}
 		StopWatch.getInstance().stopAndPrintMS();
 
 		StopWatch.getInstance().start("Entities update");
 		scene.update(seconds);
-        renderer.getLightFactory().update(seconds);
+        LightFactory.getInstance().update(seconds);
 		StopWatch.getInstance().stopAndPrintMS();
 
-		if(renderer.isFrameFinished()) {
+		if(Renderer.getInstance().isFrameFinished()) {
             OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-                renderer.startFrame();
-                renderer.draw(this);
-                renderer.endFrame();
+                Renderer.getInstance().startFrame();
+                Renderer.getInstance().draw();
+                Renderer.getInstance().endFrame();
             }, false);
 		}
 
         scene.endFrame(activeCamera);
 	}
 
-	public Renderer getRenderer() {
-		return renderer;
-	}
-	
-	public PhysicsFactory getPhysicsFactory() {
+    public PhysicsFactory getPhysicsFactory() {
 		return physicsFactory;
 	}
 
@@ -377,7 +375,7 @@ public class AppContext {
 		this.scene = scene;
 		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
 			StopWatch.getInstance().start("Scene init");
-			scene.init(this);
+			scene.init();
 			StopWatch.getInstance().stopAndPrintMS();
 		}, true);
 		restoreWorldCamera();
@@ -413,10 +411,6 @@ public class AppContext {
 		AppContext.eventBus = eventBus;
 	}
 
-	public void setRenderer(Renderer renderer) {
-		this.renderer = renderer;
-	}
-
 	public boolean isInitialized() {
 		return initialized;
 	}
@@ -427,10 +421,6 @@ public class AppContext {
 
 	public ScriptManager getScriptManager() {
 		return scriptManager;
-	}
-
-	public EntityFactory getEntityFactory() {
-		return entityFactory;
 	}
 
     public FPSCounter getFPSCounter() {

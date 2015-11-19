@@ -1,87 +1,30 @@
 package renderer;
 
-import engine.AppContext;
-import engine.TimeStepThread;
 import engine.lifecycle.LifeCycle;
 import engine.model.Model;
-import engine.model.OBJLoader;
 import engine.model.VertexBuffer;
-import octree.Octree;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.command.Command;
-import renderer.command.Result;
 import renderer.drawstrategy.GBuffer;
-import renderer.light.LightFactory;
-import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
-import scene.EnvironmentProbeFactory;
 import shader.Program;
-import shader.ProgramFactory;
-import shader.StorageBuffer;
 import texture.CubeMap;
-import texture.TextureFactory;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.SynchronousQueue;
 
 public interface Renderer extends LifeCycle {
-    String RENDER_THREAD_NAME = "Renderer";
     boolean CHECKERRORS = false;
-
-    static void exitOnGLError(String errorMessage) {
-        if (!CHECKERRORS) {
-            return;
-        }
-
-        int errorValue = GL11.glGetError();
-
-        if (errorValue != GL11.GL_NO_ERROR) {
-            String errorString = GLU.gluErrorString(errorValue);
-            System.err.println("ERROR - " + errorMessage + ": " + errorString);
-
-            if (Display.isCreated()) Display.destroy();
-            System.exit(-1);
-        }
-    }
-
-    boolean isInitialized();
 
     void destroy();
 
-    void draw(AppContext appContext);
+    void draw();
 
-    void update(AppContext appContext, float seconds);
-
-    float getElapsedSeconds();
-
-    Program getLastUsedProgram();
-
-    void setLastUsedProgram(Program firstPassProgram);
+    void update(float seconds);
 
     CubeMap getEnvironmentMap();
-
-    MaterialFactory getMaterialFactory();
-
-    TextureFactory getTextureFactory();
-
-    OBJLoader getOBJLoader();
 
     Model getSphere();
 
     void batchLine(Vector3f from, Vector3f to);
 
     void drawLines(Program firstPassProgram);
-
-    ProgramFactory getProgramFactory();
-
-    LightFactory getLightFactory();
-
-    EnvironmentProbeFactory getEnvironmentProbeFactory();
-
-    void init(Octree octree);
 
     int getMaxTextureUnits();
 
@@ -98,10 +41,6 @@ public interface Renderer extends LifeCycle {
     double getDeltaInS();
 
     int getFrameCount();
-
-    StorageBuffer getStorageBuffer();
-
-    String getCurrentState();
 
     void endFrame();
 
@@ -365,4 +304,26 @@ public interface Renderer extends LifeCycle {
     void startFrame();
 
     boolean isFrameFinished();
+
+    static Renderer getInstance() {
+        if(SingletonHelper.instance == null) {
+            throw new IllegalStateException("Call Renderer.init() before using it");
+        }
+        return SingletonHelper.instance;
+    }
+
+    static void init(Class<? extends Renderer> rendererClass) {
+        try {
+            SingletonHelper.instance = rendererClass.newInstance();
+            SingletonHelper.instance.init();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    class SingletonHelper {
+        private static Renderer instance;
+    }
 }
