@@ -127,6 +127,7 @@ public class AppContext {
     }
 
     private void initialize() {
+        setEventBus(new EventBus());
         initWorkDir();
         EntityFactory.init();
         Renderer.init(DeferredRenderer.class);
@@ -409,7 +410,7 @@ public class AppContext {
 
     public static EventBus getEventBus() {
         if (eventBus == null) {
-            setEventBus(new EventBus());
+            throw new IllegalStateException("Call AppContext init at app start");
         }
         return eventBus;
     }

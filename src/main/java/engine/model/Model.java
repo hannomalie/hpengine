@@ -2,6 +2,7 @@ package engine.model;
 
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
 
 import java.io.Serializable;
@@ -91,4 +92,40 @@ public class Model implements Serializable {
 	public String getName() {
 		return name;
 	}
+
+
+    private transient Vector3f min;
+    private transient Vector3f max;
+
+    public Vector4f[] getMinMax() {
+        if (min == null || max == null) {
+            min = vertices.get(0);
+            max = vertices.get(0);
+
+            for (Vector3f position : vertices) {
+
+                min.x = position.x < min.x ? position.x : min.x;
+                min.y = position.y < min.y ? position.y : min.y;
+                min.z = position.z < min.z ? position.z : min.z;
+
+                max.x = position.x > max.x ? position.x : max.x;
+                max.y = position.y > max.y ? position.y : max.y;
+                max.z = position.z > max.z ? position.z : max.z;
+            }
+
+        }
+
+        return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
+    }
+
+    private transient Vector3f center;
+    public Vector3f getCenter() {
+        if(center == null) {
+            center = (Vector3f) Vector3f.add(min, Vector3f.sub(max, min, null), null).scale(0.5f);
+        }
+        return new Vector3f(center);
+    }
+    public void setCenter(Vector3f center) {
+        this.center = center;
+    }
 }

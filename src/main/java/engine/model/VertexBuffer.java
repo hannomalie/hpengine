@@ -1,28 +1,19 @@
 package engine.model;
 
-import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
-import renderer.OpenGLThread;
-import renderer.Renderer;
-import renderer.command.Command;
-import renderer.command.Result;
-import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
-import java.util.concurrent.SynchronousQueue;
-
-import static org.lwjgl.opengl.GL11.glFlush;
-import static org.lwjgl.opengl.GL32.glFenceSync;
-import static org.lwjgl.opengl.GL32.glWaitSync;
 
 public class VertexBuffer {
 
-	public enum Usage {
+    private transient boolean uploaded = false;
+
+    public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
 
@@ -44,9 +35,6 @@ public class VertexBuffer {
 	public EnumSet<DataChannels> channels;
 	private Usage usage;
 	private float[] vertices;
-
-	private Vector4f min;
-	private Vector4f max;
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
 		this(values, channels, Usage.STATIC);
@@ -167,7 +155,7 @@ public class VertexBuffer {
 			GL30.glBindVertexArray(vertexArray);
 			setUpAttributes();
 			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-			GL30.glBindVertexArray(0);
+            uploaded = true;
 		});
 
 		return this;
@@ -180,18 +168,22 @@ public class VertexBuffer {
 	}
 
 	public void draw() {
+        if(!uploaded) { return; }
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
 	public void drawStrips() {
+        if(!uploaded) { return; }
 		GL30.glBindVertexArray(vertexArray);
 		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, verticesCount);
 	}
 	public void drawAgain() {
+        if(!uploaded) { return; }
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
 	
 	public void drawDebug() {
+        if(!uploaded) { return; }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
 		GL30.glBindVertexArray(vertexArray);
@@ -200,12 +192,12 @@ public class VertexBuffer {
 	}
 
 	public void drawInstanced(int instanceCount) {
+        if(!uploaded) { return; }
 		GL30.glBindVertexArray(vertexArray);
 		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
 	}
 	
 	private void setUpAttributes() {
-		
 		int currentOffset = 0;
 		for (DataChannels channel : channels) {
 			GL20.glEnableVertexAttribArray(channel.getLocation());
@@ -231,33 +223,6 @@ public class VertexBuffer {
 		buffer.rewind();
 		buffer.get(result);
 		return result;
-	}
-	
-	public Vector4f[] getMinMax() {
-		
-		if (min == null || max == null) {
-			float[] positions = getValues(DataChannels.POSITION3);
-			min = new Vector4f(positions[0],positions[1],positions[2],0);
-			max = new Vector4f(positions[0],positions[1],positions[2],0);
-			
-			for (int i = 0; i < positions.length; i+=3) {
-				
-				Vector3f position = new Vector3f(positions[i],positions[i+1],positions[i+2]);
-
-				min.x = position.x < min.x ? position.x : min.x;
-				min.y = position.y < min.y ? position.y : min.y;
-				min.z = position.z < min.z ? position.z : min.z;
-				min.w = 1;
-				
-				max.x = position.x > max.x ? position.x : max.x;
-				max.y = position.y > max.y ? position.y : max.y;
-				max.z = position.z > max.z ? position.z : max.z;
-				max.w = 1;
-			}
-			
-		}
-		
-		return new Vector4f[] {min, max};
 	}
 	
 	public float[] getValues(DataChannels forChannel) {

@@ -12,7 +12,6 @@ import util.CompressionUtils;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
@@ -28,7 +27,7 @@ public class Texture implements Serializable {
     private volatile boolean mipmapsGenerated = false;
 
 	protected GlTextureTarget target = TEXTURE_2D;
-    transient protected int textureID;
+    transient protected int textureID = -1;
     protected int height;
     protected int width;
 
@@ -45,19 +44,17 @@ public class Texture implements Serializable {
 	
     /**
      * Create a new texture
-     * @param textureID The GL texture ID
      */
-    public Texture(String path, int textureID) {
-        this(path, textureID, false);
+    public Texture(String path) {
+        this(path, false);
     }
 
-    public Texture(String path, int id, boolean srgba) {
-        this(path, TEXTURE_2D, id, srgba);
+    public Texture(String path, boolean srgba) {
+        this(path, TEXTURE_2D, srgba);
     }
 
-    public Texture(String path, GlTextureTarget target, int id, boolean srgba) {
+    public Texture(String path, GlTextureTarget target, boolean srgba) {
         this.target = target;
-        this.textureID = id;
         this.path = path;
         this.srgba = srgba;
     }
@@ -67,9 +64,11 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
+        if(textureID <= 0) { textureID = OpenGLContext.getInstance().genTextures(); }
         OpenGLContext.getInstance().bindTexture(target, textureID);
     }
     public void bind(int unit) {
+        if(textureID <= 0) { textureID = OpenGLContext.getInstance().genTextures(); }
         OpenGLContext.getInstance().bindTexture(unit, target, textureID);
     }
 
@@ -414,6 +413,7 @@ public class Texture implements Serializable {
         new Thread(() -> {
             try {
                 BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
+                if(bufferedImage == null) { throw new IOException(); }
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
                 setMinFilter(minFilter);

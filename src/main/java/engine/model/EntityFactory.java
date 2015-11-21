@@ -26,6 +26,7 @@ public class EntityFactory {
 
 	public Entity getEntity(String name, List<Model> models) {
 		if(models.size() > 1) {
+            long start = System.currentTimeMillis();
 			Entity entity = new Entity();
 			entity.setName(name);
 			for (Model model : models) {
@@ -33,6 +34,7 @@ public class EntityFactory {
 				child.setParent(entity);
 			}
 			entity.init();
+            System.out.println("Get entity took " + (System.currentTimeMillis() - start));
 			return entity;
 		} else {
 			return getEntity(new Vector3f(), name, models.get(0), models.get(0).getMaterial());

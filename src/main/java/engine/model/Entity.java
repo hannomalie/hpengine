@@ -66,6 +66,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void init() {
+        long start = System.currentTimeMillis();
 		LifeCycle.super.init();
 		transform.init();
 
@@ -76,6 +77,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			child.init();
 		}
 		initialized = true;
+        System.out.println("Entity init took " + (System.currentTimeMillis() - start));
 //		children.parallelStream().forEach(child -> child.init(world));
 	}
 
@@ -243,7 +245,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 		if(hasComponent(ModelComponent.class)) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			minMax = modelComponent.getVertexBuffer().getMinMax();
+			minMax = modelComponent.getMinMax();
 
 			Vector4f minView = new Vector4f(0,0,0,1);
 			Vector4f maxView = new Vector4f(0,0,0,1);
@@ -279,7 +281,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	public Vector3f getCenter() {
 		if(hasComponent(ModelComponent.class)) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			Vector4f[] minMax = modelComponent.getVertexBuffer().getMinMax();
+			Vector4f[] minMax = modelComponent.getMinMax();
 
 			Vector4f center = Vector4f.sub(minMax[1], minMax[0], null);
 			center.w = 1;

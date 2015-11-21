@@ -10,6 +10,7 @@ import engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.constants.GlCap;
 import renderer.material.Material;
@@ -136,8 +137,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     @Override
     public void init() {
         super.init();
+        long start = System.currentTimeMillis();
         createFloatArray(model);
+        System.out.println("createFloatArray took " + (System.currentTimeMillis() - start));
         createVertexBuffer();
+        System.out.println("CreateVertexBuffer took " + (System.currentTimeMillis() - start));
         initialized = true;
     }
 
@@ -276,8 +280,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         verticesFloatBuffer.rewind();
 //		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
-        vertexBuffer = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS);
+        long start = System.currentTimeMillis();
+        vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS);
+        System.out.println("Creating the VB took " + (System.currentTimeMillis() - start));
         vertexBuffer.upload();
+        System.out.println("Uploading the VB took " + (System.currentTimeMillis() - start));
 
 //		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
     }
@@ -289,5 +296,13 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     public VertexBuffer getVertexBuffer() {
         return vertexBuffer;
+    }
+
+    public Vector4f[] getMinMax() {
+        return model.getMinMax();
+    }
+
+    public Vector3f getCenter() {
+        return model.getCenter();
     }
 }

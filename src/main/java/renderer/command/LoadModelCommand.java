@@ -24,9 +24,13 @@ public class LoadModelCommand implements Command<EntityListResult> {
     public EntityListResult execute(AppContext appContext) {
         EntityListResult result = new EntityListResult();
         try {
+            long start = System.currentTimeMillis();
             List<Model> models = new OBJLoader().loadTexturedModel(file);
+            System.out.println("Load model returned after " + (System.currentTimeMillis() - start));
             List<Entity> entities = new ArrayList<>();
+            start = System.currentTimeMillis();
             entities.addAll(EntityFactory.getInstance().getEntity(name, models).getAllChildrenAndSelf());
+            System.out.println("Get entities took " + (System.currentTimeMillis() - start));
             return new EntityListResult(entities);
 
         } catch (IOException e) {

@@ -146,18 +146,21 @@ public class TextureFactory {
     	return getTexture(resourceName, false);
     }
     public Texture getTexture(String resourceName, boolean srgba) {
+        long start = System.currentTimeMillis();
         if(textureLoaded(resourceName)) {
             return TEXTURES.get(resourceName);
         }
-
+        System.out.println("A took " + (System.currentTimeMillis()-start) + " ms");
         if (texturePreCompiled(resourceName)) {
-            Texture texture = new Texture(resourceName, getTextureId(), srgba);
+            Texture texture = new Texture(resourceName, srgba);
             TEXTURES.put(resourceName, texture);
             texture.readAndUpload();
             return texture;
         }
 
-        Texture texture = new Texture(resourceName, getTextureId(), srgba);
+        System.out.println("B took " + (System.currentTimeMillis()-start) + " ms");
+        Texture texture = new Texture(resourceName, srgba);
+        System.out.println("C took " + (System.currentTimeMillis()-start) + " ms");
         TEXTURES.put(resourceName, texture);
         texture.convertAndUpload();
         return texture;

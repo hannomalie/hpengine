@@ -1,6 +1,7 @@
 package test;
 
 import engine.model.DataChannels;
+import engine.model.Model;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,25 +53,6 @@ public class VertexBufferTest {
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 	}
-	
-	@Test
-	public void minMax() {
-		float[] vertexData = new float[] {
-		    -1.0f, -1.0f, 0.0f,   0f, 0f,
-		    1.0f, -1.0f, 0.0f,    0f, 0f,
-		    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
-		    -1.0f,  1.0f, 0.0f,   0f,  0f,
-		    1.0f, -1.0f, 0.0f,    1.0f, 0f,
-		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
-		};
-		
-		VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
-		
-		Vector4f[] minMax = buffer.getMinMax();
 
-		Assert.assertEquals(new Vector4f(-1, -1, 0, 1), minMax[0]);
-		Assert.assertEquals(new Vector4f(1, 1, 0, 1), minMax[1]);
-	}
-
-
+    //TODO: Create MinMaxTest for model
 }

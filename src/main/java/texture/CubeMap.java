@@ -23,7 +23,7 @@ public class CubeMap extends Texture implements Serializable {
 	protected CubeMap() {}
 	
 	public CubeMap(String path, GlTextureTarget target, int textureID) {
-		super(path, target, textureID, false);
+		super(path, target, false);
 	}
 	
 	public void upload() {
