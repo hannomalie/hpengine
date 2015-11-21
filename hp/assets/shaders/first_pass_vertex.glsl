@@ -2,15 +2,20 @@
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 lastViewMatrix;
-uniform mat4 modelMatrix;
+//uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
-//uniform mat4 projectionMatrixShadow;
-//uniform mat4 viewMatrixShadow;
-
+uniform int entityIndex;
 uniform vec3 eyePosition;
 uniform int time = 0;
 //uniform vec3 lightPosition;
+
+
+//include(globals_structs.glsl)
+layout(std430, binding=3) buffer _entities {
+	Entity entities[2000];
+};
+
 
 uniform bool isInstanced = false;
 
@@ -43,6 +48,10 @@ out vec3 eyePos_world;
 out mat3 TBN;
 
 void main(void) {
+
+    Entity entity = entities[entityIndex];
+
+    mat4 modelMatrix = mat4(entity.modelMatrix);
 
 	vec4 positionModel = vec4(in_Position.xyz,1);
 	position_world = modelMatrix * positionModel;

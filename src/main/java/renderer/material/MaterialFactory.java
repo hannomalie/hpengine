@@ -1,7 +1,6 @@
 package renderer.material;
 
 import com.google.common.eventbus.Subscribe;
-import dagger.Module;
 import engine.AppContext;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
@@ -11,12 +10,13 @@ import renderer.OpenGLContext;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
 import renderer.material.Material.MaterialType;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedStorageBuffer;
 import shader.StorageBuffer;
 import texture.Texture;
 import texture.TextureFactory;
 import util.Util;
 
-import javax.inject.Inject;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -48,10 +48,11 @@ public class MaterialFactory {
 
 	private Material defaultMaterial;
 
-	private StorageBuffer materialBuffer;
+	private OpenGLBuffer materialBuffer;
 
 	private MaterialFactory() {
-		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(20000));
+//		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(20000));
+        materialBuffer = new PersistentMappedStorageBuffer(20000);
 
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
@@ -178,7 +179,7 @@ public class MaterialFactory {
 		return material;
 	}
 
-    public StorageBuffer getMaterialBuffer() {
+    public OpenGLBuffer getMaterialBuffer() {
         return materialBuffer;
     }
 

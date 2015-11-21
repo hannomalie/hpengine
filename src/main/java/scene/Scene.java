@@ -16,6 +16,9 @@ import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedStorageBuffer;
+import util.Util;
 
 import java.io.*;
 import java.util.Iterator;
@@ -31,6 +34,8 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
+    // TODO: Move this to the factory maybe?
+    private transient OpenGLBuffer entitiesBuffer;
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
@@ -50,6 +55,7 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
+        entitiesBuffer = new PersistentMappedStorageBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 		octree.init();
 		entities.forEach(entity -> entity.init());
@@ -239,4 +245,12 @@ public class Scene implements LifeCycle, Serializable {
 	public void addTubeLight(TubeLight tubeLight) {
 		tubeLights.add(tubeLight);
 	}
+
+    public void bufferEntities() {
+        entitiesBuffer.put(Util.toArray(entities, Entity.class));
+    }
+
+    public OpenGLBuffer getEntitiesBuffer() {
+        return entitiesBuffer;
+    }
 }

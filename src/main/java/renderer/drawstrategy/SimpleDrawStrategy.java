@@ -176,6 +176,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
+            firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
             firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());

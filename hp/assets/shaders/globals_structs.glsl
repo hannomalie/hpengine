@@ -34,3 +34,7 @@ struct PointLight {
 	double colorG;
 	double colorB;
 };
+
+struct Entity {
+    dmat4 modelMatrix;
+};

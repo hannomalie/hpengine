@@ -11,6 +11,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
+import shader.Bufferable;
+import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,11 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-public class Entity implements Transformable, LifeCycle, Serializable {
+public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
-	public enum Update {
+    public enum Update {
 		STATIC,
 		DYNAMIC
 	}
@@ -392,4 +394,36 @@ public class Entity implements Transformable, LifeCycle, Serializable {
 			}
 		}
 	}
+
+
+    @Override
+    public int getSizePerObject() {
+        return 16;
+    }
+
+    @Override
+    public double[] get() {
+        int index = 0;
+        double[] doubles = new double[getSizePerObject()];
+
+        Matrix4f mm = getModelMatrix();
+        doubles[index++] = mm.m00;
+        doubles[index++] = mm.m01;
+        doubles[index++] = mm.m02;
+        doubles[index++] = mm.m03;
+        doubles[index++] = mm.m10;
+        doubles[index++] = mm.m11;
+        doubles[index++] = mm.m12;
+        doubles[index++] = mm.m13;
+        doubles[index++] = mm.m20;
+        doubles[index++] = mm.m21;
+        doubles[index++] = mm.m22;
+        doubles[index++] = mm.m23;
+        doubles[index++] = mm.m30;
+        doubles[index++] = mm.m31;
+        doubles[index++] = mm.m32;
+        doubles[index++] = mm.m33;
+
+        return doubles;
+    }
 }

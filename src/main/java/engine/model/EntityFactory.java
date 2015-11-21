@@ -5,6 +5,9 @@ import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedStorageBuffer;
+import util.Util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,11 +16,8 @@ import java.util.List;
 
 public class EntityFactory {
     private static EntityFactory instance;
-
     private EntityFactory() {
 	}
-
-
 	public Entity getEntity() {
 		Entity entity = new Entity();
 		entity.init();

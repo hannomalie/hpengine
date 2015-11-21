@@ -1,7 +1,6 @@
 package renderer;
 
 import config.Config;
-import dagger.Module;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.*;
@@ -38,7 +37,6 @@ import util.stopwatch.GPUProfiler;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.ProfilingTask;
 
-import javax.inject.Inject;
 import javax.swing.*;
 import javax.vecmath.Vector2f;
 import java.awt.*;

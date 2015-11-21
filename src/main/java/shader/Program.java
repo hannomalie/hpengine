@@ -158,8 +158,12 @@ public class Program extends AbstractProgram implements Reloadable {
 //			self.unload();
             detachShader(vertexShader);
             detachShader(fragmentShader);
-            if(geometryShader != null) detachShader(geometryShader);
+            if(geometryShader != null) {
+                detachShader(geometryShader);
+                geometryShader.reload();
+            }
             fragmentShader.reload();
+            vertexShader.reload();
 			self.load();
 			return true;
 		});

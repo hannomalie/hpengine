@@ -93,7 +93,7 @@ public abstract class AbstractProgram {
 		return GL20.glGetUniformLocation(getId(), name);
 	}
 
-	public void bindShaderStorageBuffer(int index, StorageBuffer block) {
+	public void bindShaderStorageBuffer(int index, OpenGLBuffer block) {
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.getId());
 	}
 

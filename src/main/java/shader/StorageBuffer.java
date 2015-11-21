@@ -1,6 +1,7 @@
 package shader;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-public class StorageBuffer {
+public class StorageBuffer implements OpenGLBuffer {
 
     protected int id = -1;
 
@@ -30,7 +31,7 @@ public class StorageBuffer {
             id = GL15.glGenBuffers();
             buffer(data);
             unbind();
-            getValues();
+//            getValues();
         });
     }
 
@@ -42,18 +43,21 @@ public class StorageBuffer {
         });
     }
 
+    @Override
     public void bind() {
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, id);
         });
     }
 
+    @Override
     public void unbind() {
         GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
     }
 
 
 
+    @Override
     public FloatBuffer getValuesAsFloats() {
         final DoubleBuffer[] result = new DoubleBuffer[1];
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
@@ -79,6 +83,7 @@ public class StorageBuffer {
     /**
      * @return The FloatBuffer with all the values of this buffer object
      */
+    @Override
     public DoubleBuffer getValues() {
         final DoubleBuffer[] result = new DoubleBuffer[1];
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
@@ -96,6 +101,7 @@ public class StorageBuffer {
      * @param length is the count of floats that are queried
      * @return The FloatBuffer that contains the queries values
      */
+    @Override
     public DoubleBuffer getValues(int offset, int length) {
         bind();
 //		System.out.println("Offset " + offset*4);
@@ -111,9 +117,11 @@ public class StorageBuffer {
         return result[0];
     }
 
+    @Override
     public void putValues(FloatBuffer values) {
         putValues(0, values);
     }
+    @Override
     public void putValues(DoubleBuffer values) {
         putValues(0, values);
     }
@@ -123,6 +131,7 @@ public class StorageBuffer {
      * @param values is the buffer with values that should be uploaded
      * @throws IndexOutOfBoundsException
      */
+    @Override
     public void putValues(int offset, FloatBuffer values) {
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             bind();
@@ -133,6 +142,7 @@ public class StorageBuffer {
             unbind();
         });
     }
+    @Override
     public void putValues(int offset, DoubleBuffer values) {
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             bind();
@@ -144,6 +154,7 @@ public class StorageBuffer {
         });
     }
 
+    @Override
     public int getId() {
         return id;
     }
@@ -152,18 +163,22 @@ public class StorageBuffer {
         this.id = id;
     }
 
+    @Override
     public int getSize() {
         return size;
     }
 
+    @Override
     public void setSize(int size) {
         this.size = size;
     }
 
+    @Override
     public void putValues(float... values) {
         putValues(0, values);
     }
 
+    @Override
     public void putValues(int offset, float... values) {
         tempBuffer = BufferUtils.createDoubleBuffer(values.length);
         for (int i = 0; i < values.length; i++) {
@@ -173,10 +188,12 @@ public class StorageBuffer {
         tempBuffer = null;
     }
 
+    @Override
     public <T extends Bufferable> void put(T... bufferable) {
         put(0, bufferable);
     }
 
+    @Override
     public <T extends Bufferable> void put(int offset, T... bufferable) {
         OpenGLContext.getInstance().doWithOpenGLContext(() -> {
             tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getSizePerObject() * bufferable.length);
