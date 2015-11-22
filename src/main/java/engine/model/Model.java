@@ -99,8 +99,8 @@ public class Model implements Serializable {
 
     public Vector4f[] getMinMax() {
         if (min == null || max == null) {
-            min = vertices.get(0);
-            max = vertices.get(0);
+            min = new Vector3f(vertices.get(0));
+            max = new Vector3f(vertices.get(0));
 
             for (Vector3f position : vertices) {
 
@@ -121,6 +121,7 @@ public class Model implements Serializable {
     private transient Vector3f center;
     public Vector3f getCenter() {
         if(center == null) {
+            getMinMax();
             center = (Vector3f) Vector3f.add(min, Vector3f.sub(max, min, null), null).scale(0.5f);
         }
         return new Vector3f(center);
