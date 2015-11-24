@@ -96,7 +96,7 @@ public class EntityView extends WebPanel {
 	        
 	        WebButton removeEntityButton = new WebButton("Remove Entity");
 	        removeEntityButton.addActionListener(e -> {
-				CompletableFuture<Result> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
 					return new RemoveEntityCommand((Entity) entity).execute(appContext);
 				});
 	    		

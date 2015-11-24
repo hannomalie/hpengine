@@ -69,7 +69,7 @@ public class ProgramFactory {
 	}
 
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
-        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
+        return OpenGLContext.getInstance().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)));
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
@@ -81,7 +81,7 @@ public class ProgramFactory {
 		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, channels, needsTextures);
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
+		return OpenGLContext.getInstance().calculate(() -> {
             ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
             ShaderSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
             ShaderSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));

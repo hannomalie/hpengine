@@ -43,7 +43,7 @@ import static renderer.constants.GlTextureTarget.*;
  * @author Brian Matzon
  */
 public class TextureFactory {
-    private static TextureFactory instance = null;
+    private static volatile TextureFactory instance = null;
 
     public static TextureFactory getInstance() {
         if(instance == null) {
@@ -129,7 +129,7 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
+        return OpenGLContext.getInstance().calculate(() -> {
                     return getTextureId();
                 }
         );
@@ -167,7 +167,7 @@ public class TextureFactory {
     }
 
     public static int getTextureId() {
-        return OpenGLContext.getInstance().calculateWithOpenGLContext(() -> GL11.glGenTextures());
+        return OpenGLContext.getInstance().calculate(() -> GL11.glGenTextures());
     }
 
     private boolean textureLoaded(String resourceName) {
@@ -445,7 +445,7 @@ public class TextureFactory {
     }
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             texture.bind();
             if (mipmap) {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -476,7 +476,7 @@ public class TextureFactory {
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             OpenGLContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
             GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
             GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);

@@ -214,9 +214,9 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new GBuffer(AppContext.getInstance(), this));
+		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance(), this));
 
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 			OpenGLContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -230,7 +230,7 @@ public class DeferredRenderer implements Renderer {
 	
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
-        cubeMap = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> {
+        cubeMap = OpenGLContext.getInstance().calculate(() -> {
             try {
                 return TextureFactory.getInstance().getCubeMap("hp\\assets\\textures\\skybox.png");
             } catch (IOException e1) {
@@ -438,7 +438,7 @@ public class DeferredRenderer implements Renderer {
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
         fpsCounter.update();
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms",
 					fpsCounter.getFPS(), fpsCounter.getMsPerFrame()));
 		});
@@ -457,7 +457,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             if(IGNORE_GL_ERRORS) { return; }
             int errorValue = GL11.glGetError();
 

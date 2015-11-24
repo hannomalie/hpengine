@@ -1,7 +1,6 @@
 package shader;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
@@ -27,7 +26,7 @@ public class StorageBuffer implements OpenGLBuffer {
     }
 
     public StorageBuffer(DoubleBuffer data) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             id = GL15.glGenBuffers();
             buffer(data);
             unbind();
@@ -37,7 +36,7 @@ public class StorageBuffer implements OpenGLBuffer {
 
     private void buffer(DoubleBuffer data) {
         bind();
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, data, GL15.GL_DYNAMIC_COPY);
             setSize(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
         });
@@ -45,7 +44,7 @@ public class StorageBuffer implements OpenGLBuffer {
 
     @Override
     public void bind() {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, id);
         });
     }
@@ -60,7 +59,7 @@ public class StorageBuffer implements OpenGLBuffer {
     @Override
     public FloatBuffer getValuesAsFloats() {
         final DoubleBuffer[] result = new DoubleBuffer[1];
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             bind();
             buffer = GL15.glMapBuffer(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_READ_ONLY, null);
             result[0] = buffer.asDoubleBuffer(); // TODO: As read-only?
@@ -86,7 +85,7 @@ public class StorageBuffer implements OpenGLBuffer {
     @Override
     public DoubleBuffer getValues() {
         final DoubleBuffer[] result = new DoubleBuffer[1];
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             bind();
             buffer = GL15.glMapBuffer(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_READ_ONLY, null);
             result[0] = buffer.asDoubleBuffer(); // TODO: As read-only?
@@ -109,7 +108,7 @@ public class StorageBuffer implements OpenGLBuffer {
 //		System.out.println(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
 
         final DoubleBuffer[] result = new DoubleBuffer[1];
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             result[0] = GL30.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, offset * primitiveByteSize, length * primitiveByteSize/*bytes!*/, GL30.GL_MAP_READ_BIT, null).asDoubleBuffer();
             GL15.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
             unbind();
@@ -133,7 +132,7 @@ public class StorageBuffer implements OpenGLBuffer {
      */
     @Override
     public void putValues(int offset, FloatBuffer values) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             bind();
             if (offset * primitiveByteSize + values.capacity() * primitiveByteSize > size) {
                 throw new IndexOutOfBoundsException(String.format("Can't put values into shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset * primitiveByteSize, values.capacity() * primitiveByteSize));
@@ -144,7 +143,7 @@ public class StorageBuffer implements OpenGLBuffer {
     }
     @Override
     public void putValues(int offset, DoubleBuffer values) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             bind();
             if (offset * primitiveByteSize + values.capacity() * primitiveByteSize > size) {
                 throw new IndexOutOfBoundsException(String.format("Can't put values into shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset * primitiveByteSize, values.capacity() * primitiveByteSize));
@@ -195,7 +194,7 @@ public class StorageBuffer implements OpenGLBuffer {
 
     @Override
     public <T extends Bufferable> void put(int offset, T... bufferable) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getSizePerObject() * bufferable.length);
             for (int i = 0; i < bufferable.length; i++) {
                 Bufferable currentBufferable = bufferable[i];

@@ -1,6 +1,5 @@
 package texture;
 
-import engine.AppContext;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 import renderer.Renderer;
@@ -27,7 +26,7 @@ public class CubeMapArray {
 	 * @param textureCount the actual number of cubemap textures you want to allocate
 	 */
 	public CubeMapArray(Renderer renderer, int textureCount, int magTextureFilter, int internalFormat) {
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			textureId = GL11.glGenTextures();
 			bind();
 

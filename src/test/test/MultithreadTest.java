@@ -17,7 +17,7 @@ public class MultithreadTest extends TestWithRenderer {
 	public void secondThreadUsesGLContext() throws InterruptedException, LWJGLException {
 		Thread worker =	new Thread(new Runnable() {
 
-			SharedDrawable drawable = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new SharedDrawable(Display.getDrawable()));
+			SharedDrawable drawable = OpenGLContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
 			
 			@Override
 			public void run() {

@@ -66,7 +66,7 @@ public interface Shader extends Reloadable {
         final int[] shaderID = new int[1];
         final SHADERTYPE finalShader1 = shader;
         final String finalResultingShaderSource = resultingShaderSource;
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             shaderID[0] = GL20.glCreateShader(finalShader.getShaderType().glShaderType);
             finalShader1.setId(shaderID[0]);
             GL20.glShaderSource(shaderID[0], finalResultingShaderSource);
@@ -77,7 +77,7 @@ public interface Shader extends Reloadable {
 
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             if (GL20.glGetShader(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
 //			System.err.println("Dynamic code takes " + newlineCount + " lines");

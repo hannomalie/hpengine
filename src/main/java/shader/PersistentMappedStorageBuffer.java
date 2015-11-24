@@ -39,13 +39,13 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
         int capacity = requestedCapacity * 2;
 
         if(buffer != null && buffer.capacity() < capacity){
-            OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+            OpenGLContext.getInstance().execute(() -> {
                 glUnmapBuffer(target);
                 glDeleteBuffers(id);
             });
         }
 
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             id = glGenBuffers();
             bind();
             glBufferStorage(target, capacity, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -55,14 +55,14 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public void bind() {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             glBindBuffer(target, id);
         });
     }
 
     @Override
     public void unbind() {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             glBindBuffer(target, 0);
         });
     }

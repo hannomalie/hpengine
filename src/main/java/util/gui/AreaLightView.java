@@ -64,7 +64,7 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
 				return AppContext.getInstance().getScene().getAreaLights().remove(light);
 			});
 

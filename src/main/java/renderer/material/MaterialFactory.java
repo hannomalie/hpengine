@@ -12,7 +12,6 @@ import renderer.material.Material.MAP;
 import renderer.material.Material.MaterialType;
 import shader.OpenGLBuffer;
 import shader.PersistentMappedStorageBuffer;
-import shader.StorageBuffer;
 import texture.Texture;
 import texture.TextureFactory;
 import util.Util;
@@ -359,13 +358,14 @@ public class MaterialFactory {
 
 	@Subscribe
 	public void bufferMaterials(MaterialAddedEvent event) {
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-            materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+		OpenGLContext.getInstance().execute(() -> {
+            Collection<Material> materials = new ArrayList(MATERIALS.values());
+            materialBuffer.put(Util.toArray(materials, Material.class));
         });
 	}
 	@Subscribe
 	public void bufferMaterials(MaterialChangedEvent event) {
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
 			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
 

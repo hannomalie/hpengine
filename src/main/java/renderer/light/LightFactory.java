@@ -153,7 +153,7 @@ public class LightFactory {
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPERATELY
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 				int renderedTextureTemp = OpenGLContext.getInstance().genTextures();
 				OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
@@ -166,7 +166,7 @@ public class LightFactory {
 			}
 		});
 
-		lightBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(1000));
+		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
 		AppContext.getEventBus().register(this);
 	}
 
@@ -535,7 +535,7 @@ public class LightFactory {
 
 	private void bufferLights() {
 		List<PointLight> pointLights = AppContext.getInstance().getScene().getPointLights();
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
 				lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));

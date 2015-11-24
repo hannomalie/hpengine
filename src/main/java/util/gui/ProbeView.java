@@ -65,7 +65,7 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
 				return EnvironmentProbeFactory.getInstance().remove(probe);
 			});
     		
@@ -104,7 +104,7 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+				OpenGLContext.getInstance().execute(() -> {
 					EnvironmentProbeFactory.getInstance().updateBuffers();
 				});
 			}

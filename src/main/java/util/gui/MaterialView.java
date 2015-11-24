@@ -1,14 +1,11 @@
 package util.gui;
 
-import com.alee.extended.filechooser.FilesSelectionListener;
-import com.alee.extended.filechooser.WebFileChooserField;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
-import com.alee.laf.optionpane.WebOptionPane;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
@@ -21,7 +18,6 @@ import engine.AppContext;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.command.GetMaterialCommand;
@@ -31,7 +27,6 @@ import renderer.material.Material;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
 import renderer.material.MaterialFactory.MaterialInfo;
-import shader.Shader;
 import texture.Texture;
 import texture.TextureFactory;
 import util.gui.input.*;
@@ -80,7 +75,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-				CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+				CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
 					return new GetMaterialCommand(newInfo).execute(appContext);
 				});
 				MaterialResult result;
@@ -409,7 +404,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
 			return new InitMaterialCommand(material).execute(appContext);
 		});
 

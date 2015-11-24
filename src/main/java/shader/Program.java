@@ -9,7 +9,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import engine.AppContext;
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
 import org.lwjgl.util.glu.GLU;
@@ -64,7 +63,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
 			clearUniforms();
 
 			try {
@@ -154,7 +153,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-		CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
 //			self.unload();
             detachShader(vertexShader);
             detachShader(fragmentShader);

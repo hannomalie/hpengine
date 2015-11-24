@@ -42,7 +42,7 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+				CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
 					entity.init();
 					return true;
 				});

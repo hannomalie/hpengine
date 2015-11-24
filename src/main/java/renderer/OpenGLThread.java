@@ -1,12 +1,8 @@
 package renderer;
 
-import engine.AppContext;
-import engine.Drawable;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.SharedDrawable;
-
-import java.util.concurrent.Callable;
 
 public abstract class OpenGLThread extends Thread {
 
@@ -19,7 +15,7 @@ public abstract class OpenGLThread extends Thread {
 	}
 	public OpenGLThread(String name) {
 		this.name = name;
-		drawable = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new SharedDrawable(Display.getDrawable()));
+		drawable = OpenGLContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
 		initialized = true;
 	}
 

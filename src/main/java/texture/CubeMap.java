@@ -28,7 +28,7 @@ public class CubeMap extends Texture implements Serializable {
 	
 	public void upload() {
 
-		OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		OpenGLContext.getInstance().execute(() -> {
 			bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
 			{

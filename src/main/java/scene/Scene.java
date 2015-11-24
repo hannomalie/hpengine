@@ -61,7 +61,7 @@ public class Scene implements LifeCycle, Serializable {
 		entities.forEach(entity -> entity.init());
 		addAll(entities);
 		for (ProbeData data : probes) {
-			OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+			OpenGLContext.getInstance().execute(() -> {
                 try {
                     EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw();
                 } catch (Exception e) {

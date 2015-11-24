@@ -6,7 +6,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
 
-import engine.AppContext;
 import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
 import util.Util;
@@ -38,7 +37,7 @@ public class RenderTarget {
 
     public RenderTarget(RenderTargetBuilder renderTargetBuilder) {
 
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
             colorAttachments = renderTargetBuilder.colorAttachments;

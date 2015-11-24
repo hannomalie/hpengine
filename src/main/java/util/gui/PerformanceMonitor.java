@@ -168,11 +168,11 @@ public class PerformanceMonitor {
 	}
 
 	private void thirtyFPS(double y) {
-		this.thirtyFPS.add(new Millisecond(), y);
+		this.thirtyFPS.addOrUpdate(new Millisecond(), y);
 	}
 
 	private void sixtyFPS(double y) {
-		this.sixtyFPS.add(new Millisecond(), y);
+		this.sixtyFPS.addOrUpdate(new Millisecond(), y);
 	}
 
 	private void actualFPS(double y) {

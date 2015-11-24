@@ -2,8 +2,6 @@ package engine.model;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 
 import java.nio.FloatBuffer;
@@ -11,8 +9,7 @@ import java.util.EnumSet;
 
 public class VertexBuffer {
 
-    private transient boolean uploaded = false;
-
+    private transient volatile boolean uploaded = false;
     public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
@@ -29,7 +26,7 @@ public class VertexBuffer {
 	}
 
 	private volatile int vertexBuffer = 0;
-	private volatile int vertexArray = 0;
+	private volatile VertexArrayObject vertexArrayObject;
 	private FloatBuffer buffer;
 	private int verticesCount;
 	public EnumSet<DataChannels> channels;
@@ -49,8 +46,10 @@ public class VertexBuffer {
 		setInternals(buffer, channels, usage);
 		buffer.rewind();
 		float[] floatArray = new float[buffer.limit()/4];
+        long start = System.currentTimeMillis();
 		buffer.get(floatArray);
-		this.vertices = floatArray;
+        System.out.println("Buffer get took " + (System.currentTimeMillis() - start));
+        this.vertices = floatArray;
 	}
 
 	private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
@@ -127,55 +126,47 @@ public class VertexBuffer {
 					"=> Modulo is %d", vertices.length, totalElementsPerVertex, modulo));
 		}
 	}
-	
-	public VertexBuffer upload() {
-//        SynchronousQueue<Result<Object>> queue = AppContext.getInstance().getRenderer().addCommand(new Command<Result<Object>>() {
-//            @Override
-//            public Result<Object> execute(AppContext appContext) {
-//                vertexBuffer = GL15.glGenBuffers();
-//                vertexArray = GL30.glGenVertexArrays();
-//
-//                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
-//                buffer.rewind();
-//                GL30.glBindVertexArray(vertexArray);
-//                setUpAttributes();
-//                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-//                GL30.glBindVertexArray(0);
-//                return new Result<Object>(true);
-//            }
-//        });
-//        queue.poll();
 
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
-			vertexBuffer = GL15.glGenBuffers();
-			vertexArray = GL30.glGenVertexArrays();
+    public VertexBuffer upload() {
+        OpenGLContext.getInstance().execute(() -> {
+            long start = System.currentTimeMillis();
+            setVertexBuffer(GL15.glGenBuffers());
+            System.out.println("Set Vertexbuffer took " + (System.currentTimeMillis() - start));
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
+            System.out.println("Set VAO took " + (System.currentTimeMillis() - start));
 
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
-			buffer.rewind();
-			GL30.glBindVertexArray(vertexArray);
-			setUpAttributes();
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+            buffer.rewind();
+            bind();
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+            System.out.println("BufferData took " + (System.currentTimeMillis() - start));
             uploaded = true;
-		});
+        });
 
-		return this;
-	}
+        return this;
+    }
 	
 	public void delete() {
 		GL15.glDeleteBuffers(vertexBuffer);
-		GL30.glDeleteVertexArrays(vertexArray);
+//        vertexArrayObject.delete();
 		buffer = null;
 	}
 
 	public void draw() {
         if(!uploaded) { return; }
-		GL30.glBindVertexArray(vertexArray);
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        bind();
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
-	public void drawStrips() {
+
+    private void bind() {
+        vertexArrayObject.bind();
+        ARBVertexAttribBinding.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
+    }
+
+    public void drawStrips() {
         if(!uploaded) { return; }
-		GL30.glBindVertexArray(vertexArray);
-		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, verticesCount);
+        bind();
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, verticesCount);
 	}
 	public void drawAgain() {
         if(!uploaded) { return; }
@@ -186,25 +177,15 @@ public class VertexBuffer {
         if(!uploaded) { return; }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
-		GL30.glBindVertexArray(vertexArray);
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        bind();
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 	}
 
 	public void drawInstanced(int instanceCount) {
         if(!uploaded) { return; }
-		GL30.glBindVertexArray(vertexArray);
-		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
-	}
-	
-	private void setUpAttributes() {
-		int currentOffset = 0;
-		for (DataChannels channel : channels) {
-			GL20.glEnableVertexAttribArray(channel.getLocation());
-			GL20.glVertexAttribPointer(channel.getLocation(),channel.getSize(), GL11.GL_FLOAT, false, bytesPerVertex(channels), currentOffset);
-			
-			currentOffset += channel.getSize() * 4;
-		}
+        bind();
+        GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
 	}
 	
 	public static int bytesPerVertex(EnumSet<DataChannels> channels) {
@@ -253,4 +234,12 @@ public class VertexBuffer {
 		return result;
 		
 	}
+
+    private void setVertexBuffer(int vertexBuffer) {
+        this.vertexBuffer = vertexBuffer;
+    }
+
+    private void setVertexArrayObject(VertexArrayObject vertexArrayObject) {
+        this.vertexArrayObject = vertexArrayObject;
+    }
 }

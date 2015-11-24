@@ -283,6 +283,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         long start = System.currentTimeMillis();
         vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS);
         System.out.println("Creating the VB took " + (System.currentTimeMillis() - start));
+        start = System.currentTimeMillis();
         vertexBuffer.upload();
         System.out.println("Uploading the VB took " + (System.currentTimeMillis() - start));
 

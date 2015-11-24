@@ -159,7 +159,7 @@ public final class OpenGLContext {
     public void activeTexture(int textureUnitIndex) {
         int textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex);
         if(activeTexture != textureIndexGLInt) {
-            doWithOpenGLContext(() -> GL13.glActiveTexture(textureIndexGLInt));
+            execute(() -> GL13.glActiveTexture(textureIndexGLInt));
         }
     }
     private int getCleanedTextureUnitValue(int textureUnit) {
@@ -171,13 +171,13 @@ public final class OpenGLContext {
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     public void bindTexture(GlTextureTarget target, int textureId) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
     }
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -246,7 +246,7 @@ public final class OpenGLContext {
     }
 
     public void clearColor(float r, float g, float b, float a) {
-        doWithOpenGLContext(() -> {
+        execute(() -> {
             GL11.glClearColor(r, g, b, a);
         });
     }
@@ -257,7 +257,7 @@ public final class OpenGLContext {
     }
 
     public int genTextures() {
-        return calculateWithOpenGLContext(() -> {
+        return calculate(() -> {
             return GL11.glGenTextures();
         });
     }
@@ -266,11 +266,11 @@ public final class OpenGLContext {
         return initialized;
     }
 
-    public void doWithOpenGLContext(Runnable runnable) {
-        doWithOpenGLContext(runnable, true);
+    public void execute(Runnable runnable) {
+        execute(runnable, true);
     }
-    public void doWithOpenGLContext(Runnable runnable, boolean andBlock) {
-        CompletableFuture<Object> future = doWithOpenGLContext((Callable<Object>) () -> {
+    public void execute(Runnable runnable, boolean andBlock) {
+        CompletableFuture<Object> future = execute((Callable<Object>) () -> {
             runnable.run();
             return new Object();
         });
@@ -280,7 +280,7 @@ public final class OpenGLContext {
         }
     }
 
-    public <RETURN_TYPE> RETURN_TYPE calculateWithOpenGLContext(Callable<RETURN_TYPE> callable) {
+    public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
         if(util.Util.isOpenGLThread()) {
             try {
                 return callable.call();
@@ -288,7 +288,7 @@ public final class OpenGLContext {
                 e.printStackTrace();
             }
         } else {
-            CompletableFuture<RETURN_TYPE> future = doWithOpenGLContext(callable);
+            CompletableFuture<RETURN_TYPE> future = execute(callable);
             try {
                 return future.get();
             } catch (InterruptedException e) {
@@ -301,7 +301,7 @@ public final class OpenGLContext {
         return null;
     }
 
-    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> doWithOpenGLContext(Callable<RETURN_TYPE> callable) {
+    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(Callable<RETURN_TYPE> callable) {
 
         if(util.Util.isOpenGLThread()) {
             try {
@@ -330,7 +330,7 @@ public final class OpenGLContext {
     }
 
     public int createProgramId() {
-        return calculateWithOpenGLContext(() -> {
+        return calculate(() -> {
             return GL20.glCreateProgram();
         });
     }

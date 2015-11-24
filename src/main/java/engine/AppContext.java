@@ -138,7 +138,7 @@ public class AppContext {
 
         scene = new Scene();
         AppContext self = this;
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             scene.init();
         }, true);
         float rotationDelta = 125f;
@@ -234,7 +234,7 @@ public class AppContext {
     }
 
     public void destroy() {
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             Renderer.getInstance().destroy();
         }, false);
     }
@@ -342,7 +342,7 @@ public class AppContext {
         StopWatch.getInstance().stopAndPrintMS();
         StopWatch.getInstance().start("Light update");
         if (directionalLight.hasMoved()) {
-            OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+            OpenGLContext.getInstance().execute(() -> {
                 for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
                     Renderer.getInstance().addRenderProbeCommand(probe, true);
                 }
@@ -357,7 +357,7 @@ public class AppContext {
         StopWatch.getInstance().stopAndPrintMS();
 
         if (Renderer.getInstance().isFrameFinished()) {
-            OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+            OpenGLContext.getInstance().execute(() -> {
                 if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
                     scene.bufferEntities();
                 }
@@ -380,7 +380,7 @@ public class AppContext {
 
     public void setScene(Scene scene) {
         this.scene = scene;
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             StopWatch.getInstance().start("Scene init");
             scene.init();
             StopWatch.getInstance().stopAndPrintMS();

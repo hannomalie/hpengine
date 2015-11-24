@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import renderer.OpenGLContext;
-import renderer.Renderer;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
 import util.ressources.Reloadable;
@@ -114,7 +113,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void reload() {
 		final ComputeShaderProgram self = this;
 
-		CompletableFuture<Boolean> future = OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+		CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
 //			self.unload();
             detachShader(computeShader);
             computeShader.reload();

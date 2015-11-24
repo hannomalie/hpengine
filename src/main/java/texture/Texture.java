@@ -118,7 +118,7 @@ public class Texture implements Serializable {
 //			}
 //		}.start();
 
-        OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+        OpenGLContext.getInstance().execute(() -> {
             upload(buffer(), srgba);
         });
 	}
@@ -131,7 +131,7 @@ public class Texture implements Serializable {
         new OpenGLThread() {
             @Override
             public void doRun() {
-                OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+                OpenGLContext.getInstance().execute(() -> {
                     bind();
                     if (target == TEXTURE_2D)
                     {
@@ -168,7 +168,7 @@ public class Texture implements Serializable {
         //        }
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                 }, false);
-                OpenGLContext.getInstance().doWithOpenGLContext(() -> {
+                OpenGLContext.getInstance().execute(() -> {
                     handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 });
