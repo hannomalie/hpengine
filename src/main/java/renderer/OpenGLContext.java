@@ -21,6 +21,8 @@ import static renderer.constants.GlCap.DEPTH_TEST;
 
 public final class OpenGLContext {
 
+    private static final int MAX_WORKITEMS = 1000;
+
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -36,7 +38,7 @@ public final class OpenGLContext {
         if(instance == null) {
             instance = new OpenGLContext();
         } else if(!instance.isInitialized()) {
-            throw new IllegalStateException("OpenGL context not initialized. Init a renderer first.");
+            throw new IllegalStateException("OpenGL context not initialized. Init an OpenGLContext first.");
         }
         return instance;
     }
@@ -323,6 +325,12 @@ public final class OpenGLContext {
         }
 
         return null;
+    }
+
+    public void blockUntilEmpty() {
+        while(commandQueue.size() > 0) {
+
+        }
     }
 
     public TimeStepThread getDrawThread() {

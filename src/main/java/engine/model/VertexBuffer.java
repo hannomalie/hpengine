@@ -31,7 +31,6 @@ public class VertexBuffer {
 	private int verticesCount;
 	public EnumSet<DataChannels> channels;
 	private Usage usage;
-	private float[] vertices;
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
 		this(values, channels, Usage.STATIC);
@@ -45,11 +44,6 @@ public class VertexBuffer {
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
 		setInternals(buffer, channels, usage);
 		buffer.rewind();
-		float[] floatArray = new float[buffer.limit()/4];
-        long start = System.currentTimeMillis();
-		buffer.get(floatArray);
-        System.out.println("Buffer get took " + (System.currentTimeMillis() - start));
-        this.vertices = floatArray;
 	}
 
 	private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
@@ -65,7 +59,6 @@ public class VertexBuffer {
 		int totalElementsPerVertex = totalElementsPerVertex(channels);
 		int totalBytesPerVertex = totalElementsPerVertex * 4;
 		this.verticesCount = calculateVerticesCount(vertices, channels);
-		this.vertices = vertices;
 
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
 
@@ -84,24 +77,30 @@ public class VertexBuffer {
 	}
 	
 	public int getVerticesCount() {
-		verticesCount = calculateVerticesCount(vertices, channels);
+		verticesCount = calculateVerticesCount(channels);
 		return verticesCount;
 	}
 
-	private int calculateVerticesCount(float[] vertices, EnumSet<DataChannels> channels) {
+	private int calculateVerticesCount(EnumSet<DataChannels> channels) {
 		int totalElementsPerVertex = totalElementsPerVertex(channels);
-		validate(vertices, totalElementsPerVertex);
+		validate(totalElementsPerVertex);
 		
-		int verticesCount = vertices.length / totalElementsPerVertex;
+		int verticesCount = buffer.capacity() / totalElementsPerVertex;
 		return verticesCount;
 	}
-	
-	public int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
-		floatBuffer.rewind();
-		float[] floatArray = new float[floatBuffer.limit()];
-		floatBuffer.get(floatArray);
-		return calculateVerticesCount(floatArray, channels);
-	}
+
+    public int calculateVerticesCount(float[] vertices, EnumSet<DataChannels> channels) {
+        int totalElementsPerVertex = totalElementsPerVertex(channels);
+
+        int verticesCount = vertices.length / totalElementsPerVertex;
+        return verticesCount;
+    }
+    public int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
+        floatBuffer.rewind();
+        float[] floatArray = new float[floatBuffer.limit()];
+        floatBuffer.get(floatArray);
+        return calculateVerticesCount(channels);
+    }
 
 	public static int totalElementsPerVertex(EnumSet<DataChannels> channels) {
 		int count = 0;
@@ -117,21 +116,24 @@ public class VertexBuffer {
 	}
 
 	// TODO: Mach irgendwas....
-	private void validate(float[] vertices, int totalElementsPerVertex) {
-		int modulo = vertices.length % totalElementsPerVertex;
+	private void validate(int totalElementsPerVertex) {
+		int modulo = buffer.capacity() % totalElementsPerVertex;
 		if (modulo != 0) {
 			throw new RuntimeException(String.format("Can't buffer those vertices!\n" +
 					"vertices count: %d,\n" +
 					"Attribute values per vertex: %d\n" +
-					"=> Modulo is %d", vertices.length, totalElementsPerVertex, modulo));
+					"=> Modulo is %d", buffer.capacity(), totalElementsPerVertex, modulo));
 		}
 	}
 
     public VertexBuffer upload() {
+        System.out.println("Starting VB upload");
         OpenGLContext.getInstance().execute(() -> {
+            System.out.println("GPU starts actual VB upload");
             long start = System.currentTimeMillis();
             setVertexBuffer(GL15.glGenBuffers());
             System.out.println("Set Vertexbuffer took " + (System.currentTimeMillis() - start));
+            start = System.currentTimeMillis();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
             System.out.println("Set VAO took " + (System.currentTimeMillis() - start));
@@ -141,7 +143,7 @@ public class VertexBuffer {
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
             System.out.println("BufferData took " + (System.currentTimeMillis() - start));
             uploaded = true;
-        });
+        }, true); // TODO: Evaluate if this has to be blocking
 
         return this;
     }
@@ -223,10 +225,10 @@ public class VertexBuffer {
 		int resultIndex = 0;
 		
 		int elementsPerChannel = forChannel.getSize();
-		for (int i = stride; i < vertices.length; i += stride + elementsPerChannel + elementCountAfterPositions) {
+		for (int i = stride; i < buffer.capacity(); i += stride + elementsPerChannel + elementCountAfterPositions) {
 			for (int x = 0; x < forChannel.getSize(); x++) {
 				
-				result[resultIndex] = vertices[i+x];
+				result[resultIndex] = buffer.get(i+x);
 				resultIndex++;
 			}
 		}

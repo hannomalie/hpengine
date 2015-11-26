@@ -357,6 +357,7 @@ public class AppContext {
         StopWatch.getInstance().stopAndPrintMS();
 
         if (Renderer.getInstance().isFrameFinished()) {
+            OpenGLContext.getInstance().blockUntilEmpty();
             OpenGLContext.getInstance().execute(() -> {
                 if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
                     scene.bufferEntities();

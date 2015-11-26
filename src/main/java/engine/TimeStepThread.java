@@ -1,6 +1,5 @@
 package engine;
 
-import renderer.Renderer;
 import renderer.fps.FPSCounter;
 
 public abstract class TimeStepThread extends Thread {

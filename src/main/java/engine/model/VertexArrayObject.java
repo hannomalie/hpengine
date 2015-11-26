@@ -42,7 +42,6 @@ public class VertexArrayObject {
         OpenGLContext.getInstance().execute(() -> {
             currentBoundVAO = id;
             GL30.glBindVertexArray(getId());
-            System.out.println("Binding new VAO");
         });
     }
 

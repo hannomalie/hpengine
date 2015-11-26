@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 public class ModelComponent extends BaseComponent implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
+    private static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
 
     private static ExecutorService service = Executors.newFixedThreadPool(4);
 
@@ -41,14 +42,16 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     protected String materialName = "";
 
-    public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
+    public static EnumSet<DataChannels> DEFAULTCHANNELS = USE_PRECOMPUTED_TANGENTSPACE ? EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
-            DataChannels.NORMAL
-		,
-		DataChannels.TANGENT,
-		DataChannels.BINORMAL
-    );
+            DataChannels.NORMAL,
+            DataChannels.TANGENT,
+            DataChannels.BINORMAL
+            ) : EnumSet.of(
+            DataChannels.POSITION3,
+            DataChannels.TEXCOORD,
+            DataChannels.NORMAL);
     public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.NORMAL
@@ -141,7 +144,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         createFloatArray(model);
         System.out.println("createFloatArray took " + (System.currentTimeMillis() - start));
         createVertexBuffer();
-        System.out.println("CreateVertexBuffer took " + (System.currentTimeMillis() - start));
         initialized = true;
     }
 
@@ -164,22 +166,24 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             int[] referencedNormals = face.getNormalIndices();
             int[] referencedTexcoords = face.getTextureCoordinateIndices();
 
-			Vector3f[] tangentBitangent;
-            boolean hasTexcoords = referencedTexcoords[0] != -1;
-            if(hasTexcoords) {
-                tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
-                    texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
-                    normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
-            } else {
-                tangentBitangent = new Vector3f[6];
-                Vector3f edge1 = Vector3f.sub(verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[0]-1), null);
-                Vector3f edge2 = Vector3f.sub(verticesTemp.get(referencedVertices[2]-1), verticesTemp.get(referencedVertices[0]-1), null);
-                tangentBitangent[0] = edge1;
-                tangentBitangent[1] = edge2;
-                tangentBitangent[2] = edge1;
-                tangentBitangent[3] = edge2;
-                tangentBitangent[4] = edge1;
-                tangentBitangent[5] = edge2;
+            Vector3f[] tangentBitangent = null;
+            if(USE_PRECOMPUTED_TANGENTSPACE) {
+                boolean hasTexcoords = referencedTexcoords[0] != -1;
+                if(hasTexcoords) {
+                    tangentBitangent = calculateTangentBitangent(verticesTemp.get(referencedVertices[0]-1), verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[2]-1),
+                            texcoordsTemp.get(referencedTexcoords[0]-1), texcoordsTemp.get(referencedTexcoords[1]-1), texcoordsTemp.get(referencedTexcoords[2]-1),
+                            normalsTemp.get(referencedNormals[0]-1), normalsTemp.get(referencedNormals[1]-1), normalsTemp.get(referencedNormals[2]-1));
+                } else {
+                    tangentBitangent = new Vector3f[6];
+                    Vector3f edge1 = Vector3f.sub(verticesTemp.get(referencedVertices[1]-1), verticesTemp.get(referencedVertices[0]-1), null);
+                    Vector3f edge2 = Vector3f.sub(verticesTemp.get(referencedVertices[2]-1), verticesTemp.get(referencedVertices[0]-1), null);
+                    tangentBitangent[0] = edge1;
+                    tangentBitangent[1] = edge2;
+                    tangentBitangent[2] = edge1;
+                    tangentBitangent[3] = edge2;
+                    tangentBitangent[4] = edge1;
+                    tangentBitangent[5] = edge2;
+                }
             }
 
             for (int j = 0; j < 3; j++) {
@@ -201,12 +205,14 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
-				values.add(tangentBitangent[2*j].x);
-				values.add(tangentBitangent[2*j].y);
-				values.add(tangentBitangent[2*j].z);
-				values.add(tangentBitangent[2*j+1].x);
-				values.add(tangentBitangent[2*j+1].y);
-				values.add(tangentBitangent[2*j+1].z);
+                if(USE_PRECOMPUTED_TANGENTSPACE) {
+                    values.add(tangentBitangent[2*j].x);
+                    values.add(tangentBitangent[2*j].y);
+                    values.add(tangentBitangent[2*j].z);
+                    values.add(tangentBitangent[2*j+1].x);
+                    values.add(tangentBitangent[2*j+1].y);
+                    values.add(tangentBitangent[2*j+1].z);
+                }
             }
 
         }
@@ -286,8 +292,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         start = System.currentTimeMillis();
         vertexBuffer.upload();
         System.out.println("Uploading the VB took " + (System.currentTimeMillis() - start));
-
-//		vertexBufferShadow = new VertexBuffer( verticesFloatBuffer, DEFAULTCHANNELS).upload();
     }
 
     @Override

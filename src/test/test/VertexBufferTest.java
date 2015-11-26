@@ -1,15 +1,17 @@
 package test;
 
+import component.ModelComponent;
 import engine.model.DataChannels;
 import engine.model.Model;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Test;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
 
 import java.util.EnumSet;
 
-public class VertexBufferTest {
+public class VertexBufferTest extends TestWithOpenGLContext {
 	
 	@Test
 	public void correctBuffering() {
@@ -53,6 +55,18 @@ public class VertexBufferTest {
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 	}
+
+    @Test
+    public void benchmarkBufferUpload() {
+        int floatBufferSize = 8*10000000;
+        VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(floatBufferSize), ModelComponent.DEFAULTCHANNELS);
+
+        System.out.println("Starting VertexBufferUpload");
+        long start = System.currentTimeMillis();
+        buffer.upload();
+        System.out.println("Buffer upload of " + floatBufferSize + " took " + (System.currentTimeMillis() - start) + "ms");
+
+    }
 
     //TODO: Create MinMaxTest for model
 }

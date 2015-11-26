@@ -37,6 +37,10 @@ public class CommandQueue {
         return command.getFuture();
     }
 
+    public int size() {
+        return workQueue.size();
+    }
+
     public Iterator<FutureCallable> getIterator() {
         return workQueue.iterator();
     }
