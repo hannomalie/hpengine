@@ -129,11 +129,11 @@ void main(void) {
 
 
 	float depth = (position_clip.z / position_clip.w);
-	
+
 	out_normal = vec4(PN_view, depth);
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
-	
+
 	vec4 color = vec4(materialDiffuseColor, 1);
 
 	if(material.hasDiffuseMap != 0) {
@@ -148,7 +148,7 @@ void main(void) {
 	}
   	out_color = color;
   	out_color.w = float(materialMetallic);
-  	
+
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
 	}
@@ -173,7 +173,7 @@ void main(void) {
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,materialIndex,entityIndex);
-  	
+
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
 		float n2 = surface3(vec3(UV, 0.1), 2);

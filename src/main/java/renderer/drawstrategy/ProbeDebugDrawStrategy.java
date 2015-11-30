@@ -37,7 +37,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         super();
     }
 
-    public void drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public DrawResult drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         ///////////// firstpass
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
 
@@ -149,5 +149,7 @@ public class ProbeDebugDrawStrategy extends DebugDrawStrategy {
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getPositionMap()); // the first color attachment
         OpenGLContext.getInstance().enable(DEPTH_TEST);
+
+        return new DrawResult(new FirstPassResult(0,0 ), new SecondPassResult());
     }
 }

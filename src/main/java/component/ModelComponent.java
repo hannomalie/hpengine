@@ -17,6 +17,7 @@ import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
 import shader.ProgramFactory;
+import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -73,31 +74,33 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.model = model;
     }
     @Override
-    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        draw(camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
+        return draw(camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
-    public void draw(Camera camera) {
-        draw(camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+    public int draw(Camera camera) {
+        return draw(camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
-    public void draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
 
         if(!isVisible) {
-            return;
+            return 0;
         }
 
         if (firstPassProgram == null) {
-            return;
+            return 0;
         }
 
+//        GPUProfiler.start("Set local uniforms first pass");
         Program currentProgram = firstPassProgram;
         currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
         currentProgram.setUniform("isSelected", isSelected);
-        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
+//        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
+//        GPUProfiler.end();
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
@@ -105,9 +108,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
         }
         if(instanced) {
-            vertexBuffer.drawInstanced(10);
+            return vertexBuffer.drawInstanced(10);
         } else {
-            vertexBuffer.draw();
+            return vertexBuffer.draw();
         }
     }
 

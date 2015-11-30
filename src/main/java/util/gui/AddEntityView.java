@@ -73,10 +73,8 @@ public class AddEntityView extends WebPanel {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
 								long start = System.currentTimeMillis();
                                 appContext.getScene().addAll(result.entities);
-                                System.out.println("Adding to scene took  " + (System.currentTimeMillis() - start));
                                 start = System.currentTimeMillis();
                                 appContext.getEventBus().post(new MaterialAddedEvent());
-                                System.out.println("Posting event took  " + (System.currentTimeMillis() - start));
 								return result;
 							}
 

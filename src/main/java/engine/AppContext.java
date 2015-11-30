@@ -9,6 +9,7 @@ import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
+import event.FrameFinishedEvent;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -18,6 +19,7 @@ import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
+import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
 import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
@@ -47,6 +49,8 @@ public class AppContext {
 
     private TimeStepThread thread;
     private volatile boolean frameFinished = true;
+    private DrawResult latestDrawResult = null;
+    private String latestGPUProfilingResult = "";
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -357,15 +361,19 @@ public class AppContext {
         StopWatch.getInstance().stopAndPrintMS();
 
         if (Renderer.getInstance().isFrameFinished()) {
+            boolean anyEntityHasMoved = false;
+            if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
+                anyEntityHasMoved = true;
+            }
             OpenGLContext.getInstance().blockUntilEmpty();
+            final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
-                    scene.bufferEntities();
-                }
+                if(finalAnyEntityHasMoved) { scene.bufferEntities(); }
                 Renderer.getInstance().startFrame();
-                Renderer.getInstance().draw();
-                Renderer.getInstance().endFrame();
+                latestDrawResult = Renderer.getInstance().draw();
+                latestGPUProfilingResult = Renderer.getInstance().endFrame();
             }, false);
+            AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         }
 
         scene.endFrame(activeCamera);

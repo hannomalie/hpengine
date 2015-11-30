@@ -47,15 +47,15 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
     }
 
     @Override
-    public void draw(AppContext appContext) {
-        drawDebug(appContext.getActiveCamera(), appContext, appContext.getPhysicsFactory().getDynamicsWorld(),
+    public DrawResult draw(AppContext appContext) {
+        return drawDebug(appContext.getActiveCamera(), appContext, appContext.getPhysicsFactory().getDynamicsWorld(),
                 appContext.getScene().getOctree(), appContext.getScene().getEntities(),
                 appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(),
                 appContext.getInstance().getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
     }
 
 
-    public void drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public DrawResult drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
 
         LightFactory.getInstance().renderAreaLightShadowMaps(octree);
@@ -201,5 +201,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
         Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getPositionMap()); // the first color attachment
         OpenGLContext.getInstance().enable(DEPTH_TEST);
+
+        return new DrawResult(new FirstPassResult(0, 0), new SecondPassResult());
     }
 }

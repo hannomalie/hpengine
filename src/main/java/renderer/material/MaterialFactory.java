@@ -12,6 +12,7 @@ import renderer.material.Material.MAP;
 import renderer.material.Material.MaterialType;
 import shader.OpenGLBuffer;
 import shader.PersistentMappedStorageBuffer;
+import shader.StorageBuffer;
 import texture.Texture;
 import texture.TextureFactory;
 import util.Util;
@@ -50,7 +51,7 @@ public class MaterialFactory {
 	private OpenGLBuffer materialBuffer;
 
 	private MaterialFactory() {
-//		materialBuffer = OpenGLContext.getInstance().calculateWithOpenGLContext(() -> new StorageBuffer(20000));
+//		materialBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(20000));
         materialBuffer = new PersistentMappedStorageBuffer(20000);
 
 		MaterialInfo defaultTemp = new MaterialInfo();

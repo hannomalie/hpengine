@@ -3,6 +3,7 @@ package engine.model;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
+import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
@@ -56,9 +57,9 @@ public class VertexBuffer {
 
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
 		
-		int totalElementsPerVertex = totalElementsPerVertex(channels);
+		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		int totalBytesPerVertex = totalElementsPerVertex * 4;
-		this.verticesCount = calculateVerticesCount(vertices, channels);
+        int verticesCount = calculateVerticesCount(vertices, channels);
 
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
 
@@ -82,36 +83,28 @@ public class VertexBuffer {
 	}
 
 	private int calculateVerticesCount(EnumSet<DataChannels> channels) {
-		int totalElementsPerVertex = totalElementsPerVertex(channels);
+		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		validate(totalElementsPerVertex);
 		
 		int verticesCount = buffer.capacity() / totalElementsPerVertex;
 		return verticesCount;
 	}
 
-    public int calculateVerticesCount(float[] vertices, EnumSet<DataChannels> channels) {
-        int totalElementsPerVertex = totalElementsPerVertex(channels);
+    public static int calculateVerticesCount(float[] vertices, EnumSet<DataChannels> channels) {
+        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 
         int verticesCount = vertices.length / totalElementsPerVertex;
         return verticesCount;
     }
-    public int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
+    public static int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
         floatBuffer.rewind();
         float[] floatArray = new float[floatBuffer.limit()];
         floatBuffer.get(floatArray);
-        return calculateVerticesCount(channels);
+        return calculateVerticesCount(floatArray, channels);
     }
 
-	public static int totalElementsPerVertex(EnumSet<DataChannels> channels) {
-		int count = 0;
-		for (DataChannels channel : channels) {
-			count += channel.getSize();
-		}
-		return count;
-	}
-	
-	public int totalElementsPerVertex() {
-		return VertexBuffer.totalElementsPerVertex(this.channels);
+    public int totalElementsPerVertex() {
+		return DataChannels.totalElementsPerVertex(this.channels);
 		
 	}
 
@@ -127,21 +120,14 @@ public class VertexBuffer {
 	}
 
     public VertexBuffer upload() {
-        System.out.println("Starting VB upload");
         OpenGLContext.getInstance().execute(() -> {
-            System.out.println("GPU starts actual VB upload");
-            long start = System.currentTimeMillis();
             setVertexBuffer(GL15.glGenBuffers());
-            System.out.println("Set Vertexbuffer took " + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-            System.out.println("Set VAO took " + (System.currentTimeMillis() - start));
 
             buffer.rewind();
             bind();
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-            System.out.println("BufferData took " + (System.currentTimeMillis() - start));
             uploaded = true;
         }, true); // TODO: Evaluate if this has to be blocking
 
@@ -154,11 +140,19 @@ public class VertexBuffer {
 		buffer = null;
 	}
 
-	public void draw() {
+    public int draw() {
+        if(!uploaded) { return 0; }
+        bind();
+//        GPUProfiler.start("Drawing " + verticesCount + " vertices");
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+//        GPUProfiler.end();
+        return verticesCount;
+    }
+    public void drawXXX() {
         if(!uploaded) { return; }
         bind();
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-	}
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount/4);
+    }
 
     private void bind() {
         vertexArrayObject.bind();
@@ -184,22 +178,15 @@ public class VertexBuffer {
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 	}
 
-	public void drawInstanced(int instanceCount) {
-        if(!uploaded) { return; }
+	public int drawInstanced(int instanceCount) {
+        if(!uploaded) { return 0; }
         bind();
         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
+        return verticesCount;
 	}
-	
-	public static int bytesPerVertex(EnumSet<DataChannels> channels) {
-		int sum = 0;
-		for (DataChannels channel : channels) {
-			sum += channel.getSize();
-		}
-		return sum * 4;
-	}
-	
-	public float[] getVertexData() {
-		int totalElementsPerVertex = totalElementsPerVertex(channels);
+
+    public float[] getVertexData() {
+		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 	
 		float[] result = new float[totalElementsPerVertex * verticesCount];
 		

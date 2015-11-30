@@ -34,7 +34,6 @@ public class EntityFactory {
 				child.setParent(entity);
 			}
 			entity.init();
-            System.out.println("Get entity took " + (System.currentTimeMillis() - start));
 			return entity;
 		} else {
 			return getEntity(new Vector3f(), name, models.get(0), models.get(0).getMaterial());

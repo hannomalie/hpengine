@@ -93,21 +93,23 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext = OpenGLContext.getInstance();
     }
 
-    public void draw(AppContext appContext) {
-        draw(appContext.getActiveCamera(), appContext, appContext.getScene().getEntities());
+    public DrawResult draw(AppContext appContext) {
+        return draw(appContext.getActiveCamera(), appContext, appContext.getScene().getEntities());
     }
 
-    public void draw(Camera camera, AppContext appContext, List<Entity> entities) {
-        draw(appContext, null, appContext.getScene().getOctree(), camera, entities);
+    public DrawResult draw(Camera camera, AppContext appContext, List<Entity> entities) {
+        return draw(appContext, null, appContext.getScene().getOctree(), camera, entities);
     }
 
-    private void draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
+    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
+        SecondPassResult secondPassResult = null;
+
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
         DirectionalLight light = appContext.getScene().getDirectionalLight();
 
         GPUProfiler.start("First pass");
-        drawFirstPass(appContext, camera, octree, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights());
+        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights());
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -127,7 +129,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
-            drawSecondPass(camera, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
+            secondPassResult = drawSecondPass(camera, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -143,9 +145,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             OpenGLContext.getInstance().bindFrameBuffer(0);
             Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         }
+
+        return new DrawResult(firstPassResult, secondPassResult);
     }
 
-    public void drawFirstPass(AppContext appContext, Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
@@ -169,10 +173,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
+        int verticesDrawn = 0;
+        int entityCount = 0;
         GPUProfiler.start("Draw entities");
 
         if(Config.DRAWSCENE_ENABLED) {
-//			GPUProfiler.start("Depth prepass");
+			GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
@@ -189,10 +195,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
+            GPUProfiler.end();
 
             for (Entity entity : entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
-                    ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
+                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
+                    verticesDrawn += currentVerticesCount;
+                    if(currentVerticesCount > 0) { entityCount++; }
                 }
             }
         }
@@ -247,9 +256,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             floatBuffer = null;
             appContext.PICKING_CLICK = 0;
         }
+
+        return new FirstPassResult(verticesDrawn, entityCount);
     }
 
-    public void drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
         TextureFactory.getInstance().generateMipMaps(directionalLight.getShadowMapId());
 
         Vector3f camPosition = camera.getPosition();
@@ -352,6 +363,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().cullFace(BACK);
         OpenGLContext.getInstance().depthFunc(LESS);
         GPUProfiler.end();
+
+        return new SecondPassResult();
     }
 
     private void doPointLights(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {

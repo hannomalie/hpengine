@@ -3,5 +3,5 @@ package renderer.drawstrategy;
 import engine.AppContext;
 
 public interface DrawStrategy {
-    void draw(AppContext appContext);
+    DrawResult draw(AppContext appContext);
 }

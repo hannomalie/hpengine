@@ -1,5 +1,7 @@
 package engine.model;
 
+import java.util.EnumSet;
+
 public enum DataChannels {
 	POSITION3("in_Position", 3, 0, 0),
 	COLOR("in_Color", 3, 1, POSITION3.siB()),
@@ -19,8 +21,24 @@ public enum DataChannels {
 		this.location = location;
 		this.offset = bufferOffset;
 	}
-	
-	public int getSize() {
+
+    public static int totalElementsPerVertex(EnumSet<DataChannels> channels) {
+        int count = 0;
+        for (DataChannels channel : channels) {
+            count += channel.getSize();
+        }
+        return count;
+    }
+
+    public static int bytesPerVertex(EnumSet<DataChannels> channels) {
+        int sum = 0;
+        for (DataChannels channel : channels) {
+            sum += channel.getSize();
+        }
+        return sum * 4;
+    }
+
+    public int getSize() {
 		return size;
 	}
 	

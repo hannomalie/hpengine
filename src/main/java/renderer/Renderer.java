@@ -4,6 +4,7 @@ import engine.lifecycle.LifeCycle;
 import engine.model.Model;
 import engine.model.VertexBuffer;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
 import scene.EnvironmentProbe;
 import shader.Program;
@@ -14,7 +15,7 @@ public interface Renderer extends LifeCycle {
 
     void destroy();
 
-    void draw();
+    DrawResult draw();
 
     void update(float seconds);
 
@@ -42,7 +43,7 @@ public interface Renderer extends LifeCycle {
 
     int getFrameCount();
 
-    void endFrame();
+    String endFrame();
 
     GBuffer getGBuffer();
 

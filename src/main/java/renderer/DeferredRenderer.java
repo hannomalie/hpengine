@@ -17,10 +17,7 @@ import renderer.command.RenderProbeCommandQueue;
 import renderer.command.Result;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
-import renderer.drawstrategy.DebugDrawStrategy;
-import renderer.drawstrategy.DrawStrategy;
-import renderer.drawstrategy.GBuffer;
-import renderer.drawstrategy.SimpleDrawStrategy;
+import renderer.drawstrategy.*;
 import renderer.fps.FPSCounter;
 import renderer.light.LightFactory;
 import renderer.material.MaterialFactory;
@@ -256,13 +253,13 @@ public class DeferredRenderer implements Renderer {
 	// I need this to force probe redrawing after engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public void draw() {
+	public DrawResult draw() {
 		setLastFrameTime();
-
+        DrawResult drawResult;
 		if (Config.DRAWLINES_ENABLED) {
-			debugDrawStrategy.draw(AppContext.getInstance());
+            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
 		} else {
-			simpleDrawStrategy.draw(AppContext.getInstance());
+            drawResult = simpleDrawStrategy.draw(AppContext.getInstance());
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
@@ -305,16 +302,17 @@ public class DeferredRenderer implements Renderer {
 
 		frameCount++;
 		Display.update();
+        return drawResult;
 	}
 
-	private void dumpTimings() {
+	private String dumpTimings() {
 		ProfilingTask tp;
+        StringBuilder builder = new StringBuilder();
 		while((tp = GPUProfiler.getFrameResults()) != null){
-			tp.dump(); //Dumps the frame to System.out.
+            tp.dump(builder); //Dumps the frame to System.out.
 		}
-        if(GPUProfiler.isDumpRequested()) {
-            GPUProfiler.dumpAverages();
-        }
+        GPUProfiler.dumpAverages();
+        return builder.toString();
 	}
 
 	@Override
@@ -438,10 +436,10 @@ public class DeferredRenderer implements Renderer {
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
         fpsCounter.update();
-		OpenGLContext.getInstance().execute(() -> {
+//		OpenGLContext.getInstance().execute(() -> {
 			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms",
-					fpsCounter.getFPS(), fpsCounter.getMsPerFrame()));
-		});
+                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame()));
+//		});
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -556,7 +554,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	public float getCurrentFPS() {
-        return OpenGLContext.getInstance().getDrawThread().getFpsCounter().getFPS();
+        return fpsCounter.getFPS();
 	}
 
 	public int getFrameCount() {
@@ -583,7 +581,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
     @Override
-    public void endFrame() {
+    public String endFrame() {
         for (Entity entity : AppContext.getInstance().getScene().getAreaLights()) {
             entity.setHasMoved(false);
         }
@@ -599,7 +597,7 @@ public class DeferredRenderer implements Renderer {
 
         GPUProfiler.endFrame();
         frameStarted.getAndDecrement();
-        dumpTimings();
+        return dumpTimings();
     }
 
 	@Override

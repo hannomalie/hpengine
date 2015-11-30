@@ -194,6 +194,7 @@ public class StorageBuffer implements OpenGLBuffer {
 
     @Override
     public <T extends Bufferable> void put(int offset, T... bufferable) {
+        if(bufferable.length == 0) { return; }
         OpenGLContext.getInstance().execute(() -> {
             tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getSizePerObject() * bufferable.length);
             for (int i = 0; i < bufferable.length; i++) {

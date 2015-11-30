@@ -77,8 +77,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			child.init();
 		}
 		initialized = true;
-        System.out.println("Entity init took " + (System.currentTimeMillis() - start));
-//		children.parallelStream().forEach(child -> child.init(world));
 	}
 
 	public Entity addComponent(Component component) {

@@ -2,7 +2,7 @@
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 lastViewMatrix;
-uniform mat4 modelMatrix;
+//uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
 uniform int entityIndex;
@@ -51,7 +51,7 @@ void main(void) {
 
     Entity entity = entities[entityIndex];
 
-//    mat4 modelMatrix = mat4(entity.modelMatrix);
+    mat4 modelMatrix = mat4(entity.modelMatrix);
 
 	vec4 positionModel = vec4(in_Position.xyz,1);
 	position_world = modelMatrix * positionModel;

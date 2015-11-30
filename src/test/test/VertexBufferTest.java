@@ -2,12 +2,10 @@ package test;
 
 import component.ModelComponent;
 import engine.model.DataChannels;
-import engine.model.Model;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Vector4f;
 
 import java.util.EnumSet;
 
@@ -28,16 +26,17 @@ public class VertexBufferTest extends TestWithOpenGLContext {
 		float[] bufferedData = buffer.getVertexData();
 		Assert.assertArrayEquals(vertexData, bufferedData, 0f);
 		Assert.assertEquals(6, buffer.getVerticesCount());
+
 	}
 
 	@Test
 	public void correctElementsPerVertex() {
-		Assert.assertEquals(5, VertexBuffer.totalElementsPerVertex(EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)));
+		Assert.assertEquals(5, DataChannels.totalElementsPerVertex(EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)));
 	}
 
 	@Test
 	public void correctBytesPerVertex() {
-		Assert.assertEquals(20, VertexBuffer.bytesPerVertex(EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)));
+		Assert.assertEquals(20, DataChannels.bytesPerVertex(EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)));
 	}
 	
 	@Test

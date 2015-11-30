@@ -139,6 +139,8 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public <T extends Bufferable> void put(int offset, T... bufferable) {
+        if(bufferable.length == 0) { return; }
+        setCapacity(bufferable[0].getSizePerObject() * 8 * bufferable.length);
 
         buffer.rewind();
         for (int i = 0; i < bufferable.length; i++) {

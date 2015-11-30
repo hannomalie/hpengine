@@ -87,20 +87,23 @@ public class ProfilingTask {
 		children.clear();
 	}
 
-	public void dump() {
-		dump(0);
+	public StringBuilder dump(StringBuilder builder) {
+		return dump(0, builder);
 	}
 
-	private void dump(int indentation) {
+	private StringBuilder dump(int indentation, StringBuilder builder) {
 		if(GPUProfiler.PRINTING_ENABLED) {
 			for (int i = 0; i < indentation; i++) {
-				System.out.print("    ");
+                builder.append("    ");
 			}
-			System.out.println(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));	
+			builder.append(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));
+            builder.append("\n");
 		}
 		for (int i = 0; i < children.size(); i++) {
-			children.get(i).dump(indentation + 1);
+			children.get(i).dump(indentation + 1, builder);
 		}
+
+        return builder;
 	}
 	
 	public Map<String, Long> getTimesTaken() {

@@ -54,6 +54,7 @@ public class TextureFactory {
 
     public static void init() {
         instance = new TextureFactory();
+        instance.loadDefaultTexture();
     }
 
     /** The table of textures that have been loaded in this loader */
@@ -89,10 +90,14 @@ public class TextureFactory {
 
 //    	loadAllAvailableTextures();
 
-        defaultTexture = getTexture("hp\\assets\\models\\textures\\gi_flag.png", true);
+        loadDefaultTexture();
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
     }
-    
+
+    public void loadDefaultTexture() {
+        defaultTexture = getTexture("hp\\assets\\models\\textures\\gi_flag.png", true);
+    }
+
     private void loadAllAvailableTextures() {
     	File textureDir = new File(Texture.getDirectory());
     	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);

@@ -20,20 +20,20 @@ import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
 import com.alee.laf.slider.WebSlider;
+import com.alee.laf.splitpane.WebSplitPane;
 import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
-import event.EntitySelectedEvent;
-import event.GlobalDefineChangedEvent;
-import event.MaterialChangedEvent;
+import event.*;
 import octree.Octree;
 import octree.Octree.Node;
 import org.apache.commons.io.FileUtils;
@@ -113,8 +113,12 @@ public class DebugFrame {
 	private JScrollPane areaLightsPane = new JScrollPane();
 	private JScrollPane scenePane = new JScrollPane();
 	private JScrollPane probesPane = new JScrollPane();
-	private JTextPane output = new JTextPane();
-	private JScrollPane outputPane = new JScrollPane(output);
+    private JTextPane output = new JTextPane();
+    private JScrollPane outputPane = new JScrollPane(output);
+    private JTextPane infoLeft = new JTextPane();
+    private JTextPane infoRight = new JTextPane();
+    WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
+    private JScrollPane infoPane = new JScrollPane(infoSplitPane);
 	
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
@@ -125,10 +129,9 @@ public class DebugFrame {
 	"}");
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
 
-//	private WebToggleButton toggleFileReload = new WebToggleButton("Hot Reload", FileMonitor.getInstance().running);
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
-	private WebButton dumpAverages = new WebButton("Dump Averages");
+	private WebToggleButton dumpAverages = new WebToggleButton("Dump Averages");
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.useParallax);
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.useSteepParallax);
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
@@ -182,6 +185,10 @@ public class DebugFrame {
 	public DebugFrame(AppContext appContext) {
 		AppContext.getEventBus().register(this);
 		init(appContext);
+        infoSplitPane.setOneTouchExpandable ( true );
+        infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
+        infoSplitPane.setDividerLocation ( 125 );
+        infoSplitPane.setContinuousLayout ( true );
 	}
 
 	private void init(AppContext appContext) {
@@ -627,7 +634,8 @@ public class DebugFrame {
 		tabbedPane.addTab("AreaLights", areaLightsPane);
 		tabbedPane.addTab("Console", consolePane);
 		tabbedPane.addTab("Scripts", scriptsPane);
-		tabbedPane.addTab("Output", outputPane);
+        tabbedPane.addTab("Output", outputPane);
+        tabbedPane.addTab("Info", infoPane);
 		
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(new Dimension(1200, 720));
@@ -651,7 +659,7 @@ public class DebugFrame {
 	private void createInputs() {
 		toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 		toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
-		dumpAverages = new WebButton("Dump Averages");
+		dumpAverages = new WebToggleButton("Dump Averages");
 		toggleParallax = new WebToggleButton("Parallax", Config.useParallax);
 		toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
 		toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.useFrustumCulling);
@@ -754,7 +762,7 @@ public class DebugFrame {
 		
 		dumpAverages.addActionListener(e -> {
 			OpenGLContext.getInstance().execute(() -> {
-                GPUProfiler.requestDump();
+                GPUProfiler.DUMP_AVERAGES = ! GPUProfiler.DUMP_AVERAGES;
 			});
 		});
 		
@@ -1662,4 +1670,18 @@ public class DebugFrame {
 		entityViewFrame.setVisible(true);
 //    	entityViewFrame.toBack();
 	}
+
+    @Subscribe
+    public void handle(FrameFinishedEvent event) {
+        if(GPUProfiler.PROFILING_ENABLED) {
+            SwingUtils.invokeLater(() -> {
+                String drawResult = event.getDrawResult().toString();
+                if(GPUProfiler.DUMP_AVERAGES) {
+                    drawResult += GPUProfiler.getAveragesString();
+                }
+                infoLeft.setText(drawResult);
+                infoRight.setText(event.getLatestGPUProfilingResult());
+            });
+        }
+    }
 }
