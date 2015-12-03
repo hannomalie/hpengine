@@ -41,7 +41,7 @@ public class DirectionalLight extends Entity {
 	transient FloatBuffer entityBuffer;
 
 	private Vector3f color = new Vector3f(1,1,1);
-	private float scatterFactor;
+	private float scatterFactor = 1f;
 
 	transient private RenderTarget renderTarget;
 	transient private Entity box;

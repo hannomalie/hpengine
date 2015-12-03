@@ -36,11 +36,11 @@ public class VertexArrayObject {
         OpenGLContext.getInstance().execute(() -> GL30.glBindVertexArray(0));
     }
 
-    private static volatile int currentBoundVAO = -1;
+    private static volatile int CURRENTLY_BOUND_VAO = -1;
     public void bind() {
-        if(currentBoundVAO == id) { return; }
+        if(CURRENTLY_BOUND_VAO == id) { return; }
         OpenGLContext.getInstance().execute(() -> {
-            currentBoundVAO = id;
+            CURRENTLY_BOUND_VAO = id;
             GL30.glBindVertexArray(getId());
         });
     }

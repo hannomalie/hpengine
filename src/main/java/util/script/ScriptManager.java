@@ -16,20 +16,20 @@ import javax.script.*;
 
 public class ScriptManager {
 
-	private final ScriptContext globalContext;
+    private static volatile ScriptManager instance;
+    private final ScriptContext globalContext;
 	private AppContext appContext;
 	private ScriptEngine engine;
 	private DefaultCompletionProvider provider;
 	private Bindings globalBindings;
 
-	public ScriptManager(AppContext appContext) {
+	private ScriptManager(AppContext appContext) {
 		this.appContext = appContext;
 		NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
 		engine = factory.getScriptEngine(new String[] { "--global-per-engine" });
 		globalContext = engine.getContext();
 		globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		provider = new DefaultCompletionProvider();
-		defineGlobals();
 	}
 	
 
@@ -38,7 +38,7 @@ public class ScriptManager {
 		System.out.println("Script executed...");
 	}
 
-	private void defineGlobals() {
+	public void defineGlobals() {
 		define("world", appContext);
         define("renderer", Renderer.getInstance());
         define("entityFactory", EntityFactory.getInstance());
@@ -107,6 +107,9 @@ public class ScriptManager {
 	}
 
     public static ScriptManager getInstance() {
-        throw new NotImplementedException();
+        if(instance == null) {
+            instance = new ScriptManager(AppContext.getInstance());
+        }
+        return instance;
     }
 }

@@ -90,6 +90,10 @@ public class TextureFactory {
 
 //    	loadAllAvailableTextures();
 
+<<<<<<< Updated upstream
+        loadDefaultTexture();
+=======
+>>>>>>> Stashed changes
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
     }
 

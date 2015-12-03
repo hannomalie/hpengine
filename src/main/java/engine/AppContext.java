@@ -93,6 +93,16 @@ public class AppContext {
             }
         }
 
+        if (debug) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    WebLookAndFeel.install();
+                    new DebugFrame();
+                }
+            }).start();
+        }
+
         init();
 
         if (sceneName != null) {
@@ -103,15 +113,6 @@ public class AppContext {
 //            AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
 //        }
 
-        WebLookAndFeel.install();
-        if (debug) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    new DebugFrame(AppContext.getInstance());
-                }
-            }).start();
-        }
     }
 
     public static void init() {
@@ -137,8 +138,9 @@ public class AppContext {
         Renderer.init(DeferredRenderer.class);
 
         glWatch = new OpenGLStopWatch();
-        scriptManager = new ScriptManager(this);
+        scriptManager = ScriptManager.getInstance();
         physicsFactory = new PhysicsFactory(this);
+        ScriptManager.getInstance().defineGlobals();
 
         scene = new Scene();
         AppContext self = this;

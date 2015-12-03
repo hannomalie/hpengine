@@ -36,10 +36,11 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     }
 
     protected void setCapacity(int requestedCapacity) {
-        int capacity = requestedCapacity * 2;
+        int capacity = requestedCapacity;
 
         if(buffer != null && buffer.capacity() < capacity){
             OpenGLContext.getInstance().execute(() -> {
+                bind();
                 glUnmapBuffer(target);
                 glDeleteBuffers(id);
             });
