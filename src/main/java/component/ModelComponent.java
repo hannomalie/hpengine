@@ -227,11 +227,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         for (int i = 0; i < values.size(); i++) {
             floatArray[i] = values.get(i);
         }
-
-        verticesTemp = null;
-        texcoordsTemp = null;
-        normalsTemp = null;
-        facesTemp = null;
     }
 
     private Vector3f[] calculateTangentBitangent(Vector3f v1, Vector3f v2, Vector3f v3, Vector2f w1, Vector2f w2, Vector2f w3, Vector3f n1, Vector3f n2, Vector3f n3) {

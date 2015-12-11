@@ -4,6 +4,7 @@ import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -62,12 +63,20 @@ public class VertexArrayObject {
         attributesSetUp = true;
     }
 
+    private static Map<EnumSet<DataChannels>, Integer> cache = new HashMap<>();
+
     public static int bytesPerVertex(EnumSet<DataChannels> channels) {
-        int sum = 0;
-        for (DataChannels channel : channels) {
-            sum += channel.getSize();
+        if(cache.containsKey(channels)) {
+            return cache.get(channels);
+        } else {
+            int sum = 0;
+            for (DataChannels channel : channels) {
+                sum += channel.getSize();
+            }
+            int bytesPerVertex = sum * 4;
+            cache.put(channels, bytesPerVertex);
+            return bytesPerVertex;
         }
-        return sum * 4;
     }
 
     public void delete() {

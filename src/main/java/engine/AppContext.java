@@ -5,6 +5,7 @@ import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.EventBus;
 import component.InputControllerComponent;
 import config.Config;
+import engine.graphics.query.GLTimerQuery;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;

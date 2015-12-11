@@ -1,11 +1,17 @@
 package test;
 
 import component.ModelComponent;
+import engine.graphics.query.GLTimerQuery;
 import engine.model.DataChannels;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import renderer.OpenGLContext;
 
 import java.util.EnumSet;
 
@@ -64,6 +70,51 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         long start = System.currentTimeMillis();
         buffer.upload();
         System.out.println("Buffer upload of " + floatBufferSize + " took " + (System.currentTimeMillis() - start) + "ms");
+
+    }
+
+    @Test
+    public void benchmarkVAOAndVBB() {
+        OpenGLContext.getInstance().execute(() -> {
+            int vbo = GL15.glGenBuffers();
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+
+            int vao = GL30.glGenVertexArrays();
+            GL30.glBindVertexArray(vao);
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 4, GL11.GL_FLOAT, false, 4, 0);
+            GL20.glEnableVertexAttribArray(1);
+            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 4, 4);
+
+            GLTimerQuery.getInstance().begin();
+            for(int i = 0; i < 10000000; i++) {
+                GL30.glBindVertexArray(vao);
+            }
+            GLTimerQuery.getInstance().end();
+            System.out.println(GLTimerQuery.getInstance().getResult());
+        });
+
+        // TODO: Test new VBB
+        OpenGLContext.getInstance().execute(() -> {
+            int vbo = GL15.glGenBuffers();
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+
+            int vao = GL30.glGenVertexArrays();
+            GL30.glBindVertexArray(vao);
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 4, GL11.GL_FLOAT, false, 4, 0);
+            GL20.glEnableVertexAttribArray(1);
+            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 4, 4);
+
+            GLTimerQuery.getInstance().begin();
+            for(int i = 0; i < 10000000; i++) {
+                GL30.glBindVertexArray(vao);
+            }
+            GLTimerQuery.getInstance().end();
+            System.out.println(GLTimerQuery.getInstance().getResult());
+        });
+
+
 
     }
 

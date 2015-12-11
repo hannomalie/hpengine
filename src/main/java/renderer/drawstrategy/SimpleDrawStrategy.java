@@ -368,6 +368,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     private void doPointLights(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+        if(AppContext.getInstance().getScene().getPointLights().isEmpty()) { return; }
         GPUProfiler.start("Seconds pass PointLights");
         openGLContext.bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
         openGLContext.bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());

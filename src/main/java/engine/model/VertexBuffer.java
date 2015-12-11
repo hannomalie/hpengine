@@ -1,5 +1,6 @@
 package engine.model;
 
+import engine.graphics.query.GLTimerQuery;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
@@ -120,16 +121,16 @@ public class VertexBuffer {
 	}
 
     public VertexBuffer upload() {
+        buffer.rewind();
         OpenGLContext.getInstance().execute(() -> {
             setVertexBuffer(GL15.glGenBuffers());
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
 
-            buffer.rewind();
             bind();
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
-            uploaded = true;
         }, true); // TODO: Evaluate if this has to be blocking
+        uploaded = true;
 
         return this;
     }
@@ -142,20 +143,22 @@ public class VertexBuffer {
 
     public int draw() {
         if(!uploaded) { return 0; }
+//        GLTimerQuery.getInstance().begin();
         bind();
-//        GPUProfiler.start("Drawing " + verticesCount + " vertices");
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-//        GPUProfiler.end();
+//        GLTimerQuery.getInstance().end();
+//        System.out.println(GLTimerQuery.getInstance().getResult());
         return verticesCount;
     }
-    public void drawXXX() {
-        if(!uploaded) { return; }
+    public int drawXXX() {
+        if(!uploaded) { return 0; }
         bind();
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount/4);
+        return verticesCount/4;
     }
 
     private void bind() {
-        vertexArrayObject.bind();
+//        vertexArrayObject.bind();
         ARBVertexAttribBinding.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
     }
 
