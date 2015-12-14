@@ -5,6 +5,7 @@ import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
 import engine.Transform;
+import engine.graphics.query.GLTimerQuery;
 import engine.model.Entity;
 import event.EntitySelectedEvent;
 import octree.Octree;
@@ -199,7 +200,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             for (Entity entity : entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
-                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
+                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
+                            .draw(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
                     verticesDrawn += currentVerticesCount;
                     if(currentVerticesCount > 0) { entityCount++; }
                 }

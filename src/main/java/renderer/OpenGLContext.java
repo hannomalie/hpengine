@@ -2,6 +2,7 @@ package renderer;
 
 import config.Config;
 import engine.TimeStepThread;
+import engine.graphics.query.GLTimerQuery;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
@@ -341,5 +342,16 @@ public final class OpenGLContext {
         return calculate(() -> {
             return GL20.glCreateProgram();
         });
+    }
+
+    public CommandQueue getCommandQueue() {
+        return commandQueue;
+    }
+
+    public void benchmark(Runnable runnable) {
+        GLTimerQuery.getInstance().begin();
+        runnable.run();
+        GLTimerQuery.getInstance().end();
+        System.out.println(GLTimerQuery.getInstance().getResult());
     }
 }

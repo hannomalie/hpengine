@@ -1,11 +1,11 @@
 package scene;
 
 import camera.Camera;
+import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
-import event.LightChangedEvent;
-import event.SceneInitEvent;
+import event.*;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -250,6 +250,19 @@ public class Scene implements LifeCycle, Serializable {
 
     public void bufferEntities() {
         entitiesBuffer.put(Util.toArray(getEntities(), Entity.class));
+    }
+
+    @Subscribe
+    public void handle(MaterialChangedEvent event) {
+        bufferEntities();
+    }
+    @Subscribe
+    public void handle(MaterialAddedEvent event) {
+        bufferEntities();
+    }
+    @Subscribe
+    public void handle(EntityAddedEvent event) {
+        bufferEntities();
     }
 
     public OpenGLBuffer getEntitiesBuffer() {

@@ -2,6 +2,7 @@ package renderer.material;
 
 import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
+import engine.model.EntityFactory;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
 import org.apache.commons.io.FilenameUtils;
@@ -98,10 +99,8 @@ public class MaterialFactory {
 	}
 
 	public Material getMaterial(MaterialInfo materialInfo) {
-        long start = System.currentTimeMillis();
  		Material material = MATERIALS.get(materialInfo.name);
 		if(material != null) {
-            System.out.println("Material A took " + (System.currentTimeMillis()-start) + " ms");
 			return material;
 		}
 
@@ -110,13 +109,11 @@ public class MaterialFactory {
 		}
 		
 		material = read(getDirectory() + materialInfo.name);
-        System.out.println("Material read took " + (System.currentTimeMillis()-start) + " ms");
 
 		if(material != null) {
             new Thread(() -> {
                 AppContext.getEventBus().post(new MaterialAddedEvent());
             }).start();
-            System.out.println("Material B took " + (System.currentTimeMillis()-start) + " ms");
 			return material;
 		}
 		
@@ -124,9 +121,7 @@ public class MaterialFactory {
 		material.setMaterialInfo(new MaterialInfo(materialInfo));
 		initMaterial(material);
 		write(material, materialInfo.name);
-        System.out.println("Material C took " + (System.currentTimeMillis()-start) + " ms");
 		AppContext.getEventBus().post(new MaterialAddedEvent());
-        System.out.println("Material D took " + (System.currentTimeMillis()-start) + " ms");
 		return material;
 	}
 
@@ -168,11 +163,9 @@ public class MaterialFactory {
 	}
 
 	private void initMaterial(Material material) {
-        long start = System.currentTimeMillis();
 		material.init();
 		MATERIALS.put(material.getName(), material);
 		material.initialized = true;
-        System.out.println("initMaterial took " + (System.currentTimeMillis()-start) + " ms");
 	}
 
 	public Material get(String materialName) {
@@ -319,9 +312,7 @@ public class MaterialFactory {
 			Material material = (Material) in.readObject();
 			in.close();
 			handleEvolution(material.getMaterialInfo());
-            long start = System.currentTimeMillis();
             Material materialWithoutRead = getMaterialWithoutRead(material.getMaterialInfo());
-            System.out.println("Get without read took " + (System.currentTimeMillis()-start) + " ms");
             return materialWithoutRead;
 //			return material;
 		} catch (ClassNotFoundException e) {
@@ -359,16 +350,11 @@ public class MaterialFactory {
 
 	@Subscribe
 	public void bufferMaterials(MaterialAddedEvent event) {
-		OpenGLContext.getInstance().execute(() -> {
-            Collection<Material> materials = new ArrayList(MATERIALS.values());
-            materialBuffer.put(Util.toArray(materials, Material.class));
-        });
+        bufferMaterials();
 	}
 	@Subscribe
 	public void bufferMaterials(MaterialChangedEvent event) {
-		OpenGLContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
-			materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+            bufferMaterials();
 
 //            DoubleBuffer temp = materialBuffer.getValues();
 //            for(int i = 0; i < materials.size()*16; i++) {
@@ -392,6 +378,12 @@ public class MaterialFactory {
 //                    System.out.println();
 //                }
 //            }
-		});
 	}
+
+    private void bufferMaterials() {
+        OpenGLContext.getInstance().execute(() -> {
+            ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
+            materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+        });
+    }
 }

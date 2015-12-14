@@ -35,7 +35,7 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
         return buffer;
     }
 
-    protected void setCapacity(int requestedCapacity) {
+    protected synchronized void setCapacity(int requestedCapacity) {
         int capacity = requestedCapacity;
 
         if(buffer != null && buffer.capacity() < capacity){

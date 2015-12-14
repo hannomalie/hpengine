@@ -1,8 +1,10 @@
 package test;
 
 import component.ModelComponent;
+import engine.AppContext;
 import engine.graphics.query.GLTimerQuery;
 import engine.model.DataChannels;
+import engine.model.OBJLoader;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,6 +14,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLContext;
+import renderer.Renderer;
 
 import java.util.EnumSet;
 
@@ -75,9 +78,12 @@ public class VertexBufferTest extends TestWithOpenGLContext {
 
     @Test
     public void benchmarkVAOAndVBB() {
+        int count = 100000000;
+
         OpenGLContext.getInstance().execute(() -> {
             int vbo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(30), VertexBuffer.Usage.STATIC.getValue());
 
             int vao = GL30.glGenVertexArrays();
             GL30.glBindVertexArray(vao);
@@ -87,6 +93,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
             GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 4, 4);
 
             GLTimerQuery.getInstance().begin();
+
             for(int i = 0; i < 10000000; i++) {
                 GL30.glBindVertexArray(vao);
             }
@@ -94,29 +101,26 @@ public class VertexBufferTest extends TestWithOpenGLContext {
             System.out.println(GLTimerQuery.getInstance().getResult());
         });
 
-        // TODO: Test new VBB
         OpenGLContext.getInstance().execute(() -> {
-            int vbo = GL15.glGenBuffers();
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-
-            int vao = GL30.glGenVertexArrays();
-            GL30.glBindVertexArray(vao);
-            GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 4, GL11.GL_FLOAT, false, 4, 0);
-            GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 4, 4);
+            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
 
             GLTimerQuery.getInstance().begin();
-            for(int i = 0; i < 10000000; i++) {
-                GL30.glBindVertexArray(vao);
+            for(int i = 0; i < count; i++) {
+                buffer.bind();
             }
             GLTimerQuery.getInstance().end();
-            System.out.println(GLTimerQuery.getInstance().getResult());
+            System.out.println("VB bind" + GLTimerQuery.getInstance().getResult());
         });
 
+        OpenGLContext.getInstance().execute(() -> {
+            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
 
-
+            GLTimerQuery.getInstance().begin();
+            for(int i = 0; i < count; i++) {
+                buffer.draw();
+            }
+            GLTimerQuery.getInstance().end();
+            System.out.println("VB draw " + GLTimerQuery.getInstance().getResult());
+        });
     }
-
-    //TODO: Create MinMaxTest for model
 }

@@ -93,6 +93,7 @@ public class DebugDrawStrategy extends SimpleDrawStrategy {
             for (Entity entity : visibleEntities) {
                 entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
                     modelComponent.drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
+//                    modelComponent.draw(camera);
                 });
             }
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));

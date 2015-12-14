@@ -1,6 +1,7 @@
 package component;
 
 import camera.Camera;
+import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
@@ -93,37 +94,40 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             return 0;
         }
 
-//        GPUProfiler.start("Set local uniforms first pass");
         Program currentProgram = firstPassProgram;
-        currentProgram.setUniform("isInstanced", instanced);
+//        currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("entityIndex", entityIndex);
         currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
-        currentProgram.setUniform("isSelected", isSelected);
+//        currentProgram.setUniform("isSelected", isSelected);
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
-//        GPUProfiler.end();
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         } else {
             OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
         }
-        if(instanced) {
-            return vertexBuffer.drawInstanced(10);
+//        if(instanced) {
+//            return vertexBuffer.drawInstanced(10);
+//        } else
+        if (Config.DRAWLINES_ENABLED) {
+//            currentProgram.setUniform("isSelected", true);
+            return vertexBuffer.drawDebug();
         } else {
             return vertexBuffer.draw();
         }
     }
 
-    public void drawDebug(Program program, FloatBuffer modelMatrix) {
+    public int drawDebug(Program program, FloatBuffer modelMatrix) {
 
         if(!getEntity().isVisible()) {
-            return;
+            return 0;
         }
 
         program.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
-        model.getMaterial().setTexturesActive(program);
+//        model.getMaterial().setTexturesActive(program);
         vertexBuffer.drawDebug();
+        return 0;
     }
 
 
@@ -143,9 +147,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     @Override
     public void init() {
         super.init();
-        long start = System.currentTimeMillis();
         createFloatArray(model);
-        System.out.println("createFloatArray took " + (System.currentTimeMillis() - start));
         createVertexBuffer();
         initialized = true;
     }
@@ -278,18 +280,14 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     public void createVertexBuffer() {
 
-        FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(floatArray.length * 4);
+        FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(floatArray.length);
         verticesFloatBuffer.rewind();
         verticesFloatBuffer.put(floatArray);
         verticesFloatBuffer.rewind();
 //		LOGGER.log(Level.INFO, String.format("Bytes: %d", verticesFloatBuffer.capacity()));
 
-        long start = System.currentTimeMillis();
         vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS);
-        System.out.println("Creating the VB took " + (System.currentTimeMillis() - start));
-        start = System.currentTimeMillis();
         vertexBuffer.upload();
-        System.out.println("Uploading the VB took " + (System.currentTimeMillis() - start));
     }
 
     @Override

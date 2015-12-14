@@ -133,9 +133,7 @@ public class OBJLoader {
                 firstToken = tokens[0];
             }
             if ("mtllib".equals(firstToken)) {
-                long start = System.currentTimeMillis();
                 MaterialFactory.getInstance().putAll(parseMaterialLib(line, f));
-                System.out.println("parsing " + (System.currentTimeMillis() - start));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
                 currentMaterial = MaterialFactory.getInstance().get(materialName);
@@ -175,7 +173,6 @@ public class OBJLoader {
     private Model newModelHelper(List<Model> models,
                                  ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
                                  ArrayList<Vector3f> normals, String line, String name) {
-        long start = System.currentTimeMillis();
         Model model;
         model = new Model();
         model.setName(line);
@@ -186,13 +183,11 @@ public class OBJLoader {
         models.add(model);
 //		parseName(line, model);
         model.setName(name);
-        System.out.println("newModelHelper took " + (System.currentTimeMillis()-start) + " ms");
         return model;
     }
 
 
     private Map<String, MaterialInfo> parseMaterialLib(String line, File f) {
-        long start = System.currentTimeMillis();
         Map<String, MaterialInfo> materials = new HashMap<>();
         String[] twoStrings = line.split(" ");
 
@@ -279,14 +274,11 @@ public class OBJLoader {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("ParseMaterialLib took " + (System.currentTimeMillis()-start) + " ms");
         return materials;
     }
 
     private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, MAP map) {
-        long start = System.currentTimeMillis();
         currentMaterialInfo.maps.put(map, TextureFactory.getInstance().getTexture(path + name, map == MAP.DIFFUSE));
-        System.out.println("AddHelper took " + (System.currentTimeMillis()-start) + " ms");
     }
 
     private void parseName(String line, Model model) {

@@ -398,7 +398,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
     @Override
     public int getSizePerObject() {
-        return 16;
+        return 16+4;
     }
 
     @Override
@@ -423,6 +423,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         doubles[index++] = mm.m31;
         doubles[index++] = mm.m32;
         doubles[index++] = mm.m33;
+        doubles[index++] = isSelected() ? 1d : 0d;
+        double materialIndex = getComponents().containsKey("ModelComponent") ?
+                MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
+        doubles[index++] = materialIndex;
+        doubles[index++] = 0;
+        doubles[index++] = 0;
 
         return doubles;
     }

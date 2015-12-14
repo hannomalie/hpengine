@@ -14,6 +14,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import engine.AppContext;
+import event.EntityAddedEvent;
 import event.MaterialAddedEvent;
 import renderer.Renderer;
 import renderer.command.LoadModelCommand;
@@ -71,10 +72,10 @@ public class AddEntityView extends WebPanel {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
-								long start = System.currentTimeMillis();
                                 appContext.getScene().addAll(result.entities);
-                                start = System.currentTimeMillis();
+                                Thread.sleep(100);
                                 appContext.getEventBus().post(new MaterialAddedEvent());
+                                appContext.getEventBus().post(new EntityAddedEvent());
 								return result;
 							}
 

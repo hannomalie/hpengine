@@ -11,7 +11,7 @@ layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
-uniform int entityIndex;
+//uniform int entityIndex;
 uniform int materialIndex;
 uniform bool isSelected = false;
 
@@ -21,6 +21,9 @@ uniform bool useSteepParallax;
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
+};
+layout(std430, binding=3) buffer _entities {
+	Entity entities[2000];
 };
 
 uniform mat4 viewMatrix;
@@ -48,6 +51,9 @@ in vec4 position_world;
 in vec3 eyeVec;
 in vec3 eyePos_world;
 in mat3 TBN;
+flat in Entity outEntity;
+flat in Material outMaterial;
+flat in int outEntityIndex;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
@@ -61,6 +67,12 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 void main(void) {
 
+    int entityIndex = outEntityIndex;
+    Entity entity = outEntity;//entities[entityIndex];
+//    bool isSelected = entity.isSelected != 0.0 ? true : false;
+//    int materialIndex = int(entity.materialIndex);
+
+//	Material material = outMaterial;
 	Material material = materials[materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
 									 material.diffuseG,

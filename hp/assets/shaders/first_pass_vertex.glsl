@@ -12,6 +12,9 @@ uniform int time = 0;
 
 
 //include(globals_structs.glsl)
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
@@ -45,11 +48,18 @@ out vec3 lightVec;
 out vec3 halfVec;
 out vec3 eyeVec;
 out vec3 eyePos_world;
-out mat3 TBN;
+flat out mat3 TBN;
+flat out Entity outEntity;
+flat out int outEntityIndex;
+flat out Material outMaterial;
 
 void main(void) {
 
     Entity entity = entities[entityIndex];
+    outEntityIndex = entityIndex;
+    outEntity = entity;
+    Material material = materials[int(entity.materialIndex)];
+    outMaterial = material;
 
     mat4 modelMatrix = mat4(entity.modelMatrix);
 
@@ -88,20 +98,22 @@ void main(void) {
     normal_world = normalize(normal_world);
 	normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
 	normal_view = (viewMatrix * vec4(normal_world,0)).xyz;
-	
-	vec3 tangent_model = in_Tangent;
-	tangent_world.x = dot(modelMatrix[0].xyz, tangent_model);
-    tangent_world.y = dot(modelMatrix[1].xyz, tangent_model);
-    tangent_world.z = dot(modelMatrix[2].xyz, tangent_model);
-    tangent_world = normalize(tangent_world);
 
-	vec3 bitangent_model = in_Binormal;
-	bitangent_world.x = dot(modelMatrix[0].xyz, bitangent_model);
-    bitangent_world.y = dot(modelMatrix[1].xyz, bitangent_model);
-    bitangent_world.z = dot(modelMatrix[2].xyz, bitangent_model);
-    bitangent_world = normalize(bitangent_world);
-    TBN = transpose(mat3(tangent_world, bitangent_world, normal_world));
-	
+    #define use_precomputed_tangent_space_
+    #ifdef use_precomputed_tangent_space
+        vec3 tangent_model = in_Tangent;
+        tangent_world.x = dot(modelMatrix[0].xyz, tangent_model);
+        tangent_world.y = dot(modelMatrix[1].xyz, tangent_model);
+        tangent_world.z = dot(modelMatrix[2].xyz, tangent_model);
+        tangent_world = normalize(tangent_world);
+
+        vec3 bitangent_model = in_Binormal;
+        bitangent_world.x = dot(modelMatrix[0].xyz, bitangent_model);
+        bitangent_world.y = dot(modelMatrix[1].xyz, bitangent_model);
+        bitangent_world.z = dot(modelMatrix[2].xyz, bitangent_model);
+        bitangent_world = normalize(bitangent_world);
+        TBN = transpose(mat3(tangent_world, bitangent_world, normal_world));
+    #endif
 	eyePos_world = ( vec4(eyePosition,1)).xyz;
 	eyeVec = (position_world.xyz - eyePos_world);
 	

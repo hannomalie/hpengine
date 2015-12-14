@@ -256,11 +256,11 @@ public class DeferredRenderer implements Renderer {
 	public DrawResult draw() {
 		setLastFrameTime();
         DrawResult drawResult;
-		if (Config.DRAWLINES_ENABLED) {
-            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
-		} else {
+//		if (Config.DRAWLINES_ENABLED) {
+//            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
+//		} else {
             drawResult = simpleDrawStrategy.draw(AppContext.getInstance());
-		}
+//		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);

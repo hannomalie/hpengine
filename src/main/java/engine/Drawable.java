@@ -16,6 +16,5 @@ public interface Drawable {
     int draw(Camera cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected);
     int draw(Camera cameraEntity, FloatBuffer modelMatrix, Program firstPassProgram);
     int draw(Camera cameraEntity);
-
-    void drawDebug(Program program, FloatBuffer modelMatrix);
+    int drawDebug(Program program, FloatBuffer modelMatrix);
 }
