@@ -6,6 +6,7 @@ import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
 import event.*;
+import net.engio.mbassy.listener.Handler;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -253,14 +254,17 @@ public class Scene implements LifeCycle, Serializable {
     }
 
     @Subscribe
+    @Handler
     public void handle(MaterialChangedEvent event) {
         bufferEntities();
     }
     @Subscribe
+    @Handler
     public void handle(MaterialAddedEvent event) {
         bufferEntities();
     }
     @Subscribe
+    @Handler
     public void handle(EntityAddedEvent event) {
         bufferEntities();
     }

@@ -11,6 +11,7 @@ import engine.model.OBJLoader;
 import event.LightChangedEvent;
 import event.PointLightMovedEvent;
 import event.SceneInitEvent;
+import net.engio.mbassy.listener.Handler;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -545,16 +546,19 @@ public class LightFactory {
 	}
 
 	@Subscribe
+    @Handler
 	public void bufferLights(LightChangedEvent event) {
 		bufferLights();
 	}
 
 	@Subscribe
+    @Handler
 	public void bufferLights(PointLightMovedEvent event) {
 		bufferLights();
 	}
 
 	@Subscribe
+    @Handler
 	public void bufferLights(SceneInitEvent event) {
 		bufferLights();
 	}

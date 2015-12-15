@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import event.GlobalDefineChangedEvent;
 
+import net.engio.mbassy.listener.Handler;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
@@ -116,6 +117,7 @@ public abstract class AbstractProgram {
 	public int getId() { return id; }
 
 	@Subscribe
+    @Handler
 	public void handle(GlobalDefineChangedEvent e) {
 	}
 }

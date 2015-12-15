@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import engine.model.DataChannels;
 import event.GlobalDefineChangedEvent;
+import net.engio.mbassy.listener.Handler;
 import org.lwjgl.util.glu.GLU;
 import renderer.OpenGLContext;
 import util.ressources.FileMonitor;
@@ -244,6 +245,7 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	@Override
 	@Subscribe
+    @Handler
 	public void handle(GlobalDefineChangedEvent e) {
 		reload();
 	}

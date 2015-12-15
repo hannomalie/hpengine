@@ -34,6 +34,7 @@ import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
 import event.*;
+import net.engio.mbassy.listener.Handler;
 import octree.Octree;
 import octree.Octree.Node;
 import org.apache.commons.io.FileUtils;
@@ -206,6 +207,7 @@ public class DebugFrame {
 	}
 
     @Subscribe
+    @Handler
 	private void init(AppContextInitializedEvent appContextInitializedEvent) {
 		createTubeLightsTab();
 		createAreaLightsTab();
@@ -1310,7 +1312,6 @@ public class DebugFrame {
 		MaterialFactory materialFactory = MaterialFactory.getInstance();
 		TableModel materialDataModel = new AbstractTableModel() {
 
-
 			public int getColumnCount() {
 				return 2;
 			}
@@ -1339,6 +1340,7 @@ public class DebugFrame {
 				return "Null";
 			}
 		};
+        
 		JTable materialTable = new JTable(materialDataModel);
 		materialTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 	        public void valueChanged(ListSelectionEvent event) {
@@ -1610,6 +1612,7 @@ public class DebugFrame {
 	}
 
 	@Subscribe
+    @Handler
 	public void handle(EntitySelectedEvent e) {
 		DebugFrame debugFrame = this;
 		if(!Display.isActive()) { return; }
@@ -1623,6 +1626,7 @@ public class DebugFrame {
 	}
 
     @Subscribe
+    @Handler
     public void handle(FrameFinishedEvent event) {
         if(GPUProfiler.PROFILING_ENABLED) {
             SwingUtils.invokeLater(() -> {

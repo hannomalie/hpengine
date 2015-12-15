@@ -2,19 +2,18 @@ package engine;
 
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
-import com.google.common.eventbus.EventBus;
 import component.InputControllerComponent;
 import config.Config;
-import engine.graphics.query.GLTimerQuery;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
+import event.bus.EventBus;
 import event.FrameFinishedEvent;
+import event.bus.MBassadorEventBus;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
@@ -134,7 +133,8 @@ public class AppContext {
     }
 
     private void initialize() {
-        setEventBus(new EventBus());
+//        setEventBus(new GuavaEventBus());
+        setEventBus(new MBassadorEventBus());
         initWorkDir();
         EntityFactory.init();
         Renderer.init(DeferredRenderer.class);

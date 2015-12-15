@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.model.EntityFactory;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
+import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
@@ -349,10 +350,13 @@ public class MaterialFactory {
 	}
 
 	@Subscribe
+    @Handler
 	public void bufferMaterials(MaterialAddedEvent event) {
         bufferMaterials();
 	}
+
 	@Subscribe
+    @Handler
 	public void bufferMaterials(MaterialChangedEvent event) {
             bufferMaterials();
 
