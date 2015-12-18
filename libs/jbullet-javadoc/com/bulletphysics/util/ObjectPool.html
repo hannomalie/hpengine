@@ -89,14 +89,14 @@ DETAIL:&nbsp;FIELD&nbsp;|&nbsp;<A HREF="#constructor_detail">CONSTR</A>&nbsp;|&n
 <FONT SIZE="-1">
 com.bulletphysics.util</FONT>
 <BR>
-Class ObjectPool&lt;T&gt;</H2>
+Class ObjectPool&lt;TYPE&gt;</H2>
 <PRE>
 <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</A>
-  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.ObjectPool&lt;T&gt;</B>
+  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.ObjectPool&lt;TYPE&gt;</B>
 </PRE>
 <HR>
 <DL>
-<DT><PRE>public class <B>ObjectPool&lt;T&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
+<DT><PRE>public class <B>ObjectPool&lt;TYPE&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
 </PRE>
 
 <P>
@@ -117,7 +117,7 @@ Object pool.
 <B>Constructor Summary</B></FONT></TH>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
-<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#ObjectPool(java.lang.Class)">ObjectPool</A></B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A>&gt;&nbsp;cls)</CODE>
+<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#ObjectPool(java.lang.Class)">ObjectPool</A></B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A>&gt;&nbsp;cls)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
@@ -142,7 +142,7 @@ Object pool.
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A></CODE></FONT></TD>
+<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A></CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#get()">get</A></B>()</CODE>
 
 <BR>
@@ -154,11 +154,11 @@ Object pool.
 <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0" SUMMARY="">
 <TR ALIGN="right" VALIGN="">
 <TD NOWRAP><FONT SIZE="-1">
-<CODE>&lt;T&gt; <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>&lt;T&gt;</CODE></FONT></TD>
+<CODE>&lt;TYPE&gt; <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>&lt;TYPE&gt;</CODE></FONT></TD>
 </TR>
 </TABLE>
 </CODE></FONT></TD>
-<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#get(java.lang.Class)">get</A></B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;T&gt;&nbsp;cls)</CODE>
+<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#get(java.lang.Class)">get</A></B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;TYPE&gt;&nbsp;cls)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns per-thread object pool for given type, or create one if it doesn't exist.</TD>
@@ -166,7 +166,7 @@ Object pool.
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;void</CODE></FONT></TD>
-<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#release(T)">release</A></B>(<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A>&nbsp;obj)</CODE>
+<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ObjectPool.html#release(TYPE)">release</A></B>(<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A>&nbsp;obj)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Release instance into pool.</TD>
@@ -197,7 +197,7 @@ Object pool.
 <A NAME="ObjectPool(java.lang.Class)"><!-- --></A><H3>
 ObjectPool</H3>
 <PRE>
-public <B>ObjectPool</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A>&gt;&nbsp;cls)</PRE>
+public <B>ObjectPool</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A>&gt;&nbsp;cls)</PRE>
 <DL>
 </DL>
 
@@ -214,7 +214,7 @@ public <B>ObjectPool</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lan
 <A NAME="get()"><!-- --></A><H3>
 get</H3>
 <PRE>
-public <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A> <B>get</B>()</PRE>
+public <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A> <B>get</B>()</PRE>
 <DL>
 <DD>Returns instance from pool, or create one if pool is empty.
 <P>
@@ -225,10 +225,10 @@ public <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type par
 </DL>
 <HR>
 
-<A NAME="release(java.lang.Object)"><!-- --></A><A NAME="release(T)"><!-- --></A><H3>
+<A NAME="release(java.lang.Object)"><!-- --></A><A NAME="release(TYPE)"><!-- --></A><H3>
 release</H3>
 <PRE>
-public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A>&nbsp;obj)</PRE>
+public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A>&nbsp;obj)</PRE>
 <DL>
 <DD>Release instance into pool.
 <P>
@@ -241,7 +241,7 @@ public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ObjectPool.h
 <A NAME="get(java.lang.Class)"><!-- --></A><H3>
 get</H3>
 <PRE>
-public static &lt;T&gt; <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>&lt;T&gt; <B>get</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;T&gt;&nbsp;cls)</PRE>
+public static &lt;TYPE&gt; <A HREF="../../../com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>&lt;TYPE&gt; <B>get</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&lt;TYPE&gt;&nbsp;cls)</PRE>
 <DL>
 <DD>Returns per-thread object pool for given type, or create one if it doesn't exist.
 <P>

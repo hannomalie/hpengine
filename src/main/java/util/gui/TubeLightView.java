@@ -19,7 +19,7 @@ public class TubeLightView extends EntityView {
 	private TubeLight light;
 
 	public TubeLightView(AppContext appContext, DebugFrame debugFrame, TubeLight light) {
-		super(appContext, debugFrame, light);
+		super(appContext, light);
 		this.light = light;
 	}
 

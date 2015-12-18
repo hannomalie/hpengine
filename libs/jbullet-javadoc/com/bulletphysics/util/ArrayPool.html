@@ -89,14 +89,14 @@ DETAIL:&nbsp;FIELD&nbsp;|&nbsp;<A HREF="#constructor_detail">CONSTR</A>&nbsp;|&n
 <FONT SIZE="-1">
 com.bulletphysics.util</FONT>
 <BR>
-Class ArrayPool&lt;T&gt;</H2>
+Class ArrayPool&lt;TYPE&gt;</H2>
 <PRE>
 <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</A>
-  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.ArrayPool&lt;T&gt;</B>
+  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.ArrayPool&lt;TYPE&gt;</B>
 </PRE>
 <HR>
 <DL>
-<DT><PRE>public class <B>ArrayPool&lt;T&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
+<DT><PRE>public class <B>ArrayPool&lt;TYPE&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
 </PRE>
 
 <P>
@@ -146,7 +146,7 @@ Object pool for arrays.
 <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="0" SUMMARY="">
 <TR ALIGN="right" VALIGN="">
 <TD NOWRAP><FONT SIZE="-1">
-<CODE>&lt;T&gt; <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>&lt;T&gt;</CODE></FONT></TD>
+<CODE>&lt;TYPE&gt; <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>&lt;TYPE&gt;</CODE></FONT></TD>
 </TR>
 </TABLE>
 </CODE></FONT></TD>
@@ -157,7 +157,7 @@ Object pool for arrays.
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A></CODE></FONT></TD>
+<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A></CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../com/bulletphysics/util/ArrayPool.html#getAtLeast(int)">getAtLeast</A></B>(int&nbsp;length)</CODE>
 
 <BR>
@@ -166,7 +166,7 @@ Object pool for arrays.
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A></CODE></FONT></TD>
+<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A></CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../com/bulletphysics/util/ArrayPool.html#getFixed(int)">getFixed</A></B>(int&nbsp;length)</CODE>
 
 <BR>
@@ -176,7 +176,7 @@ Object pool for arrays.
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>&nbsp;void</CODE></FONT></TD>
-<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ArrayPool.html#release(T)">release</A></B>(<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A>&nbsp;array)</CODE>
+<TD><CODE><B><A HREF="../../../com/bulletphysics/util/ArrayPool.html#release(TYPE)">release</A></B>(<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A>&nbsp;array)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Releases array into object pool.</TD>
@@ -228,7 +228,7 @@ public <B>ArrayPool</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang
 <A NAME="getFixed(int)"><!-- --></A><H3>
 getFixed</H3>
 <PRE>
-public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A> <B>getFixed</B>(int&nbsp;length)</PRE>
+public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A> <B>getFixed</B>(int&nbsp;length)</PRE>
 <DL>
 <DD>Returns array of exactly the same length as demanded, or create one if not
  present in the pool.
@@ -243,7 +243,7 @@ public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type para
 <A NAME="getAtLeast(int)"><!-- --></A><H3>
 getAtLeast</H3>
 <PRE>
-public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A> <B>getAtLeast</B>(int&nbsp;length)</PRE>
+public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A> <B>getAtLeast</B>(int&nbsp;length)</PRE>
 <DL>
 <DD>Returns array that has same or greater length, or create one if not present
  in the pool.
@@ -255,10 +255,10 @@ public <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type para
 </DL>
 <HR>
 
-<A NAME="release(java.lang.Object)"><!-- --></A><A NAME="release(T)"><!-- --></A><H3>
+<A NAME="release(java.lang.Object)"><!-- --></A><A NAME="release(TYPE)"><!-- --></A><H3>
 release</H3>
 <PRE>
-public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A>&nbsp;array)</PRE>
+public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A>&nbsp;array)</PRE>
 <DL>
 <DD>Releases array into object pool.
 <P>
@@ -271,7 +271,7 @@ public void <B>release</B>(<A HREF="../../../com/bulletphysics/util/ArrayPool.ht
 <A NAME="get(java.lang.Class)"><!-- --></A><H3>
 get</H3>
 <PRE>
-public static &lt;T&gt; <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>&lt;T&gt; <B>get</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&nbsp;cls)</PRE>
+public static &lt;TYPE&gt; <A HREF="../../../com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>&lt;TYPE&gt; <B>get</B>(<A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</A>&nbsp;cls)</PRE>
 <DL>
 <DD>Returns per-thread array pool for given type, or create one if it doesn't exist.
 <P>

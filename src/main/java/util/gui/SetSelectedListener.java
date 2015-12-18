@@ -17,15 +17,14 @@ public class SetSelectedListener implements TreeSelectionListener {
 	JTree tree;
 	private WebFrame entityViewFrame;
 	private AppContext appContext;
-	private DebugFrame debugFrame;
 
-	private SetSelectedListener() { }
-	
-	public SetSelectedListener(JTree tree, AppContext appContext, DebugFrame debugFrame, WebFrame entityViewFrame) {
+	public SetSelectedListener(JTree tree, AppContext appContext) {
 		this.tree = tree;
-		this.debugFrame = debugFrame;
-		this.entityViewFrame = entityViewFrame;
 		this.appContext = appContext;
+
+        entityViewFrame = new WebFrame();
+        entityViewFrame.setVisible(false);
+
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
 		
@@ -74,7 +73,7 @@ public class SetSelectedListener implements TreeSelectionListener {
 			entityViewFrame.getContentPane().removeAll();
 			entityViewFrame.pack();
 			entityViewFrame.setSize(600, 600);
-			entityViewFrame.add(new ProbeView(appContext, debugFrame, selected));
+			entityViewFrame.add(new ProbeView(appContext, selected));
 			entityViewFrame.setVisible(true);
 		} else if (nodeInfo instanceof Entity) {
         	Entity selected = (Entity) nodeInfo;
@@ -82,7 +81,7 @@ public class SetSelectedListener implements TreeSelectionListener {
 	    	entityViewFrame.getContentPane().removeAll();
 	    	entityViewFrame.pack();
 	    	entityViewFrame.setSize(600, 600);
-	    	entityViewFrame.add(new EntityView(appContext, debugFrame, (Entity) selected));
+	    	entityViewFrame.add(new EntityView(appContext, selected));
 	    	entityViewFrame.setVisible(true);
         	
         }

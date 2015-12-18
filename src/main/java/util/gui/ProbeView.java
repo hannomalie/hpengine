@@ -14,6 +14,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import engine.AppContext;
 import engine.model.Entity;
+import event.ProbesChangedEvent;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import scene.EnvironmentProbe;
@@ -35,12 +36,10 @@ public class ProbeView extends WebPanel {
 	private EnvironmentProbe probe;
 	private AppContext appContext;
 	private WebFormattedTextField nameField;
-	private DebugFrame debugFrame;
 
-	public ProbeView(AppContext appContext, DebugFrame debugFrame, EnvironmentProbe selected) {
+	public ProbeView(AppContext appContext, EnvironmentProbe selected) {
 		this.probe = selected;
 		this.appContext = appContext;
-		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
@@ -74,7 +73,7 @@ public class ProbeView extends WebPanel {
     			result = future.get(1, TimeUnit.MINUTES);
 				if(result.equals(Boolean.TRUE)) {
 					showNotification(NotificationIcon.plus, "Probe removed");
-					if(debugFrame != null) { debugFrame.refreshProbeTab(); }
+					AppContext.getEventBus().post(new ProbesChangedEvent());
 				} else {
 					showNotification(NotificationIcon.error, "Not able to remove probe");
 				}

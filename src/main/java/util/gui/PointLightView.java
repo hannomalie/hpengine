@@ -20,7 +20,7 @@ public class PointLightView extends EntityView {
 	private PointLight light;
 
 	public PointLightView(AppContext appContext, DebugFrame debugFrame, PointLight light) {
-		super(appContext, debugFrame, light);
+		super(appContext, light);
 		this.light = light;
 	}
 

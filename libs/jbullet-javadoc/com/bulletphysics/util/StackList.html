@@ -89,21 +89,21 @@ DETAIL:&nbsp;FIELD&nbsp;|&nbsp;<A HREF="#constructor_detail">CONSTR</A>&nbsp;|&n
 <FONT SIZE="-1">
 com.bulletphysics.util</FONT>
 <BR>
-Class StackList&lt;T&gt;</H2>
+Class StackList&lt;TYPE&gt;</H2>
 <PRE>
 <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</A>
-  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.StackList&lt;T&gt;</B>
+  <IMG SRC="../../../resources/inherit.gif" ALT="extended by "><B>com.bulletphysics.util.StackList&lt;TYPE&gt;</B>
 </PRE>
 <DL>
 <DT><B>Direct Known Subclasses:</B> <DD><A HREF="../../../com/bulletphysics/util/ObjectStackList.html" title="class in com.bulletphysics.util">ObjectStackList</A></DD>
 </DL>
 <HR>
 <DL>
-<DT><PRE>public abstract class <B>StackList&lt;T&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
+<DT><PRE>public abstract class <B>StackList&lt;TYPE&gt;</B><DT>extends <A HREF="http://java.sun.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
 </PRE>
 
 <P>
-Stack-based object pool, see the example for usage. You must use the <A HREF="../../../com/bulletphysics/util/StackList.html#returning(T)"><CODE>returning(T)</CODE></A>
+Stack-based object pool, see the example for usage. You must use the <A HREF="../../../com/bulletphysics/util/StackList.html#returning(TYPE)"><CODE>returning(TYPE)</CODE></A>
  method for returning stack-allocated instance.<p>
  
  Example code:
@@ -155,7 +155,7 @@ Stack-based object pool, see the example for usage. You must use the <A HREF="..
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A></CODE></FONT></TD>
+<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A></CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../com/bulletphysics/util/StackList.html#get()">get</A></B>()</CODE>
 
 <BR>
@@ -179,8 +179,8 @@ Stack-based object pool, see the example for usage. You must use the <A HREF="..
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A></CODE></FONT></TD>
-<TD><CODE><B><A HREF="../../../com/bulletphysics/util/StackList.html#returning(T)">returning</A></B>(<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A>&nbsp;obj)</CODE>
+<CODE>&nbsp;<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A></CODE></FONT></TD>
+<TD><CODE><B><A HREF="../../../com/bulletphysics/util/StackList.html#returning(TYPE)">returning</A></B>(<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A>&nbsp;obj)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Copies given instance into one slot static instance and returns it.</TD>
@@ -254,7 +254,7 @@ public final void <B>pop</B>()</PRE>
 <A NAME="get()"><!-- --></A><H3>
 get</H3>
 <PRE>
-public <A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A> <B>get</B>()</PRE>
+public <A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A> <B>get</B>()</PRE>
 <DL>
 <DD>Returns instance from stack pool, or create one if not present. The returned
  instance will be automatically reused when <A HREF="../../../com/bulletphysics/util/StackList.html#pop()"><CODE>pop()</CODE></A> is called.
@@ -266,10 +266,10 @@ public <A HREF="../../../com/bulletphysics/util/StackList.html" title="type para
 </DL>
 <HR>
 
-<A NAME="returning(java.lang.Object)"><!-- --></A><A NAME="returning(T)"><!-- --></A><H3>
+<A NAME="returning(java.lang.Object)"><!-- --></A><A NAME="returning(TYPE)"><!-- --></A><H3>
 returning</H3>
 <PRE>
-public final <A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A> <B>returning</B>(<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A>&nbsp;obj)</PRE>
+public final <A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A> <B>returning</B>(<A HREF="../../../com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A>&nbsp;obj)</PRE>
 <DL>
 <DD>Copies given instance into one slot static instance and returns it. It's
  essential that caller of method (that uses this method for returning instances)

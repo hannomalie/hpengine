@@ -1,5 +1,7 @@
 package texture;
 
+import engine.AppContext;
+import event.TexturesChangedEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -162,6 +164,7 @@ public class TextureFactory {
 
         Texture texture = new Texture(resourceName, srgba);
         TEXTURES.put(resourceName, texture);
+        AppContext.getEventBus().post(new TexturesChangedEvent());
         texture.convertAndUpload();
         return texture;
     }

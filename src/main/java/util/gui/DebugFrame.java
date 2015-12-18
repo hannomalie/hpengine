@@ -1,13 +1,9 @@
 package util.gui;
 
-import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.WebButtonGroup;
 import com.alee.extended.tab.WebDocumentPane;
-import com.alee.extended.tree.CheckStateChange;
-import com.alee.extended.tree.CheckStateChangeListener;
 import com.alee.extended.tree.WebCheckBoxTree;
-import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.button.WebToggleButton;
 import com.alee.laf.filechooser.WebFileChooser;
@@ -29,14 +25,12 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
-import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
 import event.*;
 import net.engio.mbassy.listener.Handler;
 import octree.Octree;
-import octree.Octree.Node;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;
@@ -45,7 +39,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.*;
+import renderer.OpenGLContext;
 import renderer.command.AddCubeMapCommand;
 import renderer.command.AddTextureCommand;
 import renderer.command.AddTextureCommand.TextureResult;
@@ -57,16 +51,17 @@ import renderer.light.AreaLight;
 import renderer.light.LightFactory;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
-import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
-import texture.TextureFactory;
 import util.Adjustable;
 import util.Toggable;
+import util.gui.container.ReloadableScrollPane;
+import util.gui.container.ReloadableTabbedPane;
 import util.gui.input.SliderInput;
 import util.gui.input.TitledPanel;
+import util.gui.structure.*;
 import util.script.ScriptManager;
 import util.stopwatch.GPUProfiler;
 
@@ -78,8 +73,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
@@ -90,37 +83,56 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-
-import static util.Util.vectorToString;
 
 
 public class DebugFrame {
 
 	private WebFrame mainFrame = new WebFrame("Main");
-	private WebFrame materialViewFrame = new WebFrame("Material");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
 	private WebFrame probeViewFrame = new WebFrame("Probe");
-	private WebTabbedPane tabbedPane = new WebTabbedPane();
+	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
 	
-	private JScrollPane materialPane = new JScrollPane();
-	private JScrollPane texturePane = new JScrollPane();
-	private JScrollPane mainLightPane = new JScrollPane();
-	private JScrollPane pointLightsPane = new JScrollPane();
-	private JScrollPane tubeLightsPane = new JScrollPane();
-	private JScrollPane areaLightsPane = new JScrollPane();
-	private JScrollPane scenePane = new JScrollPane();
-	private JScrollPane probesPane = new JScrollPane();
-    private JTextPane output = new JTextPane();
-    private JScrollPane outputPane = new JScrollPane(output);
-    private JTextPane infoLeft = new JTextPane();
-    private JTextPane infoRight = new JTextPane();
+    JTable materialTable = new MaterialTable() {
+        { AppContext.getEventBus().register(this); }
+        @Subscribe @Handler public void handle(MaterialChangedEvent e) { revalidate(); }
+        @Subscribe @Handler public void handle(MaterialAddedEvent e) { revalidate(); }
+    };
+    private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);
+    JTable textureTable = new JTable(new TextureTableModel()) {
+        { AppContext.getEventBus().register(this); }
+        @Subscribe @Handler public void handle(TexturesChangedEvent e) { revalidate(); }
+    };
+    private final ReloadableScrollPane texturePane = new ReloadableScrollPane(textureTable);
+	private final ReloadableScrollPane mainLightPane = new ReloadableScrollPane(new MainLightView());
+    JTable pointsLightsTable = new JTable(new PointLightsTableModel());
+	private final ReloadableScrollPane pointLightsPane = new ReloadableScrollPane(pointsLightsTable);
+    JTable tubeLightsTable = new JTable(new TubeLightsTableModel());
+	private final ReloadableScrollPane tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
+    JTable areaLightsTable = new JTable(new AreaLightsTableModel()) {
+        { AppContext.getEventBus().register(this); }
+        @Subscribe @Handler public void handle(LightChangedEvent e) { revalidate(); }
+    };
+	private final ReloadableScrollPane areaLightsPane = new ReloadableScrollPane(areaLightsTable);
+
+    private SceneTree sceneTree = new SceneTree();
+	private final ReloadableScrollPane scenePane = new ReloadableScrollPane(sceneTree) {
+        { AppContext.getEventBus().register(this); }
+        @Subscribe @Handler public void handle(EntityAddedEvent e) { sceneTree.reload();viewport.setView((sceneTree)); }
+    };
+	private final ReloadableScrollPane probesPane = new ReloadableScrollPane(new ProbesTree());
+    private final JTextPane output = new JTextPane();
+    private final ReloadableScrollPane outputPane = new ReloadableScrollPane(output);
+    private final JTextPane infoLeft = new JTextPane();
+    private final JTextPane infoRight = new JTextPane();
     WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
-    private JScrollPane infoPane = new JScrollPane(infoSplitPane);
+    private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
 	
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
@@ -176,7 +188,7 @@ public class DebugFrame {
 	WebSlider ambientOcclusionTotalStrengthSlider = new WebSlider ( WebSlider.HORIZONTAL );
 
 	private WebCheckBoxTree<DefaultMutableTreeNode> scene = new WebCheckBoxTree<>();
-	private WebTextField sceneViewFilterField = new WebTextField(15);
+	private static WebTextField sceneViewFilterField = new WebTextField(15);
 	private WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
     private WebFrame addEntityFrame;
 	private PerformanceMonitor performanceMonitor;
@@ -197,7 +209,6 @@ public class DebugFrame {
         addTabs();
 
         initConsole();
-        refreshMainLightsTab();
         createPointLightsTab();
 
         infoSplitPane.setOneTouchExpandable ( true );
@@ -212,10 +223,6 @@ public class DebugFrame {
 		createTubeLightsTab();
 		createAreaLightsTab();
 
-		createMaterialPane(AppContext.getInstance());
-
-		addOctreeSceneObjects(AppContext.getInstance());
-		
 		addProbes(AppContext.getInstance());
 
 		initPerformanceChart();
@@ -226,7 +233,6 @@ public class DebugFrame {
         tabbedPane.addTab("Main", mainPane);
         tabbedPane.addTab("Scene", scenePane);
         tabbedPane.addTab("Probes", probesPane);
-        createTexturePane(TextureFactory.getInstance());
         tabbedPane.addTab("Texture", texturePane);
         tabbedPane.addTab("Material", materialPane);
         tabbedPane.addTab("Main light", mainLightPane);
@@ -333,7 +339,7 @@ public class DebugFrame {
         	entityLoadMenuItem.addActionListener(e -> {
 
 				AppContext.getInstance().getScene().addAll(LoadEntitiyView.showDialog(AppContext.getInstance()));
-				refreshSceneTree();
+				scenePane.reload();
 			});
 
         	menuEntity.add(entityLoadMenuItem);
@@ -356,7 +362,7 @@ public class DebugFrame {
 
 					@Override
 					public void done(Result result) {
-						refreshProbeTab();
+						probesPane.reload();
 					}
 
 				}.execute();
@@ -385,7 +391,7 @@ public class DebugFrame {
 					showError("Failed to add light");
 				} else {
 					showSuccess("Added light");
-	        		refreshPointLightsTab();
+	        		pointLightsPane.reload();
 				}
 
         	});
@@ -411,7 +417,7 @@ public class DebugFrame {
 					showError("Failed to add light");
 				} else {
 					showSuccess("Added light");
-	        		refreshTubeLightsTab();
+	        		tubeLightsPane.reload();
 				}
 
         	});
@@ -437,7 +443,7 @@ public class DebugFrame {
 					showError("Failed to add light");
 				} else {
 					showSuccess("Added light");
-	        		refreshAreaLightsTab();
+	        		areaLightsPane.reload();
 				}
 
         	});
@@ -516,7 +522,7 @@ public class DebugFrame {
 					showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 				} else {
 					showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-					refreshTextureTab();
+					texturePane.reload();
 				}
     		}
     	});
@@ -543,7 +549,7 @@ public class DebugFrame {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					} else {
 						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-						refreshTextureTab();
+						texturePane.reload();
 					}
 	    		}
         	});
@@ -570,7 +576,7 @@ public class DebugFrame {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					} else {
 						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-						refreshTextureTab();
+						texturePane.reload();
 					}
 
 	    		}
@@ -600,7 +606,7 @@ public class DebugFrame {
 						showError("Failed to add " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
 					} else {
 						showSuccess("Added " + FilenameUtils.getBaseName(chosenFile.getAbsolutePath()));
-						refreshTextureTab();
+						texturePane.reload();
 					}
 
 	    		}
@@ -1099,52 +1105,9 @@ public class DebugFrame {
 		  System.setErr(new PrintStream(outErr, true));
 		}
 
-	private void refreshMainLightsTab() {
-		mainLightPane.setViewportView(new MainLightView());
-	}
-
     private void createPointLightsTab() {
 		DebugFrame debugFrame = this;
-		TableModel pointLightsTableModel = new AbstractTableModel() {
 
-			public int getColumnCount() {
-				return 3;
-			}
-
-			public int getRowCount() {
-				return AppContext.getInstance().getScene().getPointLights().size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					PointLight light = AppContext.getInstance().getScene().getPointLights().get(row);
-					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
-					
-				} else if (col == 1) {
-					return vectorToString(AppContext.getInstance().getScene().getPointLights().get(row).getPosition());
-					
-				} else if (col == 2) {
-					return vectorToString(AppContext.getInstance().getScene().getPointLights().get(row).getColor());
-					
-				}
-				return "";
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Name";
-				} else if (column == 1) {
-					return "Position";
-				} else if (column == 2) {
-					return "Color";
-				}
-				return "Null";
-			}
-		};
-
-		JTable pointsLightsTable = new JTable(pointLightsTableModel);
-		
-		pointLightsPane  =  new JScrollPane(pointsLightsTable);
 		ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();
 	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -1172,46 +1135,6 @@ public class DebugFrame {
 
 	private void createTubeLightsTab() {
 		DebugFrame debugFrame = this;
-		TableModel tubeLightsTableModel = new AbstractTableModel() {
-
-			public int getColumnCount() {
-				return 3;
-			}
-
-			public int getRowCount() {
-				return AppContext.getInstance().getScene().getTubeLights().size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					TubeLight light = AppContext.getInstance().getScene().getTubeLights().get(row);
-					return String.format("%s (Range %f)", light.getName(), light.getScale().x);
-					
-				} else if (col == 1) {
-					return vectorToString(AppContext.getInstance().getScene().getTubeLights().get(row).getPosition());
-					
-				} else if (col == 2) {
-					return vectorToString(AppContext.getInstance().getScene().getTubeLights().get(row).getColor());
-					
-				}
-				return "";
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Name";
-				} else if (column == 1) {
-					return "Position";
-				} else if (column == 2) {
-					return "Color";
-				}
-				return "Null";
-			}
-		};
-
-		JTable tubeLightsTable = new JTable(tubeLightsTableModel);
-		
-		tubeLightsPane  =  new JScrollPane(tubeLightsTable);
 		ListSelectionModel tubeLightsCellSelectionModel = tubeLightsTable.getSelectionModel();
 		tubeLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -1238,48 +1161,7 @@ public class DebugFrame {
 
 	private void createAreaLightsTab() {
 		DebugFrame debugFrame = this;
-		TableModel areaLightsTableModel = new AbstractTableModel() {
 
-			List<AreaLight> lights = AppContext.getInstance().getScene().getAreaLights();
-
-			public int getColumnCount() {
-				return 3;
-			}
-
-			public int getRowCount() {
-				return lights.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					AreaLight light = lights.get(row);
-					return String.format("%s (Range %f)", light.getName(), light.getScale().z);
-					
-				} else if (col == 1) {
-					return vectorToString(lights.get(row).getPosition());
-					
-				} else if (col == 2) {
-					return vectorToString(lights.get(row).getColor());
-					
-				}
-				return "";
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Name";
-				} else if (column == 1) {
-					return "Position";
-				} else if (column == 2) {
-					return "Color";
-				}
-				return "Null";
-			}
-		};
-
-		JTable areaLightsTable = new JTable(areaLightsTableModel);
-		
-		areaLightsPane  =  new JScrollPane(areaLightsTable);
 		ListSelectionModel areaLightsCellSelectionModel = areaLightsTable.getSelectionModel();
 		areaLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -1307,147 +1189,6 @@ public class DebugFrame {
 		});
 	}
 
-	private void createMaterialPane(AppContext appContext) {
-		DebugFrame debugFrame = this;
-		MaterialFactory materialFactory = MaterialFactory.getInstance();
-		TableModel materialDataModel = new AbstractTableModel() {
-
-			public int getColumnCount() {
-				return 2;
-			}
-
-			public int getRowCount() {
-				return MaterialFactory.getInstance().MATERIALS.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-
-				List<Object> paths = Arrays.asList(materialFactory.MATERIALS.keySet().toArray());
-				
-				if (col == 0) {
-					return paths.get(row);
-				}
-				List<Object> materials = Arrays.asList(materialFactory.MATERIALS.values().toArray());
-				return materials.get(row);
-			}
-			
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Path";
-				} else if (column == 1) {
-					return "Material";
-				}
-				return "Null";
-			}
-		};
-        
-		JTable materialTable = new JTable(materialDataModel);
-		materialTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-	        public void valueChanged(ListSelectionEvent event) {
-	        	materialViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-	        	materialViewFrame.getContentPane().removeAll();
-	        	materialViewFrame.pack();
-	        	materialViewFrame.setSize(600, 600);
-	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, appContext, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
-	        	scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-	        	materialViewFrame.add(scrollPane);
-	            materialViewFrame.setVisible(true);
-	        }
-	    });
-
-		materialPane =  new JScrollPane(materialTable);
-	}
-
-	private void createTexturePane(TextureFactory textureFactory) {
-		TableModel textureDataModel = createTextureDataModel(textureFactory);
-		JTable textureTable = new JTable(textureDataModel);
-		texturePane  =  new JScrollPane(textureTable);
-	}
-	
-	private AbstractTableModel createTextureDataModel(TextureFactory textureFactory) {
-		return new AbstractTableModel() {
-
-			public int getColumnCount() {
-				return 2;
-			}
-
-			public int getRowCount() {
-				return textureFactory.TEXTURES.size();
-			}
-
-			public Object getValueAt(int row, int col) {
-				if (col == 0) {
-					List<Object> paths = Arrays.asList(textureFactory.TEXTURES.keySet()
-							.toArray());
-					return paths.get(row);
-				}
-				List<Object> textures = Arrays.asList(textureFactory.TEXTURES.values()
-						.toArray());
-				texture.Texture texture = (texture.Texture) textures.get(row);
-				return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
-			}
-
-			public String getColumnName(int column) {
-				if (column == 0) {
-					return "Path";
-				} else if (column == 1) {
-					return "Texture";
-				}
-				return "Null";
-			}
-		};
-	}
-
-	private void addSceneObjects(AppContext appContext) {
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene");
-		
-		for (Entity e : appContext.getScene().getEntities()) {
-			DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode(e.getName());
-			
-			Material material = e.getComponent(ModelComponent.class).getMaterial();
-			if (material != null) {
-				DefaultMutableTreeNode materialNode = new DefaultMutableTreeNode(material.getName());
-				
-				for (Object map: Arrays.asList(material.getMaterialInfo().maps.getTextures().keySet().toArray())) {
-					DefaultMutableTreeNode textureNode = new DefaultMutableTreeNode(String.format("%S - %s", map, material.getMaterialInfo().maps.get(map)));
-					materialNode.add(textureNode);
-				}
-				
-				entityNode.add(materialNode);
-			}
-			
-			top.add(entityNode);
-		}
-		
-		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
-		addCheckStateListener(scene);
-		new SetSelectedListener(scene, appContext, this, entityViewFrame);
-	}
-
-	private void addCheckStateListener(WebCheckBoxTree<DefaultMutableTreeNode> scene) {
-		scene.addCheckStateChangeListener(new CheckStateChangeListener<DefaultMutableTreeNode>() {
-			
-			@Override
-			public void checkStateChanged(List<CheckStateChange<DefaultMutableTreeNode>> stateChanges) {
-				for (CheckStateChange<DefaultMutableTreeNode> checkStateChange : stateChanges) {
-					boolean checked = checkStateChange.getNewState() == CheckState.checked ? true : false;
-					
-					Object object = checkStateChange.getNode().getUserObject();
-					if(object instanceof Entity) {
-						Entity entity = (Entity) object;
-						entity.setVisible(checked);
-					} else if (object instanceof Node) {
-						Node node = (Node) object;
-						List<Entity> result = new ArrayList<>();
-						node.getAllEntitiesInAndBelow(result);
-						for (Entity e : result) {
-							e.setVisible(checked);
-						}
-					}
-				}
-			}
-		});
-	}
 
 	private void addProbes(AppContext appContext) {
 		List<EnvironmentProbe> probes = EnvironmentProbeFactory.getInstance().getProbes();
@@ -1456,143 +1197,10 @@ public class DebugFrame {
 			top.add(new DefaultMutableTreeNode(environmentProbe));
 		}
 		this.probes = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
-		addCheckStateListener(this.probes);
-		new SetSelectedListener(this.probes, appContext, this, probeViewFrame);
-
-		tabbedPane.remove(probesPane);
-		probesPane = new JScrollPane(this.probes);
-		tabbedPane.addTab("Probes", probesPane);
-	}
-	
-	private void addOctreeSceneObjects(AppContext appContext) {
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + appContext.getScene().getEntities().size() + " entities)");
-		
-		addOctreeChildren(top, appContext.getScene().getOctree().rootNode);
-		System.out.println("Added " + appContext.getScene().getEntities().size());
-		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
-		addCheckStateListener(scene);
-		new SetSelectedListener(scene, appContext, this, entityViewFrame);
-		scene.setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(scene) {
-            private JLabel lblNull = new JLabel("");
-
-            @Override
-            public Component getTreeCellRendererComponent(JTree tree, Object value,
-                    boolean arg2, boolean arg3, boolean arg4, int arg5, boolean arg6) {
-
-                Component c = super.getTreeCellRendererComponent(tree, value, arg2, arg3, arg4, arg5, arg6);
-
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                if (matchesFilter(node)) {
-                    c.setForeground(Color.BLACK);
-                	c.setVisible(false);
-                    return c;
-                }
-                else if (containsMatchingChild(node)) {
-                    c.setForeground(Color.GRAY);
-                	c.setVisible(false);
-                    return c;
-                }
-                else {
-                	c.setVisible(false);
-                    return lblNull;
-                }
-            }
-
-            private boolean matchesFilter(DefaultMutableTreeNode node) {
-            	String filterText = sceneViewFilterField.getText();
-                return "".equals(filterText) || (node.getUserObject().toString()).startsWith(filterText);
-            }
-
-            private boolean containsMatchingChild(DefaultMutableTreeNode node) {
-                Enumeration<DefaultMutableTreeNode> e = node.breadthFirstEnumeration();
-                while (e.hasMoreElements()) {
-                    if (matchesFilter(e.nextElement())) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        });
-
-		tabbedPane.remove(scenePane);
-		scenePane = new JScrollPane(scene);
-		tabbedPane.addTab("Scene", scenePane);
-	}
-	
-	private void addOctreeChildren(DefaultMutableTreeNode parent, Node node) {
-		
-		List<Entity> entitiesInAndBelow = new ArrayList<Entity>();
-		node.getAllEntitiesInAndBelow(entitiesInAndBelow);
-		
-		DefaultMutableTreeNode current = new DefaultMutableTreeNode(node.toString() + " (" + entitiesInAndBelow.size() + " Entities in/below)");
-		parent.add(current);
-		if(node.hasChildren()) {
-			for(int i = 0; i < 8; i++) {
-				addOctreeChildren(current, node.children[i]);
-			}
-		}
-		
-		for (Entity entity : node.getEntities()) {
-			if(entity.hasParent()) { continue; }
-			DefaultMutableTreeNode currentEntity = new DefaultMutableTreeNode(entity);
-			if(entity.hasChildren()) {
-				entity.getChildren().forEach(child -> {
-					currentEntity.add(new DefaultMutableTreeNode(child));
-				});
-			}
-			current.add(currentEntity);
-		}
-		
-		if (node.hasChildren() && node.getEntities().size() > 0 && !node.isRoot()) {
-			System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
-		}
+        this.probes.addCheckStateChangeListener(new SetVisibilityCheckStateListener());
+		new SetSelectedListener(this.probes, appContext);
 	}
 
-	public void refreshSceneTree() {
-		System.out.println("Refreshing");
-		addOctreeSceneObjects(AppContext.getInstance());
-	}
-
-	public void refreshTextureTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(texturePane);
-		createTexturePane(TextureFactory.getInstance());
-		tabbedPane.addTab("Texture", texturePane);
-	}
-	
-	public void refreshMaterialTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(materialPane);
-		createMaterialPane(AppContext.getInstance());
-		tabbedPane.addTab("Material", materialPane);
-	}
-	
-	public void refreshPointLightsTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(pointLightsPane);
-		pointLightsPane.repaint();
-		tabbedPane.addTab("PointLights", pointLightsPane);
-	}
-	public void refreshTubeLightsTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(tubeLightsPane);
-		createTubeLightsTab();
-		tabbedPane.addTab("TubeLights", tubeLightsPane);
-	}
-	public void refreshAreaLightsTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(areaLightsPane);
-		createAreaLightsTab();
-		tabbedPane.addTab("AreaLights", areaLightsPane);
-	}
-	public void refreshProbeTab() {
-		System.out.println("Refreshing");
-		tabbedPane.remove(probesPane);
-		addProbes(AppContext.getInstance());
-		tabbedPane.addTab("Probes", probesPane);
-	}
-	
 	public void showSuccess(String content) {
 		if(content == null) {return; }
 		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
@@ -1620,7 +1228,7 @@ public class DebugFrame {
 		entityViewFrame.getContentPane().removeAll();
 		entityViewFrame.pack();
 		entityViewFrame.setSize(600, 700);
-		entityViewFrame.add(new EntityView(AppContext.getInstance(), debugFrame, (Entity) e.getEntity()));
+		entityViewFrame.add(new EntityView(AppContext.getInstance(), (Entity) e.getEntity()));
 		entityViewFrame.setVisible(true);
 //    	entityViewFrame.toBack();
 	}
@@ -1638,5 +1246,9 @@ public class DebugFrame {
                 infoRight.setText(event.getLatestGPUProfilingResult());
             });
         }
+    }
+
+    public static String getCurrentFilter() {
+        return sceneViewFilterField.getText();
     }
 }

@@ -25,7 +25,7 @@ public class AreaLightView extends EntityView {
 	private AreaLight light;
 
 	public AreaLightView(AppContext appContext, DebugFrame debugFrame, AreaLight light) {
-		super(appContext, debugFrame, light);
+		super(appContext, light);
 		this.light = light;
 	}
 

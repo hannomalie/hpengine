@@ -112,9 +112,7 @@ public class MaterialFactory {
 		material = read(getDirectory() + materialInfo.name);
 
 		if(material != null) {
-            new Thread(() -> {
-                AppContext.getEventBus().post(new MaterialAddedEvent());
-            }).start();
+            AppContext.getEventBus().post(new MaterialAddedEvent());
 			return material;
 		}
 		

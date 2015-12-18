@@ -91,14 +91,14 @@ DETAIL:&nbsp;FIELD&nbsp;|&nbsp;<A HREF="#constructor_detail">CONSTR</A>&nbsp;|&n
 <FONT SIZE="-1">
 org.apache.commons.io</FONT>
 <BR>
-Class DirectoryWalker&lt;T&gt;</H2>
+Class DirectoryWalker&lt;TYPE&gt;</H2>
 <PRE>
 <A HREF="http://download.oracle.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</A>
-  <IMG SRC="../../../../resources/inherit.gif" ALT="extended by "><B>org.apache.commons.io.DirectoryWalker&lt;T&gt;</B>
+  <IMG SRC="../../../../resources/inherit.gif" ALT="extended by "><B>org.apache.commons.io.DirectoryWalker&lt;TYPE&gt;</B>
 </PRE>
 <HR>
 <DL>
-<DT><PRE>public abstract class <B>DirectoryWalker&lt;T&gt;</B><DT>extends <A HREF="http://download.oracle.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
+<DT><PRE>public abstract class <B>DirectoryWalker&lt;TYPE&gt;</B><DT>extends <A HREF="http://download.oracle.com/javase/6/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</A></DL>
 </PRE>
 
 <P>
@@ -402,10 +402,10 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#checkIfCancelled(java.io.File, int, java.util.Collection)">checkIfCancelled</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
                  int&nbsp;depth,
-                 <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                 <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Checks whether the walk has been cancelled by calling <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleIsCancelled(java.io.File, int, java.util.Collection)"><CODE>handleIsCancelled(java.io.File, int, java.util.Collection<T>)</CODE></A>,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Checks whether the walk has been cancelled by calling <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleIsCancelled(java.io.File, int, java.util.Collection)"><CODE>handleIsCancelled(java.io.File, int, java.util.Collection<TYPE>)</CODE></A>,
  throwing a <code>CancelException</code> if it has.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
@@ -422,7 +422,7 @@ Abstract class that walks through a directory hierarchy and provides
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleCancelled(java.io.File, java.util.Collection, org.apache.commons.io.DirectoryWalker.CancelException)">handleCancelled</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results,
+                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results,
                 <A HREF="../../../../org/apache/commons/io/DirectoryWalker.CancelException.html" title="class in org.apache.commons.io">DirectoryWalker.CancelException</A>&nbsp;cancel)</CODE>
 
 <BR>
@@ -433,7 +433,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;boolean</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleDirectory(java.io.File, int, java.util.Collection)">handleDirectory</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                 int&nbsp;depth,
-                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked to determine if a directory should be processed.</TD>
@@ -443,7 +443,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleDirectoryEnd(java.io.File, int, java.util.Collection)">handleDirectoryEnd</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                    int&nbsp;depth,
-                   <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                   <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked at the end of processing each directory.</TD>
@@ -453,7 +453,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleDirectoryStart(java.io.File, int, java.util.Collection)">handleDirectoryStart</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                      int&nbsp;depth,
-                     <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                     <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked at the start of processing each directory.</TD>
@@ -461,7 +461,7 @@ Abstract class that walks through a directory hierarchy and provides
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>protected &nbsp;void</CODE></FONT></TD>
-<TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleEnd(java.util.Collection)">handleEnd</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+<TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleEnd(java.util.Collection)">handleEnd</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked at the end of processing.</TD>
@@ -471,7 +471,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleFile(java.io.File, int, java.util.Collection)">handleFile</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
            int&nbsp;depth,
-           <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+           <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked for each (non-directory) file.</TD>
@@ -481,7 +481,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;boolean</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleIsCancelled(java.io.File, int, java.util.Collection)">handleIsCancelled</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
                   int&nbsp;depth,
-                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked to determine if the entire walk
@@ -492,7 +492,7 @@ Abstract class that walks through a directory hierarchy and provides
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleRestricted(java.io.File, int, java.util.Collection)">handleRestricted</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                  int&nbsp;depth,
-                 <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+                 <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked for each restricted directory.</TD>
@@ -501,7 +501,7 @@ Abstract class that walks through a directory hierarchy and provides
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleStart(java.io.File, java.util.Collection)">handleStart</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-            <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+            <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overridable callback method invoked at the start of processing.</TD>
@@ -510,7 +510,7 @@ Abstract class that walks through a directory hierarchy and provides
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
 <CODE>protected &nbsp;void</CODE></FONT></TD>
 <TD><CODE><B><A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#walk(java.io.File, java.util.Collection)">walk</A></B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-     <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)</CODE>
+     <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Internal method that walks the directory hierarchy in a depth-first manner.</TD>
@@ -601,7 +601,7 @@ protected <B>DirectoryWalker</B>(<A HREF="../../../../org/apache/commons/io/file
 walk</H3>
 <PRE>
 protected final void <B>walk</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-                          <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                          <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                    throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Internal method that walks the directory hierarchy in a depth-first manner.
@@ -627,15 +627,15 @@ checkIfCancelled</H3>
 <PRE>
 protected final void <B>checkIfCancelled</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
                                       int&nbsp;depth,
-                                      <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                      <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                                throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
-<DD>Checks whether the walk has been cancelled by calling <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleIsCancelled(java.io.File, int, java.util.Collection)"><CODE>handleIsCancelled(java.io.File, int, java.util.Collection<T>)</CODE></A>,
+<DD>Checks whether the walk has been cancelled by calling <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleIsCancelled(java.io.File, int, java.util.Collection)"><CODE>handleIsCancelled(java.io.File, int, java.util.Collection<TYPE>)</CODE></A>,
  throwing a <code>CancelException</code> if it has.
  <p>
  Writers of subclasses should not normally call this method as it is called
  automatically by the walk of the tree. However, sometimes a single method,
- typically <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleFile(java.io.File, int, java.util.Collection)"><CODE>handleFile(java.io.File, int, java.util.Collection<T>)</CODE></A>, may take a long time to run. In that case,
+ typically <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleFile(java.io.File, int, java.util.Collection)"><CODE>handleFile(java.io.File, int, java.util.Collection<TYPE>)</CODE></A>, may take a long time to run. In that case,
  you may wish to check for cancellation by calling this method.
 <P>
 <DD><DL>
@@ -651,7 +651,7 @@ handleIsCancelled</H3>
 <PRE>
 protected boolean <B>handleIsCancelled</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
                                     int&nbsp;depth,
-                                    <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                    <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                              throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked to determine if the entire walk
@@ -678,7 +678,7 @@ protected boolean <B>handleIsCancelled</B>(<A HREF="http://download.oracle.com/j
  </pre>
  <p>
  If this method returns true, then the directory walk is immediately
- cancelled. The next callback method will be <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleCancelled(java.io.File, java.util.Collection, org.apache.commons.io.DirectoryWalker.CancelException)"><CODE>handleCancelled(java.io.File, java.util.Collection<T>, org.apache.commons.io.DirectoryWalker.CancelException)</CODE></A>.
+ cancelled. The next callback method will be <A HREF="../../../../org/apache/commons/io/DirectoryWalker.html#handleCancelled(java.io.File, java.util.Collection, org.apache.commons.io.DirectoryWalker.CancelException)"><CODE>handleCancelled(java.io.File, java.util.Collection<TYPE>, org.apache.commons.io.DirectoryWalker.CancelException)</CODE></A>.
  <p>
  This implementation returns false.
 <P>
@@ -695,7 +695,7 @@ protected boolean <B>handleIsCancelled</B>(<A HREF="http://download.oracle.com/j
 handleCancelled</H3>
 <PRE>
 protected void <B>handleCancelled</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-                               <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results,
+                               <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results,
                                <A HREF="../../../../org/apache/commons/io/DirectoryWalker.CancelException.html" title="class in org.apache.commons.io">DirectoryWalker.CancelException</A>&nbsp;cancel)
                         throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
@@ -718,7 +718,7 @@ protected void <B>handleCancelled</B>(<A HREF="http://download.oracle.com/javase
 handleStart</H3>
 <PRE>
 protected void <B>handleStart</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;startDirectory,
-                           <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                           <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                     throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked at the start of processing.
@@ -738,7 +738,7 @@ handleDirectory</H3>
 <PRE>
 protected boolean <B>handleDirectory</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                                   int&nbsp;depth,
-                                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                            throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked to determine if a directory should be processed.
@@ -763,7 +763,7 @@ handleDirectoryStart</H3>
 <PRE>
 protected void <B>handleDirectoryStart</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                                     int&nbsp;depth,
-                                    <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                    <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                              throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked at the start of processing each directory.
@@ -806,7 +806,7 @@ handleFile</H3>
 <PRE>
 protected void <B>handleFile</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;file,
                           int&nbsp;depth,
-                          <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                          <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                    throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked for each (non-directory) file.
@@ -826,7 +826,7 @@ handleRestricted</H3>
 <PRE>
 protected void <B>handleRestricted</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                                 int&nbsp;depth,
-                                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                          throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked for each restricted directory.
@@ -846,7 +846,7 @@ handleDirectoryEnd</H3>
 <PRE>
 protected void <B>handleDirectoryEnd</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/io/File.html?is-external=true" title="class or interface in java.io">File</A>&nbsp;directory,
                                   int&nbsp;depth,
-                                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+                                  <A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                            throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked at the end of processing each directory.
@@ -864,7 +864,7 @@ protected void <B>handleDirectoryEnd</B>(<A HREF="http://download.oracle.com/jav
 <A NAME="handleEnd(java.util.Collection)"><!-- --></A><H3>
 handleEnd</H3>
 <PRE>
-protected void <B>handleEnd</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">T</A>&gt;&nbsp;results)
+protected void <B>handleEnd</B>(<A HREF="http://download.oracle.com/javase/6/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</A>&lt;<A HREF="../../../../org/apache/commons/io/DirectoryWalker.html" title="type parameter in DirectoryWalker">TYPE</A>&gt;&nbsp;results)
                   throws <A HREF="http://download.oracle.com/javase/6/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</A></PRE>
 <DL>
 <DD>Overridable callback method invoked at the end of processing.

@@ -74,14 +74,13 @@ public class AddEntityView extends WebPanel {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
                                 appContext.getScene().addAll(result.entities);
                                 Thread.sleep(100);
-                                appContext.getEventBus().post(new MaterialAddedEvent());
-                                appContext.getEventBus().post(new EntityAddedEvent());
 								return result;
 							}
 
 							@Override
 							public void done(EntityListResult result) {
-								debugFrame.refreshSceneTree();
+                                AppContext.getEventBus().post(new MaterialAddedEvent());
+								AppContext.getEventBus().post(new EntityAddedEvent());
 							}
 						}.execute();
 					}

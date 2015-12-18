@@ -151,7 +151,7 @@ Utility functions for matrices.
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Diagonalizes this matrix by the Jacobi method. rot stores the rotation
  from the coordinate system in which the matrix is diagonal to the original
- coordinate system, i.e., old_this = rot * new_this * rot^T.</TD>
+ coordinate system, i.e., old_this = rot * new_this * rot^TYPE.</TD>
 </TR>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
@@ -391,7 +391,7 @@ public static void <B>diagonalize</B>(<A HREF="http://download.java.net/media/ja
 <DL>
 <DD>Diagonalizes this matrix by the Jacobi method. rot stores the rotation
  from the coordinate system in which the matrix is diagonal to the original
- coordinate system, i.e., old_this = rot * new_this * rot^T. The iteration
+ coordinate system, i.e., old_this = rot * new_this * rot^TYPE. The iteration
  stops when all off-diagonal elements are less than the threshold multiplied
  by the sum of the absolute values of the diagonal, or when maxSteps have
  been executed. Note that this matrix is assumed to be symmetric.

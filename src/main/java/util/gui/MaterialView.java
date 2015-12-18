@@ -15,7 +15,6 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import component.ModelComponent;
 import engine.AppContext;
-import engine.model.Entity;
 import event.MaterialChangedEvent;
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -43,23 +42,14 @@ import java.util.stream.Collectors;
 public class MaterialView extends WebPanel {
 
 	private Material material;
-	private AppContext appContext;
-	private DebugFrame parent;
 	private WebTextField nameField;
-	private Entity entity;
 
-	public MaterialView(DebugFrame parent, AppContext appContext, Material material, Entity entity) {
-		this.parent = parent;
-		this.entity = entity;
-		this.appContext = appContext;
+	public MaterialView(Material material) {
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
 		
 		init(material);
-	}
-	public MaterialView(DebugFrame parent, AppContext appContext, Material material) {
-		this(parent, appContext, material, null);
 	}
 
 	private void init(Material material) {
@@ -76,7 +66,7 @@ public class MaterialView extends WebPanel {
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
 				CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
-					return new GetMaterialCommand(newInfo).execute(appContext);
+					return new GetMaterialCommand(newInfo).execute(AppContext.getInstance());
 				});
 				MaterialResult result;
 				try {
@@ -96,7 +86,6 @@ public class MaterialView extends WebPanel {
         	}
 
         	addMaterialInitCommand(toSave);
-        	if(entity != null) { entity.getComponent(ModelComponent.class).setMaterial(toSave.getName()); }
         });
         
         Component[] components = new Component[panels.size()];
@@ -106,10 +95,6 @@ public class MaterialView extends WebPanel {
         this.setLayout(new BorderLayout());
         this.add(materialAttributesPane, BorderLayout.CENTER);
         this.add(saveButton, BorderLayout.SOUTH);
-	}
-
-	public MaterialView(AppContext appContext, Material material) {
-		this(null, appContext, material);
 	}
 
 	private void addTexturePanel(List<Component> panels) {
@@ -313,7 +298,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					transparencyInput.setValue(((float)value/100f));
     					material.setTransparency(((float)value/100f));
-    		        	appContext.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -336,7 +321,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxScaleInput.setValue(((float)value/100f));
     					material.setParallaxScale(((float)value/100f));
-    		        	appContext.getEventBus().post(new MaterialChangedEvent());
+                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -359,7 +344,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxBiasInput.setValue(((float)value/100f));
     					material.setParallaxBias(((float)value/100f));
-    		        	appContext.getEventBus().post(new MaterialChangedEvent());
+                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
     				}
     			};
     			
@@ -373,7 +358,7 @@ public class MaterialView extends WebPanel {
 			materialTypeInput.addActionListener(e -> {
 				Material.MaterialType selected = (Material.MaterialType) materialTypeInput.getSelectedItem();
 				material.setMaterialType(selected);
-				appContext.getEventBus().post(new MaterialChangedEvent());
+                AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
 			});
 			materialTypeInput.setSelectedItem(material.getMaterialType());
 			GroupPanel materialTypePanel = new GroupPanel(4, new WebLabel("Maeterial Type"), materialTypeInput);
@@ -405,7 +390,7 @@ public class MaterialView extends WebPanel {
 	
 	private void addMaterialInitCommand(Material material) {
 		CompletableFuture<MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
-			return new InitMaterialCommand(material).execute(appContext);
+			return new InitMaterialCommand(material).execute(AppContext.getInstance());
 		});
 
 		MaterialResult result;
@@ -414,9 +399,6 @@ public class MaterialView extends WebPanel {
 			if(result.equals(Boolean.TRUE)) {
 				showNotification(NotificationIcon.plus, "Material changed");
 
-				if(parent != null) {
-					parent.refreshMaterialTab();
-				}
 				init(result.material);
 				AppContext.getEventBus().post(new MaterialChangedEvent());
 			} else {

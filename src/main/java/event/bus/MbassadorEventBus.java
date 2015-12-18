@@ -1,6 +1,9 @@
 package event.bus;
 
 import net.engio.mbassy.bus.MBassador;
+import net.engio.mbassy.bus.config.BusConfiguration;
+import net.engio.mbassy.bus.config.Feature;
+import net.engio.mbassy.bus.config.IBusConfiguration;
 
 public class MBassadorEventBus implements EventBus {
 
@@ -11,7 +14,16 @@ public class MBassadorEventBus implements EventBus {
         this(true);
     }
     public MBassadorEventBus(boolean defaultAsync) {
-        this.eventBus = new MBassador();
+
+        IBusConfiguration config = new BusConfiguration()
+            .addFeature(Feature.SyncPubSub.Default())
+            .addFeature(Feature.AsynchronousHandlerInvocation.Default())
+            .addFeature(Feature.AsynchronousMessageDispatch.Default())
+            .addPublicationErrorHandler(error -> {
+                System.out.println(error);
+            });
+        this.eventBus = new MBassador(config);
+
         this.defaultAsync = defaultAsync;
     }
 

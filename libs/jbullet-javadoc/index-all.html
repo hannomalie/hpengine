@@ -77,7 +77,7 @@ function windowTitle()
 <A NAME="skip-navbar_top"></A>
 <!-- ========= END OF TOP NAVBAR ========= -->
 
-<A HREF="#_A_">A</A> <A HREF="#_B_">B</A> <A HREF="#_C_">C</A> <A HREF="#_D_">D</A> <A HREF="#_E_">E</A> <A HREF="#_F_">F</A> <A HREF="#_G_">G</A> <A HREF="#_H_">H</A> <A HREF="#_I_">I</A> <A HREF="#_J_">J</A> <A HREF="#_K_">K</A> <A HREF="#_L_">L</A> <A HREF="#_M_">M</A> <A HREF="#_N_">N</A> <A HREF="#_O_">O</A> <A HREF="#_P_">P</A> <A HREF="#_Q_">Q</A> <A HREF="#_R_">R</A> <A HREF="#_S_">S</A> <A HREF="#_T_">T</A> <A HREF="#_U_">U</A> <A HREF="#_V_">V</A> <A HREF="#_W_">W</A> <HR>
+<A HREF="#_A_">A</A> <A HREF="#_B_">B</A> <A HREF="#_C_">C</A> <A HREF="#_D_">D</A> <A HREF="#_E_">E</A> <A HREF="#_F_">F</A> <A HREF="#_G_">G</A> <A HREF="#_H_">H</A> <A HREF="#_I_">I</A> <A HREF="#_J_">J</A> <A HREF="#_K_">K</A> <A HREF="#_L_">L</A> <A HREF="#_M_">M</A> <A HREF="#_N_">N</A> <A HREF="#_O_">O</A> <A HREF="#_P_">P</A> <A HREF="#_Q_">Q</A> <A HREF="#_R_">R</A> <A HREF="#_S_">S</A> <A HREF="#_T_">TYPE</A> <A HREF="#_U_">U</A> <A HREF="#_V_">V</A> <A HREF="#_W_">W</A> <HR>
 <A NAME="_A_"><!-- --></A><H2>
 <B>A</B></H2>
 <DL>
@@ -145,10 +145,10 @@ Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/FloatAr
 <DT><A HREF="./com/bulletphysics/util/IntArrayList.html#add(int)"><B>add(int)</B></A> - 
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/IntArrayList.html" title="class in com.bulletphysics.util">IntArrayList</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#add(T)"><B>add(T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#add(TYPE)"><B>add(TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#add(int, T)"><B>add(int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#add(int, TYPE)"><B>add(int, TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/dynamics/DiscreteDynamicsWorld.html#addAction(com.bulletphysics.dynamics.ActionInterface)"><B>addAction(ActionInterface)</B></A> - 
@@ -388,7 +388,7 @@ Method in class com.bulletphysics.extras.gimpact.<A HREF="./com/bulletphysics/ex
 <DT><A HREF="./com/bulletphysics/linearmath/GeometryUtil.html#areVerticesBehindPlane(javax.vecmath.Vector4f, com.bulletphysics.util.ObjectArrayList, float)"><B>areVerticesBehindPlane(Vector4f, ObjectArrayList&lt;Vector3f&gt;, float)</B></A> - 
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/GeometryUtil.html" title="class in com.bulletphysics.linearmath">GeometryUtil</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util"><B>ArrayPool</B></A>&lt;<A HREF="./com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">T</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Object pool for arrays.<DT><A HREF="./com/bulletphysics/util/ArrayPool.html#ArrayPool(java.lang.Class)"><B>ArrayPool(Class)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util"><B>ArrayPool</B></A>&lt;<A HREF="./com/bulletphysics/util/ArrayPool.html" title="type parameter in ArrayPool">TYPE</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Object pool for arrays.<DT><A HREF="./com/bulletphysics/util/ArrayPool.html#ArrayPool(java.lang.Class)"><B>ArrayPool(Class)</B></A> -
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>
 <DD>Creates object pool.
 <DT><A HREF="./com/bulletphysics/collision/shapes/OptimizedBvh.html#assignInternalNodeFromLeafNode(int, int)"><B>assignInternalNodeFromLeafNode(int, int)</B></A> - 
@@ -1518,7 +1518,7 @@ Method in class com.bulletphysics.collision.broadphase.<A HREF="./com/bulletphys
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MatrixUtil.html" title="class in com.bulletphysics.linearmath">MatrixUtil</A>
 <DD>Diagonalizes this matrix by the Jacobi method. rot stores the rotation
  from the coordinate system in which the matrix is diagonal to the original
- coordinate system, i.e., old_this = rot * new_this * rot^T.
+ coordinate system, i.e., old_this = rot * new_this * rot^TYPE.
 <DT><A HREF="./com/bulletphysics/linearmath/DebugDrawModes.html#DISABLE_BULLET_LCP"><B>DISABLE_BULLET_LCP</B></A> - 
 Static variable in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/DebugDrawModes.html" title="class in com.bulletphysics.linearmath">DebugDrawModes</A>
 <DD>&nbsp;
@@ -1674,7 +1674,7 @@ Variable in class com.bulletphysics.collision.broadphase.<A HREF="./com/bulletph
 <DT><A HREF="./com/bulletphysics/dynamics/vehicle/WheelInfo.html#engineForce"><B>engineForce</B></A> - 
 Variable in class com.bulletphysics.dynamics.vehicle.<A HREF="./com/bulletphysics/dynamics/vehicle/WheelInfo.html" title="class in com.bulletphysics.dynamics.vehicle">WheelInfo</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#ensureIndex(com.bulletphysics.util.ObjectArrayList, int, T)"><B>ensureIndex(ObjectArrayList&lt;T&gt;, int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#ensureIndex(com.bulletphysics.util.ObjectArrayList, int, TYPE)"><B>ensureIndex(ObjectArrayList&lt;TYPE&gt;, int, TYPE)</B></A> -
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Ensures valid index in provided list by filling list with provided values
  until the index is valid.
@@ -1909,7 +1909,7 @@ Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectA
 <DT><A HREF="./com/bulletphysics/util/ObjectPool.html#get()"><B>get()</B></A> - 
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>
 <DD>Returns instance from pool, or create one if pool is empty.
-<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#get(java.lang.Class)"><B>get(Class&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#get(java.lang.Class)"><B>get(Class&lt;TYPE&gt;)</B></A> -
 Static method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>
 <DD>Returns per-thread object pool for given type, or create one if it doesn't exist.
 <DT><A HREF="./com/bulletphysics/util/StackList.html#get()"><B>get()</B></A> - 
@@ -3260,7 +3260,7 @@ Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/
 <DT><A HREF="./com/bulletphysics/collision/shapes/BU_Simplex1to4.html#getVertex(int, javax.vecmath.Vector3f)"><B>getVertex(int, Vector3f)</B></A> - 
 Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/BU_Simplex1to4.html" title="class in com.bulletphysics.collision.shapes">BU_Simplex1to4</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/collision/shapes/ByteBufferVertexData.html#getVertex(int, T)"><B>getVertex(int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/collision/shapes/ByteBufferVertexData.html#getVertex(int, TYPE)"><B>getVertex(int, TYPE)</B></A> -
 Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/ByteBufferVertexData.html" title="class in com.bulletphysics.collision.shapes">ByteBufferVertexData</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/collision/shapes/ConvexHullShape.html#getVertex(int, javax.vecmath.Vector3f)"><B>getVertex(int, Vector3f)</B></A> - 
@@ -3272,7 +3272,7 @@ Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/
 <DT><A HREF="./com/bulletphysics/collision/shapes/TriangleShape.html#getVertex(int, javax.vecmath.Vector3f)"><B>getVertex(int, Vector3f)</B></A> - 
 Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/TriangleShape.html" title="class in com.bulletphysics.collision.shapes">TriangleShape</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/collision/shapes/VertexData.html#getVertex(int, T)"><B>getVertex(int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/collision/shapes/VertexData.html#getVertex(int, TYPE)"><B>getVertex(int, TYPE)</B></A> -
 Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/VertexData.html" title="class in com.bulletphysics.collision.shapes">VertexData</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/extras/gimpact/GImpactMeshShapePart.html#getVertex(int, javax.vecmath.Vector3f)"><B>getVertex(int, Vector3f)</B></A> - 
@@ -3489,7 +3489,7 @@ Method in class com.bulletphysics.linearmath.convexhull.<A HREF="./com/bulletphy
 <DT><A HREF="./com/bulletphysics/collision/narrowphase/PointCollector.html#hasResult"><B>hasResult</B></A> - 
 Variable in class com.bulletphysics.collision.narrowphase.<A HREF="./com/bulletphysics/collision/narrowphase/PointCollector.html" title="class in com.bulletphysics.collision.narrowphase">PointCollector</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#heapSort(com.bulletphysics.util.ObjectArrayList, java.util.Comparator)"><B>heapSort(ObjectArrayList&lt;T&gt;, Comparator&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#heapSort(com.bulletphysics.util.ObjectArrayList, java.util.Comparator)"><B>heapSort(ObjectArrayList&lt;TYPE&gt;, Comparator&lt;TYPE&gt;)</B></A> -
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Sorts list using heap sort.
 <DT><A HREF="./com/bulletphysics/dynamics/constraintsolver/RotationalLimitMotor.html#hiLimit"><B>hiLimit</B></A> - 
@@ -3621,7 +3621,7 @@ Variable in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysic
  OpenGL's glDrawElements.<DT><A HREF="./com/bulletphysics/collision/shapes/IndexedMesh.html#IndexedMesh()"><B>IndexedMesh()</B></A> - 
 Constructor for class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/IndexedMesh.html" title="class in com.bulletphysics.collision.shapes">IndexedMesh</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#indexOf(T[], T)"><B>indexOf(T[], T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#indexOf(TYPE[], TYPE)"><B>indexOf(TYPE[], TYPE)</B></A> -
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Searches object in array.
 <DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#indexOf(java.lang.Object)"><B>indexOf(Object)</B></A> - 
@@ -4402,19 +4402,19 @@ Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/
 <A NAME="_O_"><!-- --></A><H2>
 <B>O</B></H2>
 <DL>
-<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util"><B>ObjectArrayList</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="type parameter in ObjectArrayList">T</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>&nbsp;<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#ObjectArrayList()"><B>ObjectArrayList()</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util"><B>ObjectArrayList</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="type parameter in ObjectArrayList">TYPE</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>&nbsp;<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#ObjectArrayList()"><B>ObjectArrayList()</B></A> -
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#ObjectArrayList(int)"><B>ObjectArrayList(int)</B></A> - 
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util"><B>ObjectPool</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">T</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Object pool.<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#ObjectPool(java.lang.Class)"><B>ObjectPool(Class&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util"><B>ObjectPool</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectPool.html" title="type parameter in ObjectPool">TYPE</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Object pool.<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#ObjectPool(java.lang.Class)"><B>ObjectPool(Class&lt;TYPE&gt;)</B></A> -
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/collision/dispatch/CollisionWorld.html#objectQuerySingle(com.bulletphysics.collision.shapes.ConvexShape, com.bulletphysics.linearmath.Transform, com.bulletphysics.linearmath.Transform, com.bulletphysics.collision.dispatch.CollisionObject, com.bulletphysics.collision.shapes.CollisionShape, com.bulletphysics.linearmath.Transform, com.bulletphysics.collision.dispatch.CollisionWorld.ConvexResultCallback, float)"><B>objectQuerySingle(ConvexShape, Transform, Transform, CollisionObject, CollisionShape, Transform, CollisionWorld.ConvexResultCallback, float)</B></A> - 
 Static method in class com.bulletphysics.collision.dispatch.<A HREF="./com/bulletphysics/collision/dispatch/CollisionWorld.html" title="class in com.bulletphysics.collision.dispatch">CollisionWorld</A>
 <DD>objectQuerySingle performs a collision detection query and calls the resultCallback.
-<DT><A HREF="./com/bulletphysics/util/ObjectStackList.html" title="class in com.bulletphysics.util"><B>ObjectStackList</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectStackList.html" title="type parameter in ObjectStackList">T</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Stack-based object pool for arbitrary objects, returning not supported.<DT><A HREF="./com/bulletphysics/util/ObjectStackList.html#ObjectStackList(java.lang.Class)"><B>ObjectStackList(Class&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectStackList.html" title="class in com.bulletphysics.util"><B>ObjectStackList</B></A>&lt;<A HREF="./com/bulletphysics/util/ObjectStackList.html" title="type parameter in ObjectStackList">TYPE</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Stack-based object pool for arbitrary objects, returning not supported.<DT><A HREF="./com/bulletphysics/util/ObjectStackList.html#ObjectStackList(java.lang.Class)"><B>ObjectStackList(Class&lt;TYPE&gt;)</B></A> -
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectStackList.html" title="class in com.bulletphysics.util">ObjectStackList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/dynamics/character/KinematicCharacterController.html#onGround()"><B>onGround()</B></A> - 
@@ -4800,7 +4800,7 @@ Constructor for class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/
 <DT><A HREF="./com/bulletphysics/linearmath/QuaternionUtil.html#quatRotate(javax.vecmath.Quat4f, javax.vecmath.Vector3f, javax.vecmath.Vector3f)"><B>quatRotate(Quat4f, Vector3f, Vector3f)</B></A> - 
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/QuaternionUtil.html" title="class in com.bulletphysics.linearmath">QuaternionUtil</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#quickSort(com.bulletphysics.util.ObjectArrayList, java.util.Comparator)"><B>quickSort(ObjectArrayList&lt;T&gt;, Comparator&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#quickSort(com.bulletphysics.util.ObjectArrayList, java.util.Comparator)"><B>quickSort(ObjectArrayList&lt;TYPE&gt;, Comparator&lt;TYPE&gt;)</B></A> -
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Sorts list using quick sort.
 </DL>
@@ -4892,10 +4892,10 @@ Static method in class com.bulletphysics.extras.gimpact.<A HREF="./com/bulletphy
 <DT><A HREF="./com/bulletphysics/collision/dispatch/CollisionDispatcher.html#registerCollisionCreateFunc(int, int, com.bulletphysics.collision.dispatch.CollisionAlgorithmCreateFunc)"><B>registerCollisionCreateFunc(int, int, CollisionAlgorithmCreateFunc)</B></A> - 
 Method in class com.bulletphysics.collision.dispatch.<A HREF="./com/bulletphysics/collision/dispatch/CollisionDispatcher.html" title="class in com.bulletphysics.collision.dispatch">CollisionDispatcher</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ArrayPool.html#release(T)"><B>release(T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ArrayPool.html#release(TYPE)"><B>release(TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ArrayPool.html" title="class in com.bulletphysics.util">ArrayPool</A>
 <DD>Releases array into object pool.
-<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#release(T)"><B>release(T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectPool.html#release(TYPE)"><B>release(TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectPool.html" title="class in com.bulletphysics.util">ObjectPool</A>
 <DD>Release instance into pool.
 <DT><A HREF="./com/bulletphysics/collision/dispatch/CollisionAlgorithmCreateFunc.html#releaseCollisionAlgorithm(com.bulletphysics.collision.broadphase.CollisionAlgorithm)"><B>releaseCollisionAlgorithm(CollisionAlgorithm)</B></A> - 
@@ -5102,7 +5102,7 @@ Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics
 <DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#resize(com.bulletphysics.util.FloatArrayList, int, float)"><B>resize(FloatArrayList, int, float)</B></A> - 
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Resizes list to exact size, filling with given value when expanding.
-<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#resize(com.bulletphysics.util.ObjectArrayList, int, java.lang.Class)"><B>resize(ObjectArrayList&lt;T&gt;, int, Class&lt;T&gt;)</B></A> - 
+<DT><A HREF="./com/bulletphysics/linearmath/MiscUtil.html#resize(com.bulletphysics.util.ObjectArrayList, int, java.lang.Class)"><B>resize(ObjectArrayList&lt;TYPE&gt;, int, Class&lt;TYPE&gt;)</B></A> -
 Static method in class com.bulletphysics.linearmath.<A HREF="./com/bulletphysics/linearmath/MiscUtil.html" title="class in com.bulletphysics.linearmath">MiscUtil</A>
 <DD>Resizes list to exact size, filling with new instances of given class type
  when expanding.
@@ -5149,7 +5149,7 @@ Variable in class com.bulletphysics.dynamics.constraintsolver.<A HREF="./com/bul
 <DT><A HREF="./com/bulletphysics/dynamics/RigidBodyConstructionInfo.html#restitution"><B>restitution</B></A> - 
 Variable in class com.bulletphysics.dynamics.<A HREF="./com/bulletphysics/dynamics/RigidBodyConstructionInfo.html" title="class in com.bulletphysics.dynamics">RigidBodyConstructionInfo</A>
 <DD>Best simulation results using zero restitution.
-<DT><A HREF="./com/bulletphysics/util/StackList.html#returning(T)"><B>returning(T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/StackList.html#returning(TYPE)"><B>returning(TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/StackList.html" title="class in com.bulletphysics.util">StackList</A>
 <DD>Copies given instance into one slot static instance and returns it.
 <DT><A HREF="./com/bulletphysics/linearmath/convexhull/HullFlags.html#REVERSE_ORDER"><B>REVERSE_ORDER</B></A> - 
@@ -5257,7 +5257,7 @@ Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/FloatAr
 <DT><A HREF="./com/bulletphysics/util/IntArrayList.html#set(int, int)"><B>set(int, int)</B></A> - 
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/IntArrayList.html" title="class in com.bulletphysics.util">IntArrayList</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#set(int, T)"><B>set(int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#set(int, TYPE)"><B>set(int, TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/collision/broadphase/AxisSweep3Internal.html#setAabb(com.bulletphysics.collision.broadphase.BroadphaseProxy, javax.vecmath.Vector3f, javax.vecmath.Vector3f, com.bulletphysics.collision.broadphase.Dispatcher)"><B>setAabb(BroadphaseProxy, Vector3f, Vector3f, Dispatcher)</B></A> - 
@@ -5724,7 +5724,7 @@ Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/
 <DT><A HREF="./com/bulletphysics/collision/shapes/QuantizedBvhNodes.html#setQuantizedAabbMin(int, int, int)"><B>setQuantizedAabbMin(int, int, int)</B></A> - 
 Method in class com.bulletphysics.collision.shapes.<A HREF="./com/bulletphysics/collision/shapes/QuantizedBvhNodes.html" title="class in com.bulletphysics.collision.shapes">QuantizedBvhNodes</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#setQuick(int, T)"><B>setQuick(int, T)</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/ObjectArrayList.html#setQuick(int, TYPE)"><B>setQuick(int, TYPE)</B></A> -
 Method in class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/ObjectArrayList.html" title="class in com.bulletphysics.util">ObjectArrayList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/dynamics/constraintsolver/SequentialImpulseConstraintSolver.html#setRandSeed(long)"><B>setRandSeed(long)</B></A> - 
@@ -6068,7 +6068,7 @@ Variable in class com.bulletphysics.dynamics.constraintsolver.<A HREF="./com/bul
 <DT><A HREF="./com/bulletphysics/dynamics/constraintsolver/ContactSolverInfo.html#splitImpulsePenetrationThreshold"><B>splitImpulsePenetrationThreshold</B></A> - 
 Variable in class com.bulletphysics.dynamics.constraintsolver.<A HREF="./com/bulletphysics/dynamics/constraintsolver/ContactSolverInfo.html" title="class in com.bulletphysics.dynamics.constraintsolver">ContactSolverInfo</A>
 <DD>&nbsp;
-<DT><A HREF="./com/bulletphysics/util/StackList.html" title="class in com.bulletphysics.util"><B>StackList</B></A>&lt;<A HREF="./com/bulletphysics/util/StackList.html" title="type parameter in StackList">T</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Stack-based object pool, see the example for usage.<DT><A HREF="./com/bulletphysics/util/StackList.html#StackList()"><B>StackList()</B></A> - 
+<DT><A HREF="./com/bulletphysics/util/StackList.html" title="class in com.bulletphysics.util"><B>StackList</B></A>&lt;<A HREF="./com/bulletphysics/util/StackList.html" title="type parameter in StackList">TYPE</A>&gt; - Class in <A HREF="./com/bulletphysics/util/package-summary.html">com.bulletphysics.util</A><DD>Stack-based object pool, see the example for usage.<DT><A HREF="./com/bulletphysics/util/StackList.html#StackList()"><B>StackList()</B></A> -
 Constructor for class com.bulletphysics.util.<A HREF="./com/bulletphysics/util/StackList.html" title="class in com.bulletphysics.util">StackList</A>
 <DD>&nbsp;
 <DT><A HREF="./com/bulletphysics/collision/broadphase/DbvtProxy.html#stage"><B>stage</B></A> - 
@@ -6198,7 +6198,7 @@ Variable in class com.bulletphysics.collision.dispatch.<A HREF="./com/bulletphys
 </DL>
 <HR>
 <A NAME="_T_"><!-- --></A><H2>
-<B>T</B></H2>
+<B>TYPE</B></H2>
 <DL>
 <DT><A HREF="./com/bulletphysics/dynamics/constraintsolver/RotationalLimitMotor.html#targetVelocity"><B>targetVelocity</B></A> - 
 Variable in class com.bulletphysics.dynamics.constraintsolver.<A HREF="./com/bulletphysics/dynamics/constraintsolver/RotationalLimitMotor.html" title="class in com.bulletphysics.dynamics.constraintsolver">RotationalLimitMotor</A>
@@ -6771,7 +6771,7 @@ Method in class com.bulletphysics.collision.broadphase.<A HREF="./com/bulletphys
 <DD>&nbsp;
 </DL>
 <HR>
-<A HREF="#_A_">A</A> <A HREF="#_B_">B</A> <A HREF="#_C_">C</A> <A HREF="#_D_">D</A> <A HREF="#_E_">E</A> <A HREF="#_F_">F</A> <A HREF="#_G_">G</A> <A HREF="#_H_">H</A> <A HREF="#_I_">I</A> <A HREF="#_J_">J</A> <A HREF="#_K_">K</A> <A HREF="#_L_">L</A> <A HREF="#_M_">M</A> <A HREF="#_N_">N</A> <A HREF="#_O_">O</A> <A HREF="#_P_">P</A> <A HREF="#_Q_">Q</A> <A HREF="#_R_">R</A> <A HREF="#_S_">S</A> <A HREF="#_T_">T</A> <A HREF="#_U_">U</A> <A HREF="#_V_">V</A> <A HREF="#_W_">W</A> 
+<A HREF="#_A_">A</A> <A HREF="#_B_">B</A> <A HREF="#_C_">C</A> <A HREF="#_D_">D</A> <A HREF="#_E_">E</A> <A HREF="#_F_">F</A> <A HREF="#_G_">G</A> <A HREF="#_H_">H</A> <A HREF="#_I_">I</A> <A HREF="#_J_">J</A> <A HREF="#_K_">K</A> <A HREF="#_L_">L</A> <A HREF="#_M_">M</A> <A HREF="#_N_">N</A> <A HREF="#_O_">O</A> <A HREF="#_P_">P</A> <A HREF="#_Q_">Q</A> <A HREF="#_R_">R</A> <A HREF="#_S_">S</A> <A HREF="#_T_">TYPE</A> <A HREF="#_U_">U</A> <A HREF="#_V_">V</A> <A HREF="#_W_">W</A>
 
 <!-- ======= START OF BOTTOM NAVBAR ====== -->
 <A NAME="navbar_bottom"><!-- --></A>

@@ -13,6 +13,7 @@ import com.alee.laf.checkbox.WebCheckBox;
 import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
+import event.EntityAddedEvent;
 import event.MaterialChangedEvent;
 import renderer.OpenGLContext;
 import renderer.Renderer;
@@ -39,13 +40,11 @@ public class EntityView extends WebPanel {
 	protected Entity entity;
 	protected AppContext appContext;
 	protected WebFormattedTextField nameField;
-	protected DebugFrame debugFrame;
 	protected Renderer renderer;
 
-	public EntityView(AppContext appContext, DebugFrame debugFrame, Entity entity) {
+	public EntityView(AppContext appContext, Entity entity) {
 		this.appContext = appContext;
         this.renderer = Renderer.getInstance();
-		this.debugFrame = debugFrame;
 		setUndecorated(true);
 		this.setSize(600, 700);
 		setMargin(20);
@@ -112,7 +111,7 @@ public class EntityView extends WebPanel {
 	    			showNotification(NotificationIcon.error, "Not able to remove entity");
 	    		} else {
 	    			showNotification(NotificationIcon.plus, "Entity removed");
-	    			if(debugFrame != null) { debugFrame.refreshSceneTree(); }
+	    			AppContext.getEventBus().post(new EntityAddedEvent());
 	    		}
 	        });
 	        webComponentPanel.addElement(removeEntityButton);
