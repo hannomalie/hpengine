@@ -15,15 +15,15 @@ import javax.swing.tree.TreeSelectionModel;
 public class SetSelectedListener implements TreeSelectionListener {
 
 	JTree tree;
-	private WebFrame entityViewFrame;
+	private final static WebFrame entityViewFrame = new WebFrame();
+    static {
+        entityViewFrame.setVisible(false);
+    }
 	private AppContext appContext;
 
 	public SetSelectedListener(JTree tree, AppContext appContext) {
 		this.tree = tree;
 		this.appContext = appContext;
-
-        entityViewFrame = new WebFrame();
-        entityViewFrame.setVisible(false);
 
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
@@ -66,7 +66,7 @@ public class SetSelectedListener implements TreeSelectionListener {
         if (node == null) return;
         Object nodeInfo = node.getUserObject();
 
-		// MIIIIEEEEEES
+		// TODO: MIIIIEEEEEES
 		if (nodeInfo instanceof EnvironmentProbe) {
 			EnvironmentProbe selected = (EnvironmentProbe) nodeInfo;
 			entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
@@ -83,7 +83,6 @@ public class SetSelectedListener implements TreeSelectionListener {
 	    	entityViewFrame.setSize(600, 600);
 	    	entityViewFrame.add(new EntityView(appContext, selected));
 	    	entityViewFrame.setVisible(true);
-        	
         }
     }
 }

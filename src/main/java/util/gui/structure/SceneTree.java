@@ -18,6 +18,8 @@ import java.util.Enumeration;
 
 public class SceneTree extends WebCheckBoxTree {
 
+    private SetSelectedListener selectionListener = null;
+
     public SceneTree() {
         super(new DefaultMutableTreeNode("Scene"));
         addOctreeSceneObjects();
@@ -45,7 +47,9 @@ public class SceneTree extends WebCheckBoxTree {
         } else {
             System.out.println("Scene is currently null");
         }
-        new SetSelectedListener(this, appContext);
+        if(selectionListener == null) {
+            selectionListener = new SetSelectedListener(this, appContext);
+        }
         setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(this) {
             private JLabel lblNull = new JLabel("");
 
