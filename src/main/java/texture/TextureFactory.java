@@ -46,6 +46,7 @@ import static renderer.constants.GlTextureTarget.*;
  */
 public class TextureFactory {
     private static volatile TextureFactory instance = null;
+    private static volatile BufferedImage defaultTextureAsBufferedImage = null;
 
     public static TextureFactory getInstance() {
         if(instance == null) {
@@ -95,8 +96,19 @@ public class TextureFactory {
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
     }
 
+    public BufferedImage getDefaultTextureAsBufferedImage() {
+        return defaultTextureAsBufferedImage;
+    }
+
     public void loadDefaultTexture() {
-        defaultTexture = getTexture("hp\\assets\\models\\textures\\gi_flag.png", true);
+        String defaultTexturePath = "hp\\assets\\models\\textures\\gi_flag.png";
+        defaultTexture = getTexture(defaultTexturePath, true);
+        try {
+            defaultTextureAsBufferedImage = loadImage(defaultTexturePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
     }
 
     private void loadAllAvailableTextures() {

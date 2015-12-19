@@ -27,10 +27,7 @@ import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
-import scene.AABB;
-import scene.EnvironmentProbe;
-import scene.EnvironmentProbeFactory;
-import scene.TransformDistanceComparator;
+import scene.*;
 import shader.ComputeShaderProgram;
 import shader.Program;
 import shader.ProgramFactory;
@@ -146,17 +143,20 @@ public class EnvironmentSampler extends Camera {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
-	public void drawCubeMap(AppContext appContext, boolean urgent) {
-		drawCubeMapSides(appContext, urgent);
+	public void drawCubeMap(boolean urgent) {
+		drawCubeMapSides(urgent);
 	}
 	
-	private void drawCubeMapSides(AppContext appContext, boolean urgent) {
-		Octree octree = appContext.getScene().getOctree();
+	private void drawCubeMapSides(boolean urgent) {
+        Scene scene = AppContext.getInstance().getScene();
+        if(scene == null) { return; }
+
+        Octree octree = scene.getOctree();
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = getOrientation();
 		Vector3f initialPosition = getPosition();
 
-		DirectionalLight light = appContext.getScene().getDirectionalLight();
+		DirectionalLight light = scene.getDirectionalLight();
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, light.getShadowMapId());
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(8);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(0).bind(10);
@@ -180,8 +180,8 @@ public class EnvironmentSampler extends Camera {
 						}
 					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
-			boolean aPointLightHasMoved = !appContext.getScene().getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
-			boolean areaLightHasMoved = !appContext.getScene().getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean aPointLightHasMoved = !scene.getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
+			boolean areaLightHasMoved = !scene.getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean rerenderLightingRequired = light.hasMoved() || aPointLightHasMoved || areaLightHasMoved;
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
@@ -214,7 +214,7 @@ public class EnvironmentSampler extends Camera {
 				GPUProfiler.start("Second pass");
 				EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
                 OpenGLContext.getInstance().clearDepthAndColorBuffer();
-				drawSecondPass(i, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderer.getEnvironmentMap());
+				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights(), renderer.getEnvironmentMap());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {

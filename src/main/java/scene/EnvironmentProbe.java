@@ -41,7 +41,7 @@ public class EnvironmentProbe extends Entity {
 		draw(appContext, false);
 	}
 	public void draw(AppContext appContext, boolean urgent) {
-		sampler.drawCubeMap(appContext, urgent);
+		sampler.drawCubeMap(urgent);
 	}
 	
 	public void drawDebug(Program program) {

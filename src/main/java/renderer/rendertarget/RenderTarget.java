@@ -46,7 +46,7 @@ public class RenderTarget {
             renderedTextures = new int[colorAttachments.size()];
             framebufferLocation = GL30.glGenFramebuffers();
 
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+            OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
 
             scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
@@ -131,7 +131,7 @@ public class RenderTarget {
     }
 
     public void use(boolean clear) {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
+        OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
         OpenGLContext.getInstance().viewPort(0, 0, width, height);
         if (clear) {
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -157,7 +157,7 @@ public class RenderTarget {
     }
 
     public void unuse() {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        OpenGLContext.getInstance().bindFrameBuffer(0);
     }
 
     public int getRenderedTexture(int index) {

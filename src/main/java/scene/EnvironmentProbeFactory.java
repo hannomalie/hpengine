@@ -60,6 +60,7 @@ public class EnvironmentProbeFactory {
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
 	public EnvironmentProbeFactory() {
+        renderer = Renderer.getInstance();
 		this.environmentMapsArray = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR);
 		this.environmentMapsArray1 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
 		this.environmentMapsArray2 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);

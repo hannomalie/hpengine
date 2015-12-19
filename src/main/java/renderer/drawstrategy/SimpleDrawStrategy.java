@@ -209,26 +209,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
-        if (Config.DRAWLIGHTS_ENABLED) {
-            for (PointLight light : pointLights) {
-                if (!light.isInFrustum(camera)) { continue;}
-                light.drawAsMesh(camera);
-            }
-            for (TubeLight light : tubeLights) {
-//				if (!light.isInFrustum(camera)) { continue;}
-                light.drawAsMesh(camera);
-            }
-            for (AreaLight light : areaLights) {
-//				if (!light.isInFrustum(camera)) { continue;}
-                light.drawAsMesh(camera);
-            }
-            appContext.getScene().getDirectionalLight().drawAsMesh(camera);
-
-//            renderer.batchLine(renderer.getLightFactory().getDirectionalLight().getWorldPosition(),
-//                    renderer.getLightFactory().getDirectionalLight().getCamera().getWorldPosition());
-//            AppContext.getInstance().getRenderer().drawLines(linesProgram);
-
-        }
 
         if(Config.DEBUGDRAW_PROBES) {
             debugDrawProbes(camera);
@@ -608,7 +588,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
-        RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
         TextureFactory.getInstance().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
         combineProgram.use();
@@ -644,7 +623,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Renderer.getInstance().getFullscreenBuffer().draw();
 
         if(target == null) {
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+            OpenGLContext.getInstance().bindFrameBuffer(0);
         } else {
             target.use(true);
         }
@@ -652,7 +631,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Post processing");
         postProcessProgram.use();
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
-        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         postProcessProgram.setUniform("worldExposure", Config.EXPOSURE);
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);

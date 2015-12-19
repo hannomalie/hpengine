@@ -1,11 +1,14 @@
 package renderer;
 
+import com.google.common.eventbus.Subscribe;
 import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.*;
+import event.EntityAddedEvent;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
+import net.engio.mbassy.listener.Handler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
@@ -256,14 +259,14 @@ public class DeferredRenderer implements Renderer {
 	public DrawResult draw() {
 		setLastFrameTime();
         DrawResult drawResult;
-//		if (Config.DRAWLINES_ENABLED) {
-//            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
-//		} else {
+		if (Config.DRAWLINES_ENABLED) {
+            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
+		} else {
             drawResult = simpleDrawStrategy.draw(AppContext.getInstance());
-//		}
+		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
 //			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
@@ -610,4 +613,5 @@ public class DeferredRenderer implements Renderer {
 	public boolean isFrameFinished() {
         return frameStarted.get() == 0;
 	}
+
 }

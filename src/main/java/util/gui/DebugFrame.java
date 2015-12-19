@@ -213,8 +213,8 @@ public class DebugFrame {
 
         infoSplitPane.setOneTouchExpandable ( true );
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
-        infoSplitPane.setDividerLocation ( 125 );
-        infoSplitPane.setContinuousLayout ( true );
+        infoSplitPane.setDividerLocation(125);
+        infoSplitPane.setContinuousLayout(true);
 	}
 
     @Subscribe
@@ -1106,32 +1106,32 @@ public class DebugFrame {
 		}
 
     private void createPointLightsTab() {
-		DebugFrame debugFrame = this;
+        DebugFrame debugFrame = this;
 
-		ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();
-	    pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ListSelectionModel pointLightsCellSelectionModel = pointsLightsTable.getSelectionModel();
+        pointLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-		pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
+        pointLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
 
-				int[] selectedRow = pointsLightsTable.getSelectedRows();
-				int[] selectedColumns = pointsLightsTable
-						.getSelectedColumns();
+                int[] selectedRow = pointsLightsTable.getSelectedRows();
+                int[] selectedColumns = pointsLightsTable
+                        .getSelectedColumns();
 
-				for (int i = 0; i < selectedRow.length; i++) {
-					for (int j = 0; j < selectedColumns.length; j++) {
-						PointLight selectedLight = AppContext.getInstance().getScene().getPointLights().get(selectedRow[i]);
-						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-						entityViewFrame.getContentPane().removeAll();
-						entityViewFrame.pack();
-						entityViewFrame.setSize(1000, 600);
-						entityViewFrame.add(new PointLightView(AppContext.getInstance(), debugFrame, (PointLight) selectedLight));
-						entityViewFrame.setVisible(true);
-					}
-				}
-			}
-		});
-	}
+                for (int i = 0; i < selectedRow.length; i++) {
+                    for (int j = 0; j < selectedColumns.length; j++) {
+                        PointLight selectedLight = AppContext.getInstance().getScene().getPointLights().get(selectedRow[i]);
+                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                        entityViewFrame.getContentPane().removeAll();
+                        entityViewFrame.pack();
+                        entityViewFrame.setSize(1000, 600);
+                        entityViewFrame.add(new PointLightView(AppContext.getInstance(), debugFrame, (PointLight) selectedLight));
+                        entityViewFrame.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
 
 	private void createTubeLightsTab() {
 		DebugFrame debugFrame = this;
@@ -1139,24 +1139,24 @@ public class DebugFrame {
 		tubeLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		tubeLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
+            public void valueChanged(ListSelectionEvent e) {
 
-				int[] selectedRow = tubeLightsTable.getSelectedRows();
-				int[] selectedColumns = tubeLightsTable.getSelectedColumns();
+                int[] selectedRow = tubeLightsTable.getSelectedRows();
+                int[] selectedColumns = tubeLightsTable.getSelectedColumns();
 
-				for (int i = 0; i < selectedRow.length; i++) {
-					for (int j = 0; j < selectedColumns.length; j++) {
-						TubeLight selectedLight = AppContext.getInstance().getScene().getTubeLights().get(selectedRow[i]);
-						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-						entityViewFrame.getContentPane().removeAll();
-						entityViewFrame.pack();
-						entityViewFrame.setSize(1000, 600);
-						entityViewFrame.add(new TubeLightView(AppContext.getInstance(), debugFrame, (TubeLight) selectedLight));
-						entityViewFrame.setVisible(true);
-					}
-				}
-			}
-		});
+                for (int i = 0; i < selectedRow.length; i++) {
+                    for (int j = 0; j < selectedColumns.length; j++) {
+                        TubeLight selectedLight = AppContext.getInstance().getScene().getTubeLights().get(selectedRow[i]);
+                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                        entityViewFrame.getContentPane().removeAll();
+                        entityViewFrame.pack();
+                        entityViewFrame.setSize(1000, 600);
+                        entityViewFrame.add(new TubeLightView(AppContext.getInstance(), debugFrame, (TubeLight) selectedLight));
+                        entityViewFrame.setVisible(true);
+                    }
+                }
+            }
+        });
 	}
 
 	private void createAreaLightsTab() {
@@ -1166,27 +1166,27 @@ public class DebugFrame {
 		areaLightsCellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		areaLightsCellSelectionModel.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
+            public void valueChanged(ListSelectionEvent e) {
 
-				int[] selectedRow = areaLightsTable.getSelectedRows();
-				int[] selectedColumns = areaLightsTable.getSelectedColumns();
+                int[] selectedRow = areaLightsTable.getSelectedRows();
+                int[] selectedColumns = areaLightsTable.getSelectedColumns();
 
-				for (int i = 0; i < selectedRow.length; i++) {
-					for (int j = 0; j < selectedColumns.length; j++) {
-						AreaLight selectedLight = AppContext.getInstance().getScene().getAreaLights().get(selectedRow[i]);
-						entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-						entityViewFrame.getContentPane().removeAll();
-						entityViewFrame.pack();
-						entityViewFrame.setSize(1000, 600);
-						System.out.println(selectedLight.getName());
-						System.out.println(selectedRow[0]);
-						System.out.println(AppContext.getInstance().getScene().getAreaLights().size());
-						entityViewFrame.add(new AreaLightView(AppContext.getInstance(), debugFrame, selectedLight));
-						entityViewFrame.setVisible(true);
-					}
-				}
-			}
-		});
+                for (int i = 0; i < selectedRow.length; i++) {
+                    for (int j = 0; j < selectedColumns.length; j++) {
+                        AreaLight selectedLight = AppContext.getInstance().getScene().getAreaLights().get(selectedRow[i]);
+                        entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                        entityViewFrame.getContentPane().removeAll();
+                        entityViewFrame.pack();
+                        entityViewFrame.setSize(1000, 600);
+                        System.out.println(selectedLight.getName());
+                        System.out.println(selectedRow[0]);
+                        System.out.println(AppContext.getInstance().getScene().getAreaLights().size());
+                        entityViewFrame.add(new AreaLightView(AppContext.getInstance(), debugFrame, selectedLight));
+                        entityViewFrame.setVisible(true);
+                    }
+                }
+            }
+        });
 	}
 
 
@@ -1196,7 +1196,7 @@ public class DebugFrame {
 		for (EnvironmentProbe environmentProbe : probes) {
 			top.add(new DefaultMutableTreeNode(environmentProbe));
 		}
-		this.probes = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
+		this.probes = new WebCheckBoxTree<>(top);
         this.probes.addCheckStateChangeListener(new SetVisibilityCheckStateListener());
 		new SetSelectedListener(this.probes, appContext);
 	}
@@ -1205,7 +1205,7 @@ public class DebugFrame {
 		if(content == null) {return; }
 		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 		notificationPopup.setIcon(NotificationIcon.plus);
-		notificationPopup.setDisplayTime( 2000 );
+		notificationPopup.setDisplayTime(2000);
 		notificationPopup.setContent(new WebLabel(content));
 		NotificationManager.showNotification(notificationPopup);
 	}
@@ -1222,15 +1222,13 @@ public class DebugFrame {
 	@Subscribe
     @Handler
 	public void handle(EntitySelectedEvent e) {
-		DebugFrame debugFrame = this;
 		if(!Display.isActive()) { return; }
 		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		entityViewFrame.getContentPane().removeAll();
 		entityViewFrame.pack();
 		entityViewFrame.setSize(600, 700);
-		entityViewFrame.add(new EntityView(AppContext.getInstance(), (Entity) e.getEntity()));
+		entityViewFrame.add(new EntityView(AppContext.getInstance(), e.getEntity()));
 		entityViewFrame.setVisible(true);
-//    	entityViewFrame.toBack();
 	}
 
     @Subscribe

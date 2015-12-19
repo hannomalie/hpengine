@@ -164,7 +164,7 @@ public class VertexBuffer {
         if(!uploaded) { return; }
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
 	}
-	
+
 	public int drawDebug() {
         if(!uploaded) { return 0; }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);

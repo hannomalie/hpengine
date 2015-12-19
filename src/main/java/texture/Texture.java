@@ -413,7 +413,10 @@ public class Texture implements Serializable {
         new Thread(() -> {
             try {
                 BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
-                if(bufferedImage == null) { throw new IOException(); }
+                if(bufferedImage == null) {
+                    bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
+                    System.out.println("Texture cannot be read, default texture data inserted instead...");
+                }
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
                 setMinFilter(minFilter);

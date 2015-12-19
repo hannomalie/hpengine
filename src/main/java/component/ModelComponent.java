@@ -85,6 +85,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     @Override
     public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+        return draw(camera, modelMatrix, firstPassProgram, entityIndex, isVisible, isSelected, false);
+    }
+
+    @Override
+    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected, boolean drawLines) {
 
         if(!isVisible) {
             return 0;
@@ -109,8 +114,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        if(instanced) {
 //            return vertexBuffer.drawInstanced(10);
 //        } else
-        if (Config.DRAWLINES_ENABLED) {
-//            currentProgram.setUniform("isSelected", true);
+        if (drawLines) {
             return vertexBuffer.drawDebug();
         } else {
             return vertexBuffer.draw();

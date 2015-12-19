@@ -84,22 +84,22 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     }
 
     @Override
-    public void putValues(FloatBuffer values) {
+    public synchronized void putValues(FloatBuffer values) {
         throw new NotImplementedException();
     }
 
     @Override
-    public void putValues(DoubleBuffer values) {
+    public synchronized void putValues(DoubleBuffer values) {
         putValues(0, values);
     }
 
     @Override
-    public void putValues(int offset, FloatBuffer values) {
+    public synchronized void putValues(int offset, FloatBuffer values) {
         throw new NotImplementedException();
     }
 
     @Override
-    public void putValues(int offset, DoubleBuffer values) {
+    public synchronized void putValues(int offset, DoubleBuffer values) {
         if(values == buffer) { return; }
         if(values.capacity() > getSize()) { setSize(values.capacity());}
         bind();
@@ -124,22 +124,22 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     }
 
     @Override
-    public void putValues(float... values) {
+    public synchronized void putValues(float... values) {
         throw new NotImplementedException();
     }
 
     @Override
-    public void putValues(int offset, float... values) {
+    public synchronized void putValues(int offset, float... values) {
         throw new NotImplementedException();
     }
 
     @Override
-    public <T extends Bufferable> void put(T... bufferable) {
+    public synchronized <T extends Bufferable> void put(T... bufferable) {
         put(0, bufferable);
     }
 
     @Override
-    public <T extends Bufferable> void put(int offset, T... bufferable) {
+    public synchronized <T extends Bufferable> void put(int offset, T... bufferable) {
         if(bufferable.length == 0) { return; }
         setCapacity(bufferable[0].getSizePerObject() * 8 * bufferable.length);
 

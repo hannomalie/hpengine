@@ -1,208 +1,205 @@
 package renderer.drawstrategy;
 
 import camera.Camera;
-import com.bulletphysics.dynamics.DynamicsWorld;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
-import engine.Transform;
 import engine.model.Entity;
+import event.EntitySelectedEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.*;
+import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.light.AreaLight;
-import renderer.light.LightFactory;
-import renderer.light.PointLight;
-import renderer.light.TubeLight;
+import renderer.constants.GlCap;
+import renderer.light.*;
+import renderer.material.MaterialFactory;
+import renderer.rendertarget.RenderTarget;
 import scene.EnvironmentProbeFactory;
 import shader.Program;
 import shader.ProgramFactory;
-import texture.CubeMap;
+import texture.TextureFactory;
+import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
-import static renderer.constants.GlCap.BLEND;
-import static renderer.constants.GlCap.DEPTH_TEST;
+import static renderer.constants.GlCap.*;
+import static renderer.constants.GlDepthFunc.LESS;
+import static renderer.constants.GlTextureTarget.*;
 
-public class DebugDrawStrategy extends SimpleDrawStrategy {
+public class DebugDrawStrategy extends BaseDrawStrategy {
+    public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
+    public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
-    private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
+    private Program firstPassProgram;
+    private Program combineProgram;
+    private Program linesProgram;
 
-    protected Program linesProgram;
+    OpenGLContext openGLContext;
 
     public DebugDrawStrategy() throws Exception {
         super();
+        ProgramFactory programFactory = ProgramFactory.getInstance();
+        firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_ambientcolor_fragment.glsl");
+
+        combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_ambientcolor_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
         linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
-        Transform transform = new Transform();
-        transform.init();
-        identityMatrixBuffer = transform.getTransformationBuffer();
+        openGLContext = OpenGLContext.getInstance();
     }
 
-    @Override
     public DrawResult draw(AppContext appContext) {
-        return drawDebug(appContext.getActiveCamera(), appContext, appContext.getPhysicsFactory().getDynamicsWorld(),
-                appContext.getScene().getOctree(), appContext.getScene().getEntities(),
-                appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(),
-                appContext.getInstance().getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
+        return draw(appContext.getActiveCamera(), appContext);
     }
 
+    public DrawResult draw(Camera camera, AppContext appContext) {
+        return draw(appContext, appContext.getScene().getOctree(), camera);
+    }
 
-    public DrawResult drawDebug(Camera camera, AppContext appContext, DynamicsWorld dynamicsWorld, Octree octree, List<Entity> entities, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+    private DrawResult draw(AppContext appContext, Octree octree, Camera camera) {
+        SecondPassResult secondPassResult = null;
 
-        LightFactory.getInstance().renderAreaLightShadowMaps(octree);
-        if(Config.USE_DPSM) {
-            LightFactory.getInstance().renderPointLightShadowMaps_dpsm(octree);
-        } else {
-            LightFactory.getInstance().renderPointLightShadowMaps(octree);
-        }
-
-        gBuffer.use(true);
-        openGLContext.disable(DEPTH_TEST);
-        openGLContext.disable(BLEND);
-
-        linesProgram.use();
-        linesProgram.setUniform("screenWidth", (float) Config.WIDTH);
-        linesProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        linesProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-        linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        linesProgram.setUniform("eyePosition", camera.getPosition());
-
-        if(Config.DRAWSCENE_ENABLED) {
-            linesProgram.setUniform("diffuseColor", new Vector3f(0,0,1));
-            List<Entity> visibleEntities = new ArrayList<>();
-            if (Config.useFrustumCulling) {
-                visibleEntities.addAll(octree.getVisible(camera));
-                for (int i = 0; i < visibleEntities.size(); i++) {
-                    if (!visibleEntities.get(i).isInFrustum(camera)) {
-                        visibleEntities.remove(i);
-                    }
-                }
-            } else {
-                visibleEntities.addAll(octree.getEntities());
-            }
-
-            for (Entity entity : visibleEntities) {
-                entity.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-                    modelComponent.drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
-//                    modelComponent.draw(camera);
-                });
-            }
-            linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
-            for (Entity entity : visibleEntities) {
-                linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(1.5f), null));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(1.5f), null));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), Vector3f.add(entity.getWorldPosition(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(1.5f), null));
-            }
-            Renderer.getInstance().drawLines(linesProgram);
-            // draw coord system for entity
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,1));
-            for (Entity entity : visibleEntities) {
-                Vector4f view = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_VIEW.x, Transform.WORLD_VIEW.y, Transform.WORLD_VIEW.z, 0.0f), null);
-                Vector4f right = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, 0.0f), null);
-                Vector4f up = Matrix4f.transform(entity.getModelMatrix(), new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, 0.0f), null);
-
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
-            }
-            Renderer.getInstance().drawLines(linesProgram);
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            for (Entity entity : visibleEntities) {
-                linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
-                Renderer.getInstance().batchVector(entity.getViewDirection(), 0.1f);
-                Renderer.getInstance().drawLines(linesProgram);
-            }
-            linesProgram.setUniform("diffuseColor", new Vector3f(0.5f,0.5f,0));
-            for (Entity entity : visibleEntities) {
-                Vector4f view = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getViewDirection().x, entity.getViewDirection().y, entity.getViewDirection().z, 0.0f), null);
-                Vector4f right = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getRightDirection().x, entity.getRightDirection().y, entity.getRightDirection().z, 0.0f), null);
-                Vector4f up = Matrix4f.transform(entity.getViewMatrix(), new Vector4f(entity.getUpDirection().x, entity.getUpDirection().y, entity.getUpDirection().z, 0.0f), null);
-
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(view.x, view.y, view.z), null).scale(1));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(right.x, right.y, right.z), null).scale(1));
-                Renderer.getInstance().batchLine(entity.getWorldPosition(), (Vector3f) Vector3f.add(entity.getWorldPosition(), new Vector3f(up.x, up.y, up.z), null).scale(1));
-                Renderer.getInstance().drawLines(linesProgram);
-            }
-        }
-
-        if (Config.DRAWLIGHTS_ENABLED) {
-            linesProgram.setUniform("diffuseColor", new Vector3f(0,1,1));
-            for (Entity entity : pointLights) {
-                entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
-            }
-            for (Entity entity : tubeLights) {
-                entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
-            }
-            for (AreaLight entity : areaLights) {
-                entity.getComponent(ModelComponent.class).drawDebug(linesProgram, entity.getModelMatrixAsBuffer());
-
-                Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_VIEW).scale(0.1f));
-                Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_RIGHT).scale(0.1f));
-                Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) new Vector3f(Transform.WORLD_UP).scale(0.1f));
-                linesProgram.setUniform("diffuseColor", new Vector3f(1,0,1));
-                linesProgram.setUniformAsMatrix4("modelMatrix", entity.getModelMatrixAsBuffer());
-                Renderer.getInstance().drawLines(linesProgram);
-            }
-
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            Renderer.getInstance().batchLine(new Vector3f(), appContext.getScene().getDirectionalLight().getCamera().getWorldPosition());
-            Renderer.getInstance().batchLine(appContext.getScene().getDirectionalLight().getCamera().getWorldPosition(),
-                               Vector3f.add(appContext.getScene().getDirectionalLight().getCamera().getWorldPosition(),
-                                       (Vector3f) new Vector3f(appContext.getScene().getDirectionalLight().getCamera().getViewDirection()).scale(10f),
-                                       null));
-            Renderer.getInstance().drawLines(linesProgram);
-        }
-
-        if (Octree.DRAW_LINES) {
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,1,1));
-            octree.drawDebug(Renderer.getInstance(), camera, linesProgram);
-        }
-
-        if (Config.DRAW_PROBES) {
-            linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-            EnvironmentProbeFactory.getInstance().drawDebug(linesProgram, octree);
-        }
-
-        linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrixBuffer);
-        Renderer.getInstance().batchLine(new Vector3f(-1000, 0, 0), new Vector3f(1000, 0, 0));
-        Renderer.getInstance().batchLine(new Vector3f(0, -1000, 0), new Vector3f(0, 1000, 0));
-        Renderer.getInstance().batchLine(new Vector3f(0, 0, -1000), new Vector3f(0, 0, 1000));
-//        Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) camera.getViewDirection().scale(15));
-//        Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) camera.getRightDirection().scale(15));
-//        Renderer.getInstance().batchLine(new Vector3f(), (Vector3f) camera.getUpDirection().scale(15));
-
-        Renderer.getInstance().drawLines(linesProgram);
-        dynamicsWorld.debugDrawWorld();
-        Renderer.getInstance().drawLines(linesProgram);
-
-        openGLContext.depthMask(false);
-        openGLContext.disable(DEPTH_TEST);
-        ////////////////////
-
-        drawSecondPass(camera, appContext.getScene().getDirectionalLight(), pointLights, tubeLights, areaLights, cubeMap);
-
-
-        openGLContext.viewPort(0,0, Config.WIDTH, Config.HEIGHT);
-        openGLContext.clearDepthAndColorBuffer();
+        GPUProfiler.start("First pass");
+        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree);
+        GPUProfiler.end();
 
         OpenGLContext.getInstance().disable(DEPTH_TEST);
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-        Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getPositionMap()); // the first color attachment
-        OpenGLContext.getInstance().enable(DEPTH_TEST);
+        GPUProfiler.start("Combine pass");
+        combinePass(camera);
+        GPUProfiler.end();
 
-        return new DrawResult(new FirstPassResult(0, 0), new SecondPassResult());
+        return new DrawResult(firstPassResult, secondPassResult);
     }
+
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree) {
+        openGLContext.enable(CULL_FACE);
+        openGLContext.depthMask(true);
+        Renderer.getInstance().getGBuffer().use(true);
+        openGLContext.enable(DEPTH_TEST);
+        openGLContext.depthFunc(LESS);
+        openGLContext.disable(GlCap.BLEND);
+
+        GPUProfiler.start("Culling");
+        List<Entity> entities;
+
+        if (Config.useFrustumCulling) {
+            entities = (octree.getVisible(camera));
+
+            for (int i = 0; i < entities.size(); i++) {
+                if (!entities.get(i).isInFrustum(camera)) {
+                    entities.remove(i);
+                }
+            }
+        } else {
+            entities = (octree.getEntities());
+        }
+        GPUProfiler.end();
+
+        int verticesDrawn = 0;
+        int entityCount = 0;
+        GPUProfiler.start("Draw entities");
+
+        if(Config.DRAWSCENE_ENABLED) {
+            GPUProfiler.start("Set global uniforms first pass");
+            Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+            firstpassDefaultProgram.use();
+            firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
+            firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
+            firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
+            firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
+            firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
+            firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
+            firstpassDefaultProgram.setUniform("near", camera.getNear());
+            firstpassDefaultProgram.setUniform("far", camera.getFar());
+            firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
+            firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
+            firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
+            GPUProfiler.end();
+
+            for (Entity entity : entities) {
+                if(entity.getComponents().containsKey("ModelComponent")) {
+                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
+                            .draw(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), true);
+                    verticesDrawn += currentVerticesCount;
+                    if(currentVerticesCount > 0) { entityCount++; }
+                }
+            }
+        }
+        GPUProfiler.end();
+
+        openGLContext.enable(CULL_FACE);
+
+        GPUProfiler.start("Generate Mipmaps of colormap");
+        openGLContext.activeTexture(0);
+        TextureFactory.getInstance().generateMipMaps(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+        GPUProfiler.end();
+
+        if(appContext.PICKING_CLICK == 1) {
+            openGLContext.readBuffer(4);
+
+            FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(4); // 4 channels
+            GL11.glReadPixels(Mouse.getX(), Mouse.getY(), 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
+            try {
+                int componentIndex = 3; // alpha component
+                appContext.getScene().getEntities().parallelStream().forEach(e -> { e.setSelected(false); });
+                Entity entity = appContext.getScene().getEntities().get((int)floatBuffer.get(componentIndex));
+                entity.setSelected(true);
+                AppContext.getEventBus().post(new EntitySelectedEvent(entity));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            floatBuffer = null;
+            appContext.PICKING_CLICK = 0;
+        }
+
+        return new FirstPassResult(verticesDrawn, entityCount);
+    }
+
+
+
+    public void combinePass(Camera camera) {
+        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        RenderTarget finalBuffer = gBuffer.getFinalBuffer();
+        TextureFactory.getInstance().generateMipMaps(finalBuffer.getRenderedTexture(0));
+
+        combineProgram.use();
+        combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+        combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        combineProgram.setUniform("screenWidth", (float) Config.WIDTH);
+        combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
+        combineProgram.setUniform("camPosition", camera.getPosition());
+        combineProgram.setUniform("ambientColor", Config.AMBIENT_LIGHT);
+        combineProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
+        combineProgram.setUniform("worldExposure", Config.EXPOSURE);
+        combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
+        combineProgram.setUniform("fullScreenMipmapCount", gBuffer.getFullScreenMipmapCount());
+        combineProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
+        combineProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
+
+//        finalBuffer.use(true);
+        OpenGLContext.getInstance().bindFrameBuffer(0);
+        OpenGLContext.getInstance().disable(DEPTH_TEST);
+
+        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
+        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
+        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getLightAccumulationBuffer().getRenderedTexture(1));
+        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
+        OpenGLContext.getInstance().bindTexture(4, TEXTURE_2D, gBuffer.getPositionMap());
+        OpenGLContext.getInstance().bindTexture(5, TEXTURE_2D, gBuffer.getNormalMap());
+        Renderer.getInstance().getEnvironmentMap().bind(6);
+        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(7);
+        OpenGLContext.getInstance().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
+        OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
+        OpenGLContext.getInstance().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
+        OpenGLContext.getInstance().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayCube());
+
+        Renderer.getInstance().getFullscreenBuffer().draw();
+    }
+
 }

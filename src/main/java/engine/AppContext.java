@@ -2,15 +2,18 @@ package engine;
 
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
+import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
+import event.EntityAddedEvent;
 import event.bus.EventBus;
 import event.FrameFinishedEvent;
 import event.bus.MBassadorEventBus;
+import net.engio.mbassy.listener.Handler;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -37,6 +40,7 @@ import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.StopWatch;
 
+import javax.jws.HandlerChain;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,6 +139,7 @@ public class AppContext {
     private void initialize() {
 //        setEventBus(new GuavaEventBus());
         setEventBus(new MBassadorEventBus());
+        eventBus.register(this);
         initWorkDir();
         EntityFactory.init();
         Renderer.init(DeferredRenderer.class);
@@ -372,7 +377,7 @@ public class AppContext {
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if(finalAnyEntityHasMoved) { scene.bufferEntities(); }
+                if(finalAnyEntityHasMoved || entityNewlyAdded ) { scene.bufferEntities(); entityNewlyAdded = false; }
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw();
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
@@ -446,5 +451,15 @@ public class AppContext {
 
     public FPSCounter getFPSCounter() {
         return thread.getFpsCounter();
+    }
+
+    private volatile boolean entityNewlyAdded = false;
+    @Subscribe
+    @Handler
+    public void handle(EntityAddedEvent e) {
+        entityNewlyAdded = true;
+        if(getScene() != null) {
+            getScene().getDirectionalLight().setNeedsShadowMapRedraw(true);
+        }
     }
 }

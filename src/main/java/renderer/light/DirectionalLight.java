@@ -258,9 +258,9 @@ public class DirectionalLight extends Entity {
 		return camera.getViewProjectionMatrixAsBuffer();
 	}
 
-	public boolean isNeedsShadowMapRedraw() {
-		return needsShadowMapRedraw;
-	}
+    public boolean isNeedsShadowMapRedraw() {
+        return needsShadowMapRedraw;
+    }
 
 	public void setNeedsShadowMapRedraw(boolean needsShadowMapRedraw) {
 		this.needsShadowMapRedraw = needsShadowMapRedraw;
