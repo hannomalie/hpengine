@@ -111,9 +111,8 @@ public class OBJLoader {
     public List<Model> loadTexturedModel(File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
         List<Model> models = new ArrayList<>();
-        Model model = null;// = new Model();
+        Model model = null;
 
-//        Map<String, Material> materials = new HashMap();
         ArrayList<Vector3f> vertices = new ArrayList<>();
         ArrayList<Vector2f> texCoords = new ArrayList<>();
         ArrayList<Vector3f> normals = new ArrayList<>();

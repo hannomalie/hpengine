@@ -241,7 +241,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	public Vector4f[] getMinMaxWorld() {
 		Vector4f[] minMax;
 
-		if(hasComponent(ModelComponent.class)) {
+		if(hasComponent(ModelComponent.class) || getComponents().containsKey("ModelComponent")) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
 			minMax = modelComponent.getMinMax();
 
@@ -251,7 +251,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			Matrix4f modelMatrix = getModelMatrix();
 
 			Matrix4f.transform(modelMatrix, minMax[0], minView);
-			Matrix4f.transform(getModelMatrix(), minMax[1], maxView);
+			Matrix4f.transform(modelMatrix, minMax[1], maxView);
 
 			minView.w = 0;
 			maxView.w = 0;

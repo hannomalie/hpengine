@@ -75,7 +75,7 @@ public class DebugDrawStrategy extends BaseDrawStrategy {
     }
 
     public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree) {
-        openGLContext.enable(CULL_FACE);
+        openGLContext.disable(CULL_FACE);
         openGLContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
         openGLContext.enable(DEPTH_TEST);

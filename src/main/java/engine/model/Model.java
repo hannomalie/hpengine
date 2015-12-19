@@ -14,24 +14,13 @@ import static org.lwjgl.opengl.GL11.*;
 public class Model implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private List<Vector3f> vertices = new ArrayList<Vector3f>();
-    private List<Vector2f> texCoords = new ArrayList<Vector2f>();
-    private List<Vector3f> normals = new ArrayList<Vector3f>();
-    private List<Face> faces = new ArrayList<Face>();
+	private List<Vector3f> vertices = new ArrayList<>();
+    private List<Vector2f> texCoords = new ArrayList<>();
+    private List<Vector3f> normals = new ArrayList<>();
+    private List<Face> faces = new ArrayList<>();
     private boolean enableSmoothShading = true;
 	private String name = "";
 	private Material material;
-
-	public void enableStates() {
-        if (hasTextureCoordinates()) {
-            glEnable(GL_TEXTURE_2D);
-        }
-        if (isSmoothShadingEnabled()) {
-            glShadeModel(GL_SMOOTH);
-        } else {
-            glShadeModel(GL_FLAT);
-        }
-    }
 
     public boolean hasTextureCoordinates() {
         return getTexCoords().size() > 0;
@@ -102,17 +91,23 @@ public class Model implements Serializable {
             min = new Vector3f(vertices.get(0));
             max = new Vector3f(vertices.get(0));
 
-            for (Vector3f position : vertices) {
+            for (int i = 0; i < faces.size(); i++) {
+                Face face = faces.get(i);
 
-                min.x = position.x < min.x ? position.x : min.x;
-                min.y = position.y < min.y ? position.y : min.y;
-                min.z = position.z < min.z ? position.z : min.z;
+                int[] referencedVertices = face.getVertexIndices();
 
-                max.x = position.x > max.x ? position.x : max.x;
-                max.y = position.y > max.y ? position.y : max.y;
-                max.z = position.z > max.z ? position.z : max.z;
+                for (int j = 0; j < 3; j++) {
+                    Vector3f position = getVertices().get(referencedVertices[j] - 1);
+
+                    min.x = position.x < min.x ? position.x : min.x;
+                    min.y = position.y < min.y ? position.y : min.y;
+                    min.z = position.z < min.z ? position.z : min.z;
+
+                    max.x = position.x > max.x ? position.x : max.x;
+                    max.y = position.y > max.y ? position.y : max.y;
+                    max.z = position.z > max.z ? position.z : max.z;
+                }
             }
-
         }
 
         return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
