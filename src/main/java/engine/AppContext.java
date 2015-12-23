@@ -369,24 +369,30 @@ public class AppContext {
         LightFactory.getInstance().update(seconds);
         StopWatch.getInstance().stopAndPrintMS();
 
+        boolean anyEntityHasMoved = false;
+        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
+            anyEntityHasMoved = true;
+        }
+
         if (Renderer.getInstance().isFrameFinished()) {
-            boolean anyEntityHasMoved = false;
-            if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
-                anyEntityHasMoved = true;
-            }
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if(finalAnyEntityHasMoved || entityNewlyAdded ) { scene.bufferEntities(); entityNewlyAdded = false; }
+                if(finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded ) { scene.bufferEntities(); entityNewlyAdded = false; }
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw();
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
             }, false);
             AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+        } else {
+            if(anyEntityHasMoved) {
+                anyEntityHasMovedSomewhen = anyEntityHasMoved;
+            }
         }
 
         scene.endFrame(activeCamera);
     }
+    private volatile boolean anyEntityHasMovedSomewhen = false;
 
     public PhysicsFactory getPhysicsFactory() {
         return physicsFactory;
