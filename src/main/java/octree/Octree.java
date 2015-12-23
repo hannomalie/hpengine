@@ -51,9 +51,7 @@ public class Octree implements LifeCycle, Serializable {
 
 	private transient Map<Entity, Octree.Node> entityNodeMappings = new ConcurrentHashMap<>();
 
-	transient private AppContext appContext;
-
-	public Octree(Renderer renderer) {
+    public Octree() {
 		this(new Vector3f());
 	}
 
@@ -173,8 +171,7 @@ public class Octree implements LifeCycle, Serializable {
 	}
 
 	public void setAppContext(AppContext appContext) {
-		this.appContext = appContext;
-	}
+    }
 
     /**
 	 * children: index is clockwise 0-3 for top: left front, left back, right back, right front and 4-7 bottom: right back, right front, left front, left back 

@@ -249,7 +249,7 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
-    public void bufferEntities() {
+    public synchronized void bufferEntities() {
         entitiesBuffer.put(Util.toArray(getEntities(), Entity.class));
     }
 

@@ -1,6 +1,9 @@
 package texture;
 
+import ddsutil.DDSUtil;
+import ddsutil.ImageRescaler;
 import engine.AppContext;
+import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -12,6 +15,9 @@ import util.CompressionUtils;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
@@ -409,11 +415,37 @@ public class Texture implements Serializable {
         setMagFilter(texture.getMagFilter());
     }
 
+    private boolean textureAvailableAsDDS(String resourceName) {
+        String fileName = FilenameUtils.getBaseName(resourceName);
+        String fullPathAsDDS = getFullPathAsDDS(fileName);
+        File f = new File(fullPathAsDDS);
+        return f.exists();
+    }
+    private String getFullPathAsDDS(String fileName) {
+        String baseName = FilenameUtils.getBaseName(fileName);
+        return getDirectory() + baseName + ".dds";
+    }
+    protected static int getNextPowerOfTwo(int fold) {
+        int ret = 2;
+        while (ret < fold) {
+            ret *= 2;
+        }
+        return ret;
+    }
+
+    private ExecutorService multiThreadService = Executors.newFixedThreadPool(4);
+    private static ReentrantLock DDSUtilWriteLock = new ReentrantLock();
+    private static final boolean autoConvertToDDS = false;
+
     public void convertAndUpload() {
-        new Thread(() -> {
+        multiThreadService.submit(() -> {
             try {
                 BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
-                if(bufferedImage == null) {
+
+                if (autoConvertToDDS && bufferedImage != null && !FilenameUtils.isExtension(path, "dds")) // &&  !textureAvailableAsDDS(path))
+                    bufferedImage = saveAsDDS(bufferedImage);
+
+                if (bufferedImage == null) {
                     bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
                     System.out.println("Texture cannot be read, default texture data inserted instead...");
                 }
@@ -439,7 +471,32 @@ public class Texture implements Serializable {
                 e.printStackTrace();
                 Logger.getGlobal().severe("Texture not found: " + path + ". Default texture returned...");
             }
-        }).start();
+        });
+    }
+
+    private BufferedImage saveAsDDS(BufferedImage bufferedImage) throws IOException {
+        long start = System.currentTimeMillis();
+
+        bufferedImage = rescaleToNextPowerOfTwo(bufferedImage);
+        try {
+            File ddsFile = new File(getFullPathAsDDS(path));
+            if (ddsFile.exists()) {
+                ddsFile.delete();
+            }
+            DDSUtilWriteLock.lock();
+            try {
+                DDSUtil.write(ddsFile, bufferedImage, DDSImage.D3DFMT_DXT5, true);
+            } finally {
+                DDSUtilWriteLock.unlock();
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
+            int i = 5;
+            i *= 10;
+            System.err.println("Exception");
+        }
+        System.out.println("Converting and saving as dds took " + (System.currentTimeMillis() - start) + "ms");
+        return bufferedImage;
     }
 
     public GlTextureTarget getTarget() {
@@ -469,4 +526,18 @@ public class Texture implements Serializable {
     public long getHandle() {
         return handle;
     }
+
+    public static BufferedImage rescaleToNextPowerOfTwo(BufferedImage nonPowerOfTwoImage) {
+        int oldWidth = nonPowerOfTwoImage.getWidth();
+        int nextPowerOfTwoWidth = getNextPowerOfTwo(oldWidth);
+        int oldHeight = nonPowerOfTwoImage.getHeight();
+        int nextPowerOfTwoHeight = getNextPowerOfTwo(oldHeight);
+        BufferedImage result = nonPowerOfTwoImage;
+        if(oldWidth != nextPowerOfTwoWidth || oldHeight != nextPowerOfTwoHeight) {
+            result = new ImageRescaler().rescaleBI(nonPowerOfTwoImage, nextPowerOfTwoWidth, nextPowerOfTwoHeight);
+        }
+        System.out.println("Image rescaled from " + oldWidth + " x " + oldHeight +" to " + nextPowerOfTwoWidth + " x " + nextPowerOfTwoHeight);
+        return result;
+    }
+
 }

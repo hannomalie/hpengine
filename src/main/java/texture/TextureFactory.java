@@ -181,6 +181,7 @@ public class TextureFactory {
         return texture;
     }
 
+
     public static int getTextureId() {
         return OpenGLContext.getInstance().calculate(() -> GL11.glGenTextures());
     }
@@ -428,7 +429,7 @@ public class TextureFactory {
             return loadImageAsStream(ref);
         }
         
-        BufferedImage bufferedImage = ImageIO.read(new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
+        BufferedImage bufferedImage = ImageIO.read(new File(ref));//new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
 
         return bufferedImage;
     }
