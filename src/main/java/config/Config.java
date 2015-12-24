@@ -45,7 +45,7 @@ public final class Config {
 	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
 	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = true;
 	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
-	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = true;
+	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
 
 	private Config() { super(); }

@@ -7,10 +7,11 @@ layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
 layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
-layout(binding=5) uniform sampler2D reflectionMap;
+//layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
+uniform layout(binding = 5, rgba16f) image3D out_voxel;
 //uniform int entityIndex;
 uniform int materialIndex;
 uniform bool isSelected = false;
@@ -33,6 +34,8 @@ uniform mat4 modelMatrix;
 uniform int time = 0;
 uniform bool useRainEffect = false;
 uniform float rainEffect = 0.0;
+
+uniform bool writeVoxels = false;
 
 in vec4 color;
 in vec2 texCoord;
@@ -108,7 +111,7 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
     #define use_precomputed_tangent_space_
-	if(material.hasDiffuseMap != 0) {
+	if(material.hasNormalMap != 0) {
         #ifdef use_precomputed_tangent_space
             sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
 
@@ -185,6 +188,12 @@ void main(void) {
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,materialIndex,entityIndex);
+
+    if(writeVoxels && imageLoad(out_voxel, ivec3(position_world.xyz + ivec3(128))).a < 1.0) {
+	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(out_color.rgb,1));
+    } else {
+//	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(0,0,0,0));
+    }
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
