@@ -46,7 +46,6 @@ import static renderer.constants.GlTextureTarget.*;
 public class SimpleDrawStrategy extends BaseDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
-    private int framebufferLocation;
 
     private Program firstPassProgram;
     private Program depthPrePassProgram;
@@ -120,22 +119,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
-
-        OpenGLContext.getInstance().execute(() -> {
-            framebufferLocation = GL30.glGenFramebuffers();
-            OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
-            GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, Renderer.getInstance().getGBuffer().grid, 0);
-            if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
-                System.out.println("RenderTarget fucked up");
-                if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
-                } else if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
-                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
-                }
-                new RuntimeException().printStackTrace();
-                System.exit(0);
-            }
-        });
 
         voxelizer = programFactory.getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
 //        voxelizer = programFactory.getProgram("mvp_vertex.glsl", "voxelize_multipass_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
@@ -312,7 +295,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             currentProgram.setUniform("writeVoxels", true);
             currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
             currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-            GL11.glDepthMask(false);
+            OpenGLContext.getInstance().depthMask(false);
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             OpenGLContext.getInstance().disable(BLEND);
             OpenGLContext.getInstance().disable(CULL_FACE);
@@ -360,6 +343,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 GPUProfiler.start("grid mipmap");
                 GL11.glBindTexture(GL12.GL_TEXTURE_3D, Renderer.getInstance().getGBuffer().grid);
                 GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
+
+                
+
                 GPUProfiler.end();
             }
             GL11.glColorMask(true, true, true, true);

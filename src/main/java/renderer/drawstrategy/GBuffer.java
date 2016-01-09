@@ -104,30 +104,6 @@ public class GBuffer {
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         int gridSize = 256;
-//        FloatBuffer buffer = BufferUtils.createFloatBuffer(gridSize * gridSize * gridSize * 4);
-//        buffer.rewind();
-//        for(int x = 0; x < gridSize; x++) {
-//            for(int y = 0; y < gridSize; y++) {
-//                for(int z = 0; z < gridSize; z++) {
-//                    buffer.put(0);//(float)x/(float)gridSize);//(float)x/(float)gridSize);
-//                    buffer.put(0);
-//                    buffer.put(0);
-//                    buffer.put(0);
-//                }
-//            }
-//        }
-//        buffer.rewind();
-//        GL12.glTexImage3D(GL12.GL_TEXTURE_3D, 0, GL30.GL_RGBA16F, 256, 256, 256, 0, GL11.GL_RGBA,
-//            GL11.GL_FLOAT, buffer);
-//        int width = gridSize;
-//        int height = gridSize;
-//        int depth = gridSize;
-//        for (int i = 0; i < 9; i++) {
-//            GL12.glTexImage3D(GL12.GL_TEXTURE_3D, i, GL30.GL_RGBA16F, width, height, depth, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
-//            width = Math.max(1, (width / 2));
-//            height = Math.max(1, (height / 2));
-//            depth = Math.max(1, (depth / 2));
-//        }
         GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, 8, GL30.GL_RGBA16F, gridSize, gridSize, gridSize);
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
         GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);

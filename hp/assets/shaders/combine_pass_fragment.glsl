@@ -384,7 +384,7 @@ vec4 specConeTrace(vec3 o, vec3 dir, float coneRatio, float maxDist)
 		float sampleDiam = max(minDiam, coneRatio*dist);
 		float sampleLOD = log2(sampleDiam*voxDim);
 		vec3 samplePos = o + dir*dist;
-		sampleLOD = 1.5;
+//		sampleLOD = 1.5;
 		vec4 sampleVal = voxelFetch(samplePos-dir, sampleLOD);//sampleSpecVox(samplePos, -d, sampleLOD);
 
 		float sampleWt = (1.0 - accum.w);
