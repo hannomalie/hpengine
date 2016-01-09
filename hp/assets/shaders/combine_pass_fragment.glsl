@@ -336,7 +336,11 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
     float positionScaleFactor = pow(2, level);
     ivec3 samplePosition = ivec3(positionWorld/positionScaleFactor + positionAdjust);
-    return texelFetch(grid, samplePosition, level);
+
+    vec3 samplePositionNormalized = vec3(positionWorld)/vec3(gridSize)+vec3(0.5);
+    return textureLod(grid, samplePositionNormalized, level);
+
+//    return texelFetch(grid, samplePosition, level);
 //    return texelFetch(grid, ivec3(positionWorld+vec3(128)), 0);
 }
 
@@ -347,14 +351,14 @@ vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRat
 	float minDiameter = minVoxelDiameter;
 	float startDist = minDiameter;
 	float dist = startDist;
-	vec4 ambientLightColor = vec4(1);
+	vec4 ambientLightColor = vec4(0.0);
 	vec4 fadeCol = ambientLightColor*vec4(0, 0, 0, 0.2);
 	while (dist <= maxDist && accum.w < 1.0)
 	{
 		float sampleDiameter = max(minDiameter, coneRatio * dist);
 		float sampleLOD = log2(sampleDiameter * minVoxelDiameterInv);
 		vec3 samplePos = origin + dir * dist;
-		sampleLOD = 1;
+//		sampleLOD = 1;
 		vec4 sampleValue = voxelFetch(samplePos-dir, sampleLOD);
 		sampleValue = mix(sampleValue,fadeCol, clamp(dist/maxDist-0.25, 0.0, 1.0));
 		float sampleWeight = (1.0 - accum.w);
@@ -363,6 +367,37 @@ vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRat
 	}
 	return accum;
 }
+vec4 specConeTrace(vec3 o, vec3 dir, float coneRatio, float maxDist)
+{
+//    float sceneScale = 2;
+//     float inverseSceneScale = 1f/sceneScale;
+//     o = vec3(inverseSceneScale) * o;
+    float voxDim = 256;
+	vec3 samplePos = o;
+	vec4 accum = vec4(0.0);
+	float minDiam = 1.0/voxDim;
+	float startDist = 2*minDiam;
+
+	float dist = startDist;
+	while(dist <= maxDist && accum.w < 1.0)
+	{
+		float sampleDiam = max(minDiam, coneRatio*dist);
+		float sampleLOD = log2(sampleDiam*voxDim);
+		vec3 samplePos = o + dir*dist;
+		sampleLOD = 1.5;
+		vec4 sampleVal = voxelFetch(samplePos-dir, sampleLOD);//sampleSpecVox(samplePos, -d, sampleLOD);
+
+		float sampleWt = (1.0 - accum.w);
+		accum += sampleVal * sampleWt;
+
+		dist += sampleDiam;
+	}
+
+	accum.xyz *= 2.0;
+
+	return accum;
+}
+
 const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
@@ -435,10 +470,11 @@ void main(void) {
     if(positionWorld.x > -128 && positionWorld.y > -128 && positionWorld.z > -128 &&
         positionWorld.x < 128.0 && positionWorld.y < 128.0 && positionWorld.z < 128.0) {
 
-//        out_color.rgb = voxelFetch(ivec3(positionWorld), 2).rgb;
+//        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
         //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-        vec4 voxel = voxelTraceCone(2.0, positionWorld, reflect(V, normalWorld), 0.005, 350);
-        out_color.rgb = voxel.rgb * voxel.a * (1-roughness);
+//        vec4 voxel = voxelTraceCone(4, positionWorld+normalWorld, normalize(reflect(V, normalWorld)), 0.005, 250);
+        vec4 voxel = specConeTrace(positionWorld, normalize(reflect(V, normalWorld)), 5f/256f, 170);
+        out_color.rgb += voxel.rgb;// * (1-roughness);
     }
 
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;

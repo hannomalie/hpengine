@@ -1,7 +1,7 @@
 package camera;
 
 import config.Config;
-import engine.AppContext;
+import engine.Transform;
 import engine.model.Entity;
 import engine.model.Model;
 import org.lwjgl.BufferUtils;
@@ -45,6 +45,20 @@ public class Camera extends Entity {
 	public Camera(float near, float far, float fov, float ratio) {
 		this(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
 	}
+
+    public Camera(Camera camera) {
+        this(camera.getProjectionMatrix(), camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio());
+        setPosition(camera.getPosition());
+        setOrientation(camera.getOrientation());
+        setScale(camera.getScale());
+        setPerspective(camera.isPerspective());
+        setWidth(camera.getWidth());
+        setHeight(camera.getHeight());
+        if(camera.hasParent()) {
+            setParent(camera.getParent());
+        }
+    }
+
 
 	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
 		this.name = "Camera_" +  System.currentTimeMillis();

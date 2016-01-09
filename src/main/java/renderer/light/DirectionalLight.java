@@ -5,6 +5,7 @@ import component.InputControllerComponent;
 import component.ModelComponent;
 import engine.AppContext;
 import engine.Transform;
+import engine.graphics.query.GLSamplesPassedQuery;
 import engine.model.Entity;
 import octree.Octree;
 import org.lwjgl.BufferUtils;

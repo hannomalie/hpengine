@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
@@ -168,6 +165,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		for (Component c : components.values()) {
 			c.update(seconds);
 		}
+//        Iterator<Entity> childrenIterator = getChildren().iterator();
+//        while(childrenIterator.hasNext()) {
+//            Entity current = childrenIterator.next();
+//            current.update(seconds);
+//        }
+
 		for (Entity child: getChildren()) {
 			child.update(seconds);
 		}

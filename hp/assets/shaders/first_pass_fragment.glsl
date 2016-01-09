@@ -190,7 +190,9 @@ void main(void) {
   	out_visibility = vec4(1,depth,materialIndex,entityIndex);
 
     if(writeVoxels && imageLoad(out_voxel, ivec3(position_world.xyz + ivec3(128))).a < 1.0) {
-	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(out_color.rgb,1));
+        vec3 voxelColor = (1+float(material.ambient))*out_color.rgb;
+
+	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(voxelColor,1));
     } else {
 //	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(0,0,0,0));
     }
