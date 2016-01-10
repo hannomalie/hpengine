@@ -68,8 +68,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     private Program voxelizer;
 
-    private static Matrix4f ortho = util.Util.createOrthogonal(-128f, 128f, 128f, -128f, 128f, -128f);
-    private static Camera orthoCam = new Camera(ortho, 128, -128, 90, 1);
+    private static Matrix4f ortho = util.Util.createOrthogonal(-GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled);
+    private static Camera orthoCam = new Camera(ortho, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled, 90, 1);
     private static Matrix4f viewX;
     private static FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
     private static Matrix4f viewY;
@@ -78,9 +78,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private static FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
     static {
         orthoCam.setPerspective(false);
-        orthoCam.setWidth(256);
-        orthoCam.setHeight(256);
+        orthoCam.setWidth(GBuffer.gridSizeScaled);
+        orthoCam.setHeight(GBuffer.gridSizeScaled);
         orthoCam.setFar(-5000);
+        orthoCam.update(0.000001f);
         {
             Transform view = new Transform();
             view.rotate(new Vector3f(0,1,0), 90f);
@@ -262,6 +263,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             firstpassDefaultProgram.setUniform("writeVoxels", false);
+            firstpassDefaultProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+            firstpassDefaultProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+            firstpassDefaultProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
             GPUProfiler.end();
 
             for (Entity entity : entities) {
@@ -281,7 +285,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             camera = orthoCam;
             camera.update(0.000001f);
-            OpenGLContext.getInstance().viewPort(0,0,256,256);
+            int gridSizeScaled = (int) (Renderer.getInstance().getGBuffer().gridSize * Renderer.getInstance().getGBuffer().sceneScale);
+            OpenGLContext.getInstance().viewPort(0,0, gridSizeScaled, gridSizeScaled);
 
 //            voxelizer.use();
 //            voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
@@ -296,6 +301,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //            currentProgram = voxelizer;
 
             currentProgram.setUniform("writeVoxels", true);
+            currentProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+            currentProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+            currentProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
             currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
             currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
             OpenGLContext.getInstance().depthMask(false);
@@ -765,6 +773,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         combineProgram.setUniform("fullScreenMipmapCount", gBuffer.getFullScreenMipmapCount());
         combineProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
         combineProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
+        combineProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+        combineProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+        combineProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
 
         finalBuffer.use(true);
         OpenGLContext.getInstance().disable(DEPTH_TEST);

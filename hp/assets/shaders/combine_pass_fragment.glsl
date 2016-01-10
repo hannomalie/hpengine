@@ -30,6 +30,10 @@ uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
 
+uniform float sceneScale = 1;
+uniform float inverseSceneScale = 1;
+uniform int gridSize;
+
 uniform bool useAmbientOcclusion = true;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
 //uniform float exposure = 4;
@@ -323,11 +327,11 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 }
 
 vec4 voxelFetch(vec3 positionWorld, float loD) {
-    const int gridSize = 256;
-    const int gridSizeHalf = 256/2;
+    const int gridSizeHalf = gridSize/2;
 
-    if(any(greaterThan(positionWorld, vec3(gridSizeHalf))) ||
-       any(lessThan(positionWorld, -vec3(gridSizeHalf)))) {
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
+       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
 
        return vec4(0);
     }
@@ -335,9 +339,9 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     int level = int(loD);
     vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
     float positionScaleFactor = pow(2, level);
-    ivec3 samplePosition = ivec3(positionWorld/positionScaleFactor + positionAdjust);
+//    ivec3 samplePosition = ivec3(positionGridScaled + positionAdjust);
 
-    vec3 samplePositionNormalized = vec3(positionWorld)/vec3(gridSize)+vec3(0.5);
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
     return textureLod(grid, samplePositionNormalized, level);
 
 //    return texelFetch(grid, samplePosition, level);
@@ -358,7 +362,7 @@ vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRat
 		float sampleDiameter = max(minDiameter, coneRatio * dist);
 		float sampleLOD = log2(sampleDiameter * minVoxelDiameterInv);
 		vec3 samplePos = origin + dir * dist;
-//		sampleLOD = 1;
+//		sampleLOD = 4;
 		vec4 sampleValue = voxelFetch(samplePos-dir, sampleLOD);
 		sampleValue = mix(sampleValue,fadeCol, clamp(dist/maxDist-0.25, 0.0, 1.0));
 		float sampleWeight = (1.0 - accum.w);
@@ -425,6 +429,18 @@ vec4 traceVoxels(vec3 worldPos, vec3 startPosition, float lod) {
 	return accumFog;
 }
 
+float radicalInverse_VdC(uint bits) {
+     bits = (bits << 16u) | (bits >> 16u);
+     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+
+     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+vec2 hammersley2d(uint i, int N) {
+	return vec2(float(i)/float(N), radicalInverse_VdC(i));
+}
 const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
@@ -494,15 +510,35 @@ void main(void) {
 	out_color.rgb = out_color.rgb * whiteScale;
 
 
-    if(positionWorld.x > -128 && positionWorld.y > -128 && positionWorld.z > -128 &&
-        positionWorld.x < 128.0 && positionWorld.y < 128.0 && positionWorld.z < 128.0) {
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    float gridSizeHalf = float(gridSize/2);
+    if(positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
+        positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
-//        out_color.rgb += traceVoxels(positionWorld, camPosition, 3).rgb;
+//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 1).rgb;
 
         //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-        vec4 voxelSpecular = voxelTraceCone(4, positionWorld, normalize(reflect(V, normalWorld)), 0.005, 170);
-        vec4 voxelDiffuse = voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
+        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.05, 170); // 0.05
+        vec4 voxelDiffuse;// = voxelTraceCone(1, positionWorld, normalize(normalWorld), 1., 100);
+
+        const int SAMPLE_COUNT = 5;
+        for (int k = 0; k < SAMPLE_COUNT; k++) {
+            const float PI = 3.1415926536;
+            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+            float Phi = 2 * PI * Xi.x;
+            float a = roughness;
+            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+
+            vec3 H;
+            H.x = SinTheta * cos( Phi );
+            H.y = SinTheta * sin( Phi );
+            H.z = CosTheta;
+            float dotProd = clamp(dot(normalWorld, H),0,1);
+            voxelDiffuse += vec4(dotProd, dotProd, dotProd, 1) * voxelTraceCone(1, positionWorld, normalize(H), 1, 100);
+        }
+
         out_color.rgb += voxelSpecular.rgb * (1-roughness) + voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
     }
 

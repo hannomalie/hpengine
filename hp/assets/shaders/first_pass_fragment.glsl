@@ -2,14 +2,14 @@
 #extension GL_NV_gpu_shader5 : enable
 #extension GL_ARB_bindless_texture : enable
 
-layout(binding=0) uniform sampler2D diffuseMap;
-layout(binding=1) uniform sampler2D normalMap;
-layout(binding=2) uniform sampler2D specularMap;
-layout(binding=3) uniform sampler2D occlusionMap;
-layout(binding=4) uniform sampler2D heightMap;
-//layout(binding=5) uniform sampler2D reflectionMap;
-layout(binding=6) uniform samplerCube environmentMap;
-layout(binding=7) uniform sampler2D roughnessMap;
+//layout(binding=0) uniform sampler2D diffuseMap;
+//layout(binding=1) uniform sampler2D normalMap;
+//layout(binding=2) uniform sampler2D specularMap;
+//layout(binding=3) uniform sampler2D occlusionMap;
+//layout(binding=4) uniform sampler2D heightMap;
+////layout(binding=5) uniform sampler2D reflectionMap;
+//layout(binding=6) uniform samplerCube environmentMap;
+//layout(binding=7) uniform sampler2D roughnessMap;
 
 uniform layout(binding = 5, rgba16f) image3D out_voxel;
 //uniform int entityIndex;
@@ -36,6 +36,9 @@ uniform bool useRainEffect = false;
 uniform float rainEffect = 0.0;
 
 uniform bool writeVoxels = false;
+uniform float sceneScale = 1f;
+uniform float inverseSceneScale = 1f;
+uniform int gridSize;
 
 in vec4 color;
 in vec2 texCoord;
@@ -189,14 +192,17 @@ void main(void) {
   	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,materialIndex,entityIndex);
 
-    if(writeVoxels && imageLoad(out_voxel, ivec3(position_world.xyz + ivec3(128))).a < 1.0) {
+    const int gridSizeHalf = gridSize/2;
+    vec3 gridPosition = vec3(inverseSceneScale)*position_world.xyz + ivec3(gridSizeHalf);
+    if(writeVoxels){//} && imageLoad(out_voxel, ivec3(gridPosition)).a < 1.0) {
         float ambientAmount = 0.5f;
         vec3 voxelColor = (vec3(ambientAmount)+float(material.ambient))*out_color.rgb;
 
-	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(voxelColor,1));
-    } else {
-//	    imageStore(out_voxel, ivec3(position_world.xyz + ivec3(128)), vec4(0,0,0,0));
+	    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor,1));
     }
+//    else {
+//	    imageStore(out_voxel, ivec3(gridPosition), vec4(1,0,0,1));
+//    }
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
