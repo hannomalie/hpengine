@@ -398,6 +398,33 @@ vec4 specConeTrace(vec3 o, vec3 dir, float coneRatio, float maxDist)
 	return accum;
 }
 
+vec4 traceVoxels(vec3 worldPos, vec3 startPosition, float lod) {
+	const int NB_STEPS = 30;
+
+	vec3 rayVector = worldPos.xyz - startPosition;
+
+	float rayLength = length(rayVector);
+	vec3 rayDirection = rayVector / rayLength;
+
+	float stepLength = rayLength / NB_STEPS;
+
+	vec3 step = rayDirection * stepLength;
+
+	vec3 currentPosition = startPosition;
+
+	vec4 accumFog = vec4(0);
+
+    int stepCount = 0;
+	for (int i = 0; i < NB_STEPS; i++) {
+	    stepCount++;
+	    if(accumFog.a >= 0.99f) { break; }
+        accumFog += voxelFetch(currentPosition, lod);
+		currentPosition += step;
+	}
+	accumFog /= stepCount;
+	return accumFog;
+}
+
 const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
@@ -471,10 +498,12 @@ void main(void) {
         positionWorld.x < 128.0 && positionWorld.y < 128.0 && positionWorld.z < 128.0) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
+//        out_color.rgb += traceVoxels(positionWorld, camPosition, 3).rgb;
+
         //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-//        vec4 voxel = voxelTraceCone(4, positionWorld+normalWorld, normalize(reflect(V, normalWorld)), 0.005, 250);
-        vec4 voxel = specConeTrace(positionWorld, normalize(reflect(V, normalWorld)), 5f/256f, 170);
-        out_color.rgb += voxel.rgb;// * (1-roughness);
+        vec4 voxelSpecular = voxelTraceCone(4, positionWorld, normalize(reflect(V, normalWorld)), 0.005, 170);
+        vec4 voxelDiffuse = voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
+        out_color.rgb += voxelSpecular.rgb * (1-roughness) + voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
     }
 
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;

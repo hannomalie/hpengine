@@ -46,6 +46,7 @@ import static renderer.constants.GlTextureTarget.*;
 public class SimpleDrawStrategy extends BaseDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
+    private ComputeShaderProgram texture3DMipMappingComputeProgram;
 
     private Program firstPassProgram;
     private Program depthPrePassProgram;
@@ -122,6 +123,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         voxelizer = programFactory.getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
 //        voxelizer = programFactory.getProgram("mvp_vertex.glsl", "voxelize_multipass_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
+
+        texture3DMipMappingComputeProgram = programFactory.getComputeProgram("texture3D_mipmap_compute.glsl");
 
         combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
         postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
@@ -338,13 +341,31 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //                }
 //            }
 
-            boolean generatevoxelsMipmap = false;
-            if(generatevoxelsMipmap && Renderer.getInstance().getFrameCount() % 4 == 0) {
+            boolean generatevoxelsMipmap = true;
+            if(generatevoxelsMipmap){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
                 GPUProfiler.start("grid mipmap");
-                GL11.glBindTexture(GL12.GL_TEXTURE_3D, Renderer.getInstance().getGBuffer().grid);
-                GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
+//                GL11.glBindTexture(GL12.GL_TEXTURE_3D, Renderer.getInstance().getGBuffer().grid);
+//                GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
 
-                
+                int size = Renderer.getInstance().getGBuffer().gridSize;
+                int currentSizeSource = 2*size;
+                int currentMipMapLevel = 0;
+
+                texture3DMipMappingComputeProgram.use();
+                while(currentSizeSource > 1) {
+                    currentSizeSource /= 2;
+                    int currentSizeTarget = currentSizeSource / 2;
+                    currentMipMapLevel++;
+
+                    GL42.glBindImageTexture(0, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, GL30.GL_RGBA16F);
+                    GL42.glBindImageTexture(1, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+                    texture3DMipMappingComputeProgram.setUniform("sourceSize", currentSizeSource);
+                    texture3DMipMappingComputeProgram.setUniform("targetSize", currentSizeTarget);
+
+                    int num_groups_xyz = Math.max(currentSizeTarget / 8, 1);
+                    texture3DMipMappingComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                }
+
 
                 GPUProfiler.end();
             }

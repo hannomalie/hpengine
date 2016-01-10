@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import renderer.OpenGLContext;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;

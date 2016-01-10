@@ -60,8 +60,9 @@ public class GBuffer {
 
 	private final int exposureIndex = 0;
 	private AppContext appContext;
+    public final int gridSize = 256;
 
-	public GBuffer(AppContext appContext, Renderer renderer) {
+    public GBuffer(AppContext appContext, Renderer renderer) {
 		this.appContext = appContext;
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
