@@ -11,7 +11,7 @@ in vec2 f_texcoord;
 
 //layout (pixel_center_integer) in vec4 gl_FragCoord;
 
-uniform layout(binding = 5, rgba16f) image3D out_voxel;
+uniform layout(binding = 5, rgba8) image3D out_voxel;
 
 //include(globals_structs.glsl)
 uniform int materialIndex;

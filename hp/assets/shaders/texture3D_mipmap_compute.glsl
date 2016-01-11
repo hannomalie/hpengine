@@ -1,8 +1,8 @@
 #define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
-layout(binding=0, rgba16f) readonly uniform image3D source;
-layout(binding=1, rgba16f) writeonly uniform image3D target;
+layout(binding=0, rgba8) readonly uniform image3D source;
+layout(binding=1, rgba8) writeonly uniform image3D target;
 
 const float kernel_3d[3][3][3] = {
    {
@@ -36,8 +36,8 @@ void main(void) {
 	        for(int z = -1; z < 1; z++) {
 	            float weight = kernel_3d[x+1][y+1][z+1];
 	            vec4 textureSample = imageLoad(source, loadPosition + ivec3(x,y,z));
-//                sourceValue.rgb += textureSample.a * textureSample.rgb;
-                sourceValue.rgba += weight * textureSample.rgba;
+                sourceValue.rgb += weight * textureSample.rgb * clamp(textureSample.a,0,1);
+                sourceValue.a += weight*textureSample.a;
                 weightSum += weight;
             }
         }

@@ -247,7 +247,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 			GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
-            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
+            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GL11.GL_RGBA8);
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
@@ -365,8 +365,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     int currentSizeTarget = currentSizeSource / 2;
                     currentMipMapLevel++;
 
-                    GL42.glBindImageTexture(0, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, GL30.GL_RGBA16F);
-                    GL42.glBindImageTexture(1, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+                    GL42.glBindImageTexture(0, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, GL11.GL_RGBA8);
+                    GL42.glBindImageTexture(1, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, GL11.GL_RGBA8);
                     texture3DMipMappingComputeProgram.setUniform("sourceSize", currentSizeSource);
                     texture3DMipMappingComputeProgram.setUniform("targetSize", currentSizeTarget);
 

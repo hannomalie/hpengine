@@ -350,7 +350,7 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
 
 vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-	vec3 samplePos = origin;
+	vec3 samplePos = origin + dir;
 	vec4 accum = vec4(0.0);
 	float minDiameter = minVoxelDiameter;
 	float startDist = minDiameter;
@@ -362,7 +362,7 @@ vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRat
 		float sampleDiameter = max(minDiameter, coneRatio * dist);
 		float sampleLOD = log2(sampleDiameter * minVoxelDiameterInv);
 		vec3 samplePos = origin + dir * dist;
-//		sampleLOD = 4;
+//		sampleLOD = 4f;
 		vec4 sampleValue = voxelFetch(samplePos-dir, sampleLOD);
 		sampleValue = mix(sampleValue,fadeCol, clamp(dist/maxDist-0.25, 0.0, 1.0));
 		float sampleWeight = (1.0 - accum.w);
@@ -441,6 +441,23 @@ float radicalInverse_VdC(uint bits) {
 vec2 hammersley2d(uint i, int N) {
 	return vec2(float(i)/float(N), radicalInverse_VdC(i));
 }
+vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
+    const float PI = 3.1415926536;
+     float phi = u * 2.0 * PI;
+     float cosTheta = 1.0 - v;
+     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	 // Tangent to world space
+	 result = TangentX * result.x + TangentY * result.y + N * result.z;
+     //mat3 transform = createOrthonormalBasis(N);
+	 //result = (transform) * result;
+
+     return result;
+}
 const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
@@ -516,18 +533,18 @@ void main(void) {
         positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
-//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 1).rgb;
+//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 2).rgb;
 
         //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.05, 170); // 0.05
-        vec4 voxelDiffuse;// = voxelTraceCone(1, positionWorld, normalize(normalWorld), 1., 100);
+        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.0125, 170); // 0.05
+        vec4 voxelDiffuse;// = 8f*voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
 
         const int SAMPLE_COUNT = 5;
         for (int k = 0; k < SAMPLE_COUNT; k++) {
             const float PI = 3.1415926536;
             vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
             float Phi = 2 * PI * Xi.x;
-            float a = roughness;
+            float a = 1;//roughness;
             float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
             float SinTheta = sqrt( 1 - CosTheta * CosTheta );
 
@@ -535,8 +552,10 @@ void main(void) {
             H.x = SinTheta * cos( Phi );
             H.y = SinTheta * sin( Phi );
             H.z = CosTheta;
+	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+
             float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += vec4(dotProd, dotProd, dotProd, 1) * voxelTraceCone(1, positionWorld, normalize(H), 1, 100);
+            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2, positionWorld, normalize(H), 4, 50);
         }
 
         out_color.rgb += voxelSpecular.rgb * (1-roughness) + voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);

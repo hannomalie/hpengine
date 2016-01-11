@@ -63,7 +63,7 @@ public class GBuffer {
     public static final float sceneScale = 2f;
     public static final int gridSize = 256;
     public static final int gridSizeHalf = gridSize/2;
-    public static final int gridSizeScaled = (int)(256*sceneScale);
+    public static final int gridSizeScaled = (int)(gridSize*sceneScale);
     public static final int gridSizeHalfScaled = (int)((gridSize/2)*sceneScale);
 
     public GBuffer(AppContext appContext, Renderer renderer) {
@@ -108,7 +108,7 @@ public class GBuffer {
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-        GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), GL30.GL_RGBA16F, gridSize, gridSize, gridSize);
+        GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), GL11.GL_RGBA8, gridSize, gridSize, gridSize);
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
         GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
 

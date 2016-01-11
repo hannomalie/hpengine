@@ -153,12 +153,12 @@ void main(void) {
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 
 	vec4 color = vec4(materialDiffuseColor, 1);
-
+    float alpha = materialTransparency;
 	if(material.hasDiffuseMap != 0) {
 
         color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
     //	color = texture(diffuseMap, UV);
-
+        alpha * color.a;
         if(color.a<0.1)
         {
             discard;
@@ -195,10 +195,11 @@ void main(void) {
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*position_world.xyz + ivec3(gridSizeHalf);
     if(writeVoxels){//} && imageLoad(out_voxel, ivec3(gridPosition)).a < 1.0) {
-        float ambientAmount = 0.5f;
-        vec3 voxelColor = (vec3(ambientAmount)+float(material.ambient))*out_color.rgb;
+        float ambientAmount = 1.5f;
+        float dynamicAdjust = 0.125f;
+        vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*material.ambient))*out_color.rgb;
 
-	    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor,1));
+	    imageStore(out_voxel, ivec3(gridPosition), dynamicAdjust*vec4(voxelColor,1-alpha));
     }
 //    else {
 //	    imageStore(out_voxel, ivec3(gridPosition), vec4(1,0,0,1));
