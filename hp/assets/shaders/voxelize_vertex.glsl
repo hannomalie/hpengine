@@ -1,7 +1,13 @@
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+
 uniform int entityIndex;
 uniform int materialIndex;
 
 //include(globals_structs.glsl)
+layout(std430, binding=1) buffer _materials {
+	Material materials[100];
+};
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
@@ -23,8 +29,11 @@ out vec2 v_texcoord;
 flat out Entity outEntity;
 flat out int outEntityIndex;
 
-void main(void) {
+uniform float sceneScale = 1f;
+uniform float inverseSceneScale = 1f;
+uniform int gridSize = 256;
 
+void main(void) {
     Entity entity = entities[entityIndex];
     outEntityIndex = entityIndex;
     outEntity = entity;
@@ -33,6 +42,7 @@ void main(void) {
 
 	vec4 positionModel = vec4(in_Position.xyz,1);
 	position_world = modelMatrix * positionModel;
+
 	vec3 normal_model = in_Normal;
 
 	normal_world = (inverse(transpose(modelMatrix)) * vec4(normal_model,0)).xyz;
@@ -41,5 +51,5 @@ void main(void) {
 	v_normal = normal_world.xyz;
 	v_texcoord = in_TextureCoord;
 
-    gl_Position = position_world;
+//    gl_Position = position_world;
 }

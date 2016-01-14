@@ -558,7 +558,7 @@ void main(void) {
             voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2, positionWorld, normalize(H), 4, 50);
         }
 
-        out_color.rgb += voxelSpecular.rgb * (1-roughness) + voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
+        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
     }
 
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;

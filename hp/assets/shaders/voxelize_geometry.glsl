@@ -1,18 +1,18 @@
 layout ( triangles ) in;
 layout ( triangle_strip, max_vertices = 3 ) out;
 
-in vec3 v_vertex[];
-in vec3 v_normal[];
-in vec2 v_texcoord[];
+in vec3 v_vertex[3];
+in vec3 v_normal[3];
+in vec2 v_texcoord[3];
 
-in vec4 position_world[];
+in vec4 position_world[3];
 
 out vec3 g_normal;
 out vec3 g_pos;
 out vec2 g_texcoord;
 
-flat out int f_axis;   //indicate which axis the projection uses
-flat out vec4 f_AABB;
+flat out int g_axis;   //indicate which axis the projection uses
+flat out vec4 g_AABB;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -23,6 +23,10 @@ uniform mat4 u_MVPy;
 uniform mat4 u_MVPz;
 uniform int u_width;
 uniform int u_height;
+
+uniform float sceneScale = 1f;
+uniform float inverseSceneScale = 1f;
+uniform int gridSize = 256;
 
 void main()
 {
@@ -52,10 +56,10 @@ void main()
                 proj=u_MVPz;
             }
 
-            proj = projectionMatrix;
+//            proj = projectionMatrix * viewMatrix;
 
             gl_Position = proj * vec4(v_vertex[i],1);
-            g_pos = gl_in[i].gl_Position.xyz;
+            g_pos = v_vertex[i].xyz;
             g_normal = v_normal[i];
             g_texcoord = v_texcoord[i];
             EmitVertex();

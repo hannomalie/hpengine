@@ -1,14 +1,11 @@
 package renderer;
 
-import com.google.common.eventbus.Subscribe;
 import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.*;
-import event.EntityAddedEvent;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
-import net.engio.mbassy.listener.Handler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
@@ -214,7 +211,7 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance(), this));
+		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance()));
 
 		OpenGLContext.getInstance().execute(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));

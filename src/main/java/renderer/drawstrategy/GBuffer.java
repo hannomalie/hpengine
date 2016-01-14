@@ -65,8 +65,10 @@ public class GBuffer {
     public static final int gridSizeHalf = gridSize/2;
     public static final int gridSizeScaled = (int)(gridSize*sceneScale);
     public static final int gridSizeHalfScaled = (int)((gridSize/2)*sceneScale);
+	public static final int gridTextureFormat = GL11.GL_RGBA;//GL11.GL_R;
+	public static final int gridTextureFormatSized = GL11.GL_RGBA8;//GL30.GL_R32UI;
 
-    public GBuffer(AppContext appContext, Renderer renderer) {
+    public GBuffer(AppContext appContext) {
 		this.appContext = appContext;
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
@@ -108,7 +110,7 @@ public class GBuffer {
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-        GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), GL11.GL_RGBA8, gridSize, gridSize, gridSize);
+        GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize);
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
         GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
 
