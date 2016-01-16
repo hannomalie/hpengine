@@ -295,6 +295,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             Scene scene = AppContext.getInstance().getScene();
             if(scene != null) {
                 voxelizer.setUniformAsMatrix4("shadowMatrix", scene.getDirectionalLight().getViewProjectionMatrixAsBuffer());
+                voxelizer.setUniform("lightDirection", scene.getDirectionalLight().getDirection());
+                voxelizer.setUniform("lightColor", scene.getDirectionalLight().getColor());
                 openGLContext.bindTexture(6, TEXTURE_2D, scene.getDirectionalLight().getShadowMapId());
             }
             voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
@@ -340,9 +342,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
                 GPUProfiler.start("grid mipmap");
-//                GL11.glBindTexture(GL12.GL_TEXTURE_3D, Renderer.getInstance().getGBuffer().grid);
-//                GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
-
                 int size = Renderer.getInstance().getGBuffer().gridSize;
                 int currentSizeSource = 2*size;
                 int currentMipMapLevel = 0;
@@ -671,6 +670,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         aoScatteringProgram.setUniform("lightDirection", directionalLight.getViewDirection());
         aoScatteringProgram.setUniform("lightDiffuse", directionalLight.getColor());
         aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+        aoScatteringProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+        aoScatteringProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
+
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
         Renderer.getInstance().getFullscreenBuffer().draw();
         OpenGLContext.getInstance().enable(DEPTH_TEST);

@@ -33,6 +33,9 @@ uniform float sceneScale = 1f;
 uniform float inverseSceneScale = 1f;
 uniform int gridSize = 256;
 
+uniform vec3 lightDirection;
+uniform vec3 lightColor;
+
 void main(void) {
     Entity entity = entities[entityIndex];
     outEntityIndex = entityIndex;

@@ -94,7 +94,7 @@ void main()
 
     float ambientAmount = 1.5f;
     float dynamicAdjust = 0.125f;
-    vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*material.ambient))*color.rgb;
+    vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*4*material.ambient))*color.rgb;
 
 	float visibility = 1.0;
 	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));
@@ -104,6 +104,8 @@ void main()
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
     visibility = max(visibility, 0.25f);
 
-    imageStore(out_voxel, ivec3(gridPosition), visibility*dynamicAdjust*vec4(voxelColor,1-alpha));
+    float NdotL = 4*max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
+
+	imageStore(out_voxel, ivec3(gridPosition), NdotL*vec4(lightColor,1)*visibility*dynamicAdjust*vec4(voxelColor,1-alpha));
 //    imageStore(out_voxel, ivec3(gridPosition), vec4(materialDiffuseColor,1));
 }

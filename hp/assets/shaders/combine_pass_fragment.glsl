@@ -339,25 +339,21 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     int level = int(loD);
     vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
     float positionScaleFactor = pow(2, level);
-//    ivec3 samplePosition = ivec3(positionGridScaled + positionAdjust);
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
     return textureLod(grid, samplePositionNormalized, level);
-
-//    return texelFetch(grid, samplePosition, level);
-//    return texelFetch(grid, ivec3(positionWorld+vec3(128)), 0);
 }
 
 vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-	vec3 samplePos = origin + dir;
+	vec3 samplePos = origin;
 	vec4 accum = vec4(0.0);
 	float minDiameter = minVoxelDiameter;
 	float startDist = minDiameter;
 	float dist = startDist;
-	vec4 ambientLightColor = vec4(0.0);
+	vec4 ambientLightColor = vec4(0.);
 	vec4 fadeCol = ambientLightColor*vec4(0, 0, 0, 0.2);
-	while (dist <= maxDist && accum.w < 1.0)
+	while (dist <= maxDist && accum.w < .9)
 	{
 		float sampleDiameter = max(minDiameter, coneRatio * dist);
 		float sampleLOD = log2(sampleDiameter * minVoxelDiameterInv);
@@ -533,10 +529,10 @@ void main(void) {
         positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
-//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 2).rgb;
+//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 3).rgb;
 
         //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.0125, 170); // 0.05
+        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.1*roughness, 170); // 0.05
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
 
         const int SAMPLE_COUNT = 5;
@@ -555,7 +551,7 @@ void main(void) {
 	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
             float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2, positionWorld, normalize(H), 4, 50);
+            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2f, positionWorld, normalize(H), 3, 150);
         }
 
         out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
