@@ -11,6 +11,7 @@ layout(binding=8) uniform sampler2D environment; // reflection
 layout(binding=9) uniform sampler2D refractedMap;
 layout(binding=11) uniform sampler2D aoScattering;
 layout(binding=12) uniform samplerCubeArray pointLightShadowMaps;
+layout(binding=13) uniform sampler3D grid;
 
 layout(std430, binding=0) buffer myBlock
 {
@@ -28,6 +29,10 @@ uniform vec3 camPosition;
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
+
+uniform float sceneScale = 1;
+uniform float inverseSceneScale = 1;
+uniform int gridSize;
 
 uniform bool useAmbientOcclusion = true;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
@@ -321,6 +326,134 @@ vec3 cookTorrance(in vec3 ViewVector, in vec3 position, in vec3 normal, float ro
 	return diff + reflectedColor * specularColor * cookTorrance;
 }
 
+vec4 voxelFetch(vec3 positionWorld, float loD) {
+    const int gridSizeHalf = gridSize/2;
+
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
+       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
+
+       return vec4(0);
+    }
+
+    int level = int(loD);
+    vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
+    float positionScaleFactor = pow(2, level);
+
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+    return textureLod(grid, samplePositionNormalized, level);
+}
+
+vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
+	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
+	vec3 samplePos = origin;
+	vec4 accum = vec4(0.0);
+	float minDiameter = minVoxelDiameter;
+	float startDist = minDiameter;
+	float dist = startDist;
+	vec4 ambientLightColor = vec4(0.);
+	vec4 fadeCol = ambientLightColor*vec4(0, 0, 0, 0.2);
+	while (dist <= maxDist && accum.w < .9)
+	{
+		float sampleDiameter = max(minDiameter, coneRatio * dist);
+		float sampleLOD = log2(sampleDiameter * minVoxelDiameterInv);
+		vec3 samplePos = origin + dir * dist;
+//		sampleLOD = 4f;
+		vec4 sampleValue = voxelFetch(samplePos-dir, sampleLOD);
+		sampleValue = mix(sampleValue,fadeCol, clamp(dist/maxDist-0.25, 0.0, 1.0));
+		float sampleWeight = (1.0 - accum.w);
+		accum += sampleValue * sampleWeight;
+		dist += sampleDiameter;
+	}
+	return accum;
+}
+vec4 specConeTrace(vec3 o, vec3 dir, float coneRatio, float maxDist)
+{
+//    float sceneScale = 2;
+//     float inverseSceneScale = 1f/sceneScale;
+//     o = vec3(inverseSceneScale) * o;
+    float voxDim = 256;
+	vec3 samplePos = o;
+	vec4 accum = vec4(0.0);
+	float minDiam = 1.0/voxDim;
+	float startDist = 2*minDiam;
+
+	float dist = startDist;
+	while(dist <= maxDist && accum.w < 1.0)
+	{
+		float sampleDiam = max(minDiam, coneRatio*dist);
+		float sampleLOD = log2(sampleDiam*voxDim);
+		vec3 samplePos = o + dir*dist;
+//		sampleLOD = 1.5;
+		vec4 sampleVal = voxelFetch(samplePos-dir, sampleLOD);//sampleSpecVox(samplePos, -d, sampleLOD);
+
+		float sampleWt = (1.0 - accum.w);
+		accum += sampleVal * sampleWt;
+
+		dist += sampleDiam;
+	}
+
+	accum.xyz *= 2.0;
+
+	return accum;
+}
+
+vec4 traceVoxels(vec3 worldPos, vec3 startPosition, float lod) {
+	const int NB_STEPS = 30;
+
+	vec3 rayVector = worldPos.xyz - startPosition;
+
+	float rayLength = length(rayVector);
+	vec3 rayDirection = rayVector / rayLength;
+
+	float stepLength = rayLength / NB_STEPS;
+
+	vec3 step = rayDirection * stepLength;
+
+	vec3 currentPosition = startPosition;
+
+	vec4 accumFog = vec4(0);
+
+    int stepCount = 0;
+	for (int i = 0; i < NB_STEPS; i++) {
+	    stepCount++;
+	    if(accumFog.a >= 0.99f) { break; }
+        accumFog += voxelFetch(currentPosition, lod);
+		currentPosition += step;
+	}
+	accumFog /= stepCount;
+	return accumFog;
+}
+
+float radicalInverse_VdC(uint bits) {
+     bits = (bits << 16u) | (bits >> 16u);
+     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+
+     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+vec2 hammersley2d(uint i, int N) {
+	return vec2(float(i)/float(N), radicalInverse_VdC(i));
+}
+vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
+    const float PI = 3.1415926536;
+     float phi = u * 2.0 * PI;
+     float cosTheta = 1.0 - v;
+     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+	vec3 TangentX = normalize( cross( UpVector, N ) );
+	vec3 TangentY = cross( N, TangentX );
+	 // Tangent to world space
+	 result = TangentX * result.x + TangentY * result.y + N * result.z;
+     //mat3 transform = createOrthonormalBasis(N);
+	 //result = (transform) * result;
+
+     return result;
+}
 const vec3 inverseGamma = vec3(1/2.2,1/2.2,1/2.2);
 void main(void) {
 	vec2 st;
@@ -389,6 +522,41 @@ void main(void) {
 	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
 
+
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    float gridSizeHalf = float(gridSize/2);
+    if(positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
+        positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
+
+//        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
+//        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 3).rgb;
+
+        //vec4 voxelTraceCone(float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
+        vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.1*roughness, 170); // 0.05
+        vec4 voxelDiffuse;// = 8f*voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
+
+        const int SAMPLE_COUNT = 5;
+        for (int k = 0; k < SAMPLE_COUNT; k++) {
+            const float PI = 3.1415926536;
+            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+            float Phi = 2 * PI * Xi.x;
+            float a = 1;//roughness;
+            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+
+            vec3 H;
+            H.x = SinTheta * cos( Phi );
+            H.y = SinTheta * sin( Phi );
+            H.z = CosTheta;
+	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+
+            float dotProd = clamp(dot(normalWorld, H),0,1);
+            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2f, positionWorld, normalize(H), 3, 150);
+        }
+
+        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
+    }
+
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;
 //	out_color.b = 0;
 
@@ -411,58 +579,4 @@ void main(void) {
 //	out_color.rgb = scattering.rgb;
 	//out_color.rgb = refracted.rgb;
 //	out_color.rgb = vec3(textureLod(pointLightShadowMaps, vec4(normalWorld,0), 0).r, 0, 0)*0.005f;
-
-	// http://simonstechblog.blogspot.de/2011/12/spherical-harmonic-lighting.html
-	const bool useSphericalHarmonicLighting = false;
-	if(useSphericalHarmonicLighting) {
-		vec3[9] cubeMap_sh_coef;
-		cubeMap_sh_coef[0]= vec3(0.690826, 0.791972, 1.156998);
-		cubeMap_sh_coef[1]= vec3(-0.032214, -0.032154, -0.031143);
-		cubeMap_sh_coef[2]= vec3(0.181760, 0.213785, 0.350721);
-		cubeMap_sh_coef[3]= vec3(0.174773, 0.165067, 0.134813);
-		cubeMap_sh_coef[4]= vec3(-0.140021, -0.133054, -0.109773);
-		cubeMap_sh_coef[5]= vec3(0.003920, 0.002716, -0.001993);
-		cubeMap_sh_coef[6]= vec3(-0.285459, -0.332236, -0.476629);
-		cubeMap_sh_coef[7]= vec3(-0.021688, -0.022507, -0.025049);
-		cubeMap_sh_coef[8]= vec3(0.056419, 0.054559, 0.047959);
-		vec3 u_light_SHCoef0_r = vec3(cubeMap_sh_coef[0].x, cubeMap_sh_coef[1].x, cubeMap_sh_coef[2].x);
-		vec3 u_light_SHCoef1_r = vec3(cubeMap_sh_coef[3].x, cubeMap_sh_coef[4].x, cubeMap_sh_coef[5].x);
-		vec3 u_light_SHCoef2_r = vec3(cubeMap_sh_coef[6].x, cubeMap_sh_coef[7].x, cubeMap_sh_coef[8].x);
-		
-		vec3 u_light_SHCoef0_g = vec3(cubeMap_sh_coef[0].y, cubeMap_sh_coef[1].y, cubeMap_sh_coef[2].y);
-		vec3 u_light_SHCoef1_g = vec3(cubeMap_sh_coef[3].y, cubeMap_sh_coef[4].y, cubeMap_sh_coef[5].y);
-		vec3 u_light_SHCoef2_g = vec3(cubeMap_sh_coef[6].y, cubeMap_sh_coef[7].y, cubeMap_sh_coef[8].y);
-		
-		vec3 u_light_SHCoef0_b = vec3(cubeMap_sh_coef[0].z, cubeMap_sh_coef[1].z, cubeMap_sh_coef[2].z);
-		vec3 u_light_SHCoef1_b = vec3(cubeMap_sh_coef[3].z, cubeMap_sh_coef[4].z, cubeMap_sh_coef[5].z);
-		vec3 u_light_SHCoef2_b = vec3(cubeMap_sh_coef[6].z, cubeMap_sh_coef[7].z, cubeMap_sh_coef[8].z);
-		
-		float[3] transferFunc_zh_coef;
-		transferFunc_zh_coef[0]= 0.886215;
-		transferFunc_zh_coef[1]= 1.023305;
-		transferFunc_zh_coef[2]= 0.495396;
-		
-		float sqrt3= 1.732050808;
-		vec3 transferFunc_SHCoef0, transferFunc_SHCoef1, transferFunc_SHCoef2;
-		
-	    normalWorld = mix(normalWorld, reflect(V, normalWorld), metallic);
-	    transferFunc_SHCoef0.x=  transferFunc_zh_coef[0];                                                               // 0-band
-	    transferFunc_SHCoef0.y= -transferFunc_zh_coef[1] * normalWorld.y;                                                    // 1-band
-	    transferFunc_SHCoef0.z=  transferFunc_zh_coef[1] * normalWorld.z;
-	    transferFunc_SHCoef1.x= -transferFunc_zh_coef[1] * normalWorld.x;
-	    transferFunc_SHCoef1.y=  sqrt3 * transferFunc_zh_coef[2] * normalWorld.x * normalWorld.y;                                 // 2-band
-	    transferFunc_SHCoef1.z= -sqrt3 * transferFunc_zh_coef[2] * normalWorld.y * normalWorld.z;
-	    transferFunc_SHCoef2.x= 0.5    * transferFunc_zh_coef[2] * (3.0 * normalWorld.z * normalWorld.z - 1.0);
-	    transferFunc_SHCoef2.y= -sqrt3 * transferFunc_zh_coef[2] * normalWorld.x * normalWorld.z;
-	    transferFunc_SHCoef2.z= 0.5 * sqrt3 * transferFunc_zh_coef[2] * (normalWorld.x * normalWorld.x - normalWorld.y * normalWorld.y);
-	    
-	    color = mix(color, specularColor, metallic);
-		vec4 result = vec4(
-	        color.r * ( dot(u_light_SHCoef0_r, transferFunc_SHCoef0) + dot(u_light_SHCoef1_r, transferFunc_SHCoef1) + dot(u_light_SHCoef2_r, transferFunc_SHCoef2) ),
-	        color.g * ( dot(u_light_SHCoef0_g, transferFunc_SHCoef0) + dot(u_light_SHCoef1_g, transferFunc_SHCoef1) + dot(u_light_SHCoef2_g, transferFunc_SHCoef2) ),
-	        color.b * ( dot(u_light_SHCoef0_b, transferFunc_SHCoef0) + dot(u_light_SHCoef1_b, transferFunc_SHCoef1) + dot(u_light_SHCoef2_b, transferFunc_SHCoef2) ),
-	    1.0);
-	    
-	    out_color = result;
-	}
 }

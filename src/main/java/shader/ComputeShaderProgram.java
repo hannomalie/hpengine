@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import renderer.OpenGLContext;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
@@ -57,7 +58,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		System.out.println("Validate program " + GLU.gluErrorString(GL11.glGetError()));
 		
 		if (GL20.glGetProgram(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-			System.err.println("Could not compile shader: " + computeShaderSource);
+			System.err.println("Could not link shader: " + computeShaderSource.getFilename());
 			System.err.println(GL20.glGetProgramInfoLog(id, 10000));
 		}
 		
@@ -123,7 +124,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);
-			if (!result.equals(Boolean.TRUE)) {
+			if (result.equals(Boolean.TRUE)) {
 				System.out.println("Program reloaded");
 			} else {
 				System.out.println("Program not reloaded");

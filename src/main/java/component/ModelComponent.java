@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import static renderer.constants.GlTextureTarget.TEXTURE_2D;
+
 public class ModelComponent extends BaseComponent implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
     private static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;

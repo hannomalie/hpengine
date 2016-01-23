@@ -8,6 +8,7 @@ layout(binding=4) uniform samplerCube environmentMap;
 layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 
 layout(binding=8) uniform samplerCubeArray probes;
+layout(binding=13) uniform sampler3D grid;
 
 uniform float screenWidth = 1280/2;
 uniform float screenHeight = 720/2;
@@ -27,6 +28,10 @@ uniform bool useAmbientOcclusion = true;
 uniform int activeProbeCount;
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
+
+uniform float sceneScale = 1;
+uniform float inverseSceneScale = 1;
+uniform int gridSize;
 
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_AOScattering;
@@ -272,6 +277,24 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 
 /////////////////////
 
+vec4 voxelFetch(vec3 positionWorld, float loD) {
+    const int gridSizeHalf = gridSize/2;
+
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
+       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
+
+       return vec4(0);
+    }
+
+    int level = int(loD);
+    vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
+    float positionScaleFactor = pow(2, level);
+
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+    return textureLod(grid, samplePositionNormalized, level);
+}
+
 float ComputeScattering(float lightDotView)
 {
 	const float G_SCATTERING = 0.000005;
@@ -329,7 +352,9 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		{
 			accumFog += ComputeScattering(NdotL);
 		} else {
-			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
+//			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
+			vec4 voxel = voxelFetch(currentPosition.xyz, 4);
+			accumFogShadow += 0.01f*voxel.rgb;
 		}
 
 		currentPosition += step;

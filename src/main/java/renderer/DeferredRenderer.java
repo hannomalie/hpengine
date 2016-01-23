@@ -204,7 +204,7 @@ public class DeferredRenderer implements Renderer {
 	private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance(), this));
+		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance()));
 
 		OpenGLContext.getInstance().execute(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
@@ -256,8 +256,8 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
-//			drawToQuad(gBuffer.getNormalMap(), debugBuffer);
+//			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
+			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
