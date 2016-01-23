@@ -67,7 +67,7 @@ public class EnvironmentProbeFactory {
 		this.environmentMapsArray3 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
 		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
-		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
+//		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}
 
 	public EnvironmentProbe getProbe(Vector3f center, float size) throws Exception {

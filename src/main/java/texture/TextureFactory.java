@@ -16,7 +16,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -167,7 +166,7 @@ public class TextureFactory {
         if(textureLoaded(resourceName)) {
             return TEXTURES.get(resourceName);
         }
-        if (texturePreCompiled(resourceName)) {
+        if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
             Texture texture = new Texture(resourceName, srgba);
             TEXTURES.put(resourceName, texture);
             texture.readAndUpload();
@@ -277,21 +276,15 @@ public class TextureFactory {
      * Convert the buffered image to a texture
      *
      * @param bufferedImage The image to convert to a texture
-     * @param texture The texture to store the data into
      * @return A buffer containing the data
      */
-    public ByteBuffer convertImageData(BufferedImage bufferedImage, Texture texture) {
-        ByteBuffer imageBuffer = null; 
+    public byte[] convertImageData(BufferedImage bufferedImage) {
         WritableRaster raster;
         BufferedImage texImage;
 
         int width = bufferedImage.getWidth();
-        texture.setWidth(width);
         int height = bufferedImage.getHeight();
-        texture.setHeight(height);
-        
-        // create a raster that can be used by OpenGL as a source
-        // for a texture
+
         if (bufferedImage.getColorModel().hasAlpha()) {
             raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,width,height,4,null);
             texImage = new BufferedImage(glAlphaColorModel,raster,false,new Hashtable());
@@ -306,13 +299,8 @@ public class TextureFactory {
         g.fillRect(0,0,width,height);
         g.drawImage(bufferedImage,0,0,null);
         
-        // build a byte buffer from the temporary image 
-        // that be used by OpenGL to produce a texture.
-        byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
-
-        texture.setData(data);
-        
-        return texture.buffer();
+        byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData();
+        return data;
     }
     
     private ByteBuffer[] convertCubeMapData(BufferedImage bufferedImage,CubeMap cubeMap) { 
@@ -425,24 +413,23 @@ public class TextureFactory {
         URL url = TextureFactory.class.getClassLoader().getResource(ref);
         
         if (url == null) {
-//            throw new IOException("Cannot find: "+ref);
             return loadImageAsStream(ref);
         }
-        
-        BufferedImage bufferedImage = ImageIO.read(new File(ref));//new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
 
+        File file = new File(ref);
+        BufferedImage bufferedImage = ImageIO.read(file);//new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
         return bufferedImage;
     }
 
     public BufferedImage loadImageAsStream(String ref) throws IOException
     { 
         BufferedImage bufferedImage = null;
+        File file = new File(ref);
 		try {
-			bufferedImage = ImageIO.read(new File(ref));
+            bufferedImage = ImageIO.read(file);
 		} catch (Exception e) {
 			System.err.println("Unable to read file " + ref);
-		} 
- 
+		}
         return bufferedImage;
     }
     

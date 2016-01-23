@@ -352,12 +352,18 @@ public class Util {
 	private static Quaternion fromBullet(Quat4f rotation) {
 		return new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
 	}
-	
 
+
+    public static int calculateMipMapCountPlusOne(int width, int height) {
+        return calculateMipMapCount(Math.max(width, height)) + 1;
+    }
+    public static int calculateMipMapCount(int width, int height) {
+        return calculateMipMapCount(Math.max(width, height));
+    }
 	public static int calculateMipMapCount(int size) {
 		int maxLength = size;
 		int count = 0;
-		while(maxLength > 1) {
+		while(maxLength >= 1) {
 			count++;
 			maxLength /= 2;
 		}

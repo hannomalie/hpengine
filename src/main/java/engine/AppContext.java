@@ -40,7 +40,6 @@ import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.StopWatch;
 
-import javax.jws.HandlerChain;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,18 +127,19 @@ public class AppContext {
     }
 
     public static void init(boolean headless) {
-        instance = new AppContext(headless);
-        instance.initialize();
+        instance = new AppContext();
+        instance.initialize(headless);
         instance.simulate();
     }
 
-    private AppContext(boolean headless) {
+    private AppContext() {
     }
 
-    private void initialize() {
+    private void initialize(boolean headless) {
 //        setEventBus(new GuavaEventBus());
         setEventBus(new MBassadorEventBus());
         eventBus.register(this);
+        Config.setHeadless(headless);
         initWorkDir();
         EntityFactory.init();
         Renderer.init(DeferredRenderer.class);

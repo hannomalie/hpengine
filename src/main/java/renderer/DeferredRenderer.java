@@ -1,14 +1,11 @@
 package renderer;
 
-import com.google.common.eventbus.Subscribe;
 import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.*;
-import event.EntityAddedEvent;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
-import net.engio.mbassy.listener.Handler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
@@ -57,7 +54,6 @@ import static log.ConsoleLogger.getLogger;
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = !(java.lang.management.ManagementFactory.getRuntimeMXBean().
 		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
-	private final boolean headless;
 	private int frameCount = 0;
 
 	private static Logger LOGGER = getLogger();
@@ -109,11 +105,7 @@ public class DeferredRenderer implements Renderer {
     private FPSCounter fpsCounter = new FPSCounter();
 
     public DeferredRenderer() {
-        this(false);
     }
-    public DeferredRenderer(boolean headless) {
-		this.headless = headless;
-	}
 
 	@Override
 	public void init() {
@@ -121,7 +113,7 @@ public class DeferredRenderer implements Renderer {
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
-            setupOpenGL(headless);
+            setupOpenGL(Config.isHeadless());
             objLoader = new OBJLoader();
             TextureFactory.init();
             DeferredRenderer.exitOnGLError("After TextureFactory");
@@ -162,31 +154,29 @@ public class DeferredRenderer implements Renderer {
 
 	private void setupOpenGL(boolean headless) {
 		try {
-			if(headless)
-			{
-				Canvas canvas = new Canvas();
-				frame = new JFrame("hpengine");
-				frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-				JLayeredPane layeredPane = new JLayeredPane();
-				layeredPane.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-				layeredPane.add(canvas, 0);
-				JPanel overlayPanel = new JPanel();
-				overlayPanel.setOpaque(true);
-				overlayPanel.add(new JButton("asdasdasd"));
-	//			layeredPane.add(overlayPanel, 1);
-				//frame.add(layeredPane);
-	//			frame.setLayout(new BorderLayout());
-				frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
-				frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
-				frame.getContentPane().add(canvas, BorderLayout.CENTER);
-				frame.pack();
-				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-//				frame.setVisible(true);
-				frame.setVisible(false);
-				Display.setParent(canvas);
-//				OpenGLContext.getInstance().attach(canvas);
-			}
+            if(headless) {
+                Canvas canvas = new Canvas();
+                frame = new JFrame("hpengine");
+                frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+                JLayeredPane layeredPane = new JLayeredPane();
+                canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+                layeredPane.add(canvas, 0);
+//            JPanel overlayPanel = new JPanel();
+//            overlayPanel.setOpaque(true);
+//            overlayPanel.add(new JButton("asdasdasd"));
+//			layeredPane.add(overlayPanel, 1);
+//            frame.add(layeredPane);
+//			frame.setLayout(new BorderLayout());
+                frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
+                frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
+                frame.getContentPane().add(canvas, BorderLayout.CENTER);
+                frame.pack();
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(false);
+                Display.setParent(canvas);
+            }
             OpenGLContext.getInstance().init();
+//            OpenGLContext.getInstance().attach(canvas);
 
 		} catch (LWJGLException e) {
 			e.printStackTrace();
@@ -458,13 +448,14 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public static void exitOnGLError(String errorMessage) {
+        Exception exception = new Exception();
         OpenGLContext.getInstance().execute(() -> {
             if(IGNORE_GL_ERRORS) { return; }
             int errorValue = GL11.glGetError();
 
             if (errorValue != GL11.GL_NO_ERROR) {
                 String errorString = GLU.gluErrorString(errorValue);
-                new Exception().printStackTrace(System.err);
+                exception.printStackTrace(System.err);
                 System.err.println("ERROR - " + errorMessage + ": " + errorString);
 
                 if (Display.isCreated()) Display.destroy();

@@ -132,7 +132,7 @@ public class EntityView extends WebPanel {
 							child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
 						}
 					}
-                    AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO Create own event type
+                    AppContext.getEventBus().post(new MaterialChangedEvent(selectedMaterial)); // TODO Create own event type
 				});
 				webComponentPanel.addElement(materialSelect);
 

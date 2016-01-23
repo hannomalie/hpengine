@@ -781,18 +781,10 @@ public class DebugFrame {
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
 			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
 			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
-			AppContext.getEventBus().post(new MaterialChangedEvent());
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;

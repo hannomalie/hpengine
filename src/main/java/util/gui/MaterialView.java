@@ -153,7 +153,7 @@ public class MaterialView extends WebPanel {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
-	        	AppContext.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
 	        });
 	        
 	        WebButton removeTextureButton = new WebButton("Remove");
@@ -180,14 +180,14 @@ public class MaterialView extends WebPanel {
 			@Override
 			public void onValueChange(Vector3f current) {
 				material.setDiffuse(current);
-	        	AppContext.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
 			}
 		});
         webComponentPanel.addElement(new ColorChooserButton("Diffuse", new ColorChooserFrame() {
 			@Override
 			public void onColorChange(Vector3f color) {
 				material.setDiffuse(color);
-	        	AppContext.getEventBus().post(new MaterialChangedEvent());
+	        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
 			}
 		}));
 
@@ -230,7 +230,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					roughnessInput.setValue(((float)value/100f));
     					material.setRoughness(((float)value/100f));
-    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
                 GroupPanel groupPanelRoughness = new GroupPanel ( 4, new WebLabel("Roughness"), roughnessInput, roughnessSliderInput );
@@ -252,7 +252,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					metallicInput.setValue(((float)value/100f));
     					material.setMetallic(((float)value/100f));
-    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -275,7 +275,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					ambientInput.setValue(((float)value/100f));
     					material.setAmbient(((float)value/100f));
-    		        	AppContext.getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -298,7 +298,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					transparencyInput.setValue(((float)value/100f));
     					material.setTransparency(((float)value/100f));
-    		        	AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
+    		        	AppContext.getInstance().getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -321,7 +321,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxScaleInput.setValue(((float)value/100f));
     					material.setParallaxScale(((float)value/100f));
-                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
+                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -344,7 +344,7 @@ public class MaterialView extends WebPanel {
     				public void onValueChange(int value, int delta) {
     					parallaxBiasInput.setValue(((float)value/100f));
     					material.setParallaxBias(((float)value/100f));
-                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
+                        AppContext.getInstance().getEventBus().post(new MaterialChangedEvent(material));
     				}
     			};
     			
@@ -358,7 +358,7 @@ public class MaterialView extends WebPanel {
 			materialTypeInput.addActionListener(e -> {
 				Material.MaterialType selected = (Material.MaterialType) materialTypeInput.getSelectedItem();
 				material.setMaterialType(selected);
-                AppContext.getInstance().getEventBus().post(new MaterialChangedEvent());
+                AppContext.getInstance().getEventBus().post(new MaterialChangedEvent(material));
 			});
 			materialTypeInput.setSelectedItem(material.getMaterialType());
 			GroupPanel materialTypePanel = new GroupPanel(4, new WebLabel("Maeterial Type"), materialTypeInput);
@@ -400,7 +400,7 @@ public class MaterialView extends WebPanel {
 				showNotification(NotificationIcon.plus, "Material changed");
 
 				init(result.material);
-				AppContext.getEventBus().post(new MaterialChangedEvent());
+				AppContext.getEventBus().post(new MaterialChangedEvent(material));
 			} else {
 				showNotification(NotificationIcon.error, "Not able to change material");
 			}

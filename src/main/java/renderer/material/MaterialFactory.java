@@ -163,11 +163,19 @@ public class MaterialFactory {
 
 	private void initMaterial(Material material) {
 		material.init();
-		MATERIALS.put(material.getName(), material);
-		material.initialized = true;
+        addMaterial(material);
+        material.initialized = true;
 	}
 
-	public Material get(String materialName) {
+    private void addMaterial(String key, Material material) {
+        MATERIALS.put(key, material);
+        AppContext.getEventBus().post(new MaterialChangedEvent());
+    }
+    private void addMaterial(Material material) {
+        addMaterial(material.getName(), material);
+    }
+
+    public Material get(String materialName) {
 		Material material = MATERIALS.get(materialName);
 		if(material == null) {
 			material = read(materialName);
@@ -176,8 +184,8 @@ public class MaterialFactory {
 				material = getDefaultMaterial();
 				Logger.getGlobal().info("Failed to get material " + materialName);
 			}
-			MATERIALS.put(material.getName(), material);
-		}
+            addMaterial(material);
+        }
 		return material;
 	}
 
@@ -292,7 +300,7 @@ public class MaterialFactory {
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
-			MATERIALS.put(key, getMaterial(materialLib.get(key)));
+			addMaterial(key, getMaterial(materialLib.get(key)));
 		}
 	}
 

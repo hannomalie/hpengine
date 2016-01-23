@@ -11,7 +11,9 @@ import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
+import util.Util;
 
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -22,22 +24,42 @@ import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
+import static texture.Texture.DDSConversionState.*;
+import static texture.Texture.UploadState.*;
 
 public class Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
-    public static final boolean COMPILED_TEXTURES = true;
+    public static final boolean COMPILED_TEXTURES = false;
     private transient boolean srgba;
 
     private String path = "";
 
-    private volatile boolean mipmapsGenerated = false;
+    private volatile boolean mipmapsGenerated = false;;
+    private boolean sourceDataCompressed = false;
 
+    public DDSConversionState getDdsConversionState() {
+        return ddsConversionState;
+    }
+
+    public enum UploadState {
+        NOT_UPLOADED,
+        UPLOADING,
+        UPLOADED
+    }
+    private transient volatile UploadState uploadState = NOT_UPLOADED;
+
+    public enum DDSConversionState {
+        NOT_CONVERTED,
+        CONVERTING,
+        CONVERTED
+    }
+    private DDSConversionState ddsConversionState = NOT_CONVERTED;
 	protected GlTextureTarget target = TEXTURE_2D;
     transient protected int textureID = -1;
     protected int height;
     protected int width;
 
-    protected volatile byte[] data;
+    protected volatile byte[][] data;
     protected int dstPixelFormat = GL11.GL_RGBA;
     protected int srcPixelFormat = GL11.GL_RGBA;
     protected int minFilter = GL11.GL_LINEAR;
@@ -91,10 +113,13 @@ public class Texture implements Serializable {
     public int getWidth() {
         return width;
     }
-    
+
 
     public void setData(byte[] data) {
-        this.data = data;
+        setData(0, data);
+    }
+    public void setData(int i, byte[] data) {
+        this.data[i] = data;
     }
 
 	public void setDstPixelFormat(int dstPixelFormat) {
@@ -106,9 +131,9 @@ public class Texture implements Serializable {
 	}
 	
 	public ByteBuffer buffer() {
-		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length);
+		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data[0].length);
 //		imageBuffer.order(ByteOrder.nativeOrder());
-		imageBuffer.put(data, 0, data.length);
+		imageBuffer.put(data[0], 0, data[0].length);
 		imageBuffer.flip();
 		return imageBuffer;
 	}
@@ -117,13 +142,6 @@ public class Texture implements Serializable {
         upload(false);
     }
 	public void upload(boolean srgba) {
-//		new OpenGLThread() {
-//			@Override
-//			public void doRun() {
-//				upload(buffer());
-//			}
-//		}.start();
-
         OpenGLContext.getInstance().execute(() -> {
             upload(buffer(), srgba);
         });
@@ -138,6 +156,7 @@ public class Texture implements Serializable {
             @Override
             public void doRun() {
                 OpenGLContext.getInstance().execute(() -> {
+                    uploadState = UPLOADING;
                     bind();
                     if (target == TEXTURE_2D)
                     {
@@ -146,7 +165,7 @@ public class Texture implements Serializable {
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width,height)));
                     }
 
                     int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
@@ -156,69 +175,48 @@ public class Texture implements Serializable {
                         //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
                     }
                     synchronized (data) {
-                        GL11.glTexImage2D(target.glTarget,
-                                0,
-                                internalformat,
-                                getWidth(),
-                                getHeight(),
-                                0,
-                                srcPixelFormat,
-                                GL11.GL_UNSIGNED_BYTE,
-                                textureBuffer);
+                        if(sourceDataCompressed) {
+                            System.out.println("#########Loading compressed texture");
+                            GL13.glCompressedTexImage2D(target.glTarget,
+                                    0,
+                                    internalformat,
+                                    getWidth(), // TODO HERE XXX
+                                    getHeight(),
+                                    0,
+                                    textureBuffer);
+                            // TODO: INSERT HERE COMPRESSION CASE
+//                            DeferredRenderer.exitOnGLError("Compressed texture fuckup " + path);
+//                            System.out.println("Uploading compressed texture");
+                        } else {
+                            GL11.glTexImage2D(target.glTarget,
+                                    0,
+                                    internalformat,
+                                    getWidth(),
+                                    getHeight(),
+                                    0,
+                                    srcPixelFormat,
+                                    GL11.GL_UNSIGNED_BYTE,
+                                    textureBuffer);
+                        }
                     }
-        //        if(mipmapsGenerated) {
-        //            uploadMipMaps(internalformat);
-        //        } else {
-        //            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-        //            downloadMipMaps();
-        //        }
+                if(mipmapsGenerated)
+                {
+                    uploadMipMaps(internalformat, sourceDataCompressed);
+                } else {
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-                }, false);
-                OpenGLContext.getInstance().execute(() -> {
+                }
+                uploadState = UPLOADED;
+//                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                }, false);
+                OpenGLContext.getInstance().execute(() -> {
+//                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+//                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 });
             }
-
         }.start();
 
-//        AppContext.getInstance().getRenderer().doWithOpenGLContext(() -> {
-//            bind();
-//            if (target == TEXTURE_2D)
-//            {
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-//                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
-//            }
-//
-//            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-//            //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
-//            if(srgba) {
-//                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-//                //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
-//            }
-//            synchronized (data) {
-//                GL11.glTexImage2D(target.glTarget,
-//                        0,
-//                        internalformat,
-//                        getWidth(),
-//                        getHeight(),
-//                        0,
-//                        srcPixelFormat,
-//                        GL11.GL_UNSIGNED_BYTE,
-//                        textureBuffer);
-//            }
-////        if(mipmapsGenerated) {
-////            uploadMipMaps(internalformat);
-////        } else {
-////            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-////            downloadMipMaps();
-////        }
-//            GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-//        }, false);
 	}
 
     private void downloadMipMaps() {
@@ -235,7 +233,7 @@ public class Texture implements Serializable {
         mipmapsGenerated = true;
     }
 
-    private void uploadMipMaps(int internalformat) {
+    private void uploadMipMaps(int internalformat, boolean srcDataCompressed) {
         int currentWidth = width/2;
         int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
@@ -243,15 +241,25 @@ public class Texture implements Serializable {
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
-            GL11.glTexImage2D(target.glTarget,
-                    0,
-                    internalformat,
-                    currentWidth,
-                    currentHeight,
-                    0,
-                    srcPixelFormat,
-                    GL11.GL_UNSIGNED_BYTE,
-                    tempBuffer);
+            if(sourceDataCompressed) {
+                ARBTextureCompression.glCompressedTexImage2DARB(target.glTarget,
+                        i,
+                        internalformat,
+                        currentWidth,
+                        currentHeight,
+                        0,
+                        tempBuffer);
+            } else {
+                GL11.glTexImage2D(target.glTarget,
+                        0,
+                        internalformat,
+                        currentWidth,
+                        currentHeight,
+                        0,
+                        srcPixelFormat,
+                        GL11.GL_UNSIGNED_BYTE,
+                        tempBuffer);
+            }
             currentWidth /= 2;
             currentHeight /= 2;
         }
@@ -266,7 +274,11 @@ public class Texture implements Serializable {
 	}
 
     public byte[] getData() {
-        return data;
+        return getData(0);
+    }
+    public byte[] getData(int index) {
+        while(uploadState != UPLOADED) {}
+        return data[index];
     }
 
     public static Texture read(String resourceName, int textureId) {
@@ -415,15 +427,21 @@ public class Texture implements Serializable {
         setMagFilter(texture.getMagFilter());
     }
 
-    private boolean textureAvailableAsDDS(String resourceName) {
-        String fileName = FilenameUtils.getBaseName(resourceName);
-        String fullPathAsDDS = getFullPathAsDDS(fileName);
+    public static boolean textureAvailableAsDDS(String resourceName) {
+        String fullPathAsDDS = getFullPathAsDDS(resourceName);
         File f = new File(fullPathAsDDS);
-        return f.exists();
+        boolean ddsExists = f.exists();
+        return ddsExists;
     }
-    private String getFullPathAsDDS(String fileName) {
-        String baseName = FilenameUtils.getBaseName(fileName);
-        return getDirectory() + baseName + ".dds";
+    public static String getFullPathAsDDS(String fileName) {
+        String name = FilenameUtils.getBaseName(fileName);
+        String nameWithExtension = FilenameUtils.getName(fileName);//FilenameUtils.getName(fileName) + "." + extension;
+        String restPath = fileName.replaceAll(nameWithExtension, "");
+        if(restPath == null) {
+            restPath = "";
+        }
+        String fullDDSPath = restPath + name + ".dds";
+        return fullDDSPath;
     }
     protected static int getNextPowerOfTwo(int fold) {
         int ret = 2;
@@ -442,9 +460,44 @@ public class Texture implements Serializable {
             try {
                 BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
 
-                if (autoConvertToDDS && bufferedImage != null && !FilenameUtils.isExtension(path, "dds")) // &&  !textureAvailableAsDDS(path))
-                    bufferedImage = saveAsDDS(bufferedImage);
+                if (bufferedImage != null) {
+                    data = new byte[util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight()))+1][];
+                } else {
+                    data = new byte[1][];
+                }
 
+                if (autoConvertToDDS && bufferedImage != null && !FilenameUtils.isExtension(path, "dds") && !textureAvailableAsDDS(path)) {
+//                    bufferedImage = saveAsDDS(bufferedImage);
+                    final BufferedImage finalBufferedImage = bufferedImage;
+
+                    new Thread(() -> {
+                        try {
+                            saveAsDDS(finalBufferedImage);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                } else if(autoConvertToDDS && textureAvailableAsDDS(path)) {
+                    ddsConversionState = CONVERTED;
+                    DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
+                    System.out.println("######## dds loaded");
+                    data = new byte[util.Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight())][];
+                    for(int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
+                        DDSImage.ImageInfo info = ddsImage.getMipMap(i);
+
+//                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
+//                        showAsTextureInFrame(mipmapImage);
+//                        data[i] = TextureFactory.getInstance().convertImageData(mipmapImage);
+                        data[i] = new byte[info.getData().capacity()];
+                        info.getData().get(data[i]);
+                    }
+                    setWidth(ddsImage.getWidth());
+                    setHeight(ddsImage.getHeight());
+//                    mipmapsGenerated = true; //TODO use this actually
+                    sourceDataCompressed = true;
+                    upload(buffer());
+                    return;
+                }
                 if (bufferedImage == null) {
                     bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
                     System.out.println("Texture cannot be read, default texture data inserted instead...");
@@ -463,9 +516,9 @@ public class Texture implements Serializable {
                 setDstPixelFormat(dstPixelFormat);
                 setSrcPixelFormat(srcPixelFormat);
 
-                // convert that image into a byte buffer of texture data
-                ByteBuffer textureBuffer = TextureFactory.getInstance().convertImageData(bufferedImage, this);
-
+                byte[] bytes = TextureFactory.getInstance().convertImageData(bufferedImage);
+                setData(bytes);
+                ByteBuffer textureBuffer = buffer();
                 upload(textureBuffer, srgba);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
@@ -474,27 +527,31 @@ public class Texture implements Serializable {
         });
     }
 
+    private static int counter = 14;
+    private static void showAsTextureInFrame(BufferedImage bufferedImage) {
+        if(counter-- < 0) { return; }
+        JFrame frame = new JFrame("WINDOW");
+        frame.setVisible(true);
+        frame.add(new JLabel(new ImageIcon(bufferedImage)));
+        frame.pack();
+    }
+
     private BufferedImage saveAsDDS(BufferedImage bufferedImage) throws IOException {
         long start = System.currentTimeMillis();
+        ddsConversionState = CONVERTING;
 
         bufferedImage = rescaleToNextPowerOfTwo(bufferedImage);
-        try {
-            File ddsFile = new File(getFullPathAsDDS(path));
-            if (ddsFile.exists()) {
-                ddsFile.delete();
-            }
-            DDSUtilWriteLock.lock();
-            try {
-                DDSUtil.write(ddsFile, bufferedImage, DDSImage.D3DFMT_DXT5, true);
-            } finally {
-                DDSUtilWriteLock.unlock();
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            e.printStackTrace();
-            int i = 5;
-            i *= 10;
-            System.err.println("Exception");
+        File ddsFile = new File(getFullPathAsDDS(path));
+        if (ddsFile.exists()) {
+            ddsFile.delete();
         }
+        DDSUtilWriteLock.lock();
+        try {
+            DDSUtil.write(ddsFile, bufferedImage, DDSImage.D3DFMT_DXT5, true);
+        } finally {
+            DDSUtilWriteLock.unlock();
+        }
+        ddsConversionState = CONVERTED;
         System.out.println("Converting and saving as dds took " + (System.currentTimeMillis() - start) + "ms");
         return bufferedImage;
     }
@@ -536,7 +593,6 @@ public class Texture implements Serializable {
         if(oldWidth != nextPowerOfTwoWidth || oldHeight != nextPowerOfTwoHeight) {
             result = new ImageRescaler().rescaleBI(nonPowerOfTwoImage, nextPowerOfTwoWidth, nextPowerOfTwoHeight);
         }
-        System.out.println("Image rescaled from " + oldWidth + " x " + oldHeight +" to " + nextPowerOfTwoWidth + " x " + nextPowerOfTwoHeight);
         return result;
     }
 

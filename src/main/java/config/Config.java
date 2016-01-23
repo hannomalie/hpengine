@@ -1,5 +1,7 @@
 package config;
 
+import engine.AppContext;
+import event.HeadlessChangedEvent;
 import org.lwjgl.util.vector.Vector3f;
 import util.Adjustable;
 import util.Toggable;
@@ -47,7 +49,16 @@ public final class Config {
 	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
 	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = true;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
+    private static volatile boolean headless = false;
 
-	private Config() { super(); }
+    private Config() { super(); }
 
+    public static boolean isHeadless() {
+        return headless;
+    }
+
+    public static void setHeadless(boolean headless) {
+        Config.headless = headless;
+        AppContext.getEventBus().post(new HeadlessChangedEvent());
+    }
 }
