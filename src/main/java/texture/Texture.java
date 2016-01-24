@@ -34,7 +34,7 @@ public class Texture implements Serializable {
 
     private String path = "";
 
-    private volatile boolean mipmapsGenerated = false;;
+    private volatile boolean mipmapsGenerated = false;
     private boolean sourceDataCompressed = false;
 
     public DDSConversionState getDdsConversionState() {
