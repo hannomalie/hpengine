@@ -32,6 +32,8 @@ uniform int gridSize = 256;
 
 uniform mat4 shadowMatrix;
 
+uniform vec3 lightDirection;
+uniform vec3 lightColor;
 
 vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 {

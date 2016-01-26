@@ -7,6 +7,7 @@ import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
+import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
@@ -16,6 +17,7 @@ import util.Util;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -180,13 +182,11 @@ public class Texture implements Serializable {
                             GL13.glCompressedTexImage2D(target.glTarget,
                                     0,
                                     internalformat,
-                                    getWidth(), // TODO HERE XXX
+                                    getWidth(),
                                     getHeight(),
                                     0,
                                     textureBuffer);
-                            // TODO: INSERT HERE COMPRESSION CASE
-//                            DeferredRenderer.exitOnGLError("Compressed texture fuckup " + path);
-//                            System.out.println("Uploading compressed texture");
+                            OpenGLContext.exitOnGLError("ZZZ");
                         } else {
                             GL11.glTexImage2D(target.glTarget,
                                     0,
@@ -201,9 +201,16 @@ public class Texture implements Serializable {
                     }
                 if(mipmapsGenerated)
                 {
-                    uploadMipMaps(internalformat, sourceDataCompressed);
+                    final int finalInternalformat = internalformat;
+                    OpenGLContext.getInstance().execute(() -> {
+                        bind();
+                        uploadMipMaps(finalInternalformat);
+                    });
                 } else {
-                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                    OpenGLContext.getInstance().execute(() -> {
+                        bind();
+                        GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                    });
                 }
                 uploadState = UPLOADED;
 //                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
@@ -233,25 +240,29 @@ public class Texture implements Serializable {
         mipmapsGenerated = true;
     }
 
-    private void uploadMipMaps(int internalformat, boolean srcDataCompressed) {
+    private void uploadMipMaps(int internalformat) {
+        System.out.println("Uploading mipmaps for " + path);
         int currentWidth = width/2;
         int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
-            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(currentHeight * currentWidth * 4);
+//            System.out.println("Uploading mipmap " + i + " with " + currentWidth + " x " + currentHeight);
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(((currentWidth + 3) / 4) * ((currentHeight + 3) / 4) * 16);//currentHeight * currentWidth * 4);
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
+//            System.out.println("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
             if(sourceDataCompressed) {
-                ARBTextureCompression.glCompressedTexImage2DARB(target.glTarget,
+                GL13.glCompressedTexImage2D(target.glTarget,
                         i,
                         internalformat,
                         currentWidth,
                         currentHeight,
                         0,
                         tempBuffer);
+                OpenGLContext.exitOnGLError("XXX");
             } else {
                 GL11.glTexImage2D(target.glTarget,
-                        0,
+                        i,
                         internalformat,
                         currentWidth,
                         currentHeight,
@@ -259,9 +270,11 @@ public class Texture implements Serializable {
                         srcPixelFormat,
                         GL11.GL_UNSIGNED_BYTE,
                         tempBuffer);
+                OpenGLContext.exitOnGLError("YYY");
             }
-            currentWidth /= 2;
-            currentHeight /= 2;
+            int minSize = 1;
+            currentWidth = Math.max(minSize, currentWidth/2);
+            currentHeight = Math.max(minSize, currentHeight/2);
         }
     }
 
@@ -453,55 +466,63 @@ public class Texture implements Serializable {
 
     private ExecutorService multiThreadService = Executors.newFixedThreadPool(4);
     private static ReentrantLock DDSUtilWriteLock = new ReentrantLock();
-    private static final boolean autoConvertToDDS = false;
+    private static final boolean autoConvertToDDS = true;
 
     public void convertAndUpload() {
         multiThreadService.submit(() -> {
             try {
-                BufferedImage bufferedImage = TextureFactory.getInstance().loadImage(path);
+                data = new byte[1][];
 
-                if (bufferedImage != null) {
-                    data = new byte[util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight()))+1][];
-                } else {
-                    data = new byte[1][];
-                }
+                boolean imageExists = new File(path).exists();
+                boolean ddsRequested = FilenameUtils.isExtension(path, "dds");
+                BufferedImage bufferedImage;
 
-                if (autoConvertToDDS && bufferedImage != null && !FilenameUtils.isExtension(path, "dds") && !textureAvailableAsDDS(path)) {
-//                    bufferedImage = saveAsDDS(bufferedImage);
-                    final BufferedImage finalBufferedImage = bufferedImage;
-
-                    new Thread(() -> {
-                        try {
-                            saveAsDDS(finalBufferedImage);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                long start = System.currentTimeMillis();
+                if(imageExists) {
+                    if(ddsRequested || !textureAvailableAsDDS(path) || !autoConvertToDDS) {
+                        bufferedImage = TextureFactory.getInstance().loadImage(path);
+                        if (bufferedImage != null) {
+                            data = new byte[util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight()))+1][];
                         }
-                    }).start();
-                } else if(autoConvertToDDS && textureAvailableAsDDS(path)) {
-                    ddsConversionState = CONVERTED;
-                    DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
-                    System.out.println("######## dds loaded");
-                    data = new byte[util.Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight())][];
-                    for(int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
-                        DDSImage.ImageInfo info = ddsImage.getMipMap(i);
+                        if(autoConvertToDDS) {
+                            new Thread(() -> {
+                                try {
+                                    saveAsDDS(bufferedImage);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }).start();
+                        }
+
+                    } else { // no dds requested and textureavailable as dds
+                        ddsConversionState = CONVERTED;
+                        DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
+                        int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
+                        mipmapCount = mipMapCountPlusOne -1;
+                        data = new byte[mipMapCountPlusOne][];
+                        for(int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
+                            DDSImage.ImageInfo info = ddsImage.getMipMap(i);
 
 //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
 //                        showAsTextureInFrame(mipmapImage);
 //                        data[i] = TextureFactory.getInstance().convertImageData(mipmapImage);
-                        data[i] = new byte[info.getData().capacity()];
-                        info.getData().get(data[i]);
+                            data[i] = new byte[info.getData().capacity()];
+                            info.getData().get(data[i]);
+                        }
+                        setWidth(ddsImage.getWidth());
+                        setHeight(ddsImage.getHeight());
+                        mipmapsGenerated = true;
+                        sourceDataCompressed = true;
+                        upload(buffer());
+                        System.out.println("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
+                        return;
                     }
-                    setWidth(ddsImage.getWidth());
-                    setHeight(ddsImage.getHeight());
-//                    mipmapsGenerated = true; //TODO use this actually
-                    sourceDataCompressed = true;
-                    upload(buffer());
-                    return;
-                }
-                if (bufferedImage == null) {
+
+                } else {
                     bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
                     System.out.println("Texture cannot be read, default texture data inserted instead...");
                 }
+
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
                 setMinFilter(minFilter);
@@ -520,6 +541,7 @@ public class Texture implements Serializable {
                 setData(bytes);
                 ByteBuffer textureBuffer = buffer();
                 upload(textureBuffer, srgba);
+                System.out.println("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
                 Logger.getGlobal().severe("Texture not found: " + path + ". Default texture returned...");
@@ -590,8 +612,12 @@ public class Texture implements Serializable {
         int oldHeight = nonPowerOfTwoImage.getHeight();
         int nextPowerOfTwoHeight = getNextPowerOfTwo(oldHeight);
         BufferedImage result = nonPowerOfTwoImage;
+
+        int maxOfWidthAndHeightPoT = Math.max(nextPowerOfTwoWidth, nextPowerOfTwoHeight);
+
         if(oldWidth != nextPowerOfTwoWidth || oldHeight != nextPowerOfTwoHeight) {
-            result = new ImageRescaler().rescaleBI(nonPowerOfTwoImage, nextPowerOfTwoWidth, nextPowerOfTwoHeight);
+            result = new ImageRescaler().rescaleBI(nonPowerOfTwoImage, maxOfWidthAndHeightPoT, maxOfWidthAndHeightPoT);
+            System.out.println("Image rescaled from " + oldWidth + " x " + oldHeight + " to " + result.getWidth() + " x " + result.getHeight());
         }
         return result;
     }
