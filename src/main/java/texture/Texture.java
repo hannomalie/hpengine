@@ -7,7 +7,6 @@ import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
@@ -17,7 +16,6 @@ import util.Util;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,8 +37,17 @@ public class Texture implements Serializable {
     private volatile boolean mipmapsGenerated = false;;
     private boolean sourceDataCompressed = false;
 
+    private transient long lastUsedTimeStamp = System.currentTimeMillis();
+    public void setUsedNow() {
+        lastUsedTimeStamp = System.currentTimeMillis();
+    }
+
     public DDSConversionState getDdsConversionState() {
         return ddsConversionState;
+    }
+
+    public long getLastUsedTimeStamp() {
+        return lastUsedTimeStamp;
     }
 
     public enum UploadState {

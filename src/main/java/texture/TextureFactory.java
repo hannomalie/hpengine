@@ -1,6 +1,7 @@
 package texture;
 
 import engine.AppContext;
+import engine.TimeStepThread;
 import event.TexturesChangedEvent;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -22,10 +23,8 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static renderer.constants.GlTextureTarget.*;
@@ -93,6 +92,23 @@ public class TextureFactory {
 //    	loadAllAvailableTextures();
 
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
+
+//        new TimeStepThread("TextureWatcher", 0.5f) {
+//            @Override
+//            public void update(float seconds) {
+//                Iterator<Texture> iterator = TEXTURES.values().iterator();
+//                while(iterator.hasNext()) {
+//                    Texture texture = iterator.next();
+//                    long notUsedSinceMs = System.currentTimeMillis() - texture.getLastUsedTimeStamp();
+//                    System.out.println("Not used since " + notUsedSinceMs + ": " + texture.getPath());
+//                }
+//                try {
+//                    sleep(500);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }.start();
     }
 
     public BufferedImage getDefaultTextureAsBufferedImage() {

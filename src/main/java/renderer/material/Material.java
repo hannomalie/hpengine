@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -24,7 +25,8 @@ import java.util.logging.Logger;
 import static log.ConsoleLogger.getLogger;
 
 public class Material implements Serializable, Bufferable {
-	public enum MaterialType {
+
+    public enum MaterialType {
 		DEFAULT,
 		FOLIAGE,
 		UNLIT
@@ -241,6 +243,10 @@ public class Material implements Serializable, Bufferable {
 	public void setMaterialType(MaterialType materialType) {
 		this.materialInfo.materialType = materialType;
 	}
+
+    public Collection<Texture> getTextures() {
+        return materialInfo.maps.getTextures().values();
+    }
 
 	@Override
 	public boolean equals(Object other) {

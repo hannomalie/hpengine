@@ -1,7 +1,6 @@
 package component;
 
 import camera.Camera;
-import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
@@ -18,7 +17,7 @@ import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
 import shader.ProgramFactory;
-import util.stopwatch.GPUProfiler;
+import texture.Texture;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -28,8 +27,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
-
-import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 
 public class ModelComponent extends BaseComponent implements Drawable, Serializable {
     private static final long serialVersionUID = 1L;
@@ -108,6 +105,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        currentProgram.setUniform("isSelected", isSelected);
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
+        setTexturesUsed();
+
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         } else {
@@ -120,6 +119,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             return vertexBuffer.drawDebug();
         } else {
             return vertexBuffer.draw();
+        }
+    }
+
+    private void setTexturesUsed() {
+        for(Texture texture : getMaterial().getTextures()) {
+            texture.setUsedNow();
         }
     }
 
