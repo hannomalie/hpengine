@@ -14,6 +14,7 @@ import util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
@@ -166,7 +167,9 @@ public final class OpenGLContext {
     private int activeTexture = -1;
     public void activeTexture(int textureUnitIndex) {
         int textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex);
-        if(activeTexture != textureIndexGLInt) {
+//        TODO: Use this
+//        if(activeTexture != textureIndexGLInt)
+        {
             execute(() -> GL13.glActiveTexture(textureIndexGLInt));
         }
     }
@@ -182,8 +185,16 @@ public final class OpenGLContext {
         OpenGLContext.getInstance().execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
+//            printTextureBindings();
         });
     }
+
+    private void printTextureBindings() {
+        for(Map.Entry<Integer, Integer> entry : textureBindings.entrySet()) {
+            System.out.println("Slot " + entry.getKey() + " -> Texture " + entry.getValue());
+        }
+    }
+
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
         OpenGLContext.getInstance().execute(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
@@ -193,6 +204,7 @@ public final class OpenGLContext {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
 //        }
+//            printTextureBindings();
         });
     }
 
@@ -265,9 +277,23 @@ public final class OpenGLContext {
     }
 
     public int genTextures() {
-        return calculate(() -> {
-            return GL11.glGenTextures();
-        });
+        return calculate(() -> GL11.glGenTextures());
+    }
+
+    public int getAvailableVRAM() {
+        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX));
+    }
+    public int getAvailableTotalVRAM() {
+        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX));
+    }
+    public int getDedicatedVRAM() {
+        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX));
+    }
+    public int getEvictedVRAM() {
+        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX));
+    }
+    public int getEvictionCount() {
+        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX));
     }
 
     public boolean isInitialized() {

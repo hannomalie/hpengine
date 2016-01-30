@@ -14,6 +14,7 @@ import event.bus.EventBus;
 import event.FrameFinishedEvent;
 import event.bus.MBassadorEventBus;
 import net.engio.mbassy.listener.Handler;
+import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -241,7 +242,7 @@ public class AppContext {
 
         AppContext self = this;
 
-        thread = new TimeStepThread("World Main", 0.001f) {
+        thread = new TimeStepThread("World Main", 0.01f) {
             @Override
             public void update(float seconds) {
                 self.update(seconds);

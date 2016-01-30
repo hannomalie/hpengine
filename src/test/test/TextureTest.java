@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.junit.Assert.*;
+import static texture.Texture.UploadState.NOT_UPLOADED;
+import static texture.Texture.UploadState.UPLOADED;
+import static texture.Texture.UploadState.UPLOADING;
 
 public class TextureTest extends TestWithAppContext {
 
@@ -202,6 +205,35 @@ public class TextureTest extends TestWithAppContext {
         Assert.assertTrue(isInRange(10, 11, 0.1f));
         Assert.assertFalse(isInRange(10, 12, 0.1f));
         Assert.assertFalse(isInRange(10, 8, 0.1f));
+    }
+
+
+    @Test(timeout = 20000L)
+    public void testUnloadAndReloadTexture() throws Exception {
+        String fileName = "testfolder/stone_normal_streaming_test.dds";
+        Assert.assertTrue(new File(fileName).exists());
+        Assert.assertFalse(TextureFactory.getInstance().TEXTURES.containsKey(fileName));
+        Texture texture = TextureFactory.getInstance().getTexture(fileName);
+        while(texture.getUploadState() != UPLOADING) {
+            Thread.sleep(20);
+        }
+        System.out.println("Texture uploading");
+        while(texture.getUploadState() != UPLOADED) {
+            Thread.sleep(20);
+        }
+        System.out.println("Texture uploaded");
+
+//        texture.unload();
+        Thread.sleep(TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
+        texture.setPreventUnload(true);
+        Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));
+        texture.setUsedNow();
+        while(texture.getUploadState() != UPLOADED) {
+            System.out.println("uploadState is " + texture.getUploadState());
+            Thread.sleep(20);
+        }
+        Assert.assertEquals(UPLOADED, texture.getUploadState());
+
     }
 
     public static class PathTest {

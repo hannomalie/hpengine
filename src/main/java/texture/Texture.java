@@ -12,6 +12,7 @@ import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
 import util.Util;
+import util.ressources.Reloadable;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
@@ -27,7 +28,7 @@ import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static texture.Texture.DDSConversionState.*;
 import static texture.Texture.UploadState.*;
 
-public class Texture implements Serializable {
+public class Texture implements Serializable, Reloadable {
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = false;
     private transient boolean srgba;
@@ -38,8 +39,13 @@ public class Texture implements Serializable {
     private boolean sourceDataCompressed = false;
 
     private transient long lastUsedTimeStamp = System.currentTimeMillis();
+    private transient volatile boolean preventUnload = false;
+
     public void setUsedNow() {
-        lastUsedTimeStamp = System.currentTimeMillis();
+        if(NOT_UPLOADED.equals(uploadState)) {
+            lastUsedTimeStamp = System.currentTimeMillis();
+            load();
+        }
     }
 
     public DDSConversionState getDdsConversionState() {
@@ -49,6 +55,15 @@ public class Texture implements Serializable {
     public long getLastUsedTimeStamp() {
         return lastUsedTimeStamp;
     }
+
+    public UploadState getUploadState() {
+        return uploadState;
+    }
+
+    public void setPreventUnload(boolean preventUnload) {
+        this.preventUnload = preventUnload;
+    }
+
 
     public enum UploadState {
         NOT_UPLOADED,
@@ -101,11 +116,19 @@ public class Texture implements Serializable {
      *
      */
     public void bind() {
-        if(textureID <= 0) { textureID = OpenGLContext.getInstance().genTextures(); }
+        if(textureID <= 0) {
+//            System.out.println("texture id is <= 0");
+            textureID = OpenGLContext.getInstance().genTextures();
+        }
+//        System.out.println("Binding texture with id " + textureID);
         OpenGLContext.getInstance().bindTexture(target, textureID);
     }
     public void bind(int unit) {
-        if(textureID <= 0) { textureID = OpenGLContext.getInstance().genTextures(); }
+        if(textureID <= 0) {
+//            System.out.println("texture id is <= 0");
+            textureID = OpenGLContext.getInstance().genTextures();
+        }
+//        System.out.println("Binding texture with id " + textureID);
         OpenGLContext.getInstance().bindTexture(unit, target, textureID);
     }
 
@@ -151,9 +174,10 @@ public class Texture implements Serializable {
         upload(false);
     }
 	public void upload(boolean srgba) {
-        OpenGLContext.getInstance().execute(() -> {
+        this.srgba = srgba;
+//        OpenGLContext.getInstance().execute(() -> {
             upload(buffer(), srgba);
-        });
+//        });
 	}
 	
 	public void upload(ByteBuffer textureBuffer) {
@@ -161,12 +185,14 @@ public class Texture implements Serializable {
 	}
 	
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
+        if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
+        uploadState = UPLOADING;
         new OpenGLThread() {
             @Override
             public void doRun() {
                 OpenGLContext.getInstance().execute(() -> {
-                    uploadState = UPLOADING;
-                    bind();
+                    System.out.println("Uploading " + path);
+                    bind(0);
                     if (target == TEXTURE_2D)
                     {
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
@@ -219,15 +245,14 @@ public class Texture implements Serializable {
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     });
                 }
+                handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 uploadState = UPLOADED;
-//                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
-                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-                }, false);
-                OpenGLContext.getInstance().execute(() -> {
+            }, false);
+//                OpenGLContext.getInstance().execute(() -> {
 //                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
 //                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-                });
+//                });
             }
         }.start();
 
@@ -486,7 +511,8 @@ public class Texture implements Serializable {
 
                 long start = System.currentTimeMillis();
                 if(imageExists) {
-                    if(ddsRequested || !textureAvailableAsDDS(path) || !autoConvertToDDS) {
+                    System.out.println(path + " available as dds: " + textureAvailableAsDDS(path));
+                    if(!textureAvailableAsDDS(path)) {
                         bufferedImage = TextureFactory.getInstance().loadImage(path);
                         if (bufferedImage != null) {
                             data = new byte[util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight()))+1][];
@@ -501,7 +527,7 @@ public class Texture implements Serializable {
                             }).start();
                         }
 
-                    } else { // no dds requested and textureavailable as dds
+                    } else { // texture available as dds
                         ddsConversionState = CONVERTED;
                         DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
                         int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
@@ -518,7 +544,9 @@ public class Texture implements Serializable {
                         }
                         setWidth(ddsImage.getWidth());
                         setHeight(ddsImage.getHeight());
-                        mipmapsGenerated = true;
+                        if(ddsImage.getNumMipMaps() > 1) {
+                            mipmapsGenerated = true;
+                        }
                         sourceDataCompressed = true;
                         upload(buffer());
                         System.out.println("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
@@ -629,4 +657,32 @@ public class Texture implements Serializable {
         return result;
     }
 
+    @Override
+    public String getName() {
+        return path;
+    }
+
+    @Override
+    public void load() {
+        System.out.println("Loading " + path);
+        if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
+
+        upload(srgba);
+    }
+
+    @Override
+    public void unload() {
+        if(uploadState != UPLOADED || preventUnload) { return; }
+
+        System.out.println("Unloading " + path);
+        uploadState = NOT_UPLOADED;
+        OpenGLContext.getInstance().execute(() -> {
+            ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle);
+//            GL11.glDeleteTextures(textureID);
+        });
+        System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+        System.out.println("Total: " + OpenGLContext.getInstance().getAvailableTotalVRAM());
+        System.out.println("Dedicated: " + OpenGLContext.getInstance().getDedicatedVRAM());
+        textureID = -1;
+    }
 }

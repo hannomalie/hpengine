@@ -45,6 +45,7 @@ import static renderer.constants.GlTextureTarget.*;
 public class TextureFactory {
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
+    public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
 
     public static TextureFactory getInstance() {
         if(instance == null) {
@@ -93,22 +94,25 @@ public class TextureFactory {
 
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
 
-//        new TimeStepThread("TextureWatcher", 0.5f) {
-//            @Override
-//            public void update(float seconds) {
-//                Iterator<Texture> iterator = TEXTURES.values().iterator();
-//                while(iterator.hasNext()) {
-//                    Texture texture = iterator.next();
-//                    long notUsedSinceMs = System.currentTimeMillis() - texture.getLastUsedTimeStamp();
+        new TimeStepThread("TextureWatcher", 0.5f) {
+            @Override
+            public void update(float seconds) {
+                Iterator<Texture> iterator = TEXTURES.values().iterator();
+                while(iterator.hasNext()) {
+                    Texture texture = iterator.next();
+                    long notUsedSinceMs = System.currentTimeMillis() - texture.getLastUsedTimeStamp();
 //                    System.out.println("Not used since " + notUsedSinceMs + ": " + texture.getPath());
-//                }
-//                try {
-//                    sleep(500);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }.start();
+                    if(notUsedSinceMs > TEXTURE_UNLOAD_THRESHOLD_IN_MS && notUsedSinceMs < 20000) {
+                        texture.unload();
+                    }
+                }
+                try {
+                    sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
     public BufferedImage getDefaultTextureAsBufferedImage() {
@@ -185,6 +189,7 @@ public class TextureFactory {
         if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
             Texture texture = new Texture(resourceName, srgba);
             TEXTURES.put(resourceName, texture);
+            AppContext.getEventBus().post(new TexturesChangedEvent());
             texture.readAndUpload();
             return texture;
         }
@@ -465,7 +470,7 @@ public class TextureFactory {
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
         OpenGLContext.getInstance().execute(() -> {
-            texture.bind();
+            texture.bind(0);
             if (mipmap) {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
