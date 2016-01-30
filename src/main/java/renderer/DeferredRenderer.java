@@ -52,8 +52,7 @@ import java.util.logging.Logger;
 import static log.ConsoleLogger.getLogger;
 
 public class DeferredRenderer implements Renderer {
-	private static boolean IGNORE_GL_ERRORS = !(java.lang.management.ManagementFactory.getRuntimeMXBean().
-		    getInputArguments().toString().indexOf("-agentlib:jdwp") > 0);
+	private static boolean IGNORE_GL_ERRORS = false;
 	private int frameCount = 0;
 
 	private static Logger LOGGER = getLogger();

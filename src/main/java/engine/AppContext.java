@@ -164,6 +164,10 @@ public class AppContext {
                                  @Override
                                  public void update(float seconds) {
 
+                                     if(!Keyboard.isCreated()) {
+                                         return;
+                                     }
+
                                      float turbo = 1f;
                                      if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
                                          turbo = 3f;
@@ -332,17 +336,19 @@ public class AppContext {
 
         StopWatch.getInstance().start("Controls update");
 
-        if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
-            if (Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
-                PICKING_CLICK = 1;
-                STRG_PRESSED_LAST_FRAME = true;
-            } else if (Mouse.isButtonDown(1) && !STRG_PRESSED_LAST_FRAME) {
-                getScene().getEntities().parallelStream().forEach(e -> {
-                    e.setSelected(false);
-                });
+        if(Keyboard.isCreated()) {
+            if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+                if (Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
+                    PICKING_CLICK = 1;
+                    STRG_PRESSED_LAST_FRAME = true;
+                } else if (Mouse.isButtonDown(1) && !STRG_PRESSED_LAST_FRAME) {
+                    getScene().getEntities().parallelStream().forEach(e -> {
+                        e.setSelected(false);
+                    });
+                }
+            } else {
+                STRG_PRESSED_LAST_FRAME = false;
             }
-        } else {
-            STRG_PRESSED_LAST_FRAME = false;
         }
 
         DirectionalLight directionalLight = scene.getDirectionalLight();

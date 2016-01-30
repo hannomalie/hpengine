@@ -104,6 +104,11 @@ public final class OpenGLContext {
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
+        try {
+            Keyboard.create();
+        } catch (LWJGLException e) {
+            e.printStackTrace();
+        }
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         Display.setResizable(false);
         KHRDebugCallback.Handler handler = new KHRDebugCallback.Handler() {
