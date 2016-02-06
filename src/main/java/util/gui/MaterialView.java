@@ -121,6 +121,7 @@ public class MaterialView extends WebPanel {
 	        select.addActionListener(e -> {
 	        	WebComboBox cb = (WebComboBox) e.getSource();
 	        	Texture selectedTexture = textures.get(cb.getSelectedIndex());
+				if(selectedTexture == null) { return; }
 	        	material.getMaterialInfo().maps.put(map, selectedTexture);
 	        	addMaterialInitCommand(material);
 	        });
@@ -396,7 +397,7 @@ public class MaterialView extends WebPanel {
 		MaterialResult result;
 		try {
 			result = future.get(1, TimeUnit.MINUTES);
-			if(result.equals(Boolean.TRUE)) {
+			if(result.isSuccessful()) {
 				showNotification(NotificationIcon.plus, "Material changed");
 
 				init(result.material);

@@ -84,7 +84,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			if (geometryShaderSource != null) {
 				try {
                     geometryShader = loadShader(GeometryShader.class, geometryShaderSource);
-					System.out.println("Attach geometryshader " + GLU.gluErrorString(GL11.glGetError()));
+					printError("Attach geometryshader ");
 				} catch (Exception e) {
 					System.out.println("Not able to load geometry shader, so what else could be done...");
 				}
@@ -113,7 +113,10 @@ public class Program extends AbstractProgram implements Reloadable {
     }
 
     private void printError(String text) {
-		System.out.println(text + " " + GLU.gluErrorString(GL11.glGetError()));
+		int error = GL11.glGetError();
+		if(error != GL11.GL_NO_ERROR) {
+			System.out.println(text + " " + GLU.gluErrorString(error));
+		}
 	}
 
 	private void addFileListeners() {

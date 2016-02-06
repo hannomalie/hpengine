@@ -59,12 +59,11 @@ public class MaterialFactory {
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
 		defaultMaterial = getMaterialWithoutRead(defaultTemp);
-		initDefaultMaterials();
 
 		AppContext.getEventBus().register(this);
 	}
 
-	private void initDefaultMaterials() {
+	public void initDefaultMaterials() {
 
 		getMaterial("default", new HashMap<MAP, String>() {{
 			put(MAP.DIFFUSE, "hp/assets/textures/default.dds");

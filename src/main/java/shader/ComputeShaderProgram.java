@@ -48,21 +48,28 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Pre load " + GLU.gluErrorString(GL11.glGetError()));
-		System.out.println("Create program " + GLU.gluErrorString(GL11.glGetError()));
+		printIfError("Pre load ");
+		printIfError("Create program ");
 		attachShader(computeShader);
-		System.out.println("Attach shader " + GLU.gluErrorString(GL11.glGetError()));
+		printIfError("Attach shader ");
 		GL20.glLinkProgram(id);
-		System.out.println("Link program " + GLU.gluErrorString(GL11.glGetError()));
+		printIfError("Link program ");
 		GL20.glValidateProgram(id);
-		System.out.println("Validate program " + GLU.gluErrorString(GL11.glGetError()));
-		
+		printIfError("Validate program ");
+
 		if (GL20.glGetProgram(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not link shader: " + computeShaderSource.getFilename());
 			System.err.println(GL20.glGetProgramInfoLog(id, 10000));
 		}
-		
-		System.out.println("ComputeShader load " + GLU.gluErrorString(GL11.glGetError()));
+
+		printIfError("ComputeShader load ");
+	}
+
+	private void printIfError(String message) {
+		int error = GL11.glGetError();
+		if(error != GL11.GL_NO_ERROR) {
+			System.out.println(message + GLU.gluErrorString(GL11.glGetError()));
+		}
 	}
 
     private void attachShader(Shader shader) {

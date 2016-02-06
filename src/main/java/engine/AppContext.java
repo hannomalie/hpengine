@@ -9,6 +9,7 @@ import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
+import event.AppContextInitializedEvent;
 import event.EntityAddedEvent;
 import event.bus.EventBus;
 import event.FrameFinishedEvent;
@@ -144,6 +145,7 @@ public class AppContext {
         initWorkDir();
         EntityFactory.init();
         Renderer.init(DeferredRenderer.class);
+//        MaterialFactory.getInstance().initDefaultMaterials();
 
         glWatch = new OpenGLStopWatch();
         scriptManager = ScriptManager.getInstance();
@@ -214,6 +216,7 @@ public class AppContext {
         activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
         activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
         initialized = true;
+        eventBus.post(new AppContextInitializedEvent());
     }
 
     private void initWorkDir() {
@@ -252,9 +255,9 @@ public class AppContext {
     }
 
     public void destroy() {
-        OpenGLContext.getInstance().execute(() -> {
-            Renderer.getInstance().destroy();
-        }, false);
+//        OpenGLContext.getInstance().execute(() -> {
+//            Renderer.getInstance().destroy();
+//        }, false);
     }
 
     public List<Entity> loadTestScene() {

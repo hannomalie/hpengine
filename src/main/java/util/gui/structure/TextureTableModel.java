@@ -13,7 +13,11 @@ public class TextureTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        return TextureFactory.getInstance().TEXTURES.size();
+        try {
+            return TextureFactory.getInstance().TEXTURES.size();
+        } catch (IllegalStateException e) {
+            return 0;
+        }
     }
 
     public Object getValueAt(int row, int col) {

@@ -94,7 +94,7 @@ void main()
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
-    float ambientAmount = 1.5f;
+    float ambientAmount = 0.3f;
     float dynamicAdjust = 0.125f;
     vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*4*material.ambient))*color.rgb;
 
