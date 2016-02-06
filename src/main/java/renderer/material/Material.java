@@ -270,7 +270,7 @@ public class Material implements Serializable, Bufferable {
 
 	@Override
 	public int getSizePerObject() {
-		return 22;
+		return 16;
 	}
 
 	@Override
@@ -293,12 +293,6 @@ public class Material implements Serializable, Bufferable {
         doubles[index++] = hasHeightMap() ? 1 : 0;
         doubles[index++] = hasOcclusionMap() ? 1 : 0;
         doubles[index++] = hasRoughnessMap() ? 1 : 0;
-        doubles[index++] = hasDiffuseMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.DIFFUSE).getHandle()) : 0;
-        doubles[index++] = hasNormalMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.NORMAL).getHandle()) : 0;
-        doubles[index++] = hasSpecularMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.SPECULAR).getHandle()) : 0;
-        doubles[index++] = hasHeightMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.HEIGHT).getHandle()) : 0;
-        doubles[index++] = hasOcclusionMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.OCCLUSION).getHandle()) : 0;
-        doubles[index++] = hasRoughnessMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.ROUGHNESS).getHandle()) : 0;
 		return doubles;
 	}
 

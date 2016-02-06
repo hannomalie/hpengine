@@ -1,19 +1,13 @@
-
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
-
-//layout(binding=0) uniform sampler2D diffuseMap;
-//layout(binding=1) uniform sampler2D normalMap;
-//layout(binding=2) uniform sampler2D specularMap;
-//layout(binding=3) uniform sampler2D occlusionMap;
-//layout(binding=4) uniform sampler2D heightMap;
-////layout(binding=5) uniform sampler2D reflectionMap;
-//layout(binding=6) uniform samplerCube environmentMap;
-//layout(binding=7) uniform sampler2D roughnessMap;
+layout(binding=0) uniform sampler2D diffuseMap;
+layout(binding=1) uniform sampler2D normalMap;
+layout(binding=2) uniform sampler2D specularMap;
+layout(binding=3) uniform sampler2D occlusionMap;
+layout(binding=4) uniform sampler2D heightMap;
+//layout(binding=5) uniform sampler2D reflectionMap;
+layout(binding=6) uniform samplerCube environmentMap;
+layout(binding=7) uniform sampler2D roughnessMap;
 
 uniform layout(binding = 5, rgba8) image3D out_voxel;
-//uniform layout(binding = 5, r32ui) uimage3D out_voxel;
-//uniform int entityIndex;
 uniform int materialIndex;
 uniform bool isSelected = false;
 
@@ -72,48 +66,24 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 //include(globals.glsl)
 
-// https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf
-//uint convVec4ToRGBA8( vec4 val) {
-//    return (uint(val.w) & 0x000000FF) <<24U | (uint(val.z) &0x000000FF) <<16U | (uint(val.y) &0x000000FF) <<8U | (uint(val.x) & 0x000000FF);
-//}
-//vec4 convRGBA8ToVec4( uint val) {
-//    return vec4 (float((val & 0x000000FF)) , float((val & 0x0000FF00) >>8U) , float (( val & 0x00FF0000) >>16U) , float((val & 0xFF000000) >>24U) );
-//}
-//void imageAtomicRGBA8Avg( layout(r32ui) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val) {
-//    val.rgb *=255.0f; // Optimise following calculations
-//    uint newVal = convVec4ToRGBA8(val);
-//    uint prevStoredVal = 0;
-//    uint curStoredVal;
-//
-//    // Loop as long as destination value gets changed by other threads
-//    while ((curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
-//        prevStoredVal = curStoredVal;
-//        vec4 rval = convRGBA8ToVec4(curStoredVal);
-//        rval . xyz =(rval.xyz * rval.w) ; // Denormalize
-//        vec4 curValF = rval + val; // Add new value
-//        curValF . xyz /= (curValF.w); // Renormalize
-//        newVal = convVec4ToRGBA8(curValF);
-//    }
-//
-//}
 void main(void) {
 
     int entityIndex = outEntityIndex;
-    Entity entity = outEntity;//entities[entityIndex];
-//    bool isSelected = entity.isSelected != 0.0 ? true : false;
-//    int materialIndex = int(entity.materialIndex);
+    Entity entity = outEntity;
 
 //	Material material = outMaterial;
-	Material material = materials[materialIndex];
-	vec3 materialDiffuseColor = vec3(material.diffuseR,
-									 material.diffuseG,
-									 material.diffuseB);
-	float materialRoughness = float(material.roughness);
-	float materialMetallic = float(material.metallic);
-	float materialAmbient = float(material.ambient);
-	float parallaxBias = float(material.parallaxBias);
-	float parallaxScale = float(material.parallaxScale);
-	float materialTransparency = float(material.transparency);
+    int materialIndex = int(entity.materialIndex);
+    Material material = materials[materialIndex];
+
+    vec3 materialDiffuseColor = vec3(material.diffuseR,
+                                     material.diffuseG,
+                                     material.diffuseB);
+    float materialRoughness = float(material.roughness);
+    float materialMetallic = float(material.metallic);
+    float materialAmbient = float(material.ambient);
+    float parallaxBias = float(material.parallaxBias);
+    float parallaxScale = float(material.parallaxScale);
+    float materialTransparency = float(material.transparency);
 
 
 	vec3 V = -normalize((position_world.xyz + eyePos_world.xyz).xyz);
@@ -141,12 +111,9 @@ void main(void) {
     #define use_precomputed_tangent_space_
 	if(material.hasNormalMap != 0) {
         #ifdef use_precomputed_tangent_space
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
-
-            PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
+            PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
         #else
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
-            PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
+            PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
         #endif
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
     }
@@ -154,8 +121,7 @@ void main(void) {
 
 	vec2 uvParallax = vec2(0,0);
 	if(material.hasHeightMap != 0) {
-        sampler2D _heightMap = sampler2D(uint64_t(material.handleHeight));
-		float height = (texture(_heightMap, UV).rgb).r;
+		float height = (texture(heightMap, UV).rgb).r;
 
         #ifdef use_precomputed_tangent_space
             vec3 viewVectorTangentSpace = normalize((TBN) * (V));
@@ -180,8 +146,7 @@ void main(void) {
 	vec4 color = vec4(materialDiffuseColor, 1);
     float alpha = materialTransparency;
 	if(material.hasDiffuseMap != 0) {
-        color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
-    //	color = texture(diffuseMap, UV);
+    	color = texture(diffuseMap, UV);
         alpha *= color.a;
         if(color.a<0.1)
         {
@@ -197,8 +162,7 @@ void main(void) {
 
 	out_position.w = materialRoughness;
 	if(material.hasRoughnessMap != 0) {
-        sampler2D _roughnessMap = sampler2D(uint64_t(material.handleRoughness));
-        float r = texture(_roughnessMap, UV).x;
+        float r = texture(roughnessMap, UV).x;
         out_position.w = materialRoughness*r;
     }
 
@@ -224,11 +188,7 @@ void main(void) {
         vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*material.ambient))*out_color.rgb;
 
 	    imageStore(out_voxel, ivec3(gridPosition), dynamicAdjust*vec4(voxelColor,1-alpha));
-//	    imageAtomicRGBA8Avg(out_voxel, ivec3(gridPosition), dynamicAdjust*vec4(voxelColor,1-alpha));
     }
-//    else {
-//	    imageStore(out_voxel, ivec3(gridPosition), vec4(1,0,0,1));
-//    }
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

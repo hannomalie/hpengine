@@ -3,26 +3,21 @@ struct Material {
 	double diffuseG;
 	double diffuseB;
 	double metallic;
+
 	double roughness;
 	double ambient;
 	double parallaxBias;
 	double parallaxScale;
+
 	double transparency;
 	double materialtype;
-
 	double hasDiffuseMap;
 	double hasNormalMap;
+
 	double hasSpecularMap;
 	double hasHeightMap;
 	double hasOcclusionMap;
 	double hasRoughnessMap;
-
-	double handleDiffuse;
-    double handleNormal;
-    double handleSpecular;
-	double handleHeight;
-	double handleOcclusion;
-	double handleRoughness;
 };
 
 struct PointLight {

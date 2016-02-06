@@ -1,7 +1,3 @@
-
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
-
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
@@ -103,12 +99,9 @@ void main(void) {
     #define use_precomputed_tangent_space_
 	if(material.hasDiffuseMap != 0) {
         #ifdef use_precomputed_tangent_space
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
-
-            PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
+            PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
         #else
-            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
-            PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
+            PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
         #endif
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
     }
@@ -122,7 +115,7 @@ void main(void) {
 	vec4 color = vec4(materialDiffuseColor, 0);
 
 	if(material.hasDiffuseMap != 0) {
-        color = texture(sampler2D(uint64_t(material.handleDiffuse)), UV);
+        color = texture(diffuseMap, UV);
 
         if(color.a<0.1)
         {

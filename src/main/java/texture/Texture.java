@@ -90,7 +90,6 @@ public class Texture implements Serializable, Reloadable {
     protected int minFilter = GL11.GL_LINEAR;
     protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
-    private long handle =-1L;
 
     protected Texture() {
     }
@@ -248,10 +247,6 @@ public class Texture implements Serializable, Reloadable {
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     });
                 }
-                if(handle <= 0) {
-                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
-                }
-                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 uploadState = UPLOADED;
                 System.out.println("Upload finished");
                 AppContext.getEventBus().post(new TexturesChangedEvent());
@@ -638,10 +633,6 @@ public class Texture implements Serializable, Reloadable {
 
     public int getMagFilter() {
         return magFilter;
-    }
-
-    public long getHandle() {
-        return handle;
     }
 
     public static BufferedImage rescaleToNextPowerOfTwo(BufferedImage nonPowerOfTwoImage) {

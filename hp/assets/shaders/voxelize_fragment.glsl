@@ -1,6 +1,11 @@
-
-#extension GL_NV_gpu_shader5 : enable
-#extension GL_ARB_bindless_texture : enable
+layout(binding=0) uniform sampler2D diffuseMap;
+layout(binding=1) uniform sampler2D normalMap;
+layout(binding=2) uniform sampler2D specularMap;
+layout(binding=3) uniform sampler2D occlusionMap;
+layout(binding=4) uniform sampler2D heightMap;
+//layout(binding=5) uniform sampler2D reflectionMap;
+layout(binding=6) uniform samplerCube environmentMap;
+layout(binding=7) uniform sampler2D roughnessMap;
 
 flat in int f_axis;   //indicate which axis the projection uses
 flat in vec4 f_AABB;
@@ -87,7 +92,7 @@ void main()
 	vec4 color = vec4(materialDiffuseColor, 1);
 
 	if(material.hasDiffuseMap != 0) {
-        color = texture(sampler2D(uint64_t(material.handleDiffuse)), g_texcoord);
+        color = texture(diffuseMap, g_texcoord);
         alpha *= color.a;
     }
 

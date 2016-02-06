@@ -106,6 +106,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
         setTexturesUsed();
+        getMaterial().setTexturesActive(currentProgram);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
@@ -136,7 +137,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
         program.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
-//        model.getMaterial().setTexturesActive(program);
+        model.getMaterial().setTexturesActive(program);
         vertexBuffer.drawDebug();
         return 0;
     }
