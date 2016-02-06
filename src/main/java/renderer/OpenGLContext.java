@@ -97,7 +97,7 @@ public final class OpenGLContext {
         PixelFormat pixelFormat = new PixelFormat();
         ContextAttribs contextAttributes = new ContextAttribs(4, 3)
 //				.withProfileCompatibility(true)
-//				.withForwardCompatible(true)
+//                .withForwardCompatible(true)
 //                .withProfileCore(true)
                 .withDebug(true)
                 ;

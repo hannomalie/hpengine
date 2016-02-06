@@ -7,12 +7,14 @@ import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.DeferredRenderer;
 import renderer.PixelBufferObject;
-import renderer.Renderer;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
@@ -25,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 public class GBuffer {
@@ -110,7 +111,7 @@ public class GBuffer {
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-        GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize);
+		GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize);
         GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
         GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
 

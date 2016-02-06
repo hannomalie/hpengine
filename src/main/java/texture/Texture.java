@@ -3,6 +3,7 @@ package texture;
 import ddsutil.DDSUtil;
 import ddsutil.ImageRescaler;
 import engine.AppContext;
+import event.TexturesChangedEvent;
 import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
@@ -175,11 +176,13 @@ public class Texture implements Serializable, Reloadable {
     }
 	public void upload(boolean srgba) {
         this.srgba = srgba;
-//        OpenGLContext.getInstance().execute(() -> {
-            upload(buffer(), srgba);
-//        });
+        upload(buffer(), srgba);
 	}
-	
+    Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
+        public void uncaughtException(Thread th, Throwable ex) {
+            System.out.println("Uncaught exception: " + ex);
+        }
+    };
 	public void upload(ByteBuffer textureBuffer) {
 		upload(textureBuffer, false);
 	}
@@ -190,6 +193,7 @@ public class Texture implements Serializable, Reloadable {
         new OpenGLThread() {
             @Override
             public void doRun() {
+                setUncaughtExceptionHandler(uncaughtExceptionHandler);
                 OpenGLContext.getInstance().execute(() -> {
                     System.out.println("Uploading " + path);
                     bind(0);
@@ -202,7 +206,6 @@ public class Texture implements Serializable, Reloadable {
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width,height)));
                     }
-
                     int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
                     //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
                     if(srgba) {
@@ -245,14 +248,14 @@ public class Texture implements Serializable, Reloadable {
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     });
                 }
-                handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                if(handle <= 0) {
+                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                }
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 uploadState = UPLOADED;
+                System.out.println("Upload finished");
+                AppContext.getEventBus().post(new TexturesChangedEvent());
             }, false);
-//                OpenGLContext.getInstance().execute(() -> {
-//                    handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
-//                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-//                });
             }
         }.start();
 
@@ -664,10 +667,10 @@ public class Texture implements Serializable, Reloadable {
 
     @Override
     public void load() {
-        System.out.println("Loading " + path);
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
+        System.out.println("Loading " + path);
 
-        upload(srgba);
+//        upload(srgba);
     }
 
     @Override
@@ -676,13 +679,8 @@ public class Texture implements Serializable, Reloadable {
 
         System.out.println("Unloading " + path);
         uploadState = NOT_UPLOADED;
-        OpenGLContext.getInstance().execute(() -> {
-            ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle);
-//            GL11.glDeleteTextures(textureID);
-        });
-        System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
-        System.out.println("Total: " + OpenGLContext.getInstance().getAvailableTotalVRAM());
-        System.out.println("Dedicated: " + OpenGLContext.getInstance().getDedicatedVRAM());
-        textureID = -1;
+//        System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+//        System.out.println("Total: " + OpenGLContext.getInstance().getAvailableTotalVRAM());
+//        System.out.println("Dedicated: " + OpenGLContext.getInstance().getDedicatedVRAM());
     }
 }

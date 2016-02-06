@@ -1,13 +1,9 @@
 package test;
 
-import com.sun.prism.impl.BufferUtil;
 import ddsutil.DDSUtil;
 import jogl.DDSImage;
 import org.junit.Assert;
 import org.junit.Test;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import renderer.OpenGLContext;
 import texture.CubeMap;
 import texture.Texture;
 import texture.TextureFactory;
@@ -21,9 +17,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.junit.Assert.*;
-import static texture.Texture.UploadState.NOT_UPLOADED;
-import static texture.Texture.UploadState.UPLOADED;
-import static texture.Texture.UploadState.UPLOADING;
+import static texture.Texture.UploadState.*;
 
 public class TextureTest extends TestWithAppContext {
 
