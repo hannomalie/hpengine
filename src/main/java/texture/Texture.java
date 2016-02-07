@@ -121,6 +121,7 @@ public class Texture implements Serializable, Reloadable {
             textureID = OpenGLContext.getInstance().genTextures();
         }
 //        System.out.println("Binding texture with id " + textureID);
+        setUsedNow();
         OpenGLContext.getInstance().bindTexture(target, textureID);
     }
     public void bind(int unit) {
@@ -129,6 +130,7 @@ public class Texture implements Serializable, Reloadable {
             textureID = OpenGLContext.getInstance().genTextures();
         }
 //        System.out.println("Binding texture with id " + textureID);
+        setUsedNow();
         OpenGLContext.getInstance().bindTexture(unit, target, textureID);
     }
 
@@ -659,9 +661,9 @@ public class Texture implements Serializable, Reloadable {
     @Override
     public void load() {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
-        System.out.println("Loading " + path);
+//        System.out.println("Loading " + path);
 
-//        upload(srgba);
+        upload(srgba);
     }
 
     @Override
@@ -670,8 +672,31 @@ public class Texture implements Serializable, Reloadable {
 
         System.out.println("Unloading " + path);
         uploadState = NOT_UPLOADED;
-//        System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
-//        System.out.println("Total: " + OpenGLContext.getInstance().getAvailableTotalVRAM());
-//        System.out.println("Dedicated: " + OpenGLContext.getInstance().getDedicatedVRAM());
+
+        OpenGLContext.getInstance().execute(() -> {
+
+            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            if(srgba) {
+                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+            }
+
+            bind();
+            for(int i = 0; i < mipmapCount-1; i++) {
+                GL11.glTexImage2D(target.glTarget,
+                        i,
+                        internalformat,
+                        0,
+                        0,
+                        0,
+                        srcPixelFormat,
+                        GL11.GL_UNSIGNED_BYTE,
+                        (ByteBuffer) null);
+            }
+
+            int mipmapCount = Util.calculateMipMapCount(getWidth(), getHeight());
+            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-1);
+//            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount);
+            System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+        });
     }
 }
