@@ -104,11 +104,13 @@ public class DebugFrame {
         { AppContext.getEventBus().register(this); }
         @Subscribe @Handler public void handle(MaterialChangedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(MaterialAddedEvent e) { revalidate(); }
+		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
     private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);
     JTable textureTable = new JTable(new TextureTableModel()) {
         { AppContext.getEventBus().register(this); }
-        @Subscribe @Handler public void handle(TexturesChangedEvent e) { revalidate(); }
+		@Subscribe @Handler public void handle(TexturesChangedEvent e) { revalidate(); }
+		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
     private final ReloadableScrollPane texturePane = new ReloadableScrollPane(textureTable);
 	private final ReloadableScrollPane mainLightPane = new ReloadableScrollPane(new MainLightView());

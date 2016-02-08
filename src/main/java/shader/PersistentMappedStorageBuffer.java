@@ -85,7 +85,7 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public synchronized void putValues(FloatBuffer values) {
-        throw new NotImplementedException();
+        putValues(0, values);
     }
 
     @Override
@@ -95,7 +95,12 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public synchronized void putValues(int offset, FloatBuffer values) {
-        throw new NotImplementedException();
+        DoubleBuffer doubleBuffer = BufferUtils.createDoubleBuffer(values.capacity());
+        values.reset();
+        for(int i = offset; i < values.capacity(); i++) {
+            doubleBuffer.put(i, values.get(i));
+        }
+        doubleBuffer.reset();
     }
 
     @Override
@@ -104,6 +109,30 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
         if(values.capacity() > getSize()) { setSize(values.capacity());}
         bind();
         values.rewind();
+        buffer.position(offset);
+        buffer.put(values);
+    }
+
+
+    @Override
+    public synchronized void putValues(float... values) {
+        putValues(0, values);
+    }
+
+    @Override
+    public synchronized void putValues(int offset, float... values) {
+        bind();
+        buffer.position(offset);
+        double[] doubleValues = new double[values.length];
+        for(int i = 0; i < values.length; i++) {
+            doubleValues[i] = values[i];
+        }
+        buffer.put(doubleValues);
+    }
+
+    @Override
+    public void putValues(int offset, double... values) {
+        bind();
         buffer.position(offset);
         buffer.put(values);
     }
@@ -121,16 +150,6 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     @Override
     public void setSize(int size) {
         setCapacity(size);
-    }
-
-    @Override
-    public synchronized void putValues(float... values) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public synchronized void putValues(int offset, float... values) {
-        throw new NotImplementedException();
     }
 
     @Override

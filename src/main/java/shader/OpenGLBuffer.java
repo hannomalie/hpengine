@@ -35,6 +35,8 @@ public interface OpenGLBuffer {
 
     void putValues(int offset, float... values);
 
+    void putValues(int offset, double... values);
+
     <T extends Bufferable> void put(T... bufferable);
 
     <T extends Bufferable> void put(int offset, T... bufferable);

@@ -188,6 +188,16 @@ public class StorageBuffer implements OpenGLBuffer {
     }
 
     @Override
+    public void putValues(int offset, double... values) {
+        tempBuffer = BufferUtils.createDoubleBuffer(values.length);
+        for (int i = 0; i < values.length; i++) {
+            tempBuffer.put(offset + i, values[i]);
+        }
+        putValues(tempBuffer);
+        tempBuffer = null;
+    }
+
+    @Override
     public <T extends Bufferable> void put(T... bufferable) {
         put(0, bufferable);
     }

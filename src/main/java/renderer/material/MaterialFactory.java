@@ -356,14 +356,18 @@ public class MaterialFactory {
 
 	@Subscribe
     @Handler
-	public void bufferMaterials(MaterialAddedEvent event) {
+	public void handle(MaterialAddedEvent event) {
         bufferMaterials();
 	}
 
 	@Subscribe
     @Handler
-	public void bufferMaterials(MaterialChangedEvent event) {
-            bufferMaterials();
+	public void handle(MaterialChangedEvent event) {
+		if(event.getMaterial().isPresent()) {
+			bufferMaterial(event.getMaterial().get());
+		} else {
+			bufferMaterials();
+		}
 
 //            DoubleBuffer temp = materialBuffer.getValues();
 //            for(int i = 0; i < materials.size()*16; i++) {
@@ -389,7 +393,16 @@ public class MaterialFactory {
 //            }
 	}
 
-    private void bufferMaterials() {
+	private void bufferMaterial(Material material) {
+		OpenGLContext.getInstance().execute(() -> {
+			ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
+
+			int offset = material.getSizePerObject() * materials.indexOf(material);
+			materialBuffer.putValues(offset, material.get());
+		});
+	}
+
+	private void bufferMaterials() {
         OpenGLContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
             materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
