@@ -11,6 +11,7 @@ import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
+import shader.Shader;
 import util.CompressionUtils;
 import util.Util;
 import util.ressources.Reloadable;
@@ -44,8 +45,9 @@ public class Texture implements Serializable, Reloadable {
 
     public void setUsedNow() {
         if(NOT_UPLOADED.equals(uploadState)) {
-            lastUsedTimeStamp = System.currentTimeMillis();
             load();
+        } else if(UPLOADED.equals(uploadState) || UPLOADING.equals(uploadState)) {
+            lastUsedTimeStamp = System.currentTimeMillis();
         }
     }
 
@@ -191,10 +193,10 @@ public class Texture implements Serializable, Reloadable {
 	public void upload(ByteBuffer textureBuffer, boolean srgba) {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
         uploadState = UPLOADING;
-        new OpenGLThread() {
-            @Override
-            public void doRun() {
-                setUncaughtExceptionHandler(uncaughtExceptionHandler);
+//        new OpenGLThread() {
+//            @Override
+//            public void doRun() {
+//                setUncaughtExceptionHandler(uncaughtExceptionHandler);
                 OpenGLContext.getInstance().execute(() -> {
                     System.out.println("Uploading " + path);
                     bind(0);
@@ -205,6 +207,7 @@ public class Texture implements Serializable, Reloadable {
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+//                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-1);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width,height)));
                     }
                     int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
@@ -239,22 +242,23 @@ public class Texture implements Serializable, Reloadable {
                 if(mipmapsGenerated)
                 {
                     final int finalInternalformat = internalformat;
-                    OpenGLContext.getInstance().execute(() -> {
+//                    OpenGLContext.getInstance().execute(() -> {
                         bind();
                         uploadMipMaps(finalInternalformat);
-                    });
+//                    });
                 } else {
-                    OpenGLContext.getInstance().execute(() -> {
+//                    OpenGLContext.getInstance().execute(() -> {
                         bind();
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-                    });
+//                    });
                 }
                 uploadState = UPLOADED;
                 System.out.println("Upload finished");
+                System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
                 AppContext.getEventBus().post(new TexturesChangedEvent());
             }, false);
-            }
-        }.start();
+//            }
+//        }.start();
 
 	}
 
@@ -680,7 +684,7 @@ public class Texture implements Serializable, Reloadable {
                 internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
             }
 
-            bind();
+            bindWithoutReupload();
             for(int i = 0; i < mipmapCount-1; i++) {
                 GL11.glTexImage2D(target.glTarget,
                         i,
@@ -698,5 +702,9 @@ public class Texture implements Serializable, Reloadable {
 //            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount);
             System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
         });
+    }
+
+    private void bindWithoutReupload() {
+        OpenGLContext.getInstance().bindTexture(target, textureID);
     }
 }

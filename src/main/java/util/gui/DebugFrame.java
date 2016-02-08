@@ -55,6 +55,7 @@ import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
+import texture.TextureFactory;
 import util.Adjustable;
 import util.Toggable;
 import util.gui.container.ReloadableScrollPane;
@@ -837,15 +838,14 @@ public class DebugFrame {
 			}
 		});
 
-	    ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
-	    ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
-	    ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
-	    ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-	    ambientOcclusionTotalStrengthSlider.setValue((int) (Config.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
-	    ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
-	    ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
-	    ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
-			
+		ambientOcclusionTotalStrengthSlider.setMinimum ( 0 );
+		ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
+		ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
+		ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
+		ambientOcclusionTotalStrengthSlider.setValue((int) (Config.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
+		ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
+		ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
+		ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				WebSlider slider = (WebSlider) e.getSource();
@@ -890,6 +890,11 @@ public class DebugFrame {
 			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.CAMERA_SPEED)) {
 				@Override public void onValueChange(int value, int delta) {
 					Config.CAMERA_SPEED = (float) value/100;
+				}
+			},
+			new SliderInput("Texture Streaming Threshold (MS)", WebSlider.HORIZONTAL, 0, 10000, (int) (TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS)) {
+				@Override public void onValueChange(int value, int delta) {
+					TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS = value;
 				}
 			}
 		));
