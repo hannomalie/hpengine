@@ -368,6 +368,7 @@ public class MaterialFactory {
 		} else {
 			bufferMaterials();
 		}
+//		bufferMaterials();
 
 //            DoubleBuffer temp = materialBuffer.getValues();
 //            for(int i = 0; i < materials.size()*16; i++) {
@@ -395,10 +396,10 @@ public class MaterialFactory {
 
 	private void bufferMaterial(Material material) {
 		OpenGLContext.getInstance().execute(() -> {
-			ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
+			ArrayList<Material> materials = new ArrayList<>(MATERIALS.values());
 
 			int offset = material.getSizePerObject() * materials.indexOf(material);
-			materialBuffer.putValues(offset, material.get());
+			materialBuffer.put(offset, material);
 		});
 	}
 

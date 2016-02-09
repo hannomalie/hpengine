@@ -207,50 +207,28 @@ public class Texture implements Serializable, Reloadable {
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//                        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-1);
                         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width,height)));
                     }
                     int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-                    //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
                     if(srgba) {
                         internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-                        //internalformat = EXTTextureSRGB.GL_SRGB8_ALPHA8_EXT;
                     }
                     synchronized (data) {
                         if(sourceDataCompressed) {
                             System.out.println("#########Loading compressed texture");
-                            GL13.glCompressedTexImage2D(target.glTarget,
-                                    0,
-                                    internalformat,
-                                    getWidth(),
-                                    getHeight(),
-                                    0,
-                                    textureBuffer);
-                            OpenGLContext.exitOnGLError("ZZZ");
+                            GL13.glCompressedTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, textureBuffer);
                         } else {
-                            GL11.glTexImage2D(target.glTarget,
-                                    0,
-                                    internalformat,
-                                    getWidth(),
-                                    getHeight(),
-                                    0,
-                                    srcPixelFormat,
-                                    GL11.GL_UNSIGNED_BYTE,
-                                    textureBuffer);
+                            GL11.glTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
                         }
                     }
                 if(mipmapsGenerated)
                 {
                     final int finalInternalformat = internalformat;
-//                    OpenGLContext.getInstance().execute(() -> {
                         bind();
                         uploadMipMaps(finalInternalformat);
-//                    });
                 } else {
-//                    OpenGLContext.getInstance().execute(() -> {
                         bind();
                         GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-//                    });
                 }
                 uploadState = UPLOADED;
                 System.out.println("Upload finished");
