@@ -44,13 +44,15 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
                 glUnmapBuffer(target);
                 glDeleteBuffers(id);
             });
+        } else if(buffer != null && buffer.capacity() >= capacity) {
+            return;
         }
 
         OpenGLContext.getInstance().execute(() -> {
             id = glGenBuffers();
             bind();
-            glBufferStorage(target, capacity, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-            buffer = glMapBufferRange(target, 0, capacity, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*4)).asDoubleBuffer();
+            glBufferStorage(target, capacity * 8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+            buffer = glMapBufferRange(target, 0, capacity*8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*8)).asDoubleBuffer();
         });
     }
 
@@ -70,17 +72,29 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public FloatBuffer getValuesAsFloats() {
-        throw new NotImplementedException();
+        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/8);
+        for(int i = 0; i < buffer.capacity() / 8; i++) {
+            result.put(i, (float) buffer.get(i));
+        }
+
+        result.rewind();
+        return result;
     }
 
     @Override
     public DoubleBuffer getValues() {
-        return buffer;
+        return getValues(0, buffer.capacity() / 8);
     }
 
     @Override
     public DoubleBuffer getValues(int offset, int length) {
-        throw new NotImplementedException();
+        DoubleBuffer result = BufferUtils.createDoubleBuffer(length);
+        for(int i = 0; i < length; i++) {
+            result.put(i, buffer.get(offset+i));
+        }
+
+        result.rewind();
+        return result;
     }
 
     @Override
@@ -95,12 +109,13 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 
     @Override
     public synchronized void putValues(int offset, FloatBuffer values) {
-        DoubleBuffer doubleBuffer = BufferUtils.createDoubleBuffer(values.capacity());
-        values.reset();
+        if(values.capacity() > getSize()) { setSize(values.capacity());}
+        bind();
+        values.rewind();
         for(int i = offset; i < values.capacity(); i++) {
-            doubleBuffer.put(i, values.get(i));
+            buffer.put(i, values.get(i));
         }
-        doubleBuffer.reset();
+        buffer.reset();
     }
 
     @Override
@@ -168,10 +183,10 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
             int currentOffset = i * currentBufferable.getSizePerObject();
             double[] currentBufferableArray = currentBufferable.get();
             for (int z = 0; z < currentBufferableArray.length; z++) {
-                buffer.put(currentOffset + z, currentBufferableArray[z]);
+                buffer.put(offset+currentOffset + z, currentBufferableArray[z]);
             }
         }
-        putValues(offset, buffer);
+//        putValues(offset, buffer);
     }
 
     public void dispose() {
