@@ -402,6 +402,7 @@ public class AppContext {
 
         scene.endFrame(activeCamera);
     }
+
     private volatile boolean anyEntityHasMovedSomewhen = false;
 
     public PhysicsFactory getPhysicsFactory() {

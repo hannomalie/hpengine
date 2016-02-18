@@ -255,8 +255,8 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
-			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
+//			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}

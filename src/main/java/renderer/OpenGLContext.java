@@ -14,6 +14,7 @@ import util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -95,9 +96,9 @@ public final class OpenGLContext {
 
     private final void privateInit() throws LWJGLException {
         PixelFormat pixelFormat = new PixelFormat();
-        ContextAttribs contextAttributes = new ContextAttribs(4, 3)
-//				.withProfileCompatibility(true)
-//                .withForwardCompatible(true)
+        ContextAttribs contextAttributes = new ContextAttribs(4, 5)
+				.withProfileCompatibility(true)
+                .withForwardCompatible(true)
 //                .withProfileCore(true)
                 .withDebug(true)
                 ;
@@ -105,6 +106,13 @@ public final class OpenGLContext {
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
+
+        ContextCapabilities capabilities = GLContext.getCapabilities();
+//        System.out.println("######## Sparse texutre ext available:");
+//        System.out.println(capabilities.GL_ARB_sparse_texture);
+//        System.out.println(capabilities.GL_EXT_direct_state_access);
+//        System.out.println(GL11.glGetString(GL11.GL_EXTENSIONS));
+
         try {
             Keyboard.create();
         } catch (LWJGLException e) {
@@ -195,16 +203,36 @@ public final class OpenGLContext {
         }
     }
 
+    private static List<Semaphore> textureUnitsLock = new CopyOnWriteArrayList();
+    static {
+        for(int i = 0; i < 16; i++) {
+            textureUnitsLock.add(new Semaphore(1));
+        }
+    }
+
+
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
         OpenGLContext.getInstance().execute(() -> {
+            if(textureUnitIndex > 14) {
+                if(textureId > 0) {
+                    try {
+                        textureUnitsLock.get(textureUnitIndex).acquire();
+                        System.out.println("Lock acquired for unit " + textureUnitIndex);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    textureUnitsLock.get(textureUnitIndex).release();
+                    System.out.println("Lock released for unit " + textureUnitIndex);
+                    return;
+                }
+            }
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
             activeTexture(textureUnitIndex);
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
-//        }
-//            printTextureBindings();
         });
     }
 

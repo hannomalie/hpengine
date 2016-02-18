@@ -4,18 +4,33 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.SharedDrawable;
 
-public abstract class OpenGLThread extends Thread {
+public class OpenGLThread extends Thread {
 
 	private String name;
 	SharedDrawable drawable;
 	public volatile boolean initialized = false;
 
+	private Runnable runnable;
+
 	public OpenGLThread() {
-		this("GLThread_" + System.currentTimeMillis());
+		this(OpenGLContext.OPENGL_THREAD_NAME + "_" + System.currentTimeMillis());
+	}
+	public OpenGLThread(Runnable runnable) {
+		this(OpenGLContext.OPENGL_THREAD_NAME + "_" + System.currentTimeMillis(), runnable);
 	}
 	public OpenGLThread(String name) {
+		this(name, new Runnable() {
+			@Override
+			public void run() {
+
+			}
+		});
+	}
+
+	public OpenGLThread(String name, Runnable runnable) {
 		this.name = name;
 		drawable = OpenGLContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
+		setRunnable(runnable);
 		initialized = true;
 	}
 
@@ -30,20 +45,26 @@ public abstract class OpenGLThread extends Thread {
 			System.err.println("Thread not initialized...");
 			return;
 		}
+		if(runnable == null) {
+			System.err.println("Runnable is null...");
+			return;
+		}
 		try {
-			if (!drawable.isCurrent()) {
+//			if (!drawable.isCurrent()) {
 				drawable.makeCurrent();
-			}
+//			}
 			Thread.currentThread().setName(name);
-	        doRun();
+	        runnable.run();
 
 			drawable.releaseContext();
 			drawable.destroy();
 		} catch (LWJGLException e) {
 			e.printStackTrace();
 		}
-		
+		setRunnable(null);
 	}
 
-	public abstract void doRun();
+	public void setRunnable(Runnable runnable) {
+		this.runnable = runnable;
+	}
 }
