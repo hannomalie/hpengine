@@ -236,7 +236,7 @@ public class TextureFactory {
         if (cubeMapPreCompiled(resourceName)) {
         	tex = CubeMap.read(resourceName, createTextureID());
         	if (tex != null) {
-                generateMipMaps(tex, Material.MIPMAP_DEFAULT);
+                generateMipMapsCubeMap(tex.getTextureID());
                 TEXTURES.put(resourceName+ "_cube",tex);
                 return tex;
             }
