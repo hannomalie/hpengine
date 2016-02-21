@@ -85,6 +85,7 @@ public class Model implements Serializable {
 
     private transient Vector3f min;
     private transient Vector3f max;
+    private float boundSphereRadius = -1;
 
     public Vector4f[] getMinMax() {
         if (min == null || max == null) {
@@ -110,7 +111,13 @@ public class Model implements Serializable {
             }
         }
 
+        boundSphereRadius = (Vector3f.sub(max, min, null).scale(0.5f)).length();
+
         return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
+    }
+
+    public float getBoundingSphereRadius() {
+        return boundSphereRadius;
     }
 
     private transient Vector3f center;

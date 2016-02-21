@@ -105,8 +105,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        currentProgram.setUniform("isSelected", isSelected);
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
-        setTexturesUsed();
-        getMaterial().setTexturesActive(currentProgram);
+        // TODO: Implement strategy pattern
+        float distanceToCamera = Vector3f.sub(camera.getWorldPosition(), getEntity().getCenterWorld(), null).length();
+//        System.out.println("boundingSphere " + model.getBoundingSphereRadius());
+//        System.out.println("distanceToCamera " + distanceToCamera);
+        boolean isInReachForTextureLoading = distanceToCamera < 1.5f*model.getBoundingSphereRadius();
+        getMaterial().setTexturesActive(currentProgram, isInReachForTextureLoading);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);

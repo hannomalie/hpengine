@@ -12,7 +12,6 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
 import shader.Bufferable;
-import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -213,11 +212,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		Vector4f[] minMaxWorld = getMinMaxWorld();
 		Vector4f minWorld = minMaxWorld[0];
 		Vector4f maxWorld = minMaxWorld[1];
-		
-		Vector3f centerWorld = new Vector3f();
-		centerWorld.x = (maxWorld.x + minWorld.x)/2;
-		centerWorld.y = (maxWorld.y + minWorld.y)/2;
-		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+
+		Vector3f centerWorld = getCenterWorld();
 		
 		Vector3f distVector = new Vector3f();
 		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
@@ -234,6 +230,18 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return false;
 	}
 
+	public Vector3f getCenterWorld() {
+		Vector4f[] minMaxWorld = getMinMaxWorld();
+		Vector4f minWorld = minMaxWorld[0];
+		Vector4f maxWorld = minMaxWorld[1];
+
+		Vector3f centerWorld = new Vector3f();
+		centerWorld.x = (maxWorld.x + minWorld.x)/2;
+		centerWorld.y = (maxWorld.y + minWorld.y)/2;
+		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+		return centerWorld;
+	}
+
 	public boolean isVisible() {
 		return visible;
 	}
@@ -248,17 +256,17 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
 			minMax = modelComponent.getMinMax();
 
-			Vector4f minView = new Vector4f(0,0,0,1);
-			Vector4f maxView = new Vector4f(0,0,0,1);
+			Vector4f minWorld = new Vector4f(0,0,0,1);
+			Vector4f maxWorld = new Vector4f(0,0,0,1);
 
 			Matrix4f modelMatrix = getModelMatrix();
 
-			Matrix4f.transform(modelMatrix, minMax[0], minView);
-			Matrix4f.transform(modelMatrix, minMax[1], maxView);
+			Matrix4f.transform(modelMatrix, minMax[0], minWorld);
+			Matrix4f.transform(modelMatrix, minMax[1], maxWorld);
 
-			minView.w = 0;
-			maxView.w = 0;
-			minMax = new Vector4f[] {minView, maxView};
+			minWorld.w = 0;
+			maxWorld.w = 0;
+			minMax = new Vector4f[] {minWorld, maxWorld};
 
 			return minMax;
 		} else {
@@ -277,24 +285,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 //		}
 
 		return minMax;
-	}
-
-	public Vector3f getCenter() {
-		if(hasComponent(ModelComponent.class)) {
-			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			Vector4f[] minMax = modelComponent.getMinMax();
-
-			Vector4f center = Vector4f.sub(minMax[1], minMax[0], null);
-			center.w = 1;
-
-			Matrix4f modelMatrix = getModelMatrix();
-
-			Matrix4f.transform(modelMatrix, center, center);
-
-			return new Vector3f(center.x, center.y, center.z);
-		} else {
-			return getPosition();
-		}
 	}
 
 	public boolean isSelected() {
