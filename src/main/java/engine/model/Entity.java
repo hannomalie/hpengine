@@ -287,6 +287,14 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return minMax;
 	}
 
+
+	public Vector3f[] getMinMaxWorldVec3() {
+		Vector4f[] asVec4 = getMinMaxWorld();
+		Vector3f[] result = {new Vector3f(asVec4[0].x, asVec4[0].y, asVec4[0].z),
+				new Vector3f(asVec4[1].x, asVec4[1].y, asVec4[1].z)};
+		return result;
+	}
+
 	public boolean isSelected() {
 		return selected;
 	}

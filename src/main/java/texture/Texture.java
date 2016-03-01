@@ -118,12 +118,16 @@ public class Texture implements Serializable, Reloadable {
      *
      */
     public void bind() {
+        bind(true);
+    }
+    public void bind(boolean setUsed) {
         if(textureID <= 0) {
 //            System.out.println("texture id is <= 0");
             textureID = OpenGLContext.getInstance().genTextures();
         }
-//        System.out.println("Binding texture with id " + textureID);
-        setUsedNow();
+        if(setUsed) {
+            setUsedNow();
+        }
         OpenGLContext.getInstance().bindTexture(target, textureID);
     }
 
