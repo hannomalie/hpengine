@@ -121,7 +121,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //            return vertexBuffer.drawInstanced(10);
 //        } else
         if (drawLines) {
-            return vertexBuffer.drawDebug();
+            return vertexBuffer.drawDebug(2);
         } else {
             return vertexBuffer.draw();
         }

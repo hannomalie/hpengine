@@ -3,9 +3,8 @@ package engine.model;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.ref.WeakReference;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class VertexArrayObject {
@@ -15,6 +14,7 @@ public class VertexArrayObject {
     private int id = -1;
     private int vertexBufferBindingIndex = 0;
     private transient boolean attributesSetUp = false;
+    private static volatile int CURRENT_BUFFER_INDEX = 0;
 
 
     public static VertexArrayObject getForChannels(EnumSet<DataChannels> channels) {
@@ -41,6 +41,7 @@ public class VertexArrayObject {
     public void bind() {
         if(CURRENTLY_BOUND_VAO == id) { return; }
         OpenGLContext.getInstance().execute(() -> {
+            System.out.println("CURRENTLY_BOUND_VAO " + CURRENTLY_BOUND_VAO);
             CURRENTLY_BOUND_VAO = id;
             GL30.glBindVertexArray(getId());
         });
@@ -49,11 +50,14 @@ public class VertexArrayObject {
     private void setUpAttributes() {
         if(attributesSetUp) { return; }
         OpenGLContext.getInstance().execute(() -> {
+//            vertexBufferBindingIndex = CURRENT_BUFFER_INDEX;
+//            CURRENT_BUFFER_INDEX += 1;
+//            System.out.println("vertexBufferBindingIndex " + vertexBufferBindingIndex);
             bind();
             int currentOffset = 0;
             for (DataChannels channel : channels) {
-                ARBVertexAttribBinding.glVertexAttribFormat(channel.getLocation(),channel.getSize(), GL11.GL_FLOAT, false, currentOffset);
-                ARBVertexAttribBinding.glVertexAttribBinding(channel.getLocation(), vertexBufferBindingIndex);
+                GL43.glVertexAttribFormat(channel.getLocation(),channel.getSize(), GL11.GL_FLOAT, false, currentOffset);
+                GL43.glVertexAttribBinding(channel.getLocation(), vertexBufferBindingIndex);
                 GL20.glEnableVertexAttribArray(channel.getLocation());
 //                GL20.glVertexAttribPointer(channel.getLocation(),channel.getSize(), GL11.GL_FLOAT, false, bytesPerVertex(channels), currentOffset);
 

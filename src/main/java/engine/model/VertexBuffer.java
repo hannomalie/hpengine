@@ -1,13 +1,15 @@
 package engine.model;
 
-import engine.graphics.query.GLTimerQuery;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL43;
 import renderer.OpenGLContext;
-import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class VertexBuffer {
 
@@ -131,7 +133,6 @@ public class VertexBuffer {
             setVertexBuffer(GL15.glGenBuffers());
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-
             bind();
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
         }, true); // TODO: Evaluate if this has to be blocking
@@ -150,14 +151,12 @@ public class VertexBuffer {
         if(!uploaded) { return 0; }
         bind();
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-
         return verticesCount;
     }
 
     public void bind() {
 //        vertexArrayObject.bind();
-        ARBVertexAttribBinding.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
-
+		GL43.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
     }
 
 	public void drawAgain() {
@@ -166,13 +165,22 @@ public class VertexBuffer {
 	}
 
 	public int drawDebug() {
-        if(!uploaded) { return 0; }
-        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+		if(!uploaded) { return 0; }
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
-        bind();
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-        return verticesCount;
+		bind();
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		return verticesCount;
+	}
+	public int drawDebug(float lineWidth) {
+		if(!uploaded) { return 0; }
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+		GL11.glLineWidth(lineWidth);
+		bind();
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		return verticesCount;
 	}
 
 	public int drawInstanced(int instanceCount) {

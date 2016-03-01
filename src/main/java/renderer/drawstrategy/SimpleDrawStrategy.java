@@ -34,7 +34,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +47,7 @@ import static renderer.constants.GlTextureTarget.*;
 public class SimpleDrawStrategy extends BaseDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
+    private FloatBuffer identityMatrix44Buffer;
     private ComputeShaderProgram texture3DMipMappingComputeProgram;
 
     private Program firstPassProgram;
@@ -142,6 +142,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         tiledProbeLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
         openGLContext = OpenGLContext.getInstance();
+        identityMatrix44Buffer = new Transform().getTransformationBuffer();
     }
 
     public DrawResult draw(AppContext appContext) {
@@ -149,10 +150,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     public DrawResult draw(Camera camera, AppContext appContext, List<Entity> entities) {
-        return draw(appContext, null, appContext.getScene().getOctree(), camera, entities);
+        return draw(appContext, null, appContext.getScene().getOctree(), camera);
     }
 
-    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera, List<Entity> entities) {
+    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera) {
         SecondPassResult secondPassResult = null;
 
         LightFactory lightFactory = LightFactory.getInstance();
@@ -164,7 +165,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         camera.update(0.0000001f);
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights());
+        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree);
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -212,7 +213,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         zeroBuffer.put(0);
         zeroBuffer.rewind();
     }
-    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree) {
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
@@ -280,10 +281,26 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     }
                 }
             }
+            linesProgram.use();
+            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
+            linesProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+            linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            Renderer.getInstance().batchVector(new Vector3f(5,5,5));
+            Renderer.getInstance().drawLines(linesProgram);
+
+//            for (Entity entity : entities) {
+//                if(entity.getComponents().containsKey("ModelComponent")) {
+//                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
+//                            .draw(camera, null, linesProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), true);
+//                    verticesDrawn += currentVerticesCount;
+//                    if(currentVerticesCount > 0) { entityCount++; }
+//                }
+//            }
+
         }
         GPUProfiler.end();
 
-        boolean renderVoxels = true;
+        boolean renderVoxels = false;
         if(renderVoxels) {
             Program currentProgram = firstPassProgram;
 
