@@ -1,5 +1,6 @@
 package renderer.material;
 
+import config.Config;
 import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;

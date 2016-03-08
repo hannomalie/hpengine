@@ -72,11 +72,20 @@ public class ModelTest extends TestWithAppContext {
 		minMaxWorld = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector4f(0, -1f, -1f, 0), minMaxWorld[0]);
 		Assert.assertEquals(new Vector4f(2f, 1f, 1f, 0), minMaxWorld[1]);
-		
+
 		entity.setScale(2);
 		minMaxWorld = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector4f(-1f, -2f, -2f, 0), minMaxWorld[0]);
 		Assert.assertEquals(new Vector4f(3f, 2f, 2f, 0), minMaxWorld[1]);
+
+		Vector3f[] minMaxWorldVec3 = entity.getMinMaxWorldVec3();
+		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3[0]);
+		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorldVec3[1]);
+
+		entity.moveInWorld(new Vector3f(0, 5, 0));
+		minMaxWorldVec3 = entity.getMinMaxWorldVec3();
+		Assert.assertEquals(new Vector3f(-1f, 3f, -2f), minMaxWorldVec3[0]);
+		Assert.assertEquals(new Vector3f(3f, 7f, 2f), minMaxWorldVec3[1]);
 	}
 	
 	

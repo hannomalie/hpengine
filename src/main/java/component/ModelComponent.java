@@ -1,6 +1,7 @@
 package component;
 
 import camera.Camera;
+import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
@@ -109,7 +110,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         float distanceToCamera = Vector3f.sub(camera.getWorldPosition(), getEntity().getCenterWorld(), null).length();
 //        System.out.println("boundingSphere " + model.getBoundingSphereRadius());
 //        System.out.println("distanceToCamera " + distanceToCamera);
-        boolean isInReachForTextureLoading = distanceToCamera < 1.5f*model.getBoundingSphereRadius();
+        boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f*model.getBoundingSphereRadius();
         getMaterial().setTexturesActive(currentProgram, isInReachForTextureLoading);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {

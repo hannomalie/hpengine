@@ -18,7 +18,6 @@ public class Model implements Serializable {
     private List<Vector2f> texCoords = new ArrayList<>();
     private List<Vector3f> normals = new ArrayList<>();
     private List<Face> faces = new ArrayList<>();
-    private boolean enableSmoothShading = true;
 	private String name = "";
 	private Material material;
 
@@ -44,14 +43,6 @@ public class Model implements Serializable {
 
     public List<Face> getFaces() {
         return faces;
-    }
-
-    public boolean isSmoothShadingEnabled() {
-        return enableSmoothShading;
-    }
-
-    public void setSmoothShadingEnabled(boolean smoothShadingEnabled) {
-        this.enableSmoothShading = smoothShadingEnabled;
     }
 
 	public void setName(String name) {
@@ -88,9 +79,10 @@ public class Model implements Serializable {
     private float boundSphereRadius = -1;
 
     public Vector4f[] getMinMax() {
-        if (min == null || max == null) {
-            min = new Vector3f(vertices.get(0));
-            max = new Vector3f(vertices.get(0));
+        if (min == null || max == null)
+        {
+            min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+            max = new Vector3f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
 
             for (int i = 0; i < faces.size(); i++) {
                 Face face = faces.get(i);

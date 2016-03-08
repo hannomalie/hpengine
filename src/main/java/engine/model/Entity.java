@@ -49,11 +49,11 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	protected Entity() { }
 
-	protected Entity(MaterialFactory materialFactory, Model model, String materialName) {
-		this(materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	protected Entity(Model model, String materialName) {
+		this(new Vector3f(0, 0, 0), model.getName(), model, materialName);
 	}
 
-	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
+	protected Entity(Vector3f position, String name, Model model, String materialName) {
 		transform.init();
 		addComponent(new ModelComponent(model, materialName));
 		this.name = name;
@@ -236,9 +236,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		Vector4f maxWorld = minMaxWorld[1];
 
 		Vector3f centerWorld = new Vector3f();
-		centerWorld.x = (maxWorld.x + minWorld.x)/2;
-		centerWorld.y = (maxWorld.y + minWorld.y)/2;
-		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+		centerWorld.x = minWorld.x + (maxWorld.x - minWorld.x)/2;
+		centerWorld.y = minWorld.y + (maxWorld.y - minWorld.y)/2;
+		centerWorld.z = minWorld.z + (maxWorld.z - minWorld.z)/2;
 		return centerWorld;
 	}
 
@@ -271,9 +271,11 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			return minMax;
 		} else {
 			minMax = new Vector4f[2];
-			Vector4f vector = new Vector4f(getPosition().x, getPosition().y, getPosition().z, 1);
-			minMax[0] = vector;
-			minMax[1] = vector;
+			float amount = 5;
+			Vector4f vectorMin = new Vector4f(getPosition().x-amount, getPosition().y-amount, getPosition().z-amount, 1);
+			Vector4f vectorMax = new Vector4f(getPosition().x+amount, getPosition().y+amount, getPosition().z+amount, 1);
+			minMax[0] = vectorMin;
+			minMax[1] = vectorMax;
 		}
 
 //		if(hasChildren()) {
@@ -291,7 +293,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	public Vector3f[] getMinMaxWorldVec3() {
 		Vector4f[] asVec4 = getMinMaxWorld();
 		Vector3f[] result = {new Vector3f(asVec4[0].x, asVec4[0].y, asVec4[0].z),
-				new Vector3f(asVec4[1].x, asVec4[1].y, asVec4[1].z)};
+							new Vector3f(asVec4[1].x, asVec4[1].y, asVec4[1].z)};
 		return result;
 	}
 

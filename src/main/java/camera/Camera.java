@@ -1,7 +1,6 @@
 package camera;
 
 import config.Config;
-import engine.Transform;
 import engine.model.Entity;
 import engine.model.Model;
 import org.lwjgl.BufferUtils;
@@ -72,7 +71,7 @@ public class Camera extends Entity {
 	}
 
 	public Camera(MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
-		super(materialFactory, position, name, model, material);
+		super(position, name, model, material);
 	}
 
 	public void update(float seconds) {

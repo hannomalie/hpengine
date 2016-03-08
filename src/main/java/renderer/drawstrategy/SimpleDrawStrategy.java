@@ -34,7 +34,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
@@ -222,7 +221,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.disable(GlCap.BLEND);
 
         GPUProfiler.start("Culling");
-        List<Entity> entities = new ArrayList<>();
+        List<Entity> entities;
 
         if (Config.useFrustumCulling) {
             entities = (octree.getVisible(camera));
@@ -246,7 +245,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         int entityCount = 0;
         GPUProfiler.start("Draw entities");
 
-        if (Config.DRAWSCENE_ENABLED) {
+        FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
+        FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+
+        if (Config.DRAWSCENE_ENABLED && AppContext.getInstance().getScene() != null) {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
@@ -255,9 +257,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
-            firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniform("useNormalMaps", !Config.DRAWLINES_ENABLED);
+            firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
-            firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
             firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
             firstpassDefaultProgram.setUniform("near", camera.getNear());
@@ -274,31 +277,53 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             for (Entity entity : entities) {
                 if (entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
+                            .draw(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
                     verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         entityCount++;
                     }
                 }
             }
-            linesProgram.use();
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-            linesProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
-            linesProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-            Renderer.getInstance().batchVector(new Vector3f(5,5,5));
-            Renderer.getInstance().drawLines(linesProgram);
-
-//            for (Entity entity : entities) {
-//                if(entity.getComponents().containsKey("ModelComponent")) {
-//                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-//                            .draw(camera, null, linesProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), true);
-//                    verticesDrawn += currentVerticesCount;
-//                    if(currentVerticesCount > 0) { entityCount++; }
-//                }
-//            }
-
         }
         GPUProfiler.end();
+
+        if(Config.DRAWLINES_ENABLED) {
+            openGLContext.disable(CULL_FACE);
+            openGLContext.depthMask(false);
+//            openGLContext.disable(DEPTH_TEST);
+
+            linesProgram.use();
+            linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
+            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
+            linesProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+            linesProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+
+            for (Entity entity : entities) {
+                if(entity.getComponents().containsKey("ModelComponent")){// && entity.getName().equals("sponza_322")) {
+                    Vector4f[] minMax = entity.getMinMaxWorld();
+                    Vector3f min = new Vector3f(minMax[0].x, minMax[0].y, minMax[0].z);
+                    Vector3f max = new Vector3f(minMax[1].x, minMax[1].y, minMax[1].z);
+                    Renderer.getInstance().batchLine(min, max);
+                }
+            }
+            Renderer.getInstance().drawLines(linesProgram);
+
+            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
+
+            int max = 500;
+            for(int x = -max; x < max; x+=25) {
+                for(int y = -max; y < max; y+=25) {
+                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
+                }
+                for(int z = -max; z < max; z+=25) {
+                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
+                }
+            }
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
+            Renderer.getInstance().drawLines(linesProgram);
+        }
 
         boolean renderVoxels = false;
         if(renderVoxels) {
@@ -323,8 +348,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
-            voxelizer.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-            voxelizer.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+            voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             voxelizer.setUniform("u_width", 256);
             voxelizer.setUniform("u_height", 256);
             currentProgram = voxelizer;
@@ -333,8 +358,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             currentProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
             currentProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
             currentProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
-            currentProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-            currentProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+            currentProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+            currentProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             currentProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
             currentProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
             currentProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
@@ -379,7 +404,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     int num_groups_xyz = Math.max(currentSizeTarget / 8, 1);
                     texture3DMipMappingComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
                 }
-
 
                 GPUProfiler.end();
             }
@@ -505,7 +529,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             OpenGLContext.getInstance().disable(BLEND);
             OpenGLContext.getInstance().cullFace(BACK);
-            renderReflectionsAndAO(viewMatrix, projectionMatrix);
+            renderReflections(viewMatrix, projectionMatrix);
         } else {
             gBuffer.getReflectionBuffer().use(true);
             gBuffer.getReflectionBuffer().unuse();
@@ -710,7 +734,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-    private void renderReflectionsAndAO(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
+    private void renderReflections(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
         GPUProfiler.start("Reflections and AO");
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();

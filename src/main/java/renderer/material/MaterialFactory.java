@@ -228,7 +228,7 @@ public class MaterialFactory {
 		public MaterialMap maps = new MaterialMap();
 		public ENVIRONMENTMAPTYPE environmentMapType = ENVIRONMENTMAPTYPE.GENERATED;
 		public String name = "";
-		public Vector3f diffuse = new Vector3f();
+		public Vector3f diffuse = new Vector3f(1,1,1);
 		public float roughness = 0.95f;
 		public float metallic = 0f;
 		public float ambient = 0;

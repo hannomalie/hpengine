@@ -4,18 +4,16 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL31;
-import org.lwjgl.opengl.GL43;
 import renderer.OpenGLContext;
 
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class VertexBuffer {
 
     private transient volatile boolean uploaded = false;
 
-    public enum Usage {
+	public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
 
@@ -61,13 +59,16 @@ public class VertexBuffer {
 	}
 
 
+	public FloatBuffer buffer(float[] vertices) {
+		return buffer(vertices, channels);
+	}
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
 		
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		int totalBytesPerVertex = totalElementsPerVertex * 4;
         int verticesCount = calculateVerticesCount(vertices, channels);
 
-		FloatBuffer buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
+		buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
 
 		for (int i = 0; i < verticesCount; i++) {
 			int currentOffset = 0;
@@ -129,6 +130,7 @@ public class VertexBuffer {
 
     public VertexBuffer upload() {
         buffer.rewind();
+		uploaded = false;
         OpenGLContext.getInstance().execute(() -> {
             setVertexBuffer(GL15.glGenBuffers());
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
@@ -143,7 +145,7 @@ public class VertexBuffer {
 	
 	public void delete() {
 		GL15.glDeleteBuffers(vertexBuffer);
-//        vertexArrayObject.delete();
+        vertexArrayObject.delete();
 		buffer = null;
 	}
 
@@ -155,8 +157,7 @@ public class VertexBuffer {
     }
 
     public void bind() {
-//        vertexArrayObject.bind();
-		GL43.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
+        vertexArrayObject.bind();
     }
 
 	public void drawAgain() {
@@ -179,6 +180,15 @@ public class VertexBuffer {
 		GL11.glLineWidth(lineWidth);
 		bind();
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		return verticesCount;
+	}
+	public int drawDebugLines() {
+		if(!uploaded) { return 0; }
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+		GL11.glLineWidth(2f);
+		bind();
+		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
 	}
