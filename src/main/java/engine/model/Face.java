@@ -1,12 +1,15 @@
 package engine.model;
 
 
+import org.lwjgl.util.vector.Vector3f;
+
 import java.io.Serializable;
 
 public class Face implements Serializable {
 	private final int[] vertexIndices = {-1, -1, -1};
     private final int[] normalIndices = {-1, -1, -1};
     private final int[] textureCoordinateIndices = {-1, -1, -1};
+    public boolean isRemoved;
 
     public boolean hasNormals() {
         return normalIndices[0] != -1;
@@ -16,7 +19,7 @@ public class Face implements Serializable {
         return textureCoordinateIndices[0] != -1;
     }
 
-    public int[] getVertexIndices() {
+    public int[] getVertices() {
         return vertexIndices;
     }
 
@@ -53,5 +56,30 @@ public class Face implements Serializable {
         this.normalIndices[0] = normalIndices[0];
         this.normalIndices[1] = normalIndices[1];
         this.normalIndices[2] = normalIndices[2];
+    }
+
+    public boolean hasVertex(int vertexIndex) {
+        return (vertexIndex == vertexIndices[0] || vertexIndex == vertexIndices[1] || vertexIndex == vertexIndices[2]);
+    }
+
+    public int getVertex(int vertexIndex) {
+        return vertexIndices[vertexIndex];
+    }
+
+    public static Vector3f calculateFaceNormal(Vector3f a, Vector3f b, Vector3f c) {
+        Vector3f tmpV1 = Vector3f.sub(b, a, null);
+        Vector3f tmpV2 = Vector3f.sub(c, b, null);
+
+        return Vector3f.cross(tmpV1, tmpV2, null).normalise(null);
+    }
+
+    public int indexOf(int vertexIndex) {
+        for (int i = 0; i < 3; i++) {
+            if (vertexIndices[i] == vertexIndex) {
+                return i;
+            }
+        }
+        return -1;
+//        throw new IllegalArgumentException("Vertex " + vertexIndex + " is not part of triangle" + this);
     }
 }

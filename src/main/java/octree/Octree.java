@@ -118,6 +118,10 @@ public class Octree implements LifeCycle, Serializable {
 	
 	public void insert(List<Entity> toDispatch){
 
+        if(toDispatch == null) {
+            return;
+        }
+
 		for (Entity Entity : toDispatch) {
 			insertWithoutOptimize(Entity);
 		}

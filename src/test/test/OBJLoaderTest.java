@@ -40,7 +40,7 @@ public class OBJLoaderTest extends TestWithAppContext {
 	public void parseFace() throws Exception {
 		Face expected = new Face(new int[]{1,2,3}, new int[]{1,2,3}, new int[]{1,1,1});
         Face face =  new OBJLoader().parseFace("f 1/1/1 2/2/1 3/3/1");
-		Assert.assertArrayEquals(expected.getVertexIndices(), face.getVertexIndices());
+		Assert.assertArrayEquals(expected.getVertices(), face.getVertices());
 		Assert.assertArrayEquals(expected.getTextureCoordinateIndices(), face.getTextureCoordinateIndices());
 		Assert.assertArrayEquals(expected.getNormalIndices(), face.getNormalIndices());
 	}

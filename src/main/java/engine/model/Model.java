@@ -9,8 +9,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL11.*;
-
 public class Model implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
@@ -94,7 +92,7 @@ public class Model implements Serializable {
             for (int i = 0; i < faces.size(); i++) {
                 Face face = faces.get(i);
 
-                int[] referencedVertices = face.getVertexIndices();
+                int[] referencedVertices = face.getVertices();
 
                 for (int j = 0; j < 3; j++) {
                     Vector3f position = getVertices().get(referencedVertices[j] - 1);

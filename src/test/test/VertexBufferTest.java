@@ -77,6 +77,32 @@ public class VertexBufferTest extends TestWithOpenGLContext {
     }
 
     @Test
+    public void indexBufferHasCorrectIndices() {
+        float[] vertexData = new float[] {
+                -1.0f, -1.0f, 0.0f,   0f, 0f,
+                1.0f, -1.0f, 0.0f,    0f, 0f,
+                -1.0f,  1.0f, 0.0f,   0f,  1.0f,
+                -1.0f,  1.0f, 0.0f,   0f,  0f,
+                1.0f, -1.0f, 0.0f,    1.0f, 0f,
+                1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+        };
+
+        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)).upload();
+        int[] indices = buffer.getIndices();
+        Assert.assertEquals(6, buffer.getVerticesCount());
+        Assert.assertEquals(2, buffer.getTriangleCount());
+        Assert.assertEquals(6, indices.length);
+
+        Assert.assertEquals(0, indices[0]);
+        Assert.assertEquals(1, indices[1]);
+        Assert.assertEquals(2, indices[2]);
+        Assert.assertEquals(3, indices[3]);
+        Assert.assertEquals(4, indices[4]);
+        Assert.assertEquals(5, indices[5]);
+
+    }
+
+    @Test
     public void benchmarkVAOAndVBB() {
         int count = 100000000;
 

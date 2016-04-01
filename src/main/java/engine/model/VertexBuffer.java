@@ -1,17 +1,32 @@
 package engine.model;
 
-import engine.graphics.query.GLTimerQuery;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
-import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.EnumSet;
 
 public class VertexBuffer {
 
     private transient volatile boolean uploaded = false;
+    private boolean hasIndexBuffer;
+
+    public void setIndexBuffer(IntBuffer indexBuffer) {
+        this.indexBuffer = indexBuffer;
+        hasIndexBuffer = true;
+    }
+
+    public int[] getIndices() {
+        int[] dst = new int[indexBuffer.capacity()];
+        indexBuffer.get(dst);
+        return dst;
+    }
+
+    public int getTriangleCount() {
+        return triangleCount;
+    }
 
     public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
@@ -28,9 +43,11 @@ public class VertexBuffer {
 		}
 	}
 
-	private volatile int vertexBuffer = 0;
+    private volatile int vertexBufferName = 0;
+    private volatile int indexBufferName = 0;
 	private volatile VertexArrayObject vertexArrayObject;
-	private FloatBuffer buffer;
+    private FloatBuffer buffer;
+    private IntBuffer indexBuffer;
 	private int verticesCount;
     private int triangleCount;
 	public EnumSet<DataChannels> channels;
@@ -47,16 +64,26 @@ public class VertexBuffer {
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
 		setInternals(buffer, channels, usage);
-		buffer.rewind();
+//		buffer.rewind();
 	}
 
-	private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
-		this.buffer = buffer;
-		this.channels = channels;
-		this.usage = usage;
-		this.verticesCount = calculateVerticesCount(buffer, channels);
+    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> defaultchannels, IntBuffer indicesBuffer) {
+        this(verticesFloatBuffer, defaultchannels);
+        setIndexBuffer(indicesBuffer);
+    }
+
+    private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
+        this.buffer = buffer;
+        this.channels = channels;
+        this.usage = usage;
+        this.verticesCount = calculateVerticesCount(buffer, channels);
+        this.indexBuffer = BufferUtils.createIntBuffer(verticesCount);
+        for (int i = 0; i < verticesCount; i++) {
+            indexBuffer.put(i, i);
+        }
+        setHasIndexBuffer(true);
         this.triangleCount = verticesCount / 3;
-	}
+    }
 
 
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
@@ -128,20 +155,29 @@ public class VertexBuffer {
     public VertexBuffer upload() {
         buffer.rewind();
         OpenGLContext.getInstance().execute(() -> {
-            setVertexBuffer(GL15.glGenBuffers());
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBuffer);
+            setVertexBufferName(GL15.glGenBuffers());
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBufferName);
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
 
             bind();
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
+
+            if (hasIndexBuffer) {
+                setIndexBufferName(GL15.glGenBuffers());
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBufferName);
+                indexBuffer.rewind();
+                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, usage.getValue());
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+            }
+
         }, true); // TODO: Evaluate if this has to be blocking
         uploaded = true;
 
         return this;
     }
-	
-	public void delete() {
-		GL15.glDeleteBuffers(vertexBuffer);
+
+    public void delete() {
+		GL15.glDeleteBuffers(vertexBufferName);
 //        vertexArrayObject.delete();
 		buffer = null;
 	}
@@ -149,20 +185,27 @@ public class VertexBuffer {
     public int draw() {
         if(!uploaded) { return 0; }
         bind();
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+
+        if(hasIndexBuffer) {
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
+        } else {
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        }
 
         return verticesCount;
     }
 
     public void bind() {
-//        vertexArrayObject.bind();
-        ARBVertexAttribBinding.glBindVertexBuffer(vertexArrayObject.getVertexBufferBindingIndex(), vertexBuffer, 0, vertexArrayObject.getBytesPerVertex());
-
+        vertexArrayObject.bind();
     }
 
 	public void drawAgain() {
         if(!uploaded) { return; }
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        if(hasIndexBuffer) {
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
+        } else {
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        }
 	}
 
 	public int drawDebug() {
@@ -170,7 +213,11 @@ public class VertexBuffer {
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
         bind();
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        if(hasIndexBuffer) {
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
+        } else {
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        }
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
         return verticesCount;
 	}
@@ -221,11 +268,19 @@ public class VertexBuffer {
 		
 	}
 
-    private void setVertexBuffer(int vertexBuffer) {
-        this.vertexBuffer = vertexBuffer;
+    private void setVertexBufferName(int vertexBufferName) {
+        this.vertexBufferName = vertexBufferName;
     }
 
     private void setVertexArrayObject(VertexArrayObject vertexArrayObject) {
         this.vertexArrayObject = vertexArrayObject;
+    }
+
+    public void setIndexBufferName(int indexBufferName) {
+        this.indexBufferName = indexBufferName;
+    }
+
+    public void setHasIndexBuffer(boolean hasIndexBuffer) {
+        this.hasIndexBuffer = hasIndexBuffer;
     }
 }
