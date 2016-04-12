@@ -353,8 +353,12 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 			accumFog += ComputeScattering(NdotL);
 		} else {
 //			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
-			vec4 voxel = voxelFetch(currentPosition.xyz, 4);
-			accumFogShadow += 0.01f*voxel.rgb;
+
+			const bool useVoxelConeTracing = false;
+			if(useVoxelConeTracing) {
+				vec4 voxel = voxelFetch(currentPosition.xyz, 4);
+				accumFogShadow += 0.01f*voxel.rgb;
+			}
 		}
 
 		currentPosition += step;

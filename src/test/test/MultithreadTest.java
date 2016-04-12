@@ -47,16 +47,12 @@ public class MultithreadTest extends TestWithRenderer {
 	
 	@Test
 	public void openGLHelperThreadTest() throws InterruptedException {
-		Thread worker =	new OpenGLThread() {
-			
-			@Override
-			public void doRun() {
-		        int id = GL11.glGenTextures();
-		        if(id != -1) {
-		        	success2 = true;
-		        }
+		Thread worker =	new OpenGLThread(() -> {
+			int id = GL11.glGenTextures();
+			if(id != -1) {
+				success2 = true;
 			}
-		};
+		});
 		
 		worker.start();
 		worker.join();

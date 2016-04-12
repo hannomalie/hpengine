@@ -12,7 +12,6 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
 import shader.Bufferable;
-import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -50,11 +49,11 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	protected Entity() { }
 
-	protected Entity(MaterialFactory materialFactory, Model model, String materialName) {
-		this(materialFactory, new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	protected Entity(Model model, String materialName) {
+		this(new Vector3f(0, 0, 0), model.getName(), model, materialName);
 	}
 
-	protected Entity(MaterialFactory materialFactory, Vector3f position, String name, Model model, String materialName) {
+	protected Entity(Vector3f position, String name, Model model, String materialName) {
 		transform.init();
 		addComponent(new ModelComponent(model, materialName));
 		this.name = name;
@@ -213,11 +212,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		Vector4f[] minMaxWorld = getMinMaxWorld();
 		Vector4f minWorld = minMaxWorld[0];
 		Vector4f maxWorld = minMaxWorld[1];
-		
-		Vector3f centerWorld = new Vector3f();
-		centerWorld.x = (maxWorld.x + minWorld.x)/2;
-		centerWorld.y = (maxWorld.y + minWorld.y)/2;
-		centerWorld.z = (maxWorld.z + minWorld.z)/2;
+
+		Vector3f centerWorld = getCenterWorld();
 		
 		Vector3f distVector = new Vector3f();
 		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
@@ -234,6 +230,18 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return false;
 	}
 
+	public Vector3f getCenterWorld() {
+		Vector4f[] minMaxWorld = getMinMaxWorld();
+		Vector4f minWorld = minMaxWorld[0];
+		Vector4f maxWorld = minMaxWorld[1];
+
+		Vector3f centerWorld = new Vector3f();
+		centerWorld.x = minWorld.x + (maxWorld.x - minWorld.x)/2;
+		centerWorld.y = minWorld.y + (maxWorld.y - minWorld.y)/2;
+		centerWorld.z = minWorld.z + (maxWorld.z - minWorld.z)/2;
+		return centerWorld;
+	}
+
 	public boolean isVisible() {
 		return visible;
 	}
@@ -248,24 +256,26 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
 			minMax = modelComponent.getMinMax();
 
-			Vector4f minView = new Vector4f(0,0,0,1);
-			Vector4f maxView = new Vector4f(0,0,0,1);
+			Vector4f minWorld = new Vector4f(0,0,0,1);
+			Vector4f maxWorld = new Vector4f(0,0,0,1);
 
 			Matrix4f modelMatrix = getModelMatrix();
 
-			Matrix4f.transform(modelMatrix, minMax[0], minView);
-			Matrix4f.transform(modelMatrix, minMax[1], maxView);
+			Matrix4f.transform(modelMatrix, minMax[0], minWorld);
+			Matrix4f.transform(modelMatrix, minMax[1], maxWorld);
 
-			minView.w = 0;
-			maxView.w = 0;
-			minMax = new Vector4f[] {minView, maxView};
+			minWorld.w = 0;
+			maxWorld.w = 0;
+			minMax = new Vector4f[] {minWorld, maxWorld};
 
 			return minMax;
 		} else {
 			minMax = new Vector4f[2];
-			Vector4f vector = new Vector4f(getPosition().x, getPosition().y, getPosition().z, 1);
-			minMax[0] = vector;
-			minMax[1] = vector;
+			float amount = 5;
+			Vector4f vectorMin = new Vector4f(getPosition().x-amount, getPosition().y-amount, getPosition().z-amount, 1);
+			Vector4f vectorMax = new Vector4f(getPosition().x+amount, getPosition().y+amount, getPosition().z+amount, 1);
+			minMax[0] = vectorMin;
+			minMax[1] = vectorMax;
 		}
 
 //		if(hasChildren()) {
@@ -279,22 +289,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return minMax;
 	}
 
-	public Vector3f getCenter() {
-		if(hasComponent(ModelComponent.class)) {
-			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			Vector4f[] minMax = modelComponent.getMinMax();
 
-			Vector4f center = Vector4f.sub(minMax[1], minMax[0], null);
-			center.w = 1;
-
-			Matrix4f modelMatrix = getModelMatrix();
-
-			Matrix4f.transform(modelMatrix, center, center);
-
-			return new Vector3f(center.x, center.y, center.z);
-		} else {
-			return getPosition();
-		}
+	public Vector3f[] getMinMaxWorldVec3() {
+		Vector4f[] asVec4 = getMinMaxWorld();
+		Vector3f[] result = {new Vector3f(asVec4[0].x, asVec4[0].y, asVec4[0].z),
+							new Vector3f(asVec4[1].x, asVec4[1].y, asVec4[1].z)};
+		return result;
 	}
 
 	public boolean isSelected() {

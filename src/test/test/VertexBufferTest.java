@@ -7,6 +7,7 @@ import engine.model.DataChannels;
 import engine.model.OBJLoader;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -19,24 +20,23 @@ import renderer.Renderer;
 import java.util.EnumSet;
 
 public class VertexBufferTest extends TestWithOpenGLContext {
-	
-	@Test
-	public void correctBuffering() {
-		float[] vertexData = new float[] {
-		    -1.0f, -1.0f, 0.0f,   0f, 0f,
-		    1.0f, -1.0f, 0.0f,    0f, 0f,
-		    -1.0f,  1.0f, 0.0f,   0f,  1.0f,
-		    -1.0f,  1.0f, 0.0f,   0f,  0f,
-		    1.0f, -1.0f, 0.0f,    1.0f, 0f,
-		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
-		};
-		
-		VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
-		float[] bufferedData = buffer.getVertexData();
-		Assert.assertArrayEquals(vertexData, bufferedData, 0f);
-		Assert.assertEquals(6, buffer.getVerticesCount());
 
-	}
+    @Test
+    public void correctBuffering() {
+        float[] vertexData = new float[] {
+                -1.0f, -1.0f, 0.0f,   0f, 0f,
+                1.0f, -1.0f, 0.0f,    0f, 0f,
+                -1.0f,  1.0f, 0.0f,   0f,  1.0f,
+                -1.0f,  1.0f, 0.0f,   0f,  0f,
+                1.0f, -1.0f, 0.0f,    1.0f, 0f,
+                1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+        };
+
+        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        float[] bufferedData = buffer.getVertexData();
+        Assert.assertArrayEquals(vertexData, bufferedData, 0f);
+        Assert.assertEquals(6, buffer.getVerticesCount());
+    }
 
 	@Test
 	public void correctElementsPerVertex() {
@@ -103,6 +103,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
     }
 
     @Test
+    @Ignore
     public void benchmarkVAOAndVBB() {
         int count = 100000000;
 

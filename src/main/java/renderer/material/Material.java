@@ -1,5 +1,6 @@
 package renderer.material;
 
+import config.Config;
 import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -113,18 +114,31 @@ public class Material implements Serializable, Bufferable {
     public boolean hasHeightMap() { return materialInfo.maps.getTextures().containsKey(MAP.HEIGHT); }
     public boolean hasOcclusionMap() { return materialInfo.maps.getTextures().containsKey(MAP.OCCLUSION); }
     public boolean hasRoughnessMap() { return materialInfo.maps.getTextures().containsKey(MAP.ROUGHNESS); }
-	
+
 	public void setTexturesActive(Program program) {
 		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
 
 		if (!program.needsTextures()) {
 			return;
 		}
-				
+
 		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
 			Texture texture = entry.getValue();
 			texture.bind(map.textureSlot);
+		}
+	}
+	public void setTexturesActive(Program program, boolean withoutSetUsed) {
+		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
+
+		if (!program.needsTextures()) {
+			return;
+		}
+
+		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
+			MAP map = entry.getKey();
+			Texture texture = entry.getValue();
+			texture.bind(map.textureSlot, withoutSetUsed);
 		}
 	}
 

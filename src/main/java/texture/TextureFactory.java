@@ -473,7 +473,7 @@ public class TextureFactory {
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
         OpenGLContext.getInstance().execute(() -> {
-            texture.bind(0);
+            texture.bind(15);
             if (mipmap) {
 //                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
 //                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
@@ -482,6 +482,7 @@ public class TextureFactory {
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL14.GL_MIRRORED_REPEAT);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL14.GL_MIRRORED_REPEAT);
+            texture.unbind(15);
         });
     }
     public void generateMipMaps(int textureId) {
@@ -519,7 +520,7 @@ public class TextureFactory {
     
     public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
     	int copyTextureId = getTextureId();
-        OpenGLContext.getInstance().bindTexture(0, TEXTURE_CUBE_MAP, copyTextureId);
+        OpenGLContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -537,6 +538,7 @@ public class TextureFactory {
 				copyTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
 				width, height, 6);
 
+        OpenGLContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, 0);
 		return copyTextureId;
     }
     

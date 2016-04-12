@@ -10,6 +10,7 @@ import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.*;
+import org.lwjgl.util.vector.Vector3f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
@@ -125,7 +126,7 @@ public class DebugDrawStrategy extends BaseDrawStrategy {
             for (Entity entity : entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), true);
+                            .draw(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), true);
                     verticesDrawn += currentVerticesCount;
                     if(currentVerticesCount > 0) { entityCount++; }
                 }

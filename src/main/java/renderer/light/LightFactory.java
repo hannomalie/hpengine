@@ -32,9 +32,7 @@ import renderer.rendertarget.CubeMapArrayRenderTarget;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
 import scene.Scene;
-import shader.Program;
-import shader.ProgramFactory;
-import shader.StorageBuffer;
+import shader.*;
 import texture.CubeMapArray;
 import util.TypedTuple;
 import util.Util;
@@ -97,7 +95,7 @@ public class LightFactory {
     private Model cubeModel;
     private Model planeModel;
 
-	private StorageBuffer lightBuffer;
+	private volatile OpenGLBuffer lightBuffer;
 	
 	public LightFactory() {
 		sphereModel = null;
@@ -167,7 +165,8 @@ public class LightFactory {
 			}
 		});
 
-		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
+//		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
+		lightBuffer = OpenGLContext.getInstance().calculate(() -> new PersistentMappedStorageBuffer(1000));
 		AppContext.getEventBus().register(this);
 	}
 
@@ -563,7 +562,7 @@ public class LightFactory {
 		bufferLights();
 	}
 
-	public StorageBuffer getLightBuffer() {
+	public OpenGLBuffer getLightBuffer() {
 		return lightBuffer;
 	}
 

@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import camera.Camera;
 import component.ModelComponent;
-import engine.AppContext;
 import engine.model.Entity;
 import engine.model.Model;
 import renderer.material.MaterialFactory;
@@ -25,7 +24,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	private Vector4f color;
 	
 	protected PointLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
-		super(materialFactory, position, generateName(), model, materialName);
+		super(position, generateName(), model, materialName);
 		setColor(colorIntensity);
 		setScale(range);
 		init();

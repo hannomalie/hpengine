@@ -35,6 +35,8 @@ uniform float sceneScale = 1f;
 uniform float inverseSceneScale = 1f;
 uniform int gridSize;
 
+uniform bool useNormalMaps = true;
+
 in vec4 color;
 in vec2 texCoord;
 in vec3 normalVec;
@@ -109,7 +111,7 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
     #define use_precomputed_tangent_space_
-	if(material.hasNormalMap != 0) {
+	if(useNormalMaps && material.hasNormalMap != 0) {
         #ifdef use_precomputed_tangent_space
             PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
         #else

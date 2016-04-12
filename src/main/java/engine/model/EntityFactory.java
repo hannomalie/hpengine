@@ -4,10 +4,6 @@ import engine.model.Entity.Update;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.material.Material;
-import renderer.material.MaterialFactory;
-import shader.OpenGLBuffer;
-import shader.PersistentMappedStorageBuffer;
-import util.Util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -58,7 +54,7 @@ public class EntityFactory {
 //		} catch (IOException e) {
 //			Logger.getGlobal().info(String.format("File not found for %s", name));
 
-			entity = new Entity(MaterialFactory.getInstance(), position, name, model, material.getName());
+			entity = new Entity(position, name, model, material.getName());
 			entity.setPosition(position);
 			entity.setName(name);
 //		} catch (ClassNotFoundException e) {

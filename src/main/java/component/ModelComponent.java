@@ -1,6 +1,7 @@
 package component;
 
 import camera.Camera;
+import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
@@ -107,8 +108,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        currentProgram.setUniform("isSelected", isSelected);
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
-        setTexturesUsed();
-        getMaterial().setTexturesActive(currentProgram);
+        // TODO: Implement strategy pattern
+        float distanceToCamera = Vector3f.sub(camera.getWorldPosition(), getEntity().getCenterWorld(), null).length();
+//        System.out.println("boundingSphere " + model.getBoundingSphereRadius());
+//        System.out.println("distanceToCamera " + distanceToCamera);
+        boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f*model.getBoundingSphereRadius();
+        getMaterial().setTexturesActive(currentProgram, isInReachForTextureLoading);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
@@ -119,7 +124,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //            return vertexBuffer.drawInstanced(10);
 //        } else
         if (drawLines) {
-            return vertexBuffer.drawDebug();
+            return vertexBuffer.drawDebug(2);
         } else {
             return vertexBuffer.draw();
         }
@@ -383,8 +388,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if(facesTemp.size() > 4) {
             int sizeBeforeReduction = facesTemp.size();
 //            indices = reduceMesh(Collections.unmodifiableList(verticesTemp), Collections.unmodifiableList(facesTemp), floatArray, indices, valuesPerVertex);
-            System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
-            System.out.println("############## faces count after reduction: " + facesTemp.size());
+//            System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
+//            System.out.println("############## faces count after reduction: " + facesTemp.size());
         }
 
         /////////
@@ -921,7 +926,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
         int[] dst = new int[indexBuffer.capacity()];
         indexBuffer.get(dst);
-        System.out.println(Arrays.toString(dst));
+//        System.out.println(Arrays.toString(dst));
 
         vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS, indexBuffer);
         vertexBuffer.upload();

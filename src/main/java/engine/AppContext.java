@@ -245,7 +245,7 @@ public class AppContext {
 
         AppContext self = this;
 
-        thread = new TimeStepThread("World Main", 0.01f) {
+        thread = new TimeStepThread("World Main", 0.005f) {
             @Override
             public void update(float seconds) {
                 self.update(seconds);
@@ -388,7 +388,7 @@ public class AppContext {
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if(finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded ) { scene.bufferEntities(); entityNewlyAdded = false; }
+                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded) && scene != null) { scene.bufferEntities(); entityNewlyAdded = false; }
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw();
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
@@ -402,6 +402,7 @@ public class AppContext {
 
         scene.endFrame(activeCamera);
     }
+
     private volatile boolean anyEntityHasMovedSomewhen = false;
 
     public PhysicsFactory getPhysicsFactory() {

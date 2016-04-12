@@ -19,7 +19,7 @@ public class StorageBuffer implements OpenGLBuffer {
     protected ByteBuffer buffer;
     private int size = -1;
 
-    private DoubleBuffer tempBuffer;
+    private volatile DoubleBuffer tempBuffer;
 
     public StorageBuffer(int size) {
         this(BufferUtils.createDoubleBuffer(size));

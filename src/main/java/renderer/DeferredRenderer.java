@@ -248,15 +248,15 @@ public class DeferredRenderer implements Renderer {
 	public DrawResult draw() {
 		setLastFrameTime();
         DrawResult drawResult;
-		if (Config.DRAWLINES_ENABLED) {
+		if (Config.DRAWLINES_ENABLED && !Config.DRAWSCENE_ENABLED) {
             drawResult = debugDrawStrategy.draw(AppContext.getInstance());
 		} else {
             drawResult = simpleDrawStrategy.draw(AppContext.getInstance());
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
-			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
+//			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
@@ -470,6 +470,7 @@ public class DeferredRenderer implements Renderer {
 
 	public void drawLines(Program program) {
 //		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
+
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
@@ -478,7 +479,7 @@ public class DeferredRenderer implements Renderer {
 			points[3*i + 2] = point.z;
 		}
 		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
-		buffer.drawDebug();
+		buffer.drawDebugLines();
 		buffer.delete();
 		linePoints.clear();
 	}

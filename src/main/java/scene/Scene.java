@@ -37,7 +37,7 @@ public class Scene implements LifeCycle, Serializable {
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
     // TODO: Move this to the factory maybe?
-    private transient OpenGLBuffer entitiesBuffer;
+    private volatile transient OpenGLBuffer entitiesBuffer;
 	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;

@@ -299,8 +299,10 @@ public class DebugFrame {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
                         Scene newScene = new Scene();
+						startProgress("Loading test scene");
                         newScene.addAll(AppContext.getInstance().loadTestScene());
                         AppContext.getInstance().setScene(newScene);
+						stopProgress();
                         return new Result(newScene);
                     }
 

@@ -176,7 +176,7 @@ public class PerformanceMonitor {
 	}
 
 	private void actualFPS(double y) {
-		this.actualMS.add(new Millisecond(), y);
+		this.actualMS.addOrUpdate(new Millisecond(), y);
 	}
 
 	class DataGenerator extends Timer implements ActionListener {

@@ -341,6 +341,7 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     float positionScaleFactor = pow(2, level);
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+
     return textureLod(grid, samplePositionNormalized, level);
 }
 
@@ -525,7 +526,8 @@ void main(void) {
 
     vec3 positionGridScaled = inverseSceneScale*positionWorld;
     float gridSizeHalf = float(gridSize/2);
-    if(positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
+    const bool useVoxelConeTracing = false;
+    if(useVoxelConeTracing && positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
         positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
@@ -551,7 +553,7 @@ void main(void) {
 	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
             float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(2f, positionWorld, normalize(H), 3, 150);
+            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(4f, positionWorld, normalize(H), 2, 150);
         }
 
         out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);

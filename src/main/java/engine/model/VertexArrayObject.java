@@ -3,14 +3,12 @@ package engine.model;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.ref.WeakReference;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class VertexArrayObject {
 
-    private static Map<EnumSet<DataChannels>, VertexArrayObject> vaoCache = new ConcurrentHashMap<>();
     private final EnumSet<DataChannels> channels;
     private int id = -1;
     private transient boolean attributesSetUp = false;
@@ -24,18 +22,15 @@ public class VertexArrayObject {
         this.channels = channels.clone();
         OpenGLContext.getInstance().execute(() -> setId(GL30.glGenVertexArrays()));
         setUpAttributes();
-        System.out.println("Creating new VAO");
     }
 
     private void unbind() {
         OpenGLContext.getInstance().execute(() -> GL30.glBindVertexArray(0));
     }
 
-    private static volatile int CURRENTLY_BOUND_VAO = -1;
     public void bind() {
 //        if(CURRENTLY_BOUND_VAO == id) { return; }
         OpenGLContext.getInstance().execute(() -> {
-            CURRENTLY_BOUND_VAO = id;
             GL30.glBindVertexArray(getId());
         });
     }
