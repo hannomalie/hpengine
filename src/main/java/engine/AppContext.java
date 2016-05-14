@@ -353,6 +353,17 @@ public class AppContext {
             } else {
                 STRG_PRESSED_LAST_FRAME = false;
             }
+
+            if(Keyboard.isKeyDown(Keyboard.KEY_0)) {
+                Config.currentModelLod = 0;
+                System.out.println(Config.currentModelLod);
+            } else if(Keyboard.isKeyDown(Keyboard.KEY_1)) {
+                Config.currentModelLod = 1;
+                System.out.println(Config.currentModelLod);
+            } else if(Keyboard.isKeyDown(Keyboard.KEY_2)) {
+                Config.currentModelLod = 2;
+                System.out.println(Config.currentModelLod);
+            }
         }
 
         DirectionalLight directionalLight = scene.getDirectionalLight();

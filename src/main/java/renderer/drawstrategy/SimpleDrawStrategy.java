@@ -213,12 +213,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         zeroBuffer.rewind();
     }
     public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree) {
+        GPUProfiler.start("Set GPU state");
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
         openGLContext.enable(DEPTH_TEST);
         openGLContext.depthFunc(LESS);
         openGLContext.disable(GlCap.BLEND);
+        GPUProfiler.end();
 
         GPUProfiler.start("Culling");
         List<Entity> entities;
@@ -236,10 +238,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
+        boolean useVoxelConeTracing = false;
         boolean clearVoxels = true;
 
-        if(clearVoxels) {
+        if(useVoxelConeTracing && clearVoxels) {
+            GPUProfiler.start("Clear voxels");
             ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().grid, 0, GBuffer.gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+            GPUProfiler.end();
         }
         int verticesDrawn = 0;
         int entityCount = 0;
@@ -310,23 +315,22 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 
-            int max = 500;
-            for(int x = -max; x < max; x+=25) {
-                for(int y = -max; y < max; y+=25) {
-                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
-                }
-                for(int z = -max; z < max; z+=25) {
-                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
-                }
-            }
+//            int max = 500;
+//            for(int x = -max; x < max; x+=25) {
+//                for(int y = -max; y < max; y+=25) {
+//                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
+//                }
+//                for(int z = -max; z < max; z+=25) {
+//                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
+//                }
+//            }
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
             Renderer.getInstance().drawLines(linesProgram);
         }
 
-        boolean renderVoxels = false;
-        if(renderVoxels) {
+        if(useVoxelConeTracing) {
             Program currentProgram = firstPassProgram;
 
             camera = orthoCam;
@@ -384,7 +388,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //            System.out.println(query.getResult());
 
             boolean generatevoxelsMipmap = true;
-            if(generatevoxelsMipmap){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
+            if(useVoxelConeTracing && generatevoxelsMipmap){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
                 GPUProfiler.start("grid mipmap");
                 int size = Renderer.getInstance().getGBuffer().gridSize;
                 int currentSizeSource = 2*size;

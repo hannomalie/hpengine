@@ -51,6 +51,8 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
     private static volatile boolean headless = false;
 
+    public static volatile int currentModelLod = 0;
+
     private Config() { super(); }
 
     public static boolean isHeadless() {

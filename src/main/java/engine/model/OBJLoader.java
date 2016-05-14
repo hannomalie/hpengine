@@ -166,6 +166,9 @@ public class OBJLoader {
         }
         reader.close();
 
+        for (Model currentModel : models) {
+            currentModel.init();
+        }
         return models;
     }
 
@@ -173,11 +176,7 @@ public class OBJLoader {
                                  ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
                                  ArrayList<Vector3f> normals, String line, String name) {
         Model model;
-        model = new Model();
-        model.setName(line);
-        model.setVertices(vertices);
-        model.setTexCoords(texCoords);
-        model.setNormals(normals);
+        model = new Model(line, vertices, texCoords, normals);
 
         models.add(model);
 //		parseName(line, model);

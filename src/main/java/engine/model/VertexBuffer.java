@@ -1,5 +1,6 @@
 package engine.model;
 
+import config.Config;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -8,21 +9,24 @@ import renderer.OpenGLContext;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 
 public class VertexBuffer {
 
     private transient volatile boolean uploaded = false;
     private boolean hasIndexBuffer;
 
-    public void setIndexBuffer(IntBuffer indexBuffer) {
-        this.indexBuffer = indexBuffer;
+    public void setIndexBuffers(List<IntBuffer> indexBuffers) {
+        this.indexBuffers = indexBuffers;
         hasIndexBuffer = true;
     }
 
     public int[] getIndices() {
-        int[] dst = new int[indexBuffer.capacity()];
-        indexBuffer.get(dst);
+        int[] dst = new int[indexBuffers.get(0).capacity()];
+        indexBuffers.get(0).get(dst);
         return dst;
     }
 
@@ -46,19 +50,16 @@ public class VertexBuffer {
 	}
 
     private volatile int vertexBufferName = 0;
-    private volatile int indexBufferName = 0;
+    private volatile int[] indexBufferNames;
 	private volatile VertexArrayObject vertexArrayObject;
     private FloatBuffer buffer;
-    private IntBuffer indexBuffer;
+    private List<IntBuffer> indexBuffers = new ArrayList<>();
 	private int verticesCount;
     private int triangleCount;
 	public EnumSet<DataChannels> channels;
 	private Usage usage;
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
-		this(values, channels, Usage.STATIC);
-	}
-	public VertexBuffer(float[] values, EnumSet<DataChannels> channels, Usage usage) {
         setInternals(buffer(values, channels), channels, Usage.STATIC);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
@@ -66,12 +67,11 @@ public class VertexBuffer {
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
 		setInternals(buffer, channels, usage);
-//		buffer.rewind();
 	}
 
-    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> defaultchannels, IntBuffer indicesBuffer) {
-        this(verticesFloatBuffer, defaultchannels);
-        setIndexBuffer(indicesBuffer);
+    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IntBuffer ... indicesBuffer) {
+        this(verticesFloatBuffer, channels);
+        setIndexBuffers(Arrays.asList(indicesBuffer));
     }
 
     private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
@@ -79,7 +79,8 @@ public class VertexBuffer {
         this.channels = channels;
         this.usage = usage;
         this.verticesCount = calculateVerticesCount(buffer, channels);
-        this.indexBuffer = BufferUtils.createIntBuffer(verticesCount);
+        IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
+        this.indexBuffers.add(indexBuffer);
         for (int i = 0; i < verticesCount; i++) {
             indexBuffer.put(i, i);
         }
@@ -168,17 +169,26 @@ public class VertexBuffer {
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
 
             if (hasIndexBuffer) {
-                setIndexBufferName(GL15.glGenBuffers());
-                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBufferName);
-                indexBuffer.rewind();
-                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, usage.getValue());
-                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+                int indexBufferIndex = 0;
+                indexBufferNames = new int[indexBuffers.size()];
+                for(IntBuffer indexBuffer : indexBuffers) {
+                    setIndexBufferName(indexBufferIndex, GL15.glGenBuffers());
+                    GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBufferNames[indexBufferIndex]);
+                    indexBuffer.rewind();
+                    GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, usage.getValue());
+                    GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+                    indexBufferIndex++;
+                }
             }
 
         }, true); // TODO: Evaluate if this has to be blocking
         uploaded = true;
 
         return this;
+    }
+
+    private void setIndexBufferName(int indexBufferIndex, int indexBufferName) {
+        indexBufferNames[indexBufferIndex] = indexBufferName;
     }
 
     public void delete() {
@@ -190,13 +200,17 @@ public class VertexBuffer {
     public int draw() {
         if(!uploaded) { return 0; }
         bind();
+        drawActually();
+
+        return verticesCount;
+    }
+
+    private void drawActually() {
         if(hasIndexBuffer) {
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(Math.min(indexBuffers.size()-1, Config.currentModelLod)));
         } else {
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
         }
-
-        return verticesCount;
     }
 
     public void bind() {
@@ -205,23 +219,15 @@ public class VertexBuffer {
 
 	public void drawAgain() {
         if(!uploaded) { return; }
-        if(hasIndexBuffer) {
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
-        } else {
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-        }
-	}
+        drawActually();
+    }
 
 	public int drawDebug() {
 		if(!uploaded) { return 0; }
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
         bind();
-        if(hasIndexBuffer) {
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer);
-        } else {
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
-        }
+        drawActually();
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
         return verticesCount;
 	}
@@ -230,7 +236,7 @@ public class VertexBuffer {
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(lineWidth);
 		bind();
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
+        drawActually();
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
 	}
@@ -298,8 +304,8 @@ public class VertexBuffer {
         this.vertexArrayObject = vertexArrayObject;
     }
 
-    public void setIndexBufferName(int indexBufferName) {
-        this.indexBufferName = indexBufferName;
+    public void setIndexBufferNames(int indexBufferName) {
+        this.indexBufferNames[0] = indexBufferName;
     }
 
     public void setHasIndexBuffer(boolean hasIndexBuffer) {
