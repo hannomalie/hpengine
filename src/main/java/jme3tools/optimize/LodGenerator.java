@@ -214,8 +214,7 @@ public class LodGenerator {
                     return vertexId[i];
                 }
             }
-            //throw new IllegalArgumentException("Vertex " + v + "is not part of triangle" + this);
-            return -1;
+            throw new IllegalArgumentException("Vertex " + v + "is not part of triangle" + this);
         }
 
         boolean isMalformed() {
@@ -315,7 +314,7 @@ public class LodGenerator {
             tri.isRemoved = false;
             for (int i = 0; i < 3; i++) {
                 tri.vertexId[i] = indices[counter + i];
-                 assert (tri.vertexId[i] < vertexLookup.size());
+//                 assert (tri.vertexId[i] < vertexLookup.size());
                 if (tri.vertexId[i] >= vertexLookup.size()) {
                     throw new IllegalStateException("tri.vertexId[i] >= vertexLookup.size()" + tri.vertexId[i] + ", " + vertexLookup.size());
                 }
@@ -350,8 +349,8 @@ public class LodGenerator {
                 logger.log(Level.WARNING, "Found isolated vertex {0} It will be excluded from Lod level calculations.", vertex);
             }
         }
-        assert (vertexList.size() == collapseCostSet.size());
-        assert (checkCosts());
+//        assert (vertexList.size() == collapseCostSet.size());
+//        assert (checkCosts());
     }
 
     //Debug only
@@ -369,7 +368,7 @@ public class LodGenerator {
     private void computeVertexCollapseCost(Vertex vertex) {
 
         vertex.collapseCost = UNINITIALIZED_COLLAPSE_COST;
-        assert (!vertex.edges.isEmpty());
+//        assert (!vertex.edges.isEmpty());
         for (Edge edge : vertex.edges) {
             edge.collapseCost = computeEdgeCollapseCost(vertex, edge);
            assert (edge.collapseCost != UNINITIALIZED_COLLAPSE_COST);
@@ -378,7 +377,7 @@ public class LodGenerator {
                 vertex.collapseTo = edge.destination;
             }
         }
-         assert (vertex.collapseCost != UNINITIALIZED_COLLAPSE_COST);
+//         assert (vertex.collapseCost != UNINITIALIZED_COLLAPSE_COST);
         collapseCostSet.add(vertex);
     }
 
@@ -501,7 +500,7 @@ public class LodGenerator {
             }
         }
 
-           assert (cost >= 0);
+//           assert (cost >= 0);
 
         return cost * Vector3f.sub(src.position, dest.position, null).lengthSquared();
     }
@@ -601,10 +600,10 @@ public class LodGenerator {
             if (!triangle.isRemoved) {
 //                    assert (indexCount != 0);
                 for (int m = 0; m < 3; m++) {
-                    lodBuffer[triangleIndex+m] = triangle.vertexId[m];
+                    lodBuffer[triangleIndex*3+m] = triangle.vertexId[m];
                 }
+                triangleIndex++;
             }
-            triangleIndex++;
         }
         return lodBuffer;
     }
@@ -719,7 +718,7 @@ public class LodGenerator {
     }
 
     private void addEdge(Vertex v, Edge edge) {
-          assert (edge.destination != v);
+//          assert (edge.destination != v);
 
         for (Edge ed : v.edges) {
             if (ed.equals(edge)) {
@@ -780,7 +779,7 @@ public class LodGenerator {
                 return;
             }
         }
-           assert (false);
+//           assert (false);
     }
 
     private void updateVertexCollapseCost(Vertex vertex) {
@@ -789,7 +788,7 @@ public class LodGenerator {
 
         for (Edge edge : vertex.edges) {
             edge.collapseCost = computeEdgeCollapseCost(vertex, edge);
-              assert (edge.collapseCost != UNINITIALIZED_COLLAPSE_COST);
+//              assert (edge.collapseCost != UNINITIALIZED_COLLAPSE_COST);
             if(edge.collapseCost == UNINITIALIZED_COLLAPSE_COST) {
                 throw new IllegalStateException("edge.collapseCost == UNINITIALIZED_COLLAPSE_COST");
             }
@@ -799,8 +798,8 @@ public class LodGenerator {
             }
         }
         if (collapseCost != vertex.collapseCost || vertex.collapseTo != collapseTo) {
-            assert (vertex.collapseTo != null);
-            assert (find(collapseCostSet, vertex));
+//            assert (vertex.collapseTo != null);
+//            assert (find(collapseCostSet, vertex));
             if(vertex.collapseTo == null) {
 //                throw new IllegalStateException("vertex.collapseTo == null");
             }
@@ -836,14 +835,14 @@ public class LodGenerator {
         if (src.edges.isEmpty()) {
             return false;
         }
-        assert (assertValidVertex(dest));
-        assert (assertValidVertex(src));
+//        assert (assertValidVertex(dest));
+//        assert (assertValidVertex(src));
 
-        assert (src.collapseCost != NEVER_COLLAPSE_COST);
-        assert (src.collapseCost != UNINITIALIZED_COLLAPSE_COST);
-        assert (!src.edges.isEmpty());
-        assert (!src.triangles.isEmpty());
-        assert (src.edges.contains(new Edge(dest)));
+//        assert (src.collapseCost != NEVER_COLLAPSE_COST);
+//        assert (src.collapseCost != UNINITIALIZED_COLLAPSE_COST);
+//        assert (!src.edges.isEmpty());
+//        assert (!src.triangles.isEmpty());
+//        assert (src.edges.contains(new Edge(dest)));
 
         // It may have vertexIDs and triangles from different submeshes(different vertex buffers),
         // so we need to connect them correctly based on deleted triangle's edge.
@@ -973,7 +972,7 @@ public class LodGenerator {
 //                assert (collapseCostSet.contains(t.vertex[i]));
 //                assert (find(collapseCostSet, t.vertex[i]));
 
-                assert (t.vertex[i].edges.contains(new Edge(t.vertex[i].collapseTo)));
+//                assert (t.vertex[i].edges.contains(new Edge(t.vertex[i].collapseTo)));
                 for (int n = 0; n < 3; n++) {
                     if (i != n) {
 
@@ -981,7 +980,7 @@ public class LodGenerator {
                         Edge ed = t.vertex[i].edges.get(id);
                         //assert (ed.collapseCost != UNINITIALIZED_COLLAPSE_COST);
                     } else {
-                        assert (!t.vertex[i].edges.contains(new Edge(t.vertex[n])));
+//                        assert (!t.vertex[i].edges.contains(new Edge(t.vertex[n])));
                     }
                 }
             }
