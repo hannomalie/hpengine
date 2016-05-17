@@ -555,7 +555,7 @@ public class LodGenerator {
                 } else {
                     break;
                 }
-                tricount = triangleList.size() - nbCollapsedTri;
+                tricount = modelComponent.getTriangleCount() - nbCollapsedTri;
             }
             logger.log(Level.FINE, "collapsed {0} tris", nbCollapsedTri);
             boolean outSkipped = (lastBakeVertexCount == tricount);
@@ -570,8 +570,7 @@ public class LodGenerator {
             bakedLods.addAll(lods);
 //            System.arraycopy(lods, 0, bakedLods, 0, numBakedLods);
             return bakedLods;
-        } else
-        {
+        } else {
             return lods;
         }
     }

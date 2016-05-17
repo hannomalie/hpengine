@@ -49,7 +49,7 @@ public class VertexBuffer {
 		}
 	}
 
-    private volatile int vertexBufferName = 0;
+    private volatile int vertexBufferName = -1;
     private volatile int[] indexBufferNames;
 	private volatile VertexArrayObject vertexArrayObject;
     private FloatBuffer buffer;
@@ -198,16 +198,23 @@ public class VertexBuffer {
 	}
 
     public int draw() {
+        return draw(true);
+    }
+    public int draw(boolean isInReachForTextureLoading) {
         if(!uploaded) { return 0; }
         bind();
-        drawActually();
+        drawActually(isInReachForTextureLoading);
 
         return verticesCount;
     }
 
-    private void drawActually() {
+    private void drawActually(boolean isInReachForTextureLoading) {
         if(hasIndexBuffer) {
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(Math.min(indexBuffers.size()-1, Config.currentModelLod)));
+            if(isInReachForTextureLoading) {
+                GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(0));
+            } else {
+                GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(Math.min(indexBuffers.size()-1, Config.currentModelLod)));
+            }
         } else {
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
         }
@@ -219,24 +226,31 @@ public class VertexBuffer {
 
 	public void drawAgain() {
         if(!uploaded) { return; }
-        drawActually();
+        drawActually(true);
     }
 
-	public int drawDebug() {
+    public int drawDebug() {
+        return drawDebug(true);
+    }
+
+    public int drawDebug(boolean isInReachForTextureLoading) {
 		if(!uploaded) { return 0; }
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
         bind();
-        drawActually();
+        drawActually(isInReachForTextureLoading);
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
         return verticesCount;
 	}
-	public int drawDebug(float lineWidth) {
+    public int drawDebug(float lineWidth) {
+        return drawDebug(lineWidth, true);
+    }
+    public int drawDebug(float lineWidth, boolean isInReachForTextureLoading) {
 		if(!uploaded) { return 0; }
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(lineWidth);
 		bind();
-        drawActually();
+        drawActually(isInReachForTextureLoading);
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
 	}

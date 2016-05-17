@@ -1,11 +1,9 @@
 package component;
 
 import camera.Camera;
-import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
-import engine.model.Face;
 import engine.model.Model;
 import engine.model.VertexBuffer;
 import jme3tools.optimize.LodGenerator;
@@ -24,7 +22,10 @@ import texture.Texture;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -63,15 +64,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             DataChannels.POSITION3);
     public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
             DataChannels.POSITION3);
-    private int nbCollapsedTri;
-    private List<VertexInfo> vertexList;
 
     public List<int[]> getLodLevels() {
         return Collections.unmodifiableList(lodLevels);
     }
 
     private List<int[]> lodLevels;
-    private List<Float[]> vertexBufferValues;
 
     public ModelComponent(Model model) {
         this(model, model.getMaterial());
@@ -131,9 +129,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //            return vertexBuffer.drawInstanced(10);
 //        } else
         if (drawLines) {
-            return vertexBuffer.drawDebug(2);
+            return vertexBuffer.drawDebug(2, isInReachForTextureLoading);
         } else {
-            return vertexBuffer.draw();
+            return vertexBuffer.draw(isInReachForTextureLoading);
         }
     }
 
@@ -194,103 +192,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         return model.getFaces().size();
     }
 
-    static class EdgeInfo {
-        final Face a;
-        final Face b;
-        final int x;
-        final int y;
-        float cost;
-
-        EdgeInfo(Face a, Face b, int x, int y) {
-            this.a = a;
-            this.b = b;
-            this.x = x;
-            this.y = y;
-        }
-    }
-
-    static class VertexInfo {
-        public static final float NEVER_COLLAPSE_COST = Float.MAX_VALUE;
-        private static final float UNINITIALIZED_COLLAPSE_COST = Float.POSITIVE_INFINITY;
-
-        public VertexInfo(Vector3f vertex, int index) {
-            this.position = vertex;
-            this.index = index;
-        }
-
-        Vector3f position = new Vector3f();
-        float collapseCost = UNINITIALIZED_COLLAPSE_COST;
-        List<Edge> edges = new ArrayList<>();
-        Set<Face> faces = Collections.synchronizedSet(new HashSet<>());
-        int collapseTo;
-        boolean isSeam;
-        int index;//index in the buffer for debugging
-
-        @Override
-        public String toString() {
-            return index + " : " + position.toString();
-        }
-
-        public void addEdgeIfAbsent(Edge edge) {
-            if(!edges.contains(edge)) {
-                edges.add(edge);
-            }
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof VertexInfo)) {
-                return false;
-            }
-            return position.equals(((VertexInfo) obj).position);
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode() + index;
-        }
-
-        public boolean isValid() {
-            return edges.size() >=2;
-        }
-    }
-
-    private class Edge {
-        private static final float UNINITIALIZED_COLLAPSE_COST = Float.POSITIVE_INFINITY;
-
-        VertexInfo destination;
-        float collapseCost = UNINITIALIZED_COLLAPSE_COST;
-        int refCount;
-
-        public Edge(VertexInfo destination) {
-            this.destination = destination;
-        }
-
-        public void set(Edge other) {
-            destination = other.destination;
-            collapseCost = other.collapseCost;
-            refCount = other.refCount;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Edge)) {
-                return false;
-            }
-            return destination == ((Edge) obj).destination;
-        }
-
-        @Override
-        public int hashCode() {
-            return destination.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "Edge{" + "collapsTo " + destination.index + '}';
-        }
-    }
-
     public List<Vector3f> getVertices() {
         return Collections.unmodifiableList(model.getVertices());
     }
@@ -298,18 +199,15 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     public void createFloatArray(Model model) {
         /////////
 
-        List<Face> facesTemp = model.getFaces();
         floatArray = model.getVertexBufferValuesArray();
         indices.add(model.getIndexBufferValuesArray());
 
-//        if(facesTemp.size() > 4) {
-            int sizeBeforeReduction = indices.get(0).length/3;
-            LodGenerator lodGenerator = new LodGenerator(this);
-            lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.5f);
-            indices = this.lodLevels;
-            System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
-            System.out.println("############## lodlevels calculated: " + lodLevels.size());
-//        }
+        int sizeBeforeReduction = indices.get(0).length/3;
+        LodGenerator lodGenerator = new LodGenerator(this);
+        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
+        indices = lodLevels;
+        System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
+        System.out.println("############## lodlevels calculated: " + lodLevels.size());
 
         /////////
 
