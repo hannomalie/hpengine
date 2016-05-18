@@ -99,9 +99,9 @@ void main()
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
-    float ambientAmount = 0.3f;
-    float dynamicAdjust = 0.125f;
-    vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*4*material.ambient))*color.rgb;
+    float ambientAmount = .01f;
+    float dynamicAdjust = 0.015f;
+    vec3 voxelColor = (vec3(ambientAmount)+float((1+dynamicAdjust)*4*material.ambient))*color.rgb;
 
 	float visibility = 1.0;
 	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));
@@ -113,6 +113,6 @@ void main()
 
     float NdotL = 4*max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
 
-	imageStore(out_voxel, ivec3(gridPosition), NdotL*vec4(lightColor,1)*visibility*dynamicAdjust*vec4(voxelColor,1-alpha));
+	imageStore(out_voxel, ivec3(gridPosition), NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1-alpha));
 //    imageStore(out_voxel, ivec3(gridPosition), vec4(materialDiffuseColor,1));
 }

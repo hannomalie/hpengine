@@ -6,11 +6,12 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 import renderer.OpenGLContext;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-public class StorageBuffer implements OpenGLBuffer {
+public abstract class StorageBuffer implements OpenGLBuffer {
 
     protected int id = -1;
 
@@ -117,6 +118,11 @@ public class StorageBuffer implements OpenGLBuffer {
     }
 
     @Override
+    public Buffer getBuffer() {
+        return null;
+    }
+
+    @Override
     public void putValues(FloatBuffer values) {
         putValues(0, values);
     }
@@ -198,12 +204,7 @@ public class StorageBuffer implements OpenGLBuffer {
     }
 
     @Override
-    public <T extends Bufferable> void put(T... bufferable) {
-        put(0, bufferable);
-    }
-
-    @Override
-    public <T extends Bufferable> void put(int offset, T... bufferable) {
+    public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
         OpenGLContext.getInstance().execute(() -> {
             tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getSizePerObject() * bufferable.length);

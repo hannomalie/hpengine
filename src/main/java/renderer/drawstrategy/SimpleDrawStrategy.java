@@ -123,7 +123,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
-        voxelizer = programFactory.getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
+        voxelizer = programFactory.getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 //        voxelizer = programFactory.getProgram("mvp_vertex.glsl", "voxelize_multipass_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
 
         texture3DMipMappingComputeProgram = programFactory.getComputeProgram("texture3D_mipmap_compute.glsl");
@@ -164,7 +164,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         camera.update(0.0000001f);
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree);
+        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, light != null ? light.isNeedsShadowMapRedraw() : false);
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -184,7 +184,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
-            secondPassResult = drawSecondPass(camera, light, appContext.getScene().getPointLights(), appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
+            secondPassResult = drawSecondPass(camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -212,7 +212,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         zeroBuffer.put(0);
         zeroBuffer.rewind();
     }
-    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree) {
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, boolean directionalLightNeedsShadowMapRedraw) {
         GPUProfiler.start("Set GPU state");
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
@@ -238,10 +238,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
-        boolean useVoxelConeTracing = false;
+        boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
 
-        if(useVoxelConeTracing && clearVoxels) {
+        boolean entityOrDirectionalLightHasMoved = appContext.hasAnEntityMovedSomewhen() || directionalLightNeedsShadowMapRedraw;
+        if(useVoxelConeTracing && clearVoxels && entityOrDirectionalLightHasMoved) {
             GPUProfiler.start("Clear voxels");
             ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().grid, 0, GBuffer.gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
             GPUProfiler.end();
@@ -330,7 +331,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             Renderer.getInstance().drawLines(linesProgram);
         }
 
-        if(useVoxelConeTracing) {
+        if(useVoxelConeTracing && entityOrDirectionalLightHasMoved) {
             Program currentProgram = firstPassProgram;
 
             camera = orthoCam;
@@ -388,7 +389,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //            System.out.println(query.getResult());
 
             boolean generatevoxelsMipmap = true;
-            if(useVoxelConeTracing && generatevoxelsMipmap){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
+            if(useVoxelConeTracing && generatevoxelsMipmap && entityOrDirectionalLightHasMoved){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
                 GPUProfiler.start("grid mipmap");
                 int size = Renderer.getInstance().getGBuffer().gridSize;
                 int currentSizeSource = 2*size;
@@ -448,8 +449,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return new FirstPassResult(verticesDrawn, entityCount);
     }
 
-    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-        TextureFactory.getInstance().generateMipMaps(directionalLight.getShadowMapId());
+    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+        TextureFactory.getInstance().generateMipMaps(directionalLight.getShadowMapId()); // TODO: Move this to shadow map rendering because cashing etc
 
         Vector3f camPosition = camera.getPosition();
         Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);

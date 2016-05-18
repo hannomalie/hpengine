@@ -1,6 +1,5 @@
 package shader;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
 import renderer.OpenGLContext;
@@ -13,67 +12,21 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class PersistentMappedStorageBuffer implements OpenGLBuffer{
+public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<DoubleBuffer> {
 
-    private final int target = GL43.GL_SHADER_STORAGE_BUFFER;
+    public PersistentMappedBuffer(int capacity) {
+        this(capacity, GL43.GL_SHADER_STORAGE_BUFFER);
+    }
 
-    protected int id;
-
-    protected DoubleBuffer buffer;
-
-    public PersistentMappedStorageBuffer(int capacity) {
+    public PersistentMappedBuffer(int capacity, int target) {
+        super(target);
         setCapacity(capacity);
-    }
-
-    public DoubleBuffer map(int requestedCapacity) {
-        bind();
-        if(requestedCapacity > buffer.capacity()){
-            setCapacity(requestedCapacity);
-        }
-
-        buffer.clear();
-        return buffer;
-    }
-
-    protected synchronized void setCapacity(int requestedCapacity) {
-        int capacity = requestedCapacity;
-
-        if(buffer != null && buffer.capacity() < capacity){
-            OpenGLContext.getInstance().execute(() -> {
-                bind();
-                glUnmapBuffer(target);
-                glDeleteBuffers(id);
-            });
-        } else if(buffer != null && buffer.capacity() >= capacity) {
-            return;
-        }
-
-        OpenGLContext.getInstance().execute(() -> {
-            id = glGenBuffers();
-            bind();
-            glBufferStorage(target, capacity * 8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-            buffer = glMapBufferRange(target, 0, capacity*8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*8)).asDoubleBuffer();
-        });
-    }
-
-    @Override
-    public void bind() {
-        OpenGLContext.getInstance().execute(() -> {
-            glBindBuffer(target, id);
-        });
-    }
-
-    @Override
-    public void unbind() {
-        OpenGLContext.getInstance().execute(() -> {
-            glBindBuffer(target, 0);
-        });
     }
 
     @Override
     public FloatBuffer getValuesAsFloats() {
-        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/8);
-        for(int i = 0; i < buffer.capacity() / 8; i++) {
+        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/ getPrimitiveSize());
+        for(int i = 0; i < buffer.capacity() / getPrimitiveSize(); i++) {
             result.put(i, (float) buffer.get(i));
         }
 
@@ -82,8 +35,13 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     }
 
     @Override
+    public int getPrimitiveSize() {
+        return 8;
+    }
+
+    @Override
     public DoubleBuffer getValues() {
-        return getValues(0, buffer.capacity() / 8);
+        return getValues(0, buffer.capacity() / getPrimitiveSize());
     }
 
     @Override
@@ -128,7 +86,6 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
         buffer.put(values);
     }
 
-
     @Override
     public synchronized void putValues(float... values) {
         putValues(0, values);
@@ -153,29 +110,14 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
     }
 
     @Override
-    public int getId() {
-        return id;
-    }
-
-    @Override
-    public int getSize() {
-        return buffer.capacity();
-    }
-
-    @Override
-    public void setSize(int size) {
-        setCapacity(size);
-    }
-
-    @Override
-    public synchronized <T extends Bufferable> void put(T... bufferable) {
+    public synchronized void put(Bufferable... bufferable) {
         put(0, bufferable);
     }
 
     @Override
-    public synchronized <T extends Bufferable> void put(int offset, T... bufferable) {
+    public synchronized void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacity(bufferable[0].getSizePerObject() * 8 * bufferable.length);
+        setCapacity(bufferable[0].getSizePerObject() * getPrimitiveSize() * bufferable.length);
 
         buffer.rewind();
         for (int i = 0; i < bufferable.length; i++) {
@@ -189,7 +131,4 @@ public class PersistentMappedStorageBuffer implements OpenGLBuffer{
 //        putValues(offset, buffer);
     }
 
-    public void dispose() {
-        glDeleteBuffers(id);
-    }
 }

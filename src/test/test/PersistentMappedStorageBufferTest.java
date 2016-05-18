@@ -4,8 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
 import shader.Bufferable;
-import shader.PersistentMappedStorageBuffer;
-import shader.StorageBuffer;
+import shader.PersistentMappedBuffer;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -19,7 +18,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(data.capacity());
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(data.capacity());
 		buffer.putValues(data);
 
         DoubleBuffer result = buffer.getValues();
@@ -38,7 +37,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);	
 		}
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(data.capacity());
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(data.capacity());
 		buffer.putValues(data);
 
         DoubleBuffer result = buffer.getValues(4, 11);
@@ -58,7 +57,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 			data.put(i, i);	
 		}
 		
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(16);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16);
 		
 		buffer.putValues(data);
 
@@ -79,7 +78,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 			data.put(i, i+4);
 		}
 		
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(16);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16);
 		
 		buffer.putValues(4, data);
 
@@ -95,7 +94,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 	@Test
 	public void storageBufferLayoutsCorrectly() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(64);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(64);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override
@@ -120,7 +119,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 	public void storageBufferLayoutsCorrectlyWithIndex() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 		double[] secondArray = new double[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-		PersistentMappedStorageBuffer buffer = new PersistentMappedStorageBuffer(48);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(48);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override

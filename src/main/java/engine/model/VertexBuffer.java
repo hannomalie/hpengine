@@ -1,12 +1,16 @@
 package engine.model;
 
 import config.Config;
+import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL31;
 import renderer.OpenGLContext;
+import shader.AbstractPersistentMappedBuffer;
+import shader.Bufferable;
 
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -14,7 +18,12 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
-public class VertexBuffer {
+import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
+import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
+import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
+import static org.lwjgl.opengl.GL30.glMapBufferRange;
+
+public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     private transient volatile boolean uploaded = false;
     private boolean hasIndexBuffer;
@@ -34,7 +43,7 @@ public class VertexBuffer {
         return triangleCount;
     }
 
-	public enum Usage {
+    public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
 
@@ -49,10 +58,8 @@ public class VertexBuffer {
 		}
 	}
 
-    private volatile int vertexBufferName = -1;
     private volatile int[] indexBufferNames;
 	private volatile VertexArrayObject vertexArrayObject;
-    private FloatBuffer buffer;
     private List<IntBuffer> indexBuffers = new ArrayList<>();
 	private int verticesCount;
     private int triangleCount;
@@ -60,13 +67,15 @@ public class VertexBuffer {
 	private Usage usage;
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
+        super(GL15.GL_ARRAY_BUFFER);
         setInternals(buffer(values, channels), channels, Usage.STATIC);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
         this(buffer, channels, Usage.STATIC);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
-		setInternals(buffer, channels, usage);
+        super(GL15.GL_ARRAY_BUFFER);
+        setInternals(buffer, channels, usage);
 	}
 
     public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IntBuffer ... indicesBuffer) {
@@ -77,6 +86,12 @@ public class VertexBuffer {
     private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
         this.buffer = buffer;
         this.channels = channels;
+//        setCapacity(buffer.capacity());
+        OpenGLContext.getInstance().execute(() -> {
+            setId(GL15.glGenBuffers());
+            bind();
+            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
+        });
         this.usage = usage;
         this.verticesCount = calculateVerticesCount(buffer, channels);
         IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
@@ -95,7 +110,7 @@ public class VertexBuffer {
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
 		
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-		int totalBytesPerVertex = totalElementsPerVertex * 4;
+		int totalBytesPerVertex = totalElementsPerVertex * getPrimitiveSize();
         int verticesCount = calculateVerticesCount(vertices, channels);
 
 		buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
@@ -162,10 +177,8 @@ public class VertexBuffer {
         buffer.rewind();
 		uploaded = false;
         OpenGLContext.getInstance().execute(() -> {
-            setVertexBufferName(GL15.glGenBuffers());
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexBufferName);
-            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
             bind();
+            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
 
             if (hasIndexBuffer) {
@@ -181,10 +194,14 @@ public class VertexBuffer {
                 }
             }
 
-        }, true); // TODO: Evaluate if this has to be blocking
-        uploaded = true;
+            uploaded = true;
+        }, false); // TODO: Evaluate if this has to be blocking
 
         return this;
+    }
+
+    protected FloatBuffer mapBuffer(int capacity) {
+        return glMapBufferRange(target, 0, capacity*getPrimitiveSize(), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*8)).asFloatBuffer();
     }
 
     private void setIndexBufferName(int indexBufferIndex, int indexBufferName) {
@@ -192,7 +209,7 @@ public class VertexBuffer {
     }
 
     public void delete() {
-		GL15.glDeleteBuffers(vertexBufferName);
+		GL15.glDeleteBuffers(getId());
         vertexArrayObject.delete();
 		buffer = null;
 	}
@@ -220,11 +237,105 @@ public class VertexBuffer {
         }
     }
 
+    @Override
     public void bind() {
-        vertexArrayObject.bind();
+        super.bind();
+        if(vertexArrayObject != null) {
+            vertexArrayObject.bind();
+        }
     }
 
-	public void drawAgain() {
+    @Override
+    public int getPrimitiveSize() {
+        return 4;
+    }
+
+    @Override
+    public FloatBuffer getValuesAsFloats() {
+        return buffer;
+    }
+
+    @Override
+    public FloatBuffer getValues() {
+        return buffer;
+    }
+
+    @Override
+    public FloatBuffer getValues(int offset, int length) {
+        FloatBuffer result = BufferUtils.createFloatBuffer(length);
+        for(int i = 0; i < length; i++) {
+            result.put(i, buffer.get(offset+i));
+        }
+
+        result.rewind();
+        return result;
+    }
+
+    @Override
+    public void putValues(FloatBuffer values) {
+        buffer.put(values);
+    }
+
+    @Override
+    public void putValues(DoubleBuffer values) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void putValues(int offset, FloatBuffer values) {
+        if(values == buffer) { return; }
+        if(values.capacity() > getSize()) { setSize(values.capacity());}
+        bind();
+        values.rewind();
+        buffer.position(offset);
+        buffer.put(values);
+    }
+
+    @Override
+    public void putValues(int offset, DoubleBuffer values) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void putValues(float... values) {
+        putValues(0, values);
+    }
+
+    @Override
+    public void putValues(int offset, float... values) {
+        bind();
+        buffer.position(offset);
+        buffer.put(values);
+
+    }
+
+    @Override
+    public void putValues(int offset, double... values) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void put(int offset, Bufferable... bufferable) {
+        if(bufferable.length == 0) { return; }
+        setCapacity(bufferable[0].getSizePerObject() * 8 * bufferable.length);
+
+        buffer.rewind();
+        for (int i = 0; i < bufferable.length; i++) {
+            Bufferable currentBufferable = bufferable[i];
+            int currentOffset = i * currentBufferable.getSizePerObject();
+            double[] currentBufferableArray = currentBufferable.get();
+            for (int z = 0; z < currentBufferableArray.length; z++) {
+                buffer.put(offset+currentOffset + z, (float) currentBufferableArray[z]);
+            }
+        }
+    }
+
+    @Override
+    public void put(Bufferable... bufferable) {
+        put(0, bufferable);
+    }
+
+    public void drawAgain() {
         if(!uploaded) { return; }
         drawActually(true);
     }
@@ -309,10 +420,6 @@ public class VertexBuffer {
 		return result;
 		
 	}
-
-    private void setVertexBufferName(int vertexBufferName) {
-        this.vertexBufferName = vertexBufferName;
-    }
 
     private void setVertexArrayObject(VertexArrayObject vertexArrayObject) {
         this.vertexArrayObject = vertexArrayObject;

@@ -166,7 +166,7 @@ public class LightFactory {
 		});
 
 //		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
-		lightBuffer = OpenGLContext.getInstance().calculate(() -> new PersistentMappedStorageBuffer(1000));
+		lightBuffer = OpenGLContext.getInstance().calculate(() -> new PersistentMappedBuffer(1000));
 		AppContext.getEventBus().register(this);
 	}
 

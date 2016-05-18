@@ -498,6 +498,7 @@ void main(void) {
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = environmentLightAO.rgb;
+	environmentLight += vec3(0.0) * color.rgb;
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
@@ -526,7 +527,7 @@ void main(void) {
 
     vec3 positionGridScaled = inverseSceneScale*positionWorld;
     float gridSizeHalf = float(gridSize/2);
-    const bool useVoxelConeTracing = false;
+    const bool useVoxelConeTracing = true;
     if(useVoxelConeTracing && positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
         positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
 
@@ -553,10 +554,11 @@ void main(void) {
 	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
             float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += 8f*vec4(dotProd, dotProd, dotProd, dotProd) * voxelTraceCone(4f, positionWorld, normalize(H), 2, 150);
+            voxelDiffuse += 8f*vec4(dotProd) * voxelTraceCone(4f, positionWorld, normalize(H), 2, 150);
         }
 
-        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));// * (1-roughness);
+//        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
+        out_color.rgb += specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb;
     }
 
 //	out_color.rg = 10*textureLod(motionMap, st, 0).xy;

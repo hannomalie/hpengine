@@ -1,21 +1,21 @@
 package shader;
 
+import java.nio.Buffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-/**
- * Created by pernpeintner on 20.11.2015.
- */
-public interface OpenGLBuffer {
+public interface OpenGLBuffer<BUFFERTYPE extends Buffer> {
     void bind();
 
     void unbind();
 
     FloatBuffer getValuesAsFloats();
 
-    DoubleBuffer getValues();
+    BUFFERTYPE getValues();
 
-    DoubleBuffer getValues(int offset, int length);
+    BUFFERTYPE getValues(int offset, int length);
+
+    BUFFERTYPE getBuffer();
 
     void putValues(FloatBuffer values);
 

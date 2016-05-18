@@ -18,8 +18,7 @@ import renderer.light.DirectionalLight;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
 import shader.OpenGLBuffer;
-import shader.PersistentMappedStorageBuffer;
-import shader.StorageBuffer;
+import shader.PersistentMappedBuffer;
 import util.Util;
 
 import java.io.*;
@@ -58,7 +57,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void init() {
 		LifeCycle.super.init();
 //        entitiesBuffer = new StorageBuffer(32000);
-        entitiesBuffer = new PersistentMappedStorageBuffer(16000);
+        entitiesBuffer = new PersistentMappedBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 		octree.init();
 		entities.forEach(entity -> entity.init());

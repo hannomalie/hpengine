@@ -52,12 +52,12 @@ public class DebugDrawStrategy extends BaseDrawStrategy {
         openGLContext = OpenGLContext.getInstance();
     }
 
-    public DrawResult draw(AppContext appContext) {
-        return draw(appContext.getActiveCamera(), appContext);
-    }
-
     public DrawResult draw(Camera camera, AppContext appContext) {
         return draw(appContext, appContext.getScene().getOctree(), camera);
+    }
+
+    public DrawResult draw(AppContext appContext) {
+        return draw(appContext.getActiveCamera(), appContext);
     }
 
     private DrawResult draw(AppContext appContext, Octree octree, Camera camera) {

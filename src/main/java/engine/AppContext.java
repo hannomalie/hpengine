@@ -403,6 +403,7 @@ public class AppContext {
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw();
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
+                anyEntityHasMovedSomewhen = false;
             }, false);
             AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         } else {
@@ -489,5 +490,9 @@ public class AppContext {
         if(getScene() != null) {
             getScene().getDirectionalLight().setNeedsShadowMapRedraw(true);
         }
+    }
+
+    public boolean hasAnEntityMovedSomewhen() {
+        return anyEntityHasMovedSomewhen;
     }
 }

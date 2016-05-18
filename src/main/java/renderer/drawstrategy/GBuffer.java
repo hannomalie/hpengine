@@ -20,6 +20,8 @@ import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedBuffer;
 import shader.StorageBuffer;
 import util.Util;
 
@@ -57,7 +59,7 @@ public class GBuffer {
 
 	private PixelBufferObject pixelBufferObject;
 	
-	private StorageBuffer storageBuffer;
+	private OpenGLBuffer storageBuffer;
 
 	private final int exposureIndex = 0;
 	private AppContext appContext;
@@ -65,7 +67,7 @@ public class GBuffer {
     public static final int gridSize = 256;
     public static final int gridSizeHalf = gridSize/2;
     public static final int gridSizeScaled = (int)(gridSize*sceneScale);
-    public static final int gridSizeHalfScaled = (int)((gridSize/2)*sceneScale);
+    public static final int gridSizeHalfScaled = (int)((gridSizeHalf)*sceneScale);
 	public static final int gridTextureFormat = GL11.GL_RGBA;//GL11.GL_R;
 	public static final int gridTextureFormatSized = GL11.GL_RGBA8;//GL30.GL_R32UI;
 
@@ -99,7 +101,7 @@ public class GBuffer {
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.WIDTH, Config.HEIGHT));
 		pixelBufferObject = new PixelBufferObject(1, 1);
 		
-         storageBuffer = new StorageBuffer(16);
+         storageBuffer = new PersistentMappedBuffer(4);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
         grid = GL11.glGenTextures();
@@ -161,7 +163,7 @@ public class GBuffer {
 		return finalBuffer.getRenderedTexture(0);
 	}
 
-	public StorageBuffer getStorageBuffer() {
+	public OpenGLBuffer getStorageBuffer() {
 		return storageBuffer;
 	}
 
