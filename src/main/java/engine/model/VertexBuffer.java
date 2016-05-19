@@ -18,9 +18,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
-import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
@@ -110,7 +107,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
 		
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-		int totalBytesPerVertex = totalElementsPerVertex * getPrimitiveSize();
+		int totalBytesPerVertex = totalElementsPerVertex * getPrimitiveSizeInBytes();
         int verticesCount = calculateVerticesCount(vertices, channels);
 
 		buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
@@ -200,8 +197,9 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         return this;
     }
 
-    protected FloatBuffer mapBuffer(int capacity) {
-        return glMapBufferRange(target, 0, capacity*getPrimitiveSize(), GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*8)).asFloatBuffer();
+    protected FloatBuffer mapBuffer(int capacityInBytes, int flags)  {
+        mapped = true;
+        return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asFloatBuffer();
     }
 
     private void setIndexBufferName(int indexBufferIndex, int indexBufferName) {
@@ -246,7 +244,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     @Override
-    public int getPrimitiveSize() {
+    public int getPrimitiveSizeInBytes() {
         return 4;
     }
 
@@ -284,7 +282,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     @Override
     public void putValues(int offset, FloatBuffer values) {
         if(values == buffer) { return; }
-        if(values.capacity() > getSize()) { setSize(values.capacity());}
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
         values.rewind();
         buffer.position(offset);
@@ -304,9 +302,9 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     @Override
     public void putValues(int offset, float... values) {
         bind();
+        setCapacityInBytes((offset + values.length)* getPrimitiveSizeInBytes());
         buffer.position(offset);
         buffer.put(values);
-
     }
 
     @Override
@@ -317,12 +315,12 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     @Override
     public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacity(bufferable[0].getSizePerObject() * 8 * bufferable.length);
+        setCapacityInBytes(bufferable[0].getElementsPerObject() * getPrimitiveSizeInBytes() * bufferable.length);
 
         buffer.rewind();
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            int currentOffset = i * currentBufferable.getSizePerObject();
+            int currentOffset = i * currentBufferable.getElementsPerObject();
             double[] currentBufferableArray = currentBufferable.get();
             for (int z = 0; z < currentBufferableArray.length; z++) {
                 buffer.put(offset+currentOffset + z, (float) currentBufferableArray[z]);

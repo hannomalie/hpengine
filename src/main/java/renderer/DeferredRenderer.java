@@ -100,6 +100,8 @@ public class DeferredRenderer implements Renderer {
 	private int maxTextureUnits;
 	private String currentState = "";
 
+    VertexBuffer buffer;
+
 	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
 
@@ -147,6 +149,9 @@ public class DeferredRenderer implements Renderer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            float[] points = {0f, 0f, 0f, 0f};
+            buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
             initialized = true;
         }
 	}
@@ -478,9 +483,10 @@ public class DeferredRenderer implements Renderer {
 			points[3*i + 1] = point.y;
 			points[3*i + 2] = point.z;
 		}
-		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+		buffer.putValues(points);
+        buffer.upload();
 		buffer.drawDebugLines();
-		buffer.delete();
+//		buffer.delete();
 		linePoints.clear();
 	}
 

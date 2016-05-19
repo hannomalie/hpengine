@@ -400,14 +400,14 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 
     @Override
-    public int getSizePerObject() {
+    public int getElementsPerObject() {
         return 16+4;
     }
 
     @Override
     public double[] get() {
         int index = 0;
-        double[] doubles = new double[getSizePerObject()];
+        double[] doubles = new double[getElementsPerObject()];
 
         Matrix4f mm = getModelMatrix();
         doubles[index++] = mm.m00;

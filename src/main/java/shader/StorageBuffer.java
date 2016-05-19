@@ -39,7 +39,7 @@ public abstract class StorageBuffer implements OpenGLBuffer {
         bind();
         OpenGLContext.getInstance().execute(() -> {
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, data, GL15.GL_DYNAMIC_COPY);
-            setSize(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
+            setSizeInBytes(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
         });
     }
 
@@ -169,12 +169,12 @@ public abstract class StorageBuffer implements OpenGLBuffer {
     }
 
     @Override
-    public int getSize() {
+    public int getSizeInBytes() {
         return size;
     }
 
     @Override
-    public void setSize(int size) {
+    public void setSizeInBytes(int size) {
         this.size = size;
     }
 
@@ -207,10 +207,10 @@ public abstract class StorageBuffer implements OpenGLBuffer {
     public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
         OpenGLContext.getInstance().execute(() -> {
-            tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getSizePerObject() * bufferable.length);
+            tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getElementsPerObject() * bufferable.length);
             for (int i = 0; i < bufferable.length; i++) {
                 Bufferable currentBufferable = bufferable[i];
-                int currentOffset = i * currentBufferable.getSizePerObject();
+                int currentOffset = i * currentBufferable.getElementsPerObject();
                 double[] currentBufferableArray = currentBufferable.get();
                 for (int z = 0; z < currentBufferableArray.length; z++) {
                     tempBuffer.put(currentOffset + z, currentBufferableArray[z]);

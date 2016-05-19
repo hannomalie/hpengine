@@ -396,7 +396,7 @@ public class MaterialFactory {
 		OpenGLContext.getInstance().execute(() -> {
 			ArrayList<Material> materials = new ArrayList<>(MATERIALS.values());
 
-			int offset = material.getSizePerObject() * materials.indexOf(material);
+			int offset = material.getElementsPerObject() * materials.indexOf(material);
 			materialBuffer.put(offset, material);
 		});
 	}

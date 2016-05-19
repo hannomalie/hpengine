@@ -1,6 +1,5 @@
 package renderer.material;
 
-import config.Config;
 import engine.AppContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -283,13 +282,13 @@ public class Material implements Serializable, Bufferable {
 
 
 	@Override
-	public int getSizePerObject() {
+	public int getElementsPerObject() {
 		return 16;
 	}
 
 	@Override
 	public double[] get() {
-		double[] doubles = new double[getSizePerObject()];
+		double[] doubles = new double[getElementsPerObject()];
 		int index = 0;
 		doubles[index++] = materialInfo.diffuse.x;
 		doubles[index++] = materialInfo.diffuse.y;

@@ -120,4 +120,6 @@ public abstract class AbstractProgram {
     @Handler
 	public void handle(GlobalDefineChangedEvent e) {
 	}
+
+
 }

@@ -31,6 +31,7 @@ public class VertexArrayObject {
     public void bind() {
 //        if(CURRENTLY_BOUND_VAO == id) { return; }
         OpenGLContext.getInstance().execute(() -> {
+            if(id <= 0) { setId(GL30.glGenVertexArrays()); }
             GL30.glBindVertexArray(getId());
         });
     }

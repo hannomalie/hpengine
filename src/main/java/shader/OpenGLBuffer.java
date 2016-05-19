@@ -27,9 +27,9 @@ public interface OpenGLBuffer<BUFFERTYPE extends Buffer> {
 
     int getId();
 
-    int getSize();
+    int getSizeInBytes();
 
-    void setSize(int size);
+    void setSizeInBytes(int size);
 
     void putValues(float... values);
 

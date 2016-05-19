@@ -101,7 +101,7 @@ public class GBuffer {
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.WIDTH, Config.HEIGHT));
 		pixelBufferObject = new PixelBufferObject(1, 1);
 		
-         storageBuffer = new PersistentMappedBuffer(4);//new StorageBuffer(16);
+         storageBuffer = new PersistentMappedBuffer(4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
         grid = GL11.glGenTextures();

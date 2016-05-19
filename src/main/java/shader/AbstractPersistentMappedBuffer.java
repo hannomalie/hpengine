@@ -1,24 +1,21 @@
 package shader;
 
-import org.lwjgl.BufferUtils;
 import renderer.OpenGLContext;
 
-import java.lang.reflect.ParameterizedType;
 import java.nio.Buffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
 import static org.lwjgl.opengl.ARBBufferStorage.glBufferStorage;
 import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL30.GL_MAP_UNSYNCHRONIZED_BIT;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
-import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer> implements OpenGLBuffer {
     protected final int target;
     private int id;
     protected BUFFER_TYPE buffer;
+    protected volatile boolean mapped;
 
     public AbstractPersistentMappedBuffer(int target) {
         this.target = target;
@@ -36,41 +33,51 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
     public BUFFER_TYPE map(int requestedCapacity) {
         bind();
         if(requestedCapacity > buffer.capacity()){
-            setCapacity(requestedCapacity);
+            setCapacityInBytes(requestedCapacity);
         }
 
         buffer.clear();
         return buffer;
     }
 
-    protected synchronized void setCapacity(int requestedCapacity) {
-        int capacity = requestedCapacity;
+    protected synchronized void setCapacityInBytes(int requestedCapacity) {
+        int capacityInBytes = requestedCapacity;
 
-        if(buffer != null && buffer.capacity() < capacity){
-            OpenGLContext.getInstance().execute(() -> {
-                bind();
-                glUnmapBuffer(target);
-                glDeleteBuffers(id);
-            });
-        } else if(buffer != null && buffer.capacity() >= capacity) {
-            return;
+        if(buffer != null) {
+            boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes() < capacityInBytes;
+            if(needsResize) {
+                OpenGLContext.getInstance().execute(() -> {
+                    bind();
+                    if(mapped) {
+                        glUnmapBuffer(target);
+                        mapped = false;
+                    }
+                    if(id > 0) {
+                        glDeleteBuffers(id);
+                        id = -1;
+                    }
+                });
+            } else {
+                return;
+            }
         }
-
-        OpenGLContext.getInstance().execute(() -> {
-            id = glGenBuffers();
-            bind();
-            glBufferStorage(target, capacity * 8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-            buffer = mapBuffer(capacity);
-        });
+        {
+            OpenGLContext.getInstance().execute(() -> {
+                id = glGenBuffers();
+                bind();
+                int flags = GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+                glBufferStorage(target, capacityInBytes * getPrimitiveSizeInBytes(), flags);
+                buffer = mapBuffer(capacityInBytes* getPrimitiveSizeInBytes(), flags);
+            });
+        }
     }
 
-    protected BUFFER_TYPE mapBuffer(int capacity) {
-        return (BUFFER_TYPE) glMapBufferRange(target, 0, capacity*8, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, BufferUtils.createByteBuffer(capacity*8)).asDoubleBuffer();
-    }
+    abstract protected BUFFER_TYPE mapBuffer(int capacity, int flags);
 
     @Override
     public void bind() {
         OpenGLContext.getInstance().execute(() -> {
+            if(id <= 0) {id = glGenBuffers(); }
             glBindBuffer(target, id);
         });
     }
@@ -92,13 +99,13 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
     }
 
     @Override
-    public int getSize() {
+    public int getSizeInBytes() {
         return buffer.capacity();
     }
 
     @Override
-    public void setSize(int size) {
-        setCapacity(size);
+    public void setSizeInBytes(int size) {
+        setCapacityInBytes(size);
     }
 
     @Override
@@ -106,7 +113,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         return buffer;
     }
 
-    public abstract int getPrimitiveSize();
+    public abstract int getPrimitiveSizeInBytes();
 
     public void dispose() {
         glDeleteBuffers(id);

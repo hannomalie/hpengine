@@ -18,7 +18,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(data.capacity());
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(data.capacity() * 8);
 		buffer.putValues(data);
 
         DoubleBuffer result = buffer.getValues();
@@ -94,7 +94,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 	@Test
 	public void storageBufferLayoutsCorrectly() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(64);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(64*8);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override
@@ -110,7 +110,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 		float[] dst = new float[result.capacity()];
 		result.get(dst);
 
-		for (int i = 0; i < 4*bufferable.getSizePerObject(); i++) {
+		for (int i = 0; i < 4*bufferable.getElementsPerObject(); i++) {
 			Assert.assertTrue(dst[i] == array[i%14]);
 		}
 	}
@@ -119,7 +119,7 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 	public void storageBufferLayoutsCorrectlyWithIndex() {
 		double[] array = new double[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 		double[] secondArray = new double[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(48);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(48*8);
 
 		Bufferable bufferable = new Bufferable() {
 			@Override
@@ -141,17 +141,17 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 		float[] dst = new float[result.capacity()];
 		result.get(dst);
 
-		for (int i = 0; i < 4*bufferable.getSizePerObject(); i++) {
-			Assert.assertTrue(dst[i] == array[i%bufferable.getSizePerObject()]);
+		for (int i = 0; i < 4*bufferable.getElementsPerObject(); i++) {
+			Assert.assertTrue(dst[i] == array[i%bufferable.getElementsPerObject()]);
 		}
 
-		buffer.put(bufferable.getSizePerObject()*2, secondBufferable);
+		buffer.put(bufferable.getElementsPerObject()*2, secondBufferable);
 
 		DoubleBuffer newValues = buffer.getValues();
 		double[] newDst = new double[newValues.capacity()];
 		newValues.get(newDst);
-		for (int i = 0; i < bufferable.getSizePerObject(); i++) {
-			Assert.assertEquals(secondArray[i], newDst[2*bufferable.getSizePerObject()+i], 0.01f);
+		for (int i = 0; i < bufferable.getElementsPerObject(); i++) {
+			Assert.assertEquals(secondArray[i], newDst[2*bufferable.getElementsPerObject()+i], 0.01f);
 		}
 	}
 }

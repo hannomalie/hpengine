@@ -2,31 +2,33 @@ package shader;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
-import renderer.OpenGLContext;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.opengl.ARBBufferStorage.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<DoubleBuffer> {
 
-    public PersistentMappedBuffer(int capacity) {
-        this(capacity, GL43.GL_SHADER_STORAGE_BUFFER);
+    public PersistentMappedBuffer(int capacityInBytes) {
+        this(capacityInBytes, GL43.GL_SHADER_STORAGE_BUFFER);
     }
 
-    public PersistentMappedBuffer(int capacity, int target) {
+    public PersistentMappedBuffer(int capacityInBytes, int target) {
         super(target);
-        setCapacity(capacity);
+        setCapacityInBytes(capacityInBytes);
+    }
+
+    @Override
+    protected DoubleBuffer mapBuffer(int capacityInBytes, int flags) {
+        mapped = true;
+        return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes* getPrimitiveSizeInBytes())).asDoubleBuffer();
     }
 
     @Override
     public FloatBuffer getValuesAsFloats() {
-        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/ getPrimitiveSize());
-        for(int i = 0; i < buffer.capacity() / getPrimitiveSize(); i++) {
+        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/ getPrimitiveSizeInBytes());
+        for(int i = 0; i < buffer.capacity() / getPrimitiveSizeInBytes(); i++) {
             result.put(i, (float) buffer.get(i));
         }
 
@@ -35,13 +37,13 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    public int getPrimitiveSize() {
+    public int getPrimitiveSizeInBytes() {
         return 8;
     }
 
     @Override
     public DoubleBuffer getValues() {
-        return getValues(0, buffer.capacity() / getPrimitiveSize());
+        return getValues(0, buffer.capacity() / getPrimitiveSizeInBytes());
     }
 
     @Override
@@ -67,7 +69,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     public synchronized void putValues(int offset, FloatBuffer values) {
-        if(values.capacity() > getSize()) { setSize(values.capacity());}
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
         values.rewind();
         for(int i = offset; i < values.capacity(); i++) {
@@ -79,7 +81,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     @Override
     public synchronized void putValues(int offset, DoubleBuffer values) {
         if(values == buffer) { return; }
-        if(values.capacity() > getSize()) { setSize(values.capacity());}
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
         values.rewind();
         buffer.position(offset);
@@ -117,12 +119,12 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     @Override
     public synchronized void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacity(bufferable[0].getSizePerObject() * getPrimitiveSize() * bufferable.length);
+        setCapacityInBytes(bufferable[0].getElementsPerObject() * getPrimitiveSizeInBytes() * bufferable.length);
 
         buffer.rewind();
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            int currentOffset = i * currentBufferable.getSizePerObject();
+            int currentOffset = i * currentBufferable.getElementsPerObject();
             double[] currentBufferableArray = currentBufferable.get();
             for (int z = 0; z < currentBufferableArray.length; z++) {
                 buffer.put(offset+currentOffset + z, currentBufferableArray[z]);
