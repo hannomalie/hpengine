@@ -538,24 +538,59 @@ void main(void) {
         vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(V, normalWorld)), 0.1*roughness, 170); // 0.05
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
 
-        const int SAMPLE_COUNT = 5;
-        for (int k = 0; k < SAMPLE_COUNT; k++) {
-            const float PI = 3.1415926536;
-            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
-            float Phi = 2 * PI * Xi.x;
-            float a = 1;//roughness;
-            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
-            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+//        const int SAMPLE_COUNT = 5;
+//        for (int k = 0; k < SAMPLE_COUNT; k++) {
+//            const float PI = 3.1415926536;
+//            vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+//            float Phi = 2 * PI * Xi.x;
+//            float a = 1;//roughness;
+//            float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+//            float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+//
+//            vec3 H;
+//            H.x = SinTheta * cos( Phi );
+//            H.y = SinTheta * sin( Phi );
+//            H.z = CosTheta;
+//	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+//
+//            float dotProd = clamp(dot(normalWorld, H),0,1);
+//            voxelDiffuse += 8f*vec4(dotProd) * voxelTraceCone(4f, positionWorld, normalize(H), 2, 150);
+//        }
 
-            vec3 H;
-            H.x = SinTheta * cos( Phi );
-            H.y = SinTheta * sin( Phi );
-            H.z = CosTheta;
-	        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+//https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
+    vec3 diffdir = normalize(normalWorld.zxy);
+    vec3 crossdir = cross(normalWorld.xyz, diffdir);
+    vec3 crossdir2 = cross(normalWorld.xyz, crossdir);
 
-            float dotProd = clamp(dot(normalWorld, H),0,1);
-            voxelDiffuse += 8f*vec4(dotProd) * voxelTraceCone(4f, positionWorld, normalize(H), 2, 150);
-        }
+    // jitter cones
+    float j = 1.0 + (fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453)) * 0.2;
+
+    vec3 directions[9] =
+    {
+        normalWorld,
+        normalize(crossdir   * j + normalWorld),
+        normalize(-crossdir  * j + normalWorld),
+        normalize(crossdir2  * j + normalWorld),
+        normalize(-crossdir2 * j + normalWorld),
+        normalize((crossdir + crossdir2)  * j + normalWorld),
+        normalize((crossdir - crossdir2)  * j + normalWorld),
+        normalize((-crossdir + crossdir2) * j + normalWorld),
+        normalize((-crossdir - crossdir2) * j + normalWorld),
+    };
+
+    float diff_angle = 0.6f;
+
+    vec4 diffuse = vec4(0, 0, 0, 0);
+
+    for (uint d = 0; d < 9; ++d)
+    {
+        vec3 D = directions[d];
+
+        float NdotL = clamp(dot(normalize(normalWorld), normalize(D)), 0, 1);
+
+        voxelDiffuse += voxelTraceCone(4f, positionWorld, normalize(D), 2, 150) * NdotL;
+    }
+
 
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
         out_color.rgb += specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb;
