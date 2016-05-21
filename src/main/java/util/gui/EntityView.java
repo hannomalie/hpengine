@@ -13,8 +13,8 @@ import com.alee.laf.checkbox.WebCheckBox;
 import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
+import event.EntityChangedMaterialEvent;
 import event.EntityAddedEvent;
-import event.MaterialChangedEvent;
 import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.Result;
@@ -117,7 +117,7 @@ public class EntityView extends WebPanel {
 	        webComponentPanel.addElement(removeEntityButton);
 
 			try {
-				WebComboBox materialSelect = new WebComboBox(new Vector<Material>(MaterialFactory.getInstance().getMaterialsAsList()));
+				WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
 				Material material = MaterialFactory.getInstance().getDefaultMaterial();
 				if(entity.getComponentOption(ModelComponent.class).isPresent()) {
 					material = entity.getComponent(ModelComponent.class).getMaterial();
@@ -132,7 +132,7 @@ public class EntityView extends WebPanel {
 							child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
 						}
 					}
-                    AppContext.getEventBus().post(new MaterialChangedEvent(selectedMaterial)); // TODO Create own event type
+                    AppContext.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
 				});
 				webComponentPanel.addElement(materialSelect);
 

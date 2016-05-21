@@ -145,31 +145,22 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         identityMatrix44Buffer = new Transform().getTransformationBuffer();
     }
 
-    public DrawResult draw(AppContext appContext, RenderExtract renderExtract) {
-        return draw(appContext.getActiveCamera(), appContext, renderExtract);
-    }
-
-    public DrawResult draw(Camera camera, AppContext appContext, RenderExtract renderExtract) {
-        return draw(appContext, null, appContext.getScene().getOctree(), camera, renderExtract);
-    }
-
-    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera, RenderExtract renderExtract) {
+    @Override
+    public DrawResult draw(RenderTarget target, RenderExtract renderExtract) {
         SecondPassResult secondPassResult = null;
+        AppContext appContext = AppContext.getInstance();
+        Octree octree = appContext.getScene().getOctree();
 
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
         DirectionalLight light = appContext.getScene().getDirectionalLight();
 
-        camera = new Camera(camera);
-        camera.init();
-        camera.update(0.0000001f);
-
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, light != null ? light.isNeedsShadowMapRedraw() : false, renderExtract);
+        FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract.camera, octree, renderExtract);
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
-            environmentProbeFactory.drawAlternating(octree, camera, light, Renderer.getInstance().getFrameCount());
+            environmentProbeFactory.drawAlternating(octree, renderExtract.camera, light, Renderer.getInstance().getFrameCount());
             Renderer.getInstance().executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
             {
@@ -185,13 +176,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
-            secondPassResult = drawSecondPass(camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
+            secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             GPUProfiler.start("Combine pass");
-            combinePass(target, light, camera);
+            combinePass(target, renderExtract.camera);
             GPUProfiler.end();
         } else {
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
@@ -213,7 +204,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         zeroBuffer.put(0);
         zeroBuffer.rewind();
     }
-    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, boolean directionalLightNeedsShadowMapRedraw, RenderExtract renderExtract) {
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, RenderExtract renderExtract) {
         GPUProfiler.start("Set GPU state");
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
@@ -227,10 +218,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         List<Entity> entities;
 
         if (Config.useFrustumCulling) {
-            entities = (octree.getVisible(camera));
+            entities = (octree.getVisible(renderExtract.camera));
 
             for (int i = 0; i < entities.size(); i++) {
-                if (!entities.get(i).isInFrustum(camera)) {
+                if (!entities.get(i).isInFrustum(renderExtract.camera)) {
                     entities.remove(i);
                 }
             }
@@ -242,7 +233,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
 
-        boolean entityOrDirectionalLightHasMoved = renderExtract.anyEntityHasMovedSomewhen || directionalLightNeedsShadowMapRedraw;
+        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
         if(useVoxelConeTracing && clearVoxels && entityOrDirectionalLightHasMoved) {
             GPUProfiler.start("Clear voxels");
             ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().grid, 0, GBuffer.gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
@@ -805,7 +796,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
 
-    public void combinePass(RenderTarget target, DirectionalLight light, Camera camera) {
+    public void combinePass(RenderTarget target, Camera camera) {
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
         TextureFactory.getInstance().generateMipMaps(finalBuffer.getRenderedTexture(0));

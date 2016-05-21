@@ -91,7 +91,6 @@ public class DeferredRenderer implements Renderer {
 
 	private GBuffer gBuffer;
 	private SimpleDrawStrategy simpleDrawStrategy;
-	private DebugDrawStrategy debugDrawStrategy;
 	private DrawStrategy currentDrawStrategy;
 
 	private RenderTarget fullScreenTarget;
@@ -123,7 +122,6 @@ public class DeferredRenderer implements Renderer {
                 setupShaders();
                 setUpGBuffer();
                 simpleDrawStrategy = new SimpleDrawStrategy();
-                debugDrawStrategy = new DebugDrawStrategy();
             } catch (Exception e) {
                 e.printStackTrace();
                 System.err.println("Cannot init DeferredRenderer");
@@ -253,11 +251,7 @@ public class DeferredRenderer implements Renderer {
 	public DrawResult draw(RenderExtract renderExtract) {
 		setLastFrameTime();
         DrawResult drawResult;
-		if (Config.DRAWLINES_ENABLED && !Config.DRAWSCENE_ENABLED) {
-            drawResult = debugDrawStrategy.draw(AppContext.getInstance(), renderExtract);
-		} else {
-            drawResult = simpleDrawStrategy.draw(AppContext.getInstance(), renderExtract);
-		}
+            drawResult = simpleDrawStrategy.draw(renderExtract);
 
 		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);

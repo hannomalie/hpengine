@@ -254,18 +254,14 @@ public class Scene implements LifeCycle, Serializable {
 
     @Subscribe
     @Handler
-    public void handle(MaterialChangedEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
-    public void handle(MaterialAddedEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
     public void handle(EntityAddedEvent event) {
         bufferEntities();
+    }
+    @Subscribe
+    @Handler
+    public void handle(EntityChangedMaterialEvent event) {
+        int offset = event.getEntity().getElementsPerObject() * octree.getEntities().indexOf(event.getEntity());
+        entitiesBuffer.put(offset, event.getEntity());
     }
 
     public OpenGLBuffer getEntitiesBuffer() {

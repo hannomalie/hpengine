@@ -136,13 +136,13 @@ public class Octree implements LifeCycle, Serializable {
 	public List<Entity> getVisible(Camera camera) {
 		StopWatch.getInstance().start("Octree get visible");
 		List<Entity> result = new ArrayList<>();
-		result.addAll(getEntitiesForNode(rootNode));
-		
+//		result.addAll(getEntitiesForNode(rootNode));
 //		rootNode.getVisible(camera, result);
 //		rootNode.getVisibleThreaded(camera, result);
-		result = getEntities().stream().filter(e -> { return e.isInFrustum(camera); }).collect(Collectors.toList());
+
+		result = getEntities().stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
-		return new ArrayList<Entity>(result);
+		return new ArrayList<>(result);
 	}
 	
 	

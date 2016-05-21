@@ -45,7 +45,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	private boolean selected = false;
 	private boolean visible = true;
 	
-	public HashMap<String, Component> components = new HashMap<>();
+	public Map<String, Component> components = new HashMap<>();
 
 	protected Entity() { }
 
@@ -179,9 +179,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.appContext = appContext;
 	}
 
-    public HashMap<String,Component> getComponents() {
+    public Map<String,Component> getComponents() {
 		return components;
-	};
+	}
 
 	public FloatBuffer getModelMatrixAsBuffer() {
 		return transform.getTransformationBuffer();

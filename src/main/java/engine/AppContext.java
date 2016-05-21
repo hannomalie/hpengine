@@ -15,7 +15,6 @@ import event.bus.EventBus;
 import event.FrameFinishedEvent;
 import event.bus.MBassadorEventBus;
 import net.engio.mbassy.listener.Handler;
-import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -154,6 +153,7 @@ public class AppContext {
         ScriptManager.getInstance().defineGlobals();
 
         scene = new Scene();
+        AppContext.getEventBus().register(scene);
         AppContext self = this;
         OpenGLContext.getInstance().execute(() -> {
             scene.init();
@@ -406,11 +406,15 @@ public class AppContext {
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded) && scene != null) {
-                    scene.bufferEntities(); entityNewlyAdded = false;
+                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityAdded) && scene != null) {
+                    scene.bufferEntities(); entityAdded = false;
                 }
                 Renderer.getInstance().startFrame();
-                RenderExtract renderExtract = new RenderExtract(finalAnyEntityHasMoved);
+                boolean directionalLightNeedsShadowMapRender = false;
+                if(getScene() != null) {
+                    directionalLightNeedsShadowMapRender = getScene().getDirectionalLight() != null ? getScene().getDirectionalLight().isNeedsShadowMapRedraw() : false;
+                }
+                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
@@ -492,11 +496,11 @@ public class AppContext {
         return thread.getFpsCounter();
     }
 
-    private volatile boolean entityNewlyAdded = false;
+    private volatile boolean entityAdded = false;
     @Subscribe
     @Handler
     public void handle(EntityAddedEvent e) {
-        entityNewlyAdded = true;
+        entityAdded = true;
         if(getScene() != null) {
             getScene().getDirectionalLight().setNeedsShadowMapRedraw(true);
         }
