@@ -88,20 +88,21 @@ void main()
 									 material.diffuseG,
 									 material.diffuseB);
 
-    float alpha = float(material.transparency);
+    float opacity = 1-float(material.transparency);
 	vec4 color = vec4(materialDiffuseColor, 1);
 
 	if(material.hasDiffuseMap != 0) {
         color = texture(diffuseMap, g_texcoord);
-        alpha *= color.a;
+        opacity *= color.a;
     }
 
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
-    float ambientAmount = .01f;
+    float ambientAmount = .05f;
     float dynamicAdjust = 0.015f;
-    vec3 voxelColor = (vec3(ambientAmount)+float((1+dynamicAdjust)*4*material.ambient))*color.rgb;
+    vec3 voxelColor = color.rgb;
+    vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*material.ambient))*voxelColor;
 
 	float visibility = 1.0;
 	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));
@@ -109,10 +110,11 @@ void main()
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
-    visibility = max(visibility, 0.25f);
+    visibility = max(visibility, 0.125f);
 
-    float NdotL = 4*max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
+    float NdotL = max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
 
-	imageStore(out_voxel, ivec3(gridPosition), NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1-alpha));
-//    imageStore(out_voxel, ivec3(gridPosition), vec4(materialDiffuseColor,1));
+    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
+	imageStore(out_voxel, ivec3(gridPosition), vec4(finalVoxelColor, opacity));
+//    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor, 1-alpha));
 }

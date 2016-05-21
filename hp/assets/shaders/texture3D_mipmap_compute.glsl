@@ -63,6 +63,17 @@ const float kernel_3d[5][5][5] = {
 };
 #endif
 
+vec4[8] fetchTexels(ivec3 pos) {
+  return vec4[8] (imageLoad(source, pos + ivec3(1, 1, 1)),
+                  imageLoad(source, pos + ivec3(1, 1, 0)),
+                  imageLoad(source, pos + ivec3(1, 0, 1)),
+                  imageLoad(source, pos + ivec3(1, 0, 0)),
+                  imageLoad(source, pos + ivec3(0, 1, 1)),
+                  imageLoad(source, pos + ivec3(0, 1, 0)),
+                  imageLoad(source, pos + ivec3(0, 0, 1)),
+                  imageLoad(source, pos + ivec3(0, 0, 0)));
+}
+
 void main(void) {
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
 	ivec3 workGroup = ivec3(gl_WorkGroupID);
@@ -74,13 +85,18 @@ void main(void) {
 	float weightSum = 0;
 
 #ifdef KERNEL_SIZE_3
-	int amplitude = 1;
-	float divisor = 1;
+    const int kernelSize = 3;
+	const int amplitude = 1;
+	const float divisor = 1;
 #else
-	int amplitude = 2;
-	float divisor = 4;
+    const int kernelSize = 5;
+	const int amplitude = 2;
+	const float divisor = 4;
 #endif
 
+    vec4[kernelSize*kernelSize*kernelSize] texels;
+
+    int counter = 0;
 	for(int x = -amplitude; x < amplitude; x++) {
 	    for(int y = -amplitude; y < amplitude; y++) {
 	        for(int z = -amplitude; z < amplitude; z++) {
@@ -90,14 +106,23 @@ void main(void) {
 //                sourceValue.rgba += weight * textureSample.rgba;// * clamp(textureSample.a,0,1) + (sourceValue.rgb * 1-sourceValue.a);
                 sourceValue.a += weight*textureSample.a;
                 weightSum += weight;
+
+                texels[counter] = textureSample;
+                counter++;
             }
         }
 	}
-	sourceValue.rgb /= weightSum-sourceValue.a;
-//	sourceValue /= weightSum;
-//	sourceValue /= 9;
-//	sourceValue /= divisor;
-//	vec4 sourceValue = imageLoad(source, loadPosition);
-	imageStore(target, storePos, sourceValue);
+
+	sourceValue *= sourceValue.a;
+	sourceValue /= weightSum;
+
+	vec4 values[8] = fetchTexels(loadPosition);
+        imageStore(target, storePos, (values[0] + values[4] * (1 - values[0].a)
+                                            + values[1] + values[5] * (1 - values[1].a)
+                                            + values[2] + values[6] * (1 - values[2].a)
+                                            + values[3] + values[7] * (1 - values[3].a)) / 4);
+
+
+//	imageStore(target, storePos, sourceValue);
 //	imageStore(target, ivec3(0,0,0), vec4(1,0,0,1));
 }

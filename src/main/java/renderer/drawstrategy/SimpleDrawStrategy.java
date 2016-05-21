@@ -377,7 +377,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //            GLSamplesPassedQuery query = new GLSamplesPassedQuery();
 //            query.begin();
 
-            for (Entity entity : entities) {
+            for (Entity entity : octree.getEntities()) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
                             .draw(camera, null, currentProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
