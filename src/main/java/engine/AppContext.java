@@ -24,6 +24,7 @@ import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
@@ -363,6 +364,12 @@ public class AppContext {
             } else if(Keyboard.isKeyDown(Keyboard.KEY_2)) {
                 Config.currentModelLod = 2;
                 System.out.println(Config.currentModelLod);
+            } else if(Keyboard.isKeyDown(Keyboard.KEY_3)) {
+                Config.currentModelLod = 3;
+                System.out.println(Config.currentModelLod);
+            } else if(Keyboard.isKeyDown(Keyboard.KEY_4)) {
+                Config.currentModelLod = 4;
+                System.out.println(Config.currentModelLod);
             }
         }
 
@@ -399,16 +406,19 @@ public class AppContext {
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
-                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded) && scene != null) { scene.bufferEntities(); entityNewlyAdded = false; }
+                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityNewlyAdded) && scene != null) {
+                    scene.bufferEntities(); entityNewlyAdded = false;
+                }
                 Renderer.getInstance().startFrame();
-                latestDrawResult = Renderer.getInstance().draw();
+                RenderExtract renderExtract = new RenderExtract(finalAnyEntityHasMoved);
+                latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
             }, false);
             AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         } else {
             if(anyEntityHasMoved) {
-                anyEntityHasMovedSomewhen = anyEntityHasMoved;
+                anyEntityHasMovedSomewhen = true;
             }
         }
 

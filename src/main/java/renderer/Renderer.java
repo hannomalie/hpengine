@@ -15,7 +15,7 @@ public interface Renderer extends LifeCycle {
 
     void destroy();
 
-    DrawResult draw();
+    DrawResult draw(RenderExtract renderExtract);
 
     void update(float seconds);
 

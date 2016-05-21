@@ -176,8 +176,8 @@ public class DirectionalLight extends Entity {
 		if(!needsShadowMapRedraw) { return; }
 		OpenGLContext.getInstance().depthMask(true);
 		OpenGLContext.getInstance().enable(DEPTH_TEST);
-		OpenGLContext.getInstance().cullFace(BACK);
-		OpenGLContext.getInstance().enable(CULL_FACE);
+//		OpenGLContext.getInstance().cullFace(BACK);
+		OpenGLContext.getInstance().disable(CULL_FACE);
 		
 		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
 		renderTarget.use(true);

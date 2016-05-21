@@ -13,6 +13,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.light.*;
@@ -52,15 +53,15 @@ public class DebugDrawStrategy extends BaseDrawStrategy {
         openGLContext = OpenGLContext.getInstance();
     }
 
-    public DrawResult draw(Camera camera, AppContext appContext) {
-        return draw(appContext, appContext.getScene().getOctree(), camera);
+    public DrawResult draw(Camera camera, AppContext appContext, RenderExtract renderExtract) {
+        return draw(appContext, appContext.getScene().getOctree(), camera, renderExtract);
     }
 
-    public DrawResult draw(AppContext appContext) {
-        return draw(appContext.getActiveCamera(), appContext);
+    public DrawResult draw(AppContext appContext, RenderExtract renderExtract) {
+        return draw(appContext.getActiveCamera(), appContext, renderExtract);
     }
 
-    private DrawResult draw(AppContext appContext, Octree octree, Camera camera) {
+    private DrawResult draw(AppContext appContext, Octree octree, Camera camera, RenderExtract renderExtract) {
         SecondPassResult secondPassResult = null;
 
         GPUProfiler.start("First pass");

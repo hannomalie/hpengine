@@ -250,13 +250,13 @@ public class DeferredRenderer implements Renderer {
 	// I need this to force probe redrawing after engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public DrawResult draw() {
+	public DrawResult draw(RenderExtract renderExtract) {
 		setLastFrameTime();
         DrawResult drawResult;
 		if (Config.DRAWLINES_ENABLED && !Config.DRAWSCENE_ENABLED) {
-            drawResult = debugDrawStrategy.draw(AppContext.getInstance());
+            drawResult = debugDrawStrategy.draw(AppContext.getInstance(), renderExtract);
 		} else {
-            drawResult = simpleDrawStrategy.draw(AppContext.getInstance());
+            drawResult = simpleDrawStrategy.draw(AppContext.getInstance(), renderExtract);
 		}
 
 		if (Config.DEBUGFRAME_ENABLED) {

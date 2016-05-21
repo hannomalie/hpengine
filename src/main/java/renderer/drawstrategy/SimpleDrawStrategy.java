@@ -16,6 +16,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
@@ -144,15 +145,15 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         identityMatrix44Buffer = new Transform().getTransformationBuffer();
     }
 
-    public DrawResult draw(AppContext appContext) {
-        return draw(appContext.getActiveCamera(), appContext, appContext.getScene().getEntities());
+    public DrawResult draw(AppContext appContext, RenderExtract renderExtract) {
+        return draw(appContext.getActiveCamera(), appContext, renderExtract);
     }
 
-    public DrawResult draw(Camera camera, AppContext appContext, List<Entity> entities) {
-        return draw(appContext, null, appContext.getScene().getOctree(), camera);
+    public DrawResult draw(Camera camera, AppContext appContext, RenderExtract renderExtract) {
+        return draw(appContext, null, appContext.getScene().getOctree(), camera, renderExtract);
     }
 
-    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera) {
+    private DrawResult draw(AppContext appContext, RenderTarget target, Octree octree, Camera camera, RenderExtract renderExtract) {
         SecondPassResult secondPassResult = null;
 
         LightFactory lightFactory = LightFactory.getInstance();
@@ -164,7 +165,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         camera.update(0.0000001f);
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, light != null ? light.isNeedsShadowMapRedraw() : false);
+        FirstPassResult firstPassResult = drawFirstPass(appContext, camera, octree, light != null ? light.isNeedsShadowMapRedraw() : false, renderExtract);
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -212,7 +213,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         zeroBuffer.put(0);
         zeroBuffer.rewind();
     }
-    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, boolean directionalLightNeedsShadowMapRedraw) {
+    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, boolean directionalLightNeedsShadowMapRedraw, RenderExtract renderExtract) {
         GPUProfiler.start("Set GPU state");
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
@@ -241,7 +242,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
 
-        boolean entityOrDirectionalLightHasMoved = appContext.hasAnEntityMovedSomewhen() || directionalLightNeedsShadowMapRedraw;
+        boolean entityOrDirectionalLightHasMoved = renderExtract.anyEntityHasMovedSomewhen || directionalLightNeedsShadowMapRedraw;
         if(useVoxelConeTracing && clearVoxels && entityOrDirectionalLightHasMoved) {
             GPUProfiler.start("Clear voxels");
             ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().grid, 0, GBuffer.gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
