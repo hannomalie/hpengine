@@ -9,7 +9,6 @@ import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.light.DirectionalLight;
@@ -131,10 +130,10 @@ public class EnvironmentProbeFactory {
 		return weights;
 	}
 
-	public void draw(Octree octree) {
-		draw(octree, false);
+	public void draw() {
+		draw(false);
 	}
-	public void draw(Octree octree, boolean urgent) {
+	public void draw(boolean urgent) {
 		if(!Config.DRAW_PROBES) { return; }
 		
 		prepareProbeRendering();
@@ -246,7 +245,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void drawInitial(Octree octree) {
-		draw(octree);
+		draw();
 	}
 
 	public CubeMapArray getEnvironmentMapsArray() {

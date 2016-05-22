@@ -157,7 +157,6 @@ public class EnvironmentSampler extends Camera {
 		Vector3f initialPosition = getPosition();
 
 		DirectionalLight light = scene.getDirectionalLight();
-        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, light.getShadowMapId());
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(8);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(0).bind(10);
 
@@ -360,7 +359,6 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
 		OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
 		cubeMap.bind(4);
-		OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();

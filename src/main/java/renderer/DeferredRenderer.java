@@ -467,7 +467,7 @@ public class DeferredRenderer implements Renderer {
 		return initialized;
 	}
 
-	public void drawLines(Program program) {
+	public int drawLines(Program program) {
 //		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 
 		float[] points = new float[linePoints.size() * 3];
@@ -482,6 +482,7 @@ public class DeferredRenderer implements Renderer {
 		buffer.drawDebugLines();
 //		buffer.delete();
 		linePoints.clear();
+        return points.length / 3 / 2;
 	}
 
 	@Override

@@ -25,7 +25,7 @@ public interface Renderer extends LifeCycle {
 
     void batchLine(Vector3f from, Vector3f to);
 
-    void drawLines(Program firstPassProgram);
+    int drawLines(Program firstPassProgram);
 
     int getMaxTextureUnits();
 

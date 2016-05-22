@@ -4,9 +4,8 @@ import camera.Camera;
 import component.InputControllerComponent;
 import component.ModelComponent;
 import engine.AppContext;
-import engine.Transform;
-import engine.graphics.query.GLSamplesPassedQuery;
 import engine.model.Entity;
+import event.DirectionalLightHasMovedEvent;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
@@ -16,8 +15,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
-import renderer.Renderer;
-import renderer.constants.CullMode;
+import renderer.RenderExtract;
 import renderer.material.Material;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
@@ -26,17 +24,15 @@ import shader.Program;
 import shader.ProgramFactory;
 import util.Util;
 
-import java.io.Serializable;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static renderer.constants.CullMode.BACK;
-import static renderer.constants.CullMode.FRONT;
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DirectionalLight extends Entity {
-	public static final int SHADOWMAP_RESOLUTION = 2048;
 
 	private boolean castsShadows = false;
 	transient FloatBuffer entityBuffer;
@@ -44,18 +40,10 @@ public class DirectionalLight extends Entity {
 	private Vector3f color = new Vector3f(1,1,1);
 	private float scatterFactor = 1f;
 
-	transient private RenderTarget renderTarget;
 	transient private Entity box;
-	transient private Program directionalShadowPassProgram;
 	private Camera camera;
 
-	private transient boolean needsShadowMapRedraw = true;
-
 	public DirectionalLight() {
-		this(true);
-	}
-
-	public DirectionalLight(boolean castsShadows) {
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
 
@@ -120,36 +108,11 @@ public class DirectionalLight extends Entity {
 //		}
 	}
 
-	public boolean isCastsShadows() {
-		return castsShadows;
-	}
-	private void setCastsShadows(boolean castsShadows) {
-		this.castsShadows = castsShadows;
-	}
-
-	public RenderTarget getRenderTarget() {
-		return renderTarget;
-	}
-	public void setRenderTarget(RenderTarget renderTarget) {
-		this.renderTarget = renderTarget;
-	}
-
 	@Override
 	public void init() {
 		super.init();
 		initialized = false;
 		entityBuffer = BufferUtils.createFloatBuffer(16);
-
-		directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
-
-		renderTarget = new RenderTargetBuilder()
-							.setWidth(SHADOWMAP_RESOLUTION)
-							.setHeight(SHADOWMAP_RESOLUTION)
-							.setClearRGBA(1f, 1f, 1f, 1f)
-							.add(3, new ColorAttachmentDefinition()
-									.setInternalFormat(GL30.GL_RGBA32F)
-									.setTextureFilter(GL11.GL_NEAREST))
-							.build();
 
         setHasMoved(true);
 		initialized = true;
@@ -157,7 +120,9 @@ public class DirectionalLight extends Entity {
 
 	@Override
 	public void update(float seconds) {
-		if(hasMoved()) {setNeedsShadowMapRedraw(true);}
+		if(hasMoved()) {
+            AppContext.getEventBus().post(new DirectionalLightHasMovedEvent());
+        }
 //        System.out.println(hasMoved());
         super.update(seconds);
 	}
@@ -171,51 +136,6 @@ public class DirectionalLight extends Entity {
 		});
 	}
 
-	public void drawShadowMap(Octree octree) {
-		if(!isInitialized()) { return; }
-		if(!needsShadowMapRedraw) { return; }
-		OpenGLContext.getInstance().depthMask(true);
-		OpenGLContext.getInstance().enable(DEPTH_TEST);
-//		OpenGLContext.getInstance().cullFace(BACK);
-		OpenGLContext.getInstance().disable(CULL_FACE);
-		
-		List<Entity> visibles = octree.getEntities();//getVisible(getCamera());
-		renderTarget.use(true);
-		directionalShadowPassProgram.use();
-		directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
-		directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-
-		for (Entity e : visibles) {
-			e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-
-				if (modelComponent.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-					OpenGLContext.getInstance().disable(CULL_FACE);
-				} else {
-					OpenGLContext.getInstance().enable(CULL_FACE);
-				}
-				directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-				modelComponent.getMaterial().setTexturesActive(directionalShadowPassProgram);
-				directionalShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-				directionalShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
-
-				modelComponent.getVertexBuffer().draw();
-			});
-		}
-//		OpenGLContext.getInstance().enable(CULL_FACE);
-		setNeedsShadowMapRedraw(false);
-	}
-
-	public int getShadowMapId() {
-		if(!initialized) { return -1; }
-		return renderTarget.getRenderedTexture();
-	}
-	public int getShadowMapWorldPositionId() {
-		return renderTarget.getRenderedTexture(2);
-	}
-	public int getShadowMapColorMapId() {
-		return renderTarget.getRenderedTexture(1);
-	}
-	
 	public Camera getCamera() {
 		return camera;
 	}
@@ -262,11 +182,4 @@ public class DirectionalLight extends Entity {
 		return camera.getViewProjectionMatrixAsBuffer();
 	}
 
-    public boolean isNeedsShadowMapRedraw() {
-        return needsShadowMapRedraw;
-    }
-
-	public void setNeedsShadowMapRedraw(boolean needsShadowMapRedraw) {
-		this.needsShadowMapRedraw = needsShadowMapRedraw;
-	}
 }

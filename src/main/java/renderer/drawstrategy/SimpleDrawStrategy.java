@@ -6,12 +6,8 @@ import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
-import event.EntitySelectedEvent;
 import octree.Octree;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.DeferredRenderer;
@@ -20,13 +16,16 @@ import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
-import renderer.light.*;
+import renderer.drawstrategy.extensions.*;
+import renderer.light.AreaLight;
+import renderer.light.DirectionalLight;
+import renderer.light.LightFactory;
+import renderer.light.TubeLight;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
-import scene.Scene;
 import shader.ComputeShaderProgram;
 import shader.Program;
 import shader.ProgramFactory;
@@ -35,6 +34,7 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
@@ -44,13 +44,10 @@ import static renderer.constants.GlCap.*;
 import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
-public class SimpleDrawStrategy extends BaseDrawStrategy {
+public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPassExtension.AfterFirstPassExtensionPoint {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
-    private FloatBuffer identityMatrix44Buffer;
-    private ComputeShaderProgram texture3DMipMappingComputeProgram;
 
-    private Program firstPassProgram;
     private Program depthPrePassProgram;
     private Program secondPassDirectionalProgram;
     private Program secondPassPointProgram;
@@ -68,54 +65,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private ComputeShaderProgram tiledProbeLightingProgram;
     private ComputeShaderProgram tiledDirectLightingProgram;
 
-    private Program voxelizer;
-
-    private static Matrix4f ortho = util.Util.createOrthogonal(-GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled);
-    private static Camera orthoCam = new Camera(ortho, GBuffer.gridSizeHalfScaled, -GBuffer.gridSizeHalfScaled, 90, 1);
-    private static Matrix4f viewX;
-    private static FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
-    private static Matrix4f viewY;
-    private static FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
-    private static Matrix4f viewZ;
-    private static FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
-    static {
-        orthoCam.setPerspective(false);
-        orthoCam.setWidth(GBuffer.gridSizeScaled);
-        orthoCam.setHeight(GBuffer.gridSizeScaled);
-        orthoCam.setFar(-5000);
-        orthoCam.update(0.000001f);
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(0,1,0), 90f);
-            viewX = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewXBuffer.rewind();
-            viewX.store(viewXBuffer);
-            viewXBuffer.rewind();
-        }
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(1, 0, 0), 90f);
-            viewY = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewYBuffer.rewind();
-            viewY.store(viewYBuffer);
-            viewYBuffer.rewind();
-        }
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(0,1,0), 180f);
-            viewZ = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewZBuffer.rewind();
-            viewZ.store(viewZBuffer);
-            viewZBuffer.rewind();
-        }
-    }
-
     OpenGLContext openGLContext;
+    private final ArrayList<AfterFirstPassExtension> afterFirstPassExtensions = new ArrayList<>();
+    private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
+    private FirstPassResult firstPassResult = new FirstPassResult();
 
     public SimpleDrawStrategy() throws Exception {
         super();
         ProgramFactory programFactory = ProgramFactory.getInstance();
-        firstPassProgram = programFactory.getProgram("first_pass_vertex.glsl", "first_pass_fragment.glsl");
         secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
         secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
         secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
@@ -123,11 +80,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
-
-        voxelizer = programFactory.getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
-//        voxelizer = programFactory.getProgram("mvp_vertex.glsl", "voxelize_multipass_fragment.glsl", ModelComponent.DEFAULTCHANNELS, false);
-
-        texture3DMipMappingComputeProgram = programFactory.getComputeProgram("texture3D_mipmap_compute.glsl");
 
         combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
         postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
@@ -142,7 +94,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         tiledProbeLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
         openGLContext = OpenGLContext.getInstance();
-        identityMatrix44Buffer = new Transform().getTransformationBuffer();
+
+        directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
+
+        registerAfterFirstPassExtension(new DrawLinesExtension());
+        registerAfterFirstPassExtension(new VoxelConeTracingExtension());
+        registerAfterFirstPassExtension(new PixelPerfectPickingExtension());
     }
 
     @Override
@@ -156,7 +113,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         DirectionalLight light = appContext.getScene().getDirectionalLight();
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract.camera, octree, renderExtract);
+        FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract);
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
@@ -164,9 +121,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             Renderer.getInstance().executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
             {
-                GPUProfiler.start("Directional shadowmap");
-                light.drawShadowMap(octree);
-                GPUProfiler.end();
+                directionalLightShadowMapExtension.run(renderExtract, firstPassResult);
             }
             lightFactory.renderAreaLightShadowMaps(octree);
             if (Config.USE_DPSM) {
@@ -196,15 +151,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return new DrawResult(firstPassResult, secondPassResult);
     }
 
-    static FloatBuffer zeroBuffer = BufferUtils.createFloatBuffer(4);
-    static {
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.rewind();
-    }
-    public FirstPassResult drawFirstPass(AppContext appContext, Camera camera, Octree octree, RenderExtract renderExtract) {
+    public FirstPassResult drawFirstPass(AppContext appContext, RenderExtract renderExtract) {
+        firstPassResult.reset();
+
+        Camera camera = renderExtract.camera;
+
         GPUProfiler.start("Set GPU state");
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
@@ -214,33 +165,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.disable(GlCap.BLEND);
         GPUProfiler.end();
 
-        GPUProfiler.start("Culling");
-        List<Entity> entities;
+        List<Entity> visibleEntities = renderExtract.visibleEntities;
 
-        if (Config.useFrustumCulling) {
-            entities = (octree.getVisible(renderExtract.camera));
-
-            for (int i = 0; i < entities.size(); i++) {
-                if (!entities.get(i).isInFrustum(renderExtract.camera)) {
-                    entities.remove(i);
-                }
-            }
-        } else {
-            entities = (octree.getEntities());
-        }
-        GPUProfiler.end();
-
-        boolean useVoxelConeTracing = true;
-        boolean clearVoxels = true;
-
-        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
-        if(useVoxelConeTracing && clearVoxels && entityOrDirectionalLightHasMoved) {
-            GPUProfiler.start("Clear voxels");
-            ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().grid, 0, GBuffer.gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-            GPUProfiler.end();
-        }
-        int verticesDrawn = 0;
-        int entityCount = 0;
         GPUProfiler.start("Draw entities");
 
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
@@ -257,7 +183,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
             firstpassDefaultProgram.setUniform("useNormalMaps", !Config.DRAWLINES_ENABLED);
             firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
+            firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
             firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
@@ -272,144 +198,28 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
             GPUProfiler.end();
 
-            for (Entity entity : entities) {
+            for (Entity entity : visibleEntities) {
                 if (entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
                             .draw(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
-                    verticesDrawn += currentVerticesCount;
+                    firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
-                        entityCount++;
+                        firstPassResult.entitiesDrawn++;
                     }
                 }
             }
         }
         GPUProfiler.end();
 
-        if(Config.DRAWLINES_ENABLED) {
-            openGLContext.disable(CULL_FACE);
-            openGLContext.depthMask(false);
-//            openGLContext.disable(DEPTH_TEST);
 
-            linesProgram.use();
-            linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-            linesProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            linesProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-
-            for (Entity entity : entities) {
-                if(entity.getComponents().containsKey("ModelComponent")){// && entity.getName().equals("sponza_322")) {
-                    Vector4f[] minMax = entity.getMinMaxWorld();
-                    Vector3f min = new Vector3f(minMax[0].x, minMax[0].y, minMax[0].z);
-                    Vector3f max = new Vector3f(minMax[1].x, minMax[1].y, minMax[1].z);
-                    Renderer.getInstance().batchLine(min, max);
-                }
-            }
-            Renderer.getInstance().drawLines(linesProgram);
-
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-
-//            int max = 500;
-//            for(int x = -max; x < max; x+=25) {
-//                for(int y = -max; y < max; y+=25) {
-//                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
-//                }
-//                for(int z = -max; z < max; z+=25) {
-//                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
-//                }
-//            }
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
-            Renderer.getInstance().drawLines(linesProgram);
-        }
-
-        if(useVoxelConeTracing && entityOrDirectionalLightHasMoved) {
-            Program currentProgram = firstPassProgram;
-
-            camera = orthoCam;
-            camera.update(0.000001f);
-            int gridSizeScaled = (int) (Renderer.getInstance().getGBuffer().gridSize * Renderer.getInstance().getGBuffer().sceneScale);
-            OpenGLContext.getInstance().viewPort(0,0, gridSizeScaled, gridSizeScaled);
-
-            voxelizer.use();
-            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GBuffer.gridTextureFormatSized);
-            Scene scene = AppContext.getInstance().getScene();
-            if(scene != null) {
-                voxelizer.setUniformAsMatrix4("shadowMatrix", scene.getDirectionalLight().getViewProjectionMatrixAsBuffer());
-                voxelizer.setUniform("lightDirection", scene.getDirectionalLight().getDirection());
-                voxelizer.setUniform("lightColor", scene.getDirectionalLight().getColor());
-                openGLContext.bindTexture(6, TEXTURE_2D, scene.getDirectionalLight().getShadowMapId());
-            }
-            voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-            voxelizer.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
-            voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
-            voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
-            voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
-            voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-            voxelizer.setUniform("u_width", 256);
-            voxelizer.setUniform("u_height", 256);
-            currentProgram = voxelizer;
-
-            currentProgram.setUniform("writeVoxels", true);
-            currentProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-            currentProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-            currentProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
-            currentProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            currentProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-            currentProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-            currentProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-            currentProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
-            OpenGLContext.getInstance().depthMask(false);
-            OpenGLContext.getInstance().disable(DEPTH_TEST);
-            OpenGLContext.getInstance().disable(BLEND);
-            OpenGLContext.getInstance().disable(CULL_FACE);
-            GL11.glColorMask(false, false, false, false);
-
-//            GLSamplesPassedQuery query = new GLSamplesPassedQuery();
-//            query.begin();
-
-            for (Entity entity : octree.getEntities()) {
-                if(entity.getComponents().containsKey("ModelComponent")) {
-                    int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(camera, null, currentProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
-                    verticesDrawn += currentVerticesCount;
-                    if(currentVerticesCount > 0) { entityCount++; }
-                }
-            }
-//            query.end();
-//            System.out.println(query.getResult());
-
-            boolean generatevoxelsMipmap = true;
-            if(useVoxelConeTracing && generatevoxelsMipmap && entityOrDirectionalLightHasMoved){// && Renderer.getInstance().getFrameCount() % 4 == 0) {
-                GPUProfiler.start("grid mipmap");
-                int size = Renderer.getInstance().getGBuffer().gridSize;
-                int currentSizeSource = 2*size;
-                int currentMipMapLevel = 0;
-
-                texture3DMipMappingComputeProgram.use();
-                while(currentSizeSource > 1) {
-                    currentSizeSource /= 2;
-                    int currentSizeTarget = currentSizeSource / 2;
-                    currentMipMapLevel++;
-
-                    GL42.glBindImageTexture(0, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, GBuffer.gridTextureFormatSized);
-                    GL42.glBindImageTexture(1, Renderer.getInstance().getGBuffer().grid, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, GBuffer.gridTextureFormatSized);
-                    texture3DMipMappingComputeProgram.setUniform("sourceSize", currentSizeSource);
-                    texture3DMipMappingComputeProgram.setUniform("targetSize", currentSizeTarget);
-
-                    int num_groups_xyz = Math.max(currentSizeTarget / 8, 1);
-                    texture3DMipMappingComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-                }
-
-                GPUProfiler.end();
-            }
-            GL11.glColorMask(true, true, true, true);
+        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+        for(AfterFirstPassExtension extension : afterFirstPassExtensions) {
+            extension.run(renderExtract, firstPassResult);
         }
 
         if (Config.DEBUGDRAW_PROBES) {
             debugDrawProbes(camera);
-            EnvironmentProbeFactory.getInstance().draw(octree);
+            EnvironmentProbeFactory.getInstance().draw();
         }
         openGLContext.enable(CULL_FACE);
 
@@ -418,32 +228,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         TextureFactory.getInstance().generateMipMaps(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         GPUProfiler.end();
 
-        if (appContext.PICKING_CLICK == 1) {
-            openGLContext.readBuffer(4);
 
-            FloatBuffer floatBuffer = BufferUtils.createFloatBuffer(4); // 4 channels
-            GL11.glReadPixels(Mouse.getX(), Mouse.getY(), 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
-            try {
-                int componentIndex = 3; // alpha component
-                appContext.getScene().getEntities().parallelStream().forEach(e -> {
-                    e.setSelected(false);
-                });
-                Entity entity = appContext.getScene().getEntities().get((int) floatBuffer.get(componentIndex));
-                entity.setSelected(true);
-                AppContext.getEventBus().post(new EntitySelectedEvent(entity));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            floatBuffer = null;
-            appContext.PICKING_CLICK = 0;
-        }
-
-        return new FirstPassResult(verticesDrawn, entityCount);
+        return firstPassResult;
     }
 
     public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
-        TextureFactory.getInstance().generateMipMaps(directionalLight.getShadowMapId()); // TODO: Move this to shadow map rendering because cashing etc
-
         Vector3f camPosition = camera.getPosition();
         Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -468,7 +257,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
         openGLContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         openGLContext.bindTexture(4, TEXTURE_CUBE_MAP, cubeMap.getTextureID());
-        openGLContext.bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+        openGLContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         openGLContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
@@ -504,8 +293,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         doTubeLights(tubeLights, camPositionV4, viewMatrix, projectionMatrix);
 
         doAreaLights(areaLights, viewMatrix, projectionMatrix);
-
-        doInstantRadiosity(directionalLight, viewMatrix, projectionMatrix);
 
         doPointLights(viewMatrix, projectionMatrix);
 
@@ -671,26 +458,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-    private void doInstantRadiosity(DirectionalLight directionalLight, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
-        if (Config.useInstantRadiosity) {
-            GPUProfiler.start("Instant Radiosity");
-            OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
-            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, directionalLight.getShadowMapWorldPositionId());
-            OpenGLContext.getInstance().bindTexture(8, TEXTURE_2D, directionalLight.getShadowMapColorMapId());
-            instantRadiosityProgram.use();
-            instantRadiosityProgram.setUniform("screenWidth", (float) Config.WIDTH);
-            instantRadiosityProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-            instantRadiosityProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
-            instantRadiosityProgram.setUniform("lightDiffuse", directionalLight.getColor());
-            instantRadiosityProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-            instantRadiosityProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-            OpenGLContext.getInstance().disable(CULL_FACE);
-            OpenGLContext.getInstance().disable(DEPTH_TEST);
-            Renderer.getInstance().getFullscreenBuffer().draw();
-            GPUProfiler.end();
-        }
-    }
-
     private void renderAOAndScattering(Entity cameraEntity, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, DirectionalLight directionalLight) {
         if (!Config.useAmbientOcclusion && !Config.SCATTERING) {
             return;
@@ -702,7 +469,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLight.getShadowMapId());
+        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
 
         gBuffer.getHalfScreenBuffer().use(true);
@@ -892,4 +659,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     }
 
+    @Override
+    public void registerAfterFirstPassExtension(AfterFirstPassExtension extension) {
+        afterFirstPassExtensions.add(extension);
+    }
 }

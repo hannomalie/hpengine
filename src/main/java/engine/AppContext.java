@@ -10,6 +10,7 @@ import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
 import event.AppContextInitializedEvent;
+import event.DirectionalLightHasMovedEvent;
 import event.EntityAddedEvent;
 import event.bus.EventBus;
 import event.FrameFinishedEvent;
@@ -57,6 +58,7 @@ public class AppContext {
     private volatile boolean frameFinished = true;
     private DrawResult latestDrawResult = null;
     private String latestGPUProfilingResult = "";
+    private volatile boolean directionalLightNeedsShadowMapRedraw;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -387,7 +389,7 @@ public class AppContext {
                 for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
                     Renderer.getInstance().addRenderProbeCommand(probe, true);
                 }
-                EnvironmentProbeFactory.getInstance().draw(scene.getOctree(), true);
+                EnvironmentProbeFactory.getInstance().draw(true);
             });
         }
         StopWatch.getInstance().stopAndPrintMS();
@@ -412,12 +414,15 @@ public class AppContext {
                 Renderer.getInstance().startFrame();
                 boolean directionalLightNeedsShadowMapRender = false;
                 if(getScene() != null) {
-                    directionalLightNeedsShadowMapRender = getScene().getDirectionalLight() != null ? getScene().getDirectionalLight().isNeedsShadowMapRedraw() : false;
+                    directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRedraw;
                 }
-                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender);
+                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
+                if(directionalLightNeedsShadowMapRender) {
+                    directionalLightNeedsShadowMapRedraw = !latestDrawResult.directionalLightShadowMapWasRendered();
+                }
             }, false);
             AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         } else {
@@ -501,9 +506,13 @@ public class AppContext {
     @Handler
     public void handle(EntityAddedEvent e) {
         entityAdded = true;
-        if(getScene() != null) {
-            getScene().getDirectionalLight().setNeedsShadowMapRedraw(true);
-        }
+        directionalLightNeedsShadowMapRedraw = true;
+    }
+
+    @Subscribe
+    @Handler
+    public void handle(DirectionalLightHasMovedEvent e) {
+        directionalLightNeedsShadowMapRedraw = true;
     }
 
     public boolean hasAnEntityMovedSomewhen() {
