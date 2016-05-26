@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
+import static org.lwjgl.opengl.GL30.glGetFramebufferAttachmentParameteri;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
@@ -65,7 +66,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
 	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
         super(GL15.GL_ARRAY_BUFFER);
-        setInternals(buffer(values, channels), channels, Usage.STATIC);
+        setInternals(values, channels, Usage.STATIC);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
         this(buffer, channels, Usage.STATIC);
@@ -81,9 +82,13 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
-        this.buffer = buffer;
+        float[] values = new float[buffer.capacity()];
+        buffer.get(values);
+        setInternals(values, channels, usage);
+    }
+    private void setInternals(float[] values, EnumSet<DataChannels> channels, Usage usage) {
         this.channels = channels;
-//        setCapacity(buffer.capacity());
+        setCapacityInBytes(values.length*getPrimitiveSizeInBytes());
         OpenGLContext.getInstance().execute(() -> {
             setId(GL15.glGenBuffers());
             bind();
@@ -98,6 +103,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         }
         setHasIndexBuffer(true);
         this.triangleCount = verticesCount / 3;
+        putValues(values);
     }
 
 
@@ -105,12 +111,10 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		return buffer(vertices, channels);
 	}
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
-		
+
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		int totalBytesPerVertex = totalElementsPerVertex * getPrimitiveSizeInBytes();
         int verticesCount = calculateVerticesCount(vertices, channels);
-
-		buffer = BufferUtils.createFloatBuffer(totalElementsPerVertex * verticesCount);
 
 		for (int i = 0; i < verticesCount; i++) {
 			int currentOffset = 0;
@@ -171,6 +175,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	}
 
     public VertexBuffer upload() {
+//        System.out.println("upload " + isMapped());
         buffer.rewind();
 		uploaded = false;
         OpenGLContext.getInstance().execute(() -> {
@@ -198,7 +203,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     protected FloatBuffer mapBuffer(int capacityInBytes, int flags)  {
-        mapped = true;
         return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asFloatBuffer();
     }
 

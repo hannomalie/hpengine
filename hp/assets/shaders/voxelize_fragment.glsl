@@ -99,8 +99,8 @@ void main()
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
-    float ambientAmount = .05f;
-    float dynamicAdjust = 0.015f;
+    float ambientAmount = 0.0125f;
+    float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
     vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*material.ambient))*voxelColor;
 
@@ -110,7 +110,6 @@ void main()
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
-    visibility = max(visibility, 0.125f);
 
     float NdotL = max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
 

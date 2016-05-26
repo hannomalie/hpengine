@@ -23,6 +23,7 @@ import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.material.Material;
@@ -151,7 +152,7 @@ public class LightFactory {
 		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
-		// TODO: WRAP METHODS SEPERATELY
+		// TODO: WRAP METHODS SEPARATELY
 		OpenGLContext.getInstance().execute(() -> {
 			for(int i = 0; i < MAX_AREALIGHT_SHADOWMAPS; i++) {
 				int renderedTextureTemp = OpenGLContext.getInstance().genTextures();
@@ -387,17 +388,11 @@ public class LightFactory {
 		GPUProfiler.end();
 	}
 
-	public void renderPointLightShadowMaps(Octree octree) {
+	public void renderPointLightShadowMaps(RenderExtract renderExtract) {
         Scene scene = AppContext.getInstance().getScene();
         if(scene == null) { return; }
 
-        boolean noNeedToRedraw = octree.getEntities()
-                                        .stream()
-                                        .filter(entity -> entity.hasMoved()).collect(Collectors.toList())
-                                        .isEmpty() &&
-                                        scene.getPointLights().stream()
-                                        .filter(light -> light.hasMoved()).collect(Collectors.toList())
-                                        .isEmpty();
+        boolean noNeedToRedraw = !(renderExtract.anEntityHasMoved || renderExtract.anyPointLightHasMoved);
         if(noNeedToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
@@ -412,7 +407,7 @@ public class LightFactory {
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
 			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
-			List<Entity> visibles = octree.getEntities();
+			List<Entity> visibles = new ArrayList<>(renderExtract.entities);
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
             pointCubeShadowPassProgram.setUniform("pointLightRadius", light.getRadius());

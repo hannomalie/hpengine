@@ -325,6 +325,6 @@ public interface Renderer extends LifeCycle {
     }
 
     class SingletonHelper {
-        private static Renderer instance;
+        protected static volatile Renderer instance;
     }
 }

@@ -47,6 +47,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static log.ConsoleLogger.getLogger;
 
@@ -69,7 +70,6 @@ public class AppContext {
 
     public static final String WORKDIR_NAME = "hp";
     public static final String ASSETDIR_NAME = "hp/assets";
-    private static EventBus eventBus;
     ScriptManager scriptManager;
     PhysicsFactory physicsFactory;
     Scene scene;
@@ -140,9 +140,7 @@ public class AppContext {
     }
 
     private void initialize(boolean headless) {
-//        setEventBus(new GuavaEventBus());
-        setEventBus(new MBassadorEventBus());
-        eventBus.register(this);
+        getEventBus().register(this);
         Config.setHeadless(headless);
         initWorkDir();
         EntityFactory.init();
@@ -219,7 +217,7 @@ public class AppContext {
         activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
         activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
         initialized = true;
-        eventBus.post(new AppContextInitializedEvent());
+        getEventBus().post(new AppContextInitializedEvent());
     }
 
     private void initWorkDir() {
@@ -404,6 +402,11 @@ public class AppContext {
             anyEntityHasMoved = true;
         }
 
+        boolean anyPointLightHasMoved = scene.getPointLights().stream()
+                        .filter(light -> light.hasMoved()).collect(Collectors.toList())
+                        .isEmpty();
+
+
         if (Renderer.getInstance().isFrameFinished()) {
             OpenGLContext.getInstance().blockUntilEmpty();
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
@@ -416,7 +419,7 @@ public class AppContext {
                 if(getScene() != null) {
                     directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRedraw;
                 }
-                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender);
+                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
@@ -475,14 +478,7 @@ public class AppContext {
     }
 
     public static EventBus getEventBus() {
-        if (eventBus == null) {
-            throw new IllegalStateException("Call AppContext init at app start");
-        }
-        return eventBus;
-    }
-
-    private static void setEventBus(EventBus eventBus) {
-        AppContext.eventBus = eventBus;
+        return EventBus.getInstance();
     }
 
     public boolean isInitialized() {

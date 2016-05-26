@@ -12,7 +12,7 @@ import renderer.drawstrategy.FirstPassResult;
 
 import java.nio.FloatBuffer;
 
-public class PixelPerfectPickingExtension implements AfterFirstPassExtension {
+public class PixelPerfectPickingExtension implements RenderExtension {
 
     private final FloatBuffer floatBuffer;
 
@@ -21,7 +21,7 @@ public class PixelPerfectPickingExtension implements AfterFirstPassExtension {
         floatBuffer = BufferUtils.createFloatBuffer(4);
     }
     @Override
-    public void run(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
 
         AppContext appContext = AppContext.getInstance();
         if (appContext.PICKING_CLICK == 1) {

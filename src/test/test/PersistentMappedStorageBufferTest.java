@@ -9,7 +9,7 @@ import shader.PersistentMappedBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-public class PersistentMappedStorageBufferTest extends TestWithAppContext {
+public class PersistentMappedStorageBufferTest extends TestWithOpenGLContext {
 
 	@Test
 	public void storageBuffersGetsCorrectValues() {
@@ -51,15 +51,13 @@ public class PersistentMappedStorageBufferTest extends TestWithAppContext {
 
 	@Test
 	public void storageBufferBuffersCorrectly() {
-
         DoubleBuffer data = BufferUtils.createDoubleBuffer(16);
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);	
 		}
 		
-		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16);
-		
-		buffer.putValues(data);
+		PersistentMappedBuffer buffer = new PersistentMappedBuffer(16*8);
+        buffer.putValues(data);
 
         DoubleBuffer result = buffer.getValues(0, 16);
 		double[] dst = new double[result.capacity()];

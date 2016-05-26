@@ -53,7 +53,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     @Override
-    public void run(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
         if(renderExtract.directionalLightNeedsShadowMapRender) {
             GPUProfiler.start("Directional shadowmap");
             drawShadowMap(renderExtract, firstPassResult);

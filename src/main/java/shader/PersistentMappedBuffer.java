@@ -21,14 +21,13 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     protected DoubleBuffer mapBuffer(int capacityInBytes, int flags) {
-        mapped = true;
         return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes* getPrimitiveSizeInBytes())).asDoubleBuffer();
     }
 
     @Override
     public FloatBuffer getValuesAsFloats() {
         FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity()/ getPrimitiveSizeInBytes());
-        for(int i = 0; i < buffer.capacity() / getPrimitiveSizeInBytes(); i++) {
+        for(int i = 0; i < buffer.capacity(); i++) {
             result.put(i, (float) buffer.get(i));
         }
 
@@ -43,7 +42,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     public DoubleBuffer getValues() {
-        return getValues(0, buffer.capacity() / getPrimitiveSizeInBytes());
+        return getValues(0, buffer.capacity());
     }
 
     @Override
@@ -58,17 +57,17 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    public synchronized void putValues(FloatBuffer values) {
+    public void putValues(FloatBuffer values) {
         putValues(0, values);
     }
 
     @Override
-    public synchronized void putValues(DoubleBuffer values) {
+    public void putValues(DoubleBuffer values) {
         putValues(0, values);
     }
 
     @Override
-    public synchronized void putValues(int offset, FloatBuffer values) {
+    public void putValues(int offset, FloatBuffer values) {
         if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
         values.rewind();
@@ -79,7 +78,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    public synchronized void putValues(int offset, DoubleBuffer values) {
+    public void putValues(int offset, DoubleBuffer values) {
         if(values == buffer) { return; }
         if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
@@ -89,12 +88,12 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    public synchronized void putValues(float... values) {
+    public void putValues(float... values) {
         putValues(0, values);
     }
 
     @Override
-    public synchronized void putValues(int offset, float... values) {
+    public void putValues(int offset, float... values) {
         bind();
         buffer.position(offset);
         double[] doubleValues = new double[values.length];
@@ -112,12 +111,12 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    public synchronized void put(Bufferable... bufferable) {
+    public void put(Bufferable... bufferable) {
         put(0, bufferable);
     }
 
     @Override
-    public synchronized void put(int offset, Bufferable... bufferable) {
+    public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
         setCapacityInBytes(bufferable[0].getElementsPerObject() * getPrimitiveSizeInBytes() * bufferable.length);
 

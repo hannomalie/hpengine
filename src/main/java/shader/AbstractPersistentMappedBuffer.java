@@ -1,21 +1,18 @@
 package shader;
 
+import org.lwjgl.opengl.GL15;
 import renderer.OpenGLContext;
 
 import java.nio.Buffer;
 
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
-import static org.lwjgl.opengl.ARBBufferStorage.glBufferStorage;
+import static org.lwjgl.opengl.ARBBufferStorage.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL30.GL_MAP_UNSYNCHRONIZED_BIT;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
 public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer> implements OpenGLBuffer {
     protected final int target;
     private int id;
     protected BUFFER_TYPE buffer;
-    protected volatile boolean mapped;
 
     public AbstractPersistentMappedBuffer(int target) {
         this.target = target;
@@ -30,17 +27,17 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
 //        }
     }
 
-    public BUFFER_TYPE map(int requestedCapacity) {
+    public BUFFER_TYPE map(int requestedCapacityInBytes) {
         bind();
-        if(requestedCapacity > buffer.capacity()){
-            setCapacityInBytes(requestedCapacity);
+        if(requestedCapacityInBytes > buffer.capacity()){
+            setCapacityInBytes(requestedCapacityInBytes);
         }
 
         buffer.clear();
         return buffer;
     }
 
-    protected synchronized void setCapacityInBytes(int requestedCapacity) {
+    protected void setCapacityInBytes(int requestedCapacity) {
         int capacityInBytes = requestedCapacity;
 
         if(buffer != null) {
@@ -48,9 +45,8 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
             if(needsResize) {
                 OpenGLContext.getInstance().execute(() -> {
                     bind();
-                    if(mapped) {
+                    if(GL15.glGetBufferParameter(target, GL15.GL_BUFFER_MAPPED) == 1) {
                         glUnmapBuffer(target);
-                        mapped = false;
                     }
                     if(id > 0) {
                         glDeleteBuffers(id);
@@ -65,9 +61,10 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
             OpenGLContext.getInstance().execute(() -> {
                 id = glGenBuffers();
                 bind();
-                int flags = GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-                glBufferStorage(target, capacityInBytes * getPrimitiveSizeInBytes(), flags);
-                buffer = mapBuffer(capacityInBytes* getPrimitiveSizeInBytes(), flags);
+                int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+                glBufferStorage(target, capacityInBytes, flags);
+                buffer = mapBuffer(capacityInBytes, flags);
+
             });
         }
     }
@@ -84,9 +81,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
 
     @Override
     public void unbind() {
-        OpenGLContext.getInstance().execute(() -> {
-            glBindBuffer(target, 0);
-        });
+        OpenGLContext.getInstance().execute(() -> glBindBuffer(target, 0));
     }
 
     @Override

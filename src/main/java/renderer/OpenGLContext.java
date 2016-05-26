@@ -36,7 +36,7 @@ public final class OpenGLContext {
     private static volatile OpenGLContext instance;
     private CommandQueue commandQueue = new CommandQueue();
     private volatile boolean initialized = false;
-
+    public volatile boolean errorOccured = false;
     public static OpenGLContext getInstance() {
         if(instance == null) {
             instance = new OpenGLContext();
@@ -125,6 +125,7 @@ public final class OpenGLContext {
             public void handleMessage(int source, int type, int id, int severity, String message) {
                 if(severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
                     Logger.getGlobal().severe(message);
+                    errorOccured = true;
                     new RuntimeException().printStackTrace();
                 }
             }

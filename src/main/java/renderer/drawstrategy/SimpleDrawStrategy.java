@@ -44,7 +44,7 @@ import static renderer.constants.GlCap.*;
 import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
-public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPassExtension.AfterFirstPassExtensionPoint {
+public class SimpleDrawStrategy extends BaseDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
@@ -66,7 +66,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
     private ComputeShaderProgram tiledDirectLightingProgram;
 
     OpenGLContext openGLContext;
-    private final ArrayList<AfterFirstPassExtension> afterFirstPassExtensions = new ArrayList<>();
+    private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private FirstPassResult firstPassResult = new FirstPassResult();
 
@@ -97,9 +97,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 
-        registerAfterFirstPassExtension(new DrawLinesExtension());
-        registerAfterFirstPassExtension(new VoxelConeTracingExtension());
-        registerAfterFirstPassExtension(new PixelPerfectPickingExtension());
+        registerRenderExtension(new DrawLinesExtension());
+        registerRenderExtension(new VoxelConeTracingExtension());
+        registerRenderExtension(new PixelPerfectPickingExtension());
     }
 
     @Override
@@ -121,17 +121,17 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
             Renderer.getInstance().executeRenderProbeCommands();
             GPUProfiler.start("Shadowmap pass");
             {
-                directionalLightShadowMapExtension.run(renderExtract, firstPassResult);
+                directionalLightShadowMapExtension.renderFirstPass(renderExtract, firstPassResult);
             }
             lightFactory.renderAreaLightShadowMaps(octree);
             if (Config.USE_DPSM) {
                 lightFactory.renderPointLightShadowMaps_dpsm(octree);
             } else {
-                lightFactory.renderPointLightShadowMaps(octree);
+                lightFactory.renderPointLightShadowMaps(renderExtract);
             }
             GPUProfiler.end();
             GPUProfiler.start("Second pass");
-            secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap());
+            secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), Renderer.getInstance().getEnvironmentMap(), renderExtract);
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -176,7 +176,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
-            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GBuffer.gridTextureFormatSized);
+//            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GBuffer.gridTextureFormatSized);
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
@@ -193,9 +193,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             firstpassDefaultProgram.setUniform("writeVoxels", false);
-            firstpassDefaultProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-            firstpassDefaultProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-            firstpassDefaultProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
+//            firstpassDefaultProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+//            firstpassDefaultProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+//            firstpassDefaultProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
             GPUProfiler.end();
 
             for (Entity entity : visibleEntities) {
@@ -213,8 +213,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
 
 
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-        for(AfterFirstPassExtension extension : afterFirstPassExtensions) {
-            extension.run(renderExtract, firstPassResult);
+        for(RenderExtension extension : renderExtensions) {
+            extension.renderFirstPass(renderExtract, firstPassResult);
         }
 
         if (Config.DEBUGDRAW_PROBES) {
@@ -232,7 +232,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
         return firstPassResult;
     }
 
-    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap, RenderExtract renderExtract) {
+        SecondPassResult secondPassResult = new SecondPassResult();
         Vector3f camPosition = camera.getPosition();
         Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -296,17 +297,21 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
 
         doPointLights(viewMatrix, projectionMatrix);
 
-        GPUProfiler.start("MipMap generation AO and light buffer");
-        OpenGLContext.getInstance().activeTexture(0);
-        TextureFactory.getInstance().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
-        TextureFactory.getInstance().generateMipMaps(gBuffer.getAmbientOcclusionMapId());
-        GPUProfiler.end();
+        for(RenderExtension extension : renderExtensions) {
+            extension.renderSecondPassFullScreen(renderExtract, secondPassResult);
+        }
 
         OpenGLContext.getInstance().disable(BLEND);
 
         gBuffer.getLightAccumulationBuffer().unuse();
 
         renderAOAndScattering(camera, viewMatrix, projectionMatrix, directionalLight);
+
+        GPUProfiler.start("MipMap generation AO and light buffer");
+        OpenGLContext.getInstance().activeTexture(0);
+        TextureFactory.getInstance().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
+        TextureFactory.getInstance().generateMipMaps(gBuffer.getAmbientOcclusionMapId());
+        GPUProfiler.end();
 
         if (Config.USE_GI) {
             GL11.glDepthMask(false);
@@ -318,6 +323,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
             gBuffer.getReflectionBuffer().use(true);
             gBuffer.getReflectionBuffer().unuse();
         }
+
+        for(RenderExtension extension: renderExtensions) {
+            extension.renderSecondPassFullScreen(renderExtract, secondPassResult);
+        }
+
         GPUProfiler.start("Blurring");
         Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.WIDTH / 2, Config.HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, false, 1);
@@ -332,7 +342,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
         OpenGLContext.getInstance().depthFunc(LESS);
         GPUProfiler.end();
 
-        return new SecondPassResult();
+        return secondPassResult;
     }
 
     private void doPointLights(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
@@ -487,9 +497,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
         aoScatteringProgram.setUniform("lightDirection", directionalLight.getViewDirection());
         aoScatteringProgram.setUniform("lightDiffuse", directionalLight.getColor());
         aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
-        aoScatteringProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-        aoScatteringProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
+//        aoScatteringProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
+//        aoScatteringProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
+//        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
 
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
         Renderer.getInstance().getFullscreenBuffer().draw();
@@ -581,9 +591,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
         combineProgram.setUniform("fullScreenMipmapCount", gBuffer.getFullScreenMipmapCount());
         combineProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
         combineProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
-        combineProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-        combineProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-        combineProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
 
         finalBuffer.use(true);
         OpenGLContext.getInstance().disable(DEPTH_TEST);
@@ -600,7 +607,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
         OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
         OpenGLContext.getInstance().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
         OpenGLContext.getInstance().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayCube());
-        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, gBuffer.grid);
 
         Renderer.getInstance().getFullscreenBuffer().draw();
 
@@ -659,8 +665,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy implements AfterFirstPa
 
     }
 
-    @Override
-    public void registerAfterFirstPassExtension(AfterFirstPassExtension extension) {
-        afterFirstPassExtensions.add(extension);
+    public void registerRenderExtension(RenderExtension extension) {
+        renderExtensions.add(extension);
     }
 }

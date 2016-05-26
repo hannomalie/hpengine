@@ -2,7 +2,9 @@ package renderer.drawstrategy.extensions;
 
 import renderer.RenderExtract;
 import renderer.drawstrategy.FirstPassResult;
+import renderer.drawstrategy.SecondPassResult;
 
 public interface RenderExtension {
-    void run(RenderExtract renderExtract, FirstPassResult firstPassResult);
+    default void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {}
+    default void renderSecondPassFullScreen(RenderExtract renderExtract, SecondPassResult secondPassResult) {}
 }

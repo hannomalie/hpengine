@@ -16,7 +16,7 @@ import java.nio.FloatBuffer;
 
 import static renderer.constants.GlCap.CULL_FACE;
 
-public class DrawLinesExtension implements AfterFirstPassExtension {
+public class DrawLinesExtension implements RenderExtension {
 
     private final Program linesProgram;
     private final FloatBuffer identityMatrix44Buffer;
@@ -27,7 +27,7 @@ public class DrawLinesExtension implements AfterFirstPassExtension {
     }
 
     @Override
-    public void run(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
 
         if(Config.DRAWLINES_ENABLED) {
             OpenGLContext openGLContext = OpenGLContext.getInstance();

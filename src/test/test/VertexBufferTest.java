@@ -64,6 +64,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
 	}
 
+    @Ignore
     @Test
     public void benchmarkBufferUpload() {
         int floatBufferSize = 8*10000000;

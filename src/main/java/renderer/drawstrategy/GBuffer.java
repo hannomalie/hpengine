@@ -38,7 +38,6 @@ public class GBuffer {
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
 	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
-    public final int grid;
 
     private RenderTarget gBuffer;
 	private RenderTarget reflectionBuffer;
@@ -63,13 +62,6 @@ public class GBuffer {
 
 	private final int exposureIndex = 0;
 	private AppContext appContext;
-    public static final float sceneScale = 2f;
-    public static final int gridSize = 256;
-    public static final int gridSizeHalf = gridSize/2;
-    public static final int gridSizeScaled = (int)(gridSize*sceneScale);
-    public static final int gridSizeHalfScaled = (int)((gridSizeHalf)*sceneScale);
-	public static final int gridTextureFormat = GL11.GL_RGBA;//GL11.GL_R;
-	public static final int gridTextureFormatSized = GL11.GL_RGBA8;//GL30.GL_R32UI;
 
     public GBuffer(AppContext appContext) {
 		this.appContext = appContext;
@@ -104,21 +96,6 @@ public class GBuffer {
          storageBuffer = new PersistentMappedBuffer(4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
-        grid = GL11.glGenTextures();
-        GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
-//        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_MAX_LEVEL, 8);
-        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-		GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize);
-        GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid);
-        GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
-
-//        long handle =  ARBBindlessTexture.glGetTextureHandleARB(grid);
-//        ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
         DeferredRenderer.exitOnGLError("grid texture creation");
 	}
 	
