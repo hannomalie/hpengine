@@ -21,6 +21,7 @@ import component.ModelComponent;
 import component.PhysicsComponent;
 import config.Config;
 import engine.AppContext;
+import engine.TimeStepThread;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import org.lwjgl.BufferUtils;
@@ -47,12 +48,15 @@ public class PhysicsFactory {
 	public PhysicsFactory(AppContext appContext, Vector3f gravity) {
 		this.appContext = appContext;
 		setupBullet(gravity);
+        new TimeStepThread("Physics", 0) {
+
+            @Override
+            public void update(float seconds) {
+                dynamicsWorld.stepSimulation(seconds*1000);
+            }
+        }.start();
 	}
 	
-	public void update(float seconds) {
-		dynamicsWorld.stepSimulation(seconds);
-	}
-
 	public PhysicsComponent addBallPhysicsComponent(Entity owner) {
 		return addBallPhysicsComponent(owner, 1, 10);
 	}

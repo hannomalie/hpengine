@@ -59,7 +59,6 @@ public class DeferredRenderer implements Renderer {
 
 	private volatile boolean initialized = false;
 
-	private BlockingQueue<Command> workQueue = new LinkedBlockingQueue<Command>();
 	private Map<Command<? extends Result<?>>, SynchronousQueue<Result<? extends Object>>> commandQueueMap = new ConcurrentHashMap<>();
 	
 	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
@@ -75,7 +74,6 @@ public class DeferredRenderer implements Renderer {
 	private static Program blurProgram;
 	private static Program bilateralBlurProgram;
 	private static Program linesProgram;
-	private Program lastUsedProgram = null;
 
 	private VertexBuffer fullscreenBuffer;
 	private VertexBuffer debugBuffer;
@@ -197,7 +195,6 @@ public class DeferredRenderer implements Renderer {
 				add(new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height)).upload());
 			}
 		}};
-		
 		glWatch = new OpenGLStopWatch();
 
 		DeferredRenderer.exitOnGLError("setupOpenGL");
@@ -496,10 +493,7 @@ public class DeferredRenderer implements Renderer {
 		return cubeMap;
 	}
 
-	ForkJoinPool fjpool = new ForkJoinPool(Runtime.getRuntime().availableProcessors()*2);
-
 	private List<Vector3f> linePoints = new ArrayList<>();
-	private int rsmSize = 2048/2/2/2/2/2/2/2;
 	private JFrame frame;
 
 	@Override

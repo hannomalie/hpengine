@@ -4,6 +4,7 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
+import component.PhysicsComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -46,6 +47,7 @@ import util.stopwatch.StopWatch;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -73,7 +75,7 @@ public class AppContext {
     ScriptManager scriptManager;
     PhysicsFactory physicsFactory;
     Scene scene;
-    private int entityCount = 5;
+    private int entityCount = 3;
     public volatile int PICKING_CLICK = 0;
     private Camera camera;
     private Camera activeCamera;
@@ -268,7 +270,9 @@ public class AppContext {
 
         try {
             Model skyBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-            entities.add(EntityFactory.getInstance().getEntity(new Vector3f(), skyBox));
+            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
+            skyBoxEntity.setScale(100);
+            entities.add(skyBoxEntity);
 
             Model sphere = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 
@@ -282,6 +286,9 @@ public class AppContext {
                                 .setMetallic((float) j / entityCount)
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0));
                         Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
+                        mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
+                        mat.setMetallic((float)j/entityCount);
+                        mat.setRoughness((float)k/entityCount);
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
@@ -376,7 +383,6 @@ public class AppContext {
         DirectionalLight directionalLight = scene.getDirectionalLight();
 
         StopWatch.getInstance().stopAndPrintMS();
-        physicsFactory.update(seconds);
         StopWatch.getInstance().start("Camera update");
         camera.update(seconds);
 

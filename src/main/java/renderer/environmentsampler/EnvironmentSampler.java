@@ -163,6 +163,7 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().enable(DEPTH_TEST);
 		OpenGLContext.getInstance().depthFunc(LEQUAL);
 
+        renderTarget.use(false);
 		bindProgramSpecificsPerCubeMap();
 
 		boolean filteringRequired = false;

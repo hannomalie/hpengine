@@ -240,7 +240,7 @@ void main(void) {
         vec4 voxelSpecular = voxelTraceCone(1, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(2, positionWorld, normalize(normalWorld), 5, 100);
 
-        const int SAMPLE_COUNT = 8;
+        const int SAMPLE_COUNT = 4;
         for (int k = 0; k < SAMPLE_COUNT; k++) {
             const float PI = 3.1415926536;
             vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
