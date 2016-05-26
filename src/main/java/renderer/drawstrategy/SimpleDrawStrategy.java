@@ -176,7 +176,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
-//            GL42.glBindImageTexture(5, Renderer.getInstance().getGBuffer().grid, 0, true, 0, GL15.GL_READ_WRITE, GBuffer.gridTextureFormatSized);
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
@@ -192,10 +191,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
-            firstpassDefaultProgram.setUniform("writeVoxels", false);
-//            firstpassDefaultProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-//            firstpassDefaultProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-//            firstpassDefaultProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
             GPUProfiler.end();
 
             for (Entity entity : visibleEntities) {
@@ -210,7 +205,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             }
         }
         GPUProfiler.end();
-
 
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         for(RenderExtension extension : renderExtensions) {

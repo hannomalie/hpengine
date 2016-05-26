@@ -220,10 +220,10 @@ void main(void) {
 	vec3 normalView = normalAmbient.xyz;
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 
-	float metallic = texture2D(diffuseMap, st).a;
+	float metallic = textureLod(diffuseMap, st, 0).a;
 	float glossiness = (1-roughness);
-	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
-	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, glossiness);
+	vec3 maxSpecular = mix(vec3(0.1), color, metallic);
+	vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
     vec3 positionGridScaled = inverseSceneScale*positionWorld;
@@ -295,7 +295,7 @@ void main(void) {
 //    }
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
-        vct += 8*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+        vct += 4*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
     }
 
     out_DiffuseSpecular.rgb = vct;
