@@ -419,7 +419,11 @@ public class AppContext {
                 if(getScene() != null) {
                     directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRedraw;
                 }
-                RenderExtract renderExtract = new RenderExtract(getActiveCamera(), scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved);
+                Camera extractedCamera = new Camera(getActiveCamera());
+                extractedCamera.init();
+                extractedCamera.update(0.0000001f);
+
+                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
