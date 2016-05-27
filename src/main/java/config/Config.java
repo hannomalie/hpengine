@@ -26,7 +26,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR_PROBES = false;
 	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
-	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = true;
+	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = false;
 	@Toggable(group = "Quality settings") public static volatile boolean SSR_FADE_TO_SCREEN_BORDERS = true;
 	@Toggable(group = "Quality settings") public static volatile boolean SSR_TEMPORAL_FILTERING = true;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
@@ -51,7 +51,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
     private static volatile boolean headless = false;
 
-    public static volatile int currentModelLod = 0;
+    public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
     private Config() { super(); }
 

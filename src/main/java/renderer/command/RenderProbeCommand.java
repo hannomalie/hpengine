@@ -3,6 +3,7 @@ package renderer.command;
 import engine.Transform;
 import engine.AppContext;
 import engine.model.Transformable;
+import renderer.RenderExtract;
 import scene.EnvironmentProbe;
 
 public class RenderProbeCommand implements Command<Result>, Transformable {
@@ -21,7 +22,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	@Override
 	public Result execute(AppContext appContext) {
 		
-		probe.draw(appContext, urgent);
+		probe.draw(urgent, new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true));
 		
 		return new Result();
 	}

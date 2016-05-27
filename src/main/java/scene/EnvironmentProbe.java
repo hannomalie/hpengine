@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.environmentsampler.EnvironmentSampler;
 import shader.Program;
@@ -37,11 +38,11 @@ public class EnvironmentProbe extends Entity {
 		super.init();
 	}
 
-	public void draw() {
-		draw(appContext, false);
+	public void draw(RenderExtract extract) {
+		draw(false, extract);
 	}
-	public void draw(AppContext appContext, boolean urgent) {
-		sampler.drawCubeMap(urgent);
+	public void draw(boolean urgent, RenderExtract extract) {
+		sampler.drawCubeMap(urgent, extract);
 	}
 	
 	public void drawDebug(Program program) {

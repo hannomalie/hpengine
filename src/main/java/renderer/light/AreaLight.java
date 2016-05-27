@@ -9,6 +9,7 @@ import engine.model.Model;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.RenderExtract;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import shader.Program;
@@ -53,20 +54,20 @@ public class AreaLight extends Camera {
 		return String.format("AreaLight_%d", System.currentTimeMillis());
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(Camera camera, RenderExtract extract) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, getTransform().getTransformationBuffer(), 0);
+			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
 		});
         for(Entity entity : getChildren()) {
             entity.getComponentOption(ModelComponent.class).ifPresent(component ->{
-                component.draw(camera);
+                component.draw(extract, camera);
             });
         }
 	}
 
-	public void draw(Camera camera, Program program) {
+	public void draw(Camera camera, RenderExtract extract) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, getTransform().getTransformationBuffer(), 0);
+			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 

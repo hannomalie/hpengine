@@ -13,7 +13,6 @@ import com.alee.laf.text.WebTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import component.ModelComponent;
 import engine.AppContext;
 import event.MaterialChangedEvent;
 import org.apache.commons.io.FileUtils;

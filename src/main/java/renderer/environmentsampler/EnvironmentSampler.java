@@ -19,6 +19,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.drawstrategy.GBuffer;
 import renderer.light.*;
@@ -143,11 +144,11 @@ public class EnvironmentSampler extends Camera {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
-	public void drawCubeMap(boolean urgent) {
-		drawCubeMapSides(urgent);
+	public void drawCubeMap(boolean urgent, RenderExtract extract) {
+		drawCubeMapSides(urgent, extract);
 	}
 	
-	private void drawCubeMapSides(boolean urgent) {
+	private void drawCubeMapSides(boolean urgent, RenderExtract extract) {
         Scene scene = AppContext.getInstance().getScene();
         if(scene == null) { return; }
 
@@ -206,7 +207,7 @@ public class EnvironmentSampler extends Camera {
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill GBuffer");
-					drawFirstPass(i, this, movedVisibles);
+					drawFirstPass(i, this, movedVisibles, extract);
 					EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
@@ -302,7 +303,7 @@ public class EnvironmentSampler extends Camera {
 		GPUProfiler.end();
 	}
 	
-	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities) {
+	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities, RenderExtract extract) {
 		camera.update(0.1f);
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().getFrameBufferLocation());
 //		EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().resetAttachments();
@@ -334,7 +335,7 @@ public class EnvironmentSampler extends Camera {
 
         for (Entity entity : entities) {
             if(entity.getComponents().containsKey("ModelComponent")) {
-                ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(camera);
+                ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(extract, camera);
             }
         }
 		GPUProfiler.end();

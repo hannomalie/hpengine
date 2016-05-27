@@ -27,7 +27,6 @@ import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import config.Config;
 import engine.AppContext;
-import engine.model.Entity;
 import event.*;
 import net.engio.mbassy.listener.Handler;
 import octree.Octree;
@@ -40,6 +39,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.command.AddCubeMapCommand;
 import renderer.command.AddTextureCommand;
 import renderer.command.AddTextureCommand.TextureResult;
@@ -357,7 +357,8 @@ public class DebugFrame {
 					@Override
 					public Result doInBackground() throws Exception {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw();
+                            AppContext appContext = AppContext.getInstance();
+							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true));
 							return new Result<>(true);
 						});
 

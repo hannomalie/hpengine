@@ -1,6 +1,7 @@
 package renderer.command;
 
 import engine.AppContext;
+import renderer.RenderExtract;
 import texture.Texture;
 import texture.TextureFactory;
 

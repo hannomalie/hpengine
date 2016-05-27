@@ -118,7 +118,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (!Config.DEBUGDRAW_PROBES) {
             environmentProbeFactory.drawAlternating(octree, renderExtract.camera, light, Renderer.getInstance().getFrameCount());
-            Renderer.getInstance().executeRenderProbeCommands();
+            Renderer.getInstance().executeRenderProbeCommands(renderExtract);
             GPUProfiler.start("Shadowmap pass");
             {
                 directionalLightShadowMapExtension.renderFirstPass(renderExtract, firstPassResult);
@@ -196,7 +196,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             for (Entity entity : visibleEntities) {
                 if (entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
+                            .draw(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         firstPassResult.entitiesDrawn++;
@@ -212,7 +212,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         if (Config.DEBUGDRAW_PROBES) {
-            debugDrawProbes(camera);
+            debugDrawProbes(camera, renderExtract);
             EnvironmentProbeFactory.getInstance().draw();
         }
         openGLContext.enable(CULL_FACE);
@@ -628,7 +628,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-    private void debugDrawProbes(Camera camera) {
+    private void debugDrawProbes(Camera camera, RenderExtract extract) {
         Entity probeBoxEntity = Renderer.getInstance().getGBuffer().getProbeBoxEntity();
 
         probeFirstpassProgram.use();
@@ -650,7 +650,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
             probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
             probeBoxEntity.getComponent(ModelComponent.class).
-                    draw(camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
+                    draw(extract, camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
         }
 
         probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;

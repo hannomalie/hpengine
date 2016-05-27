@@ -47,7 +47,7 @@ public interface Renderer extends LifeCycle {
 
     GBuffer getGBuffer();
 
-    void executeRenderProbeCommands();
+    void executeRenderProbeCommands(RenderExtract extract);
 
     void drawToQuad(int colorReflectivenessMap);
 

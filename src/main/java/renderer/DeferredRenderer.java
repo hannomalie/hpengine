@@ -503,17 +503,17 @@ public class DeferredRenderer implements Renderer {
 
 
 	@Override
-	public void executeRenderProbeCommands() {
+	public void executeRenderProbeCommands(RenderExtract extract) {
 		int counter = 0;
 		
 		renderProbeCommandQueue.takeNearest(AppContext.getInstance().getActiveCamera()).ifPresent(command -> {
-			command.getProbe().draw(AppContext.getInstance(), command.isUrgent());
+			command.getProbe().draw(command.isUrgent(), extract);
 		});
 		counter++;
 		
 		while(counter < RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL) {
 			renderProbeCommandQueue.take().ifPresent(command -> {
-                command.getProbe().draw(AppContext.getInstance(), command.isUrgent());
+                command.getProbe().draw(command.isUrgent(), extract);
             });
 			counter++;
 		}

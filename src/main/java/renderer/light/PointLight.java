@@ -6,6 +6,7 @@ import camera.Camera;
 import component.ModelComponent;
 import engine.model.Entity;
 import engine.model.Model;
+import renderer.RenderExtract;
 import renderer.material.MaterialFactory;
 import shader.Bufferable;
 import shader.Program;
@@ -42,10 +43,10 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		return color;
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(Camera camera, RenderExtract extract) {
 		if(!isInitialized()) { return; }
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			modelComponent.draw(camera, getTransform().getTransformationBuffer(), 0);
+			modelComponent.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
 		});
 	}
 

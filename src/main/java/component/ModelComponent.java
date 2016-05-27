@@ -1,6 +1,7 @@
 package component;
 
 import camera.Camera;
+import config.Config;
 import engine.AppContext;
 import engine.Drawable;
 import engine.model.DataChannels;
@@ -12,7 +13,9 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.constants.GlCap;
+import renderer.lodstrategy.ModelLod;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
@@ -69,7 +72,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         return Collections.unmodifiableList(lodLevels);
     }
 
-    private List<int[]> lodLevels;
+    private volatile List<int[]> lodLevels;
 
     public ModelComponent(Model model) {
         this(model, model.getMaterial());
@@ -82,21 +85,21 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.model = model;
     }
     @Override
-    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        return draw(camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
+        return draw(extract, camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
-    public int draw(Camera camera) {
-        return draw(camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
-    }
-
-    @Override
-    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
-        return draw(camera, modelMatrix, firstPassProgram, entityIndex, isVisible, isSelected, false);
+    public int draw(RenderExtract extract, Camera camera) {
+        return draw(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
-    public int draw(Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected, boolean drawLines) {
+    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
+        return draw(extract, camera, modelMatrix, firstPassProgram, entityIndex, isVisible, isSelected, false);
+    }
+
+    @Override
+    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected, boolean drawLines) {
 
         if(!isVisible) {
             return 0;
@@ -129,9 +132,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //            return vertexBuffer.drawInstanced(10);
 //        } else
         if (drawLines) {
-            return vertexBuffer.drawDebug(2, isInReachForTextureLoading);
+            return vertexBuffer.drawDebug(2, ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(extract, this));
         } else {
-            return vertexBuffer.draw(isInReachForTextureLoading);
+            return vertexBuffer.draw(Config.MODEL_LOD_STRATEGY.getIndexBufferIndex(extract, this));
         }
     }
 

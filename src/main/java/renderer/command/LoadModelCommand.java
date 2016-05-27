@@ -5,6 +5,7 @@ import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
+import renderer.RenderExtract;
 import renderer.command.LoadModelCommand.EntityListResult;
 
 import java.io.File;

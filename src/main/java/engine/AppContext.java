@@ -33,6 +33,7 @@ import renderer.fps.FPSCounter;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.light.PointLight;
+import renderer.lodstrategy.ModelLod;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import scene.EnvironmentProbe;
@@ -363,20 +364,23 @@ public class AppContext {
             }
 
             if(Keyboard.isKeyDown(Keyboard.KEY_0)) {
-                Config.currentModelLod = 0;
-                System.out.println(Config.currentModelLod);
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
+                System.out.println("Model lod 0");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_1)) {
-                Config.currentModelLod = 1;
-                System.out.println(Config.currentModelLod);
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_1;
+                System.out.println("Model lod 1");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_2)) {
-                Config.currentModelLod = 2;
-                System.out.println(Config.currentModelLod);
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_2;
+                System.out.println("Model lod 2");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_3)) {
-                Config.currentModelLod = 3;
-                System.out.println(Config.currentModelLod);
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_3;
+                System.out.println("Model lod 3");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_4)) {
-                Config.currentModelLod = 4;
-                System.out.println(Config.currentModelLod);
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_4;
+                System.out.println("Model lod 4");
+            } else if(Keyboard.isKeyDown(Keyboard.KEY_5)) {
+                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_5;
+                System.out.println("Model lod 5");
             }
         }
 

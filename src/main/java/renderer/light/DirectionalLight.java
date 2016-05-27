@@ -127,12 +127,12 @@ public class DirectionalLight extends Entity {
         super.update(seconds);
 	}
 
-	public void drawAsMesh(Camera camera) {
+	public void drawAsMesh(RenderExtract extract, Camera camera) {
 		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, getTransform().getTransformationBuffer(), 0);
+			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
 		});
 		camera.getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(camera, camera.getTransform().getTransformationBuffer(), 0);
+			component.draw(extract, camera, camera.getTransform().getTransformationBuffer(), 0);
 		});
 	}
 

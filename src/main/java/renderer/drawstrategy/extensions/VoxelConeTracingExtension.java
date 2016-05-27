@@ -175,7 +175,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             for (Entity entity : renderExtract.entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
+                            .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if(currentVerticesCount > 0) { firstPassResult.entitiesDrawn++; }
                 }

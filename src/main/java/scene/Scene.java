@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
@@ -65,7 +66,8 @@ public class Scene implements LifeCycle, Serializable {
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().execute(() -> {
                 try {
-                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw();
+                    AppContext appContext = AppContext.getInstance();
+                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
