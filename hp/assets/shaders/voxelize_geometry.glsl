@@ -41,7 +41,7 @@ void main()
 
         vec4 AABB;
         vec2 hPixel = vec2( 1.0/256f, 1.0/256f );
-        float pl = 1.4142135637309 / u_width ;
+        float pl = 1.4142135637309 / float(u_width) ;
         //calculate AABB of this triangle
         AABB.xy = v_vertex[0].xy;
         AABB.zw = v_vertex[0].xy;
@@ -87,11 +87,13 @@ void main()
             proj=u_MVPz;
         }
 
+        vec3 vertexTemp = v_vertex[i];
 //        conservative rasterization
-//        v_vertex[i] = cr_pos[i];
+//        vertexTemp = cr_pos[i].xyz;
 
-        gl_Position = proj * vec4(v_vertex[i],1);
-        g_pos = v_vertex[i].xyz;
+
+        gl_Position = proj * vec4(vertexTemp,1);
+        g_pos = vertexTemp.xyz;
 
         g_normal = v_normal[i];
         g_texcoord = v_texcoord[i];

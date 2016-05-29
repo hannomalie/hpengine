@@ -72,7 +72,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         return Collections.unmodifiableList(lodLevels);
     }
 
-    private volatile List<int[]> lodLevels;
+    private volatile List<int[]> lodLevels = new ArrayList<>();
 
     public ModelComponent(Model model) {
         this(model, model.getMaterial());
@@ -206,11 +206,12 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         indices.add(model.getIndexBufferValuesArray());
 
         int sizeBeforeReduction = indices.get(0).length/3;
-        LodGenerator lodGenerator = new LodGenerator(this);
-        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
+//        LodGenerator lodGenerator = new LodGenerator(this);
+//        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
+        lodLevels.add(indices.get(0));
         indices = lodLevels;
-        System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
-        System.out.println("############## lodlevels calculated: " + lodLevels.size());
+//        System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
+//        System.out.println("############## lodlevels calculated: " + lodLevels.size());
 
         /////////
 

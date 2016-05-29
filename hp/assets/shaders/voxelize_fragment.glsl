@@ -1,11 +1,13 @@
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
-layout(binding=3) uniform sampler2D occlusionMap;
+//layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
+layout(binding = 5, rgba8) uniform image3D out_voxel;
 //layout(binding=5) uniform sampler2D reflectionMap;
-layout(binding=6) uniform samplerCube environmentMap;
+layout(binding=6) uniform sampler2D shadowMap;
 layout(binding=7) uniform sampler2D roughnessMap;
+layout(binding=8) uniform sampler3D secondVoxelVolume;
 
 flat in int f_axis;   //indicate which axis the projection uses
 flat in vec4 f_AABB;
@@ -16,10 +18,11 @@ in vec2 g_texcoord;
 
 //layout (pixel_center_integer) in vec4 gl_FragCoord;
 
-uniform layout(binding = 5, rgba8) image3D out_voxel;
-layout(binding=6) uniform sampler2D shadowMap;
 
 //include(globals_structs.glsl)
+//include(globals.glsl)
+
+
 uniform int materialIndex;
 uniform int entityIndex;
 layout(std430, binding=1) buffer _materials {
@@ -90,19 +93,28 @@ void main()
 
     float opacity = 1-float(material.transparency);
 	vec4 color = vec4(materialDiffuseColor, 1);
+	float roughness = float(material.roughness);
+	float metallic = float(material.metallic);
 
 	if(material.hasDiffuseMap != 0) {
         color = texture(diffuseMap, g_texcoord);
-        opacity *= color.a;
+        metallic = color.a;
     }
+	if(material.hasRoughnessMap != 0) {
+        roughness = texture(roughnessMap, g_texcoord).r;
+    }
+
+    float glossiness = (1-roughness);
+    vec3 maxSpecular = mix(vec3(0.1), color.rgb, metallic);
+    vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
 
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
-    float ambientAmount = 0.0125f;
+    float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*material.ambient))*voxelColor;
+    vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*4*material.ambient))*voxelColor;
 
 	float visibility = 1.0;
 	vec4 positionShadow = (shadowMatrix * vec4(g_pos.xyz, 1));
@@ -114,6 +126,12 @@ void main()
     float NdotL = max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
-	imageStore(out_voxel, ivec3(gridPosition), vec4(finalVoxelColor, opacity));
+
+    vec4 diffuseVoxelTraced= traceVoxelsDiffuse(6, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, 1, g_pos, g_normal, 0.1*float(material.roughness), 370); // 0.05
+    vec3 maxMultipleBounce = vec3(0.5);
+    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + 0.25*specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+
+	imageStore(out_voxel, ivec3(gridPosition), 0.25*vec4(finalVoxelColor, opacity));
 //    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor, 1-alpha));
 }

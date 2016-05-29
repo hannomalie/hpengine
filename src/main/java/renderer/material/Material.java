@@ -136,6 +136,7 @@ public class Material implements Serializable, Bufferable {
 
 		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
+            if(map.equals(MAP.OCCLUSION)) { continue; }
 			Texture texture = entry.getValue();
 			texture.bind(map.textureSlot, withoutSetUsed);
 		}

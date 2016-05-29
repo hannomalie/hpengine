@@ -588,4 +588,21 @@ public class TextureFactory {
         GL30.glGenerateMipmap(target.glTarget);
     }
 
+    // TODO return proper object
+    public int getTexture3D(int gridSize, int gridTextureFormatSized, int filterMin, int filterMag, int wrapMode) {
+        final int[] grid = new int[1];
+        OpenGLContext.getInstance().execute(()-> {
+            grid[0] = GL11.glGenTextures();
+            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0]);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, filterMin);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MAG_FILTER,filterMag);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_S, wrapMode);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_WRAP_T, wrapMode);
+            GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL12.GL_TEXTURE_WRAP_R, wrapMode);
+            GL42.glTexStorage3D(GL12.GL_TEXTURE_3D, util.Util.calculateMipMapCount(gridSize), gridTextureFormatSized, gridSize, gridSize, gridSize);
+            GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0]);
+            GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
+        });
+        return grid[0];
+    }
 }

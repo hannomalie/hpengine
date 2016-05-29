@@ -328,19 +328,6 @@ vec3 _sphericalToCartesian(vec2 input){
     return outCart;
 }
 
-float radicalInverse_VdC(uint bits) {
-     bits = (bits << 16u) | (bits >> 16u);
-     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-     
-     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-vec2 hammersley2d(uint i, int N) {
-	return vec2(float(i)/float(N), radicalInverse_VdC(i));
-}
-
 // http://blog.tobias-franke.eu/2014/03/30/notes_on_importance_sampling.html
 float p(vec2 spherical_coords, float roughness) {
 
@@ -352,23 +339,6 @@ float p(vec2 spherical_coords, float roughness) {
 	return result;
 }
 
-// http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
-vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
-     float phi = u * 2.0 * PI;
-     float cosTheta = 1.0 - v;
-     float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-     vec3 result = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
-     
-	vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-	vec3 TangentX = normalize( cross( UpVector, N ) );
-	vec3 TangentY = cross( N, TangentX );
-	 // Tangent to world space
-	 result = TangentX * result.x + TangentY * result.y + N * result.z;
-     //mat3 transform = createOrthonormalBasis(N);
-	 //result = (transform) * result;
-	 
-     return result;
-}
 
 vec3[2] ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N ) {
 	float a = Roughness * Roughness;

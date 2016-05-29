@@ -66,23 +66,6 @@ float maxDepth(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
 	return result;
 }
 
-float linstep(float low, float high, float v){
-    return clamp((v-low)/(high-low), 0.0, 1.0);
-}
-
-float radicalInverse_VdC(uint bits) {
-     bits = (bits << 16u) | (bits >> 16u);
-     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-     
-     return float(bits) * 2.3283064365386963e-10; // / 0x100000000
-}
-vec2 hammersley2d(uint i, int N) {
-	return vec2(float(i)/float(N), radicalInverse_VdC(i));
-}
-
 vec3 PCF(sampler2D sampler, vec2 texCoords, float referenceDepth, float inBlurDistance) {
 	vec3 result = vec3(0,0,0);
 	float blurDistance = clamp(inBlurDistance, 0.0, 0.002);
