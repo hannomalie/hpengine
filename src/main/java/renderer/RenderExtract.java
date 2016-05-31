@@ -7,6 +7,7 @@ import renderer.light.DirectionalLight;
 import util.stopwatch.GPUProfiler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class RenderExtract {
@@ -24,7 +25,7 @@ public class RenderExtract {
                          boolean directionalLightNeedsShadowMapRender,
                          boolean anyPointLightHasMoved) {
         this.camera = camera;
-        this.entities = entities;
+        this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
         visibleEntities.addAll(entities);
         if (Config.useFrustumCulling) {

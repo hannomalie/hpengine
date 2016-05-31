@@ -104,6 +104,7 @@ public class DebugFrame {
         { AppContext.getEventBus().register(this); }
         @Subscribe @Handler public void handle(MaterialChangedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(MaterialAddedEvent e) { revalidate(); }
+        @Subscribe @Handler public void handle(SceneInitEvent e) { revalidate(); }
 		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
     private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);

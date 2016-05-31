@@ -10,6 +10,7 @@ import javax.swing.event.ChangeListener;
 
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
+import com.alee.extended.panel.TwoSidesPanel;
 import com.alee.laf.button.WebButton;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
@@ -34,160 +35,159 @@ public class MainLightView extends WebPanel {
     public MainLightView() {
 
         List<Component> panels = getPanels();
-        Component[] components = new Component[panels.size()];
-        panels.toArray(components);
-
-        GridPanel gridPanel = new GridPanel ( components.length, 1, components);
-        gridPanel.setLayout(new FlowLayout());
         this.removeAll();
-        JScrollPane scrollPane = new JScrollPane(gridPanel);
+        JScrollPane scrollPane = new JScrollPane(new TwoSidesPanel(panels.get(0), panels.get(1)));
         scrollPane.getVerticalScrollBar().setUnitIncrement(32);
         this.add(scrollPane);
         repaint();
     }
 
-	protected List<Component> getPanels() {
-		List<Component> panels = new ArrayList<>();
-		
-		WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
-		lightColorChooserPanel.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				DirectionalLight light = AppContext.getInstance().getScene().getDirectionalLight();
-				Color color = lightColorChooserPanel.getColor();
-				light.setColor(new Vector3f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f));
-			}
-		});
-		WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
-		ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				Color color = ambientLightColorChooserPanel.getColor();
-				Config.AMBIENT_LIGHT.set(new Vector3f(color.getRed()/255.f,
-						color.getGreen()/255.f,
-						color.getBlue()/255.f));
-			}
-		});
-		panels.add(ambientLightColorChooserPanel);
-		panels.add(lightColorChooserPanel);
+    protected List<Component> getPanels() {
+        List<Component> panels = new ArrayList<>();
 
-		addAttributesPanel(panels);
-		return panels;
-	}
-	protected WebComponentPanel addAttributesPanel(List<Component> panels) {
-		
-		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
-        webComponentPanel.setElementMargin ( 4 );
+        WebColorChooserPanel lightColorChooserPanel = new WebColorChooserPanel();
+        lightColorChooserPanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                DirectionalLight light = AppContext.getInstance().getScene().getDirectionalLight();
+                Color color = lightColorChooserPanel.getColor();
+                light.setColor(new Vector3f(color.getRed() / 255.f,
+                        color.getGreen() / 255.f,
+                        color.getBlue() / 255.f));
+            }
+        });
+        WebColorChooserPanel ambientLightColorChooserPanel = new WebColorChooserPanel();
+        ambientLightColorChooserPanel.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                Color color = ambientLightColorChooserPanel.getColor();
+                Config.AMBIENT_LIGHT.set(new Vector3f(color.getRed() / 255.f,
+                        color.getGreen() / 255.f,
+                        color.getBlue() / 255.f));
+            }
+        });
+        GridPanel gridPanel = new GridPanel(1, 2, ambientLightColorChooserPanel, lightColorChooserPanel);
+        panels.add(gridPanel);
+        panels.add(getAttributesPanel());
+
+        return panels;
+    }
+
+    protected WebComponentPanel getAttributesPanel() {
+
+        WebComponentPanel webComponentPanel = new WebComponentPanel(true);
+        webComponentPanel.setElementMargin(4);
 
         addNamePanel(webComponentPanel);
 
         WebComponentPanel movablePanel = new WebComponentPanel(false);
         movablePanel.setElementMargin(4);
-        
-	    WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", new Vector3f()) {
-			@Override
-			public void onValueChange(Vector3f current) {
-				AppContext.getInstance().getScene().getDirectionalLight().setPosition(current);
-			}
-		};
-		movablePanel.addElement(positionField);
-        
-		movablePanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 3600, 0) {
-			@Override
-			public void onValueChange(int value, int delta) {
-                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(1, 0, 0, 0.01f*delta));
-			}
-		});
-		movablePanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 3600, 0) {
-			@Override
-			public void onValueChange(int value, int delta) {
-                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(0, 1, 0, 0.01f*delta));
-			}
-		});
-		movablePanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 3600, 0) {
-			@Override
-			public void onValueChange(int value, int delta) {
-                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(0, 0, 1, 0.01f*delta));
-			}
-		});
 
-		movablePanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
-			@Override
-			public void onValueChange(int value, int delta) {
+        WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", new Vector3f()) {
+            @Override
+            public void onValueChange(Vector3f current) {
+                AppContext.getInstance().getScene().getDirectionalLight().setPosition(current);
+            }
+        };
+        movablePanel.addElement(positionField);
+
+        movablePanel.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 3600, 0) {
+            @Override
+            public void onValueChange(int value, int delta) {
+                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(1, 0, 0, 0.01f * delta));
+            }
+        });
+        movablePanel.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 3600, 0) {
+            @Override
+            public void onValueChange(int value, int delta) {
+                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(0, 1, 0, 0.01f * delta));
+            }
+        });
+        movablePanel.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 3600, 0) {
+            @Override
+            public void onValueChange(int value, int delta) {
+                AppContext.getInstance().getScene().getDirectionalLight().rotateWorld(new Vector4f(0, 0, 1, 0.01f * delta));
+            }
+        });
+
+        movablePanel.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
+            @Override
+            public void onValueChange(int value, int delta) {
                 DirectionalLight directionalLight = AppContext.getInstance().getScene().getDirectionalLight();
                 Vector3f axis = directionalLight.getRightDirection();
-				axis = new Vector3f(1, 0, 0);
+                axis = new Vector3f(1, 0, 0);
                 directionalLight.moveInWorld((Vector3f) axis.scale(delta));
-				positionField.setValue(directionalLight.getPosition());
-			}
-		});
-		movablePanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
-			@Override
-			public void onValueChange(int value, int delta) {
+                positionField.setValue(directionalLight.getPosition());
+            }
+        });
+        movablePanel.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
+            @Override
+            public void onValueChange(int value, int delta) {
                 DirectionalLight directionalLight = AppContext.getInstance().getScene().getDirectionalLight();
-				Vector3f axis = directionalLight.getUpDirection();
-				axis = new Vector3f(0, 1, 0);
+                Vector3f axis = directionalLight.getUpDirection();
+                axis = new Vector3f(0, 1, 0);
                 directionalLight.moveInWorld((Vector3f) axis.scale(delta));
-				positionField.setValue(directionalLight.getPosition());
-			}
-		});
-		movablePanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
-			@Override
-			public void onValueChange(int value, int delta) {
+                positionField.setValue(directionalLight.getPosition());
+            }
+        });
+        movablePanel.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
+            @Override
+            public void onValueChange(int value, int delta) {
                 DirectionalLight directionalLight = AppContext.getInstance().getScene().getDirectionalLight();
-				Vector3f axis = directionalLight.getViewDirection().negate(null);
-				axis = new Vector3f(0, 0, -1);
+                Vector3f axis = directionalLight.getViewDirection().negate(null);
+                axis = new Vector3f(0, 0, -1);
                 directionalLight.moveInWorld((Vector3f) axis.scale(delta));
-				positionField.setValue(directionalLight.getPosition());
-			}
-		});
+                positionField.setValue(directionalLight.getPosition());
+            }
+        });
 
-		movablePanel.addElement(new WebFormattedVec3Field("View Direction", new Vector3f(0, 0, -1)) {
-			@Override
-			public void onValueChange(Vector3f current) {
+        movablePanel.addElement(new WebFormattedVec3Field("View Direction", new Vector3f(0, 0, -1)) {
+            @Override
+            public void onValueChange(Vector3f current) {
                 DirectionalLight directionalLight = AppContext.getInstance().getScene().getDirectionalLight();
-				Quaternion temp = new Quaternion();
-				temp.setFromAxisAngle(new Vector4f(current.x, current.y, current.z, 0));
+                Quaternion temp = new Quaternion();
+                temp.setFromAxisAngle(new Vector4f(current.x, current.y, current.z, 0));
                 directionalLight.setOrientation(temp);
-			}
-		});
+            }
+        });
 
         webComponentPanel.addElement(movablePanel);
 
-		webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(0,0,0)) {
-			@Override
-			public void onValueChange(Vector3f current) {
-				DirectionalLight light = AppContext.getInstance().getScene().getDirectionalLight();
-				light.getCamera().setWidth(current.x);
-				light.getCamera().setHeight(current.y);
-				light.getCamera().setFar(current.z);
-			}
-		});
-		webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", new Vector3f()) {
-			@Override
-			public void onValueChange(Vector3f current) {
+        webComponentPanel.addElement(new WebFormattedVec3Field("Width, Height, Z Max", new Vector3f(0, 0, 0)) {
+            @Override
+            public void onValueChange(Vector3f current) {
+                DirectionalLight light = AppContext.getInstance().getScene().getDirectionalLight();
+                light.getCamera().setWidth(current.x);
+                light.getCamera().setHeight(current.y);
+                light.getCamera().setFar(current.z);
+            }
+        });
+        webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", new Vector3f()) {
+            @Override
+            public void onValueChange(Vector3f current) {
                 AppContext.getInstance().getScene().getDirectionalLight().getCamera().setPosition(current);
-			}
-		});
+            }
+        });
 
-		webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-            AppContext.getInstance().setActiveCamera(AppContext.getInstance().getScene().getDirectionalLight().getCamera());
-		});}});
-		webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-            AppContext.getInstance().restoreWorldCamera();
-		});}});
+        webComponentPanel.addElement(new WebButton("Use Light Cam") {{
+            addActionListener(e -> {
+                AppContext.getInstance().setActiveCamera(AppContext.getInstance().getScene().getDirectionalLight().getCamera());
+            });
+        }});
+        webComponentPanel.addElement(new WebButton("Use World Cam") {{
+            addActionListener(e -> {
+                AppContext.getInstance().restoreWorldCamera();
+            });
+        }});
 
-        panels.add(webComponentPanel);
         return webComponentPanel;
-	}
+    }
 
     private void addNamePanel(WebComponentPanel webComponentPanel) {
         WebLabel labelName = new WebLabel("Name");
         WebFormattedTextField nameField = new WebFormattedTextField();
         nameField.setValue("Directional light");
-        GroupPanel groupPanel = new GroupPanel ( 4, labelName, nameField );
+        GroupPanel groupPanel = new GroupPanel(4, labelName, nameField);
         webComponentPanel.addElement(groupPanel);
     }
 }

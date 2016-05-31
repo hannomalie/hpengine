@@ -132,7 +132,7 @@ public class MaterialView extends WebPanel {
 	        	addMaterialInitCommand(material);
 	        });
 
-	        GroupPanel groupPanel = new GroupPanel ( 4, label, select, removeTextureButton );
+            GroupPanel groupPanel = new GroupPanel(4, label, select, removeTextureButton);
 			webComponentPanel.addElement(groupPanel);
 		}
 	}

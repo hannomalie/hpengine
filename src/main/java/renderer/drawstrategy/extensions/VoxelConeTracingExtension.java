@@ -129,6 +129,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GPUProfiler.end();
             }
 
+            GPUProfiler.start("Voxelization");
             orthoCam.update(0.000001f);
             int gridSizeScaled = (int) (gridSize * sceneScale);
             OpenGLContext.getInstance().viewPort(0,0, gridSizeScaled, gridSizeScaled);
@@ -176,13 +177,14 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
                     int currentVerticesCount = modelComponent
-                            .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected());
+                            .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), true, entity.isSelected());
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if(currentVerticesCount > 0) { firstPassResult.entitiesDrawn++; }
                 }
             }
 //            query.end();
 //            System.out.println(query.getResult());
+            GPUProfiler.end();
 
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){

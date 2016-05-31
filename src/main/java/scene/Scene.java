@@ -57,7 +57,6 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-//        entitiesBuffer = new StorageBuffer(32000);
         entitiesBuffer = new PersistentMappedBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 		octree.init();

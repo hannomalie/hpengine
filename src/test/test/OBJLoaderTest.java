@@ -5,9 +5,11 @@ import engine.model.Face;
 import engine.model.Model;
 import engine.model.OBJLoader;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.material.Material;
 import texture.TextureFactory;
 import util.Util;
 import util.stopwatch.StopWatch;
@@ -51,17 +53,22 @@ public class OBJLoaderTest extends TestWithAppContext {
 		Assert.assertEquals("png", extension);
 	}
 
-	@Test
-	public void loadTextureFromJar() throws IOException {
-        texture.Texture texture = TextureFactory.getInstance().getTexture("src/assets/textures/stone_diffuse.png");
-		Assert.assertEquals(512, texture.getHeight());
-	}
-	
+    @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
         texture.Texture texture = TextureFactory.getInstance().getTexture("C://default.png");
 		Assert.assertEquals(1, texture.getHeight());
 	}
+
+    @Test
+    public void loadsMaterial() throws Exception {
+        List<Model> sibenik = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        Material material = sibenik.get(0).getMaterial();
+
+        Assert.assertEquals("rozeta", material.getName());
+        Assert.assertEquals("hp\\assets\\models\\textures\\KAMEN-stup", material.getMaterialInfo().maps.get(Material.MAP.DIFFUSE).getName());
+        Assert.assertEquals(1, material.getTextures().size());
+    }
 	
 	@Test
 	public void loadSponzaTest() throws Exception {

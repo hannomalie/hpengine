@@ -13,13 +13,13 @@ import texture.Texture;
 public class MaterialMap implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private transient ConcurrentHashMap<MAP, Texture> textures = new ConcurrentHashMap<MAP, Texture>();
-	private HashMap<MAP, String> textureNames = new HashMap<MAP, String>();
+	private transient ConcurrentHashMap<MAP, Texture> textures = new ConcurrentHashMap<>();
+	private HashMap<MAP, String> textureNames = new HashMap<>();
 	
 	
 	public MaterialMap() {
-		setTextures(new ConcurrentHashMap<MAP, Texture>());
-		setTextureNames(new HashMap<MAP, String>());
+		setTextures(new ConcurrentHashMap<>());
+		setTextureNames(new HashMap<>());
 	}
 	
 	@Override
@@ -43,7 +43,7 @@ public class MaterialMap implements Serializable {
 		return true;
 	}
 
-	public Object get(Object key) {
+	public Texture get(MAP key) {
 		return getTextures().get(key);
 	}
 
