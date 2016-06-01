@@ -66,16 +66,22 @@ public class MainLightView extends WebPanel {
                         color.getBlue() / 255.f));
             }
         });
-        GridPanel gridPanel = new GridPanel(1, 2, ambientLightColorChooserPanel, lightColorChooserPanel);
-        panels.add(gridPanel);
+
+        WebComponentPanel webComponentPanel = new WebComponentPanel(false);
+        webComponentPanel.setElementMargin(4);
+
+        GridPanel gridPanel = new GridPanel(2, 1, ambientLightColorChooserPanel, lightColorChooserPanel);
+        webComponentPanel.add(gridPanel);
         panels.add(getAttributesPanel());
+
+        panels.add(webComponentPanel);
 
         return panels;
     }
 
     protected WebComponentPanel getAttributesPanel() {
 
-        WebComponentPanel webComponentPanel = new WebComponentPanel(true);
+        WebComponentPanel webComponentPanel = new WebComponentPanel(false);
         webComponentPanel.setElementMargin(4);
 
         addNamePanel(webComponentPanel);
