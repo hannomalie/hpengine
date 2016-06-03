@@ -90,7 +90,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private final Program voxelizer;
     private final Program voxelConeTraceProgram;
-    private final ComputeShaderProgram texture3DMipMappingComputeProgram;
+    private final ComputeShaderProgram texture3DMipMapAlphaBlendComputeProgram;
+    private final ComputeShaderProgram texture3DMipMapComputeProgram;
+    int normalGrid;
     int currentVoxelTarget;
     int currentVoxelSource;
 
@@ -99,7 +101,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     public VoxelConeTracingExtension() throws Exception {
         voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
-        texture3DMipMappingComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
+        texture3DMipMapAlphaBlendComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
+        texture3DMipMapComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
 
 
         grid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
@@ -110,6 +113,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
+        normalGrid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE);
+
         currentVoxelTarget = grid;
         currentVoxelSource = gridTwo;
         voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
@@ -136,6 +144,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
             voxelizer.use();
             GL42.glBindImageTexture(5, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+            GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             OpenGLContext.getInstance().bindTexture(8, TEXTURE_3D, currentVoxelSource);
             Scene scene = AppContext.getInstance().getScene();
             if(scene != null) {
@@ -189,29 +198,36 @@ public class VoxelConeTracingExtension implements RenderExtension {
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){
                 GPUProfiler.start("grid mipmap");
-                int size = gridSize;
-                int currentSizeSource = 2*size;
-                int currentMipMapLevel = 0;
 
-                texture3DMipMappingComputeProgram.use();
-                while(currentSizeSource > 1) {
-                    currentSizeSource /= 2;
-                    int currentSizeTarget = currentSizeSource / 2;
-                    currentMipMapLevel++;
-
-                    GL42.glBindImageTexture(0, currentVoxelTarget, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized);
-                    GL42.glBindImageTexture(1, currentVoxelTarget, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-                    texture3DMipMappingComputeProgram.setUniform("sourceSize", currentSizeSource);
-                    texture3DMipMappingComputeProgram.setUniform("targetSize", currentSizeTarget);
-
-                    int num_groups_xyz = Math.max(currentSizeTarget / 8, 1);
-                    texture3DMipMappingComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-                }
+                mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
+                mipmapGrid(normalGrid, texture3DMipMapComputeProgram);
 
                 switchCurrentVoxelGrid();
                 GPUProfiler.end();
             }
             GL11.glColorMask(true, true, true, true);
+        }
+    }
+
+    private void mipmapGrid(int texture3D, ComputeShaderProgram shader) {
+        shader.use();
+        int size = gridSize;
+        int currentSizeSource = 2*size;
+        int currentMipMapLevel = 0;
+
+        while(currentSizeSource > 1) {
+            currentSizeSource /= 2;
+            int currentSizeTarget = currentSizeSource / 2;
+            currentMipMapLevel++;
+
+            GL42.glBindImageTexture(0, texture3D, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized);
+            GL42.glBindImageTexture(1, texture3D, currentMipMapLevel, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+            GL42.glBindImageTexture(3, normalGrid, currentMipMapLevel-1, true, 0, GL15.GL_READ_ONLY, gridTextureFormatSized);
+            shader.setUniform("sourceSize", currentSizeSource);
+            shader.setUniform("targetSize", currentSizeTarget);
+
+            int num_groups_xyz = Math.max(currentSizeTarget / 8, 1);
+            shader.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
         }
     }
 
@@ -234,6 +250,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
         OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelSource);
+        OpenGLContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
 
         voxelConeTraceProgram.use();
         voxelConeTraceProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());

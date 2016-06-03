@@ -1,11 +1,10 @@
 package util.script;
 
-import component.ScriptComponent;
+import component.JavaScriptComponent;
 import engine.AppContext;
 import engine.model.EntityFactory;
 import engine.model.OBJLoader;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
-import org.apache.commons.lang.NotImplementedException;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import renderer.Renderer;
@@ -60,11 +59,11 @@ public class ScriptManager {
 		this.provider = provider;
 	}
 
-	public void evalUpdate(ScriptComponent scriptComponent, float seconds) {
-		engine.setContext(scriptComponent.getContext());
+	public void evalUpdate(JavaScriptComponent javaScriptComponent, float seconds) {
+		engine.setContext(javaScriptComponent.getContext());
 		try {
 			((Invocable)engine).invokeFunction("update", seconds);
-//			engine.eval(String.format("update(%s)", seconds, scriptComponent.getContext()));
+//			engine.eval(String.format("update(%s)", seconds, javaScriptComponent.getContext()));
 		} catch (ScriptException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
@@ -83,12 +82,12 @@ public class ScriptManager {
 		return globalBindings;
 	}
 
-	public void evalInit(ScriptComponent scriptComponent) {
+	public void evalInit(JavaScriptComponent javaScriptComponent) {
 		try {
-			engine.eval(scriptComponent.getScript(), scriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE));
+			engine.eval(javaScriptComponent.getScript(), javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE));
 
-			engine.setContext(scriptComponent.getContext());
-			scriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("entity", scriptComponent.getEntity());
+			engine.setContext(javaScriptComponent.getContext());
+			javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("entity", javaScriptComponent.getEntity());
 			((Invocable)engine).invokeFunction("init", appContext);
 
 		} catch (ScriptException e) {

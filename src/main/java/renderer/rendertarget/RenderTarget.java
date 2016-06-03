@@ -65,6 +65,8 @@ public class RenderTarget {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
 
+                GL30.glGenerateMipmap(GlTextureTarget.TEXTURE_2D.glTarget);
+
                 FloatBuffer borderColorBuffer = BufferUtils.createFloatBuffer(4);
                 float[] borderColors = new float[]{0, 0, 0, 1};
                 borderColorBuffer.put(borderColors);

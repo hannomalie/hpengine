@@ -61,10 +61,8 @@ public class GBuffer {
 	private OpenGLBuffer storageBuffer;
 
 	private final int exposureIndex = 0;
-	private AppContext appContext;
 
     public GBuffer(AppContext appContext) {
-		this.appContext = appContext;
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
 						.add(5, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
@@ -77,7 +75,9 @@ public class GBuffer {
 						.build();
 		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.WIDTH * SECONDPASSSCALE))
 						.setHeight((int) (Config.HEIGHT * SECONDPASSSCALE))
-						.add(2, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.add(2, new ColorAttachmentDefinition()
+                                .setInternalFormat(GL30.GL_RGBA16F)
+                                .setTextureFilter(GL11.GL_LINEAR))
 						.build();
 		finalBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
 						.add(new ColorAttachmentDefinition()
@@ -85,7 +85,8 @@ public class GBuffer {
 						.build();
 		halfScreenBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH / 2).setHeight(Config.HEIGHT / 2)
 						.add(new ColorAttachmentDefinition()
-								.setInternalFormat(GL30.GL_RGBA16F))
+								.setInternalFormat(GL30.GL_RGBA16F)
+                                .setTextureFilter(GL11.GL_LINEAR))
 						.build();
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();

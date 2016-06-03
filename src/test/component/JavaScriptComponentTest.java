@@ -1,12 +1,12 @@
 package test;
 
-import component.ScriptComponent;
+import component.JavaScriptComponent;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import junit.framework.Assert;
 import org.junit.Test;
 
-public class ScriptTest extends TestWithAppContext {
+public class JavaScriptComponentTest extends TestWithAppContext {
 
     @Test
     public void globalDefines() {
@@ -17,7 +17,7 @@ public class ScriptTest extends TestWithAppContext {
 
     @Test
     public void localDefines() {
-        ScriptComponent component = new ScriptComponent();
+        JavaScriptComponent component = new JavaScriptComponent();
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
         entity.init();
         component.setInt("myInt", 5);
@@ -32,7 +32,7 @@ public class ScriptTest extends TestWithAppContext {
         Assert.assertEquals(242, appContext.getScriptManager().getGlobalContext().get("myInt"));
 
         String script = "var myInt = myInt;";
-        ScriptComponent component = new ScriptComponent(script);
+        JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
         entity.init();
 
@@ -49,7 +49,7 @@ public class ScriptTest extends TestWithAppContext {
 
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
-        ScriptComponent component = new ScriptComponent(script);
+        JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
         entity.init();
 

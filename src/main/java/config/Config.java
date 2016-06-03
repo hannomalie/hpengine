@@ -3,6 +3,7 @@ package config;
 import engine.AppContext;
 import event.HeadlessChangedEvent;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.lodstrategy.ModelLod;
 import util.Adjustable;
 import util.Toggable;
 
