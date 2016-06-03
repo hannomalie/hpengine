@@ -82,7 +82,7 @@ const float scaleX = 1;
 const float scaleY = 0.56;
 const vec2 ratio = vec2(scaleX, scaleY);
 vec4 blur(sampler2D sampler, vec2 texCoords, float inBlurDistance, float mipLevel) {
-	float blurDistance = clamp(inBlurDistance, 0.0, 0.0125);
+	float blurDistance = clamp(inBlurDistance, 0.0, 0.025);
 	vec4 result = vec4(0,0,0,0);
 	result += kernel[0] * textureLod(sampler, texCoords + vec2(-blurDistance, -blurDistance), mipLevel);
 	result += kernel[1] * textureLod(sampler, texCoords + vec2(0, -blurDistance), mipLevel);
@@ -373,7 +373,7 @@ void main(void) {
   	
   	vec4 motionVecProbeIndices = texture2D(motionMap, st);
   	vec2 motion = motionVecProbeIndices.xy;
-  	float transparency = motionVecProbeIndices .a;
+  	float transparency = motionVecProbeIndices.a;
   	vec4 colorMetallic = texture2D(diffuseMap, st);
   	colorMetallic.xyz = pow(colorMetallic.xyz, inverseGamma);
   	
@@ -408,6 +408,7 @@ void main(void) {
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
+	out_color.rgb *= clamp(ao,0,1);
 	out_color.rgb += (scattering.rgb); //scattering
 	
 	float autoExposure = exposure;

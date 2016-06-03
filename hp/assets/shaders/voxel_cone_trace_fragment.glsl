@@ -10,6 +10,7 @@ layout(binding=7) uniform sampler2D visibilityMap;
 layout(binding=8) uniform samplerCubeArray probes;
 
 layout(binding=13) uniform sampler3D grid;
+layout(binding=14) uniform sampler3D normalGrid;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -65,7 +66,8 @@ void main(void) {
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
 	//positionView = positionViewPreW.xyz / positionViewPreW.w;
 
-	vec3 color = texture2D(diffuseMap, st).xyz;
+    vec4 colorTransparency = texture2D(diffuseMap, st);
+	vec3 color = colorTransparency.xyz;
 	float roughness = texture2D(positionMap, st).a;
 
   	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
@@ -85,6 +87,13 @@ void main(void) {
 	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
 
 	float metallic = textureLod(diffuseMap, st, 0).a;
+
+    vec4 motionVecProbeIndices = texture(motionMap, st);
+  	vec2 motion = motionVecProbeIndices.xy;
+  	float transparency = motionVecProbeIndices.a;
+
+	float opacity = mix(1-transparency, 1, metallic);
+
 	float glossiness = (1-roughness);
 	vec3 maxSpecular = mix(vec3(0.2), color, metallic);
 	vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
@@ -110,6 +119,12 @@ void main(void) {
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
         vct += 4*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+
+
+        const bool useTransparency = false;
+        if(useTransparency) {
+            vct = 4*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
+        }
     }
 
     out_DiffuseSpecular.rgb = vct;

@@ -1,6 +1,7 @@
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
+layout(binding =3, rgba8) uniform image3D out_voxelNormal;
 //layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
 layout(binding = 5, rgba8) uniform image3D out_voxel;
@@ -128,10 +129,11 @@ void main()
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
     vec4 diffuseVoxelTraced= traceVoxelsDiffuse(6, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, 1, g_pos, g_normal, 0.1*float(material.roughness), 370); // 0.05
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, 1, g_pos, normalize(g_normal), 0.1*float(material.roughness), 70); // 0.05
     vec3 maxMultipleBounce = vec3(0.5);
     finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + 0.25*specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
 	imageStore(out_voxel, ivec3(gridPosition), 0.25*vec4(finalVoxelColor, opacity));
+	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(g_normal, 0));
 //    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor, 1-alpha));
 }
