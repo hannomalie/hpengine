@@ -63,7 +63,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist <= moments.x) {
-		//return vec3(1.0,1.0,1.0);
+//		return vec3(1.0,1.0,1.0);
 	}
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
@@ -128,12 +128,13 @@ void main()
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
-    vec4 diffuseVoxelTraced= traceVoxelsDiffuse(6, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, 1, g_pos, normalize(g_normal), 0.1*float(material.roughness), 70); // 0.05
-    vec3 maxMultipleBounce = vec3(0.5);
-    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + 0.25*specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+    const int SAMPLE_COUNT = 4;
+    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.1*float(material.roughness), 70); // 0.05
+    vec3 maxMultipleBounce = vec3(1.25);
+    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
-	imageStore(out_voxel, ivec3(gridPosition), 0.25*vec4(finalVoxelColor, opacity));
+	imageStore(out_voxel, ivec3(gridPosition), vec4(finalVoxelColor, opacity));
 	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(g_normal, 0));
 //    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor, 1-alpha));
 }

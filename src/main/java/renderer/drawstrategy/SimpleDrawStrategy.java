@@ -291,9 +291,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         doPointLights(viewMatrix, projectionMatrix);
 
+        GPUProfiler.start("Extensions");
         for(RenderExtension extension : renderExtensions) {
             extension.renderSecondPassFullScreen(renderExtract, secondPassResult);
         }
+        GPUProfiler.end();
 
         OpenGLContext.getInstance().disable(BLEND);
 
@@ -304,7 +306,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("MipMap generation AO and light buffer");
         OpenGLContext.getInstance().activeTexture(0);
         TextureFactory.getInstance().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
-        TextureFactory.getInstance().generateMipMaps(gBuffer.getAmbientOcclusionMapId());
         GPUProfiler.end();
 
         if (Config.USE_GI) {
@@ -319,14 +320,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         for(RenderExtension extension: renderExtensions) {
-            extension.renderSecondPassFullScreen(renderExtract, secondPassResult);
+            extension.renderSecondPassHalfScreen(renderExtract, secondPassResult);
         }
 
         GPUProfiler.start("Blurring");
-        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.WIDTH / 2, Config.HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
+//        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.WIDTH / 2, Config.HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
-//		renderer.blur2DTexture(getAmbientOcclusionMapId(), (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
+//		Renderer.getInstance().blur2DTexture(gBuffer.getAmbientOcclusionMapId(), 0, (int)(Config.WIDTH), (int)(Config.HEIGHT), GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTextureBilateral(getLightAccumulationMapOneId(), 0, (int)(renderer.WIDTH*SECONDPASSSCALE), (int)(renderer.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
 
 //		renderer.blur2DTexture(halfScreenTarget.getRenderedTexture(0), (int)(renderer.WIDTH*0.5), (int)(renderer.HEIGHT*0.5), GL11.GL_RGBA8, false, 1);

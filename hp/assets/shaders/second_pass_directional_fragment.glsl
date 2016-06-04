@@ -35,17 +35,8 @@ uniform vec3 environmentMapMax[100];
 
 in vec2 pass_TextureCoord;
 layout(location=0)out vec4 out_DiffuseSpecular;
-layout(location=1)out vec4 out_AOReflection;
 
 //include(globals.glsl)
-
-///////////////////// AO
-uniform bool useAmbientOcclusion = false;
-uniform bool useColorBleeding = false;
-uniform float ambientOcclusionRadius = 0.006;
-uniform float ambientOcclusionTotalStrength = 0.38;
-uniform float ambientOcclusionStrength = 0.7;
-uniform float ambientOcclusionFalloff = 0.001;
 
 
 float maxDepth(sampler2D sampler, vec2 texCoords, float inBlurDistance) {
@@ -219,14 +210,6 @@ void main(void) {
 	float ambient = normalAmbient.a;
 	ambient += 0.001;
 	out_DiffuseSpecular.rgb += ambient * color.rgb;
-	
-	//out_DiffuseSpecular.rgb = normalWorld/2+1;
-	//out_AOReflection.gba = vec3(0,0,0);
-	/*if(SCATTERING) {
-		out_AOReflection.gba += scatterFactor * scatter(positionWorld, -eyePosition);
-	} else {
-		out_AOReflection.gba = vec3(0,0,0);
-	}*/
 	
 	//out_DiffuseSpecular = vec4(color,1);
 	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);

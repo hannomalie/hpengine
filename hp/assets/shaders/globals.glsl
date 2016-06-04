@@ -451,7 +451,21 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
-    return textureLod(grid, samplePositionNormalized, level);
+    vec4 result = 0.2*textureLod(grid, samplePositionNormalized, level);
+
+    float amount = 0.005;
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, -amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, -amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, -amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, -amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, amount), level);
+
+    return result;
+
+//    return textureLod(grid, samplePositionNormalized, level);
 }
 
 vec4 voxelTraceCone(sampler3D grid, int gridSize, float sceneScale, float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
@@ -559,7 +573,7 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
 
     vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
     vec3 bitangent = cross(normalWorld, tangent);
-    float minVoxelDiameter = 8;//2/sceneScale;
+    float minVoxelDiameter = 6*sceneScale;
     float coneRatio = 6;
 //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
   voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld), coneRatio, 150);
