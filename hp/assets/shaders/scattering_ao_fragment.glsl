@@ -351,13 +351,15 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		if (shadowMapValue > (worldInShadowCameraSpace.z - ditherValue * 0.0001))
 		{
 			accumFog += ComputeScattering(NdotL);
-		} else {
+		}
+		{
 //			accumFogShadow += 0.0005f * ComputeScattering(NdotL);
 
 			const bool useVoxelConeTracing = false;
 			if(useVoxelConeTracing) {
-				vec4 voxel = voxelFetch(currentPosition.xyz, 4);
-				accumFogShadow += 0.01f*voxel.rgb;
+			    int mipLevel = 5;
+				vec4 voxel = voxelFetch(currentPosition, mipLevel);
+				accumFogShadow += voxel.rgb;
 			}
 		}
 
@@ -367,50 +369,97 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	return (accumFog * lightDiffuse) + accumFogShadow;
 }
 
+vec3 getPosition(in vec2 uv) {
+    return textureLod(positionMap, uv, 0).xyz;
+}
+vec3 getNormal(in vec2 uv) {
+    return textureLod(normalMap, uv, 0).xyz;
+}
+
+float doAmbientOcclusion(in vec2 tcoord,in vec2 uv, in vec3 p, in vec3 cnorm) {
+    float g_bias = 0.5f;
+    float g_scale = 0.01;
+    float g_intensity = 3.5;
+
+    vec3 diff = getPosition(tcoord + uv) - p;
+    const vec3 v = normalize(diff);
+    const float d = length(diff)*g_scale;
+    return max(0.0,dot(cnorm,v)-g_bias)*(1.0/(1.0+d))*g_intensity;
+}
 float getAmbientOcclusion(vec2 st) {
-	
-	float ao = 1;
-	vec3 ssdo = vec3(0,0,0);
-	
-	float sum = 0.0;
-	float prof = texture(motionMap, st.xy).b; // depth
-	vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
-	const int NUM_SAMPLES = 4;
-	int hf = NUM_SAMPLES/2;
-	
-	//calculate sampling rates:
-	float ratex = (1.0/screenWidth);
-	float ratey = (1.0/screenHeight);
-	float incx2 = ratex*8;//ao radius
-	float incy2 = ratey*8;
-	if (useAmbientOcclusion) {
-		for(int i=-hf; i < hf; i++) {
-		      for(int j=-hf; j < hf; j++) {
-		 
-		      if (i != 0 || j!= 0) {
-	 
-			      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
-			
-			      float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
-			      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
-			
-			      //OCCLUSION:
-			      //calculate approximate pixel distance:
-			      vec3 dist2 = vec3(coords2,prof-prof2g);
-			      //calculate normal and sampling direction coherence:
-			      float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
-			      //if there is coherence, calculate occlusion:
-			      if (coherence2 > 0){
-			          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
-			          sum += clamp(pformfactor2*0.5,0.0,1.0);//ao intensity;
-			      }
-		      }
-		   }
-		}
-	}
-	
-	ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
-	return ao;
+
+    const bool useCrytekAO = false;
+    if(useCrytekAO) {
+        const vec2 vec[4] = {vec2(1,0),vec2(-1,0),
+                    vec2(0,1),vec2(0,-1)};
+        vec3 p = getPosition(st);
+        vec3 n = getNormal(st);
+        vec2 rand = vec2(rand(st), rand(vec2(1)-st));
+        float g_sample_rad = 10;
+
+        float ao = 0.0f;
+        float rad = g_sample_rad/p.z;
+
+        //**SSAO Calculation**//
+        int iterations = 4;
+        for (int j = 0; j < iterations; ++j) {
+          vec2 coord1 = reflect(vec[j],rand)*rad;
+          vec2 coord2 = vec2(coord1.x*0.707 - coord1.y*0.707,
+                      coord1.x*0.707 + coord1.y*0.707);
+
+          ao += doAmbientOcclusion(st,coord1*0.25, p, n);
+          ao += doAmbientOcclusion(st,coord2*0.5, p, n);
+          ao += doAmbientOcclusion(st,coord1*0.75, p, n);
+          ao += doAmbientOcclusion(st,coord2, p, n);
+        }
+        ao/= float(iterations)*4.0;
+
+        return 1-ao;
+
+    } else {
+        float ao = 1;
+        vec3 ssdo = vec3(0,0,0);
+
+        float sum = 0.0;
+        float prof = texture(motionMap, st.xy).b; // depth
+        vec3 norm = normalize(vec3(texture(normalMap, st.xy).xyz)); //*2.0-vec3(1.0)
+        const int NUM_SAMPLES = 4;
+        int hf = NUM_SAMPLES/2;
+
+        //calculate sampling rates:
+        float ratex = (1.0/screenWidth);
+        float ratey = (1.0/screenHeight);
+        float incx2 = ratex*8;//ao radius
+        float incy2 = ratey*8;
+        if (useAmbientOcclusion) {
+            for(int i=-hf; i < hf; i++) {
+                  for(int j=-hf; j < hf; j++) {
+
+                  if (i != 0 || j!= 0) {
+
+                      vec2 coords2 = vec2(i*incx2,j*incy2)/prof;
+
+                      float prof2g = texture2D(motionMap,st.xy+coords2*rand(st.xy)).b; // depth
+                      vec3 norm2g = normalize(vec3(texture2D(normalMap,st.xy+coords2*rand(st.xy)).xyz)); //*2.0-vec3(1.0)
+
+                      //OCCLUSION:
+                      //calculate approximate pixel distance:
+                      vec3 dist2 = vec3(coords2,prof-prof2g);
+                      //calculate normal and sampling direction coherence:
+                      float coherence2 = dot(normalize(-coords2),normalize(vec2(norm2g.xy)));
+                      //if there is coherence, calculate occlusion:
+                      if (coherence2 > 0){
+                          float pformfactor2 = 0.5*((1.0-dot(norm,norm2g)))/(3.1416*pow(abs(length(dist2*2)),2.0)+0.5);//el 4: depthscale
+                          sum += clamp(pformfactor2*0.25,0.0,1.0);//ao intensity;
+                      }
+                  }
+               }
+            }
+        }
+
+        ao = clamp(1.0-(sum/NUM_SAMPLES),0,1);
+        return ao;
+    }
 }
 void main(void) {
 	vec2 st;

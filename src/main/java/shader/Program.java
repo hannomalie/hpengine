@@ -201,7 +201,8 @@ public class Program extends AbstractProgram implements Reloadable {
 				((this.geometryShaderSource == null && otherProgram.geometryShaderSource == null) ||
 				(this.geometryShaderSource.equals(otherProgram.geometryShaderSource))) &&
 			this.vertexShaderSource.equals(otherProgram.vertexShaderSource) &&
-			this.fragmentShaderSource.equals(otherProgram.fragmentShaderSource)) {
+			this.fragmentShaderSource.equals(otherProgram.fragmentShaderSource) &&
+            this.defines.isEmpty()) {
 			return true;
 		}
 		return false;
@@ -214,6 +215,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		hash += (geometryShaderSource != null? geometryShaderSource.hashCode() : 0);
 		hash += (vertexShaderSource != null? vertexShaderSource.hashCode() : 0);
 		hash += (fragmentShaderSource != null? fragmentShaderSource.hashCode() : 0);
+        hash += defines.hashCode();
 		return hash;
 	};
 	

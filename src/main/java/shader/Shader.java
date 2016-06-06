@@ -38,7 +38,9 @@ public interface Shader extends Reloadable {
             return null;
         }
 
-        String resultingShaderSource = "#version 430 core \n" + mapDefinesString + "\n" + ShaderDefine.getGlobalDefinesString();
+        String resultingShaderSource = "#version 430 core \n"
+                + mapDefinesString + "\n"
+                + ShaderDefine.getGlobalDefinesString() + "\n";
 
         String findStr = "\n";
         int newlineCount = (resultingShaderSource.split(findStr, -1).length - 1);
@@ -143,7 +145,8 @@ public interface Shader extends Reloadable {
     enum OpenGLShader {
         VertexShader(GL20.GL_VERTEX_SHADER),
         FragmentShader(GL20.GL_FRAGMENT_SHADER),
-        GeometryShader(GL32.GL_GEOMETRY_SHADER), ComputeShader(GL43.GL_COMPUTE_SHADER);
+        GeometryShader(GL32.GL_GEOMETRY_SHADER),
+        ComputeShader(GL43.GL_COMPUTE_SHADER);
 
         public final int glShaderType;
 

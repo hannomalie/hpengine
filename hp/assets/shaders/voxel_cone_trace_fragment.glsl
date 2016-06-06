@@ -9,6 +9,8 @@ layout(binding=6) uniform sampler2D shadowMap; // momentum1, momentum2, normal
 layout(binding=7) uniform sampler2D visibilityMap;
 layout(binding=8) uniform samplerCubeArray probes;
 
+layout(binding=11) uniform sampler2D aoScattering;
+
 layout(binding=13) uniform sampler3D grid;
 layout(binding=14) uniform sampler3D normalGrid;
 
@@ -24,6 +26,8 @@ uniform int gridSize;
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
 uniform float secondPassScale = 1;
+
+uniform bool useAmbientOcclusion = true;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -127,6 +131,9 @@ void main(void) {
         }
     }
 
+	if(useAmbientOcclusion) {
+	    vec4 AOscattering = textureLod(aoScattering, st, 0);
+		vct *= clamp(AOscattering.r,0.0,1.0);
+	}
     out_DiffuseSpecular.rgb = vct;
-
 }

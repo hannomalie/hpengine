@@ -86,7 +86,7 @@ public class GBuffer {
 		halfScreenBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH / 2).setHeight(Config.HEIGHT / 2)
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
-                                .setTextureFilter(GL11.GL_LINEAR))
+                                .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
 						.build();
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();

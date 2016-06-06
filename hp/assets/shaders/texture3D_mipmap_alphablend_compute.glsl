@@ -29,7 +29,7 @@ vec3[8] fetchNormalTexels(ivec3 pos) {
 
 float dotSaturate(vec3 a, vec3 b) {
     return 1;
-//    return clamp(dot(a,b), 0.25f, 1);
+//    return clamp(dot(a,b), 0.0f, 1.0f);
 }
 
 void main(void) {
@@ -45,9 +45,9 @@ void main(void) {
 	vec4 values[8] = fetchTexels(loadPosition);
 	vec3 normalValues[8] = fetchNormalTexels(loadPosition);
 	vec4 finalValue = (values[0] + values[4] * (1 - values[0].a) * dotSaturate(normalValues[0], -(normalValues[4]))
-                                                             + values[1] + values[5] * (1 - values[1].a) * dotSaturate(normalValues[5], -(normalValues[1]))
-                                                             + values[2] + values[6] * (1 - values[2].a) * dotSaturate(normalValues[6], -(normalValues[2]))
-                                                             + values[3] + values[7] * (1 - values[3].a) * dotSaturate(normalValues[7], -(normalValues[3]))) / 4;
+                     + values[1] + values[5] * (1 - values[1].a) * dotSaturate(normalValues[5], -(normalValues[1]))
+                     + values[2] + values[6] * (1 - values[2].a) * dotSaturate(normalValues[6], -(normalValues[2]))
+                     + values[3] + values[7] * (1 - values[3].a) * dotSaturate(normalValues[7], -(normalValues[3]))) / 4;
     imageStore(target, storePos, finalValue);
 //    imageStore(targetTwo, storePos, finalValue);
 

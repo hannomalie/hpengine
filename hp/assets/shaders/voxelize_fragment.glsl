@@ -131,7 +131,7 @@ void main()
     const int SAMPLE_COUNT = 4;
     vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
     vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.1*float(material.roughness), 70); // 0.05
-    vec3 maxMultipleBounce = vec3(1.25);
+    vec3 maxMultipleBounce = vec3(.025);
     finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
 	imageStore(out_voxel, ivec3(gridPosition), vec4(finalVoxelColor, opacity));

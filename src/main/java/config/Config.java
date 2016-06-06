@@ -46,7 +46,7 @@ public final class Config {
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
 	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
 	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 8f;
-	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = true;
+	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = false;
 	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
 	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;

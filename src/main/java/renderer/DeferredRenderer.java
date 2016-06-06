@@ -113,9 +113,9 @@ public class DeferredRenderer implements Renderer {
             setCurrentState("INITIALIZING");
             setupOpenGL(Config.isHeadless());
             objLoader = new OBJLoader();
+            ProgramFactory.init();
             TextureFactory.init();
             DeferredRenderer.exitOnGLError("After TextureFactory");
-            ProgramFactory.init();
             try {
                 setupShaders();
                 setUpGBuffer();

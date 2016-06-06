@@ -11,7 +11,9 @@ import org.lwjgl.util.vector.Vector2f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
-import renderer.material.Material;
+import shader.ComputeShaderProgram;
+import shader.ProgramFactory;
+import shader.define.Define;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -48,6 +50,14 @@ public class TextureFactory {
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
     private static volatile boolean USE_TEXTURE_STREAMING = false;
 
+    public static Texture getLensFlareTexture() {
+        return lensFlareTexture;
+    }
+
+    private static Texture lensFlareTexture;
+    private final ComputeShaderProgram blur2dProgramSeperableHorizontal;
+    private final ComputeShaderProgram blur2dProgramSeperableVertical;
+
     public static TextureFactory getInstance() {
         if(instance == null) {
             throw new IllegalStateException("Call AppContext.init() before using it");
@@ -58,6 +68,7 @@ public class TextureFactory {
     public static void init() {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
+        lensFlareTexture = instance.getTexture("hp\\assets\\textures\\lens_flare_tex.jpg", true);
     }
 
     /** The table of textures that have been loaded in this loader */
@@ -92,6 +103,15 @@ public class TextureFactory {
                                             DataBuffer.TYPE_BYTE);
 
 //    	loadAllAvailableTextures();
+
+        ArrayList horizontalDefines = new ArrayList() {{
+            add(Define.getDefine("HORIZONTAL", true));
+        }};
+        ArrayList verticalDefines = new ArrayList() {{
+            add(Define.getDefine("VERTICAL", true));
+        }};
+        blur2dProgramSeperableHorizontal = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
+        blur2dProgramSeperableVertical = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
         DeferredRenderer.exitOnGLError("After TextureFactory constructor");
 
@@ -604,5 +624,42 @@ public class TextureFactory {
             GL30.glGenerateMipmap(GL12.GL_TEXTURE_3D);
         });
         return grid[0];
+    }
+
+    public void blur2DTextureRGBA16F(int sourceTexture, int width, int height, int mipmapTarget, int mipmapSource) {
+
+        OpenGLContext.getInstance().execute(() -> {
+            blur2dProgramSeperableHorizontal.use();
+            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
+            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            blur2dProgramSeperableHorizontal.setUniform("width", width);
+            blur2dProgramSeperableHorizontal.setUniform("height", height);
+            blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
+            blur2dProgramSeperableHorizontal.setUniform("mipmapTarget", mipmapTarget);
+            blur2dProgramSeperableHorizontal.dispatchCompute(width/8, height/8, 1);
+
+            blur2dProgramSeperableVertical.use();
+//            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
+//            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            blur2dProgramSeperableVertical.setUniform("width", width);
+            blur2dProgramSeperableVertical.setUniform("height", height);
+            blur2dProgramSeperableVertical.setUniform("mipmapSource", mipmapSource);
+            blur2dProgramSeperableVertical.setUniform("mipmapTarget", mipmapTarget);
+            blur2dProgramSeperableVertical.dispatchCompute(width/8, height/8, 1);
+        });
+    }
+
+    public void blurHorinzontal2DTextureRGBA16F(int sourceTexture, int width, int height, int mipmapTarget, int mipmapSource) {
+
+        OpenGLContext.getInstance().execute(() -> {
+            blur2dProgramSeperableHorizontal.use();
+            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
+            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            blur2dProgramSeperableHorizontal.setUniform("width", width);
+            blur2dProgramSeperableHorizontal.setUniform("height", height);
+            blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
+            blur2dProgramSeperableHorizontal.setUniform("mipmapTarget", mipmapTarget);
+            blur2dProgramSeperableHorizontal.dispatchCompute(width/8, height/8, 1);
+        });
     }
 }

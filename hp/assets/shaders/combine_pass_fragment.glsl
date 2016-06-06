@@ -386,7 +386,7 @@ void main(void) {
   	
 	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
 	
-	vec4 AOscattering = textureLod(aoScattering, st, 3);
+	vec4 AOscattering = textureLod(aoScattering, st, 0);
 	vec3 scattering = AOscattering.gba;
 
 	vec4 refracted = textureLod(refractedMap, st, 0).rgba;
@@ -399,9 +399,9 @@ void main(void) {
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
 	vec3 ambientTerm = ambientColor*environmentLight;
-	if(useAmbientOcclusion) {
-		ambientTerm *= clamp(ao,0,1);
-	}
+//	if(useAmbientOcclusion) {
+//		ambientTerm *= clamp(ao,0,1);
+//	}
 	
 	
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
@@ -436,7 +436,7 @@ void main(void) {
 //	out_color.rgb = ambientTerm;
 //	out_color.rgb = vec3(roughness,roughness,roughness);
 	//out_color.rgb = specularColor;
-	//out_color.rgb = vec3(ao,ao,ao);
+//	out_color.rgb = vec3(ao,ao,ao);
 	//out_color.rgb = reflectedColor.rgb;
 	//float motion = textureLod(motionMap, st, 0).r;
 	//out_color.rgb = vec3(motion,0);

@@ -4,9 +4,11 @@ import engine.AppContext;
 import engine.model.DataChannels;
 import org.apache.commons.io.FileUtils;
 import renderer.OpenGLContext;
+import shader.define.Define;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -68,9 +70,12 @@ public class ProgramFactory {
 		return program;
 	}
 
-	public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
+    public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
+        return getComputeProgram(computeShaderLocation, Collections.EMPTY_LIST);
+    }
+	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, List<Define> defines) {
         return OpenGLContext.getInstance().calculate(() -> {
-            ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)));
+            ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
             return program;

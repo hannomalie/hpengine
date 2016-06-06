@@ -2,6 +2,7 @@
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
 layout(binding=3) uniform sampler2D motionMap;
+layout(binding=4) uniform sampler2D lensflareMap;
 
 layout(std430, binding=0) buffer myBlock
 { 
@@ -438,9 +439,9 @@ vec3 textureDistorted(
  	return vec3(r, g, b);
 }
 vec3 calculateLensflare(vec2 texcoord) {
-	float uGhostDispersal = 0.053f;
+	float uGhostDispersal = 0.53f;
 	int uGhosts = 3;
-	float uHaloWidth = 0.0025f;
+	float uHaloWidth = 0.25f;
 	float uDistortion = 0.0001f;
 
 	vec3 camx = -cameraRightDirection;
@@ -468,6 +469,8 @@ vec3 calculateLensflare(vec2 texcoord) {
 		float luminance = (0.2126*textureSample.r + 0.7152*textureSample.g + 0.0722*textureSample.b);
 		result.rgb += textureSample * luminance;
 	  }
+
+	  result.rgb *= pow(texture(lensflareMap, 1-texcoord).rgb, vec3(1.0/2.2));
 	return result.rgb;
 }
 
@@ -509,14 +512,15 @@ void main()
 		    out_color.a = 1;
 		    vec3 brightColor = out_color.rgb;
 
-		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.9 - exposure/100.0, 0.0, 1.0));
+		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.8 - exposure/50.0, 0.0, 1.0));
 
-			const bool useLensflare = true;
-			if(useLensflare) {
-				vec3 lensflare = calculateLensflare(texcoord);
-				out_color.rgb += lensflare;
-			}
 	    }
+
+        const bool useLensflare = true;
+        if(useLensflare) {
+            vec3 lensflare = calculateLensflare(pass_TextureCoord);
+            out_color.rgb += lensflare;
+        }
 	} else {
 		const bool useFXAA = true;
 		if(useFXAA) {

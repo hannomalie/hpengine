@@ -2,6 +2,7 @@ package renderer.drawstrategy.extensions;
 
 import camera.Camera;
 import component.ModelComponent;
+import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
@@ -125,7 +126,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     @Override
     public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
-
+        GPUProfiler.start("VCT first pass");
         boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
@@ -202,11 +203,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
                 mipmapGrid(normalGrid, texture3DMipMapComputeProgram);
 
-                switchCurrentVoxelGrid();
                 GPUProfiler.end();
             }
             GL11.glColorMask(true, true, true, true);
         }
+        GPUProfiler.end();
     }
 
     private void mipmapGrid(int texture3D, ComputeShaderProgram shader) {
@@ -244,23 +245,31 @@ public class VoxelConeTracingExtension implements RenderExtension {
     @Override
     public void renderSecondPassFullScreen(RenderExtract renderExtract, SecondPassResult secondPassResult) {
 
+        GPUProfiler.start("VCT second pass");
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
-        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelSource);
+        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelTarget);
         OpenGLContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
 
         voxelConeTraceProgram.use();
         voxelConeTraceProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());
-        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix",renderExtract.camera.getViewMatrixAsBuffer());
+        voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
         voxelConeTraceProgram.setUniform("sceneScale", sceneScale);
-        voxelConeTraceProgram.setUniform("inverseSceneScale", 1f/sceneScale);
-        voxelConeTraceProgram.setUniform("gridSize",gridSize);
+        voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / sceneScale);
+        voxelConeTraceProgram.setUniform("gridSize", gridSize);
+        voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         Renderer.getInstance().getFullscreenBuffer().draw();
+        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
+        if(entityOrDirectionalLightHasMoved) {
+//            ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+            switchCurrentVoxelGrid();
+        }
+        GPUProfiler.end();
     }
 
 }

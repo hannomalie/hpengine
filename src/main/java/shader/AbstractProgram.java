@@ -1,7 +1,9 @@
 package shader;
 
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import event.GlobalDefineChangedEvent;
 
@@ -13,11 +15,13 @@ import org.lwjgl.util.vector.Vector3f;
 
 import com.google.common.eventbus.Subscribe;
 import renderer.OpenGLContext;
+import shader.define.Define;
 
 
 public abstract class AbstractProgram {
 
-	protected HashMap<String, Uniform> uniforms = new HashMap<>();
+    protected HashMap<String, Uniform> uniforms = new HashMap<>();
+    protected List<Define> defines = new ArrayList<>();
 	protected final int id = OpenGLContext.getInstance().createProgramId();
 	
 	public AbstractProgram() { }

@@ -137,7 +137,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             GPUProfiler.start("Combine pass");
-            combinePass(target, renderExtract.camera);
+            combinePass(target, renderExtract);
             GPUProfiler.end();
         } else {
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
@@ -299,9 +299,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         OpenGLContext.getInstance().disable(BLEND);
 
-        gBuffer.getLightAccumulationBuffer().unuse();
+        renderAOAndScattering(renderExtract);
 
-        renderAOAndScattering(camera, viewMatrix, projectionMatrix, directionalLight);
+        gBuffer.getLightAccumulationBuffer().unuse();
 
         GPUProfiler.start("MipMap generation AO and light buffer");
         OpenGLContext.getInstance().activeTexture(0);
@@ -324,6 +324,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         GPUProfiler.start("Blurring");
+        TextureFactory.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.WIDTH, Config.HEIGHT, 7, 8);
+        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
+        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
 //        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.WIDTH / 2, Config.HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
@@ -463,7 +466,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-    private void renderAOAndScattering(Entity cameraEntity, FloatBuffer viewMatrix, FloatBuffer projectionMatrix, DirectionalLight directionalLight) {
+    private void renderAOAndScattering(RenderExtract renderExtract) {
         if (!Config.useAmbientOcclusion && !Config.SCATTERING) {
             return;
         }
@@ -480,18 +483,18 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         gBuffer.getHalfScreenBuffer().use(true);
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use();
-        aoScatteringProgram.setUniform("eyePosition", cameraEntity.getPosition());
+        aoScatteringProgram.setUniform("eyePosition", renderExtract.camera.getPosition());
         aoScatteringProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         aoScatteringProgram.setUniform("ambientOcclusionRadius", Config.AMBIENTOCCLUSION_RADIUS);
         aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", Config.AMBIENTOCCLUSION_TOTAL_STRENGTH);
         aoScatteringProgram.setUniform("screenWidth", (float) Config.WIDTH / 2);
         aoScatteringProgram.setUniform("screenHeight", (float) Config.HEIGHT / 2);
-        aoScatteringProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-        aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-        aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-        aoScatteringProgram.setUniform("lightDirection", directionalLight.getViewDirection());
-        aoScatteringProgram.setUniform("lightDiffuse", directionalLight.getColor());
-        aoScatteringProgram.setUniform("scatterFactor", directionalLight.getScatterFactor());
+        aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
+        aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
+        aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
+        aoScatteringProgram.setUniform("lightDirection", renderExtract.directionalLight.getViewDirection());
+        aoScatteringProgram.setUniform("lightDiffuse", renderExtract.directionalLight.getColor());
+        aoScatteringProgram.setUniform("scatterFactor", renderExtract.directionalLight.getScatterFactor());
 //        aoScatteringProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
 //        aoScatteringProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
 //        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
@@ -568,17 +571,17 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
 
-    public void combinePass(RenderTarget target, Camera camera) {
+    public void combinePass(RenderTarget target, RenderExtract renderExtract) {
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
         TextureFactory.getInstance().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
         combineProgram.use();
-        combineProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
-        combineProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        combineProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
+        combineProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
         combineProgram.setUniform("screenWidth", (float) Config.WIDTH);
         combineProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        combineProgram.setUniform("camPosition", camera.getPosition());
+        combineProgram.setUniform("camPosition", renderExtract.camera.getPosition());
         combineProgram.setUniform("ambientColor", Config.AMBIENT_LIGHT);
         combineProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         combineProgram.setUniform("worldExposure", Config.EXPOSURE);
@@ -617,13 +620,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram.setUniform("worldExposure", Config.EXPOSURE);
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
-        postProcessProgram.setUniform("cameraRightDirection", camera.getTransform().getRightDirection());
-        postProcessProgram.setUniform("cameraViewDirection", camera.getTransform().getViewDirection());
+        postProcessProgram.setUniform("cameraRightDirection", renderExtract.camera.getTransform().getRightDirection());
+        postProcessProgram.setUniform("cameraViewDirection", renderExtract.camera.getTransform().getViewDirection());
         postProcessProgram.setUniform("seconds", Renderer.getInstance().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
+        OpenGLContext.getInstance().bindTexture(4, TEXTURE_2D, TextureFactory.getInstance().getLensFlareTexture().getTextureID());
         Renderer.getInstance().getFullscreenBuffer().draw();
 
         GPUProfiler.end();

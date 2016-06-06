@@ -4,13 +4,17 @@ import static log.ConsoleLogger.getLogger;
 import static shader.Shader.*;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import renderer.OpenGLContext;
+import shader.define.Define;
 import util.ressources.FileMonitor;
 import util.ressources.ReloadOnFileChangeListener;
 import util.ressources.Reloadable;
@@ -32,8 +36,12 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	private ReloadOnFileChangeListener<ComputeShaderProgram> reloadOnFileChangeListener;
 	private FileAlterationObserver observerShader;
 
-	public ComputeShaderProgram(ShaderSource computeShaderSource) {
+    public ComputeShaderProgram(ShaderSource computeShaderSource) {
+        this(computeShaderSource, Collections.EMPTY_LIST);
+    }
+	public ComputeShaderProgram(ShaderSource computeShaderSource, List<Define> defines) {
 		this.computeShaderSource = computeShaderSource;
+        this.defines = defines;
 
 		observerShader = new FileAlterationObserver(getDirectory());
 		load();
@@ -44,7 +52,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void load() {
 		clearUniforms();
 		try {
-            computeShader = ComputeShader.load(computeShaderSource);
+            computeShader = ComputeShader.load(computeShaderSource, Define.getStringForDefines(defines));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -155,7 +163,8 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		
 		ComputeShaderProgram otherProgram = (ComputeShaderProgram) other;
 		
-		if (this.computeShaderSource.equals(otherProgram.computeShaderSource == null)) {
+		if (this.computeShaderSource.equals(otherProgram.computeShaderSource == null) &&
+            this.defines.isEmpty()) {
 			return true;
 		}
 		return false;
@@ -165,6 +174,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public int hashCode() {
 		int hash = 0;
 		hash += (computeShaderSource != null? computeShaderSource.hashCode() : 0);
+        hash += defines.hashCode();
 		return hash;
 	};
 }
