@@ -618,3 +618,19 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
 //    }
     return voxelDiffuse;
 }
+
+
+vec2 cartesianToSpherical(vec3 cartCoords){
+	float a = atan(cartCoords.y/cartCoords.x);
+	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
+	return vec2(a, b);
+}
+
+vec3 sphericalToCartesian(vec2 spherical){
+	vec3 outCart;
+    outCart.x = cos(spherical.x) * sin(spherical.y);
+    outCart.y = sin(spherical.x) * sin(spherical.y);
+    outCart.z = cos(spherical.y);
+
+    return outCart;
+}

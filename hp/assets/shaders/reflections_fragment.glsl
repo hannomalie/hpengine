@@ -313,12 +313,6 @@ vec2 _cartesianToSpherical(vec3 cartCoords){
     return vec2(outPolar, outElevation);
 }
 
-vec2 cartesianToSpherical(vec3 cartCoords){
-	float a = atan(cartCoords.y/cartCoords.x);
-	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
-	return vec2(a, b);
-}
-    
 vec3 _sphericalToCartesian(vec2 input){
 	vec3 outCart;
     outCart.x = cos(input.x) * sin(input.y);
