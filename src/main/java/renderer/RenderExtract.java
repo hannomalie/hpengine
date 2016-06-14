@@ -17,13 +17,15 @@ public class RenderExtract {
     public final List<Entity> entities;
     public final List<Entity> visibleEntities = new ArrayList<>();
     public final DirectionalLight directionalLight;
-    public boolean anyPointLightHasMoved;
+    public final boolean anyPointLightHasMoved;
+    public final boolean sceneInitiallyDrawn;
 
     public RenderExtract(Camera camera, List<Entity> entities,
                          DirectionalLight directionalLight,
                          boolean anEntityHasMoved,
                          boolean directionalLightNeedsShadowMapRender,
-                         boolean anyPointLightHasMoved) {
+                         boolean anyPointLightHasMoved,
+                         boolean sceneInitiallyDrawn) {
         this.camera = camera;
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
@@ -41,5 +43,6 @@ public class RenderExtract {
         this.anEntityHasMoved = anEntityHasMoved;
         this.directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRender;
         this.anyPointLightHasMoved = anyPointLightHasMoved;
+        this.sceneInitiallyDrawn = sceneInitiallyDrawn;
     }
 }

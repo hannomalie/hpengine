@@ -31,11 +31,27 @@ public class VertexBufferTest extends TestWithOpenGLContext {
                 1.0f, -1.0f, 0.0f,    1.0f, 0f,
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
+        float[] vertexData2 = new float[] {
+                -1.0f, -1.0f, 0.0f,   0f, 0f,
+                1.0f, -1.0f, 0.0f,    0f, 0f,
+                -1.0f,  1.0f, 0.0f,   0f,  1.0f,
+                -1.0f,  1.0f, 0.0f,   0f,  0f,
+                1.0f, -1.0f, 0.0f,    1.0f, 0f,
+                1.0f,  1.0f, 0.0f,    1.0f,  1.0f,
+                1.0f, -1.0f, 0.0f,    1.0f, 0f,
+                1.0f,  1.0f, 0.0f,    1.0f,  1.0f
+        };
 
         VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        Assert.assertTrue(OpenGLContext.getInstance().calculate(
+                () -> GL15.glGetBufferParameter(GL15.GL_ARRAY_BUFFER, GL15.GL_BUFFER_MAPPED) == 1));
+        buffer.upload();
         float[] bufferedData = buffer.getVertexData();
         Assert.assertArrayEquals(vertexData, bufferedData, 0f);
         Assert.assertEquals(6, buffer.getVerticesCount());
+
+//        buffer.putValues(vertexData2);
+//        buffer.upload();
     }
 
 	@Test

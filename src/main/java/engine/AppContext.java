@@ -4,18 +4,13 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
-import component.PhysicsComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
-import event.AppContextInitializedEvent;
-import event.DirectionalLightHasMovedEvent;
-import event.EntityAddedEvent;
+import event.*;
 import event.bus.EventBus;
-import event.FrameFinishedEvent;
-import event.bus.MBassadorEventBus;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -48,7 +43,6 @@ import util.stopwatch.StopWatch;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -63,6 +57,7 @@ public class AppContext {
     private DrawResult latestDrawResult = null;
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
+    private volatile boolean sceneInitiallyDrawn;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -433,13 +428,14 @@ public class AppContext {
                 extractedCamera.init();
                 extractedCamera.update(0.0000001f);
 
-                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved);
+                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, sceneInitiallyDrawn);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;
                 if(directionalLightNeedsShadowMapRender) {
                     directionalLightNeedsShadowMapRedraw = !latestDrawResult.directionalLightShadowMapWasRendered();
                 }
+                sceneInitiallyDrawn = true;
             }, false);
             AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         } else {
@@ -452,10 +448,6 @@ public class AppContext {
     }
 
     private volatile boolean anyEntityHasMovedSomewhen = false;
-
-    public PhysicsFactory getPhysicsFactory() {
-        return physicsFactory;
-    }
 
     public Scene getScene() {
         return scene;
@@ -517,12 +509,19 @@ public class AppContext {
     public void handle(EntityAddedEvent e) {
         entityAdded = true;
         directionalLightNeedsShadowMapRedraw = true;
+        sceneInitiallyDrawn = false;
     }
 
     @Subscribe
     @Handler
     public void handle(DirectionalLightHasMovedEvent e) {
         directionalLightNeedsShadowMapRedraw = true;
+    }
+
+    @Subscribe
+    @Handler
+    public void handle(SceneInitEvent e) {
+        sceneInitiallyDrawn = false;
     }
 
     public boolean hasAnEntityMovedSomewhen() {

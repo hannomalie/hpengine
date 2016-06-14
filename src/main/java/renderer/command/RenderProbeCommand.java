@@ -22,7 +22,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	@Override
 	public Result execute(AppContext appContext) {
 		
-		probe.draw(urgent, new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true));
+		probe.draw(urgent, new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false));
 		
 		return new Result();
 	}
