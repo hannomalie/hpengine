@@ -451,9 +451,35 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
-    vec4 result = 0.2*textureLod(grid, samplePositionNormalized, level);
+    vec4 result = textureLod(grid, samplePositionNormalized, level);
 
     float amount = 0.005;
+
+    return result;
+
+//    return textureLod(grid, samplePositionNormalized, level);
+}
+vec4 voxelFetchBlurred(sampler3D grid, int gridSize, float sceneScale, vec3 positionWorld, float loD) {
+    const int gridSizeHalf = gridSize/2;
+    float inverseSceneScale = 1.f/sceneScale;
+
+    vec3 positionGridScaled = inverseSceneScale*positionWorld;
+    if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
+       any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
+
+       return vec4(0);
+    }
+
+    int level = int(loD);
+    vec3 positionAdjust = vec3(gridSize/pow(2, level+1));
+    float positionScaleFactor = pow(2, level);
+
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+
+    vec4 result = textureLod(grid, samplePositionNormalized, level);
+
+    float amount = 0.005;
+    result *= 0.2;
     result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, amount), level);
     result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, amount), level);
     result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, amount), level);
@@ -464,8 +490,6 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
     result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, amount), level);
 
     return result;
-
-//    return textureLod(grid, samplePositionNormalized, level);
 }
 
 vec4 voxelTraceCone(sampler3D grid, int gridSize, float sceneScale, float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
