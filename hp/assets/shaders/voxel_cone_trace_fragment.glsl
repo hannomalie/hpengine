@@ -13,6 +13,7 @@ layout(binding=11) uniform sampler2D aoScattering;
 
 layout(binding=13) uniform sampler3D grid;
 layout(binding=14) uniform sampler3D normalGrid;
+layout(binding=15) uniform sampler3D albedoGrid;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -135,5 +136,7 @@ void main(void) {
 	    vec4 AOscattering = textureLod(aoScattering, st, 0);
 		vct *= clamp(AOscattering.r,0.0,1.0);
 	}
+
+//	vct = voxelTraceCone(albedoGrid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.01, 370).rgb;
     out_DiffuseSpecular.rgb = vct;
 }

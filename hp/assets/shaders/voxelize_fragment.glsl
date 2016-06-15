@@ -4,7 +4,7 @@ layout(binding=2) uniform sampler2D specularMap;
 layout(binding =3, rgba8) uniform image3D out_voxelNormal;
 //layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
-layout(binding = 5, rgba8) uniform image3D out_voxel;
+layout(binding = 5, rgba8) uniform image3D out_voxelAlbedo;
 //layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform sampler2D shadowMap;
 layout(binding=7) uniform sampler2D roughnessMap;
@@ -26,6 +26,8 @@ in vec2 g_texcoord;
 
 uniform int materialIndex;
 uniform int entityIndex;
+uniform int isStatic;
+
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
@@ -112,6 +114,10 @@ void main()
     const int gridSizeHalf = gridSize/2;
     vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
 
+    vec3 positionGridScaled = inverseSceneScale*g_pos.xyz;
+    vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
+    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).a > 0) { discard; }
+
     float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
@@ -128,13 +134,7 @@ void main()
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
-    const int SAMPLE_COUNT = 4;
-    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelVolume, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelVolume, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.1*float(material.roughness), 70); // 0.05
-    vec3 maxMultipleBounce = vec3(.025);
-    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + specularColor * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
-
-	imageStore(out_voxel, ivec3(gridPosition), vec4(finalVoxelColor, opacity));
-	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(g_normal, 0));
-//    imageStore(out_voxel, ivec3(gridPosition), vec4(voxelColor, 1-alpha));
+	imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(color.rgb, opacity));
+	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(cartesianToSpherical(g_normal), 0.25*material.ambient , isStatic));
+    imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(1,0,0,1));
 }
