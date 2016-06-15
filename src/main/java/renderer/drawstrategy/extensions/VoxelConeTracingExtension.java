@@ -93,6 +93,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private final Program voxelConeTraceProgram;
     private final ComputeShaderProgram texture3DMipMapAlphaBlendComputeProgram;
     private final ComputeShaderProgram texture3DMipMapComputeProgram;
+    private final ComputeShaderProgram clearDynamicVoxelsComputeProgram;
+    private final ComputeShaderProgram injectLightComputeProgram;
+    private final int albedoGrid;
     int normalGrid;
     int currentVoxelTarget;
     int currentVoxelSource;
@@ -104,6 +107,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
         texture3DMipMapAlphaBlendComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
         texture3DMipMapComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
+        clearDynamicVoxelsComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");
+        injectLightComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_inject_light_compute.glsl");
 
 
         grid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
@@ -111,6 +116,10 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
         gridTwo = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
+                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_LINEAR,
+                GL12.GL_CLAMP_TO_EDGE);
+        albedoGrid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
