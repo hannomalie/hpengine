@@ -6,6 +6,7 @@ import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import octree.Octree;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
@@ -177,7 +178,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-            firstpassDefaultProgram.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
+            firstpassDefaultProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
             firstpassDefaultProgram.setUniform("useNormalMaps", !Config.DRAWLINES_ENABLED);

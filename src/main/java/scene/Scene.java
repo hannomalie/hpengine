@@ -5,6 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import event.*;
 import net.engio.mbassy.listener.Handler;
 import octree.Octree;
@@ -36,9 +37,6 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-    // TODO: Move this to the factory maybe?
-    private volatile transient OpenGLBuffer entitiesBuffer;
-	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
@@ -57,7 +55,6 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-        entitiesBuffer = new PersistentMappedBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 		octree.init();
 		entities.forEach(entity -> entity.init());
@@ -249,23 +246,4 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
-    public void bufferEntities() {
-        entitiesBuffer.put(Util.toArray(getEntities(), Entity.class));
-    }
-
-    @Subscribe
-    @Handler
-    public void handle(EntityAddedEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
-    public void handle(EntityChangedMaterialEvent event) {
-        int offset = event.getEntity().getElementsPerObject() * octree.getEntities().indexOf(event.getEntity());
-        entitiesBuffer.put(offset, event.getEntity());
-    }
-
-    public OpenGLBuffer getEntitiesBuffer() {
-        return entitiesBuffer;
-    }
 }

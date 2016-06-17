@@ -6,6 +6,7 @@ import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -168,7 +169,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 voxelizer.setUniform("lightColor", scene.getDirectionalLight().getColor());
             }
             voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-            voxelizer.bindShaderStorageBuffer(3, AppContext.getInstance().getScene().getEntitiesBuffer());
+            voxelizer.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
             voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
