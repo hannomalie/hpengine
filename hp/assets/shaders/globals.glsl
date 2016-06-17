@@ -240,28 +240,6 @@ float surface3 ( vec3 coord, float frequency) {
     return n;
 }
 
-mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
-{
-	vec3 dp1 = dFdx( p );
-	vec3 dp2 = dFdy( p );
-	vec2 duv1 = dFdx( uv );
-	vec2 duv2 = dFdy( uv );
-
-	vec3 dp2perp = cross( dp2, N );
-	vec3 dp1perp = cross( N, dp1 );
-	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
-
-	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-	return mat3( T * invmax, B * invmax, N );
-}
-vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
-{
-	vec3 map = (texture(normalMap, texcoord)).xyz;
-	map = map * 2 - 1;
-	mat3 TBN = cotangent_frame( N, V, texcoord );
-	return normalize( TBN * map );
-}
 
 vec2 encodeNormal(vec3 n) {
     return vec2((vec2(atan(n.y,n.x)/kPI, n.z)+1.0)*0.5);
@@ -644,17 +622,36 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
 }
 
 
-vec2 cartesianToSpherical(vec3 cartCoords){
-	float a = atan(cartCoords.y/cartCoords.x);
-	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
-	return vec2(a, b);
+//vec2 cartesianToSpherical(vec3 cartCoords){
+//    cartCoords = cartCoords;
+//	float a = atan(cartCoords.y/cartCoords.x);
+//	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
+//	return vec2(a, b);
+//}
+//
+//vec3 sphericalToCartesian(vec2 spherical){
+//	vec3 outCart;
+//    outCart.x = cos(spherical.x) * sin(spherical.y);
+//    outCart.y = sin(spherical.x) * sin(spherical.y);
+//    outCart.z = cos(spherical.y);
+//
+//    return outCart;
+//}
+
+#define STEREOSCALE 1.77777f
+#define INVSTEREOSCALE (1.0f/STEREOSCALE)
+vec2 cartesianToSpherical(vec3 n) {
+    n = normalize(-n);
+    vec2 enc = (n.xy / (n.z+1)) * INVSTEREOSCALE;
+    return enc;
 }
-
-vec3 sphericalToCartesian(vec2 spherical){
-	vec3 outCart;
-    outCart.x = cos(spherical.x) * sin(spherical.y);
-    outCart.y = sin(spherical.x) * sin(spherical.y);
-    outCart.z = cos(spherical.y);
-
-    return outCart;
+vec3 sphericalToCartesian(vec2 enc) {
+    float scale = STEREOSCALE;
+    vec3 nn = vec3(enc.xy * vec2(scale,scale), 0);
+    nn.z = 1.0f;
+    float g = 2.0 / dot(nn.xyz,nn.xyz);
+    vec3 n;
+    n.xy = g*nn.xy;
+    n.z = g-1;
+    return normalize(-n);
 }

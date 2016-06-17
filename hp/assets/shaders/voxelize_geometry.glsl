@@ -95,7 +95,7 @@ void main()
         gl_Position = proj * vec4(vertexTemp,1);
         g_pos = vertexTemp.xyz;
 
-        g_normal = v_normal[i];
+        g_normal = faceNormal;//v_normal[i];
         g_texcoord = v_texcoord[i];
         EmitVertex();
 	}

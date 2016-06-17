@@ -112,11 +112,11 @@ void main()
     vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
 
     const int gridSizeHalf = gridSize/2;
-    vec3 gridPosition = vec3(inverseSceneScale)*g_pos.xyz + ivec3(gridSizeHalf);
+    vec3 gridPosition = vec3(inverseSceneScale) * g_pos.xyz + ivec3(gridSizeHalf);
 
     vec3 positionGridScaled = inverseSceneScale*g_pos.xyz;
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
-    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).a > 0) { discard; }
+//    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).a > 0) { discard; }
 
     float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;
@@ -135,6 +135,6 @@ void main()
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
 	imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(cartesianToSpherical(g_normal), 0.25*material.ambient , isStatic));
-    imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(1,0,0,1));
+	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(normalize(g_normal), 0.25*float(material.ambient)));
+//    imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(1,0,0,1));
 }

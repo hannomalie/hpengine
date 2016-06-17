@@ -68,6 +68,28 @@ layout(location=4)out vec4 out_visibility; // visibility
 
 //include(globals.glsl)
 
+mat3 cotangent_frame( vec3 N, vec3 p, vec2 uv )
+{
+	vec3 dp1 = dFdx( p );
+	vec3 dp2 = dFdy( p );
+	vec2 duv1 = dFdx( uv );
+	vec2 duv2 = dFdy( uv );
+
+	vec3 dp2perp = cross( dp2, N );
+	vec3 dp1perp = cross( N, dp1 );
+	vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+	vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+	float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
+	return mat3( T * invmax, B * invmax, N );
+}
+vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
+{
+	vec3 map = (texture(normalMap, texcoord)).xyz;
+	map = map * 2 - 1;
+	mat3 TBN = cotangent_frame( N, V, texcoord );
+	return normalize( TBN * map );
+}
 void main(void) {
 
     int entityIndex = outEntityIndex;
@@ -181,16 +203,6 @@ void main(void) {
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,materialIndex,entityIndex);
-
-    const int gridSizeHalf = gridSize/2;
-    vec3 gridPosition = vec3(inverseSceneScale)*position_world.xyz + ivec3(gridSizeHalf);
-    if(writeVoxels) {// && imageLoad(out_voxel, ivec3(gridPosition)).a < 1.0) {
-        float ambientAmount = 1.5f;
-        float dynamicAdjust = 0.125f;
-        vec3 voxelColor = (vec3(ambientAmount)+float(4*(1/dynamicAdjust)*material.ambient))*out_color.rgb;
-
-	    imageStore(out_voxel, ivec3(gridPosition), dynamicAdjust*vec4(voxelColor,1-alpha));
-    }
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

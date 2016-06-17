@@ -11,9 +11,9 @@ layout(binding=8) uniform samplerCubeArray probes;
 
 layout(binding=11) uniform sampler2D aoScattering;
 
+layout(binding=12) uniform sampler3D albedoGrid;
 layout(binding=13) uniform sampler3D grid;
 layout(binding=14) uniform sampler3D normalGrid;
-layout(binding=15) uniform sampler3D albedoGrid;
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -114,12 +114,11 @@ void main(void) {
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
 //        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 3).rgb;
 
-        //vec4 voxelTraceCone(grid, float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist)
-        vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(grid, 2, positionWorld, normalize(normalWorld), 5, 100);
 
         const int SAMPLE_COUNT = 4;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));

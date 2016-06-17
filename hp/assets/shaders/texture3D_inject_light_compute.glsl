@@ -36,7 +36,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist <= moments.x) {
-//		return vec3(1.0,1.0,1.0);
+		return vec3(1.0,1.0,1.0);
 	}
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
@@ -70,43 +70,47 @@ void main(void) {
 	float weightSum = 0;
 
 	float visibility = 1.0;
-	vec3 positionWorld = vec3(storePos)-vec3(sceneScale*float(gridSize));
+	vec3 positionWorld = sceneScale*vec3(storePos-vec3(float(gridSizeHalf)));
 	vec3 gridPosition = vec3(inverseSceneScale)*positionWorld.xyz + ivec3(gridSizeHalf);
     vec3 positionGridScaled = inverseSceneScale*gridPosition.xyz;
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
-    vec4 color = voxelFetch(albedoGrid, gridSize, sceneScale, positionWorld, 0);
-    vec4 normalEmissiveStatic = voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
-    vec3 g_normal = sphericalToCartesian(normalEmissiveStatic.xy);
+    vec4 color = texelFetch(albedoGrid, storePos, 0);//voxelFetch(albedoGrid, gridSize, sceneScale, positionWorld, 0);
+    vec4 normalEmissive = texelFetch(normalGrid, storePos, 0);//voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
+    vec3 g_normal = normalize(normalEmissive.xyz);
     vec3 g_pos = positionWorld;
     float opacity = color.a;
 
     float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float((1+dynamicAdjust)*4*normalEmissiveStatic.b))*voxelColor;
+    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalEmissive.a))*voxelColor;
 
 	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
+//	visibility = 1-visibility;
 
-    float NdotL = max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
+	vec3 lightDirectionTemp = lightDirection;
+//	lightDirectionTemp.z *=-1;
+    float NdotL = max(0.0, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
-    const int SAMPLE_COUNT = 4;
-    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
-    vec3 maxMultipleBounce = vec3(.025);
-    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb /*+ specularColor * voxelSpecular.rgb*/, vec3(0,0,0), maxMultipleBounce);
+//    const int SAMPLE_COUNT = 4;
+//    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
+//    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
+//    vec3 maxMultipleBounce = vec3(.025);
+//    finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb /*+ specularColor * voxelSpecular.rgb*/, vec3(0,0,0), maxMultipleBounce);
 
 
 	vec4 currentValue = textureLod(normalGrid, storePos, 0);
 //	if(currentValue.a < 0.1)
 	{
-//        imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
-        imageStore(voxelGrid, storePos, vec4(color.rgb, opacity));
+        imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
+//        imageStore(voxelGrid, storePos, vec4(vec3(visibility), opacity));
+//        imageStore(voxelGrid, storePos, vec4(vec3(positionWorld*0.00001f), opacity));
 	}
 }

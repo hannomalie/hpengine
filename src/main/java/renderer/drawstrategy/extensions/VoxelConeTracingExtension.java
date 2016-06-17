@@ -125,7 +125,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
         normalGrid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
-                GL11.GL_LINEAR_MIPMAP_LINEAR,
+                GL11.GL_NEAREST,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
 
@@ -220,11 +220,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
             injectLightComputeProgram.setUniform("gridSize",gridSize);
             if(scene != null) {
                 injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", scene.getDirectionalLight().getViewProjectionMatrixAsBuffer());
-                injectLightComputeProgram.setUniform("lightDirection", scene.getDirectionalLight().getDirection());
+                injectLightComputeProgram.setUniform("lightDirection", scene.getDirectionalLight().getCamera().getViewDirection());
                 injectLightComputeProgram.setUniform("lightColor", scene.getDirectionalLight().getColor());
             }
             int num_groups_xyz = Math.max(gridSize / 8, 1);
-            injectLightComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
+            injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
 
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){
@@ -281,9 +281,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        OpenGLContext.getInstance().bindTexture(12, TEXTURE_3D, albedoGrid);
         OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelTarget);
         OpenGLContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
-        OpenGLContext.getInstance().bindTexture(15, TEXTURE_3D, albedoGrid);
 
         voxelConeTraceProgram.use();
         voxelConeTraceProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());

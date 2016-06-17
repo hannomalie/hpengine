@@ -293,6 +293,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         doPointLights(viewMatrix, projectionMatrix);
 
         GPUProfiler.start("Extensions");
+        openGLContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         for(RenderExtension extension : renderExtensions) {
             extension.renderSecondPassFullScreen(renderExtract, secondPassResult);
         }
