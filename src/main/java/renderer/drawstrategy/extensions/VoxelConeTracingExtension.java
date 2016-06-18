@@ -297,7 +297,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
         if(entityOrDirectionalLightHasMoved) {
 //            if only second bounce, clear current target texture
-//            ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+            ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
             switchCurrentVoxelGrid();
         }
         GPUProfiler.end();

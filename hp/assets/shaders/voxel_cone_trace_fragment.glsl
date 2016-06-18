@@ -127,7 +127,7 @@ void main(void) {
 
         const bool useTransparency = false;
         if(useTransparency) {
-            vct = 4*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
+            vct = 4*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld+3*normalWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
         }
     }
 
