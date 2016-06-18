@@ -417,7 +417,7 @@ public class AppContext {
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
                 if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityAdded) && scene != null) {
-                    EntityFactory.getInstance().bufferEntities(); entityAdded = false;
+                    scene.bufferEntities(); entityAdded = false;
                 }
                 Renderer.getInstance().startFrame();
                 boolean directionalLightNeedsShadowMapRender = false;
