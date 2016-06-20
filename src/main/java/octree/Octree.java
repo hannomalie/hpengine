@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import static log.ConsoleLogger.getLogger;
 
-public class Octree implements LifeCycle, Serializable {
+public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
@@ -68,9 +68,10 @@ public class Octree implements LifeCycle, Serializable {
 		this.size = size;
 	}
 
-	public void init() {
+	@Override
+    public void init() {
 		LifeCycle.super.init();
-		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
+		executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors()/2);
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
@@ -84,7 +85,8 @@ public class Octree implements LifeCycle, Serializable {
 	public List<Entity> getEntitiesForNode(Node node) { return Collections.unmodifiableList(entityNodeMappings.entrySet().stream().filter(pair -> pair.getValue().equals(node))
 																					.map(pair -> pair.getKey()).collect(Collectors.toList()));}
 	
-	public void insert(Entity entity) {
+	@Override
+    public void insert(Entity entity) {
 
 		if(entity.hasChildren()) {
 			insert(entity.getChildren());
@@ -116,7 +118,8 @@ public class Octree implements LifeCycle, Serializable {
 	}
 	
 	
-	public void insert(List<Entity> toDispatch){
+	@Override
+    public void insert(List<Entity> toDispatch){
 
         if(toDispatch == null) {
             return;
@@ -133,7 +136,8 @@ public class Octree implements LifeCycle, Serializable {
 //		System.out.println("Took " + (end - start) + " ms to optimize.");
 	}
 
-	public List<Entity> getVisible(Camera camera) {
+	@Override
+    public List<Entity> getVisible(Camera camera) {
 		StopWatch.getInstance().start("Octree get visible");
 		List<Entity> result = new ArrayList<>();
 //		result.addAll(getEntitiesForNode(rootNode));
@@ -155,7 +159,8 @@ public class Octree implements LifeCycle, Serializable {
 		}
 	}
 	
-	public void drawDebug(Renderer renderer, Camera camera, Program program) {
+	@Override
+    public void drawDebug(Renderer renderer, Camera camera, Program program) {
 		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
 		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
 		
@@ -665,11 +670,13 @@ public class Octree implements LifeCycle, Serializable {
 		}
 	}
 
-	public List<Entity> getEntities() {
+	@Override
+    public List<Entity> getEntities() {
 		return new CopyOnWriteArrayList<>(entityNodeMappings.keySet());
 	}
 	
-	public int getEntityCount() {
+	@Override
+    public int getEntityCount() {
 		return getEntities().size();
 	}
 
@@ -677,7 +684,8 @@ public class Octree implements LifeCycle, Serializable {
 		return rootNode.getMaxDeepness();
 	}
 
-	public boolean removeEntity(Entity entity) {
+	@Override
+    public boolean removeEntity(Entity entity) {
 		entityNodeMappings.remove(entity);
 		return rootNode.remove(entity);
 	}

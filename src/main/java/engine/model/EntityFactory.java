@@ -1,9 +1,18 @@
 package engine.model;
 
+import com.google.common.eventbus.Subscribe;
+import engine.AppContext;
 import engine.model.Entity.Update;
+import event.EntityAddedEvent;
+import event.EntityChangedMaterialEvent;
+import event.SceneInitEvent;
+import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.material.Material;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedBuffer;
+import util.Util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,7 +21,10 @@ import java.util.List;
 
 public class EntityFactory {
     private static EntityFactory instance;
+    private volatile transient OpenGLBuffer entitiesBuffer;
+
     private EntityFactory() {
+        AppContext.getEventBus().register(this);
 	}
 	public Entity getEntity() {
 		Entity entity = new Entity();
@@ -115,7 +127,43 @@ public class EntityFactory {
         return instance;
     }
 
-    public static void init() {
+    public static void create() {
         instance = new EntityFactory();
+    }
+    public static void init() {
+        instance.entitiesBuffer = new PersistentMappedBuffer(16000);
+    }
+
+    public OpenGLBuffer getEntitiesBuffer() {
+        return entitiesBuffer;
+    }
+
+    public void bufferEntities(List<Entity> entities) {
+        entitiesBuffer.put(Util.toArray(entities, Entity.class));
+    }
+
+    public void bufferEntities() {
+        if(AppContext.getInstance().getScene() != null) {
+            bufferEntities(AppContext.getInstance().getScene().getEntities());
+        }
+    }
+
+    @Subscribe
+    @Handler
+    public void handle(EntityAddedEvent event) {
+        bufferEntities();
+    }
+    @Subscribe
+    @Handler
+    public void handle(SceneInitEvent event) {
+        bufferEntities();
+    }
+    @Subscribe
+    @Handler
+    public void handle(EntityChangedMaterialEvent event) {
+        if(AppContext.getInstance().getScene() != null) {
+            int offset = event.getEntity().getElementsPerObject() * AppContext.getInstance().getScene().getEntities().indexOf(event.getEntity());
+            entitiesBuffer.put(offset, event.getEntity());
+        }
     }
 }

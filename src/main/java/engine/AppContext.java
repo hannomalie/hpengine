@@ -12,6 +12,7 @@ import engine.model.OBJLoader;
 import event.*;
 import event.bus.EventBus;
 import net.engio.mbassy.listener.Handler;
+import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
@@ -40,6 +41,9 @@ import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.StopWatch;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,9 +114,9 @@ public class AppContext {
         }
 
         init();
-
         if (sceneName != null) {
-            Scene scene = Scene.read(Renderer.getInstance(), sceneName);
+            Renderer.getInstance();
+            Scene scene = Scene.read(sceneName);
             AppContext.getInstance().setScene(scene);
         }
 //        else {
@@ -141,8 +145,10 @@ public class AppContext {
         getEventBus().register(this);
         Config.setHeadless(headless);
         initWorkDir();
-        EntityFactory.init();
+        initOpenGLContext();
+        EntityFactory.create();
         Renderer.init(DeferredRenderer.class);
+        EntityFactory.init();
 //        MaterialFactory.getInstance().initDefaultMaterials();
 
         glWatch = new OpenGLStopWatch();
@@ -253,10 +259,23 @@ public class AppContext {
         thread.start();
     }
 
+
+    private void destroyOpenGL() {
+        OpenGLContext.getInstance().getDrawThread().stopRequested = true;
+        try {
+            Display.destroy();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void destroy() {
-//        OpenGLContext.getInstance().execute(() -> {
-//            Renderer.getInstance().destroy();
-//        }, false);
+        System.out.println("Finalize renderer");
+        destroyOpenGL();
+        if(frame != null) {
+            frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+        }
+        System.exit(0);
     }
 
     public List<Entity> loadTestScene() {
@@ -417,7 +436,7 @@ public class AppContext {
             final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
             OpenGLContext.getInstance().execute(() -> {
                 if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityAdded) && scene != null) {
-                    scene.bufferEntities(); entityAdded = false;
+                    EntityFactory.getInstance().bufferEntities(); entityAdded = false;
                 }
                 Renderer.getInstance().startFrame();
                 boolean directionalLightNeedsShadowMapRender = false;
@@ -447,6 +466,38 @@ public class AppContext {
         scene.endFrame(activeCamera);
     }
 
+    private JFrame frame;
+    private void initOpenGLContext() {
+        try {
+            OpenGLContext.getInstance();
+            if(Config.isHeadless()) {
+                Canvas canvas = new Canvas();
+                frame = new JFrame("hpengine");
+                frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+                JLayeredPane layeredPane = new JLayeredPane();
+                canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+                layeredPane.add(canvas, 0);
+                //            JPanel overlayPanel = new JPanel();
+                //            overlayPanel.setOpaque(true);
+                //            overlayPanel.add(new JButton("asdasdasd"));
+                //			layeredPane.add(overlayPanel, 1);
+                //            frame.add(layeredPane);
+                //			frame.setLayout(new BorderLayout());
+                frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
+                frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
+                frame.getContentPane().add(canvas, BorderLayout.CENTER);
+                frame.pack();
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(false);
+                Display.setParent(canvas);
+            }
+//            OpenGLContext.getInstance().attach(canvas);
+
+        } catch (LWJGLException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+    }
     private volatile boolean anyEntityHasMovedSomewhen = false;
 
     public Scene getScene() {

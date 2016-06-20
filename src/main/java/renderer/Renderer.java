@@ -13,7 +13,7 @@ import texture.CubeMap;
 public interface Renderer extends LifeCycle {
     boolean CHECKERRORS = false;
 
-    void destroy();
+    default void destroy() {};
 
     DrawResult draw(RenderExtract renderExtract);
 

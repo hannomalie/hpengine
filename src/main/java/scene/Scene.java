@@ -1,26 +1,21 @@
 package scene;
 
 import camera.Camera;
-import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
-import event.*;
-import net.engio.mbassy.listener.Handler;
+import event.LightChangedEvent;
+import event.SceneInitEvent;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
-import renderer.Renderer;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.PointLight;
 import renderer.light.TubeLight;
-import shader.OpenGLBuffer;
-import shader.PersistentMappedBuffer;
-import util.Util;
 
 import java.io.*;
 import java.util.Iterator;
@@ -36,9 +31,6 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-    // TODO: Move this to the factory maybe?
-    private volatile transient OpenGLBuffer entitiesBuffer;
-	
 	private Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
@@ -48,7 +40,7 @@ public class Scene implements LifeCycle, Serializable {
 	private DirectionalLight directionalLight = new DirectionalLight();
 
 	public Scene() {
-		octree = new Octree(new Vector3f(), 600, 5);
+        this("new-scene-" + System.currentTimeMillis());
 	}
 	public Scene(String name) {
 		this.name = name;
@@ -57,8 +49,9 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-        entitiesBuffer = new PersistentMappedBuffer(16000);
+//        entitiesBuffer = new PersistentMappedBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
+        octree = new Octree(new Vector3f(), 600, 5);
 		octree.init();
 		entities.forEach(entity -> entity.init());
 		addAll(entities);
@@ -127,7 +120,7 @@ public class Scene implements LifeCycle, Serializable {
 		return false;
 	}
 
-	public static Scene read(Renderer renderer, String name) {
+	public static Scene read(String name) {
 		String fileName = FilenameUtils.getBaseName(name);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
@@ -140,7 +133,7 @@ public class Scene implements LifeCycle, Serializable {
 //			Scene scene = (Scene)newIn.readObject();
 //			newIn.close();
 
-			handleEvolution(scene, renderer);
+			handleEvolution(scene);
 			in.close();
 			fis.close();
 			scene.octree = new Octree(new Vector3f(), 400, 6);
@@ -153,7 +146,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
 
-    private static void handleEvolution(Scene scene, Renderer renderer) {
+    private static void handleEvolution(Scene scene) {
     }
 
 	public static String getDirectory() {
@@ -249,23 +242,4 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
-    public void bufferEntities() {
-        entitiesBuffer.put(Util.toArray(getEntities(), Entity.class));
-    }
-
-    @Subscribe
-    @Handler
-    public void handle(EntityAddedEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
-    public void handle(EntityChangedMaterialEvent event) {
-        int offset = event.getEntity().getElementsPerObject() * octree.getEntities().indexOf(event.getEntity());
-        entitiesBuffer.put(offset, event.getEntity());
-    }
-
-    public OpenGLBuffer getEntitiesBuffer() {
-        return entitiesBuffer;
-    }
 }

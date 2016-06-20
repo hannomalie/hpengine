@@ -19,6 +19,13 @@ public abstract class TimeStepThread extends Thread {
         super();
         setMinimumCycleTimeInSeconds(minimumCycleTimeInSeconds);
         setName(name);
+        setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                System.out.println("An error!");
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override

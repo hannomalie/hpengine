@@ -28,7 +28,7 @@ public final class OpenGLContext {
 
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
 
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private TimeStepThread openGLThread;
     private boolean attached;
@@ -39,7 +39,19 @@ public final class OpenGLContext {
     public volatile boolean errorOccured = false;
     public static OpenGLContext getInstance() {
         if(instance == null) {
-            instance = new OpenGLContext();
+            synchronized(OpenGLContext.class) {
+                System.out.println("OpenGLContext is still null");
+
+                if(instance == null) {
+                    try {
+                        System.out.println("OpenGLContext is being initialized");
+                        OpenGLContext.init();
+                        System.out.println("OpenGLContext is initialized");
+                    } catch (LWJGLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
         } else if(!instance.isInitialized()) {
             throw new IllegalStateException("OpenGL context not initialized. Init an OpenGLContext first.");
         }
@@ -65,16 +77,22 @@ public final class OpenGLContext {
         }
     }
 
-    public void init() throws LWJGLException {
-        openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
+    public static void init() throws LWJGLException {
+        OpenGLContext context = new OpenGLContext();
+        instance = context;
+        context.openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
 
             @Override
             public void update(float seconds) {
                 Thread.currentThread().setName(OPENGL_THREAD_NAME);
-                if (!isInitialized()) {
+                if (!context.isInitialized()) {
                     try {
-                        privateInit();
-                    } catch (LWJGLException e) {
+                        try {
+                            context.privateInit();
+                        } catch (Exception e) {
+                            System.out.println("Exception during privateInit");
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                         System.exit(-1);
                     }
@@ -83,14 +101,19 @@ public final class OpenGLContext {
                 }
             }
         };
-        executorService.submit(openGLThread);
-
-        waitForInitialization();
+        executorService.submit(context.openGLThread);
+        System.out.println("OpenGLContext thread submitted");
+        waitForInitialization(context);
     }
 
-    public final void waitForInitialization() {
-        while(!isInitialized()) {
-
+    public static final void waitForInitialization(OpenGLContext context) {
+        while(!context.isInitialized()) {
+            System.out.println("Waiting for OpenGLContext initialization");
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -103,7 +126,9 @@ public final class OpenGLContext {
                 .withDebug(true)
                 ;
 
+        System.out.println("OpenGLContext before setDisplayMode");
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
+        System.out.println("OpenGLContext after setDisplayMode");
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
 
@@ -140,6 +165,7 @@ public final class OpenGLContext {
         viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
 
         initialized = true;
+        System.out.println("OpenGLContext initialized");
     }
 
     public void update(float seconds) {

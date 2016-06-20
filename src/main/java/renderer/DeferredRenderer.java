@@ -111,7 +111,7 @@ public class DeferredRenderer implements Renderer {
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
-            setupOpenGL(Config.isHeadless());
+            setupBuffers();
             objLoader = new OBJLoader();
             ProgramFactory.init();
             TextureFactory.init();
@@ -152,38 +152,9 @@ public class DeferredRenderer implements Renderer {
         }
 	}
 
-	private void setupOpenGL(boolean headless) {
-		try {
-            if(headless) {
-                Canvas canvas = new Canvas();
-                frame = new JFrame("hpengine");
-                frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-                JLayeredPane layeredPane = new JLayeredPane();
-                canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-                layeredPane.add(canvas, 0);
-//            JPanel overlayPanel = new JPanel();
-//            overlayPanel.setOpaque(true);
-//            overlayPanel.add(new JButton("asdasdasd"));
-//			layeredPane.add(overlayPanel, 1);
-//            frame.add(layeredPane);
-//			frame.setLayout(new BorderLayout());
-                frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
-                frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
-                frame.getContentPane().add(canvas, BorderLayout.CENTER);
-                frame.pack();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setVisible(false);
-                Display.setParent(canvas);
-            }
-            OpenGLContext.getInstance().init();
-//            OpenGLContext.getInstance().attach(canvas);
+	private void setupBuffers() {
 
-		} catch (LWJGLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-
-		initIdentityMatrixBuffer();
+        initIdentityMatrixBuffer();
 
 		fullscreenBuffer = new QuadVertexBuffer( true).upload();
 		debugBuffer = new QuadVertexBuffer( false).upload();
@@ -197,10 +168,11 @@ public class DeferredRenderer implements Renderer {
 		}};
 		glWatch = new OpenGLStopWatch();
 
-		DeferredRenderer.exitOnGLError("setupOpenGL");
+		DeferredRenderer.exitOnGLError("setupBuffers");
 //		CLUtil.initialize();
 	}
-	private void setUpGBuffer() {
+
+    private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
 		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance()));
@@ -400,24 +372,6 @@ public class DeferredRenderer implements Renderer {
 		fullScreenTarget.unuse();
 		GL11.glDeleteTextures(copyTextureId);
 	}
-	
-	public void destroy() {
-		System.out.println("Finalize renderer");
-		destroyOpenGL();
-		if(frame != null) {
-			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-		}
-		System.exit(0);
-	}
-
-	private void destroyOpenGL() {
-		OpenGLContext.getInstance().getDrawThread().stopRequested = true;
-        try {
-            Display.destroy();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
-	}
 
 	private static long lastFrameTime = 0l;
 
@@ -494,7 +448,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private List<Vector3f> linePoints = new ArrayList<>();
-	private JFrame frame;
 
 	@Override
 	public Model getSphere() {

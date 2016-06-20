@@ -15,7 +15,7 @@ public class SceneTest extends TestWithAppContext {
 		scene.init();
 		Assert.assertTrue(scene.write(SCENENAME));
 
-		Scene loadedScene = Scene.read(renderer, SCENENAME);
+		Scene loadedScene = Scene.read(SCENENAME);
 
 		Assert.assertNotNull(scene.equals(loadedScene));
 
@@ -31,7 +31,7 @@ public class SceneTest extends TestWithAppContext {
 		Assert.assertEquals(1, appContext.getScene().getEntities().size());
 		Assert.assertTrue(scene.write(SCENENAME));
 
-		Scene loadedScene = Scene.read(renderer, SCENENAME);
+		Scene loadedScene = Scene.read(SCENENAME);
 		loadedScene.init();
 		appContext.setScene(loadedScene);
 

@@ -282,7 +282,7 @@ public class DebugFrame {
                     new SwingWorkerWithProgress<Result<Scene>>(renderer.Renderer.getInstance(), this, "Load scene...", "Unable to load scene " + sceneName){
                         @Override
                         public Result<Scene> doInBackground() throws Exception {
-                            Scene newScene = Scene.read(renderer.Renderer.getInstance(), sceneName);
+                            Scene newScene = Scene.read(sceneName);
                             AppContext.getInstance().setScene(newScene);
                             return new Result(newScene);
                         }
