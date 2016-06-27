@@ -10,6 +10,7 @@ import engine.model.QuadVertexBuffer;
 import engine.model.Transformable;
 import engine.model.VertexBuffer;
 import event.MaterialChangedEvent;
+import octree.EntitiesContainer;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -152,7 +153,7 @@ public class EnvironmentSampler extends Camera {
         Scene scene = AppContext.getInstance().getScene();
         if(scene == null) { return; }
 
-        Octree octree = scene.getOctree();
+        EntitiesContainer octree = scene.getEntitiesContainer();
 		GPUProfiler.start("Cubemap render 6 sides");
 		Quaternion initialOrientation = getOrientation();
 		Vector3f initialPosition = getPosition();

@@ -12,6 +12,7 @@ import event.LightChangedEvent;
 import event.PointLightMovedEvent;
 import event.SceneInitEvent;
 import net.engio.mbassy.listener.Handler;
+import octree.EntitiesContainer;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -345,7 +346,7 @@ public class LightFactory {
 		areaLightRightDirections.rewind();
 	}
 
-	public void renderAreaLightShadowMaps(Octree octree) {
+	public void renderAreaLightShadowMaps(EntitiesContainer octree) {
         Scene scene = AppContext.getInstance().getScene();
         if(scene == null) { return; }
 
@@ -449,7 +450,7 @@ public class LightFactory {
 		GPUProfiler.end();
 	}
 
-	public void renderPointLightShadowMaps_dpsm(Octree octree) {
+	public void renderPointLightShadowMaps_dpsm(EntitiesContainer octree) {
 		GPUProfiler.start("PointLight shadowmaps");
 		OpenGLContext.getInstance().depthMask(true);
 		OpenGLContext.getInstance().enable(DEPTH_TEST);

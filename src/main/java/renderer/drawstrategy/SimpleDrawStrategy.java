@@ -7,7 +7,7 @@ import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
-import octree.Octree;
+import octree.EntitiesContainer;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -107,7 +107,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public DrawResult draw(RenderTarget target, RenderExtract renderExtract) {
         SecondPassResult secondPassResult = null;
         AppContext appContext = AppContext.getInstance();
-        Octree octree = appContext.getScene().getOctree();
+        EntitiesContainer octree = appContext.getScene().getEntitiesContainer();
 
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
@@ -118,7 +118,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
-            environmentProbeFactory.drawAlternating(octree, renderExtract.camera, light, Renderer.getInstance().getFrameCount());
+            environmentProbeFactory.drawAlternating(renderExtract.camera, light, Renderer.getInstance().getFrameCount());
             Renderer.getInstance().executeRenderProbeCommands(renderExtract);
             GPUProfiler.start("Shadowmap pass");
             {

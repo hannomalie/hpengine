@@ -6,6 +6,7 @@ import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
+import octree.EntitiesContainer;
 import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
@@ -31,7 +32,7 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-	private Octree octree = new Octree(new Vector3f(), 400, 6);
+	private transient Octree octree = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
@@ -49,7 +50,6 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-//        entitiesBuffer = new PersistentMappedBuffer(16000);
 		EnvironmentProbeFactory.getInstance().clearProbes();
         octree = new Octree(new Vector3f(), 600, 5);
 		octree.init();
@@ -191,7 +191,7 @@ public class Scene implements LifeCycle, Serializable {
 		}
        getDirectionalLight().setHasMoved(false);
 	}
-	public Octree getOctree() {
+	public EntitiesContainer getEntitiesContainer() {
 		return octree;
 	}
 	public List<Entity> getEntities() {

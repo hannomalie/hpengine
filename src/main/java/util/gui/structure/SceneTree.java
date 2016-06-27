@@ -4,6 +4,7 @@ import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
 import engine.AppContext;
 import engine.model.Entity;
+import octree.EntitiesContainer;
 import octree.Octree;
 import util.gui.DebugFrame;
 import util.gui.SetSelectedListener;
@@ -15,6 +16,9 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SceneTree extends WebCheckBoxTree {
 
@@ -42,7 +46,7 @@ public class SceneTree extends WebCheckBoxTree {
         top.removeAllChildren();
 
         if(appContext.getScene() != null) {
-            addOctreeChildren(top, appContext.getScene().getOctree().rootNode);
+            spanTree(top, appContext.getScene().getEntitiesContainer());
             System.out.println("Added " + appContext.getScene().getEntities().size());
         } else {
             System.out.println("Scene is currently null");
@@ -96,32 +100,23 @@ public class SceneTree extends WebCheckBoxTree {
         return top;
     }
 
-    private void addOctreeChildren(DefaultMutableTreeNode parent, Octree.Node node) {
+    private void spanTree(DefaultMutableTreeNode parent, EntitiesContainer container) {
 
-        java.util.List<Entity> entitiesInAndBelow = new ArrayList<Entity>();
-        node.getAllEntitiesInAndBelow(entitiesInAndBelow);
+        java.util.List<Entity> rootEntities = new ArrayList<>();
+        rootEntities.addAll(container.getEntities());
 
-        DefaultMutableTreeNode current = new DefaultMutableTreeNode(node.toString() + " (" + entitiesInAndBelow.size() + " Entities in/below)");
-        parent.add(current);
-        if(node.hasChildren()) {
-            for(int i = 0; i < 8; i++) {
-                addOctreeChildren(current, node.children[i]);
-            }
+        Map<Entity, DefaultMutableTreeNode> rootEntityMappings = new HashMap<>();
+
+        for(Entity entity : rootEntities.stream().filter(e -> !e.hasParent()).collect(Collectors.toList())) {
+            DefaultMutableTreeNode current = new DefaultMutableTreeNode(entity);
+            rootEntityMappings.put(entity, current);
+            parent.add(current);
         }
 
-        for (Entity entity : node.getEntities()) {
-            if(entity.hasParent()) { continue; }
-            DefaultMutableTreeNode currentEntity = new DefaultMutableTreeNode(entity);
-            if(entity.hasChildren()) {
-                entity.getChildren().forEach(child -> {
-                    currentEntity.add(new DefaultMutableTreeNode(child));
-                });
-            }
-            current.add(currentEntity);
-        }
 
-        if (node.hasChildren() && node.getEntities().size() > 0 && !node.isRoot()) {
-            System.out.println("FUUUUUUUUUUUUUUUUUUUUCK deepness is " + node.getDeepness());
+        for(Entity entity : rootEntities.stream().filter(e -> e.hasParent()).collect(Collectors.toList())) {
+            DefaultMutableTreeNode current = new DefaultMutableTreeNode(entity);
+            rootEntityMappings.get(entity.getParent()).add(current);
         }
     }
 

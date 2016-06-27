@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
+import octree.EntitiesContainer;
 import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -149,7 +150,7 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void drawAlternating(Octree octree, Entity camera, DirectionalLight light, int frameCount) {
+	public void drawAlternating(Entity camera, DirectionalLight light, int frameCount) {
 		if(!Config.DRAW_PROBES) { return; }
 
 		prepareProbeRendering();
