@@ -12,8 +12,7 @@ import event.LightChangedEvent;
 import event.PointLightMovedEvent;
 import event.SceneInitEvent;
 import net.engio.mbassy.listener.Handler;
-import octree.EntitiesContainer;
-import octree.Octree;
+import container.EntitiesContainer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -45,7 +44,6 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;

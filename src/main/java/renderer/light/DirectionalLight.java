@@ -6,31 +6,16 @@ import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
 import event.DirectionalLightHasMovedEvent;
-import octree.Octree;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.OpenGLContext;
 import renderer.RenderExtract;
-import renderer.material.Material;
-import renderer.rendertarget.ColorAttachmentDefinition;
-import renderer.rendertarget.RenderTarget;
-import renderer.rendertarget.RenderTargetBuilder;
 import shader.Program;
-import shader.ProgramFactory;
 import util.Util;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static renderer.constants.GlCap.CULL_FACE;
-import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DirectionalLight extends Entity {
 

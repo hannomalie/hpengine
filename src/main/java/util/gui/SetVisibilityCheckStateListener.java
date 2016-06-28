@@ -4,7 +4,7 @@ import com.alee.extended.checkbox.CheckState;
 import com.alee.extended.tree.CheckStateChange;
 import com.alee.extended.tree.CheckStateChangeListener;
 import engine.model.Entity;
-import octree.Octree;
+import container.Octree;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;

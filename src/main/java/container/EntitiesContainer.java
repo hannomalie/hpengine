@@ -1,4 +1,4 @@
-package octree;
+package container;
 
 import camera.Camera;
 import engine.model.Entity;

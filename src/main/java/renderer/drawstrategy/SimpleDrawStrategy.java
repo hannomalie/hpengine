@@ -7,7 +7,7 @@ import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
-import octree.EntitiesContainer;
+import container.EntitiesContainer;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;

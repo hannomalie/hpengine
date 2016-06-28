@@ -29,7 +29,7 @@ import config.Config;
 import engine.AppContext;
 import event.*;
 import net.engio.mbassy.listener.Handler;
-import octree.Octree;
+import container.Octree;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.fife.ui.autocomplete.AutoCompletion;

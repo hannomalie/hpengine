@@ -1,15 +1,14 @@
 package scene;
 
 import camera.Camera;
+import container.EntitiesContainer;
+import container.RegularGrid;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
-import octree.EntitiesContainer;
-import octree.Octree;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
@@ -32,7 +31,7 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-	private transient Octree octree = new Octree(new Vector3f(), 400, 6);
+	private transient EntitiesContainer entityContainer;// = new Octree(new Vector3f(), 400, 6);
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
@@ -51,8 +50,9 @@ public class Scene implements LifeCycle, Serializable {
 	public void init() {
 		LifeCycle.super.init();
 		EnvironmentProbeFactory.getInstance().clearProbes();
-        octree = new Octree(new Vector3f(), 600, 5);
-		octree.init();
+//        entityContainer = new Octree(new Vector3f(), 600, 5);
+        entityContainer = new RegularGrid();
+		entityContainer.init();
 		entities.forEach(entity -> entity.init());
 		addAll(entities);
 		for (ProbeData data : probes) {
@@ -93,7 +93,7 @@ public class Scene implements LifeCycle, Serializable {
 			fos = new FileOutputStream(getDirectory() + fileName + ".hpscene");
 			out = new ObjectOutputStream(fos);
 			entities.clear();
-			entities.addAll(octree.getEntities());
+			entities.addAll(entityContainer.getEntities());
 			probes.clear();
 			for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
 				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
@@ -136,7 +136,7 @@ public class Scene implements LifeCycle, Serializable {
 			handleEvolution(scene);
 			in.close();
 			fis.close();
-			scene.octree = new Octree(new Vector3f(), 400, 6);
+			scene.entityContainer = new EntityContainer();//new Octree(new Vector3f(), 400, 6);
 			return scene;
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
@@ -154,13 +154,13 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	public void addAll(List<Entity> entities) {
 //		initializationWrapped(() -> {
-			octree.insert(entities);
+			entityContainer.insert(entities);
 //			return null;
 //		});
 	}
 	public void add(Entity entity) {
 //		initializationWrapped(() -> {
-			octree.insert(entity);
+			entityContainer.insert(entity);
 //			return null;
 //		});
 	}
@@ -173,7 +173,7 @@ public class Scene implements LifeCycle, Serializable {
 		for (AreaLight areaLight : areaLights) {
 			areaLight.update(seconds);
 		}
-		for (Entity entity : octree.getEntities()) {
+		for (Entity entity : entityContainer.getEntities()) {
 			entity.update(seconds);
 		}
 		directionalLight.update(seconds);
@@ -186,16 +186,16 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
     public void endFrame(Camera camera) {
-		for (Entity entity : octree.getEntities()) {
+		for (Entity entity : entityContainer.getEntities()) {
 			entity.setHasMoved(false);
 		}
        getDirectionalLight().setHasMoved(false);
 	}
 	public EntitiesContainer getEntitiesContainer() {
-		return octree;
+		return entityContainer;
 	}
 	public List<Entity> getEntities() {
-		return octree.getEntities();
+		return entityContainer.getEntities();
 	}
 	public Optional<Entity> getEntity(String name) {
 		List<Entity> candidates = getEntities().stream().filter(e -> { return e.getName().equals(name); }).collect(Collectors.toList());
@@ -208,7 +208,7 @@ public class Scene implements LifeCycle, Serializable {
 		this.initialized = initialized;
 	}
 	public boolean removeEntity(Entity entity) {
-		return octree.removeEntity(entity);
+		return entityContainer.removeEntity(entity);
 	}
 	public String getName() {
 		return name;
