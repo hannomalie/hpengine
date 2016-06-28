@@ -29,12 +29,11 @@ public class RenderExtract {
         this.camera = camera;
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
-        visibleEntities.addAll(entities);
         if (Config.useFrustumCulling) {
             GPUProfiler.start("Culling");
             for (int i = 0; i < entities.size(); i++) {
-                if (!entities.get(i).isInFrustum(camera)) {
-                    entities.remove(i);
+                if (entities.get(i).isInFrustum(camera)) {
+                    visibleEntities.add(entities.get(i));
                 }
             }
             GPUProfiler.end();

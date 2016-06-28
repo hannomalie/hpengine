@@ -219,8 +219,7 @@ public class DeferredRenderer implements Renderer {
 
 	public DrawResult draw(RenderExtract renderExtract) {
 		setLastFrameTime();
-        DrawResult drawResult;
-            drawResult = simpleDrawStrategy.draw(renderExtract);
+        DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 
 		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);

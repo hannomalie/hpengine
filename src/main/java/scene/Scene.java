@@ -2,7 +2,7 @@ package scene;
 
 import camera.Camera;
 import container.EntitiesContainer;
-import container.RegularGrid;
+import container.SimpleContainer;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
@@ -51,7 +51,7 @@ public class Scene implements LifeCycle, Serializable {
 		LifeCycle.super.init();
 		EnvironmentProbeFactory.getInstance().clearProbes();
 //        entityContainer = new Octree(new Vector3f(), 600, 5);
-        entityContainer = new RegularGrid();
+        entityContainer = new SimpleContainer();
 		entityContainer.init();
 		entities.forEach(entity -> entity.init());
 		addAll(entities);
@@ -136,7 +136,7 @@ public class Scene implements LifeCycle, Serializable {
 			handleEvolution(scene);
 			in.close();
 			fis.close();
-			scene.entityContainer = new EntityContainer();//new Octree(new Vector3f(), 400, 6);
+			scene.entityContainer = new SimpleContainer();//new Octree(new Vector3f(), 400, 6);
 			return scene;
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();

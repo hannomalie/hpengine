@@ -455,8 +455,8 @@ public class AppContext {
                     directionalLightNeedsShadowMapRedraw = !latestDrawResult.directionalLightShadowMapWasRendered();
                 }
                 sceneInitiallyDrawn = true;
+                AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
             }, false);
-            AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
         } else {
             if(anyEntityHasMoved) {
                 anyEntityHasMovedSomewhen = true;
