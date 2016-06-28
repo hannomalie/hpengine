@@ -196,6 +196,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             for (Entity entity : visibleEntities) {
                 if (entity.getComponents().containsKey("ModelComponent")) {
+                    OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
                             .draw(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
                     firstPassResult.verticesDrawn += currentVerticesCount;

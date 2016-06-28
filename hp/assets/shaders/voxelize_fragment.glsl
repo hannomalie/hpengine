@@ -10,8 +10,8 @@ layout(binding=6) uniform sampler2D shadowMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 layout(binding=8) uniform sampler3D secondVoxelVolume;
 
-flat in int f_axis;   //indicate which axis the projection uses
-flat in vec4 f_AABB;
+flat in int g_axis;   //indicate which axis the projection uses
+flat in vec4 g_AABB;
 
 in vec3 g_normal;
 in vec3 g_pos;
@@ -89,6 +89,8 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 }
 void main()
 {
+//	if( g_pos.x < g_AABB.x || g_pos.y < g_AABB.y || g_pos.x > g_AABB.z || g_pos.y > g_AABB.w )
+//		discard;
 	Material material = materials[materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
 									 material.diffuseG,
@@ -135,6 +137,6 @@ void main()
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
 	imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(normalize(g_normal), 0.25*float(material.ambient)));
+	imageStore(out_voxelNormal, ivec3(gridPosition), vec4(Encode(normalize(g_normal)), isStatic, 0.25*float(material.ambient)));
 //    imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(1,0,0,1));
 }

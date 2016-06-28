@@ -37,8 +37,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     private static final long serialVersionUID = 1L;
     public static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
 
-    private static ExecutorService service = Executors.newFixedThreadPool(4);
-
     private Model model;
 
     public boolean instanced = false;
@@ -83,6 +81,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     public ModelComponent(Model model, String materialName) {
         this.materialName = materialName;
         this.model = model;
+        createFloatArray(model);
     }
     @Override
     public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
@@ -126,7 +125,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         } else {
-            OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
+//            OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
         }
 //        if(instanced) {
 //            return vertexBuffer.drawInstanced(10);
@@ -174,7 +173,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     @Override
     public void init() {
         super.init();
-        createFloatArray(model);
         createVertexBuffer();
         initialized = true;
     }
@@ -200,8 +198,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
 
     public void createFloatArray(Model model) {
-        /////////
-
         floatArray = model.getVertexBufferValuesArray();
         indices.add(model.getIndexBufferValuesArray());
 
@@ -213,7 +209,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
 //        System.out.println("############## lodlevels calculated: " + lodLevels.size());
 
-        /////////
 
     }
 

@@ -1,13 +1,11 @@
 package engine.model;
 
-import config.Config;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL31;
 import renderer.OpenGLContext;
-import renderer.lodstrategy.ModelLod;
 import shader.AbstractPersistentMappedBuffer;
 import shader.Bufferable;
 
@@ -19,7 +17,6 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL30.glGetFramebufferAttachmentParameteri;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {

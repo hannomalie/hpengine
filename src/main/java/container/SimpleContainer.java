@@ -49,7 +49,9 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public List<Entity> getEntities() {
-        return new ArrayList<>(entities);
+        List<Entity> result = new ArrayList<>();
+        result.addAll(entities);
+        return result;
     }
 
     @Override

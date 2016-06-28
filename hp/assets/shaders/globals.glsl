@@ -622,36 +622,60 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
 }
 
 
-//vec2 cartesianToSpherical(vec3 cartCoords){
-//    cartCoords = cartCoords;
-//	float a = atan(cartCoords.y/cartCoords.x);
-//	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
-//	return vec2(a, b);
-//}
-//
-//vec3 sphericalToCartesian(vec2 spherical){
-//	vec3 outCart;
-//    outCart.x = cos(spherical.x) * sin(spherical.y);
-//    outCart.y = sin(spherical.x) * sin(spherical.y);
-//    outCart.z = cos(spherical.y);
-//
-//    return outCart;
-//}
+vec2 cartesianToSpherical(vec3 cartCoords){
+	float a = atan(cartCoords.y/cartCoords.x);
+	float b = atan(sqrt(cartCoords.x*cartCoords.x+cartCoords.y*cartCoords.y))/cartCoords.z;
+	return vec2(a, b);
+}
+
+vec3 sphericalToCartesian(vec2 spherical){
+	vec3 outCart;
+    outCart.x = cos(spherical.x) * sin(spherical.y);
+    outCart.y = sin(spherical.x) * sin(spherical.y);
+    outCart.z = cos(spherical.y);
+
+    return outCart;
+}
+
+// https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
+vec2 OctWrap( vec2 v )
+{
+    return ( 1.0 - abs( v.yx ) ) * ( vec2(v.x >= 0.0 ? 1.0 : -1.0, v.y >= 0.0 ? 1.0 : -1.0 ));
+}
+
+vec2 Encode( vec3 n )
+{
+    n /= ( abs( n.x ) + abs( n.y ) + abs( n.z ) );
+    n.xy = n.z >= 0.0 ? n.xy : OctWrap( n.xy );
+    n.xy = n.xy * 0.5 + 0.5;
+    return n.xy;
+}
+
+vec3 Decode( vec2 encN )
+{
+    encN = encN * 2.0 - 1.0;
+
+    vec3 n;
+    n.z = 1.0 - abs( encN.x ) - abs( encN.y );
+    n.xy = n.z >= 0.0 ? encN.xy : OctWrap( encN.xy );
+    n = normalize( n );
+    return n;
+}
 
 #define STEREOSCALE 1.77777f
 #define INVSTEREOSCALE (1.0f/STEREOSCALE)
-vec2 cartesianToSpherical(vec3 n) {
-    n = normalize(-n);
-    vec2 enc = (n.xy / (n.z+1)) * INVSTEREOSCALE;
-    return enc;
-}
-vec3 sphericalToCartesian(vec2 enc) {
-    float scale = STEREOSCALE;
-    vec3 nn = vec3(enc.xy * vec2(scale,scale), 0);
-    nn.z = 1.0f;
-    float g = 2.0 / dot(nn.xyz,nn.xyz);
-    vec3 n;
-    n.xy = g*nn.xy;
-    n.z = g-1;
-    return normalize(-n);
-}
+//vec2 cartesianToSpherical(vec3 n) {
+//    n = normalize(-n);
+//    vec2 enc = (n.xy / (n.z+1)) * INVSTEREOSCALE;
+//    return enc;
+//}
+//vec3 sphericalToCartesian(vec2 enc) {
+//    float scale = STEREOSCALE;
+//    vec3 nn = vec3(enc.xy * vec2(scale,scale), 0);
+//    nn.z = 1.0f;
+//    float g = 2.0 / dot(nn.xyz,nn.xyz);
+//    vec3 n;
+//    n.xy = g*nn.xy;
+//    n.z = g-1;
+//    return normalize(-n);
+//}

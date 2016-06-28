@@ -76,15 +76,16 @@ void main(void) {
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
     vec4 color = texelFetch(albedoGrid, storePos, 0);//voxelFetch(albedoGrid, gridSize, sceneScale, positionWorld, 0);
-    vec4 normalEmissive = texelFetch(normalGrid, storePos, 0);//voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
-    vec3 g_normal = normalize(normalEmissive.xyz);
+    vec4 normalStaticEmissive = texelFetch(normalGrid, storePos, 0);//voxelFetch(normalGrid, gridSize, sceneScale, positionWorld, 0);
+    vec3 g_normal = normalize(Decode(normalStaticEmissive.xy));
     vec3 g_pos = positionWorld;
     float opacity = color.a;
+    float isStatic = normalStaticEmissive.b;
 
     float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;
     vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalEmissive.a))*voxelColor;
+    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;
 
 	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
   	positionShadow.xyz /= positionShadow.w;
@@ -101,16 +102,18 @@ void main(void) {
 
     const int SAMPLE_COUNT = 4;
     vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
-    vec3 maxMultipleBounce = vec3(.025);
-	finalVoxelColor += clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+    vec4 voxelSpecular = 0.25*voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
+    vec3 maxMultipleBounce = vec3(.25);
+	finalVoxelColor += 0.5*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
 
-	vec4 currentValue = textureLod(normalGrid, storePos, 0);
-//	if(currentValue.a < 0.1)
+//	if(isStatic < 0.9)
 	{
         imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 //        imageStore(voxelGrid, storePos, vec4(vec3(visibility), opacity));
 //        imageStore(voxelGrid, storePos, vec4(vec3(positionWorld*0.00001f), opacity));
 	}
+//	else {
+//        imageStore(voxelGrid, storePos, vec4(0,1,0,0));
+//	}
 }

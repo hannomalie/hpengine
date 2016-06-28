@@ -57,6 +57,40 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
     return projectedCoord;
 }
 
+vec3 scatter(vec3 worldPos, vec3 startPosition) {
+	const int NB_STEPS = 2530;
+
+	vec3 rayVector = worldPos.xyz - startPosition;
+
+	vec3 rayDirection = normalize(rayVector);
+
+	float stepLength = 0.25;
+
+	vec3 step = rayDirection * stepLength;
+
+	vec3 currentPosition = startPosition;
+
+	vec3 lit = vec3(0,0,0);
+	vec3 accumAlbedo = vec3(0,0,0);
+	vec3 normalValue = vec3(0,0,0);
+	vec3 isStaticValue = vec3(0,0,0);
+	float alpha = 0;
+
+	for (int i = 0; i < NB_STEPS; i++) {
+		if(alpha > 1.0) { break; }
+		int mipLevel = 0;
+		vec4 sampledValue = texelFetch(albedoGrid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
+		vec4 sampledNormalValue = texelFetch(normalGrid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
+		vec4 sampledLitValue = texelFetch(grid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
+		normalValue.rgb = sampledNormalValue.rgb;
+		lit = sampledLitValue.rgb;
+		isStaticValue = vec3(normalValue.b);
+		accumAlbedo += sampledValue.rgb * sampledValue.a;
+		alpha += sampledValue.a;
+		currentPosition += step;
+	}
+	return lit;
+}
 
 void main(void) {
 
@@ -138,4 +172,10 @@ void main(void) {
 
 //	vct = voxelTraceCone(albedoGrid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.01, 370).rgb;
     out_DiffuseSpecular.rgb = vct;
+
+    const bool debugVoxels = false;
+    if(debugVoxels) {
+    	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition);
+    	out_DiffuseSpecular.rgb = vct;
+    }
 }
