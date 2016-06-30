@@ -143,17 +143,17 @@ public class VoxelConeTracingExtension implements RenderExtension {
         {
             if(clearVoxels) {
                 GPUProfiler.start("Clear voxels");
-                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-//                clearDynamicVoxelsComputeProgram.use();
-//                int num_groups_xyz = Math.max(gridSize / 8, 1);
-//                GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-//                GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
+//                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+//                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+//                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+                clearDynamicVoxelsComputeProgram.use();
+                int num_groups_xyz = Math.max(gridSize / 8, 1);
+                GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
 //                GL42.glBindImageTexture(2, currentVoxelSource, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-//                GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-//                OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
-//                clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
+                GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
+                clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
                 GPUProfiler.end();
             }
 
@@ -201,7 +201,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             for (Entity entity :  renderExtract.entities) {
                 if(entity.getComponents().containsKey("ModelComponent")) {
                     boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-//                    if(renderExtract.sceneInitiallyDrawn && isStatic) { continue; }
+                    if(renderExtract.sceneInitiallyDrawn && isStatic) { continue; }
                     ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
                     voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                     int currentVerticesCount = modelComponent
@@ -212,6 +212,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             }
             GPUProfiler.end();
 
+            GPUProfiler.start("grid shading");
             GL42.glBindImageTexture(0, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             OpenGLContext.getInstance().bindTexture(1, TEXTURE_3D, albedoGrid);
             OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
@@ -227,6 +228,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             }
             int num_groups_xyz = Math.max(gridSize / 8, 1);
             injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+            GPUProfiler.end();
 
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){

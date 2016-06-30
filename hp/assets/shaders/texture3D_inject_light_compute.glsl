@@ -17,10 +17,10 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 //include(globals.glsl)
 
-vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
+vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
   	if (ShadowCoordPostW.x < 0 || ShadowCoordPostW.x > 1 || ShadowCoordPostW.y < 0 || ShadowCoordPostW.y > 1) {
-  		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
+//  		float fadeOut = max(abs(ShadowCoordPostW.x), abs(ShadowCoordPostW.y)) - 1;
 		return vec3(0,0,0);
 	}
 
@@ -38,6 +38,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	if (dist <= moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
+	else { return vec3(0); }
 
 	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
 	// How likely this pixel is to be lit (p_max)
@@ -91,7 +92,7 @@ void main(void) {
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
+	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0, 1).r;
 //	visibility = 1-visibility;
 
 	vec3 lightDirectionTemp = lightDirection;
@@ -103,17 +104,9 @@ void main(void) {
     const int SAMPLE_COUNT = 4;
     vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
     vec4 voxelSpecular = 0.25*voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
-    vec3 maxMultipleBounce = vec3(.25);
+    vec3 maxMultipleBounce = vec3(.5);
 	finalVoxelColor += 0.5*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
 
-//	if(isStatic < 0.9)
-	{
-        imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
-//        imageStore(voxelGrid, storePos, vec4(vec3(visibility), opacity));
-//        imageStore(voxelGrid, storePos, vec4(vec3(positionWorld*0.00001f), opacity));
-	}
-//	else {
-//        imageStore(voxelGrid, storePos, vec4(0,1,0,0));
-//	}
+	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

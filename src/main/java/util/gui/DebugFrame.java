@@ -155,6 +155,7 @@ public class DebugFrame {
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
 	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.useFrustumCulling);
 	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.useInstantRadiosity);
+	private WebToggleButton toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", Config.forceRevoxelization);
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.DRAWLINES_ENABLED);
 	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", Config.DRAWSCENE_ENABLED);
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
@@ -756,6 +757,9 @@ public class DebugFrame {
 		toggleInstantRadiosity.addActionListener(e -> {
 			Config.useInstantRadiosity = !Config.useInstantRadiosity;
 		});
+		toggleForceRevoxelization.addActionListener(e -> {
+			Config.forceRevoxelization = !Config.forceRevoxelization;
+		});
 
 		toggleDrawLines.addActionListener(e -> {
 			Config.DRAWLINES_ENABLED = !Config.DRAWLINES_ENABLED;
@@ -876,7 +880,7 @@ public class DebugFrame {
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
 		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleAutoExposure, toggleVSync,
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.EXPOSURE) {
 			@Override public void onValueChange(int value, int delta) {
 				Config.EXPOSURE = value;

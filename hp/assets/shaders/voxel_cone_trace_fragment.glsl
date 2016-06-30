@@ -152,16 +152,16 @@ void main(void) {
 
         const int SAMPLE_COUNT = 4;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
-        vct += 4*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+        vct += 1*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
 
         const bool useTransparency = false;
         if(useTransparency) {
-            vct = 4*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld+3*normalWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
+            vct = 1*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld+3*normalWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
         }
     }
 

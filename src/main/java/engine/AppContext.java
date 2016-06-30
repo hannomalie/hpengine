@@ -447,7 +447,7 @@ public class AppContext {
                 extractedCamera.init();
                 extractedCamera.update(0.0000001f);
 
-                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, sceneInitiallyDrawn);
+                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization));
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;

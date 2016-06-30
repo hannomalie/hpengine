@@ -6,6 +6,7 @@ import component.ModelComponent;
 import engine.Transform;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
+import event.UpdateChangedEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -402,6 +403,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 				child.setUpdate(update);
 			}
 		}
+		AppContext.getEventBus().post(new UpdateChangedEvent(this));
 	}
 
 

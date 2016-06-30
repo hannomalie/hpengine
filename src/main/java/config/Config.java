@@ -18,6 +18,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
 	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
 	public static volatile boolean useInstantRadiosity = false;
+	public static volatile boolean forceRevoxelization = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = false;
 	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
 	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
