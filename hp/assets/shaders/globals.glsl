@@ -431,8 +431,6 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
 
     vec4 result = textureLod(grid, samplePositionNormalized, level);
 
-    float amount = 0.005;
-
     return result;
 
 //    return textureLod(grid, samplePositionNormalized, level);

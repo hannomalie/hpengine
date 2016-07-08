@@ -360,7 +360,7 @@ public class DebugFrame {
 					public Result doInBackground() throws Exception {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
                             AppContext appContext = AppContext.getInstance();
-							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,true));
+							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,true, AppContext.getInstance().getScene().getMinMax()[0], AppContext.getInstance().getScene().getMinMax()[1]));
 							return new Result<>(true);
 						});
 

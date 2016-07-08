@@ -9,6 +9,7 @@ import engine.model.Entity;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
@@ -59,7 +60,7 @@ public class Scene implements LifeCycle, Serializable {
 			OpenGLContext.getInstance().execute(() -> {
                 try {
                     AppContext appContext = AppContext.getInstance();
-                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false));
+                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false, new Vector4f(min), new Vector4f(max)));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -144,7 +145,40 @@ public class Scene implements LifeCycle, Serializable {
 		return null;
 	}
 
-	static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
+    static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+    static final Vector4f absoluteMinimum = new Vector4f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
+    Vector4f min = new Vector4f();
+    Vector4f max = new Vector4f();
+    Vector4f[] minMax = new Vector4f[]{min, max};
+
+    public Vector4f[] getMinMax() {
+        return minMax;
+    }
+
+    public void calculateMinMax() {
+        calculateMinMax(entityContainer.getEntities());
+    }
+    private void calculateMinMax(List<Entity> entities) {
+        if(entities.size() == 0) { min.set(-1,-1,-1,-1); max.set(1,1,1,1); return;}
+
+        min.set(absoluteMaximum);
+        max.set(absoluteMinimum);
+
+        for(Entity entity : entities) {
+            Vector4f[] currentMinMax = entity.getMinMaxWorld();
+            Vector4f currentMin = currentMinMax[0];
+            Vector4f currentMax = currentMinMax[1];
+            min.x = currentMin.x < min.x ? currentMin.x : min.x;
+            min.y = currentMin.y < min.y ? currentMin.y : min.y;
+            min.z = currentMin.z < min.z ? currentMin.z : min.z;
+
+            max.x = currentMax.x > max.x ? currentMax.x : max.x;
+            max.y = currentMax.y > max.y ? currentMax.y : max.y;
+            max.z = currentMax.z > max.z ? currentMax.z : max.z;
+        }
+    }
+
+    static FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
 
     private static void handleEvolution(Scene scene) {
     }
@@ -155,12 +189,14 @@ public class Scene implements LifeCycle, Serializable {
 	public void addAll(List<Entity> entities) {
 //		initializationWrapped(() -> {
 			entityContainer.insert(entities);
+        calculateMinMax(entities);
 //			return null;
 //		});
 	}
 	public void add(Entity entity) {
 //		initializationWrapped(() -> {
 			entityContainer.insert(entity);
+        calculateMinMax(entities);
 //			return null;
 //		});
 	}

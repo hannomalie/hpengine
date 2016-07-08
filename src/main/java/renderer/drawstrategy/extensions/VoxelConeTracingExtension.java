@@ -11,6 +11,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
@@ -31,54 +32,24 @@ import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static renderer.constants.GlTextureTarget.TEXTURE_3D;
 
 public class VoxelConeTracingExtension implements RenderExtension {
-
-    public static final float sceneScale = 2f;
     public static final int gridSize = 256;
     public static final int gridSizeHalf = gridSize/2;
-    public static final int gridSizeScaled = (int)(gridSize*sceneScale);
-    public static final int gridSizeHalfScaled = (int)((gridSizeHalf)*sceneScale);
     public static final int gridTextureFormat = GL11.GL_RGBA;//GL11.GL_R;
     public static final int gridTextureFormatSized = GL11.GL_RGBA8;//GL30.GL_R32UI;
+    private Transform viewXTransform;
+    private Transform viewYTransform;
+    private Transform viewZTransform;
 
-    private static Matrix4f ortho = util.Util.createOrthogonal(-gridSizeHalfScaled, gridSizeHalfScaled, gridSizeHalfScaled, -gridSizeHalfScaled, gridSizeHalfScaled, -gridSizeHalfScaled);
-    private static Camera orthoCam = new Camera(ortho, gridSizeHalfScaled, -gridSizeHalfScaled, 90, 1);
-    private static Matrix4f viewX;
-    public static FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
-    private static Matrix4f viewY;
-    public static FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
-    private static Matrix4f viewZ;
-    public static FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
-    static {
-        orthoCam.setPerspective(false);
-        orthoCam.setWidth(gridSizeScaled);
-        orthoCam.setHeight(gridSizeScaled);
-        orthoCam.setFar(-5000);
-        orthoCam.update(0.000001f);
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(0,1,0), 90f);
-            viewX = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewXBuffer.rewind();
-            viewX.store(viewXBuffer);
-            viewXBuffer.rewind();
-        }
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(1, 0, 0), 90f);
-            viewY = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewYBuffer.rewind();
-            viewY.store(viewYBuffer);
-            viewYBuffer.rewind();
-        }
-        {
-            Transform view = new Transform();
-            view.rotate(new Vector3f(0,1,0), 180f);
-            viewZ = Matrix4f.mul(ortho, view.getViewMatrix(), null);
-            viewZBuffer.rewind();
-            viewZ.store(viewZBuffer);
-            viewZBuffer.rewind();
-        }
-    }
+    public float sceneScale = 2;
+
+    private Matrix4f ortho = util.Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
+    private Camera orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+    private Matrix4f viewX;
+    public FloatBuffer viewXBuffer = BufferUtils.createFloatBuffer(16);
+    private Matrix4f viewY;
+    public FloatBuffer viewYBuffer = BufferUtils.createFloatBuffer(16);
+    private Matrix4f viewZ;
+    public FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
 
     static FloatBuffer zeroBuffer = BufferUtils.createFloatBuffer(4);
     static {
@@ -104,6 +75,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private final int gridTwo;
 
     public VoxelConeTracingExtension() throws Exception {
+        initOrthoCam();
+        initViewXBuffer();
+        initViewYBuffer();
+        initViewZBuffer();
+
         voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
         texture3DMipMapAlphaBlendComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
         texture3DMipMapComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
@@ -133,6 +109,44 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
     }
 
+    private void initViewZBuffer() {
+        viewZTransform = new Transform();
+        viewZTransform.rotate(new Vector3f(0,1,0), 180f);
+        viewZ = Matrix4f.mul(ortho, viewZTransform.getViewMatrix(), null);
+        viewZBuffer.rewind();
+        viewZ.store(viewZBuffer);
+        viewZBuffer.rewind();
+    }
+
+    private void initViewYBuffer() {
+        viewYTransform = new Transform();
+        viewYTransform.rotate(new Vector3f(1, 0, 0), 90f);
+        viewY = Matrix4f.mul(ortho, viewYTransform.getViewMatrix(), null);
+        viewYBuffer.rewind();
+        viewY.store(viewYBuffer);
+        viewYBuffer.rewind();
+    }
+
+    private void initViewXBuffer() {
+        viewXTransform = new Transform();
+        viewXTransform.rotate(new Vector3f(0,1,0), 90f);
+        viewX = Matrix4f.mul(ortho, viewXTransform.getViewMatrix(), null);
+        viewXBuffer.rewind();
+        viewX.store(viewXBuffer);
+        viewXBuffer.rewind();
+    }
+
+    private void initOrthoCam() {
+        ortho = util.Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
+        orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+
+        orthoCam.setPerspective(false);
+        orthoCam.setWidth(getGridSizeScaled());
+        orthoCam.setHeight(getGridSizeScaled());
+        orthoCam.setFar(-5000);
+        orthoCam.update(0.000001f);
+    }
+
     @Override
     public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
         GPUProfiler.start("VCT first pass");
@@ -143,23 +157,26 @@ public class VoxelConeTracingExtension implements RenderExtension {
         {
             if(clearVoxels) {
                 GPUProfiler.start("Clear voxels");
-//                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-//                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-//                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-                clearDynamicVoxelsComputeProgram.use();
-                int num_groups_xyz = Math.max(gridSize / 8, 1);
-                GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-                GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
+                if(!renderExtract.sceneInitiallyDrawn) {
+                    ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+                    ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+                    ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+                } else {
+                    clearDynamicVoxelsComputeProgram.use();
+                    int num_groups_xyz = Math.max(gridSize / 8, 1);
+                    GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                    GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
 //                GL42.glBindImageTexture(2, currentVoxelSource, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-                GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-                OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
-                clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
+                    GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                    OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
+                    clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
+                }
                 GPUProfiler.end();
             }
 
             GPUProfiler.start("Voxelization");
             orthoCam.update(0.000001f);
-            int gridSizeScaled = (int) (gridSize * sceneScale);
+            int gridSizeScaled = (int) (gridSize * getSceneScale(renderExtract));
             OpenGLContext.getInstance().viewPort(0,0, gridSizeScaled, gridSizeScaled);
             voxelizer.use();
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
@@ -184,14 +201,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.setUniform("u_height", 256);
 
             voxelizer.setUniform("writeVoxels", true);
-            voxelizer.setUniform("sceneScale", sceneScale);
-            voxelizer.setUniform("inverseSceneScale", 1f/sceneScale);
+            voxelizer.setUniform("sceneScale", getSceneScale(renderExtract));
+            voxelizer.setUniform("inverseSceneScale", 1f/getSceneScale(renderExtract));
             voxelizer.setUniform("gridSize",gridSize);
             voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
             voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
-            voxelizer.setUniform("sceneScale", sceneScale);
-            voxelizer.setUniform("inverseSceneScale", 1f/sceneScale);
-            voxelizer.setUniform("gridSize",gridSize);
             OpenGLContext.getInstance().depthMask(false);
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             OpenGLContext.getInstance().disable(BLEND);
@@ -218,8 +232,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
             OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
             OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
             injectLightComputeProgram.use();
-            injectLightComputeProgram.setUniform("sceneScale", sceneScale);
-            injectLightComputeProgram.setUniform("inverseSceneScale", 1f/sceneScale);
+            injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
+            injectLightComputeProgram.setUniform("inverseSceneScale", 1f/getSceneScale(renderExtract));
             injectLightComputeProgram.setUniform("gridSize",gridSize);
             if(scene != null) {
                 injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
@@ -296,8 +310,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
-        voxelConeTraceProgram.setUniform("sceneScale", sceneScale);
-        voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / sceneScale);
+        voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderExtract));
+        voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
         voxelConeTraceProgram.setUniform("gridSize", gridSize);
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         Renderer.getInstance().getFullscreenBuffer().draw();
@@ -310,4 +324,30 @@ public class VoxelConeTracingExtension implements RenderExtension {
         GPUProfiler.end();
     }
 
+    Vector4f maxExtents = new Vector4f();
+    public float getSceneScale(RenderExtract renderExtract) {
+        maxExtents.setX(Math.max(Math.abs(renderExtract.sceneMin.x), Math.abs(renderExtract.sceneMax.x)));
+        maxExtents.setY(Math.max(Math.abs(renderExtract.sceneMin.y), Math.abs(renderExtract.sceneMax.y)));
+        maxExtents.setZ(Math.max(Math.abs(renderExtract.sceneMin.z), Math.abs(renderExtract.sceneMax.z)));
+        float max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z);
+        float sceneScale = max / (float) gridSizeHalf;
+        sceneScale = Math.max(sceneScale, 2.0f);
+        boolean sceneScaleChanged = this.sceneScale != sceneScale;
+        if(sceneScaleChanged) {
+            initOrthoCam();
+            initViewXBuffer();
+            initViewYBuffer();
+            initViewZBuffer();
+        }
+        this.sceneScale = sceneScale;
+        return sceneScale;
+    }
+
+    private int getGridSizeScaled() {
+        return (int)(gridSize*sceneScale);
+    }
+
+    private int getGridSizeHalfScaled() {
+        return (int)((gridSizeHalf)*sceneScale);
+    }
 }

@@ -5,20 +5,18 @@ import engine.model.Entity;
 import renderer.Renderer;
 import shader.Program;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 public class SimpleContainer implements EntitiesContainer {
 
-    private Set<Entity> entities = new HashSet<>();
+    private Set<Entity> entities = new CopyOnWriteArraySet<>();
     private boolean initialized;
 
     @Override
     public void init() {
-        entities = new HashSet<>();
+        entities = new CopyOnWriteArraySet<>();
         initialized = true;
     }
 

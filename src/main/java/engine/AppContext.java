@@ -423,6 +423,7 @@ public class AppContext {
 
         boolean anyEntityHasMoved = false;
         if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
+            if(getScene() != null) { getScene().calculateMinMax(); }
             anyEntityHasMoved = true;
         }
 
@@ -447,7 +448,7 @@ public class AppContext {
                 extractedCamera.init();
                 extractedCamera.update(0.0000001f);
 
-                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization));
+                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1]);
                 latestDrawResult = Renderer.getInstance().draw(renderExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 anyEntityHasMovedSomewhen = false;

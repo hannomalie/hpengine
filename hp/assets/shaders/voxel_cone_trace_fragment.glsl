@@ -64,7 +64,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 
 	vec3 rayDirection = normalize(rayVector);
 
-	float stepLength = 0.25;
+	float stepLength = 0.125;
 
 	vec3 step = rayDirection * stepLength;
 
@@ -77,11 +77,13 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	float alpha = 0;
 
 	for (int i = 0; i < NB_STEPS; i++) {
-		if(alpha > 1.0) { break; }
+		if(alpha >= 1.0) { break; }
 		int mipLevel = 0;
-		vec4 sampledValue = texelFetch(albedoGrid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
-		vec4 sampledNormalValue = texelFetch(normalGrid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
-		vec4 sampledLitValue = texelFetch(grid, ivec3(vec3(inverseSceneScale)*currentPosition.xyz + ivec3(gridSize/2)), mipLevel);
+		vec3 gridSizeHalf = ivec3(gridSize/2);
+		ivec3 gridPosition = ivec3(vec3(inverseSceneScale)*currentPosition.xyz + gridSizeHalf);
+		vec4 sampledValue = texelFetch(albedoGrid, gridPosition, mipLevel);
+		vec4 sampledNormalValue = texelFetch(normalGrid, gridPosition, mipLevel);
+		vec4 sampledLitValue = texelFetch(grid, gridPosition, mipLevel);
 		normalValue.rgb = sampledNormalValue.rgb;
 		lit = sampledLitValue.rgb;
 		isStaticValue = vec3(normalValue.b);
@@ -140,10 +142,14 @@ void main(void) {
 
     vec3 positionGridScaled = inverseSceneScale*positionWorld;
     float gridSizeHalf = float(gridSize/2);
+    float maxExtent = gridSizeHalf * sceneScale;
     const bool useVoxelConeTracing = true;
     vec3 vct;
-    if(useVoxelConeTracing && positionGridScaled.x > -gridSizeHalf && positionGridScaled.y > -gridSizeHalf && positionGridScaled.z > -gridSizeHalf &&
-        positionGridScaled.x < gridSizeHalf && positionGridScaled.y < gridSizeHalf && positionGridScaled.z < gridSizeHalf) {
+
+    const bool debugVoxels = false;
+    if(!debugVoxels && useVoxelConeTracing &&
+        positionWorld.x > -maxExtent && positionWorld.y > -maxExtent && positionWorld.z > -maxExtent &&
+        positionWorld.x < maxExtent && positionWorld.y < maxExtent && positionWorld.z < maxExtent) {
 
 //        out_color.rgb = voxelFetch(ivec3(positionWorld), 0).rgb;
 //        out_color.rgb = 100*traceVoxels(positionWorld, camPosition, 3).rgb;
@@ -170,10 +176,8 @@ void main(void) {
 		vct *= clamp(AOscattering.r,0.0,1.0);
 	}
 
-//	vct = voxelTraceCone(albedoGrid, gridSize, sceneScale, 1, positionWorld, normalize(reflect(-V, normalWorld)), 0.01, 370).rgb;
     out_DiffuseSpecular.rgb = vct;
 
-    const bool debugVoxels = false;
     if(debugVoxels) {
     	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition);
     	out_DiffuseSpecular.rgb = vct;

@@ -3,6 +3,7 @@ package renderer;
 import camera.Camera;
 import config.Config;
 import engine.model.Entity;
+import org.lwjgl.util.vector.Vector4f;
 import renderer.light.DirectionalLight;
 import util.stopwatch.GPUProfiler;
 
@@ -19,13 +20,17 @@ public class RenderExtract {
     public final DirectionalLight directionalLight;
     public final boolean anyPointLightHasMoved;
     public final boolean sceneInitiallyDrawn;
+    public final Vector4f sceneMin;
+    public final Vector4f sceneMax;
 
     public RenderExtract(Camera camera, List<Entity> entities,
                          DirectionalLight directionalLight,
                          boolean anEntityHasMoved,
                          boolean directionalLightNeedsShadowMapRender,
                          boolean anyPointLightHasMoved,
-                         boolean sceneInitiallyDrawn) {
+                         boolean sceneInitiallyDrawn,
+                         Vector4f sceneMin,
+                         Vector4f sceneMax) {
         this.camera = camera;
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
@@ -43,5 +48,7 @@ public class RenderExtract {
         this.directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRender;
         this.anyPointLightHasMoved = anyPointLightHasMoved;
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
+        this.sceneMin = sceneMin;
+        this.sceneMax = sceneMax;
     }
 }
