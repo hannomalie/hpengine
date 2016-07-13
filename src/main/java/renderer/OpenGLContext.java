@@ -107,14 +107,16 @@ public final class OpenGLContext {
     }
 
     public static final void waitForInitialization(OpenGLContext context) {
+        System.out.println("Waiting for OpenGLContext initialization");
         while(!context.isInitialized()) {
-            System.out.println("Waiting for OpenGLContext initialization");
+            System.out.print(".");
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        System.out.println("OpenGLContext ready");
     }
 
     private final void privateInit() throws LWJGLException {

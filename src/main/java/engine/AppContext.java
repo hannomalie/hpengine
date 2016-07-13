@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 
 import static log.ConsoleLogger.getLogger;
 
-public class AppContext {
+public class AppContext implements Extractor<RenderExtract> {
 
     private static volatile AppContext instance = null;
 
@@ -172,9 +172,9 @@ public class AppContext {
                                  @Override
                                  public void update(float seconds) {
 
-                                     if(!Keyboard.isCreated()) {
-                                         return;
-                                     }
+//                                     if(!Keyboard.isCreated()) {
+//                                         return;
+//                                     }
 
                                      float turbo = 1f;
                                      if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
@@ -363,7 +363,8 @@ public class AppContext {
 
         StopWatch.getInstance().start("Controls update");
 
-        if(Keyboard.isCreated()) {
+//        if(Keyboard.isCreated())
+        {
             if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
                 if (Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
                     PICKING_CLICK = 1;
@@ -421,50 +422,49 @@ public class AppContext {
         LightFactory.getInstance().update(seconds);
         StopWatch.getInstance().stopAndPrintMS();
 
-        boolean anyEntityHasMoved = false;
-        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
-            if(getScene() != null) { getScene().calculateMinMax(); }
-            anyEntityHasMoved = true;
-        }
-
         boolean anyPointLightHasMoved = scene.getPointLights().stream()
                         .filter(light -> light.hasMoved()).collect(Collectors.toList())
                         .isEmpty();
+        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
+            if(getScene() != null) { getScene().calculateMinMax(); }
+            entityHasMoved = true;
+        }
 
 
         if (Renderer.getInstance().isFrameFinished()) {
             OpenGLContext.getInstance().blockUntilEmpty();
-            final boolean finalAnyEntityHasMoved = anyEntityHasMoved;
-            OpenGLContext.getInstance().execute(() -> {
-                if((finalAnyEntityHasMoved || anyEntityHasMovedSomewhen || entityAdded) && scene != null) {
-                    EntityFactory.getInstance().bufferEntities(); entityAdded = false;
-                }
-                Renderer.getInstance().startFrame();
-                boolean directionalLightNeedsShadowMapRender = false;
-                if(getScene() != null) {
-                    directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRedraw;
-                }
-                Camera extractedCamera = new Camera(getActiveCamera());
-                extractedCamera.init();
-                extractedCamera.update(0.0000001f);
+            if((entityHasMoved || entityAdded) && scene != null) {
+                EntityFactory.getInstance().bufferEntities(); entityAdded = false;
+            }
 
-                RenderExtract renderExtract = new RenderExtract(extractedCamera, scene.getEntities(), directionalLight, finalAnyEntityHasMoved, directionalLightNeedsShadowMapRender,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1]);
-                latestDrawResult = Renderer.getInstance().draw(renderExtract);
+            Camera extractedCamera = new Camera(getActiveCamera());
+            extractedCamera.init();
+
+            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, extractedCamera);
+
+            OpenGLContext.getInstance().execute(() -> {
+                Renderer.getInstance().startFrame();
+
+                latestDrawResult = Renderer.getInstance().draw(currentExtract);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
-                anyEntityHasMovedSomewhen = false;
-                if(directionalLightNeedsShadowMapRender) {
-                    directionalLightNeedsShadowMapRedraw = !latestDrawResult.directionalLightShadowMapWasRendered();
-                }
-                sceneInitiallyDrawn = true;
+                resetState(currentExtract);
                 AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
             }, false);
-        } else {
-            if(anyEntityHasMoved) {
-                anyEntityHasMovedSomewhen = true;
-            }
         }
 
         scene.endFrame(activeCamera);
+    }
+
+    @Override
+    public void resetState(RenderExtract currentExtract) {
+        entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
+        directionalLightNeedsShadowMapRedraw = currentExtract.directionalLightNeedsShadowMapRender? false : !latestDrawResult.directionalLightShadowMapWasRendered();
+        sceneInitiallyDrawn = !currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn;
+    }
+
+    @Override
+    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera) {
+        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1]);
     }
 
     private JFrame frame;
@@ -499,7 +499,7 @@ public class AppContext {
             System.exit(-1);
         }
     }
-    private volatile boolean anyEntityHasMovedSomewhen = false;
+    private volatile boolean entityHasMoved = false;
 
     public Scene getScene() {
         return scene;
@@ -576,7 +576,4 @@ public class AppContext {
         sceneInitiallyDrawn = false;
     }
 
-    public boolean hasAnEntityMovedSomewhen() {
-        return anyEntityHasMovedSomewhen;
-    }
 }

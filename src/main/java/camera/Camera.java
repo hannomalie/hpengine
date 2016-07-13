@@ -68,17 +68,25 @@ public class Camera extends Entity {
 		this.projectionMatrix = projectionMatrix;
 
 		frustum = new Frustum(this);
+        saveViewMatrixAsLastViewMatrix();
+        transform();
+        storeMatrices();
 	}
 
 	public Camera(MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
 		super(position, name, model, material);
+        saveViewMatrixAsLastViewMatrix();
+        transform();
+        storeMatrices();
 	}
 
 	public void update(float seconds) {
 		saveViewMatrixAsLastViewMatrix();
 		super.update(seconds);
-		transform();
-		storeMatrices();
+        if(hasMoved()) {
+            transform();
+            storeMatrices();
+        }
 	}
 
 	private void storeMatrices() {
@@ -88,7 +96,6 @@ public class Camera extends Entity {
 			projectionMatrixBuffer.flip();
 		}
 		synchronized (viewProjectionMatrixBuffer) {
-
 			viewProjectionMatrixBuffer.rewind();
 			Matrix4f.mul(projectionMatrix, getViewMatrix(), null).store(viewProjectionMatrixBuffer);
 			viewProjectionMatrixBuffer.flip();

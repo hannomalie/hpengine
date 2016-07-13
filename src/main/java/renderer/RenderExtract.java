@@ -12,25 +12,21 @@ import java.util.Collections;
 import java.util.List;
 
 public class RenderExtract {
-    public final boolean anEntityHasMoved;
-    public final boolean directionalLightNeedsShadowMapRender;
-    public final Camera camera;
-    public final List<Entity> entities;
-    public final List<Entity> visibleEntities = new ArrayList<>();
-    public final DirectionalLight directionalLight;
-    public final boolean anyPointLightHasMoved;
-    public final boolean sceneInitiallyDrawn;
-    public final Vector4f sceneMin;
-    public final Vector4f sceneMax;
+    public boolean anEntityHasMoved;
+    public boolean directionalLightNeedsShadowMapRender;
+    public Camera camera;
+    public List<Entity> entities;
+    public List<Entity> visibleEntities = new ArrayList<>();
+    public DirectionalLight directionalLight;
+    public boolean anyPointLightHasMoved;
+    public boolean sceneInitiallyDrawn;
+    public Vector4f sceneMin;
+    public Vector4f sceneMax;
 
-    public RenderExtract(Camera camera, List<Entity> entities,
-                         DirectionalLight directionalLight,
-                         boolean anEntityHasMoved,
-                         boolean directionalLightNeedsShadowMapRender,
-                         boolean anyPointLightHasMoved,
-                         boolean sceneInitiallyDrawn,
-                         Vector4f sceneMin,
-                         Vector4f sceneMax) {
+    public RenderExtract() {
+    }
+
+    public RenderExtract init(Camera camera, List<Entity> entities, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax) {
         this.camera = camera;
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
@@ -50,5 +46,7 @@ public class RenderExtract {
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
+
+        return this;
     }
 }
