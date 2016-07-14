@@ -4,12 +4,12 @@ import camera.Camera;
 import config.Config;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.drawstrategy.DrawResult;
 import renderer.light.DirectionalLight;
+import renderer.material.MaterialFactory;
 import util.stopwatch.GPUProfiler;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class RenderExtract {
     public boolean anEntityHasMoved;
@@ -22,11 +22,12 @@ public class RenderExtract {
     public boolean sceneInitiallyDrawn;
     public Vector4f sceneMin;
     public Vector4f sceneMax;
+    private Map properties = new HashMap<>();
 
     public RenderExtract() {
     }
 
-    public RenderExtract init(Camera camera, List<Entity> entities, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax) {
+    public RenderExtract init(Camera camera, List<Entity> entities, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult) {
         this.camera = camera;
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
@@ -46,6 +47,9 @@ public class RenderExtract {
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
+        if(latestDrawResult != null) {
+            this.properties.putAll(latestDrawResult.getProperties());
+        }
 
         return this;
     }

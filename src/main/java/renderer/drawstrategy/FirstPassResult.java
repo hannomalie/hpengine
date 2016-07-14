@@ -1,10 +1,14 @@
 package renderer.drawstrategy;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public final class FirstPassResult {
     public int verticesDrawn;
     public int entitiesDrawn;
     public int linesDrawn;
     public boolean directionalLightShadowMapWasRendered;
+    private Map<String, Object> properties = new HashMap<>();
 
     public FirstPassResult() {
     }
@@ -18,5 +22,17 @@ public final class FirstPassResult {
 
     public void reset() {
         init(0,0,0,false);
+    }
+
+    public void setProperty(String vctLightInjectedFramesAgo, Object value) {
+        properties.put(vctLightInjectedFramesAgo, value);
+    }
+
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    public Map<String, Object> getProperties() {
+        return properties;
     }
 }

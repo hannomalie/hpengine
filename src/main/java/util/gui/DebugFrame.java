@@ -38,8 +38,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.OpenGLContext;
-import renderer.RenderExtract;
+import renderer.*;
+import renderer.Renderer;
 import renderer.command.AddCubeMapCommand;
 import renderer.command.AddTextureCommand;
 import renderer.command.AddTextureCommand.TextureResult;
@@ -355,12 +355,13 @@ public class DebugFrame {
         	WebMenuItem probeAddMenuItem = new WebMenuItem ( "Add" );
         	probeAddMenuItem.addActionListener(e -> {
 
-                new SwingWorkerWithProgress<Result>(renderer.Renderer.getInstance(), this, "Adding Probe...", "Failed to add probe") {
+                new SwingWorkerWithProgress<Result>(Renderer.getInstance(), this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
                             AppContext appContext = AppContext.getInstance();
-							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,true, AppContext.getInstance().getScene().getMinMax()[0], AppContext.getInstance().getScene().getMinMax()[1]));
+							// TODO: Remove this f***
+							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,true, AppContext.getInstance().getScene().getMinMax()[0], AppContext.getInstance().getScene().getMinMax()[1], null));
 							return new Result<>(true);
 						});
 

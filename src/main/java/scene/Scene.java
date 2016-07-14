@@ -60,7 +60,8 @@ public class Scene implements LifeCycle, Serializable {
 			OpenGLContext.getInstance().execute(() -> {
                 try {
                     AppContext appContext = AppContext.getInstance();
-                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false, new Vector4f(min), new Vector4f(max)));
+					// TODO: Remove this f***
+                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false, new Vector4f(min), new Vector4f(max), null));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

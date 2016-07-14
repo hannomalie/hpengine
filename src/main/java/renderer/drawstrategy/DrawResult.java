@@ -1,5 +1,7 @@
 package renderer.drawstrategy;
 
+import java.util.Map;
+
 public class DrawResult {
     private final FirstPassResult firstPassResult;
     private final SecondPassResult secondPassResult;
@@ -26,5 +28,9 @@ public class DrawResult {
 
     public boolean directionalLightShadowMapWasRendered() {
         return firstPassResult.directionalLightShadowMapWasRendered;
+    }
+
+    public Map<String, Object> getProperties() {
+        return firstPassResult.getProperties();
     }
 }

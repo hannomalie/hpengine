@@ -62,6 +62,8 @@ public class AppContext implements Extractor<RenderExtract> {
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
     private volatile boolean sceneInitiallyDrawn;
+    private RenderExtract currentRenderExtract = new RenderExtract();
+    private RenderExtract nextExtract = new RenderExtract();
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -440,7 +442,7 @@ public class AppContext implements Extractor<RenderExtract> {
             Camera extractedCamera = new Camera(getActiveCamera());
             extractedCamera.init();
 
-            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, extractedCamera);
+            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, extractedCamera, latestDrawResult);
 
             OpenGLContext.getInstance().execute(() -> {
                 Renderer.getInstance().startFrame();
@@ -458,13 +460,13 @@ public class AppContext implements Extractor<RenderExtract> {
     @Override
     public void resetState(RenderExtract currentExtract) {
         entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
-        directionalLightNeedsShadowMapRedraw = currentExtract.directionalLightNeedsShadowMapRender? false : !latestDrawResult.directionalLightShadowMapWasRendered();
+        directionalLightNeedsShadowMapRedraw = currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered() ? false : directionalLightNeedsShadowMapRedraw;
         sceneInitiallyDrawn = !currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn;
     }
 
     @Override
-    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera) {
-        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1]);
+    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult) {
+        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
     }
 
     private JFrame frame;
@@ -576,4 +578,13 @@ public class AppContext implements Extractor<RenderExtract> {
         sceneInitiallyDrawn = false;
     }
 
+    private void switchExtracts() {
+        synchronized (currentRenderExtract) {
+            synchronized (nextExtract) {
+                RenderExtract temp = currentRenderExtract;
+                currentRenderExtract = nextExtract;
+                nextExtract = temp;
+            }
+        }
+    }
 }
