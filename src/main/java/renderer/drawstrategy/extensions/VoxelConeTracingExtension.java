@@ -221,7 +221,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     int currentVerticesCount = modelComponent
                             .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), true, entity.isSelected());
                     firstPassResult.verticesDrawn += currentVerticesCount;
-                    if(currentVerticesCount > 0) { firstPassResult.entitiesDrawn++; }
+                    if(currentVerticesCount > 0) {
+                        firstPassResult.entitiesDrawn++;
+                    } else if(currentVerticesCount < 0){
+                        firstPassResult.notYetUploadedVertexBufferDrawn = true;
+                    }
                 }
             }
             GPUProfiler.end();

@@ -14,7 +14,7 @@ import java.util.*;
 public class RenderExtract {
     public boolean anEntityHasMoved;
     public boolean directionalLightNeedsShadowMapRender;
-    public Camera camera;
+    public Camera camera = new Camera();
     public List<Entity> entities;
     public List<Entity> visibleEntities = new ArrayList<>();
     public DirectionalLight directionalLight;
@@ -28,7 +28,7 @@ public class RenderExtract {
     }
 
     public RenderExtract init(Camera camera, List<Entity> entities, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult) {
-        this.camera = camera;
+        this.camera.init(camera);
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
         if (Config.useFrustumCulling) {

@@ -10,9 +10,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.RenderExtract;
-import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
-import shader.Program;
 import util.Util;
 
 import java.util.List;
@@ -25,7 +23,7 @@ public class AreaLight extends Camera {
 	transient private RenderTarget renderTarget;
 
 	protected AreaLight(Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(MaterialFactory.getInstance(), position, generateName(), model, model.getMaterial().getName());
+		super(position, generateName(), model, model.getMaterial().getName());
         projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);

@@ -439,10 +439,7 @@ public class AppContext implements Extractor<RenderExtract> {
                 EntityFactory.getInstance().bufferEntities(); entityAdded = false;
             }
 
-            Camera extractedCamera = new Camera(getActiveCamera());
-            extractedCamera.init();
-
-            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, extractedCamera, latestDrawResult);
+            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
 
             OpenGLContext.getInstance().execute(() -> {
                 Renderer.getInstance().startFrame();
@@ -461,7 +458,7 @@ public class AppContext implements Extractor<RenderExtract> {
     public void resetState(RenderExtract currentExtract) {
         entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
         directionalLightNeedsShadowMapRedraw = currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered() ? false : directionalLightNeedsShadowMapRedraw;
-        sceneInitiallyDrawn = !currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn;
+        sceneInitiallyDrawn = (!currentExtract.sceneInitiallyDrawn && !latestDrawResult.notYetUploadedVertexBufferDrawn() ? true : sceneInitiallyDrawn);
     }
 
     @Override

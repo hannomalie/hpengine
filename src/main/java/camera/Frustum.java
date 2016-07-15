@@ -46,18 +46,15 @@ public class Frustum implements Serializable {
      */
     public float[][] values = new float[6][4];
 	
-	Vector3f fc = new Vector3f(); // far plane center
-	
 	private transient FloatBuffer buffer = BufferUtils.createFloatBuffer(4*6);
 
 	public Frustum(Camera camera) {
 		calculate(camera);
-		
 	}
-	
+
+    private transient FloatBuffer buf;
 	public void calculate(Camera camera) {
-		FloatBuffer buf = BufferUtils.createFloatBuffer(16);
-		camera.getProjectionMatrix().store(buf);
+        camera.getProjectionMatrix().store(buf);
 		float[] proj = new float[16];
 		buf.rewind();
 		buf.get(proj);
@@ -282,6 +279,7 @@ public class Frustum implements Serializable {
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         buffer = BufferUtils.createFloatBuffer(4*6);
+        buf = BufferUtils.createFloatBuffer(16);
     }
 
 

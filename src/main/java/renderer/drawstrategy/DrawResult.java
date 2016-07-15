@@ -33,4 +33,8 @@ public class DrawResult {
     public Map<String, Object> getProperties() {
         return firstPassResult.getProperties();
     }
+
+    public boolean notYetUploadedVertexBufferDrawn() {
+        return firstPassResult.notYetUploadedVertexBufferDrawn;
+    }
 }

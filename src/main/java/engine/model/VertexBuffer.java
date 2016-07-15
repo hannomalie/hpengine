@@ -94,12 +94,12 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         });
         this.usage = usage;
         this.verticesCount = calculateVerticesCount(buffer, channels);
-        IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
-        this.indexBuffers.add(indexBuffer);
-        for (int i = 0; i < verticesCount; i++) {
-            indexBuffer.put(i, i);
-        }
-        setHasIndexBuffer(true);
+//        IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
+//        this.indexBuffers.add(indexBuffer);
+//        for (int i = 0; i < verticesCount; i++) {
+//            indexBuffer.put(i, i);
+//        }
+//        setHasIndexBuffer(true);
         this.triangleCount = verticesCount / 3;
         putValues(values);
     }
@@ -195,7 +195,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
             }
 
             uploaded = true;
-        }, false); // TODO: Evaluate if this has to be blocking
+        }, false);
 
         return this;
     }
@@ -218,7 +218,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         return draw(0);
     }
     public int draw(int lodLevel) {
-        if(!uploaded) { return 0; }
+        if(!uploaded) { return -1; }
         bind();
         return drawActually(lodLevel);
     }

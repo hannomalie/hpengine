@@ -202,6 +202,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         firstPassResult.entitiesDrawn++;
+                    } else if(currentVerticesCount < 0){
+                        firstPassResult.notYetUploadedVertexBufferDrawn = true;
                     }
                 }
             }

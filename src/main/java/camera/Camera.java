@@ -38,15 +38,24 @@ public class Camera extends Entity {
 	private boolean isPerspective = true;
 	
 	public Camera() {
-		this(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
+        init(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
-		this(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
+        init(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
 	}
 
     public Camera(Camera camera) {
-        this(camera.getProjectionMatrix(), camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio());
+        init(camera);
+    }
+
+
+	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
+        init(projectionMatrix, near, far, fov, ratio);
+	}
+
+    public void init(Camera camera) {
+        init(camera.getProjectionMatrix(), camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio());
         setPosition(camera.getPosition());
         setOrientation(camera.getOrientation());
         setScale(camera.getScale());
@@ -56,24 +65,24 @@ public class Camera extends Entity {
         if(camera.hasParent()) {
             setParent(camera.getParent());
         }
+        init();
     }
 
+    public void init(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
+        this.name = "Camera_" +  System.currentTimeMillis();
+        this.near = near;
+        this.far = far;
+        this.fov = fov;
+        this.ratio = ratio;
+        this.projectionMatrix = projectionMatrix;
 
-	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
-		this.name = "Camera_" +  System.currentTimeMillis();
-		this.near = near;
-		this.far = far;
-		this.fov = fov;
-		this.ratio = ratio;
-		this.projectionMatrix = projectionMatrix;
-
-		frustum = new Frustum(this);
+        frustum = new Frustum(this);
         saveViewMatrixAsLastViewMatrix();
         transform();
         storeMatrices();
-	}
+    }
 
-	public Camera(MaterialFactory materialFactory, Vector3f position, String name, Model model, String material) {
+    public Camera(Vector3f position, String name, Model model, String material) {
 		super(position, name, model, material);
         saveViewMatrixAsLastViewMatrix();
         transform();
