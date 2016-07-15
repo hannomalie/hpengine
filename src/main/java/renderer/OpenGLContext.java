@@ -442,4 +442,14 @@ public final class OpenGLContext {
         GLTimerQuery.getInstance().end();
         System.out.println(GLTimerQuery.getInstance().getResult());
     }
+
+    public void destroy() {
+        openGLThread.stopRequested = true;
+        try {
+            executorService.shutdown();
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

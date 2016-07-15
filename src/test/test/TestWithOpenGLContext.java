@@ -2,6 +2,7 @@ package test;
 
 import config.Config;
 import event.bus.MBassadorEventBus;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
@@ -27,5 +28,10 @@ public class TestWithOpenGLContext {
         frame.setVisible(false);
         Display.setParent(canvas);
         OpenGLContext.getInstance();
+    }
+
+    @AfterClass
+    public static void destroy() {
+        OpenGLContext.getInstance().destroy();
     }
 }

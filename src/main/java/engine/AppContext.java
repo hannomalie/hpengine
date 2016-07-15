@@ -219,9 +219,6 @@ public class AppContext implements Extractor<RenderExtract> {
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
         activeCamera = camera;
-        // TODO: Check if this is still necessary
-        activeCamera.rotateWorld(new Vector4f(0, 1, 0, 0.01f));
-        activeCamera.rotateWorld(new Vector4f(1, 0, 0, 0.01f));
         initialized = true;
         getEventBus().post(new AppContextInitializedEvent());
     }

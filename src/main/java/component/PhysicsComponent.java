@@ -30,13 +30,10 @@ public class PhysicsComponent extends BaseComponent {
 		Matrix4f temp = new Matrix4f();
 		out.getMatrix(temp);
 		engine.Transform converted = Util.fromBullet(out);
-//		System.out.println("Rotation " + converted.getOrientation().x + " " + converted.getOrientation().y + " " + converted.getOrientation().z + " " + converted.getOrientation().w);
 		owner.getTransform().setScale(owner.getScale());
 
 		owner.getTransform().setOrientation(converted.getOrientation());
-		//owner.getTransform().setPosition(new org.lwjgl.util.vector.Vector3f(out.origin.x,out.origin.y,out.origin.z));
 		owner.getTransform().setPosition(converted.getPosition());
-//		System.out.println("Rotation own " + owner.getOrientation().x + " " + owner.getOrientation().y + " " + owner.getOrientation().z + " " + owner.getOrientation().w);
 	}
 
 	@Override
