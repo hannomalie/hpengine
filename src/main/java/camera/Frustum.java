@@ -52,8 +52,9 @@ public class Frustum implements Serializable {
 		calculate(camera);
 	}
 
-    private transient FloatBuffer buf;
+    private transient FloatBuffer buf = BufferUtils.createFloatBuffer(16);
 	public void calculate(Camera camera) {
+        buf.rewind();
         camera.getProjectionMatrix().store(buf);
 		float[] proj = new float[16];
 		buf.rewind();
