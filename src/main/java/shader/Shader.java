@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 public interface Shader extends Reloadable {
 
-    static final Logger LOGGER = Logger.getLogger(Shader.class.getName());
+    Logger LOGGER = Logger.getLogger(Shader.class.getName());
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws Exception {
         return loadShader(type, new File(getDirectory() + filename), "");

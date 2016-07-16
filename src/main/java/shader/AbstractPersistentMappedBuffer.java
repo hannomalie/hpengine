@@ -1,11 +1,13 @@
 package shader;
 
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL44;
 import renderer.OpenGLContext;
 
 import java.nio.Buffer;
 
-import static org.lwjgl.opengl.ARBBufferStorage.*;
+import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
+import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
@@ -59,10 +61,9 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         }
         {
             OpenGLContext.getInstance().execute(() -> {
-                id = glGenBuffers();
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-                glBufferStorage(target, capacityInBytes, flags);
+                GL44.glBufferStorage(target, capacityInBytes, flags);
                 buffer = mapBuffer(capacityInBytes, flags);
 
             });

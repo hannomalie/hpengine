@@ -16,10 +16,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
+
+    static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
 
     private transient volatile boolean uploaded = false;
     private boolean hasIndexBuffer;
@@ -60,9 +63,8 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	private int verticesCount;
     private int triangleCount;
 	public EnumSet<DataChannels> channels;
-	private Usage usage;
 
-	public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
+    public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
         super(GL15.GL_ARRAY_BUFFER);
         setInternals(values, channels, Usage.STATIC);
 	}
@@ -88,11 +90,9 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         this.channels = channels;
         setCapacityInBytes(values.length*getPrimitiveSizeInBytes());
         OpenGLContext.getInstance().execute(() -> {
-            setId(GL15.glGenBuffers());
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         });
-        this.usage = usage;
         this.verticesCount = calculateVerticesCount(buffer, channels);
 //        IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
 //        this.indexBuffers.add(indexBuffer);
@@ -178,7 +178,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         OpenGLContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage.getValue());
 
             if (hasIndexBuffer) {
                 int indexBufferIndex = 0;
@@ -187,7 +186,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
                     setIndexBufferName(indexBufferIndex, GL15.glGenBuffers());
                     GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBufferNames[indexBufferIndex]);
                     indexBuffer.rewind();
-                    GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, usage.getValue());
+                    GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, Usage.STATIC.getValue());
                     GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
                     indexBufferIndex++;
                 }
@@ -223,6 +222,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     private int drawActually(int lodLevel) {
+        LOGGER.finest("drawActually called");
         if(hasIndexBuffer) {
             lodLevel = Math.min(indexBuffers.size() - 1, lodLevel);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(lodLevel));
@@ -235,6 +235,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     @Override
     public void bind() {
+        LOGGER.finest("bind called");
         super.bind();
         if(vertexArrayObject != null) {
             vertexArrayObject.bind();
