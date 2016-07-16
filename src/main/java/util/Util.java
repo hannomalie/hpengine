@@ -23,10 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static log.ConsoleLogger.getLogger;
-
 public class Util {
-	private static Logger LOGGER = getLogger();
+    private static final Logger LOGGER = Logger.getLogger(Util.class.getName());
 	private static final double PI = 3.14159265358979323846;
 	private static final String VECTOR_DELIMITER = "_";
 	
@@ -385,7 +383,7 @@ public class Util {
 			columnCounter++;
 		}
 		buffer.rewind();
-		System.out.println(builder.toString());
+		LOGGER.info(builder.toString());
 	}
 	
 	/**

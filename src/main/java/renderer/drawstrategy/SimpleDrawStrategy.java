@@ -279,8 +279,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
         secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getCamera().getViewDirection());
-//        System.out.println("Light View Direction: " + directionalLight.getViewDirection());
-//        System.out.println("Cam View Direction: " + directionalLight.getCamera().getViewDirection());
         secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(secondPassDirectionalProgram);
         GPUProfiler.start("Draw fullscreen buffer");
@@ -403,11 +401,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 GL11.glCullFace(GL11.GL_BACK);
                 GL11.glDepthFunc(GL11.GL_LEQUAL);
             }
-//			System.out.println("START " + tubeLight.getStart());
-//			System.out.println("AT " + tubeLight.getPosition());
-//			System.out.println("END " + tubeLight.getEnd());
-//			System.out.println("RADIUS " + tubeLight.getRadius());
-//			System.out.println("SCALE " + tubeLight.getScale());
             secondPassTubeProgram.setUniform("lightPosition", tubeLight.getPosition());
             secondPassTubeProgram.setUniform("lightStart", tubeLight.getStart());
             secondPassTubeProgram.setUniform("lightEnd", tubeLight.getEnd());

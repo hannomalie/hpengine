@@ -67,7 +67,6 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 
 	public void setCubeMapFace(int cubeMapArrayListIndex, int attachmentIndex, int cubeMapIndex, int faceIndex) {
 		GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+attachmentIndex, cubeMapArrays.get(cubeMapArrayListIndex).getTextureID(), 0, 6*cubeMapIndex + faceIndex);
-//		System.out.println("Setting cubemaparray number " + cubeMapArrayListIndex + " with texture id " + cubeMapArrays.get(cubeMapArrayListIndex).getTextureID() + " to attachment " + attachmentIndex + " with cubemap " + cubeMapIndex + " and face " + faceIndex);
 	}
 	public void resetAttachments() {
 		for (int i = 0; i < cubeMapArrays.size(); i++) {

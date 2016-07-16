@@ -17,10 +17,7 @@ import texture.Texture;
 import texture.TextureFactory;
 import util.Util;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -30,6 +27,7 @@ import static renderer.material.Material.getDirectory;
 import static renderer.material.Material.write;
 
 public class MaterialFactory {
+    private static final Logger LOGGER = Logger.getLogger(MaterialFactory.class.getName());
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
     private static MaterialFactory instance;
@@ -310,7 +308,7 @@ public class MaterialFactory {
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
 		try {
-//			System.out.println(new File(Material.getDirectory() + fileName + ".hpmaterial").exists());
+			LOGGER.info(String.valueOf(new File(Material.getDirectory() + fileName + ".hpmaterial").exists()));
 			fis = new FileInputStream(getDirectory() + fileName + ".hpmaterial");
 			in = new ObjectInputStream(fis);
 			Material material = (Material) in.readObject();

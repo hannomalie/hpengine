@@ -5,7 +5,12 @@ import net.engio.mbassy.bus.config.BusConfiguration;
 import net.engio.mbassy.bus.config.Feature;
 import net.engio.mbassy.bus.config.IBusConfiguration;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class MBassadorEventBus implements EventBus {
+
+    private static final Logger LOGGER = Logger.getLogger(EventBus.class.getName());
 
     private final MBassador eventBus;
     private final boolean defaultAsync;
@@ -20,7 +25,7 @@ public class MBassadorEventBus implements EventBus {
             .addFeature(Feature.AsynchronousHandlerInvocation.Default())
             .addFeature(Feature.AsynchronousMessageDispatch.Default())
             .addPublicationErrorHandler(error -> {
-                System.out.println(error);
+                LOGGER.severe(error.getMessage());
             });
         this.eventBus = new MBassador(config);
 

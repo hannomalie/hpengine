@@ -1,7 +1,16 @@
 package shader;
 
-import static log.ConsoleLogger.getLogger;
-import static shader.Shader.*;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.monitor.FileAlterationObserver;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.util.glu.GLU;
+import renderer.OpenGLContext;
+import shader.define.Define;
+import util.ressources.FileMonitor;
+import util.ressources.ReloadOnFileChangeListener;
+import util.ressources.Reloadable;
 
 import java.io.File;
 import java.util.Collections;
@@ -11,24 +20,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import renderer.OpenGLContext;
-import shader.define.Define;
-import util.ressources.FileMonitor;
-import util.ressources.ReloadOnFileChangeListener;
-import util.ressources.Reloadable;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.monitor.FileAlterationObserver;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.util.glu.GLU;
+import static shader.Shader.ShaderSource;
+import static shader.Shader.getDirectory;
 
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
-	private static Logger LOGGER = getLogger();
+    private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
 	
 	private ShaderSource computeShaderSource;
     private ComputeShader computeShader;
@@ -76,7 +73,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	private void printIfError(String message) {
 		int error = GL11.glGetError();
 		if(error != GL11.GL_NO_ERROR) {
-			System.out.println(message + GLU.gluErrorString(GL11.glGetError()));
+			LOGGER.severe(message + GLU.gluErrorString(GL11.glGetError()));
 		}
 	}
 
@@ -140,12 +137,12 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);
 			if (result.equals(Boolean.TRUE)) {
-				System.out.println("Program reloaded");
+				LOGGER.info("Program reloaded");
 			} else {
-				System.out.println("Program not reloaded");
+				LOGGER.severe("Program not reloaded");
 			}
 		} catch (Exception e1) {
-			System.out.println("Program not reloaded");
+			LOGGER.severe("Program not reloaded");
 		}
 	}
 

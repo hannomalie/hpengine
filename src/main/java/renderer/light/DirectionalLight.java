@@ -108,7 +108,6 @@ public class DirectionalLight extends Entity {
 		if(hasMoved()) {
             AppContext.getEventBus().post(new DirectionalLightHasMovedEvent());
         }
-//        System.out.println(hasMoved());
         super.update(seconds);
 	}
 

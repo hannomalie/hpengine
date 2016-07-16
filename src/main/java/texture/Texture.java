@@ -8,9 +8,9 @@ import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import renderer.*;
+import renderer.OpenGLContext;
+import renderer.OpenGLThread;
 import renderer.constants.GlTextureTarget;
-import shader.Shader;
 import util.CompressionUtils;
 import util.Util;
 import util.ressources.Reloadable;
@@ -19,7 +19,6 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,6 +30,9 @@ import static texture.Texture.DDSConversionState.*;
 import static texture.Texture.UploadState.*;
 
 public class Texture implements Serializable, Reloadable {
+
+    private static final Logger LOGGER = Logger.getLogger(Texture.class.getName());
+
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = false;
     private transient boolean srgba;
@@ -122,7 +124,7 @@ public class Texture implements Serializable, Reloadable {
     }
     public void bind(boolean setUsed) {
         if(textureID <= 0) {
-//            System.out.println("texture id is <= 0");
+//            LOGGER.info("texture id is <= 0");
             textureID = OpenGLContext.getInstance().genTextures();
         }
         if(setUsed) {
@@ -194,7 +196,7 @@ public class Texture implements Serializable, Reloadable {
 	}
     Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread th, Throwable ex) {
-            System.out.println("Uncaught exception: " + ex);
+            LOGGER.severe("Uncaught exception: " + ex);
             ex.printStackTrace();
         }
     };
@@ -208,7 +210,7 @@ public class Texture implements Serializable, Reloadable {
         uploadState = UPLOADING;
 
         new OpenGLThread(() -> {
-            System.out.println("Uploading " + path);
+            LOGGER.info("Uploading " + path);
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -228,7 +230,7 @@ public class Texture implements Serializable, Reloadable {
                 internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
             }
             if (sourceDataCompressed) {
-                System.out.println("#########Loading compressed texture");
+                LOGGER.info("#########Loading compressed texture");
                 GL13.glCompressedTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, textureBuffer);
 //                            GL45.glCompressedTextureSubImage2D(textureID, 0, 0, 0, getWidth(), getHeight(), srcPixelFormat, textureBuffer);
             } else {
@@ -244,8 +246,8 @@ public class Texture implements Serializable, Reloadable {
             }
             unbind(15);
             uploadState = UPLOADED;
-            System.out.println("Upload finished");
-            System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+            LOGGER.info("Upload finished");
+            LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
             AppContext.getEventBus().post(new TexturesChangedEvent());
         }).start();
 	}
@@ -265,16 +267,16 @@ public class Texture implements Serializable, Reloadable {
     }
 
     private void uploadMipMaps(int internalformat) {
-        System.out.println("Uploading mipmaps for " + path);
+        LOGGER.info("Uploading mipmaps for " + path);
         int currentWidth = width/2;
         int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
-//            System.out.println("Uploading mipmap " + i + " with " + currentWidth + " x " + currentHeight);
+//            LOGGER.info("Uploading mipmap " + i + " with " + currentWidth + " x " + currentHeight);
             ByteBuffer tempBuffer = BufferUtils.createByteBuffer(((currentWidth + 3) / 4) * ((currentHeight + 3) / 4) * 16);//currentHeight * currentWidth * 4);
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
-//            System.out.println("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
+//            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
             if(sourceDataCompressed) {
                 GL13.glCompressedTexImage2D(target.glTarget,
                         i,
@@ -369,7 +371,7 @@ public class Texture implements Serializable, Reloadable {
 //		long start = System.currentTimeMillis();
 		in.defaultReadObject();
 	    decompress();
-//		System.out.println("TEXTURE READ IN " +  (System.currentTimeMillis() - start) + " ms");
+//		LOGGER.info("TEXTURE READ IN " +  (System.currentTimeMillis() - start) + " ms");
 	}
 
 	
@@ -383,7 +385,7 @@ public class Texture implements Serializable, Reloadable {
 		synchronized (data) {
 			setData(CompressionUtils.compress(getData()));
 		}
-//		System.out.println("Compression took " + (System.currentTimeMillis() - start));
+//		LOGGER.info("Compression took " + (System.currentTimeMillis() - start));
 	}
 
 	protected void decompress() throws IOException {
@@ -392,7 +394,7 @@ public class Texture implements Serializable, Reloadable {
 			synchronized (data) {
 				setData(CompressionUtils.decompress(getData()));
 			}
-//			System.out.println("Decompression took " + (System.currentTimeMillis() - start));
+//			LOGGER.info("Decompression took " + (System.currentTimeMillis() - start));
 		} catch (DataFormatException e) {
 			e.printStackTrace();
 		}
@@ -438,15 +440,15 @@ public class Texture implements Serializable, Reloadable {
     public void readAndUpload() {
         new Thread(() -> {
             try {
-                System.out.println("Thread started ...");
+                LOGGER.info("Thread started ...");
                 FileInputStream fis = new FileInputStream(getDirectory() + FilenameUtils.getBaseName(path) + ".hptexture");
                 ObjectInputStream in = new ObjectInputStream(fis);
                 Texture texture = (Texture) in.readObject();
                 in.close();
                 init(texture);
-                System.out.println("Data: " + getData().length);
+                LOGGER.fine("Data: " + getData().length);
                 upload();
-                System.out.println("Uploaded");
+                LOGGER.info("Uploaded");
             } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
                 e.printStackTrace();
             }
@@ -503,7 +505,7 @@ public class Texture implements Serializable, Reloadable {
 
                 long start = System.currentTimeMillis();
                 if(imageExists) {
-                    System.out.println(path + " available as dds: " + textureAvailableAsDDS(path));
+                    LOGGER.info(path + " available as dds: " + textureAvailableAsDDS(path));
                     if(!textureAvailableAsDDS(path)) {
                         bufferedImage = TextureFactory.getInstance().loadImage(path);
                         if (bufferedImage != null) {
@@ -541,13 +543,13 @@ public class Texture implements Serializable, Reloadable {
                         }
                         sourceDataCompressed = true;
                         upload(buffer());
-                        System.out.println("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
+                        LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
                         return;
                     }
 
                 } else {
                     bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
-                    System.out.println("Texture cannot be read, default texture data inserted instead...");
+                    LOGGER.severe("Texture cannot be read, default texture data inserted instead...");
                 }
 
                 setWidth(bufferedImage.getWidth());
@@ -568,7 +570,7 @@ public class Texture implements Serializable, Reloadable {
                 setData(bytes);
                 ByteBuffer textureBuffer = buffer();
                 upload(textureBuffer, srgba);
-                System.out.println("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
+                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
                 Logger.getGlobal().severe("Texture not found: " + path + ". Default texture returned...");
@@ -601,7 +603,7 @@ public class Texture implements Serializable, Reloadable {
             DDSUtilWriteLock.unlock();
         }
         ddsConversionState = CONVERTED;
-        System.out.println("Converting and saving as dds took " + (System.currentTimeMillis() - start) + "ms");
+        LOGGER.info("Converting and saving as dds took " + (System.currentTimeMillis() - start) + "ms");
         return bufferedImage;
     }
 
@@ -640,7 +642,7 @@ public class Texture implements Serializable, Reloadable {
 
         if(oldWidth != nextPowerOfTwoWidth || oldHeight != nextPowerOfTwoHeight) {
             result = new ImageRescaler().rescaleBI(nonPowerOfTwoImage, maxOfWidthAndHeightPoT, maxOfWidthAndHeightPoT);
-            System.out.println("Image rescaled from " + oldWidth + " x " + oldHeight + " to " + result.getWidth() + " x " + result.getHeight());
+            LOGGER.info("Image rescaled from " + oldWidth + " x " + oldHeight + " to " + result.getWidth() + " x " + result.getHeight());
         }
         return result;
     }
@@ -653,7 +655,7 @@ public class Texture implements Serializable, Reloadable {
     @Override
     public void load() {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
-//        System.out.println("Loading " + path);
+//        LOGGER.info("Loading " + path);
 
         upload(srgba);
     }
@@ -662,7 +664,7 @@ public class Texture implements Serializable, Reloadable {
     public void unload() {
         if(uploadState != UPLOADED || preventUnload) { return; }
 
-        System.out.println("Unloading " + path);
+        LOGGER.info("Unloading " + path);
         uploadState = NOT_UPLOADED;
 
         OpenGLContext.getInstance().execute(() -> {
@@ -688,7 +690,7 @@ public class Texture implements Serializable, Reloadable {
             int mipmapCount = Util.calculateMipMapCount(getWidth(), getHeight());
             GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-1);
 //            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount);
-            System.out.println("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+            LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
         });
     }
 

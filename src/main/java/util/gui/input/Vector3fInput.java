@@ -1,16 +1,16 @@
 package util.gui.input;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.JComponent;
-
+import com.alee.laf.text.WebTextField;
 import org.lwjgl.util.vector.Vector3f;
 
-import com.alee.laf.text.WebTextField;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.logging.Logger;
 
 
 public abstract class Vector3fInput {
+    private static final Logger LOGGER = Logger.getLogger(Vector3fInput.class.getName());
 
 	WebTextField field1 = new WebTextField("0");
 	WebTextField field2 = new WebTextField("0");
@@ -44,7 +44,7 @@ public abstract class Vector3fInput {
 			two = Float.parseFloat(field2.getText());
 			three = Float.parseFloat(field3.getText());
 		} catch (Exception e) {
-			System.out.println("Conversion failed");
+			LOGGER.severe("Conversion failed");
 		}
 		
 		return new Vector3f(one, two, three);

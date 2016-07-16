@@ -104,10 +104,6 @@ public abstract class StorageBuffer implements OpenGLBuffer {
     @Override
     public DoubleBuffer getValues(int offset, int length) {
         bind();
-//		System.out.println("Offset " + offset*4);
-//		System.out.println("Length " + length*4);
-//		System.out.println(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
-
         final DoubleBuffer[] result = new DoubleBuffer[1];
         OpenGLContext.getInstance().execute(() -> {
             result[0] = GL30.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, offset * primitiveByteSize, length * primitiveByteSize/*bytes!*/, GL30.GL_MAP_READ_BIT, null).asDoubleBuffer();

@@ -8,8 +8,11 @@ import org.junit.Test;
 import org.lwjgl.BufferUtils;
 import test.TestWithOpenGLContext;
 
+import java.util.logging.Logger;
+
 public class OpenGLQueryTest extends TestWithOpenGLContext {
 
+    private static final Logger LOGGER = Logger.getLogger(OpenGLQueryTest.class.getName());
 
     @Test
     public void testTimerQuery() throws InterruptedException {
@@ -22,7 +25,7 @@ public class OpenGLQueryTest extends TestWithOpenGLContext {
 
         query.end();
         Float result = query.getResult();
-        System.out.println("Uploading " + floatValueCount + " float values took " + result + " ms");
+        LOGGER.info("Uploading " + floatValueCount + " float values took " + result + " ms");
         Assert.assertTrue("Query should take some time", result > 1.0);
     }
 

@@ -5,7 +5,11 @@ import junit.framework.Assert;
 import org.junit.Test;
 import test.TestWithRenderer;
 
+import java.util.logging.Logger;
+
 public class SamplesPassedQueryTest extends TestWithRenderer {
+
+    private static final Logger LOGGER = Logger.getLogger(SamplesPassedQueryTest.class.getName());
 
     @Test
     public void testSamplesPassed() throws InterruptedException {
@@ -18,7 +22,7 @@ public class SamplesPassedQueryTest extends TestWithRenderer {
         query.end();
 
         Integer samplesPassedCount = query.getResult();
-        System.out.println("Samples passed: " + samplesPassedCount);
+        LOGGER.info("Samples passed: " + samplesPassedCount);
         Assert.assertTrue(samplesPassedCount > 0);
 
 

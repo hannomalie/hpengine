@@ -3,7 +3,11 @@ package util.stopwatch;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL33;
 
+import java.util.logging.Logger;
+
 public class OpenGLStopWatch {
+
+    private static final Logger LOGGER = Logger.getLogger(OpenGLStopWatch.class.getName());
 
 	private int queryIdStart;
 	private int queryIdEnd;
@@ -35,7 +39,7 @@ public class OpenGLStopWatch {
 	}
 	
 	public void printTimeInMS() {
-		System.out.println(description + " took " + getTimeInMS() + " ms");
+		LOGGER.info(description + " took " + getTimeInMS() + " ms");
 	}
 	
 	public long stopAndGetTimeInMS() {

@@ -515,7 +515,6 @@ public class DebugFrame {
     		});
     		if(chosenFile != null) {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-					System.out.println(chosenFile.getName());
 					MaterialFactory.getInstance().get(chosenFile.getName());
 					return new Result(true);
 				});
@@ -1185,9 +1184,6 @@ public class DebugFrame {
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        System.out.println(selectedLight.getName());
-                        System.out.println(selectedRow[0]);
-                        System.out.println(AppContext.getInstance().getScene().getAreaLights().size());
                         entityViewFrame.add(new AreaLightView(AppContext.getInstance(), debugFrame, selectedLight));
                         entityViewFrame.setVisible(true);
                     }

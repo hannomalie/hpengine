@@ -1,11 +1,11 @@
 package test;
 
 import camera.Camera;
+import container.Octree;
+import container.Octree.Node;
 import engine.Transform;
 import engine.model.Entity;
 import junit.framework.Assert;
-import container.Octree;
-import container.Octree.Node;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -15,11 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
 public class OctreeTest extends TestWithAppContext {
-	
+
+    private static final Logger LOGGER = Logger.getLogger(OctreeTest.class.getName());
+
 	@Test
 	public void generatingBox() {
 		AABB box = new AABB(new Vector3f(), 10);
@@ -277,8 +280,8 @@ public class OctreeTest extends TestWithAppContext {
 		long start = System.currentTimeMillis();
 		octree.insert(toAdd);
 		long end = System.currentTimeMillis();
-		System.out.println("Took " + (end - start) + " ms to insert " + entityCount +  " entities.");
-		System.out.println("Current deepness is " + octree.getCurrentDeepness());
+		LOGGER.info("Took " + (end - start) + " ms to insert " + entityCount +  " entities.");
+		LOGGER.info("Current deepness is " + octree.getCurrentDeepness());
 		
 		checkIfValid(octree.rootNode);
 	}

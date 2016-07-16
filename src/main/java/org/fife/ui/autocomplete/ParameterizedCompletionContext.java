@@ -20,6 +20,8 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -61,6 +63,7 @@ import org.fife.ui.rtextarea.ChangeableHighlightPainter;
  */
 class ParameterizedCompletionContext {
 
+    private static final Logger LOGGER = Logger.getLogger(ParameterizedCompletionContext.class.getName());
 	/**
 	 * The parent window.
 	 */
@@ -462,7 +465,7 @@ class ParameterizedCompletionContext {
 	private void installKeyBindings() {
 
 		if (AutoCompletion.getDebug()) {
-			System.out.println("CompletionContext: Installing keybindings");
+			LOGGER.log(Level.FINE, "CompletionContext: Installing keybindings");
 		}
 
 		JTextComponent tc = ac.getTextComponent();
@@ -763,7 +766,7 @@ class ParameterizedCompletionContext {
 	private void uninstallKeyBindings() {
 
 		if (AutoCompletion.getDebug()) {
-			System.out.println("CompletionContext Uninstalling keybindings");
+			LOGGER.log(Level.FINE, "CompletionContext Uninstalling keybindings");
 		}
 
 		JTextComponent tc = ac.getTextComponent();

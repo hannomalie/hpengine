@@ -1,12 +1,14 @@
 package util.commandqueue;
 
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 public class CommandQueue {
+    private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
+
     private BlockingQueue<FutureCallable> workQueue = new LinkedBlockingQueue<>();
 
     public void executeCommands() {
@@ -19,14 +21,12 @@ public class CommandQueue {
         if(command != null) {
             try {
                 command.complete(command.execute());
+                LOGGER.finer(String.valueOf(workQueue.remainingCapacity()));
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
-//            System.out.println("#################################");
-//            System.out.println(workQueue.size());
-//            workQueue.forEach(futureCallable -> System.out.println(futureCallable));
         } else {
             return false;
         }

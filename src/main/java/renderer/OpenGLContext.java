@@ -23,6 +23,7 @@ import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 
 public final class OpenGLContext {
+    private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
 
     private static final int MAX_WORKITEMS = 1000;
 
@@ -40,13 +41,11 @@ public final class OpenGLContext {
     public static OpenGLContext getInstance() {
         if(instance == null) {
             synchronized(OpenGLContext.class) {
-                System.out.println("OpenGLContext is still null");
-
                 if(instance == null) {
                     try {
-                        System.out.println("OpenGLContext is being initialized");
+                        LOGGER.info("OpenGLContext is being initialized");
                         OpenGLContext.init();
-                        System.out.println("OpenGLContext is initialized");
+                        LOGGER.info("OpenGLContext is initialized");
                     } catch (LWJGLException e) {
                         e.printStackTrace();
                     }
@@ -90,7 +89,7 @@ public final class OpenGLContext {
                         try {
                             context.privateInit();
                         } catch (Exception e) {
-                            System.out.println("Exception during privateInit");
+                            LOGGER.severe("Exception during privateInit");
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -107,16 +106,16 @@ public final class OpenGLContext {
     }
 
     public static final void waitForInitialization(OpenGLContext context) {
-        System.out.println("Waiting for OpenGLContext initialization");
+        LOGGER.info("Waiting for OpenGLContext initialization");
         while(!context.isInitialized()) {
-            System.out.print(".");
+            LOGGER.info("Waiting for OpenGLContext initialization...");
             try {
-                Thread.sleep(50);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        System.out.println("OpenGLContext ready");
+        LOGGER.info("OpenGLContext ready");
     }
 
     private final void privateInit() throws LWJGLException {
@@ -128,9 +127,9 @@ public final class OpenGLContext {
                 .withDebug(true)
                 ;
 
-        System.out.println("OpenGLContext before setDisplayMode");
+        LOGGER.info("OpenGLContext before setDisplayMode");
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
-        System.out.println("OpenGLContext after setDisplayMode");
+        LOGGER.info("OpenGLContext after setDisplayMode");
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
 
@@ -167,7 +166,7 @@ public final class OpenGLContext {
         viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
 
         initialized = true;
-        System.out.println("OpenGLContext initialized");
+        LOGGER.info("OpenGLContext initialized");
     }
 
     public void update(float seconds) {
@@ -228,7 +227,7 @@ public final class OpenGLContext {
 
     private void printTextureBindings() {
         for(Map.Entry<Integer, Integer> entry : textureBindings.entrySet()) {
-            System.out.println("Slot " + entry.getKey() + " -> Texture " + entry.getValue());
+            LOGGER.info("Slot " + entry.getKey() + " -> Texture " + entry.getValue());
         }
     }
 
@@ -246,13 +245,13 @@ public final class OpenGLContext {
                 if(textureId > 0) {
                     try {
                         textureUnitsLock.get(textureUnitIndex).acquire();
-//                        System.out.println("Lock acquired for unit " + textureUnitIndex);
+                        LOGGER.finer("Lock acquired for unit " + textureUnitIndex);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 } else {
                     textureUnitsLock.get(textureUnitIndex).release();
-//                    System.out.println("Lock released for unit " + textureUnitIndex);
+                    LOGGER.finer("Lock released for unit " + textureUnitIndex);
                     return;
                 }
             }
@@ -440,7 +439,7 @@ public final class OpenGLContext {
         GLTimerQuery.getInstance().begin();
         runnable.run();
         GLTimerQuery.getInstance().end();
-        System.out.println(GLTimerQuery.getInstance().getResult());
+        LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
     }
 
     public void destroy() {

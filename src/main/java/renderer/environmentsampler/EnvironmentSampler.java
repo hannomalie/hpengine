@@ -647,11 +647,6 @@ public class EnvironmentSampler extends Camera {
 				GL11.glCullFace(GL11.GL_BACK);
 				GL11.glDepthFunc(GL11.GL_LEQUAL);
 			}
-//			System.out.println("START " + tubeLight.getStart());
-//			System.out.println("AT " + tubeLight.getPosition());
-//			System.out.println("END " + tubeLight.getEnd());
-//			System.out.println("RADIUS " + tubeLight.getRadius());
-//			System.out.println("SCALE " + tubeLight.getScale());
 			secondPassTubeProgram.setUniform("lightPosition", tubeLight.getPosition());
 			secondPassTubeProgram.setUniform("lightStart", tubeLight.getStart());
 			secondPassTubeProgram.setUniform("lightEnd", tubeLight.getEnd());

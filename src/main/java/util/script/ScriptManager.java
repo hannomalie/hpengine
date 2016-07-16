@@ -12,8 +12,11 @@ import renderer.material.MaterialFactory;
 import texture.TextureFactory;
 
 import javax.script.*;
+import java.util.logging.Logger;
 
 public class ScriptManager {
+
+    private static final Logger LOGGER = Logger.getLogger(ScriptManager.class.getName());
 
     private static volatile ScriptManager instance;
     private final ScriptContext globalContext;
@@ -34,7 +37,7 @@ public class ScriptManager {
 
 	public void eval(String script) throws ScriptException {
 		engine.eval(script);
-		System.out.println("Script executed...");
+		LOGGER.info("Script executed...");
 	}
 
 	public void defineGlobals() {

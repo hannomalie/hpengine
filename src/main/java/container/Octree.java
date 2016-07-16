@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
-	private static Logger LOGGER = getLogger();
+	private static Logger LOGGER = LogManager.getLogManager().getLogger(Octree.class.getName());
 	private static FloatBuffer matrix44Buffer = null;
 	private static Matrix4f modelMatrix = new Matrix4f();
 	public static final float DEFAULT_SIZE = 1000;
@@ -128,12 +129,12 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		for (Entity Entity : toDispatch) {
 			insertWithoutOptimize(Entity);
 		}
-//		long start = System.currentTimeMillis();
-//	    rootNode.optimize();
+		long start = System.currentTimeMillis();
+	    rootNode.optimize();
 		optimize();
 //		rootNode.optimizeThreaded();
-//		long end = System.currentTimeMillis();
-//		System.out.println("Took " + (end - start) + " ms to optimize.");
+		long end = System.currentTimeMillis();
+		LOGGER.info("Took " + (end - start) + " ms to optimize.");
 	}
 
 	@Override
@@ -312,7 +313,6 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		
 
 		public boolean isVisible(Camera camera) {
-//			System.out.println("Node visible " + aabb.isInFrustum(camera) + " with " + getAllEntitiesInAndBelow().size());
 			return looseAabb.isInFrustum(camera);
 		}
 		
@@ -454,7 +454,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			    System.out.println("Finished all threads");
+			    LOGGER.info("Finished all threads");
 			}
 		}
 		public void optimize() {
@@ -485,7 +485,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 				  if (node.hasEntities() && node.hasChildren()) {
 					node.addAll(node.collectAllEntitiesFromChildren());
 					node.setHasChildren(false);
-					System.out.println("Optimized...");
+					LOGGER.info("Optimized...");
 //					return;
 				  }
 				node.optimize();

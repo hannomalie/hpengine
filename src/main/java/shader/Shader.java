@@ -11,10 +11,14 @@ import util.ressources.Reloadable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public interface Shader extends Reloadable {
+
+    static final Logger LOGGER = Logger.getLogger(Shader.class.getName());
+
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws Exception {
         return loadShader(type, new File(getDirectory() + filename), "");
     }
@@ -34,7 +38,7 @@ public interface Shader extends Reloadable {
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, ShaderSource shaderSource, String mapDefinesString) {
 
         if (shaderSource == null) {
-            System.out.println("Shadersource null, returning null shader");
+            LOGGER.severe("Shadersource null, returning null shader");
             return null;
         }
 
@@ -94,7 +98,7 @@ public interface Shader extends Reloadable {
             throw new ShaderLoadException(shaderSource);
         }
 
-//		System.out.println(resultingShaderSource);
+		LOGGER.finer(resultingShaderSource);
         OpenGLContext.exitOnGLError("loadShader");
 
         return shader;

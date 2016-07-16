@@ -47,6 +47,8 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -82,7 +84,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private Camera camera;
     private Camera activeCamera;
 
-    private static Logger LOGGER = getLogger();
+    private static final Logger LOGGER = Logger.getLogger(AppContext.class.getName());
     private volatile boolean initialized;
 
     private OpenGLStopWatch glWatch;
@@ -269,7 +271,7 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     public void destroy() {
-        System.out.println("Finalize renderer");
+        LOGGER.info("Finalize renderer");
         destroyOpenGL();
         if(frame != null) {
             frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
@@ -379,22 +381,22 @@ public class AppContext implements Extractor<RenderExtract> {
 
             if(Keyboard.isKeyDown(Keyboard.KEY_0)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
-                System.out.println("Model lod 0");
+                LOGGER.info("Model lod 0");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_1)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_1;
-                System.out.println("Model lod 1");
+                LOGGER.info("Model lod 1");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_2)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_2;
-                System.out.println("Model lod 2");
+                LOGGER.info("Model lod 2");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_3)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_3;
-                System.out.println("Model lod 3");
+                LOGGER.info("Model lod 3");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_4)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_4;
-                System.out.println("Model lod 4");
+                LOGGER.info("Model lod 4");
             } else if(Keyboard.isKeyDown(Keyboard.KEY_5)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_5;
-                System.out.println("Model lod 5");
+                LOGGER.info("Model lod 5");
             }
         }
 

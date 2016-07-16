@@ -21,6 +21,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -40,6 +42,7 @@ import javax.swing.plaf.ListUI;
 import javax.swing.text.Caret;
 import javax.swing.text.JTextComponent;
 
+import event.bus.EventBus;
 import org.fife.ui.rsyntaxtextarea.PopupWindowDecorator;
 
 
@@ -56,6 +59,7 @@ import org.fife.ui.rsyntaxtextarea.PopupWindowDecorator;
 class AutoCompletePopupWindow extends JWindow implements CaretListener,
 									ListSelectionListener, MouseListener {
 
+    private static final Logger LOGGER = Logger.getLogger(AutoCompletePopupWindow.class.getName());
 	/**
 	 * The parent AutoCompletion instance.
 	 */
@@ -319,7 +323,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener,
 	private void installKeyBindings() {
 
 		if (AutoCompletion.getDebug()) {
-			System.out.println("PopupWindow: Installing keybindings");
+			LOGGER.log(Level.FINE, "PopupWindow: Installing keybindings");
 		}
 
 		if (escapeKap==null) { // Lazily create actions.
@@ -730,7 +734,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener,
 	public void uninstallKeyBindings() {
 
 		if (AutoCompletion.getDebug()) {
-			System.out.println("PopupWindow: Removing keybindings");
+			LOGGER.log(Level.FINE, "PopupWindow: Removing keybindings");
 		}
 
 		JTextComponent comp = ac.getTextComponent();

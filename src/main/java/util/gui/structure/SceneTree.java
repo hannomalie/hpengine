@@ -2,9 +2,9 @@ package util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
+import container.EntitiesContainer;
 import engine.AppContext;
 import engine.model.Entity;
-import container.EntitiesContainer;
 import util.gui.DebugFrame;
 import util.gui.SetSelectedListener;
 import util.gui.SetVisibilityCheckStateListener;
@@ -17,9 +17,12 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class SceneTree extends WebCheckBoxTree {
+
+    private static final Logger LOGGER = Logger.getLogger(SceneTree.class.getName());
 
     private SetSelectedListener selectionListener = null;
 
@@ -36,7 +39,7 @@ public class SceneTree extends WebCheckBoxTree {
         model.reload();
         revalidate();
         repaint();
-        System.out.println("Reloaded scene tree");
+        LOGGER.info("Reloaded scene tree");
     }
 
     private DefaultMutableTreeNode addOctreeSceneObjects() {
@@ -46,9 +49,9 @@ public class SceneTree extends WebCheckBoxTree {
 
         if(appContext.getScene() != null) {
             spanTree(top, appContext.getScene().getEntitiesContainer());
-            System.out.println("Added " + appContext.getScene().getEntities().size());
+            LOGGER.info("Added " + appContext.getScene().getEntities().size());
         } else {
-            System.out.println("Scene is currently null");
+            LOGGER.info("Scene is currently null");
         }
         if(selectionListener == null) {
             selectionListener = new SetSelectedListener(this, appContext);

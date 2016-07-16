@@ -15,11 +15,14 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 import static texture.Texture.UploadState.*;
 
 public class TextureTest extends TestWithAppContext {
+
+    private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
@@ -58,7 +61,7 @@ public class TextureTest extends TestWithAppContext {
 
         long start = System.currentTimeMillis();
         DDSImage newddsimage = DDSImage.read(file);
-        System.out.println("DDS read took " + (System.currentTimeMillis()-start) + "ms");
+        LOGGER.info("DDS read took " + (System.currentTimeMillis()-start) + "ms");
 
         assertEquals("height",bi.getHeight(), newddsimage.getHeight());
         assertEquals("width", bi.getWidth(), newddsimage.getWidth());
@@ -184,7 +187,7 @@ public class TextureTest extends TestWithAppContext {
         }
         float actualFailurePercentage = 100f*((float)diffCounter/(float)expected.length);
         float actualPassedValuesPercentage = 100f - actualFailurePercentage;
-        System.out.println("Percentage of values within the tolerance is " + actualPassedValuesPercentage);
+        LOGGER.info("Percentage of values within the tolerance is " + actualPassedValuesPercentage);
         return actualFailurePercentage;
     }
 
@@ -211,11 +214,11 @@ public class TextureTest extends TestWithAppContext {
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);
         }
-        System.out.println("Texture uploading");
+        LOGGER.info("Texture uploading");
         while(texture.getUploadState() != UPLOADED) {
             Thread.sleep(20);
         }
-        System.out.println("Texture uploaded");
+        LOGGER.info("Texture uploaded");
 
 //        texture.unload();
         Thread.sleep(TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
@@ -223,7 +226,7 @@ public class TextureTest extends TestWithAppContext {
         Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));
         texture.setUsedNow();
         while(texture.getUploadState() != UPLOADED) {
-            System.out.println("uploadState is " + texture.getUploadState());
+            LOGGER.info("uploadState is " + texture.getUploadState());
             Thread.sleep(20);
         }
         Assert.assertEquals(UPLOADED, texture.getUploadState());

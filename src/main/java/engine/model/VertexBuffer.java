@@ -173,7 +173,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	}
 
     public VertexBuffer upload() {
-//        System.out.println("upload " + isMapped());
         buffer.rewind();
 		uploaded = false;
         OpenGLContext.getInstance().execute(() -> {

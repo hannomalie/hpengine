@@ -48,11 +48,8 @@
 package jme3tools.optimize;
 
 import component.ModelComponent;
-import engine.model.DataChannels;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector3f;
 
-import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,10 +81,7 @@ import java.util.logging.Logger;
  */
 public class LodGenerator {
 
-    private static final Logger logger = Logger.getLogger(LodGenerator.class.getName());
-    static {
-        logger.setLevel(Level.ALL);
-    }
+    private static final Logger LOGGER = Logger.getLogger(LodGenerator.class.getName());
     private static final float NEVER_COLLAPSE_COST = Float.MAX_VALUE;
     private static final float UNINITIALIZED_COLLAPSE_COST = Float.POSITIVE_INFINITY;
     private final ModelComponent modelComponent;
@@ -325,7 +319,7 @@ public class LodGenerator {
             triangleList.add(tri);
             if (tri.isMalformed()) {
                 if (!tri.isRemoved) {
-                    logger.log(Level.FINE, "malformed triangle found with ID:{0}\n{1} It will be excluded from Lod level calculations.", new Object[]{triangleList.indexOf(tri), tri.toString()});
+                    LOGGER.log(Level.FINE, "malformed triangle found with ID:{0}\n{1} It will be excluded from Lod level calculations.", new Object[]{triangleList.indexOf(tri), tri.toString()});
                     tri.isRemoved = true;
                     indexCount -= 3;
                 }
@@ -346,7 +340,7 @@ public class LodGenerator {
             if (!vertex.edges.isEmpty()) {
                 computeVertexCollapseCost(vertex);
             } else {
-                logger.log(Level.WARNING, "Found isolated vertex {0} It will be excluded from Lod level calculations.", vertex);
+                LOGGER.log(Level.WARNING, "Found isolated vertex {0} It will be excluded from Lod level calculations.", vertex);
             }
         }
 //        assert (vertexList.size() == collapseCostSet.size());
@@ -358,7 +352,7 @@ public class LodGenerator {
         for (Vertex vertex : vertexList) {
             boolean test = find(collapseCostSet, vertex);
             if (!test) {
-                System.out.println("vertex " + vertex.index + " not present in collapse costs");
+                LOGGER.info("vertex " + vertex.index + " not present in collapse costs");
                 return false;
             }
         }
@@ -541,7 +535,7 @@ public class LodGenerator {
                     Vertex v = it.next();
                     if (v.collapseCost < collapseCostLimit) {
                         if (!collapse(v)) {
-                            logger.log(Level.FINE, "Couldn''t collapse vertex{0}", v.index);
+                            LOGGER.log(Level.FINE, "Couldn''t collapse vertex{0}", v.index);
                         }
                         Iterator<Vertex> it2 = collapseCostSet.iterator();
                         if (it2.hasNext()) {
@@ -557,7 +551,7 @@ public class LodGenerator {
                 }
                 tricount = modelComponent.getTriangleCount() - nbCollapsedTri;
             }
-            logger.log(Level.FINE, "collapsed {0} tris", nbCollapsedTri);
+            LOGGER.log(Level.FINE, "collapsed {0} tris", nbCollapsedTri);
             boolean outSkipped = (lastBakeVertexCount == tricount);
             if (!outSkipped) {
                 lastBakeVertexCount = tricount;
@@ -700,7 +694,7 @@ public class LodGenerator {
                 if (!tri.isRemoved) {
                     tri.isRemoved = true;
                     indexCount -= 3;
-                    logger.log(Level.FINE, "duplicate triangle found{0}{1} It will be excluded from Lod level calculations.", new Object[]{tri, duplicate});
+                    LOGGER.log(Level.FINE, "duplicate triangle found{0}{1} It will be excluded from Lod level calculations.", new Object[]{tri, duplicate});
                 }
             }
         }

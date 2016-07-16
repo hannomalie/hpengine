@@ -28,6 +28,7 @@ import java.nio.IntBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import static renderer.constants.GlTextureTarget.*;
 
@@ -45,6 +46,7 @@ import static renderer.constants.GlTextureTarget.*;
  * @author Brian Matzon
  */
 public class TextureFactory {
+    private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
@@ -268,7 +270,7 @@ public class TextureFactory {
                          GL11.GL_LINEAR, false);
 
         TEXTURES.put(resourceName + "_cube",tex);
-        System.out.println("Precompiled " + CubeMap.write(tex, resourceName));
+        LOGGER.info("Precompiled " + CubeMap.write(tex, resourceName));
         return tex;
     }
 
@@ -384,7 +386,7 @@ public class TextureFactory {
 //                File outputfile = new File(i + ".png");
 //                ImageIO.write(texImage, "png", outputfile);
 //            } catch (IOException e) {
-//            	System.out.println("xoxoxoxo");
+//            	LOGGER.info("xoxoxoxo");
 //            }
             
             

@@ -1,12 +1,15 @@
 package util.stopwatch;
 
-import java.util.LinkedList;
-
 import junit.framework.Assert;
-
 import org.junit.Test;
 
+import java.util.LinkedList;
+import java.util.logging.Logger;
+
 public class StopWatch {
+
+    private static final Logger LOGGER = Logger.getLogger(StopWatch.class.getName());
+
 	public static boolean ACTIVE = false;
 	public static boolean PRINT = false;
 	
@@ -41,7 +44,7 @@ public class StopWatch {
 		if (!ACTIVE) {return;}
 		if (!PRINT) {return;}
 		String out = stopAndGetStringMS();
-		System.out.println(getIntendation() + out);
+		LOGGER.info(getIntendation() + out);
 	}
 	
 	private String getIntendation() {

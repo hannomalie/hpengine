@@ -9,12 +9,15 @@ import net.engio.mbassy.listener.Handler;
 import org.junit.Test;
 
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 /**
  * Test to roughly compare speed difference between
  * async and synced eventbus with singlethreading
  */
 public class EventBusBenchmark {
+
+    private static final Logger LOGGER = Logger.getLogger(EventBusBenchmark.class.getName());
 
     @Test
     public void postEventsBenchmark() {
@@ -48,7 +51,7 @@ public class EventBusBenchmark {
             }
         }
         long durationInMs = System.currentTimeMillis() - start;
-        System.out.println( eventBus.getClass().toString() + "(async " + async + ")" +
+        LOGGER.info( eventBus.getClass().toString() + "(async " + async + ")" +
                 " took " +
                 durationInMs +
                 " ms to complete " + postCount + " postings (" + (durationInMs / (float) postCount) + " per post)");
@@ -60,7 +63,7 @@ public class EventBusBenchmark {
             eventBus.post(new Object());
         }
         long durationInMs = System.currentTimeMillis() - start;
-        System.out.println( eventBus.getClass().toString() +
+        LOGGER.info( eventBus.getClass().toString() +
                 " took " +
                 durationInMs +
                 " ms to complete " + postCount + " postings (" + (durationInMs / (float) postCount) + " per post)");

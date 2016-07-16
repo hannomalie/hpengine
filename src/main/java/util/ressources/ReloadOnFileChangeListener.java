@@ -1,10 +1,13 @@
 package util.ressources;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
 public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChangeListener {
+
+    private static final Logger LOGGER = Logger.getLogger(ReloadOnFileChangeListener.class.getName());
 
 	private T owner;
 
@@ -15,8 +18,8 @@ public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChan
 	@Override
 	public void onFileChangeAction(File arg0) {
 		if(shouldReload(arg0)) {
-			System.out.println("Reloading....... " + owner.getName());
-			System.out.println("because " + arg0.getAbsolutePath() + " was changed.");
+			LOGGER.info("Reloading....... " + owner.getName());
+			LOGGER.info("because " + arg0.getAbsolutePath() + " was changed.");
 			owner.reload();
 		}
 	}

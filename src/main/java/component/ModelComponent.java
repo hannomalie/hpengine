@@ -7,7 +7,6 @@ import engine.Drawable;
 import engine.model.DataChannels;
 import engine.model.Model;
 import engine.model.VertexBuffer;
-import jme3tools.optimize.LodGenerator;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -25,15 +24,12 @@ import texture.Texture;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ModelComponent extends BaseComponent implements Drawable, Serializable {
+    private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
     public static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
 
@@ -117,15 +113,15 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
         // TODO: Implement strategy pattern
         float distanceToCamera = Vector3f.sub(camera.getWorldPosition(), getEntity().getCenterWorld(), null).length();
-//        System.out.println("boundingSphere " + model.getBoundingSphereRadius());
-//        System.out.println("distanceToCamera " + distanceToCamera);
+        if(LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.finer("boundingSphere " + model.getBoundingSphereRadius());
+            LOGGER.finer("distanceToCamera " + distanceToCamera);
+        }
         boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f*model.getBoundingSphereRadius();
         getMaterial().setTexturesActive(currentProgram, isInReachForTextureLoading);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
-        } else {
-//            OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
         }
 //        if(instanced) {
 //            return vertexBuffer.drawInstanced(10);
@@ -206,10 +202,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
         lodLevels.add(indices.get(0));
         indices = lodLevels;
-//        System.out.println("############## faces count before reduction: " + sizeBeforeReduction);
-//        System.out.println("############## lodlevels calculated: " + lodLevels.size());
-
-
+        LOGGER.fine("############## faces count before reduction: " + sizeBeforeReduction);
+        LOGGER.fine("############## lodlevels calculated: " + lodLevels.size());
     }
 
 
@@ -270,7 +264,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         List<IntBuffer> indexBuffers = new ArrayList<>();
         for(int[] indexArray : indices) {
             int[] indicesTemp = indexArray;
-//            System.out.println(Arrays.toString(indicesTemp));
+            LOGGER.fine(Arrays.toString(indicesTemp));
             IntBuffer indexBuffer = BufferUtils.createIntBuffer(indicesTemp.length);
             indexBuffers.add(indexBuffer);
             indexBuffer.rewind();

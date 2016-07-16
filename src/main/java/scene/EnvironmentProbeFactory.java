@@ -231,13 +231,6 @@ public class EnvironmentProbeFactory {
 			}
 		}).findFirst();
 		
-//		for (EnvironmentProbe environmentProbe : probes) {
-//			if(environmentProbe.contains(entity.getMinMaxWorld())) {
-//				System.out.println("Returning " + environmentProbe.getPosition());
-//				return Optional.of(environmentProbe);
-//			}
-//		}
-//		return Optional.empty();
 	}
 	
 	public List<EnvironmentProbe> getProbes() {

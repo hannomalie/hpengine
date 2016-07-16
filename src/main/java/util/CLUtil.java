@@ -3,6 +3,7 @@ package util;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -17,7 +18,9 @@ import org.lwjgl.opencl.CLPlatform;
 import org.lwjgl.opencl.CLProgram;
 
 public class CLUtil {
-	
+
+    private static final Logger LOGGER = Logger.getLogger(CLUtil.class.getName());
+
 	public static boolean initialized = false;
 	public static CLPlatform platform;
 	public static List<CLDevice> devices;
@@ -55,7 +58,7 @@ public class CLUtil {
 				CL10.clGetProgramBuildInfo(program, CLUtil.devices.get(0), CL10.CL_PROGRAM_BUILD_LOG, infoBuffer, pointerBuffer);
 				byte bytes[] = new byte[infoBuffer.capacity()];
 				infoBuffer.get(bytes);
-				System.out.println(new String(bytes));	
+				LOGGER.fine(new String(bytes));
 			}
 			throw e;
 		}

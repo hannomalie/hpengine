@@ -2,7 +2,11 @@ package engine;
 
 import renderer.fps.FPSCounter;
 
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 public abstract class TimeStepThread extends Thread {
+    private Logger LOGGER;
 
     private long start = 0l;
     private long lastFrame = 0l;
@@ -17,12 +21,13 @@ public abstract class TimeStepThread extends Thread {
     }
     public TimeStepThread(String name, float minimumCycleTimeInSeconds) {
         super();
+        LOGGER = LogManager.getLogManager().getLogger(TimeStepThread.class.getName() + " " + name);
         setMinimumCycleTimeInSeconds(minimumCycleTimeInSeconds);
         setName(name);
         setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                System.out.println("An error!");
+                LOGGER.severe("An error!");
                 e.printStackTrace();
             }
         });

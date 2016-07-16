@@ -1,24 +1,22 @@
 package renderer.rendertarget;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
+import renderer.constants.GlTextureTarget;
+import util.Util;
+
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
-
-import renderer.OpenGLContext;
-import renderer.constants.GlTextureTarget;
-import util.Util;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL32;
+import java.util.logging.Logger;
 
 public class RenderTarget {
+
+    private static final Logger LOGGER = Logger.getLogger(RenderTarget.class.getName());
+
     private boolean useDepthBuffer;
     protected int framebufferLocation = -1;
     protected int depthbufferLocation = -1;
@@ -86,11 +84,11 @@ public class RenderTarget {
             }
 
             if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
-                System.out.println("RenderTarget fucked up");
+                LOGGER.severe("RenderTarget fucked up");
                 if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
-                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+                    LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
                 } else if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) == GL30.GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
-                    System.out.println("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+                    LOGGER.severe("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
                 }
                 new RuntimeException().printStackTrace();
                 System.exit(0);

@@ -86,7 +86,7 @@ public class Program extends AbstractProgram implements Reloadable {
                     geometryShader = loadShader(GeometryShader.class, geometryShaderSource);
 					printError("Attach geometryshader ");
 				} catch (Exception e) {
-					System.out.println("Not able to load geometry shader, so what else could be done...");
+					LOGGER.severe("Not able to load geometry shader, so what else could be done...");
 				}
 			}
 
@@ -115,7 +115,7 @@ public class Program extends AbstractProgram implements Reloadable {
     private void printError(String text) {
 		int error = GL11.glGetError();
 		if(error != GL11.GL_NO_ERROR) {
-			System.out.println(text + " " + GLU.gluErrorString(error));
+			LOGGER.severe(text + " " + GLU.gluErrorString(error));
 		}
 	}
 
@@ -173,12 +173,12 @@ public class Program extends AbstractProgram implements Reloadable {
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);
 			if (result.equals(Boolean.TRUE)) {
-				System.out.println("Program reloaded");
+				LOGGER.info("Program reloaded");
 			} else {
-				System.out.println("Program not reloaded");
+				LOGGER.severe("Program not reloaded");
 			}
 		} catch (Exception e1) {
-			System.out.println("Program not reloaded");
+			LOGGER.severe("Program not reloaded");
 		}
 	}
 
