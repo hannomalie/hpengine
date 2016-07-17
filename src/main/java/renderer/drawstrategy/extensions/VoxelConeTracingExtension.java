@@ -151,14 +151,22 @@ public class VoxelConeTracingExtension implements RenderExtension {
     @Override
     public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
         GPUProfiler.start("VCT first pass");
-        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
+        boolean directionalLightMoved = renderExtract.directionalLightNeedsShadowMapRender;
+        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || directionalLightMoved;
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        int bounces = 14;
+        Scene scene = AppContext.getInstance().getScene();
+        int bounces = 13;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
-        if((useVoxelConeTracing && entityOrDirectionalLightHasMoved) || !renderExtract.sceneInitiallyDrawn || (lightInjectedFramesAgo != null && lightInjectedFramesAgo < bounces))
+        boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
+        boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved || sceneContainsDynamicObjects)) || !renderExtract.sceneInitiallyDrawn;
+        boolean needsLightInjection = lightInjectedFramesAgo == null || lightInjectedFramesAgo <= bounces;
+        if(entityOrDirectionalLightHasMoved) {
+            lightInjectedFramesAgo = 0;
+        }
+        if(needsRevoxelization || needsLightInjection)
         {
-            if(clearVoxels && lightInjectedFramesAgo == null) {
+            if(clearVoxels && renderExtract.anEntityHasMoved) {
                 GPUProfiler.start("Clear voxels");
                 if(!renderExtract.sceneInitiallyDrawn) {
                     ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
@@ -177,93 +185,92 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GPUProfiler.end();
             }
 
-            GPUProfiler.start("Voxelization");
-            orthoCam.update(0.000001f);
-            int gridSizeScaled = (int) (gridSize * getSceneScale(renderExtract));
-            OpenGLContext.getInstance().viewPort(0,0, gridSizeScaled, gridSizeScaled);
-            voxelizer.use();
-            GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-            GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-            OpenGLContext.getInstance().bindTexture(8, TEXTURE_3D, currentVoxelSource);
-            Scene scene = AppContext.getInstance().getScene();
-            if(scene != null) {
-                voxelizer.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
-                voxelizer.setUniform("lightDirection", renderExtract.directionalLight.getDirection());
-                voxelizer.setUniform("lightColor", renderExtract.directionalLight.getColor());
-            }
-            voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-            voxelizer.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
-            voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
-            voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
-            voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
-            FloatBuffer viewMatrixAsBuffer1 = renderExtract.camera.getViewMatrixAsBuffer();
-            voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
-            FloatBuffer projectionMatrixAsBuffer1 = renderExtract.camera.getProjectionMatrixAsBuffer();
-            voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
-            voxelizer.setUniform("u_width", 256);
-            voxelizer.setUniform("u_height", 256);
+            if(needsRevoxelization) {
+                GPUProfiler.start("Voxelization");
+                orthoCam.update(0.000001f);
+                int gridSizeScaled = (int) (gridSize * getSceneScale(renderExtract));
+                OpenGLContext.getInstance().viewPort(0, 0, gridSizeScaled, gridSizeScaled);
+                voxelizer.use();
+                GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                OpenGLContext.getInstance().bindTexture(8, TEXTURE_3D, currentVoxelSource);
+                if (scene != null) {
+                    voxelizer.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
+                    voxelizer.setUniform("lightDirection", renderExtract.directionalLight.getDirection());
+                    voxelizer.setUniform("lightColor", renderExtract.directionalLight.getColor());
+                }
+                voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
+                voxelizer.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
+                voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
+                voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
+                voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
+                FloatBuffer viewMatrixAsBuffer1 = renderExtract.camera.getViewMatrixAsBuffer();
+                voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
+                FloatBuffer projectionMatrixAsBuffer1 = renderExtract.camera.getProjectionMatrixAsBuffer();
+                voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
+                voxelizer.setUniform("u_width", 256);
+                voxelizer.setUniform("u_height", 256);
 
-            voxelizer.setUniform("writeVoxels", true);
-            voxelizer.setUniform("sceneScale", getSceneScale(renderExtract));
-            voxelizer.setUniform("inverseSceneScale", 1f/getSceneScale(renderExtract));
-            voxelizer.setUniform("gridSize",gridSize);
-            voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
-            voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
-            OpenGLContext.getInstance().depthMask(false);
-            OpenGLContext.getInstance().disable(DEPTH_TEST);
-            OpenGLContext.getInstance().disable(BLEND);
-            OpenGLContext.getInstance().disable(CULL_FACE);
-            GL11.glColorMask(false, false, false, false);
+                voxelizer.setUniform("writeVoxels", true);
+                voxelizer.setUniform("sceneScale", getSceneScale(renderExtract));
+                voxelizer.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
+                voxelizer.setUniform("gridSize", gridSize);
+                voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
+                voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
+                OpenGLContext.getInstance().depthMask(false);
+                OpenGLContext.getInstance().disable(DEPTH_TEST);
+                OpenGLContext.getInstance().disable(BLEND);
+                OpenGLContext.getInstance().disable(CULL_FACE);
+                GL11.glColorMask(false, false, false, false);
 
-            for (Entity entity :  renderExtract.entities) {
-                if(entity.getComponents().containsKey("ModelComponent")) {
-                    boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                    if(renderExtract.sceneInitiallyDrawn && isStatic) { continue; }
-                    ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
-                    voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
-                    int currentVerticesCount = modelComponent
-                            .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), true, entity.isSelected());
-                    firstPassResult.verticesDrawn += currentVerticesCount;
-                    if(currentVerticesCount > 0) {
-                        firstPassResult.entitiesDrawn++;
-                    } else if(currentVerticesCount < 0){
-                        firstPassResult.notYetUploadedVertexBufferDrawn = true;
+                for (Entity entity : renderExtract.entities) {
+                    if (entity.getComponents().containsKey("ModelComponent")) {
+                        boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
+                        if (renderExtract.sceneInitiallyDrawn && isStatic) {
+                            continue;
+                        }
+                        ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
+                        voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
+                        int currentVerticesCount = modelComponent
+                                .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), true, entity.isSelected());
+                        firstPassResult.verticesDrawn += currentVerticesCount;
+                        if (currentVerticesCount > 0) {
+                            firstPassResult.entitiesDrawn++;
+                        } else if (currentVerticesCount < 0) {
+                            firstPassResult.notYetUploadedVertexBufferDrawn = true;
+                        }
                     }
                 }
-            }
-            GPUProfiler.end();
+                GPUProfiler.end();
 
-            GPUProfiler.start("grid shading");
-            GL42.glBindImageTexture(0, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-            OpenGLContext.getInstance().bindTexture(1, TEXTURE_3D, albedoGrid);
-            OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
-            OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
-            injectLightComputeProgram.use();
-            injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
-            injectLightComputeProgram.setUniform("inverseSceneScale", 1f/getSceneScale(renderExtract));
-            injectLightComputeProgram.setUniform("gridSize",gridSize);
-            if(scene != null) {
-                injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
-                injectLightComputeProgram.setUniform("lightDirection", renderExtract.directionalLight.getCamera().getViewDirection());
-                injectLightComputeProgram.setUniform("lightColor", renderExtract.directionalLight.getColor());
-            }
-            int num_groups_xyz = Math.max(gridSize / 8, 1);
-
-            if(lightInjectedFramesAgo == null) {
-                injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-                lightInjectedFramesAgo = -1;
-                System.out.println(lightInjectedFramesAgo);
-            } else if(lightInjectedFramesAgo < bounces ) {
-                injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-                System.out.println(lightInjectedFramesAgo);
-            } else {
-                lightInjectedFramesAgo = null;
+//                lightInjectedFramesAgo = null;
             }
 
-            if(lightInjectedFramesAgo != null) {
-                firstPassResult.setProperty("vctLightInjectedFramesAgo", ++lightInjectedFramesAgo);
+            if(needsLightInjection) {
+                GPUProfiler.start("grid shading");
+                GL42.glBindImageTexture(0, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
+                OpenGLContext.getInstance().bindTexture(1, TEXTURE_3D, albedoGrid);
+                OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
+                OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
+                injectLightComputeProgram.use();
+                injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
+                injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
+                injectLightComputeProgram.setUniform("gridSize", gridSize);
+                if (scene != null) {
+                    injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
+                    injectLightComputeProgram.setUniform("lightDirection", renderExtract.directionalLight.getCamera().getViewDirection());
+                    injectLightComputeProgram.setUniform("lightColor", renderExtract.directionalLight.getColor());
+                }
+                int num_groups_xyz = Math.max(gridSize / 8, 1);
+
+                if (lightInjectedFramesAgo < bounces) {
+                    injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                    firstPassResult.setProperty("vctLightInjectedFramesAgo", ++lightInjectedFramesAgo);
+                } else if(lightInjectedFramesAgo == bounces) {
+                    firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo);
+                }
+                GPUProfiler.end();
             }
-            GPUProfiler.end();
 
             boolean generatevoxelsMipmap = true;
             if(generatevoxelsMipmap){
@@ -339,7 +346,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         Renderer.getInstance().getFullscreenBuffer().draw();
         boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
-        if(entityOrDirectionalLightHasMoved) {
+        if(entityOrDirectionalLightHasMoved)
+        {
 //            if only second bounce, clear current target texture
             switchCurrentVoxelGrid();
 //            ARBClearTexture.glClearTexImage(currentVoxelSource, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);

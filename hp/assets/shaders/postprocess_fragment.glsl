@@ -439,9 +439,9 @@ vec3 textureDistorted(
  	return vec3(r, g, b);
 }
 vec3 calculateLensflare(vec2 texcoord) {
-	float uGhostDispersal = 0.53f;
+	float uGhostDispersal = 0.253f;
 	int uGhosts = 3;
-	float uHaloWidth = 0.25f;
+	float uHaloWidth = 0.025f;
 	float uDistortion = 0.0001f;
 
 	vec3 camx = -cameraRightDirection;
@@ -512,7 +512,7 @@ void main()
 		    out_color.a = 1;
 		    vec3 brightColor = out_color.rgb;
 
-		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.8 - exposure/50.0, 0.0, 1.0));
+		    out_color.rgb = mix(brightColor, in_color.rgb, clamp(0.8 - exposure/100.0, 0.0, 1.0));
 
 	    }
 
