@@ -7,6 +7,7 @@ import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
+import jdk.nashorn.internal.runtime.Logging;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -153,9 +154,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        if((useVoxelConeTracing && entityOrDirectionalLightHasMoved) || !renderExtract.sceneInitiallyDrawn)
+        int bounces = 14;
+        Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
+        if((useVoxelConeTracing && entityOrDirectionalLightHasMoved) || !renderExtract.sceneInitiallyDrawn || (lightInjectedFramesAgo != null && lightInjectedFramesAgo < bounces))
         {
-            if(clearVoxels) {
+            if(clearVoxels && lightInjectedFramesAgo == null) {
                 GPUProfiler.start("Clear voxels");
                 if(!renderExtract.sceneInitiallyDrawn) {
                     ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
@@ -245,7 +248,21 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.setUniform("lightColor", renderExtract.directionalLight.getColor());
             }
             int num_groups_xyz = Math.max(gridSize / 8, 1);
-            injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+
+            if(lightInjectedFramesAgo == null) {
+                injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                lightInjectedFramesAgo = -1;
+                System.out.println(lightInjectedFramesAgo);
+            } else if(lightInjectedFramesAgo < bounces ) {
+                injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                System.out.println(lightInjectedFramesAgo);
+            } else {
+                lightInjectedFramesAgo = null;
+            }
+
+            if(lightInjectedFramesAgo != null) {
+                firstPassResult.setProperty("vctLightInjectedFramesAgo", ++lightInjectedFramesAgo);
+            }
             GPUProfiler.end();
 
             boolean generatevoxelsMipmap = true;
@@ -259,6 +276,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
             }
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
             GL11.glColorMask(true, true, true, true);
+        } else {
+            firstPassResult.setProperty("vctLightInjectedFramesAgo", null);
         }
         GPUProfiler.end();
     }
