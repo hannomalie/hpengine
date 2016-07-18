@@ -27,6 +27,28 @@ vec3[8] fetchNormalTexels(ivec3 pos) {
                   imageLoad(normalSource, pos + ivec3(0, 0, 0)).rgb);
 }
 
+vec4 calculateMipMap(ivec3 pos) {
+
+    const int kernelSizeHalf = 2;
+    const int kernelSize = 2 * kernelSizeHalf +1;
+
+    vec3 result = vec3(0);
+    float alpha = 0;
+    for(int x = -kernelSizeHalf; x < kernelSizeHalf; x++) {
+      for(int y = -kernelSizeHalf; y < kernelSizeHalf; y++) {
+        for(int z = -kernelSizeHalf; z < kernelSizeHalf; z++) {
+          vec4 currentValue = imageLoad(source, pos + ivec3(x, y, z));
+          result += currentValue.a * currentValue.rgb;
+          alpha += currentValue.a;
+        }
+      }
+    }
+
+    if(alpha < 0.0000001) { return vec4(0);}
+    float denominator = (kernelSize*kernelSize*kernelSize);
+    return vec4(result/alpha, alpha/denominator);
+}
+
 float dotSaturate(vec3 a, vec3 b) {
     return 1;
 //    return clamp(dot(a,b), 0.0f, 1.0f);
@@ -48,8 +70,8 @@ void main(void) {
                      + values[1] + values[5] * (1 - values[1].a) * dotSaturate(normalValues[5], -(normalValues[1]))
                      + values[2] + values[6] * (1 - values[2].a) * dotSaturate(normalValues[6], -(normalValues[2]))
                      + values[3] + values[7] * (1 - values[3].a) * dotSaturate(normalValues[7], -(normalValues[3]))) / 4;
-    imageStore(target, storePos, finalValue);
-//    imageStore(targetTwo, storePos, finalValue);
+//    imageStore(target, storePos, finalValue);
+    imageStore(target, storePos, calculateMipMap(loadPosition));
 
 //	imageStore(target, storePos, sourceValue);
 //	imageStore(target, ivec3(0,0,0), vec4(1,0,0,1));

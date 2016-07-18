@@ -156,7 +156,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
         Scene scene = AppContext.getInstance().getScene();
-        int bounces = 13;
+        int bounces = 1;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
         boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
         boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved || sceneContainsDynamicObjects)) || !renderExtract.sceneInitiallyDrawn;
@@ -263,8 +263,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 }
                 int num_groups_xyz = Math.max(gridSize / 8, 1);
 
-                if (lightInjectedFramesAgo < bounces) {
+                if (lightInjectedFramesAgo == null || lightInjectedFramesAgo < bounces) {
                     injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                    mipmapGrid();
                     firstPassResult.setProperty("vctLightInjectedFramesAgo", ++lightInjectedFramesAgo);
                 } else if(lightInjectedFramesAgo == bounces) {
                     firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo);
@@ -272,21 +273,24 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GPUProfiler.end();
             }
 
-            boolean generatevoxelsMipmap = true;
-            if(generatevoxelsMipmap){
-                GPUProfiler.start("grid mipmap");
-
-                mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
-//                mipmapGrid(normalGrid, texture3DMipMapComputeProgram);
-
-                GPUProfiler.end();
-            }
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
             GL11.glColorMask(true, true, true, true);
         } else {
             firstPassResult.setProperty("vctLightInjectedFramesAgo", null);
         }
         GPUProfiler.end();
+    }
+
+    private void mipmapGrid() {
+        boolean generatevoxelsMipmap = true;
+        if(generatevoxelsMipmap){
+            GPUProfiler.start("grid mipmap");
+            GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
+            mipmapGrid(currentVoxelTarget, texture3DMipMapAlphaBlendComputeProgram);
+//                mipmapGrid(normalGrid, texture3DMipMapComputeProgram);
+
+            GPUProfiler.end();
+        }
     }
 
     private void mipmapGrid(int texture3D, ComputeShaderProgram shader) {

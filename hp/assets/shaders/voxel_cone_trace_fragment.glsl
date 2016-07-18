@@ -156,13 +156,13 @@ void main(void) {
 
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(grid, 2, positionWorld, normalize(normalWorld), 5, 100);
 
-        const int SAMPLE_COUNT = 4;
+        const int SAMPLE_COUNT = 14;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
 		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+3*sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
-        vct +=1*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+        vct +=4*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
 
         const bool useTransparency = false;
