@@ -52,22 +52,22 @@ public class AreaLight extends Camera {
 		return String.format("AreaLight_%d", System.currentTimeMillis());
 	}
 
-	public void drawAsMesh(Camera camera, RenderExtract extract) {
-		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
-		});
-        for(Entity entity : getChildren()) {
-            entity.getComponentOption(ModelComponent.class).ifPresent(component ->{
-                component.draw(extract, camera);
-            });
-        }
-	}
+//	public void drawAsMesh(Camera camera, RenderExtract extract) {
+//		getComponentOption(ModelComponent.class).ifPresent(component -> {
+//			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
+//		});
+//        for(Entity entity : getChildren()) {
+//            entity.getComponentOption(ModelComponent.class).ifPresent(component ->{
+//                component.draw(extract, camera);
+//            });
+//        }
+//	}
 
-	public void draw(Camera camera, RenderExtract extract) {
-		getComponentOption(ModelComponent.class).ifPresent(component -> {
-			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
-		});
-	}
+//	public void draw(Camera camera, RenderExtract extract) {
+//		getComponentOption(ModelComponent.class).ifPresent(component -> {
+//			component.draw(extract, camera, getTransform().getTransformationBuffer(), 0);
+//		});
+//	}
 
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
 		Matrix4f temp = new Matrix4f();

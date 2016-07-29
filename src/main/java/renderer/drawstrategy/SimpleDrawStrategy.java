@@ -3,11 +3,12 @@ package renderer.drawstrategy;
 import camera.Camera;
 import component.ModelComponent;
 import config.Config;
+import container.EntitiesContainer;
 import engine.AppContext;
+import engine.DrawConfiguration;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
-import container.EntitiesContainer;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -198,7 +199,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 if (entity.getComponents().containsKey("ModelComponent")) {
                     OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED);
+                            .draw(new DrawConfiguration(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity),AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED));
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         firstPassResult.entitiesDrawn++;
@@ -216,7 +217,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         if (Config.DEBUGDRAW_PROBES) {
-            debugDrawProbes(camera, renderExtract);
+//            debugDrawProbes(camera, renderExtract);
             EnvironmentProbeFactory.getInstance().draw();
         }
         openGLContext.enable(CULL_FACE);
@@ -631,38 +632,42 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
     }
 
-    private void debugDrawProbes(Camera camera, RenderExtract extract) {
-        Entity probeBoxEntity = Renderer.getInstance().getGBuffer().getProbeBoxEntity();
-
-        probeFirstpassProgram.use();
-        EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(probeFirstpassProgram);
-        OpenGLContext.getInstance().activeTexture(8);
-        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind();
-        probeFirstpassProgram.setUniform("showContent", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
-
-        Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse());
-
-        for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
-            Transform transform = new Transform();
-            transform.setPosition(probe.getCenter());
-            transform.setScale(probe.getSize());
-            Vector3f colorHelper = probe.getDebugColor();
-            probeBoxEntity.getComponent(ModelComponent.class).getMaterial().setDiffuse(colorHelper);
-            probeBoxEntity.setTransform(transform);
-            probeBoxEntity.update(0);
-            probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
-            probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
-            probeBoxEntity.getComponent(ModelComponent.class).
-                    draw(extract, camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
-        }
-
-        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
-        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().y = oldMaterialColor.y;
-        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().z = oldMaterialColor.z;
-
-    }
+//    TODO: Reimplement this functionality
+//    private void debugDrawProbes(Camera camera, RenderExtract extract) {
+//        Entity probeBoxEntity = Renderer.getInstance().getGBuffer().getProbeBoxEntity();
+//
+//        probeFirstpassProgram.use();
+//        EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(probeFirstpassProgram);
+//        OpenGLContext.getInstance().activeTexture(8);
+//        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind();
+//        probeFirstpassProgram.setUniform("showContent", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
+//
+//        Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse());
+//
+//        for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
+//            Transform transform = new Transform();
+//            transform.setPosition(probe.getCenter());
+//            transform.setScale(probe.getSize());
+//            Vector3f colorHelper = probe.getDebugColor();
+//            probeBoxEntity.getComponent(ModelComponent.class).getMaterial().setDiffuse(colorHelper);
+//            probeBoxEntity.setTransform(transform);
+//            probeBoxEntity.update(0);
+//            probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
+//            probeFirstpassProgram.setUniform("probeIndex", probe.getIndex());
+//            probeBoxEntity.getComponent(ModelComponent.class).draw(extract, camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
+//        }
+//
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().y = oldMaterialColor.y;
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().z = oldMaterialColor.z;
+//
+//    }
 
     public void registerRenderExtension(RenderExtension extension) {
         renderExtensions.add(extension);
+    }
+
+    public DirectionalLightShadowMapExtension getDirectionalLightExtension() {
+        return directionalLightShadowMapExtension;
     }
 }

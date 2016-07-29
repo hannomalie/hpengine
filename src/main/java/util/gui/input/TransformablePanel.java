@@ -1,27 +1,22 @@
 package util.gui.input;
 
-import java.awt.event.ActionEvent;
-
+import com.alee.extended.panel.WebComponentPanel;
+import com.alee.laf.slider.WebSlider;
 import engine.model.Transformable;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-import renderer.Renderer;
-
-import com.alee.extended.panel.WebComponentPanel;
-import com.alee.laf.slider.WebSlider;
+import java.awt.event.ActionEvent;
 
 public class TransformablePanel<T extends Transformable> extends WebComponentPanel {
 
 	private Quaternion startOrientation;
 	private Vector3f startPosition;
-	private Renderer renderer;
-	
-	public TransformablePanel(Renderer renderer, T transformable) {
+
+	public TransformablePanel(T transformable) {
 		super(false);
 	    this.setElementMargin(4);
-	    this.renderer = renderer;
 		startOrientation = new Quaternion(transformable.getOrientation());
 		startPosition = new Vector3f(transformable.getPosition());
 	    

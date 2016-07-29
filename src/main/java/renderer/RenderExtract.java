@@ -34,7 +34,7 @@ public class RenderExtract {
         if (Config.useFrustumCulling) {
             GPUProfiler.start("Culling");
             for (int i = 0; i < entities.size(); i++) {
-                if (entities.get(i).isInFrustum(camera)) {
+                if (entities.get(i).isInFrustum(camera) || entities.get(i).getInstanceCount() > 1) { // TODO: Better culling for instances
                     visibleEntities.add(entities.get(i));
                 }
             }

@@ -196,7 +196,7 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	public void add(Entity entity) {
 //		initializationWrapped(() -> {
-			entityContainer.insert(entity);
+			entityContainer.insert(entity.getAllChildrenAndSelf());
         calculateMinMax(entities);
 //			return null;
 //		});
@@ -279,4 +279,12 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
+    public int getEntityIndexOf(Entity entity) {
+        int index = 0;
+        for(Entity current : entityContainer.getEntities()) {
+            if(current.equals(entity)) { return index; }
+            index += current.getInstanceCount();
+        }
+        return index;
+    }
 }

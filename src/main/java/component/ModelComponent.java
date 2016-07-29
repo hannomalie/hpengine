@@ -1,8 +1,8 @@
 package component;
 
 import camera.Camera;
-import config.Config;
 import engine.AppContext;
+import engine.DrawConfiguration;
 import engine.Drawable;
 import engine.model.DataChannels;
 import engine.model.Model;
@@ -81,38 +81,39 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
     @Override
     public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        return draw(extract, camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        return draw(extract, camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
     @Override
     public int draw(RenderExtract extract, Camera camera) {
-        return draw(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
+        return draw(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
     }
 
     @Override
-    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected) {
-        return draw(extract, camera, modelMatrix, firstPassProgram, entityIndex, isVisible, isSelected, false);
+    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected) {
+        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false));
     }
 
     @Override
-    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, boolean isVisible, boolean isSelected, boolean drawLines) {
+    public int draw(DrawConfiguration drawConfiguration) {
 
-        if(!isVisible) {
+        if(!drawConfiguration.isVisible()) {
             return 0;
         }
 
-        if (firstPassProgram == null) {
+        if (drawConfiguration.getFirstPassProgram() == null) {
             return 0;
         }
 
-        Program currentProgram = firstPassProgram;
+        Program currentProgram = drawConfiguration.getFirstPassProgram();
 //        currentProgram.setUniform("isInstanced", instanced);
-        currentProgram.setUniform("entityIndex", entityIndex);
+        currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
+        currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
         currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
 //        currentProgram.setUniform("isSelected", isSelected);
 //        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
         // TODO: Implement strategy pattern
-        float distanceToCamera = Vector3f.sub(camera.getWorldPosition(), getEntity().getCenterWorld(), null).length();
+        float distanceToCamera = Vector3f.sub(drawConfiguration.getCamera().getWorldPosition(), getEntity().getCenterWorld(), null).length();
         if(LOGGER.isLoggable(Level.FINE)) {
             LOGGER.finer("boundingSphere " + model.getBoundingSphereRadius());
             LOGGER.finer("distanceToCamera " + distanceToCamera);
@@ -126,10 +127,11 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 //        if(instanced) {
 //            return vertexBuffer.drawInstanced(10);
 //        } else
-        if (drawLines) {
-            return vertexBuffer.drawDebug(2, ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(extract, this));
+        if (drawConfiguration.isDrawLines()) {
+            return vertexBuffer.drawDebug(2, ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(drawConfiguration.getExtract(), this));
         } else {
-            return vertexBuffer.draw(Config.MODEL_LOD_STRATEGY.getIndexBufferIndex(extract, this));
+            //return vertexBuffer.draw(Config.MODEL_LOD_STRATEGY.getIndexBufferIndex(extract, this));
+            return vertexBuffer.drawInstanced(getEntity().getInstanceCount());
         }
     }
 

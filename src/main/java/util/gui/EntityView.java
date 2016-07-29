@@ -1,39 +1,41 @@
 package util.gui;
 
-import java.awt.*;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import javax.swing.*;
-
-import com.alee.laf.checkbox.WebCheckBox;
-import component.ModelComponent;
-import engine.AppContext;
-import engine.model.Entity;
-import event.EntityChangedMaterialEvent;
-import event.EntityAddedEvent;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-import renderer.command.Result;
-import renderer.command.RemoveEntityCommand;
-import renderer.material.Material;
-import renderer.material.MaterialFactory;
-import util.gui.input.TransformablePanel;
-
 import com.alee.extended.panel.GridPanel;
 import com.alee.extended.panel.GroupPanel;
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.button.WebButton;
+import com.alee.laf.checkbox.WebCheckBox;
 import com.alee.laf.combobox.WebComboBox;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
+import com.alee.laf.tabbedpane.WebTabbedPane;
 import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import component.ModelComponent;
+import engine.AppContext;
+import engine.Transform;
+import engine.model.Entity;
+import event.EntityAddedEvent;
+import event.EntityChangedMaterialEvent;
+import renderer.OpenGLContext;
+import renderer.Renderer;
+import renderer.command.RemoveEntityCommand;
+import renderer.command.Result;
+import renderer.material.Material;
+import renderer.material.MaterialFactory;
+import util.gui.input.TransformablePanel;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class EntityView extends WebPanel {
 
@@ -49,10 +51,10 @@ public class EntityView extends WebPanel {
 		this.setSize(600, 700);
 		setMargin(20);
 
-		init(appContext, entity);
+		init(entity);
 	}
 
-	protected void init(AppContext appContext, Entity entity) {
+	protected void init(Entity entity) {
 		this.entity = entity;
 		List<Component> panels = getPanels();
 
@@ -64,7 +66,24 @@ public class EntityView extends WebPanel {
 		this.removeAll();
 		JScrollPane scrollPane = new JScrollPane(gridPanel);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(32);
-		this.add(scrollPane);
+
+        WebTabbedPane tabbedPane = new WebTabbedPane();
+        tabbedPane.addTab("Entity", scrollPane);
+        List<Component> instancesPanels = new ArrayList<>();
+        for(Transform instanceTrafo : entity.getInstances()) {
+            instancesPanels.add(new TransformablePanel<>(instanceTrafo));
+        }
+        WebButton addInstanceButton = new WebButton("Add Entity");
+        addInstanceButton.addActionListener(e -> {
+            entity.addInstance(new Transform());
+//            TODO: Make this possible
+//            init(entity);
+        });
+        instancesPanels.add(addInstanceButton);
+        GridPanel instancesGridPanel = new GridPanel(instancesPanels.size(), 1, instancesPanels.toArray(new Component[0]));
+        JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
+        tabbedPane.addTab("Instances", instancesScrollPane);
+		this.add(tabbedPane);
 		repaint();
 	}
 
@@ -81,7 +100,7 @@ public class EntityView extends WebPanel {
 
 	        addNamePanel(webComponentPanel);
 
-	        webComponentPanel.addElement(new TransformablePanel<Entity>(renderer, entity));
+	        webComponentPanel.addElement(new TransformablePanel<>(entity));
 
 	        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
 	        updateComboBox.addActionListener(e -> { entity.setUpdate((Entity.Update) updateComboBox.getSelectedItem()); });
@@ -152,7 +171,7 @@ public class EntityView extends WebPanel {
 				childSelect.addActionListener(e ->{
 					int index = childSelect.getSelectedIndex();
 					Entity newEntity = entity.getChildren().get(index);
-					temp.init(appContext, newEntity);
+					temp.init(newEntity);
 				});
 				childSelect.setName("Children");
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Children"), childSelect));
@@ -162,7 +181,7 @@ public class EntityView extends WebPanel {
 				WebButton parentSelectButton = new WebButton(entity.getParent().getName());
 				EntityView temp = this;
 				parentSelectButton.addActionListener(e -> {
-					temp.init(appContext, entity.getParent());
+					temp.init(entity.getParent());
 				});
 				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Parent"), parentSelectButton));
 

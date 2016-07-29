@@ -6,6 +6,7 @@ uniform mat4 lastViewMatrix;
 uniform mat4 lightMatrix;
 
 uniform int entityIndex;
+uniform int entityBaseIndex;
 uniform vec3 eyePosition;
 uniform int time = 0;
 //uniform vec3 lightPosition;
@@ -19,8 +20,6 @@ layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
 
-
-uniform bool isInstanced = false;
 
 in vec3 in_Position;
 in vec4 in_Color;
@@ -51,11 +50,13 @@ out vec3 eyePos_world;
 flat out mat3 TBN;
 flat out Entity outEntity;
 flat out int outEntityIndex;
+flat out int outEntityBufferIndex;
 flat out Material outMaterial;
 
 void main(void) {
 
-    Entity entity = entities[entityIndex];
+    outEntityBufferIndex = entityBaseIndex + gl_InstanceID;
+    Entity entity = entities[outEntityBufferIndex];
     outEntityIndex = entityIndex;
     outEntity = entity;
     Material material = materials[int(entity.materialIndex)];
@@ -65,11 +66,6 @@ void main(void) {
 
 	vec4 positionModel = vec4(in_Position.xyz,1);
 	position_world = modelMatrix * positionModel;
-
-	if(isInstanced) {
-		position_world.x += float(gl_InstanceID/150) * 15.0f;
-		position_world.z += float(gl_InstanceID%150) * 10.0f;
-	}
 
 	mat4 mvp = (projectionMatrix * viewMatrix * modelMatrix);
 	position_clip = mvp * positionModel;

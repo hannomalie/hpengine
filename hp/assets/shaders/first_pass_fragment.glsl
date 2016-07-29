@@ -57,6 +57,7 @@ in mat3 TBN;
 flat in Entity outEntity;
 flat in Material outMaterial;
 flat in int outEntityIndex;
+flat in int outEntityBufferIndex;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
@@ -92,7 +93,7 @@ vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D normalMap)
 }
 void main(void) {
 
-    int entityIndex = outEntityIndex;
+    int entityIndex = outEntityBufferIndex;
     Entity entity = outEntity;
 
 //	Material material = outMaterial;
@@ -202,7 +203,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,materialIndex,entityIndex);
+  	out_visibility = vec4(1,depth,materialIndex,outEntityIndex);
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));

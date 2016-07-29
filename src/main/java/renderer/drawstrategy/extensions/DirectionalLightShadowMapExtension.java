@@ -4,6 +4,7 @@ import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity;
+import engine.model.EntityFactory;
 import event.DirectionalLightHasMovedEvent;
 import event.EntityAddedEvent;
 import net.engio.mbassy.listener.Handler;
@@ -14,6 +15,7 @@ import renderer.RenderExtract;
 import renderer.drawstrategy.FirstPassResult;
 import renderer.light.DirectionalLight;
 import renderer.material.Material;
+import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
@@ -37,7 +39,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public DirectionalLightShadowMapExtension() {
 
-        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_ssbo_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
         renderTarget = new RenderTargetBuilder()
                 .setWidth(SHADOWMAP_RESOLUTION)
@@ -69,10 +71,13 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 //		OpenGLContext.getInstance().cullFace(BACK);
         OpenGLContext.getInstance().disable(CULL_FACE);
 
-        List<Entity> visibles = renderExtract.entities.stream().filter(e -> e.isInFrustum(directionalLight.getCamera())).collect(Collectors.toList());Collectors.toList();
+        // TODO: Better instance culling
+        List<Entity> visibles = renderExtract.entities.stream().filter(e -> e.isInFrustum(directionalLight.getCamera()) || e.getInstanceCount() > 1).collect(Collectors.toList());Collectors.toList();
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
+        directionalShadowPassProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
+        directionalShadowPassProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", directionalLight.getCamera().getViewMatrixAsBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
 
@@ -84,12 +89,14 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
                 } else {
                     OpenGLContext.getInstance().enable(CULL_FACE);
                 }
-                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+//                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
                 modelComponent.getMaterial().setTexturesActive(directionalShadowPassProgram);
                 directionalShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
+                directionalShadowPassProgram.setUniform("entityIndex", AppContext.getInstance().getScene().getEntities().indexOf(e));
+                directionalShadowPassProgram.setUniform("entityBaseIndex", AppContext.getInstance().getScene().getEntityIndexOf(e));
                 directionalShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                modelComponent.getVertexBuffer().draw();
+                modelComponent.getVertexBuffer().drawInstanced(e.getInstanceCount());
             });
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());

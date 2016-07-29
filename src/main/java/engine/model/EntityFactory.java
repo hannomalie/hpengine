@@ -9,6 +9,7 @@ import event.SceneInitEvent;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
+import renderer.OpenGLContext;
 import renderer.material.Material;
 import shader.OpenGLBuffer;
 import shader.PersistentMappedBuffer;
@@ -17,6 +18,7 @@ import util.Util;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class EntityFactory {
@@ -144,7 +146,10 @@ public class EntityFactory {
 
     public void bufferEntities() {
         if(AppContext.getInstance().getScene() != null) {
-            bufferEntities(AppContext.getInstance().getScene().getEntities());
+//            TODO: Execute this outside of the renderloop
+            OpenGLContext.getInstance().execute(() -> {
+                bufferEntities(AppContext.getInstance().getScene().getEntities());
+            });
         }
     }
 
@@ -162,8 +167,20 @@ public class EntityFactory {
     @Handler
     public void handle(EntityChangedMaterialEvent event) {
         if(AppContext.getInstance().getScene() != null) {
-            int offset = event.getEntity().getElementsPerObject() * AppContext.getInstance().getScene().getEntities().indexOf(event.getEntity());
-            entitiesBuffer.put(offset, event.getEntity());
+            Entity entity = event.getEntity();
+            buffer(entity);
         }
+    }
+
+    public void buffer(Entity entity) {
+        int offset = 0;
+        for(Entity current : AppContext.getInstance().getScene().getEntities()) {
+            if(current.equals(entity)) {
+                break;
+            }
+            offset += (current.getInstanceCount()) * entity.getElementsPerObject();
+        }
+//        entity.getElementsPerObject() * AppContext.getInstance().getScene().getEntities().indexOf(entity);
+        entitiesBuffer.put(offset, entity);
     }
 }

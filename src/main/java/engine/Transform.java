@@ -1,5 +1,6 @@
 package engine;
 
+import engine.model.Transformable;
 import org.lwjgl.BufferUtils;
 import util.Util;
 import org.lwjgl.util.vector.Matrix4f;
@@ -14,7 +15,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Transform implements Serializable {
+public class Transform implements Serializable, Transformable {
 	private static final long serialVersionUID = 1L;
 
 	public static final Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
@@ -56,6 +57,17 @@ public class Transform implements Serializable {
 		viewMatrixBuffer.rewind();
 		parentMatrix = new Matrix4f();
 	}
+
+    public Transform init(Transform other) {
+        this.setPosition(other.getPosition());
+        this.setOrientation(other.getOrientation());
+        this.setScale(other.getScale());
+        this.setParent(other.getParent());
+        for(Transform currentChild : other.getChildren()) {
+            this.addChild(currentChild);
+        }
+        return this;
+    }
 	
 	public Transform getParent() {
 		return parent;
@@ -97,7 +109,17 @@ public class Transform implements Serializable {
 		return children;
 	}
 
-	public Vector3f getPosition() {
+    @Override
+    public Transform getTransform() {
+        return this;
+    }
+
+    @Override
+    public void setTransform(Transform transform) {
+        this.init(transform);
+    }
+
+    public Vector3f getPosition() {
 		return setAndReturnCopy(position);
 	}
 	public Vector3f getWorldPosition() {

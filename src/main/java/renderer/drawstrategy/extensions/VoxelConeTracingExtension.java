@@ -7,7 +7,6 @@ import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
-import jdk.nashorn.internal.runtime.Logging;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -158,6 +157,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         Scene scene = AppContext.getInstance().getScene();
         int bounces = 1;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
+        if(lightInjectedFramesAgo == null) { lightInjectedFramesAgo = 0; }
         boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
         boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved || sceneContainsDynamicObjects)) || !renderExtract.sceneInitiallyDrawn;
         boolean needsLightInjection = lightInjectedFramesAgo == null || lightInjectedFramesAgo <= bounces;
@@ -232,7 +232,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                         ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
                         voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                         int currentVerticesCount = modelComponent
-                                .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), true, entity.isSelected());
+                                .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), true, entity.isSelected());
                         firstPassResult.verticesDrawn += currentVerticesCount;
                         if (currentVerticesCount > 0) {
                             firstPassResult.entitiesDrawn++;

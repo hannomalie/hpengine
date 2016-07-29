@@ -233,6 +233,19 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         }
     }
 
+    public int drawInstanced(int instanceCount) {
+        if(!uploaded) { return 0; }
+        bind();
+        if(hasIndexBuffer) {
+            // TODO: use lod
+            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexBuffers.get(0), instanceCount);
+        } else {
+            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
+        }
+
+        return verticesCount;
+    }
+
     @Override
     public void bind() {
         LOGGER.finest("bind called");
@@ -370,13 +383,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		GL11.glDrawArrays(GL11.GL_LINES, 0, verticesCount);
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
-	}
-
-	public int drawInstanced(int instanceCount) {
-        if(!uploaded) { return 0; }
-        bind();
-        GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
-        return verticesCount;
 	}
 
     public float[] getVertexData() {

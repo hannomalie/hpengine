@@ -78,6 +78,8 @@ import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -656,6 +658,34 @@ public class DebugFrame {
         }
         console.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
         console.setCodeFoldingEnabled(true);
+        console.addKeyListener(new KeyListener() {
+            private volatile boolean saving = false;
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if(e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                    if(saving) { return; }
+                    saving = true;
+                    System.out.println("Saving...");
+                    try {
+                        FileUtils.write(new File("hp/assets/scripts/console.js"), console.getText());
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    } finally {
+                        saving = false;
+                    }
+                }
+            }
+        });
         AutoCompletion ac = new AutoCompletion(ScriptManager.getInstance().getProvider());
         ac.install(console);
     }

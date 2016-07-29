@@ -3,8 +3,8 @@ package engine.model;
 import camera.Camera;
 import component.Component;
 import component.ModelComponent;
-import engine.Transform;
 import engine.AppContext;
+import engine.Transform;
 import engine.lifecycle.LifeCycle;
 import event.UpdateChangedEvent;
 import org.apache.commons.io.FilenameUtils;
@@ -20,10 +20,15 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
+
+    public List<Transform> getInstances() {
+        return instances;
+    }
 
     public enum Update {
 		STATIC,
@@ -32,7 +37,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	private Update update = Update.STATIC;
 
-	private Transform transform = new Transform();
+	private engine.Transform transform = new engine.Transform();
+
+    private List<Transform> instances = new CopyOnWriteArrayList<>();
 
 	protected transient AppContext appContext;
 
@@ -386,10 +393,15 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return initialized;
 	}
 
-	public void setHasMoved(boolean value) { transform.setHasMoved(value); }
+	public void setHasMoved(boolean value) {
+        transform.setHasMoved(value);
+        for(Transform inst : instances) {
+            inst.setHasMoved(value);
+        }
+    }
 
 	public boolean hasMoved() {
-		return transform.isHasMoved();
+		return transform.isHasMoved() || instances.stream().anyMatch(inst -> inst.isHasMoved());
 	}
 
 	public Update getUpdate() {
@@ -409,15 +421,35 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
     @Override
     public int getElementsPerObject() {
-        return 16+4;
+        return getInstanceCount() * (16+4);
     }
+
 
     @Override
     public double[] get() {
-        int index = 0;
+
         double[] doubles = new double[getElementsPerObject()];
 
-        Matrix4f mm = getModelMatrix();
+        int index = 0;
+        {
+            Matrix4f mm = getModelMatrix();
+            index = getValues(doubles, index, mm);
+        }
+
+        for(Transform instanceTransform : instances) {
+            Matrix4f instanceMatrix = instanceTransform.getTransformation();
+            index = getValues(doubles, index, instanceMatrix);
+        }
+        if(hasParent()) {
+            for(Transform instanceTransform : getParent().getInstances()) {
+                Matrix4f instanceMatrix = instanceTransform.getTransformation();
+                index = getValues(doubles, index, instanceMatrix);
+            }
+        }
+        return doubles;
+    }
+
+    private int getValues(double[] doubles, int index, Matrix4f mm) {
         doubles[index++] = mm.m00;
         doubles[index++] = mm.m01;
         doubles[index++] = mm.m02;
@@ -440,7 +472,22 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         doubles[index++] = materialIndex;
         doubles[index++] = 0;
         doubles[index++] = 0;
+        return index;
+    }
 
-        return doubles;
+    public int getInstanceCount() {
+        int instancesCount = instances.size() + 1;
+
+        if(hasParent() && getParent().getInstanceCount() > 1) {
+            instancesCount *= getParent().getInstanceCount();
+        }
+        return instancesCount;
+    }
+
+    public void addInstance(Transform instance) {
+        if(getParent() != null) {
+            instance.setParent(getParent().getTransform());
+        }
+        instances.add(instance);
     }
 }
