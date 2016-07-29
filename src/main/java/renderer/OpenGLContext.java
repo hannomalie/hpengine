@@ -359,15 +359,20 @@ public final class OpenGLContext {
     public void execute(Runnable runnable) {
         execute(runnable, true);
     }
-    public void execute(Runnable runnable, boolean andBlock) {
+    public Exception execute(Runnable runnable, boolean andBlock) {
         CompletableFuture<Object> future = execute((Callable<Object>) () -> {
-            runnable.run();
-            return new Object();
+            try {
+                runnable.run();
+            } catch(Exception e) {
+                return e;
+            }
+            return null;
         });
 
         if(andBlock) {
             future.join();
         }
+        return null;
     }
 
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
@@ -396,7 +401,11 @@ public final class OpenGLContext {
         if(util.Util.isOpenGLThread()) {
             try {
                 CompletableFuture<RETURN_TYPE> result = new CompletableFuture();
-                result.complete(callable.call());
+                try {
+                    result.complete(callable.call());
+                } catch(Exception e) {
+                    result.completeExceptionally(e);
+                }
                 return result;
             } catch (Exception e) {
                 e.printStackTrace();
