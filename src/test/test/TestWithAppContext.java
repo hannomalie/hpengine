@@ -16,13 +16,14 @@ public class TestWithAppContext {
 	
 	@BeforeClass
 	public static void init() {
-        AppContext.init(true);
+        // TODO: Make this work headless
+        AppContext.init(false);
         appContext = AppContext.getInstance();
         renderer = Renderer.getInstance();
 	}
 	
 	@AfterClass
 	public static void kill() {
-        AppContext.getInstance().destroy();
+//        AppContext.getInstance().destroy();
 	}
 }
