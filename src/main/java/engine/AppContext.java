@@ -462,7 +462,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
     @Override
     public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult) {
-        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
+        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
     }
 
     private JFrame frame;

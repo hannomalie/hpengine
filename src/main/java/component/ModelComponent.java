@@ -90,7 +90,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     @Override
     public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected) {
-        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false));
+        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false));
     }
 
     @Override
@@ -105,12 +105,9 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         }
 
         Program currentProgram = drawConfiguration.getFirstPassProgram();
-//        currentProgram.setUniform("isInstanced", instanced);
         currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
         currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
         currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
-//        currentProgram.setUniform("isSelected", isSelected);
-//        currentProgram.setUniformAsMatrix4("modelMatrix", modelMatrix);
 
         // TODO: Implement strategy pattern
         float distanceToCamera = Vector3f.sub(drawConfiguration.getCamera().getWorldPosition(), getEntity().getCenterWorld(), null).length();

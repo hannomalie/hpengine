@@ -76,16 +76,22 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 isStaticValue = vec3(0,0,0);
 	float alpha = 0;
 
+	int mipLevel = 0;
 	for (int i = 0; i < NB_STEPS; i++) {
-		if(alpha >= 1.0) { break; }
-		int mipLevel = 0;
+		if(alpha >= 0.01)
+		{
+			break;
+		}
 		vec3 gridSizeHalf = ivec3(gridSize/2);
-		ivec3 gridPosition = ivec3(vec3(inverseSceneScale)*currentPosition.xyz + gridSizeHalf);
+		int mipAdjust = int(pow(mipLevel+1,2));
+		vec3 positionSceneScaled = vec3(inverseSceneScale)*currentPosition.xyz;
+		positionSceneScaled /= pow(mipLevel+1,2);
+		ivec3 gridPosition = ivec3(positionSceneScaled + gridSizeHalf);
 		vec4 sampledValue = texelFetch(albedoGrid, gridPosition, mipLevel);
 		vec4 sampledNormalValue = texelFetch(normalGrid, gridPosition, mipLevel);
-		vec4 sampledLitValue = texelFetch(grid, gridPosition, mipLevel);
+		vec4 sampledLitValue = voxelFetch(grid, gridSize, sceneScale, currentPosition.xyz, mipLevel);//texelFetch(grid, gridPosition, mipLevel);
 		normalValue.rgb = sampledNormalValue.rgb;
-		lit = sampledLitValue.rgb;
+		lit += sampledLitValue.rgb;
 		isStaticValue = vec3(normalValue.b);
 		accumAlbedo += sampledValue.rgb * sampledValue.a;
 		alpha += sampledValue.a;
@@ -136,8 +142,8 @@ void main(void) {
 	float opacity = mix(1-transparency, 1, metallic);
 
 	float glossiness = (1-roughness);
-	vec3 maxSpecular = mix(vec3(0.2), color, metallic);
-	vec3 specularColor = mix(vec3(0.02), maxSpecular, glossiness);
+	vec3 maxSpecular = mix(vec3(0.05), color, metallic);
+	vec3 specularColor = mix(vec3(0.00), maxSpecular, glossiness);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
     vec3 positionGridScaled = inverseSceneScale*positionWorld;
@@ -146,6 +152,7 @@ void main(void) {
     const bool useVoxelConeTracing = true;
     vec3 vct;
 
+	const float boost = 1.;
     const bool debugVoxels = false;
     if(!debugVoxels && useVoxelConeTracing &&
         positionWorld.x > -maxExtent && positionWorld.y > -maxExtent && positionWorld.z > -maxExtent &&
@@ -162,12 +169,15 @@ void main(void) {
 
 //
 //        out_color.rgb += specularColor.rgb*voxelSpecular.rgb * (1-roughness) + color*voxelDiffuse.rgb * (1 - (1-roughness));
-        vct +=4*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+        vct += boost*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
 
         const bool useTransparency = false;
         if(useTransparency) {
-            vct = 1*voxelTraceCone(grid, gridSize, sceneScale, 1, positionWorld+3*normalWorld, normalize(refract(-V, normalWorld,2-roughness)), 0.1*roughness, 370).rgb * (transparency) + vct * opacity;
+        	vec3 sampledValue = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*2*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+//        	compensate missing secondary bounces
+//        	sampledValue += 0.1*voxelTraceCone(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+            vct = /* small boost factor, figure out why */ 4 * boost * color * sampledValue * (transparency) + vct * opacity;
         }
     }
 

@@ -155,12 +155,14 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
         Scene scene = AppContext.getInstance().getScene();
-        int bounces = 1;
+        int bounces = 4;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
-        if(lightInjectedFramesAgo == null) { lightInjectedFramesAgo = 0; }
+        if(lightInjectedFramesAgo == null) {
+            lightInjectedFramesAgo = 0;
+        }
         boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
         boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved || sceneContainsDynamicObjects)) || !renderExtract.sceneInitiallyDrawn;
-        boolean needsLightInjection = lightInjectedFramesAgo == null || lightInjectedFramesAgo <= bounces;
+        boolean needsLightInjection = lightInjectedFramesAgo < bounces-1;
         if(entityOrDirectionalLightHasMoved) {
             lightInjectedFramesAgo = 0;
         }
@@ -208,8 +210,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 voxelizer.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer1);
                 FloatBuffer projectionMatrixAsBuffer1 = renderExtract.camera.getProjectionMatrixAsBuffer();
                 voxelizer.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer1);
-                voxelizer.setUniform("u_width", 256);
-                voxelizer.setUniform("u_height", 256);
+                voxelizer.setUniform("u_width", gridSize);
+                voxelizer.setUniform("u_height", gridSize);
 
                 voxelizer.setUniform("writeVoxels", true);
                 voxelizer.setUniform("sceneScale", getSceneScale(renderExtract));
@@ -229,6 +231,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                         if (renderExtract.sceneInitiallyDrawn && isStatic) {
                             continue;
                         }
+                        if(!entityOrDirectionalLightHasMoved) { continue; }
+                        lightInjectedFramesAgo = 0;
                         ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
                         voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                         int currentVerticesCount = modelComponent
@@ -242,8 +246,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     }
                 }
                 GPUProfiler.end();
-
-//                lightInjectedFramesAgo = null;
             }
 
             if(needsLightInjection) {
@@ -253,6 +255,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
                 OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
                 injectLightComputeProgram.use();
+                injectLightComputeProgram.setUniform("bounces", bounces);
                 injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
                 injectLightComputeProgram.setUniform("gridSize", gridSize);
@@ -263,20 +266,17 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 }
                 int num_groups_xyz = Math.max(gridSize / 8, 1);
 
-                if (lightInjectedFramesAgo == null || lightInjectedFramesAgo < bounces) {
-                    injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-                    mipmapGrid();
-                    firstPassResult.setProperty("vctLightInjectedFramesAgo", ++lightInjectedFramesAgo);
-                } else if(lightInjectedFramesAgo == bounces) {
-                    firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo);
-                }
+                injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                mipmapGrid();
+                firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo+1);
                 GPUProfiler.end();
+                switchCurrentVoxelGrid();
+            } else {
+                firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo);
             }
 
             GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
             GL11.glColorMask(true, true, true, true);
-        } else {
-            firstPassResult.setProperty("vctLightInjectedFramesAgo", null);
         }
         GPUProfiler.end();
     }
@@ -336,7 +336,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
         OpenGLContext.getInstance().bindTexture(12, TEXTURE_3D, albedoGrid);
-        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelTarget);
+        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelSource);
         OpenGLContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
 
         voxelConeTraceProgram.use();
@@ -349,13 +349,12 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("gridSize", gridSize);
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         Renderer.getInstance().getFullscreenBuffer().draw();
-        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
-        if(entityOrDirectionalLightHasMoved)
-        {
+//        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
+//        if(entityOrDirectionalLightHasMoved)
+//        {
 //            if only second bounce, clear current target texture
-            switchCurrentVoxelGrid();
 //            ARBClearTexture.glClearTexImage(currentVoxelSource, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-        }
+//        }
         GPUProfiler.end();
     }
 

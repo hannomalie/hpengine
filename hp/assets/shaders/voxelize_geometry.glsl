@@ -106,6 +106,7 @@ void main()
         g_pos = v_vertex[i].xyz;
         g_normal = faceNormal;//v_normal[i];
         g_texcoord = v_texcoord[i];
+        g_texcoord.y = 1-g_texcoord.y;
         EmitVertex();
 	}
 

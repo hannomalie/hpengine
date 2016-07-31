@@ -15,6 +15,8 @@ uniform mat4 shadowMatrix;
 
 uniform vec3 lightDirection;
 uniform vec3 lightColor;
+
+uniform int bounces = 1;
 //include(globals.glsl)
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
@@ -93,7 +95,6 @@ void main(void) {
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0, 1).r;
-//	visibility = 1-visibility;
 
 	vec3 lightDirectionTemp = lightDirection;
 //	lightDirectionTemp.z *=-1;
@@ -101,12 +102,17 @@ void main(void) {
 
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
-//    const int SAMPLE_COUNT = 4;
-//    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-//    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, normalize(g_normal), 0.85, 70); // 0.05
-//    vec3 maxMultipleBounce = vec3(0.5);
-//	finalVoxelColor += 0.25*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+//	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos, 0);
+//	finalVoxelColor += currentPositionsValues.rgb * 0.5;// * (1/float(bounces+1));
+//	finalVoxelColor /= float(bounces);
 
+    const int SAMPLE_COUNT = 4;
+    vec4 diffuseVoxelTraced;// = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+2*sceneScale*g_normal, g_normal, .85, 270); // 0.05
+    vec3 maxMultipleBounce = vec3(10.5);
+	vec3 multipleBounceColor = 0.4*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+
+	finalVoxelColor += multipleBounceColor;// / max(float(bounces), 1.0f);
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

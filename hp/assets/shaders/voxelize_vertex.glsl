@@ -2,6 +2,7 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 
 uniform int entityIndex;
+uniform int entityBaseIndex;
 uniform int materialIndex;
 
 //include(globals_structs.glsl)
@@ -37,7 +38,8 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 void main(void) {
-    Entity entity = entities[entityIndex];
+    int entityBufferIndex = entityBaseIndex + gl_InstanceID;
+    Entity entity = entities[entityBufferIndex];
     outEntityIndex = entityIndex;
     outEntity = entity;
 

@@ -17,24 +17,29 @@ EntityFactory = Java.type('engine.model.EntityFactory');
 //var trafo = new Transform();
 //trafo.setPosition(new Vector3f(15,15,15));
 //world.getScene().getEntities().get(0).addInstance(trafo);
-//EntityFactory.getInstance().bufferEntities();
 
-var count = 13;
+var count = 10;
 var instances = new java.util.ArrayList();
-for(var x = 0; x < count; x++) {
-	for(var y = 0; y < count; y++) {
-		for(var z = 0; z < count; z++) {
+var random = new java.util.Random();
+for(var x = -count; x < count; x++) {
+	for(var y = -count; y < count; y++) {
+		for(var z = -count; z < count; z++) {
 			var trafo = new Transform();
-			trafo.setPosition(new Vector3f(10*x,10*y,10*z));
-            instances.add(trafo);
+			var randomFloat = random.nextFloat() - 0.5;
+			trafo.setPosition(Vector3f.add(AppContext.getInstance().getScene().getEntities().get(0).getPosition(), new Vector3f(randomFloat*15*x,randomFloat*15*y,randomFloat*15*z), null));
+            	instances.add(trafo);
 		}
 	}
 }
 
+print("adding...." + instances.size());
 OpenGLContext.getInstance().execute(new java.lang.Runnable() {
 	run: function() {
-		for(var i = 0; i < count; i++) {
-			world.getScene().getEntities().get(0).addInstance(instances.get(i));
+		for(var i = 0; i < instances.size(); i++) {
+			AppContext.getInstance().getScene().getEntities().get(0).addInstance(instances.get(i));
+//			print(instances.get(i));
 		}
 	}
 });
+EntityFactory.getInstance().bufferEntities();
+

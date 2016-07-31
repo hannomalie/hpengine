@@ -420,7 +420,7 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
     if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
        any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
 
-       return vec4(0);
+//       return vec4(0);
     }
 
     int level = int(loD);
@@ -429,7 +429,7 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
 
-    vec4 result = textureLod(grid, samplePositionNormalized, level);
+    vec4 result = textureLod(grid, samplePositionNormalized, loD);
 
     return result;
 
@@ -456,14 +456,14 @@ vec4 voxelFetchBlurred(sampler3D grid, int gridSize, float sceneScale, vec3 posi
 
     float amount = 0.005;
     result *= 0.2;
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, -amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, -amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, -amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, -amount), level);
-    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, amount), level);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, -amount, -amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, amount, -amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, -amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(-amount, amount, -amount), loD);
+    result += 0.1*textureLod(grid, samplePositionNormalized + vec3(amount, -amount, amount), loD);
 
     return result;
 }
@@ -567,7 +567,7 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
         H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
         float dotProd = clamp(dot(normalWorld, H),0,1);
-        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, 6, positionWorld, normalize(H), 6, 150);
+        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, 6, positionWorld, normalize(H), sceneScale*6, 150);
     }
 
 
