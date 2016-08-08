@@ -32,13 +32,11 @@ public class RenderExtract {
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
         visibleEntities.clear();
         if (Config.useFrustumCulling) {
-            GPUProfiler.start("Culling");
             for (int i = 0; i < entities.size(); i++) {
                 if (entities.get(i).isInFrustum(camera) || entities.get(i).getInstanceCount() > 1) { // TODO: Better culling for instances
                     visibleEntities.add(entities.get(i));
                 }
             }
-            GPUProfiler.end();
         }
         this.directionalLight = directionalLight;
         this.anEntityHasMoved = anEntityHasMoved;

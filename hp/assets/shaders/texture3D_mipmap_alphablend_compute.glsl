@@ -31,7 +31,7 @@ vec3[8] fetchNormalTexels(ivec3 pos) {
 
 vec4 calculateMipMap(ivec3 pos) {
 
-    const int kernelSizeHalf = 2;
+    const int kernelSizeHalf = 1;
     const int kernelSize = 2 * kernelSizeHalf +1;
 
     vec3 centerNormal = Decode(imageLoad(normalSource, pos).xy);
@@ -54,7 +54,7 @@ vec4 calculateMipMap(ivec3 pos) {
 
     if(alpha < 0.0000001) { return vec4(0);}
     float denominator = (kernelSize*kernelSize*kernelSize);
-    return vec4(result/alpha, 1);//alpha/denominator);
+    return vec4(result/alpha, alpha/denominator);
 }
 vec4 calculateMipMapNormalWeighted(ivec3 pos) {
 

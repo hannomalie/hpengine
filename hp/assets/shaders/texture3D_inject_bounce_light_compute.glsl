@@ -1,4 +1,4 @@
-#define WORK_GROUP_SIZE 8
+#define WORK_GROUP_SIZE 16
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
 layout(binding=0, rgba8) writeonly uniform image3D voxelGrid;
@@ -85,25 +85,10 @@ void main(void) {
     float opacity = color.a;
     float isStatic = normalStaticEmissive.b;
 
-    float ambientAmount = 0;//.0125f;
-    float dynamicAdjust = 0;//.015f;
-    vec3 voxelColor = color.rgb;
-    vec3 voxelColorAmbient = (vec3(ambientAmount)+float(normalStaticEmissive.a))*voxelColor;
-
-	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
-  	positionShadow.xyz /= positionShadow.w;
-  	float depthInLightSpace = positionShadow.z;
-    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0, 1).r;
-
-	vec3 lightDirectionTemp = lightDirection;
-//	lightDirectionTemp.z *=-1;
-    float NdotL = max(0.0, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
-
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
+    vec3 finalVoxelColor;
 
 	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos, 0);
-	finalVoxelColor += currentPositionsValues.rgb * 0.25;// * (1/float(bounces+1));
+	finalVoxelColor += currentPositionsValues.rgb * 0.5;// * (1/float(bounces+1));
 //	finalVoxelColor /= float(bounces);
 
     const int SAMPLE_COUNT = 4;

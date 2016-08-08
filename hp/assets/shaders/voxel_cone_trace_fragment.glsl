@@ -91,7 +91,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		vec4 sampledNormalValue = texelFetch(normalGrid, gridPosition, mipLevel);
 		vec4 sampledLitValue = voxelFetch(grid, gridSize, sceneScale, currentPosition.xyz, mipLevel);//texelFetch(grid, gridPosition, mipLevel);
 		normalValue.rgb = sampledNormalValue.rgb;
-		lit += sampledLitValue.rgb;
+		lit += sampledLitValue.rgb * sampledLitValue.a;
 		isStaticValue = vec3(normalValue.b);
 		accumAlbedo += sampledValue.rgb * sampledValue.a;
 		alpha += sampledValue.a;
@@ -163,7 +163,7 @@ void main(void) {
 
         vec4 voxelDiffuse;// = 8f*voxelTraceCone(grid, 2, positionWorld, normalize(normalWorld), 5, 100);
 
-        const int SAMPLE_COUNT = 14;
+        const int SAMPLE_COUNT = 4;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
 		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+3*sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
