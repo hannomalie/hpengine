@@ -616,6 +616,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Post processing");
         postProcessProgram.use();
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
+        postProcessProgram.setUniform("screenWidth", (float) Config.WIDTH);
+        postProcessProgram.setUniform("screenHeight", (float) Config.HEIGHT);
         postProcessProgram.setUniform("worldExposure", Config.EXPOSURE);
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
@@ -626,6 +628,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
+        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
         OpenGLContext.getInstance().bindTexture(4, TEXTURE_2D, TextureFactory.getInstance().getLensFlareTexture().getTextureID());
         Renderer.getInstance().getFullscreenBuffer().draw();
 

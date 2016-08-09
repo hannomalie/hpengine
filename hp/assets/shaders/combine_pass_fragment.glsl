@@ -371,10 +371,10 @@ void main(void) {
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
   	
-  	vec4 motionVecProbeIndices = texture2D(motionMap, st);
+  	vec4 motionVecProbeIndices = textureLod(motionMap, st, 0);
   	vec2 motion = motionVecProbeIndices.xy;
   	float transparency = motionVecProbeIndices.a;
-  	vec4 colorMetallic = texture2D(diffuseMap, st);
+  	vec4 colorMetallic = textureLod(diffuseMap, st, 0);
   	colorMetallic.xyz = pow(colorMetallic.xyz, inverseGamma);
   	
   	float metallic = colorMetallic.a;
@@ -384,7 +384,7 @@ void main(void) {
   	const float metalBias = 0.0;
   	vec3 color = mix(colorMetallic.xyz, vec3(0,0,0), clamp(metallic - metalBias, 0, 1));
   	
-	vec4 lightDiffuseSpecular = texture(lightAccumulationMap, st);
+	vec4 lightDiffuseSpecular = textureLod(lightAccumulationMap, st, 0);
 	
 	vec4 AOscattering = textureLod(aoScattering, st, 0);
 	vec3 scattering = AOscattering.gba;
@@ -407,7 +407,7 @@ void main(void) {
 	vec4 lit = vec4(ambientTerm.rgb,1) + lightDiffuseSpecular;
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
-	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
+//	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
 	out_color.rgb *= clamp(ao,0,1);
 	out_color.rgb += (scattering.rgb); //scattering
 	
@@ -430,7 +430,7 @@ void main(void) {
 //	out_color.rgb = normalView.xyz;
 	//out_color.rgb = vec3(normalView.xyz*0.5+0.5);
 //	out_color.rgb = specularColor.xyz;
-//	out_color.rgb = lightDiffuseSpecular.rgb;
+	out_color.rgb = lightDiffuseSpecular.rgb;
 //	out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = 10*environmentLight;
 //	out_color.rgb = ambientTerm;

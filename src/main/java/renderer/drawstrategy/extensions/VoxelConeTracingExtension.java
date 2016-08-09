@@ -362,6 +362,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
         voxelConeTraceProgram.setUniform("gridSize", gridSize);
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
+        voxelConeTraceProgram.setUniform("screenWidth", (float) Config.WIDTH);
+        voxelConeTraceProgram.setUniform("screenHeight", (float) Config.HEIGHT);
         Renderer.getInstance().getFullscreenBuffer().draw();
 //        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
 //        if(entityOrDirectionalLightHasMoved)

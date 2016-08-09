@@ -1,7 +1,8 @@
 
 layout(binding=0) uniform sampler2D renderedTexture;
 layout(binding=1) uniform sampler2D normalDepthTexture;
-layout(binding=3) uniform sampler2D motionMap;
+layout(binding=2) uniform sampler2D motionMap;
+layout(binding=3) uniform sampler2D lightAccumulationMap;
 layout(binding=4) uniform sampler2D lensflareMap;
 
 layout(std430, binding=0) buffer myBlock
@@ -14,6 +15,9 @@ layout(std430, binding=0) buffer myBlock
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
+
+uniform float screenWidth = 1280;
+uniform float screenHeight = 720;
 
 uniform float worldExposure = 5;
 
@@ -479,7 +483,7 @@ void main()
 	if (usePostProcessing) {
 		vec4 in_color = texture2D(renderedTexture, pass_TextureCoord);
 		float depth = texture2D(motionMap, pass_TextureCoord).b;
-	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/1280,1/720), renderedTexture);
+	    in_color.rgb = DoDOF(pass_TextureCoord, vec2(1/screenWidth,1/screenHeight), renderedTexture);
 	    
 	    out_color = in_color;
 	    //out_color.rgb = in_color.rgb;
