@@ -2,6 +2,8 @@ package component;
 
 import javax.vecmath.Matrix4f;
 
+import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import engine.AppContext;
 import engine.model.Entity;
 import util.Util;
 
@@ -9,20 +11,26 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.linearmath.Transform;
 
 public class PhysicsComponent extends BaseComponent {
-	
-	public enum MotionType {
+    public enum MotionType {
 		STATIC,
 		DYNAMIC
 	}
 	
-	RigidBody rigidBody;
+	RigidBodyConstructionInfo rigidBodyConstructionInfo;
 	private Entity owner;
-	
-	public PhysicsComponent(Entity owner, RigidBody rigidBody) {
+    private transient RigidBody rigidBody;
+
+	public PhysicsComponent(Entity owner, RigidBodyConstructionInfo rigidBodyConstructionInfo) {
 		this.owner = owner;
-		this.rigidBody = rigidBody;
+		this.rigidBodyConstructionInfo = rigidBodyConstructionInfo;
 		owner.getComponents().put(getIdentifier(), this);
 	}
+
+    @Override
+    public void init() {
+        rigidBody = new RigidBody(rigidBodyConstructionInfo);
+        AppContext.getInstance().getPhysicsFactory().getDynamicsWorld().addRigidBody(rigidBody);
+    }
 	
 	public void update(float seconds) {
 		Transform out = new Transform();

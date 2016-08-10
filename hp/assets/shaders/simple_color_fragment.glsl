@@ -4,7 +4,7 @@ uniform vec3 diffuseColor = vec3(1,0,0);
 
 in vec2 pass_TextureCoord;
 
-out vec4 out_color;
+layout(location=2)out vec4 out_color;
 
 void main()
 {

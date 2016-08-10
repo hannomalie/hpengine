@@ -284,9 +284,12 @@ public class Util {
 		return b.toString();
 	}
 
-	public static javax.vecmath.Vector3f toBullet(Vector3f in) {
-		return new javax.vecmath.Vector3f(in.x, in.y, in.z);
-	}
+    public static javax.vecmath.Vector3f toBullet(Vector3f in) {
+        return new javax.vecmath.Vector3f(in.x, in.y, in.z);
+    }
+    public static Vector3f fromBullet(javax.vecmath.Vector3f in) {
+        return new Vector3f(in.x, in.y, in.z);
+    }
 	public static Transform toBullet(engine.Transform in) {
 		Matrix4f out = in.getTransformation();
 		return new Transform(toBullet(out));

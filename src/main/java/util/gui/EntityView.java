@@ -14,18 +14,23 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import component.ModelComponent;
+import component.PhysicsComponent;
 import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import event.EntityAddedEvent;
 import event.EntityChangedMaterialEvent;
+import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.command.RemoveEntityCommand;
 import renderer.command.Result;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
+import util.Util;
+import util.gui.input.LimitedWebFormattedTextField;
 import util.gui.input.TransformablePanel;
+import util.gui.input.WebFormattedVec3Field;
 
 import javax.swing.*;
 import java.awt.*;
@@ -73,16 +78,66 @@ public class EntityView extends WebPanel {
         for(Transform instanceTrafo : entity.getInstances()) {
             instancesPanels.add(new TransformablePanel<>(instanceTrafo));
         }
+        WebComponentPanel buttonPanel = new WebComponentPanel();
+        buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Entity");
         addInstanceButton.addActionListener(e -> {
             entity.addInstance(new Transform());
 //            TODO: Make this possible
 //            init(entity);
         });
-        instancesPanels.add(addInstanceButton);
+        buttonPanel.addElement(addInstanceButton);
+        instancesPanels.add(buttonPanel);
         GridPanel instancesGridPanel = new GridPanel(instancesPanels.size(), 1, instancesPanels.toArray(new Component[0]));
         JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
         tabbedPane.addTab("Instances", instancesScrollPane);
+
+        WebComponentPanel physicsPanel = new WebComponentPanel();
+        if(entity.getComponentOption(PhysicsComponent.class).isPresent()) {
+            WebButton removePhysicsComponent = new WebButton("Remove PhysicsComponent");
+            removePhysicsComponent.addActionListener(e -> {
+                if(entity.getComponentOption(ModelComponent.class) != null) {
+                    entity.removeComponent(entity.getComponent(PhysicsComponent.class));
+                }
+            });
+            physicsPanel.addElement(removePhysicsComponent);
+            javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
+            physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
+                @Override
+                public void onValueChange(Vector3f value) {
+                    entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
+                }
+            });
+            physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
+                @Override
+                public void onChange(float currentValue) {
+                    entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
+                }
+            });
+        } else {
+            WebButton addBallPhysicsComponentButton = new WebButton("Add Ball PhysicsComponent");
+            addBallPhysicsComponentButton.addActionListener(e -> {
+                float radius = 10;
+                if(entity.getComponentOption(ModelComponent.class) != null) {
+                    radius = entity.getComponent(ModelComponent.class).getBoundingSphereRadius();
+                }
+                PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addBallPhysicsComponent(entity, radius, 0.0f);
+                physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
+            });
+            physicsPanel.addElement(addBallPhysicsComponentButton);
+
+            if(entity.getComponentOption(ModelComponent.class) != null) {
+                WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
+                addMeshPhysicsComponentButton.addActionListener(e -> {
+                    PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
+                    physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
+                });
+                physicsPanel.addElement(addMeshPhysicsComponentButton);
+            }
+
+        }
+        GridPanel physicsGridPanel = new GridPanel(physicsPanel);
+        tabbedPane.addTab("Physics", physicsGridPanel);
 		this.add(tabbedPane);
 		repaint();
 	}

@@ -317,6 +317,10 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         setCapacityInBytes((offset + values.length)* getPrimitiveSizeInBytes());
         buffer.position(offset);
         buffer.put(values);
+
+        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
+        verticesCount = values.length/totalElementsPerVertex;
+        triangleCount = verticesCount/3;
     }
 
     @Override

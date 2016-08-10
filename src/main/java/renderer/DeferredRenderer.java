@@ -3,11 +3,11 @@ package renderer;
 import config.Config;
 import engine.AppContext;
 import engine.Transform;
+import engine.graphics.query.GLSamplesPassedQuery;
 import engine.model.*;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
@@ -34,10 +34,7 @@ import util.stopwatch.GPUProfiler;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.ProfilingTask;
 
-import javax.swing.*;
 import javax.vecmath.Vector2f;
-import java.awt.*;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -221,9 +218,12 @@ public class DeferredRenderer implements Renderer {
 		setLastFrameTime();
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 
+        if(Config.DRAWLINES_ENABLED) {
+            drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
+        }
 		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
-//			drawToQuad(AppContext.getInstance().getScene().getDirectionalLight().getShadowMapId(), debugBuffer);
+//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
 //			}
@@ -429,8 +429,7 @@ public class DeferredRenderer implements Renderer {
 		}
 		buffer.putValues(points);
         buffer.upload();
-		buffer.drawDebugLines();
-//		buffer.delete();
+        buffer.drawDebugLines();
 		linePoints.clear();
         return points.length / 3 / 2;
 	}

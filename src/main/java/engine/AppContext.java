@@ -436,6 +436,7 @@ public class AppContext implements Extractor<RenderExtract> {
             OpenGLContext.getInstance().blockUntilEmpty();
             if((entityHasMoved || entityAdded) && scene != null) {
                 EntityFactory.getInstance().bufferEntities(); entityAdded = false;
+                directionalLightNeedsShadowMapRedraw = true;
             }
 
             RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
@@ -574,6 +575,7 @@ public class AppContext implements Extractor<RenderExtract> {
         sceneInitiallyDrawn = false;
     }
 
+//    TODO: Use this
     private void switchExtracts() {
         synchronized (currentRenderExtract) {
             synchronized (nextExtract) {
@@ -582,5 +584,8 @@ public class AppContext implements Extractor<RenderExtract> {
                 nextExtract = temp;
             }
         }
+    }
+    public PhysicsFactory getPhysicsFactory() {
+        return physicsFactory;
     }
 }

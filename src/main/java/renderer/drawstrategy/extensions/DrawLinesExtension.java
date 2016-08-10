@@ -1,6 +1,7 @@
 package renderer.drawstrategy.extensions;
 
 import config.Config;
+import engine.AppContext;
 import engine.Transform;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
@@ -8,6 +9,7 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
+import renderer.constants.GlCap;
 import renderer.drawstrategy.FirstPassResult;
 import shader.Program;
 import shader.ProgramFactory;
@@ -33,7 +35,7 @@ public class DrawLinesExtension implements RenderExtension {
             OpenGLContext openGLContext = OpenGLContext.getInstance();
             openGLContext.disable(CULL_FACE);
             openGLContext.depthMask(false);
-//            openGLContext.disable(DEPTH_TEST);
+//            openGLContext.disable(GlCap.DEPTH_TEST);
 
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
@@ -62,11 +64,16 @@ public class DrawLinesExtension implements RenderExtension {
 //                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
 //                }
 //            }
+
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
             int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
             firstPassResult.linesDrawn += linesDrawn;
+
+
+            AppContext.getInstance().getPhysicsFactory().getDynamicsWorld().debugDrawWorld();
+            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }
 }

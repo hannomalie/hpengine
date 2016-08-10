@@ -35,6 +35,7 @@ import javax.vecmath.Vector3f;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class PhysicsFactory {
 	
@@ -52,7 +53,12 @@ public class PhysicsFactory {
 
             @Override
             public void update(float seconds) {
-                dynamicsWorld.stepSimulation(seconds*1000);
+                try {
+                    dynamicsWorld.stepSimulation(seconds*1000);
+                } catch (Exception e) {
+                    System.out.println("e = " + e);
+                    e.printStackTrace();
+                }
             }
         }.start();
 	}
@@ -60,15 +66,15 @@ public class PhysicsFactory {
 	public PhysicsComponent addBallPhysicsComponent(Entity owner) {
 		return addBallPhysicsComponent(owner, 1, 10);
 	}
-	public PhysicsComponent addBallPhysicsComponent(Entity owner, float radius) {
-		return addBallPhysicsComponent(owner, radius, 10);
-	}
 	public PhysicsComponent addBallPhysicsComponent(Entity owner, float radius, float mass) {
 		SphereShape sphereShape = new SphereShape(radius);
 		Vector3f inertia = new Vector3f();
 		sphereShape.calculateLocalInertia(mass, inertia);
 		return addPhysicsComponent(sphereShape, owner, mass, inertia);
 	}
+    public PhysicsComponent addBallPhysicsComponent(Entity owner, float radius) {
+        return addBallPhysicsComponent(owner, radius, 10);
+    }
 
 	public PhysicsComponent addBoxPhysicsComponent(Entity entity) {
 		return addBallPhysicsComponent(entity, 10);
@@ -144,9 +150,7 @@ public class PhysicsFactory {
 //		System.out.println("own: " + owner.getTransform().getOrientation());
 		RigidBodyConstructionInfo bodyConstructionInfo = new RigidBodyConstructionInfo(mass, motionState, shape, inertia);
 		bodyConstructionInfo.restitution = 0.5f;
-		RigidBody body = new RigidBody(bodyConstructionInfo);
-		dynamicsWorld.addRigidBody(body);
-		return new PhysicsComponent(owner, body);
+		return new PhysicsComponent(owner, bodyConstructionInfo);
 	}
 	
 
@@ -158,6 +162,7 @@ public class PhysicsFactory {
 		dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, constraintSolver, collisionConfiguration);
 		dynamicsWorld.setGravity(gravity);
 		dynamicsWorld.setDebugDrawer(new IDebugDraw() {
+            Logger logger = Logger.getLogger("Physics Factory Debug Draw");
 			
 			@Override
 			public void setDebugMode(int arg0) {
@@ -165,13 +170,12 @@ public class PhysicsFactory {
 			
 			@Override
 			public void reportErrorWarning(String arg0) {
+                logger.info(arg0);
 			}
 			
 			@Override
 			public int getDebugMode() {
-				if(Config.DRAWLINES_ENABLED) {
-					return 1;
-				} else { return 0; }
+                return Config.DRAWLINES_ENABLED ? 1 : 0;
 			}
 			
 			@Override
@@ -188,7 +192,7 @@ public class PhysicsFactory {
 			
 			@Override
 			public void draw3dText(Vector3f arg0, String arg1) {
-				
+                logger.info(arg0.toString() + " - " + arg1);
 			}
 		});
 		
