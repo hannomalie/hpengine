@@ -4,6 +4,7 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
+import component.PhysicsComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -17,7 +18,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
@@ -43,18 +43,20 @@ import util.stopwatch.StopWatch;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
+import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static log.ConsoleLogger.getLogger;
-
 public class AppContext implements Extractor<RenderExtract> {
+    public static int WINDOW_WIDTH = Config.WIDTH;
+    public static int WINDOW_HEIGHT = Config.HEIGHT;
 
     private static volatile AppContext instance = null;
 
@@ -107,26 +109,23 @@ public class AppContext implements Extractor<RenderExtract> {
             }
         }
 
-        if (debug) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    WebLookAndFeel.install();
-                    new DebugFrame();
-                }
-            }).start();
+        try {
+            EventQueue.invokeAndWait(() -> WebLookAndFeel.install());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
         }
 
         init();
+        if (debug) {
+            new DebugFrame();
+        }
         if (sceneName != null) {
             Renderer.getInstance();
             Scene scene = Scene.read(sceneName);
             AppContext.getInstance().setScene(scene);
         }
-//        else {
-//            AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
-//        }
-
     }
 
     public static void init() {
@@ -149,7 +148,68 @@ public class AppContext implements Extractor<RenderExtract> {
         getEventBus().register(this);
         Config.setHeadless(headless);
         initWorkDir();
+        frame = new JFrame("hpengine");
+        frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+        JLayeredPane layeredPane = new JLayeredPane();
+        canvas = new Canvas() {
+            @Override
+            public void addNotify() {
+                super.addNotify();
+            }
+
+            @Override
+            public void removeNotify() {
+                super.removeNotify();
+            }
+        };
+        canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+        canvas.setIgnoreRepaint(true);
+        layeredPane.add(canvas, 0);
+        JPanel overlayPanel = new JPanel();
+        overlayPanel.setOpaque(true);
+//        overlayPanel.add(new JButton("asdasdasd"));
+        layeredPane.add(overlayPanel, 1);
+        frame.add(layeredPane);
+        frame.setLayout(new BorderLayout());
+//        frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
+//        frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
+        frame.getContentPane().add(canvas, BorderLayout.CENTER);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        try {
+            Display.setParent(canvas);
+        } catch (LWJGLException e) {
+            e.printStackTrace();
+        }
+        frame.addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent evt) {
+                AppContext.WINDOW_WIDTH = frame.getWidth();
+                AppContext.WINDOW_HEIGHT = frame.getHeight();
+            }
+        });
         initOpenGLContext();
+
+//        WebComboBox type = new WebComboBox(DynamicMenuType.values(), DynamicMenuType.shutter);
+//        WebComboBox hidingType = new WebComboBox(DynamicMenuType.values(), DynamicMenuType.shutter);
+//        WebTextField radius = new WebTextField(new IntTextDocument(), "70", 4);
+//
+//        final WebDynamicMenu menu = new WebDynamicMenu();
+//        menu.setType ( ( DynamicMenuType ) type.getSelectedItem () );
+//        menu.setHideType ( (DynamicMenuType) hidingType.getSelectedItem () );
+//        menu.setRadius ( Integer.parseInt ( radius.getText () ) );
+//        menu.setStepProgress ( 0.07f );
+//
+//        final int items = 5;
+//        for ( int i = 1; i <= items; i++ )
+//        {
+//            final ImageIcon icon = WebLookAndFeel.getIcon ( 24 );
+//            final ActionListener action = e -> System.out.println ( icon );
+//            final WebDynamicMenuItem item = new WebDynamicMenuItem( icon, action );
+//            item.setMargin ( new Insets ( 8, 8, 8, 8 ) );
+//            menu.addItem ( item );
+//        }
+//        menu.showMenu(Display.getParent(), 100, 100);
+
         EntityFactory.create();
         Renderer.init(DeferredRenderer.class);
         EntityFactory.init();
@@ -285,10 +345,10 @@ public class AppContext implements Extractor<RenderExtract> {
         OpenGLContext.exitOnGLError("loadTestScene");
 
         try {
-            Model skyBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
-            skyBoxEntity.setScale(100);
-            entities.add(skyBoxEntity);
+//            Model skyBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+//            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
+//            skyBoxEntity.setScale(100);
+//            entities.add(skyBoxEntity);
 
             Model sphere = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 
@@ -316,9 +376,9 @@ public class AppContext implements Extractor<RenderExtract> {
 //							scale.scale(new Random().nextFloat()*14);
 //							entity.setScale(scale);
 //
-//							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
-//							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
-//							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
+							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
+							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
 
                             entities.add(entity);
                         } catch (Exception e) {
@@ -361,7 +421,9 @@ public class AppContext implements Extractor<RenderExtract> {
     private boolean STRG_PRESSED_LAST_FRAME = false;
 
     private void update(float seconds) {
-
+        SwingUtilities.invokeLater(() -> {
+            frame.setTitle(Display.getTitle());
+        });
         StopWatch.getInstance().start("Controls update");
 
 //        if(Keyboard.isCreated())
@@ -465,38 +527,10 @@ public class AppContext implements Extractor<RenderExtract> {
     public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult) {
         return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
     }
-
-    private JFrame frame;
+    JFrame frame;
+    Canvas canvas;
     private void initOpenGLContext() {
-        try {
-            OpenGLContext.getInstance();
-            if(Config.isHeadless()) {
-                Canvas canvas = new Canvas();
-                frame = new JFrame("hpengine");
-                frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-                JLayeredPane layeredPane = new JLayeredPane();
-                canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-                layeredPane.add(canvas, 0);
-                //            JPanel overlayPanel = new JPanel();
-                //            overlayPanel.setOpaque(true);
-                //            overlayPanel.add(new JButton("asdasdasd"));
-                //			layeredPane.add(overlayPanel, 1);
-                //            frame.add(layeredPane);
-                //			frame.setLayout(new BorderLayout());
-                frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
-                frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
-                frame.getContentPane().add(canvas, BorderLayout.CENTER);
-                frame.pack();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setVisible(false);
-                Display.setParent(canvas);
-            }
-//            OpenGLContext.getInstance().attach(canvas);
-
-        } catch (LWJGLException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        OpenGLContext.getInstance();
     }
     private volatile boolean entityHasMoved = false;
 

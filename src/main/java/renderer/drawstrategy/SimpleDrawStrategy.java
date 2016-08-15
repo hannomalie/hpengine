@@ -609,10 +609,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (target == null) {
             OpenGLContext.getInstance().bindFrameBuffer(0);
+            OpenGLContext.getInstance().viewPort(0,0,AppContext.WINDOW_WIDTH, AppContext.WINDOW_HEIGHT);
         } else {
             target.use(true);
         }
-
         GPUProfiler.start("Post processing");
         postProcessProgram.use();
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
