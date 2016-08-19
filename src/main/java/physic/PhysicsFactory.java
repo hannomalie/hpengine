@@ -12,22 +12,19 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-import com.bulletphysics.linearmath.DefaultMotionState;
-import com.bulletphysics.linearmath.IDebugDraw;
-import com.bulletphysics.linearmath.MotionState;
-import com.bulletphysics.linearmath.Transform;
+import com.bulletphysics.linearmath.*;
 import com.bulletphysics.util.ObjectArrayList;
 import component.ModelComponent;
 import component.PhysicsComponent;
 import config.Config;
-import engine.AppContext;
 import engine.TimeStepThread;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.Renderer;
-import util.Util;
+import util.commandqueue.CommandQueue;
+import util.commandqueue.FutureCallable;
 
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
@@ -35,25 +32,27 @@ import javax.vecmath.Vector3f;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 public class PhysicsFactory {
-	
-	private AppContext appContext;
-	private DynamicsWorld dynamicsWorld;
-	private RigidBody ground;
 
-	public PhysicsFactory(AppContext appContext) {
-		this(appContext, new Vector3f(0,-20,0));
+    private DynamicsWorld dynamicsWorld;
+	private RigidBody ground;
+    private final CommandQueue commandQueue = new CommandQueue();
+
+	public PhysicsFactory() {
+		this(new Vector3f(0,-20,0));
 	}
-	public PhysicsFactory(AppContext appContext, Vector3f gravity) {
-		this.appContext = appContext;
-		setupBullet(gravity);
+	public PhysicsFactory(Vector3f gravity) {
+        setupBullet(gravity);
         new TimeStepThread("Physics", 0) {
 
             @Override
             public void update(float seconds) {
                 try {
+                    commandQueue.executeCommands();
                     dynamicsWorld.stepSimulation(seconds*1000);
                 } catch (Exception e) {
                     System.out.println("e = " + e);
@@ -70,7 +69,7 @@ public class PhysicsFactory {
 		SphereShape sphereShape = new SphereShape(radius);
 		Vector3f inertia = new Vector3f();
 		sphereShape.calculateLocalInertia(mass, inertia);
-		return addPhysicsComponent(sphereShape, owner, mass, inertia);
+		return addPhysicsComponent(new MeshShapeInfo( () -> sphereShape, owner, mass, inertia));
 	}
     public PhysicsComponent addBallPhysicsComponent(Entity owner, float radius) {
         return addBallPhysicsComponent(owner, radius, 10);
@@ -92,7 +91,7 @@ public class PhysicsFactory {
 		BoxShape boxShape = new BoxShape(halfExtends);
 		Vector3f inertia = new Vector3f();
 		boxShape.calculateLocalInertia(1f, inertia);
-		return addPhysicsComponent(boxShape, owner, mass, inertia);
+		return addPhysicsComponent(new MeshShapeInfo( () -> boxShape, owner, mass, inertia));
 	}
 
 	public PhysicsComponent addHullPhysicsComponent(Entity owner, float mass) {
@@ -107,50 +106,75 @@ public class PhysicsFactory {
 		CollisionShape shape = new ConvexHullShape(list);
 		Vector3f inertia = new Vector3f();
 		shape.calculateLocalInertia(1f, inertia);
-		return addPhysicsComponent(shape, owner, mass, inertia);
+		return addPhysicsComponent(new MeshShapeInfo( () -> shape, owner, mass, inertia));
 	}
 	
 	public PhysicsComponent addMeshPhysicsComponent(Entity owner, float mass) {
-		ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
+        Vector3f inertia = new Vector3f();
+        Supplier<CollisionShape> collisionShapeSupplier = () -> supplyCollisionShape(owner, mass, inertia);
 
-		float[] vertices = modelComponent.getVertexBuffer().getValues(DataChannels.POSITION3);
-		ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 8);
-		ByteBuffer indexBuffer = BufferUtils.createByteBuffer(vertices.length * 8);
-		
-		List<Vector3f> scaledVertices = new ArrayList<>(vertices.length/3);
-		for (int i = 0; i < vertices.length; i+=3) {
-			org.lwjgl.util.vector.Vector3f vec = new org.lwjgl.util.vector.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
-			org.lwjgl.util.vector.Vector3f scaledVec = org.lwjgl.util.vector.Vector3f.cross(vec, owner.getScale(), null);
-
-			vertexBuffer.putFloat(scaledVec.x);
-			vertexBuffer.putFloat(scaledVec.y);
-			vertexBuffer.putFloat(scaledVec.z);
-			indexBuffer.putFloat(i);
-			indexBuffer.putFloat(i+1);
-			indexBuffer.putFloat(i+2);
-		}
-		
-		vertexBuffer.rewind();
-		indexBuffer.rewind();
-
-		TriangleIndexVertexArray vertexArray = new TriangleIndexVertexArray(vertices.length/3, indexBuffer, 0, vertices.length,vertexBuffer, 0); 
-		CollisionShape shape = new com.bulletphysics.collision.shapes.BvhTriangleMeshShape(vertexArray, true);
-		Vector3f inertia = new Vector3f();
-		shape.calculateLocalInertia(mass, inertia);
-		return addPhysicsComponent(shape, owner, mass, inertia);
+        MeshShapeInfo info = new MeshShapeInfo(collisionShapeSupplier, owner, mass, inertia);
+        return addPhysicsComponent(info);
 	}
+
+    public CollisionShape supplyCollisionShape(Entity owner, float mass, Vector3f inertia) {
+        ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
+        if(modelComponent == null || !modelComponent.isInitialized()) {
+            throw new IllegalStateException("ModelComponent null or not initialized");
+        }
+
+        float[] vertices = modelComponent.getVertexBuffer().getValues(DataChannels.POSITION3);
+        int[] indices = modelComponent.getVertexBuffer().getIndices();
+        ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 4);
+        ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
+
+        for (int i = 0; i < vertices.length; i+=3) {
+            org.lwjgl.util.vector.Vector3f vec = new org.lwjgl.util.vector.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
+            org.lwjgl.util.vector.Vector3f scaledVec = org.lwjgl.util.vector.Vector3f.cross(vec, owner.getScale(), null);
+
+            vertexBuffer.putFloat(scaledVec.x);
+            vertexBuffer.putFloat(scaledVec.y);
+            vertexBuffer.putFloat(scaledVec.z);
+        }
+        for (int i = 0; i < indices.length; i+=3) {
+            indexBuffer.putFloat(indices[i]);
+            indexBuffer.putFloat(indices[i+1]);
+            indexBuffer.putFloat(indices[i+2]);
+        }
+
+        vertexBuffer.rewind();
+        indexBuffer.rewind();
+
+        TriangleIndexVertexArray vertexArray = new TriangleIndexVertexArray(indices.length/3, indexBuffer, 0, vertices.length,vertexBuffer, 0);
+        BvhTriangleMeshShape shape = new BvhTriangleMeshShape(vertexArray, true);
+        shape.calculateLocalInertia(mass, inertia);
+        return shape;
+    }
+
+    public CommandQueue getCommandQueue() {
+        return commandQueue;
+    }
+
+    public void debugDrawWorld() {
+        getDynamicsWorld().debugDrawWorld();
+    }
+
+    public class MeshShapeInfo {
+        public MeshShapeInfo(Supplier<CollisionShape> shapeSupplier, Entity owner, float mass, Vector3f inertia) {
+            this.shapeSupplier = shapeSupplier;
+            this.owner = owner;
+            this.mass = mass;
+            this.inertia = inertia;
+        }
+
+        public Supplier<CollisionShape> shapeSupplier;
+        public Entity owner;
+        public float mass;
+        public Vector3f inertia;
+    }
 	
-	public PhysicsComponent addPhysicsComponent(CollisionShape shape, Entity owner, float mass, Vector3f inertia) {
-		Transform transform = Util.toBullet(owner.getTransform());
-		MotionState motionState = new DefaultMotionState(transform);
-//		System.out.println("bullet: " + transform.origin);
-//		System.out.println("own: " + owner.getTransform().getPosition());
-//		Quat4f out = new Quat4f();
-//		System.out.println("bullet: " + transform.getRotation(out));
-//		System.out.println("own: " + owner.getTransform().getOrientation());
-		RigidBodyConstructionInfo bodyConstructionInfo = new RigidBodyConstructionInfo(mass, motionState, shape, inertia);
-		bodyConstructionInfo.restitution = 0.5f;
-		return new PhysicsComponent(owner, bodyConstructionInfo);
+	public PhysicsComponent addPhysicsComponent(MeshShapeInfo info) {
+		return new PhysicsComponent(info.owner, info);
 	}
 	
 
@@ -159,7 +183,16 @@ public class PhysicsFactory {
 		CollisionConfiguration collisionConfiguration = new DefaultCollisionConfiguration();
 		CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
 		ConstraintSolver constraintSolver = new SequentialImpulseConstraintSolver();
-		dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, constraintSolver, collisionConfiguration);
+		dynamicsWorld = new DiscreteDynamicsWorld(dispatcher, broadphase, constraintSolver, collisionConfiguration) {
+            @Override
+            public void debugDrawObject(Transform worldTransform, CollisionShape shape, Vector3f color) {
+                super.debugDrawObject(worldTransform, shape, color);
+                Vector3f from = new Vector3f();
+                Vector3f to = new Vector3f();
+                shape.getAabb(worldTransform, from, to);
+                getDebugDrawer().drawAabb(from, to, color);
+            }
+        };
 		dynamicsWorld.setGravity(gravity);
 		dynamicsWorld.setDebugDrawer(new IDebugDraw() {
             Logger logger = Logger.getLogger("Physics Factory Debug Draw");
@@ -175,14 +208,21 @@ public class PhysicsFactory {
 			
 			@Override
 			public int getDebugMode() {
-                return Config.DRAWLINES_ENABLED ? 1 : 0;
+                int flags =
+//                        DebugDrawModes.DRAW_AABB
+//                        & DebugDrawModes.DRAW_WIREFRAME
+//                            DebugDrawModes.DRAW_TEXT
+//                        & DebugDrawModes.DRAW_CONTACT_POINTS
+                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
+                        ;
+                return Config.DRAWLINES_ENABLED ? flags : 0;
 			}
 			
 			@Override
-			public void drawLine(Vector3f arg0, Vector3f arg1, Vector3f arg2) {
+			public void drawLine(Vector3f start, Vector3f end, Vector3f color) {
                 Renderer.getInstance().batchLine(
-						new org.lwjgl.util.vector.Vector3f(arg0.x, arg0.y, arg0.z),
-						new org.lwjgl.util.vector.Vector3f(arg1.x, arg1.y, arg1.z));
+						new org.lwjgl.util.vector.Vector3f(start.x, start.y, start.z),
+						new org.lwjgl.util.vector.Vector3f(end.x, end.y, end.z));
 			}
 			
 			@Override
@@ -207,11 +247,33 @@ public class PhysicsFactory {
 		dynamicsWorld.addRigidBody(ground);
 	}
 	
-	public DynamicsWorld getDynamicsWorld() {
+	private DynamicsWorld getDynamicsWorld() {
 		return dynamicsWorld;
 	}
 
-	public RigidBody getGround() {
+    List<RigidBody> rigidBodyCache = new ArrayList<>();
+    public void registerRigidBody(RigidBody rigidBody) {
+        rigidBodyCache.add(rigidBody);
+        dynamicsWorld.addRigidBody(rigidBody);
+    }
+
+    public void clearWorld() {
+        for(RigidBody rigidBody : rigidBodyCache) {
+            unregisterRigidBody(rigidBody);
+        }
+    }
+
+    public CompletableFuture<Object> unregisterRigidBody(final RigidBody rigidBody) {
+        return getCommandQueue().addCommand(new FutureCallable<Object>() {
+            @Override
+            public Object execute() throws Exception {
+                getDynamicsWorld().removeRigidBody(rigidBody);
+                return null;
+            }
+        });
+    }
+
+    public RigidBody getGround() {
 		return ground;
 	}
 	public void setGround(RigidBody ground) {

@@ -34,6 +34,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     public int[] getIndices() {
         int[] dst = new int[indexBuffers.get(0).capacity()];
+        indexBuffers.get(0).rewind();
         indexBuffers.get(0).get(dst);
         return dst;
     }

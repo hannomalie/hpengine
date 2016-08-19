@@ -72,7 +72,7 @@ public class DrawLinesExtension implements RenderExtension {
             firstPassResult.linesDrawn += linesDrawn;
 
 
-            AppContext.getInstance().getPhysicsFactory().getDynamicsWorld().debugDrawWorld();
+            AppContext.getInstance().getPhysicsFactory().debugDrawWorld();
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }

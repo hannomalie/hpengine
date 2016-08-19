@@ -492,4 +492,8 @@ public class Util {
 
 		return new TypedTuple<>(resultViewMatrices, resultProjectionMatrices);
 	}
+
+    public static boolean equals(Quaternion a, Quaternion b) {
+        return a.x == b.x && a.y == b.y && a.x == b.x && a.w == b.w;
+    }
 }

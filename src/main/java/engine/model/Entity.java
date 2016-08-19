@@ -3,6 +3,7 @@ package engine.model;
 import camera.Camera;
 import component.Component;
 import component.ModelComponent;
+import component.PhysicsComponent;
 import engine.AppContext;
 import engine.Transform;
 import engine.lifecycle.LifeCycle;
@@ -70,7 +71,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void init() {
-        long start = System.currentTimeMillis();
 		LifeCycle.super.init();
 		transform.init();
 
@@ -114,7 +114,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return Optional.ofNullable(type.cast(component));
 	}
 
-	private boolean hasComponent(Class<ModelComponent> type) {
+	private boolean hasComponent(Class<? extends Component> type) {
 		return getComponents().keySet().contains(type.getSimpleName().toString());
 	}
 
@@ -170,6 +170,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	@Override
 	public void update(float seconds) {
 		for (Component c : components.values()) {
+            if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
 //        Iterator<Entity> childrenIterator = getChildren().iterator();
@@ -405,6 +406,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public Update getUpdate() {
+        if(hasComponent(PhysicsComponent.class) && getComponent(PhysicsComponent.class).isDynamic()) {
+            return Update.DYNAMIC;
+        }
 		return update;
 	}
 

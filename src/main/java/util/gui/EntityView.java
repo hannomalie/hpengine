@@ -100,20 +100,27 @@ public class EntityView extends WebPanel {
                     entity.removeComponent(entity.getComponent(PhysicsComponent.class));
                 }
             });
-            physicsPanel.addElement(removePhysicsComponent);
-            javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
-            physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
-                @Override
-                public void onValueChange(Vector3f value) {
-                    entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
-                }
-            });
-            physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
-                @Override
-                public void onChange(float currentValue) {
-                    entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
-                }
-            });
+            if(entity.getComponent(PhysicsComponent.class).isInitialized()) {
+                physicsPanel.addElement(removePhysicsComponent);
+                javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
+                physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
+                    @Override
+                    public void onValueChange(Vector3f value) {
+                        entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
+                    }
+                });
+                physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
+                    @Override
+                    public void onChange(float currentValue) {
+                        entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
+                    }
+                });
+                WebButton resetTransformButton = new WebButton("Reset Transform");
+                resetTransformButton.addActionListener(e -> {
+                    entity.getComponent(PhysicsComponent.class).reset();
+                });
+                physicsPanel.addElement(resetTransformButton);
+            }
         } else {
             WebButton addBallPhysicsComponentButton = new WebButton("Add Ball PhysicsComponent");
             addBallPhysicsComponentButton.addActionListener(e -> {
@@ -122,17 +129,16 @@ public class EntityView extends WebPanel {
                     radius = entity.getComponent(ModelComponent.class).getBoundingSphereRadius();
                 }
                 PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addBallPhysicsComponent(entity, radius, 0.0f);
-                physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
             });
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
             if(entity.getComponentOption(ModelComponent.class) != null) {
+                PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
-                    PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
+                    physicsComponent.init();
                     physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
                 });
-                physicsPanel.addElement(addMeshPhysicsComponentButton);
             }
 
         }

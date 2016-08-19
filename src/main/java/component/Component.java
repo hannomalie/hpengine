@@ -14,5 +14,5 @@ public interface Component extends LifeCycle, Serializable {
 
 	String getIdentifier();
 
-	default void initAfterAdd(Entity entity) {}
+	default void initAfterAdd(Entity entity) { if(entity.isInitialized()) { init(); }}
 }

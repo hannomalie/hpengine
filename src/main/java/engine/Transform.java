@@ -130,6 +130,7 @@ public class Transform implements Serializable, Transformable {
 		return getPosition();
 	}
 	public void setPosition(Vector3f position) {
+        if(this.position.equals(position)) { return; }
 //		this.position = position;
 		this.position.set(position);
 		setDirty(true);
@@ -144,13 +145,13 @@ public class Transform implements Serializable, Transformable {
 		return getScale();
 	}
 	public void setScale(Vector3f scale) {
+        if(this.scale.equals(scale)) { return; }
 //		this.scale = scale;
 		this.scale.set(scale);
 		setDirty(true);
 	}
 	public void setScale(float scale) {
 		setScale(new Vector3f(scale, scale, scale));
-		setDirty(true);
 	}
 	public Quaternion getOrientation() {
 		return setAndReturnCopy(orientation);
@@ -163,6 +164,7 @@ public class Transform implements Serializable, Transformable {
 		return getOrientation();
 	}
 	public void setOrientation(Quaternion orientation) {
+        if(Util.equals(this.orientation, orientation)) { return; }
 //		this.orientation = orientation;
 		setDirty(true);
 		this.orientation.set(orientation);

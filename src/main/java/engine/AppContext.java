@@ -4,6 +4,7 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
+import component.PhysicsComponent;
 import config.Config;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -17,7 +18,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import physic.PhysicsFactory;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
@@ -36,6 +36,7 @@ import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import texture.Texture;
+import util.commandqueue.FutureCallable;
 import util.gui.DebugFrame;
 import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
@@ -47,12 +48,8 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static log.ConsoleLogger.getLogger;
 
 public class AppContext implements Extractor<RenderExtract> {
 
@@ -157,7 +154,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
         glWatch = new OpenGLStopWatch();
         scriptManager = ScriptManager.getInstance();
-        physicsFactory = new PhysicsFactory(this);
+        physicsFactory = new PhysicsFactory();
         ScriptManager.getInstance().defineGlobals();
 
         scene = new Scene();
@@ -316,7 +313,8 @@ public class AppContext implements Extractor<RenderExtract> {
 //							scale.scale(new Random().nextFloat()*14);
 //							entity.setScale(scale);
 //
-//							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+                            entity.addComponent(physicsComponent);
 //							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
 //							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
 
@@ -350,6 +348,9 @@ public class AppContext implements Extractor<RenderExtract> {
 //			}
 //			StopWatch.getInstance().stopAndPrintMS();
 
+            for(Entity entity : entities) {
+                entity.init();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -505,6 +506,7 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     public void setScene(Scene scene) {
+        physicsFactory.clearWorld();
         this.scene = scene;
         OpenGLContext.getInstance().execute(() -> {
             StopWatch.getInstance().start("Scene init");
