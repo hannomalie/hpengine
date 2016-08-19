@@ -96,12 +96,12 @@ public class EntityView extends WebPanel {
         if(entity.getComponentOption(PhysicsComponent.class).isPresent()) {
             WebButton removePhysicsComponent = new WebButton("Remove PhysicsComponent");
             removePhysicsComponent.addActionListener(e -> {
-                if(entity.getComponentOption(ModelComponent.class) != null) {
+                if(entity.getComponentOption(ModelComponent.class).isPresent()) {
                     entity.removeComponent(entity.getComponent(PhysicsComponent.class));
                 }
             });
+            physicsPanel.addElement(removePhysicsComponent);
             if(entity.getComponent(PhysicsComponent.class).isInitialized()) {
-                physicsPanel.addElement(removePhysicsComponent);
                 javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
                 physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
                     @Override
@@ -132,7 +132,7 @@ public class EntityView extends WebPanel {
             });
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
-            if(entity.getComponentOption(ModelComponent.class) != null) {
+            if(!entity.getComponentOption(ModelComponent.class).isPresent()) {
                 PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
@@ -140,7 +140,6 @@ public class EntityView extends WebPanel {
                     physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
                 });
             }
-
         }
         GridPanel physicsGridPanel = new GridPanel(physicsPanel);
         tabbedPane.addTab("Physics", physicsGridPanel);
@@ -156,114 +155,114 @@ public class EntityView extends WebPanel {
 	
 	protected WebComponentPanel addAttributesPanel(List<Component> panels) {
 			
-			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
-	        webComponentPanel.setElementMargin ( 4 );
+        WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
+        webComponentPanel.setElementMargin ( 4 );
 
-	        addNamePanel(webComponentPanel);
+        addNamePanel(webComponentPanel);
 
-	        webComponentPanel.addElement(new TransformablePanel<>(entity));
+        webComponentPanel.addElement(new TransformablePanel<>(entity));
 
-	        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
-	        updateComboBox.addActionListener(e -> { entity.setUpdate((Entity.Update) updateComboBox.getSelectedItem()); });
-			webComponentPanel.addElement(updateComboBox);
+        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
+        updateComboBox.addActionListener(e -> { entity.setUpdate((Entity.Update) updateComboBox.getSelectedItem()); });
+        webComponentPanel.addElement(updateComboBox);
 
-	        WebButton saveEntityButton = new WebButton("Save Entity");
-	        saveEntityButton.addActionListener(e -> {
-	        	Entity.write(entity, nameField.getText());
-	        });
-	        webComponentPanel.addElement(saveEntityButton);
-	        
-	        WebButton removeEntityButton = new WebButton("Remove Entity");
-	        removeEntityButton.addActionListener(e -> {
-				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-					return new RemoveEntityCommand(entity).execute(appContext);
-				});
-	    		
-	    		Result result = null;
-	    		try {
-	    			result = future.get(1, TimeUnit.MINUTES);
-	    		} catch (Exception e1) {
-	    			e1.printStackTrace();
-	    			showNotification(NotificationIcon.error, "Not able to remove entity");
-	    		}
-	    		
-	    		if (!result.isSuccessful()) {
-	    			showNotification(NotificationIcon.error, "Not able to remove entity");
-	    		} else {
-	    			showNotification(NotificationIcon.plus, "Entity removed");
-	    			AppContext.getEventBus().post(new EntityAddedEvent());
-	    		}
-	        });
-	        webComponentPanel.addElement(removeEntityButton);
+        WebButton saveEntityButton = new WebButton("Save Entity");
+        saveEntityButton.addActionListener(e -> {
+            Entity.write(entity, nameField.getText());
+        });
+        webComponentPanel.addElement(saveEntityButton);
 
-			try {
-				WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
-				Material material = MaterialFactory.getInstance().getDefaultMaterial();
-				if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-					material = entity.getComponent(ModelComponent.class).getMaterial();
-				}
-				materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(material));
-				materialSelect.addActionListener(e -> {
-					WebComboBox cb = (WebComboBox) e.getSource();
-					Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
-					entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-					if(entity.hasChildren()) {
-						for (Entity child : entity.getChildren()) {
-							child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-						}
-					}
-                    AppContext.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
-				});
-				webComponentPanel.addElement(materialSelect);
+        WebButton removeEntityButton = new WebButton("Remove Entity");
+        removeEntityButton.addActionListener(e -> {
+            CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+                return new RemoveEntityCommand(entity).execute(appContext);
+            });
 
-			} catch (NullPointerException e) {
-				Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
-			}
+            Result result = null;
+            try {
+                result = future.get(1, TimeUnit.MINUTES);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                showNotification(NotificationIcon.error, "Not able to remove entity");
+            }
 
-			if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-				webComponentPanel.addElement(new WebCheckBox("Instanced") {{
-					this.addActionListener(e -> {entity.getComponent(ModelComponent.class).instanced = !entity.getComponent(ModelComponent.class).instanced;});
-				}});
-			}
+            if (!result.isSuccessful()) {
+                showNotification(NotificationIcon.error, "Not able to remove entity");
+            } else {
+                showNotification(NotificationIcon.plus, "Entity removed");
+                AppContext.getEventBus().post(new EntityAddedEvent());
+            }
+        });
+        webComponentPanel.addElement(removeEntityButton);
 
-			if(entity.hasChildren()) {
-				WebComboBox childSelect = new WebComboBox(new Vector<>(entity.getChildren()));
-				EntityView temp = this;
-				childSelect.addActionListener(e ->{
-					int index = childSelect.getSelectedIndex();
-					Entity newEntity = entity.getChildren().get(index);
-					temp.init(newEntity);
-				});
-				childSelect.setName("Children");
-				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Children"), childSelect));
-			}
+        try {
+            WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
+            Material material = MaterialFactory.getInstance().getDefaultMaterial();
+            if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+                material = entity.getComponent(ModelComponent.class).getMaterial();
+            }
+            materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(material));
+            materialSelect.addActionListener(e -> {
+                WebComboBox cb = (WebComboBox) e.getSource();
+                Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+                entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+                if(entity.hasChildren()) {
+                    for (Entity child : entity.getChildren()) {
+                        child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+                    }
+                }
+                AppContext.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
+            });
+            webComponentPanel.addElement(materialSelect);
 
-			if(entity.hasParent()) {
-				WebButton parentSelectButton = new WebButton(entity.getParent().getName());
-				EntityView temp = this;
-				parentSelectButton.addActionListener(e -> {
-					temp.init(entity.getParent());
-				});
-				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Parent"), parentSelectButton));
+        } catch (NullPointerException e) {
+            Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
+        }
 
-				WebButton parentRemove = new WebButton("Remove Parent");
-				parentRemove.addActionListener(e -> {
-					entity.removeParent();
-				});
-				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
+        if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+            webComponentPanel.addElement(new WebCheckBox("Instanced") {{
+                this.addActionListener(e -> {entity.getComponent(ModelComponent.class).instanced = !entity.getComponent(ModelComponent.class).instanced;});
+            }});
+        }
 
-			} else {
-				WebComboBox parentSelect = new WebComboBox(new Vector<>(appContext.getScene().getEntities()));
-				parentSelect.addActionListener(e ->{
-					int index = parentSelect.getSelectedIndex();
-					Entity newParent = appContext.getScene().getEntities().get(index);
-					entity.setParent(newParent);
-				});
-				webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));
-			}
-	        panels.add(webComponentPanel);
-	        
-	        return webComponentPanel;
+        if(entity.hasChildren()) {
+            WebComboBox childSelect = new WebComboBox(new Vector<>(entity.getChildren()));
+            EntityView temp = this;
+            childSelect.addActionListener(e ->{
+                int index = childSelect.getSelectedIndex();
+                Entity newEntity = entity.getChildren().get(index);
+                temp.init(newEntity);
+            });
+            childSelect.setName("Children");
+            webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Children"), childSelect));
+        }
+
+        if(entity.hasParent()) {
+            WebButton parentSelectButton = new WebButton(entity.getParent().getName());
+            EntityView temp = this;
+            parentSelectButton.addActionListener(e -> {
+                temp.init(entity.getParent());
+            });
+            webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Parent"), parentSelectButton));
+
+            WebButton parentRemove = new WebButton("Remove Parent");
+            parentRemove.addActionListener(e -> {
+                entity.removeParent();
+            });
+            webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
+
+        } else {
+            WebComboBox parentSelect = new WebComboBox(new Vector<>(appContext.getScene().getEntities()));
+            parentSelect.addActionListener(e ->{
+                int index = parentSelect.getSelectedIndex();
+                Entity newParent = appContext.getScene().getEntities().get(index);
+                entity.setParent(newParent);
+            });
+            webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));
+        }
+        panels.add(webComponentPanel);
+
+        return webComponentPanel;
 	}
 
 	protected void addNamePanel(WebComponentPanel webComponentPanel) {

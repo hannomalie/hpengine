@@ -26,6 +26,8 @@ public class MBassadorEventBus implements EventBus {
             .addFeature(Feature.AsynchronousMessageDispatch.Default())
             .addPublicationErrorHandler(error -> {
                 LOGGER.severe(error.getMessage());
+                LOGGER.severe(String.valueOf(error.getCause()));
+                throw new IllegalStateException("Eventbus error");
             });
         this.eventBus = new MBassador(config);
 
