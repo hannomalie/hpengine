@@ -112,5 +112,5 @@ void main(void) {
     #endif
 	eyePos_world = ( vec4(eyePosition,1)).xyz;
 	eyeVec = (position_world.xyz - eyePos_world);
-	
+
 }

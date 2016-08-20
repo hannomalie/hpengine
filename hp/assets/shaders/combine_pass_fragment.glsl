@@ -430,7 +430,7 @@ void main(void) {
 //	out_color.rgb = normalView.xyz;
 	//out_color.rgb = vec3(normalView.xyz*0.5+0.5);
 //	out_color.rgb = specularColor.xyz;
-	out_color.rgb = lightDiffuseSpecular.rgb;
+//	out_color.rgb = lightDiffuseSpecular.rgb;
 //	out_color.rgb = vec3(motionVec,0);
 	//out_color.rgb = 10*environmentLight;
 //	out_color.rgb = ambientTerm;

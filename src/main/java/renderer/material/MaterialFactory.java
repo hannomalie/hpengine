@@ -291,7 +291,12 @@ public class MaterialFactory {
             result = 31 * result + (textureLess ? 1 : 0);
             return result;
         }
-    }
+
+		public MaterialInfo setAmbient(float ambient) {
+			this.ambient = ambient;
+			return this;
+		}
+	}
 
 	public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
