@@ -97,7 +97,8 @@ import java.util.concurrent.TimeUnit;
 
 public class DebugFrame {
 
-	private WebFrame mainFrame = new WebFrame("Main");
+    private final CircleMenu circleMenu;
+    private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
 	private WebFrame probeViewFrame = new WebFrame("Probe");
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
@@ -222,6 +223,8 @@ public class DebugFrame {
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
         infoSplitPane.setDividerLocation(125);
         infoSplitPane.setContinuousLayout(true);
+
+        circleMenu = new CircleMenu();
 	}
 
     @Subscribe

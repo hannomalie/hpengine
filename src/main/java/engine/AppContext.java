@@ -36,7 +36,6 @@ import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import texture.Texture;
-import util.commandqueue.FutureCallable;
 import util.gui.DebugFrame;
 import util.script.ScriptManager;
 import util.stopwatch.OpenGLStopWatch;
@@ -51,7 +50,6 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -69,6 +67,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private volatile boolean sceneInitiallyDrawn;
     private RenderExtract currentRenderExtract = new RenderExtract();
     private RenderExtract nextExtract = new RenderExtract();
+    private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -430,6 +429,14 @@ public class AppContext implements Extractor<RenderExtract> {
             frame.setTitle(Display.getTitle());
         });
         StopWatch.getInstance().start("Controls update");
+        if(Mouse.isButtonDown(0)) {
+            if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
+                AppContext.getEventBus().post(new ClickEvent());
+            }
+            MOUSE_LEFT_PRESSED_LAST_FRAME = true;
+        } else {
+            MOUSE_LEFT_PRESSED_LAST_FRAME = false;
+        }
 
 //        if(Keyboard.isCreated())
         {
@@ -627,5 +634,9 @@ public class AppContext implements Extractor<RenderExtract> {
     }
     public PhysicsFactory getPhysicsFactory() {
         return physicsFactory;
+    }
+
+    public JFrame getFrame() {
+        return frame;
     }
 }
