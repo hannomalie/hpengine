@@ -1,4 +1,4 @@
-#define WORK_GROUP_SIZE 16
+#define WORK_GROUP_SIZE 8
 
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE, local_size_z = WORK_GROUP_SIZE) in;
 layout(binding=0, rgba8) writeonly uniform image3D voxelGrid;
