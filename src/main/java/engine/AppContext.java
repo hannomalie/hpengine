@@ -165,10 +165,10 @@ public class AppContext implements Extractor<RenderExtract> {
         canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
         canvas.setIgnoreRepaint(true);
         layeredPane.add(canvas, 0);
-        JPanel overlayPanel = new JPanel();
-        overlayPanel.setOpaque(true);
+//        JPanel overlayPanel = new JPanel();
+//        overlayPanel.setOpaque(true);
 //        overlayPanel.add(new JButton("asdasdasd"));
-        layeredPane.add(overlayPanel, 1);
+//        layeredPane.add(overlayPanel, 1);
         frame.add(layeredPane);
         frame.setLayout(new BorderLayout());
 //        frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
@@ -188,27 +188,6 @@ public class AppContext implements Extractor<RenderExtract> {
             }
         });
         initOpenGLContext();
-
-//        WebComboBox type = new WebComboBox(DynamicMenuType.values(), DynamicMenuType.shutter);
-//        WebComboBox hidingType = new WebComboBox(DynamicMenuType.values(), DynamicMenuType.shutter);
-//        WebTextField radius = new WebTextField(new IntTextDocument(), "70", 4);
-//
-//        final WebDynamicMenu menu = new WebDynamicMenu();
-//        menu.setType ( ( DynamicMenuType ) type.getSelectedItem () );
-//        menu.setHideType ( (DynamicMenuType) hidingType.getSelectedItem () );
-//        menu.setRadius ( Integer.parseInt ( radius.getText () ) );
-//        menu.setStepProgress ( 0.07f );
-//
-//        final int items = 5;
-//        for ( int i = 1; i <= items; i++ )
-//        {
-//            final ImageIcon icon = WebLookAndFeel.getIcon ( 24 );
-//            final ActionListener action = e -> System.out.println ( icon );
-//            final WebDynamicMenuItem item = new WebDynamicMenuItem( icon, action );
-//            item.setMargin ( new Insets ( 8, 8, 8, 8 ) );
-//            menu.addItem ( item );
-//        }
-//        menu.showMenu(Display.getParent(), 100, 100);
 
         EntityFactory.create();
         Renderer.init(DeferredRenderer.class);
@@ -539,6 +518,7 @@ public class AppContext implements Extractor<RenderExtract> {
     public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult) {
         return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
     }
+
     JFrame frame;
     Canvas canvas;
     private void initOpenGLContext() {
