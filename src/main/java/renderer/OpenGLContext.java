@@ -110,7 +110,7 @@ public final class OpenGLContext {
         while(!context.isInitialized()) {
             LOGGER.info("Waiting for OpenGLContext initialization...");
             try {
-                Thread.sleep(100);
+                Thread.sleep(400);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -364,6 +364,7 @@ public final class OpenGLContext {
             try {
                 runnable.run();
             } catch(Exception e) {
+                LOGGER.severe(e.toString());
                 return e;
             }
             return null;
