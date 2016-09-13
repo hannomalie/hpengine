@@ -103,7 +103,8 @@ void main(void) {
     vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
 
 	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos, 0);
-	finalVoxelColor += currentPositionsValues.rgb * 0.25;// * (1/float(bounces+1));
+	finalVoxelColor *= 0.5;
+	finalVoxelColor += currentPositionsValues.rgb * 0.5;// * (1/float(bounces+1));
 //	finalVoxelColor /= float(bounces);
 
     const int SAMPLE_COUNT = 4;
@@ -113,7 +114,7 @@ void main(void) {
     vec3 maxMultipleBounce = vec3(10.5);
 	vec3 multipleBounceColor = 0.4*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
-	finalVoxelColor += multipleBounceColor;// / max(float(bounces), 1.0f);
+//	finalVoxelColor += multipleBounceColor;// / max(float(bounces), 1.0f);
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

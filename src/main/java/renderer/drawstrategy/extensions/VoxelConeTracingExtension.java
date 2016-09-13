@@ -158,13 +158,13 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
         Scene scene = AppContext.getInstance().getScene();
-        int bounces = 3;
+        int bounces = 4;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
         if(lightInjectedFramesAgo == null) {
             lightInjectedFramesAgo = 0;
         }
         boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
-        boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved || sceneContainsDynamicObjects)) || !renderExtract.sceneInitiallyDrawn;
+        boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved)) || !renderExtract.sceneInitiallyDrawn;
         boolean needsLightInjection = lightInjectedFramesAgo < bounces-1;
         if(entityOrDirectionalLightHasMoved) {
             lightInjectedFramesAgo = 0;
@@ -259,7 +259,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
                 int num_groups_xyz = Math.max(gridSize / 8, 1);
 
-//                if(lightInjectedFramesAgo == 0) {
+                if(lightInjectedFramesAgo == 0)
+                {
                     injectLightComputeProgram.use();
                     injectLightComputeProgram.setUniform("bounces", bounces);
                     injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
@@ -272,15 +273,16 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     }
 
                     injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-
-//                } else {
-//                    injectMultipleBounceLightComputeProgram.use();
-//                    injectMultipleBounceLightComputeProgram.setUniform("bounces", bounces);
-//                    injectMultipleBounceLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
-//                    injectMultipleBounceLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
-//                    injectMultipleBounceLightComputeProgram.setUniform("gridSize", gridSize);
-//                    injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
-//                }
+                }
+                else {
+                    injectMultipleBounceLightComputeProgram.use();
+                    injectMultipleBounceLightComputeProgram.setUniform("bounces", bounces);
+                    injectMultipleBounceLightComputeProgram.setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo);
+                    injectMultipleBounceLightComputeProgram.setUniform("sceneScale", getSceneScale(renderExtract));
+                    injectMultipleBounceLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderExtract));
+                    injectMultipleBounceLightComputeProgram.setUniform("gridSize", gridSize);
+                    injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
+                }
                 mipmapGrid();
                 firstPassResult.setProperty("vctLightInjectedFramesAgo", lightInjectedFramesAgo+1);
                 GPUProfiler.end();

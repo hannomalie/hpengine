@@ -17,6 +17,8 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 uniform int bounces = 1;
+uniform int lightInjectedFramesAgo = 1;
+
 //include(globals.glsl)
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
@@ -31,35 +33,11 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	vec2 moments = shadowMapSample.rg;
 	vec2 momentsUnblurred = moments;
 
-//	moments = blur(shadowMap, ShadowCoordPostW.xy, 0.0125, 1).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.0017).rg;
-	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
-	//moments /= 3;
-
-	// Surface is fully lit. as the current fragment is before the light occluder
 	if (dist <= moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
 	else { return vec3(0); }
 
-	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
-	// How likely this pixel is to be lit (p_max)
-	float variance = moments.y - (moments.x*moments.x);
-	variance = max(variance,0.0005);
-
-	float d = dist - moments.x;
-	//float p_max = (variance / (variance + d*d));
-	// thanks, for light bleeding reduction, FOOGYWOO! http://dontnormalize.me/
-	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
-
-	p_max = smoothstep(0.1, 1.0, p_max);
-
-	float darknessFactor = 420.0;
-	p_max = clamp(exp(darknessFactor * (moments.x - dist)), 0.0, 1.0);
-
-	//p_max = blurESM(shadowMap, ShadowCoordPostW.xy, dist, 0.002);
-
-	return vec3(p_max,p_max,p_max);
 }
 
 void main(void) {
@@ -87,18 +65,17 @@ void main(void) {
 
     vec3 finalVoxelColor;
 
-	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos, 0);
-	finalVoxelColor += currentPositionsValues.rgb * 0.5;// * (1/float(bounces+1));
-//	finalVoxelColor /= float(bounces);
+	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos,0);
+	finalVoxelColor += currentPositionsValues.rgb;// * 0.5 * (1.0/float(bounces+1));
 
     const int SAMPLE_COUNT = 4;
     vec4 diffuseVoxelTraced;// = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, g_normal, .485, 270); // 0.05
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+sceneScale*g_normal, g_normal, float(0.25*lightInjectedFramesAgo)*.1485, 270); // 0.05
 
     vec3 maxMultipleBounce = vec3(10.5);
-	vec3 multipleBounceColor = 0.4*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+	vec3 multipleBounceColor = voxelSpecular.rgb;//clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
-	finalVoxelColor += multipleBounceColor;// / max(float(bounces), 1.0f);
+	finalVoxelColor += multipleBounceColor * (1/float(bounces+1));
 
-	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
+	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, currentPositionsValues.a));
 }
