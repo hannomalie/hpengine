@@ -339,7 +339,8 @@ public class AppContext implements Extractor<RenderExtract> {
                                 .setDiffuse(new Vector3f(1, 1, 1))
                                 .setRoughness((float) i / entityCount)
                                 .setMetallic((float) j / entityCount)
-                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0));
+                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
+                                .setAmbient(1);
                         Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
                         mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
                         mat.setMetallic((float)j/entityCount);
