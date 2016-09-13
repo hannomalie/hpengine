@@ -132,13 +132,14 @@ public class EntityView extends WebPanel {
             });
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
-            if(!entity.getComponentOption(ModelComponent.class).isPresent()) {
-                PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
+            if(entity.getComponentOption(ModelComponent.class).isPresent()) {
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
+                    PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
                     physicsComponent.init();
                     physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
                 });
+                physicsPanel.addElement(addMeshPhysicsComponentButton);
             }
         }
         GridPanel physicsGridPanel = new GridPanel(physicsPanel);

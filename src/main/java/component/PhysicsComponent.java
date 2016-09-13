@@ -41,6 +41,7 @@ public class PhysicsComponent extends BaseComponent {
         rigidBodyConstructionInfo = new RigidBodyConstructionInfo(info.mass, motionState, info.shapeSupplier.get(), info.inertia);
         rigidBodyConstructionInfo.restitution = 0.5f;
         rigidBody = new RigidBody(rigidBodyConstructionInfo);
+        rigidBody.setUserPointer(owner);
         registerRigidBody();
     }
 

@@ -190,6 +190,7 @@ public class PhysicsFactory {
                 Vector3f from = new Vector3f();
                 Vector3f to = new Vector3f();
                 shape.getAabb(worldTransform, from, to);
+                from.negate();
                 getDebugDrawer().drawAabb(from, to, color);
             }
         };
@@ -209,11 +210,11 @@ public class PhysicsFactory {
 			@Override
 			public int getDebugMode() {
                 int flags =
-//                        DebugDrawModes.DRAW_AABB
+                        DebugDrawModes.DRAW_AABB
 //                        & DebugDrawModes.DRAW_WIREFRAME
 //                            DebugDrawModes.DRAW_TEXT
 //                        & DebugDrawModes.DRAW_CONTACT_POINTS
-                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
+//                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
                         ;
                 return Config.DRAWLINES_ENABLED ? flags : 0;
 			}
@@ -224,7 +225,21 @@ public class PhysicsFactory {
 						new org.lwjgl.util.vector.Vector3f(start.x, start.y, start.z),
 						new org.lwjgl.util.vector.Vector3f(end.x, end.y, end.z));
 			}
-			
+
+            @Override
+            public void drawAabb(Vector3f from, Vector3f to, Vector3f color) {
+
+                drawLine(from, new Vector3f(to.x, from.y, from.z), color);
+                drawLine(from, new Vector3f(from.x, to.y, from.z), color);
+                drawLine(from, new Vector3f(to.x, to.y, from.z), color);
+
+                drawLine(new Vector3f(from.x, to.y, to.z), to, color);
+                drawLine(new Vector3f(to.x, from.y, to.z), to, color);
+                drawLine(new Vector3f(from.x, from.y, to.z), to, color);
+
+                drawLine(from, to, color);
+            }
+
 			@Override
 			public void drawContactPoint(Vector3f arg0, Vector3f arg1, float arg2,
 					int arg3, Vector3f arg4) {
