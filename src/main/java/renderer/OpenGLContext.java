@@ -377,21 +377,12 @@ public final class OpenGLContext {
     }
 
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
-        if(util.Util.isOpenGLThread()) {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            CompletableFuture<RETURN_TYPE> future = execute(callable);
-            try {
-                return future.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+        try {
+            return execute(callable).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
 
         return null;
@@ -410,6 +401,7 @@ public final class OpenGLContext {
                 return result;
             } catch (Exception e) {
                 e.printStackTrace();
+                return null;
             }
         } else {
             CompletableFuture future = commandQueue.addCommand(new FutureCallable() {
@@ -421,8 +413,6 @@ public final class OpenGLContext {
             );
             return future;
         }
-
-        return null;
     }
 
     public void blockUntilEmpty() {
