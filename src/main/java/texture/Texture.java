@@ -9,18 +9,15 @@ import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
-import renderer.command.Command;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
 import util.Util;
-import util.commandqueue.FutureCallable;
 import util.ressources.Reloadable;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
@@ -232,25 +229,24 @@ public class Texture implements Serializable, Reloadable {
                     GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
                 }
                 unbind(15);
-                bind(15);
-
+            });
+//            OpenGLContext.getInstance().execute(() -> {
                 LOGGER.info("Actually uploading...");
                 if (mipmapsGenerated) {
                     LOGGER.info("Mipmaps already generated");
                     uploadMipMaps(finalInternalformat);
                 }
-                if (sourceDataCompressed) {
-                    uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0);
-//                    GL13.glCompressedTexImage2D(target.glTarget, 0, finalInternalformat, getWidth(), getHeight(), 0, textureBuffer);
-                } else {
-                    GL11.glTexImage2D(target.glTarget, 0, finalInternalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
-                }
-
+//            });
+            OpenGLContext.getInstance().execute(() -> {
+                uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed);
+            });
+            OpenGLContext.getInstance().execute(() -> {
                 if(!mipmapsGenerated) {
+                    bind(15);
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                    unbind(15);
                 }
             });
-            unbind(15);
             uploadState = UPLOADED;
             LOGGER.info("Upload finished");
             LOGGER.fine("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
@@ -262,18 +258,29 @@ public class Texture implements Serializable, Reloadable {
         TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
     }
 
-    private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel) {
+    private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed) {
         textureBuffer.rewind();
-        int pbo = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo);
-        glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity(), GL_STREAM_COPY);
-        ByteBuffer temp = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
-        temp.put(textureBuffer);
-        GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
+        OpenGLContext.getInstance().execute(() -> {
+            bind(15);
+            int pbo = GL15.glGenBuffers();
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo);
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity(), GL_STREAM_COPY);
+            ByteBuffer temp = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
+            temp.put(textureBuffer);
+            GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
 
-        GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, textureBuffer.capacity(), 0);
-        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-        GL15.glDeleteBuffers(pbo);
+            if (sourceDataCompressed) {
+                GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, textureBuffer.capacity(), 0);
+            } else {
+                GL11.glTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0);
+            }
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+            GL15.glDeleteBuffers(pbo);
+            int textureBaseLevel = mipmapCount - mipLevel;
+            LOGGER.info("TextureBaseLevel: " + Math.max(0, textureBaseLevel));
+            //        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, textureBaseLevel);
+            unbind(15);
+        });
     }
 
     private void downloadMipMaps() {
@@ -300,13 +307,7 @@ public class Texture implements Serializable, Reloadable {
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
             LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
-            if(sourceDataCompressed) {
-                uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, i);
-//                GL13.glCompressedTexImage2D(target.glTarget, i, internalformat, currentWidth, currentHeight, 0, tempBuffer);
-            } else {
-                GL11.glTexImage2D(target.glTarget, i, internalformat,currentWidth, currentHeight, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, tempBuffer);
-            }
-            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-i);
+            uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, i, sourceDataCompressed);
             int minSize = 1;
             currentWidth = Math.max(minSize, currentWidth/2);
             currentHeight = Math.max(minSize, currentHeight/2);
@@ -562,6 +563,8 @@ public class Texture implements Serializable, Reloadable {
 
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
+                int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(getWidth(), getHeight());
+                mipmapCount = mipMapCountPlusOne -1;
                 setMinFilter(minFilter);
                 setMagFilter(magFilter);
 
