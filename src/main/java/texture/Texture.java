@@ -215,42 +215,41 @@ public class Texture implements Serializable, Reloadable {
 
         Runnable uploadRunnable = () -> {
             LOGGER.info("Uploading " + path);
-            bind(15);
-            if (target == TEXTURE_2D) {
-                OpenGLContext.getInstance().execute(() -> {
+            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            if (srgba) {
+                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+            }
+            int finalInternalformat = internalformat;
+
+            OpenGLContext.getInstance().execute(() -> {
+                bind(15);
+                if (target == TEXTURE_2D) {
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
                     GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
                     GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
-                });
-            }
-            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-            if (srgba) {
-                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-            }
-            int finalInternalformat = internalformat;
-            if (mipmapsGenerated) {
-                LOGGER.info("Mipmaps already generated");
-                OpenGLContext.getInstance().execute(() -> {
-                    uploadMipMaps(finalInternalformat);
-                });
-            }
+                }
+                unbind(15);
+                bind(15);
 
-            OpenGLContext.getInstance().execute(() -> {
                 LOGGER.info("Actually uploading...");
+                if (mipmapsGenerated) {
+                    LOGGER.info("Mipmaps already generated");
+                    uploadMipMaps(finalInternalformat);
+                }
                 if (sourceDataCompressed) {
                     uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0);
-                    //                GL13.glCompressedTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, textureBuffer);
+//                    GL13.glCompressedTexImage2D(target.glTarget, 0, finalInternalformat, getWidth(), getHeight(), 0, textureBuffer);
                 } else {
                     GL11.glTexImage2D(target.glTarget, 0, finalInternalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
                 }
-            });
 
-            if(!mipmapsGenerated) {
-                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-            }
+                if(!mipmapsGenerated) {
+                    GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                }
+            });
             unbind(15);
             uploadState = UPLOADED;
             LOGGER.info("Upload finished");
@@ -260,13 +259,7 @@ public class Texture implements Serializable, Reloadable {
 
 //        new OpenGLThread(uploadRunnable).start();
 //        OpenGLContext.getInstance().execute(uploadRunnable,false);
-        try {
-            TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
     }
 
     private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel) {
@@ -302,17 +295,18 @@ public class Texture implements Serializable, Reloadable {
         int currentWidth = width/2;
         int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
-            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(((currentWidth + 3) / 4) * ((currentHeight + 3) / 4) * 16);//currentHeight * currentWidth * 4);
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(data[i].length);//currentHeight * currentWidth * 4);
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
-//            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
+            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
             if(sourceDataCompressed) {
                 uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, i);
 //                GL13.glCompressedTexImage2D(target.glTarget, i, internalformat, currentWidth, currentHeight, 0, tempBuffer);
             } else {
                 GL11.glTexImage2D(target.glTarget, i, internalformat,currentWidth, currentHeight, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, tempBuffer);
             }
+            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-i);
             int minSize = 1;
             currentWidth = Math.max(minSize, currentWidth/2);
             currentHeight = Math.max(minSize, currentHeight/2);

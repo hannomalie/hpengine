@@ -511,6 +511,10 @@ public class DebugFrame {
         });
         WebMenuItem toggleFPS = new WebMenuItem("Toggle FPS");
         toggleFPS.addActionListener(e -> {
+			if(performanceMonitor == null) {
+				// TODO: Remove this somehow
+				initPerformanceChart();
+			}
             performanceMonitor.toggleVisibility();
         });
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
