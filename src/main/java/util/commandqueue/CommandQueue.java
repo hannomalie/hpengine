@@ -2,6 +2,7 @@ package util.commandqueue;
 
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
@@ -32,11 +33,42 @@ public class CommandQueue {
         }
     }
 
+    public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(Runnable runnable) {
+        FutureCallable command = new FutureCallable() {
+            @Override
+            public Object execute() throws Exception {
+                try {
+                    runnable.run();
+                    complete(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    completeExceptionally(e);
+                }
+                return null;
+            }
+        };
+        workQueue.offer(command);
+        return command.getFuture();
+    }
     public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(FutureCallable<RESULT_TYPE> command) {
         workQueue.offer(command);
         return command.getFuture();
     }
+    public Exception execute(Runnable runnable, boolean andBlock) {
+        CompletableFuture<Object> future = addCommand(new FutureCallable<Object>() {
 
+            @Override
+            public Object execute() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
+
+        if(andBlock) {
+            future.join();
+        }
+        return null;
+    }
     public int size() {
         return workQueue.size();
     }

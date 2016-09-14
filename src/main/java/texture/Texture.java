@@ -9,22 +9,27 @@ import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
-import renderer.OpenGLThread;
+import renderer.command.Command;
 import renderer.constants.GlTextureTarget;
 import util.CompressionUtils;
 import util.Util;
+import util.commandqueue.FutureCallable;
 import util.ressources.Reloadable;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
+import static org.lwjgl.opengl.GL15.GL_STREAM_COPY;
+import static org.lwjgl.opengl.GL15.glBufferData;
+import static org.lwjgl.opengl.GL21.GL_PIXEL_UNPACK_BUFFER;
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static texture.Texture.DDSConversionState.*;
 import static texture.Texture.UploadState.*;
@@ -181,7 +186,6 @@ public class Texture implements Serializable, Reloadable {
 	
 	public ByteBuffer buffer() {
 		ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data[0].length);
-//		imageBuffer.order(ByteOrder.nativeOrder());
 		imageBuffer.put(data[0], 0, data[0].length);
 		imageBuffer.flip();
 		return imageBuffer;
@@ -209,48 +213,75 @@ public class Texture implements Serializable, Reloadable {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
         uploadState = UPLOADING;
 
-        new OpenGLThread(() -> {
+        Runnable uploadRunnable = () -> {
             LOGGER.info("Uploading " + path);
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             bind(15);
             if (target == TEXTURE_2D) {
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
+                OpenGLContext.getInstance().execute(() -> {
+                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
+                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+                    GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+                    GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                    GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, Util.calculateMipMapCount(Math.max(width, height)));
+                });
             }
             int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
             if (srgba) {
                 internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
             }
-            if (sourceDataCompressed) {
-                LOGGER.info("#########Loading compressed texture");
-                GL13.glCompressedTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, textureBuffer);
-//                            GL45.glCompressedTextureSubImage2D(textureID, 0, 0, 0, getWidth(), getHeight(), srcPixelFormat, textureBuffer);
-            } else {
-//                            GL45.glTextureSubImage2D(textureID, 0, internalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
-                GL11.glTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
-            }
-//                    }
+            int finalInternalformat = internalformat;
             if (mipmapsGenerated) {
-                final int finalInternalformat = internalformat;
-                uploadMipMaps(finalInternalformat);
-            } else {
+                LOGGER.info("Mipmaps already generated");
+                OpenGLContext.getInstance().execute(() -> {
+                    uploadMipMaps(finalInternalformat);
+                });
+            }
+
+            OpenGLContext.getInstance().execute(() -> {
+                LOGGER.info("Actually uploading...");
+                if (sourceDataCompressed) {
+                    uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0);
+                    //                GL13.glCompressedTexImage2D(target.glTarget, 0, internalformat, getWidth(), getHeight(), 0, textureBuffer);
+                } else {
+                    GL11.glTexImage2D(target.glTarget, 0, finalInternalformat, getWidth(), getHeight(), 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, textureBuffer);
+                }
+            });
+
+            if(!mipmapsGenerated) {
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
             }
             unbind(15);
             uploadState = UPLOADED;
             LOGGER.info("Upload finished");
-            LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
+            LOGGER.fine("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
             AppContext.getEventBus().post(new TexturesChangedEvent());
-        }).start();
-	}
+        };
+
+//        new OpenGLThread(uploadRunnable).start();
+//        OpenGLContext.getInstance().execute(uploadRunnable,false);
+        try {
+            TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel) {
+        textureBuffer.rewind();
+        int pbo = GL15.glGenBuffers();
+        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity(), GL_STREAM_COPY);
+        ByteBuffer temp = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
+        temp.put(textureBuffer);
+        GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
+
+        GL13.glCompressedTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, textureBuffer.capacity(), 0);
+        GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+        GL15.glDeleteBuffers(pbo);
+    }
 
     private void downloadMipMaps() {
         int currentWidth = width/2;
@@ -271,32 +302,16 @@ public class Texture implements Serializable, Reloadable {
         int currentWidth = width/2;
         int currentHeight = height/2;
         for(int i = 1; i < mipmapCount; i++) {
-//            LOGGER.info("Uploading mipmap " + i + " with " + currentWidth + " x " + currentHeight);
             ByteBuffer tempBuffer = BufferUtils.createByteBuffer(((currentWidth + 3) / 4) * ((currentHeight + 3) / 4) * 16);//currentHeight * currentWidth * 4);
             tempBuffer.rewind();
             tempBuffer.put(data[i]);
             tempBuffer.rewind();
 //            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
             if(sourceDataCompressed) {
-                GL13.glCompressedTexImage2D(target.glTarget,
-                        i,
-                        internalformat,
-                        currentWidth,
-                        currentHeight,
-                        0,
-                        tempBuffer);
-                OpenGLContext.exitOnGLError("XXX");
+                uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, i);
+//                GL13.glCompressedTexImage2D(target.glTarget, i, internalformat, currentWidth, currentHeight, 0, tempBuffer);
             } else {
-                GL11.glTexImage2D(target.glTarget,
-                        i,
-                        internalformat,
-                        currentWidth,
-                        currentHeight,
-                        0,
-                        srcPixelFormat,
-                        GL11.GL_UNSIGNED_BYTE,
-                        tempBuffer);
-                OpenGLContext.exitOnGLError("YYY");
+                GL11.glTexImage2D(target.glTarget, i, internalformat,currentWidth, currentHeight, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, tempBuffer);
             }
             int minSize = 1;
             currentWidth = Math.max(minSize, currentWidth/2);
@@ -448,7 +463,6 @@ public class Texture implements Serializable, Reloadable {
                 init(texture);
                 LOGGER.fine("Data: " + getData().length);
                 upload();
-                LOGGER.info("Uploaded");
             } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
                 e.printStackTrace();
             }

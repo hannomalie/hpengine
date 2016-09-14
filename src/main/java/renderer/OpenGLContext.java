@@ -360,7 +360,7 @@ public final class OpenGLContext {
         execute(runnable, true);
     }
     public Exception execute(Runnable runnable, boolean andBlock) {
-        CompletableFuture<Object> future = execute((Callable<Object>) () -> {
+        CompletableFuture<Object> future = execute(() -> {
             try {
                 runnable.run();
             } catch(Exception e) {

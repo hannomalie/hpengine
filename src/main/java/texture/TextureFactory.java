@@ -14,6 +14,7 @@ import renderer.constants.GlTextureTarget;
 import shader.ComputeShaderProgram;
 import shader.ProgramFactory;
 import shader.define.Define;
+import util.commandqueue.CommandQueue;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -50,7 +51,13 @@ public class TextureFactory {
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
-    private static volatile boolean USE_TEXTURE_STREAMING = false;
+    private static volatile boolean USE_TEXTURE_STREAMING = true;
+
+    public CommandQueue getCommandQueue() {
+        return commandQueue;
+    }
+
+    CommandQueue commandQueue = new CommandQueue();
 
     public static Texture getLensFlareTexture() {
         return lensFlareTexture;
@@ -138,6 +145,13 @@ public class TextureFactory {
                 }
             }.start();
         }
+
+        new TimeStepThread("TextureFactory", 0f) {
+            @Override
+            public void update(float seconds) {
+                commandQueue.executeCommands();
+            }
+        }.start();
     }
 
     public BufferedImage getDefaultTextureAsBufferedImage() {
