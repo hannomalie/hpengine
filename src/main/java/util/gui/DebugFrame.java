@@ -1247,7 +1247,7 @@ public class DebugFrame {
 		notificationPopup.setIcon(NotificationIcon.plus);
 		notificationPopup.setDisplayTime(2000);
 		notificationPopup.setContent(new WebLabel(content));
-		NotificationManager.showNotification(notificationPopup);
+		NotificationManager.showNotification(mainFrame, notificationPopup);
 	}
 
 	public void showError(String content) {
@@ -1256,7 +1256,7 @@ public class DebugFrame {
 		notificationPopup.setIcon(NotificationIcon.error);
 		notificationPopup.setDisplayTime( 2000 );
 		notificationPopup.setContent(new WebLabel(content));
-		NotificationManager.showNotification(notificationPopup);
+		NotificationManager.showNotification(mainFrame, notificationPopup);
 	}
 
 	@Subscribe
