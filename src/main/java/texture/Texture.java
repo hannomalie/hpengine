@@ -230,32 +230,32 @@ public class Texture implements Serializable, Reloadable {
                 }
                 unbind(15);
             });
-//            OpenGLContext.getInstance().execute(() -> {
-                LOGGER.info("Actually uploading...");
-                if (mipmapsGenerated) {
-                    LOGGER.info("Mipmaps already generated");
-                    uploadMipMaps(finalInternalformat);
-                }
-//            });
-            OpenGLContext.getInstance().execute(() -> {
-                uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed);
-            });
+            LOGGER.info("Actually uploading...");
+            if (mipmapsGenerated) {
+                LOGGER.info("Mipmaps already generated");
+                uploadMipMaps(finalInternalformat);
+            }
+            uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed);
             OpenGLContext.getInstance().execute(() -> {
                 if(!mipmapsGenerated) {
                     bind(15);
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     unbind(15);
+                    setUploaded();
                 }
             });
-            uploadState = UPLOADED;
-            LOGGER.info("Upload finished");
-            LOGGER.fine("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
             AppContext.getEventBus().post(new TexturesChangedEvent());
         };
 
 //        new OpenGLThread(uploadRunnable).start();
 //        OpenGLContext.getInstance().execute(uploadRunnable,false);
         TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
+    }
+
+    private void setUploaded() {
+        uploadState = UPLOADED;
+        LOGGER.info("Upload finished");
+        LOGGER.fine("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
     }
 
     private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed) {
@@ -280,6 +280,10 @@ public class Texture implements Serializable, Reloadable {
             LOGGER.info("TextureBaseLevel: " + Math.max(0, textureBaseLevel));
             //        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, textureBaseLevel);
             unbind(15);
+
+            if(mipmapsGenerated && mipLevel == 0) {
+                setUploaded();
+            }
         });
     }
 
