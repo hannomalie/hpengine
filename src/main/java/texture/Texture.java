@@ -18,8 +18,11 @@ import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
@@ -235,7 +238,7 @@ public class Texture implements Serializable, Reloadable {
                 LOGGER.info("Mipmaps already generated");
                 uploadMipMaps(finalInternalformat);
             }
-            uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed);
+            uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed, false);
             OpenGLContext.getInstance().execute(() -> {
                 if(!mipmapsGenerated) {
                     bind(15);
@@ -247,8 +250,6 @@ public class Texture implements Serializable, Reloadable {
             AppContext.getEventBus().post(new TexturesChangedEvent());
         };
 
-//        new OpenGLThread(uploadRunnable).start();
-//        OpenGLContext.getInstance().execute(uploadRunnable,false);
         TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
     }
 
@@ -258,15 +259,23 @@ public class Texture implements Serializable, Reloadable {
         LOGGER.fine("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
     }
 
-    private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed) {
+    private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed, boolean setMaxLevel) {
         textureBuffer.rewind();
+        final AtomicInteger pbo = new AtomicInteger(-1);
+        ByteBuffer temp = OpenGLContext.getInstance().calculate(() -> {
+            bind(15);
+            pbo.set(GL15.glGenBuffers());
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity(), GL_STREAM_COPY);
+            ByteBuffer xxx = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
+            unbind(15);
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+            return xxx;
+        });
+        temp.put(textureBuffer);
         OpenGLContext.getInstance().execute(() -> {
             bind(15);
-            int pbo = GL15.glGenBuffers();
-            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo);
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, textureBuffer.capacity(), GL_STREAM_COPY);
-            ByteBuffer temp = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
-            temp.put(textureBuffer);
+            GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
 
             if (sourceDataCompressed) {
@@ -275,10 +284,10 @@ public class Texture implements Serializable, Reloadable {
                 GL11.glTexImage2D(target.glTarget, mipLevel, internalformat, width, height, 0, srcPixelFormat, GL11.GL_UNSIGNED_BYTE, 0);
             }
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-            GL15.glDeleteBuffers(pbo);
-            int textureBaseLevel = mipmapCount - mipLevel;
-            LOGGER.info("TextureBaseLevel: " + Math.max(0, textureBaseLevel));
-            //        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, textureBaseLevel);
+            GL15.glDeleteBuffers(pbo.get());
+            int textureMaxLevel = mipmapCount - mipLevel;
+            LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel));
+            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel);
             unbind(15);
 
             if(mipmapsGenerated && mipLevel == 0) {
@@ -303,18 +312,27 @@ public class Texture implements Serializable, Reloadable {
 
     private void uploadMipMaps(int internalformat) {
         LOGGER.info("Uploading mipmaps for " + path);
-        int currentWidth = width/2;
-        int currentHeight = height/2;
-        for(int i = 1; i < mipmapCount; i++) {
-            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(data[i].length);//currentHeight * currentWidth * 4);
-            tempBuffer.rewind();
-            tempBuffer.put(data[i]);
-            tempBuffer.rewind();
-            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
-            uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, i, sourceDataCompressed);
+        int currentWidth = width;
+        int currentHeight = height;
+        List<Integer> widths = new ArrayList();
+        List<Integer> heights = new ArrayList();
+        for(int i = 0; i < mipmapCount-1; i++) {
             int minSize = 1;
             currentWidth = Math.max(minSize, currentWidth/2);
             currentHeight = Math.max(minSize, currentHeight/2);
+            widths.add(currentWidth);
+            heights.add(currentHeight);
+        }
+        for(int i = mipmapCount-1; i >= 1; i--) {
+            currentWidth = widths.get(i - 1);
+            currentHeight = heights.get(i - 1);
+            int mipmapIndex = i;
+            ByteBuffer tempBuffer = BufferUtils.createByteBuffer(data[mipmapIndex].length);//currentHeight * currentWidth * 4);
+            tempBuffer.rewind();
+            tempBuffer.put(data[mipmapIndex]);
+            tempBuffer.rewind();
+            LOGGER.info("Mipmap buffering with " + tempBuffer.remaining() + " remaining bytes for " + currentWidth + " x " +  currentHeight);
+            uploadWithPixelBuffer(tempBuffer, internalformat, currentWidth, currentHeight, mipmapIndex, sourceDataCompressed, true);
         }
     }
 
