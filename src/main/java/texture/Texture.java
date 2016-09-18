@@ -286,8 +286,10 @@ public class Texture implements Serializable, Reloadable {
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
             GL15.glDeleteBuffers(pbo.get());
             int textureMaxLevel = mipmapCount - mipLevel;
-            LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel));
-            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel);
+            if(setMaxLevel) {
+                LOGGER.info("TextureMaxLevel: " + Math.max(0, textureMaxLevel));
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, textureMaxLevel);
+            }
             unbind(15);
 
             if(mipmapsGenerated && mipLevel == 0) {
@@ -708,7 +710,8 @@ public class Texture implements Serializable, Reloadable {
             }
 
             bindWithoutReupload();
-            for(int i = 0; i < mipmapCount-1; i++) {
+            int newBaseLevel = mipmapCount - 2;
+            for(int i = 0; i < newBaseLevel; i++) {
                 GL11.glTexImage2D(target.glTarget,
                         i,
                         internalformat,
@@ -721,8 +724,8 @@ public class Texture implements Serializable, Reloadable {
             }
 
             int mipmapCount = Util.calculateMipMapCount(getWidth(), getHeight());
-            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, mipmapCount-1);
-//            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, mipmapCount);
+            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, newBaseLevel);
+            LOGGER.info("New Base Level: " + newBaseLevel);
             LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
         });
     }
