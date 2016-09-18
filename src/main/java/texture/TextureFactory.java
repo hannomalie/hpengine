@@ -82,7 +82,7 @@ public class TextureFactory {
     }
 
     /** The table of textures that have been loaded in this loader */
-    public Map<String, Texture> TEXTURES = new ConcurrentHashMap<String, Texture>();
+    public Map<String, Texture> TEXTURES = new ConcurrentHashMap<>();
 
     /** The colour model including alpha for the GL image */
     private ColorModel glAlphaColorModel;
@@ -234,7 +234,6 @@ public class TextureFactory {
         Texture texture = new Texture(resourceName, srgba);
         TEXTURES.put(resourceName, texture);
         AppContext.getEventBus().post(new TexturesChangedEvent());
-        // TODO: Take account of srgba here!
         texture.convertAndUpload();
         return texture;
     }

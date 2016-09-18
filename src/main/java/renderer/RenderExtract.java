@@ -15,13 +15,13 @@ public class RenderExtract {
     public boolean anEntityHasMoved;
     public boolean directionalLightNeedsShadowMapRender;
     public Camera camera = new Camera();
-    public List<Entity> entities;
+    public List<Entity> entities = new ArrayList<>();
     public List<Entity> visibleEntities = new ArrayList<>();
-    public DirectionalLight directionalLight;
+    public DirectionalLight directionalLight = new DirectionalLight();
     public boolean anyPointLightHasMoved;
     public boolean sceneInitiallyDrawn;
-    public Vector4f sceneMin;
-    public Vector4f sceneMax;
+    public Vector4f sceneMin = new Vector4f();
+    public Vector4f sceneMax = new Vector4f();
     private Map properties = new HashMap<>();
 
     /**

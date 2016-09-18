@@ -1,5 +1,7 @@
 package util.stopwatch;
 
+import util.TypedTuple;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -92,8 +94,8 @@ public class GPUProfiler {
 
 		ProfilingTask frame = completedFrames.get(0);
 		if (frame.resultsAvailable()) {
-			for (Entry<String, Long> entrySet : frame.getTimesTaken().entrySet()) {
-				collectedTimes.add(new Record(entrySet.getKey(), entrySet.getValue()));
+			for (Entry<String, TypedTuple<Long, Long>> entrySet : frame.getTimesTaken().entrySet()) {
+				collectedTimes.add(new Record(entrySet.getKey(), entrySet.getValue().getLeft(), entrySet.getValue().getRight()));
 			}
 			return completedFrames.remove(0);
 		} else {
@@ -129,13 +131,16 @@ public class GPUProfiler {
 		if(averages.isEmpty()) { return; }
         StringBuilder builder = new StringBuilder("");
         builder.append("##########################################\n");
-        builder.append("name\t\t\t|  ms\t|\tsamples\n");
+        builder.append("name\t\t\t|  ms\t|ms cpu\t|\tsamples\n");
 		averages.entrySet().stream().forEach(s -> {
             String name = s.getKey();
             while (name.length() < 30) {
                 name += " ";
             }
-            builder.append(String.format("%s\t|  %.5f\t|\t%s", name.substring(0, Math.min(name.length(), 30)), (s.getValue().summedTime / s.getValue().count) / 1000 / 1000f, s.getValue().count));
+			String clippedName = name.substring(0, Math.min(name.length(), 30));
+			long time = s.getValue().summedTime / s.getValue().count;
+			long timeCpu = s.getValue().summedTimeCpu / s.getValue().count;
+			builder.append(String.format("%s\t| %.5f\t|%.5f\t|\t%s", clippedName, time / 1000 / 1000f, timeCpu / 1000 / 1000f, s.getValue().count));
             builder.append("\n");
         });
 
@@ -156,6 +161,7 @@ public class GPUProfiler {
 			if(averageHelper.count < sampleCount) {
 				averageHelper.count++;
 				averageHelper.summedTime += record.time;
+				averageHelper.summedTimeCpu += record.timeCpu;
 			}
 		}
 		return averages;
@@ -184,16 +190,20 @@ public class GPUProfiler {
     public static class Record {
 		public String name = "";
 		public Long time = new Long(0);
+		public Long timeCpu = new Long(0);
 		
-		public Record(String name, long time) {
+		public Record(String name, long time, long timeCpu) {
 			this.name = name;
 			this.time = time;
+			this.timeCpu = timeCpu;
 		}
 		private Record() {}
 	}
 	public static class AverageHelper {
 		public Integer count = new Integer(0);
 		public Long summedTime = new Long(0);
+		public Long summedTimeCpu = new Long(0);
 		public Long getAverageInMS() { return (summedTime / count) / 1000 / 1000; }
+		public Long getAverageCpuInMS() { return (summedTimeCpu / count) / 1000 / 1000; }
 	}
 }

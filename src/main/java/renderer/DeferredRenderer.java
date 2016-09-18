@@ -4,6 +4,7 @@ import config.Config;
 import engine.AppContext;
 import engine.Transform;
 import engine.graphics.query.GLSamplesPassedQuery;
+import engine.input.Input;
 import engine.model.*;
 import event.PointLightMovedEvent;
 import event.StateChangedEvent;
@@ -33,6 +34,7 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.ProfilingTask;
+import util.stopwatch.StopWatch;
 
 import javax.vecmath.Vector2f;
 import java.io.File;
@@ -215,9 +217,9 @@ public class DeferredRenderer implements Renderer {
 	int counter = 0;
 
 	public DrawResult draw(RenderExtract renderExtract) {
-		setLastFrameTime();
+		GPUProfiler.start("Frame");
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
-
+		GPUProfiler.end();
         if(Config.DRAWLINES_ENABLED) {
             drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
         }
@@ -250,16 +252,17 @@ public class DeferredRenderer implements Renderer {
 //            }
 		}
 
-		if(counter < 20) {
-            AppContext.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
-			Config.CONTINUOUS_DRAW_PROBES = true;
-			counter++;
-		} else if(counter == 20) {
-			Config.CONTINUOUS_DRAW_PROBES = false;
-			counter++;
-		}
+//		if(counter < 20) {
+//            AppContext.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+//			Config.CONTINUOUS_DRAW_PROBES = true;
+//			counter++;
+//		} else if(counter == 20) {
+//			Config.CONTINUOUS_DRAW_PROBES = false;
+//			counter++;
+//		}
 
 		frameCount++;
+		Input.update();
 		Display.update();
         return drawResult;
 	}
@@ -537,6 +540,7 @@ public class DeferredRenderer implements Renderer {
 
         GPUProfiler.endFrame();
         frameStarted.getAndDecrement();
+		setLastFrameTime();
         return dumpTimings();
     }
 

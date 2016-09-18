@@ -6,6 +6,7 @@ import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
 import component.PhysicsComponent;
 import config.Config;
+import engine.input.Input;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
@@ -221,38 +222,38 @@ public class AppContext implements Extractor<RenderExtract> {
 //                                     }
 
                                      float turbo = 1f;
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_LSHIFT)) {
                                          turbo = 3f;
                                      }
 
                                      float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Mouse.isButtonDown(0)) {
+                                     if (Input.isMouseClicked(0)) {
                                          getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
                                      }
-                                     if (Mouse.isButtonDown(1)) {
+                                     if (Input.isMouseClicked(1)) {
                                          getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
                                      }
-                                     if (Mouse.isButtonDown(2)) {
+                                     if (Input.isMouseClicked(2)) {
                                          getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
                                      }
 
                                      float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_W)) {
                                          getEntity().move(new Vector3f(0, 0, -moveAmount));
                                      }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_A)) {
                                          getEntity().move(new Vector3f(-moveAmount, 0, 0));
                                      }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_S)) {
                                          getEntity().move(new Vector3f(0, 0, moveAmount));
                                      }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_D)) {
                                          getEntity().move(new Vector3f(moveAmount, 0, 0));
                                      }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_Q)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_Q)) {
                                          getEntity().move(new Vector3f(0, -moveAmount, 0));
                                      }
-                                     if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+                                     if (Input.isKeyPressed(Keyboard.KEY_E)) {
                                          getEntity().move(new Vector3f(0, moveAmount, 0));
                                      }
                                  }
@@ -297,7 +298,24 @@ public class AppContext implements Extractor<RenderExtract> {
                 self.update(seconds);
             }
         };
+
         thread.start();
+
+//        new TimeStepThread("Render", 0.002f) {
+//            @Override
+//            public void update(float seconds) {
+//                if (Renderer.getInstance().isFrameFinished()) {
+//                System.out.println(OpenGLContext.getInstance().blockUntilEmpty());
+//                    OpenGLContext.getInstance().execute(() -> {
+//                            Renderer.getInstance().startFrame();
+//                            latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
+//                            latestGPUProfilingResult = Renderer.getInstance().endFrame();
+//                            resetState(currentExtract);
+//                            AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+//                    }, false);
+//                }
+//            }
+//        }.start();
     }
 
 
@@ -407,10 +425,11 @@ public class AppContext implements Extractor<RenderExtract> {
 
     private void update(float seconds) {
         SwingUtilities.invokeLater(() -> {
+            //TODO Don't use Display title anymore
             frame.setTitle(Display.getTitle());
         });
         StopWatch.getInstance().start("Controls update");
-        if(Mouse.isButtonDown(0)) {
+        if(Input.isMouseClicked(0)) {
             if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
                 AppContext.getEventBus().post(new ClickEvent());
             }
@@ -421,11 +440,11 @@ public class AppContext implements Extractor<RenderExtract> {
 
 //        if(Keyboard.isCreated())
         {
-            if (PICKING_CLICK == 0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && Display.isActive()) {
-                if (Mouse.isButtonDown(0) && !STRG_PRESSED_LAST_FRAME) {
+            if (PICKING_CLICK == 0 && Input.isKeyPressed(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+                if (Input.isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
                     PICKING_CLICK = 1;
                     STRG_PRESSED_LAST_FRAME = true;
-                } else if (Mouse.isButtonDown(1) && !STRG_PRESSED_LAST_FRAME) {
+                } else if (Input.isMouseClicked(1) && !STRG_PRESSED_LAST_FRAME) {
                     getScene().getEntities().parallelStream().forEach(e -> {
                         e.setSelected(false);
                     });
@@ -434,22 +453,22 @@ public class AppContext implements Extractor<RenderExtract> {
                 STRG_PRESSED_LAST_FRAME = false;
             }
 
-            if(Keyboard.isKeyDown(Keyboard.KEY_0)) {
+            if(Input.isKeyPressed(Keyboard.KEY_0)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
                 LOGGER.info("Model lod 0");
-            } else if(Keyboard.isKeyDown(Keyboard.KEY_1)) {
+            } else if(Input.isKeyPressed(Keyboard.KEY_1)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_1;
                 LOGGER.info("Model lod 1");
-            } else if(Keyboard.isKeyDown(Keyboard.KEY_2)) {
+            } else if(Input.isKeyPressed(Keyboard.KEY_2)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_2;
                 LOGGER.info("Model lod 2");
-            } else if(Keyboard.isKeyDown(Keyboard.KEY_3)) {
+            } else if(Input.isKeyPressed(Keyboard.KEY_3)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_3;
                 LOGGER.info("Model lod 3");
-            } else if(Keyboard.isKeyDown(Keyboard.KEY_4)) {
+            } else if(Input.isKeyPressed(Keyboard.KEY_4)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_4;
                 LOGGER.info("Model lod 4");
-            } else if(Keyboard.isKeyDown(Keyboard.KEY_5)) {
+            } else if(Input.isKeyPressed(Keyboard.KEY_5)) {
                 Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_5;
                 LOGGER.info("Model lod 5");
             }
@@ -487,18 +506,15 @@ public class AppContext implements Extractor<RenderExtract> {
         }
 
 
+        if((entityHasMoved || entityAdded) && scene != null) {
+            EntityFactory.getInstance().bufferEntities(); entityAdded = false;
+            directionalLightNeedsShadowMapRedraw = true;
+        }
+        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
         if (Renderer.getInstance().isFrameFinished()) {
             OpenGLContext.getInstance().blockUntilEmpty();
-            if((entityHasMoved || entityAdded) && scene != null) {
-                EntityFactory.getInstance().bufferEntities(); entityAdded = false;
-                directionalLightNeedsShadowMapRedraw = true;
-            }
-
-            currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
-
             OpenGLContext.getInstance().execute(() -> {
                 Renderer.getInstance().startFrame();
-
                 latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 resetState(currentExtract);
@@ -506,7 +522,9 @@ public class AppContext implements Extractor<RenderExtract> {
             }, false);
         }
 
-        scene.endFrame(activeCamera);
+        if(scene != null) {
+            scene.endFrame();
+        }
     }
 
     @Override

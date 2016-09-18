@@ -112,7 +112,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
-        DirectionalLight light = appContext.getScene().getDirectionalLight();
+        DirectionalLight light = renderExtract.directionalLight;
 
         GPUProfiler.start("First pass");
         FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract);
@@ -169,10 +169,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         List<Entity> visibleEntities = renderExtract.visibleEntities;
 
-        GPUProfiler.start("Draw entities");
-
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
         FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+
+        GPUProfiler.start("Draw entities");
 
         if (Config.DRAWSCENE_ENABLED && AppContext.getInstance().getScene() != null) {
             GPUProfiler.start("Set global uniforms first pass");
@@ -213,7 +213,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         for(RenderExtension extension : renderExtensions) {
+            GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
             extension.renderFirstPass(renderExtract, firstPassResult);
+            GPUProfiler.end();
         }
 
         if (Config.DEBUGDRAW_PROBES) {

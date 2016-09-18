@@ -1,5 +1,7 @@
 package util.stopwatch;
 
+import util.TypedTuple;
+
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT;
 import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT_AVAILABLE;
@@ -19,6 +21,8 @@ public class ProfilingTask {
 	private int startQuery, endQuery;
 
 	private ArrayList<ProfilingTask> children;
+	private long startTimeCpu;
+	private long endTimeCpu;
 
 	public ProfilingTask() {
 		children = new ArrayList<>();
@@ -30,6 +34,7 @@ public class ProfilingTask {
 		this.parent = parent;
 		this.name = name;
 		this.startQuery = startQuery;
+		this.startTimeCpu = System.nanoTime();
 
 		if (parent != null) {
 			parent.addChild(this);
@@ -44,6 +49,7 @@ public class ProfilingTask {
 
 	public ProfilingTask end(int endQuery) {
 		this.endQuery = endQuery;
+		this.endTimeCpu = System.nanoTime();
 		return parent;
 	}
 
@@ -79,6 +85,10 @@ public class ProfilingTask {
 		return getEndTime() - getStartTime();
 	}
 
+	public long getTimeTakenCpu() {
+		return (endTimeCpu - startTimeCpu);
+	}
+
 	public ArrayList<ProfilingTask> getChildren() {
 		return children;
 	}
@@ -96,7 +106,7 @@ public class ProfilingTask {
 			for (int i = 0; i < indentation; i++) {
                 builder.append("    ");
 			}
-			builder.append(String.format("%s : %.5fms", name, getTimeTaken() / 1000f / 1000f));
+			builder.append(String.format("%s : %.5fms (CPU: %.5fms)", name, getTimeTaken() / 1000f / 1000f, getTimeTakenCpu() / 1000f / 1000f));
             builder.append("\n");
 		}
 		for (int i = 0; i < children.size(); i++) {
@@ -106,13 +116,13 @@ public class ProfilingTask {
         return builder;
 	}
 	
-	public Map<String, Long> getTimesTaken() {
-		Map<String, Long> result = new HashMap();
+	public Map<String, TypedTuple<Long, Long>> getTimesTaken() {
+		Map<String, TypedTuple<Long, Long>> result = new HashMap();
 		
 		if(!name.startsWith("Frame")) {
-			result.put(name, getTimeTaken());
+			result.put(name, new TypedTuple(getTimeTaken(), getTimeTakenCpu()));
 		} else {
-			result.put("Frame", getTimeTaken());
+			result.put("Frame", new TypedTuple(getTimeTaken(), getTimeTakenCpu()));
 		}
 		for (ProfilingTask gpuTaskProfile : children) {
 			result.putAll(gpuTaskProfile.getTimesTaken());

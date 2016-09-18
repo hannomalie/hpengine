@@ -32,7 +32,7 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-	private transient EntitiesContainer entityContainer;// = new Octree(new Vector3f(), 400, 6);
+	private transient EntitiesContainer entityContainer = new SimpleContainer();
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
@@ -222,7 +222,7 @@ public class Scene implements LifeCycle, Serializable {
 		initialized = true;
 	}
 
-    public void endFrame(Camera camera) {
+    public void endFrame() {
 		for (Entity entity : entityContainer.getEntities()) {
 			entity.setHasMoved(false);
 		}

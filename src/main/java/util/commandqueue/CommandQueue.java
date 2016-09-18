@@ -1,16 +1,13 @@
 package util.commandqueue;
 
 import java.util.Iterator;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Logger;
 
 public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
-    private BlockingQueue<FutureCallable> workQueue = new LinkedBlockingQueue<>();
+    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
 
     public void executeCommands() {
         while(executeCommand()) {
@@ -75,5 +72,9 @@ public class CommandQueue {
 
     public Iterator<FutureCallable> getIterator() {
         return workQueue.iterator();
+    }
+
+    public LinkedBlockingDeque<FutureCallable> getWorkQueue() {
+        return workQueue;
     }
 }

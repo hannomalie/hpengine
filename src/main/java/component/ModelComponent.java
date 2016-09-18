@@ -20,6 +20,7 @@ import renderer.material.MaterialFactory;
 import shader.Program;
 import shader.ProgramFactory;
 import texture.Texture;
+import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -95,7 +96,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     @Override
     public int draw(DrawConfiguration drawConfiguration) {
-
         if(!drawConfiguration.isVisible()) {
             return 0;
         }
@@ -107,7 +107,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         Program currentProgram = drawConfiguration.getFirstPassProgram();
         currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
         currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
-        currentProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().get(materialName)));
 
         // TODO: Implement strategy pattern
         float distanceToCamera = Vector3f.sub(drawConfiguration.getCamera().getWorldPosition(), getEntity().getCenterWorld(), null).length();
@@ -121,9 +120,6 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
-//        if(instanced) {
-//            return vertexBuffer.drawInstanced(10);
-//        } else
         if (drawConfiguration.isDrawLines()) {
             return vertexBuffer.drawDebug(2, ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(drawConfiguration.getExtract(), this));
         } else {

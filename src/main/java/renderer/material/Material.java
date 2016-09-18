@@ -128,8 +128,6 @@ public class Material implements Serializable, Bufferable {
 		}
 	}
 	public void setTexturesActive(Program program, boolean withoutSetUsed) {
-		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
-
 		if (!program.needsTextures()) {
 			return;
 		}

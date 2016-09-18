@@ -4,6 +4,7 @@ import camera.Camera;
 import component.InputControllerComponent;
 import component.ModelComponent;
 import engine.AppContext;
+import engine.input.Input;
 import engine.model.Entity;
 import event.DirectionalLightHasMovedEvent;
 import org.lwjgl.BufferUtils;
@@ -50,31 +51,31 @@ public class DirectionalLight extends Entity {
 				float moveAmount = 100* seconds;
 				float rotateAmount = 100*seconds;
 
-                if(!Keyboard.isCreated()) {
-                    return;
-                }
-				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+//                if(!Keyboard.isCreated()) {
+//                    return;
+//                }
+				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
 					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
 					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
 					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
 					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
 					getEntity().move(new Vector3f(0, -moveAmount, 0));
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD2)) {
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
 					getEntity().move(new Vector3f(0, moveAmount, 0));
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD4)) {
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
 					getEntity().move(new Vector3f(-moveAmount, 0, 0));
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD6)) {
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
 					getEntity().move(new Vector3f(moveAmount, 0, 0));
 				}
 			}

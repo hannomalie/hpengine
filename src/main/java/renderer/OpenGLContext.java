@@ -14,7 +14,6 @@ import util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -393,10 +392,12 @@ public final class OpenGLContext {
         }
     }
 
-    public void blockUntilEmpty() {
+    public long blockUntilEmpty() {
+        long start = System.currentTimeMillis();
         while(commandQueue.size() > 0) {
 
         }
+        return System.currentTimeMillis() - start;
     }
 
     public TimeStepThread getDrawThread() {
@@ -427,6 +428,44 @@ public final class OpenGLContext {
             executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void executeNow(Runnable runnable, boolean andBlock) {
+        CompletableFuture result = new CompletableFuture();
+        if(util.Util.isOpenGLThread()) {
+            try {
+                try {
+                    runnable.run();
+                    result.complete(true);
+                } catch(Exception e) {
+                    result.completeExceptionally(e);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
+                                                       @Override
+                                                       public Object execute() throws Exception {
+                                                           try {
+                                                               runnable.run();
+                                                               result.complete(true);
+                                                           } catch(Exception e) {
+                                                               result.completeExceptionally(e);
+                                                           }
+                                                           return true;
+                                                       }
+                                                   });
+        }
+        if(andBlock) {
+            try {
+                result.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

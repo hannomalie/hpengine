@@ -574,7 +574,7 @@ public class Texture implements Serializable, Reloadable {
                             mipmapsGenerated = true;
                         }
                         sourceDataCompressed = true;
-                        upload(buffer());
+                        upload(buffer(), this.srgba);
                         LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
                         return;
                     }
