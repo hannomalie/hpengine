@@ -48,7 +48,7 @@ import static renderer.constants.GlTextureTarget.*;
  */
 public class TextureFactory {
     private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
-    private static final int TEXTURE_FACTORY_THREAD_COUNT = 5;
+    private static final int TEXTURE_FACTORY_THREAD_COUNT = 2;
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
@@ -58,7 +58,7 @@ public class TextureFactory {
         return commandQueue;
     }
 
-    CommandQueue commandQueue = new CommandQueue();
+    private CommandQueue commandQueue = new CommandQueue();
 
     public static Texture getLensFlareTexture() {
         return lensFlareTexture;

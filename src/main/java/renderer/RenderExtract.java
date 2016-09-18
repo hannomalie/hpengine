@@ -24,6 +24,24 @@ public class RenderExtract {
     public Vector4f sceneMax;
     private Map properties = new HashMap<>();
 
+    /**
+     * Copy constructor
+     * @param source
+     */
+    public RenderExtract(RenderExtract source) {
+        this.anEntityHasMoved = source.anEntityHasMoved;
+        this.directionalLightNeedsShadowMapRender = source.directionalLightNeedsShadowMapRender;
+        this.camera = source.camera;
+        this.entities = source.entities;
+        this.visibleEntities = source.visibleEntities;
+        this.directionalLight = source.directionalLight;
+        this.anyPointLightHasMoved = source.anyPointLightHasMoved;
+        this.sceneInitiallyDrawn = source.sceneInitiallyDrawn;
+        this.sceneMin = source.sceneMin;
+        this.sceneMax = source.sceneMax;
+        this.properties.putAll(properties);
+    }
+
     public RenderExtract() {
     }
 

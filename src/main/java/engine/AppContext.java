@@ -68,6 +68,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private RenderExtract currentRenderExtract = new RenderExtract();
     private RenderExtract nextExtract = new RenderExtract();
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
+    private volatile RenderExtract currentExtract;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -493,12 +494,12 @@ public class AppContext implements Extractor<RenderExtract> {
                 directionalLightNeedsShadowMapRedraw = true;
             }
 
-            RenderExtract currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
+            currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
 
             OpenGLContext.getInstance().execute(() -> {
                 Renderer.getInstance().startFrame();
 
-                latestDrawResult = Renderer.getInstance().draw(currentExtract);
+                latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
                 resetState(currentExtract);
                 AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
