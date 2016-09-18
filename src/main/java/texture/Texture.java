@@ -523,12 +523,11 @@ public class Texture implements Serializable, Reloadable {
         return ret;
     }
 
-    private static ExecutorService multiThreadService = Executors.newFixedThreadPool(4);
     private static ReentrantLock DDSUtilWriteLock = new ReentrantLock();
     private static final boolean autoConvertToDDS = true;
 
     public void convertAndUpload() {
-        multiThreadService.submit(() -> {
+        TextureFactory.getInstance().getCommandQueue().addCommand(() -> {
             try {
                 data = new byte[1][];
 
@@ -723,7 +722,6 @@ public class Texture implements Serializable, Reloadable {
                         (ByteBuffer) null);
             }
 
-            int mipmapCount = Util.calculateMipMapCount(getWidth(), getHeight());
             GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, newBaseLevel);
             LOGGER.info("New Base Level: " + newBaseLevel);
             LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
