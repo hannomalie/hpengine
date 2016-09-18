@@ -64,19 +64,19 @@ public abstract class TimeStepThread extends Thread {
         float secondsLeft = (minimumCycleTimeInSeconds - actualS);
         if(secondsLeft <= 0) { return; }
 
-        boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
-        if(moreThanThreeMsToWait) {
-            try {
-                long timeBeforeSleep = System.nanoTime();
-                Thread.sleep((long) (actualS * 0.9f/1000f));
-                long sleptNanoSeconds = System.nanoTime() - timeBeforeSleep;
-                long sleptMs = sleptNanoSeconds / 1000 / 1000;
-                secondsLeft -= sleptMs/1000f;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-        }
+//        boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
+//        if(moreThanThreeMsToWait) {
+//            try {
+//                long timeBeforeSleep = System.nanoTime();
+//                Thread.sleep((long) (actualS * 0.9f/1000f));
+//                long sleptNanoSeconds = System.nanoTime() - timeBeforeSleep;
+//                long sleptMs = sleptNanoSeconds / 1000 / 1000;
+//                secondsLeft -= sleptMs/1000f;
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//
+//        }
 
         long nanoSecondsLeft = (long) (secondsLeft * 1000 * 1000 * 1000);
         long startTime = System.nanoTime();

@@ -20,9 +20,9 @@ import renderer.material.MaterialFactory;
 import shader.Program;
 import shader.ProgramFactory;
 import texture.Texture;
-import util.stopwatch.GPUProfiler;
 
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
@@ -91,7 +91,7 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
 
     @Override
     public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected) {
-        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false));
+        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false, camera.getWorldPosition()));
     }
 
     @Override
@@ -103,19 +103,22 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         if (drawConfiguration.getFirstPassProgram() == null) {
             return 0;
         }
-
         Program currentProgram = drawConfiguration.getFirstPassProgram();
+
         currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
         currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
 
         // TODO: Implement strategy pattern
-        float distanceToCamera = Vector3f.sub(drawConfiguration.getCamera().getWorldPosition(), getEntity().getCenterWorld(), null).length();
+        Vector3f centerWorld = getEntity().getCenterWorld();
+        Vector3f.sub(drawConfiguration.getCameraWorldPosition(), centerWorld, distance);
+        float distanceToCamera = distance.length();
         if(LOGGER.isLoggable(Level.FINE)) {
             LOGGER.finer("boundingSphere " + model.getBoundingSphereRadius());
             LOGGER.finer("distanceToCamera " + distanceToCamera);
         }
         boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f*model.getBoundingSphereRadius();
-        getMaterial().setTexturesActive(currentProgram, isInReachForTextureLoading);
+        Material material = getMaterial();
+        material.setTexturesActive(currentProgram, isInReachForTextureLoading);
 
         if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
@@ -127,6 +130,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
             return vertexBuffer.drawInstanced(getEntity().getInstanceCount());
         }
     }
+
+    private transient Vector3f distance = new Vector3f();
 
     private void setTexturesUsed() {
         for(Texture texture : getMaterial().getTextures()) {
@@ -148,8 +153,13 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
     }
 
 
+    private transient WeakReference<Material> materialCache = null;
     public Material getMaterial() {
+        if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
+            return materialCache.get();
+        }
         Material material = MaterialFactory.getInstance().get(materialName);
+        materialCache = new WeakReference<>(material);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
             return MaterialFactory.getInstance().getDefaultMaterial();

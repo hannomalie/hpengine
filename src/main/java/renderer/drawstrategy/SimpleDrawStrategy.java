@@ -6,7 +6,6 @@ import config.Config;
 import container.EntitiesContainer;
 import engine.AppContext;
 import engine.DrawConfiguration;
-import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import org.lwjgl.opengl.*;
@@ -26,7 +25,6 @@ import renderer.light.TubeLight;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
-import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import shader.ComputeShaderProgram;
 import shader.Program;
@@ -195,11 +193,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             GPUProfiler.end();
 
+            Vector3f cameraWorldPosition = camera.getWorldPosition();
             for (Entity entity : visibleEntities) {
                 if (entity.getComponents().containsKey("ModelComponent")) {
                     OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
                     int currentVerticesCount = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"))
-                            .draw(new DrawConfiguration(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity),AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED));
+                            .draw(new DrawConfiguration(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity),AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition));
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         firstPassResult.entitiesDrawn++;

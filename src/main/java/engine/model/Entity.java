@@ -239,12 +239,16 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return false;
 	}
 
+	private transient Vector3f centerWorld = null;
 	public Vector3f getCenterWorld() {
+		if(centerWorld != null) {
+			return centerWorld;
+		}
 		Vector4f[] minMaxWorld = getMinMaxWorld();
 		Vector4f minWorld = minMaxWorld[0];
 		Vector4f maxWorld = minMaxWorld[1];
 
-		Vector3f centerWorld = new Vector3f();
+		centerWorld = new Vector3f();
 		centerWorld.x = minWorld.x + (maxWorld.x - minWorld.x)/2;
 		centerWorld.y = minWorld.y + (maxWorld.y - minWorld.y)/2;
 		centerWorld.z = minWorld.z + (maxWorld.z - minWorld.z)/2;
@@ -266,6 +270,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
                 return minMax;
             }
         }
+        centerWorld = null;
         if(hasComponent(ModelComponent.class) || getComponents().containsKey("ModelComponent")) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
 			minMax = modelComponent.getMinMax();

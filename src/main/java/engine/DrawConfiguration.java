@@ -1,6 +1,7 @@
 package engine;
 
 import camera.Camera;
+import org.lwjgl.util.vector.Vector3f;
 import renderer.RenderExtract;
 import shader.Program;
 
@@ -16,8 +17,9 @@ public class DrawConfiguration {
     private final boolean isVisible;
     private final boolean isSelected;
     private final boolean drawLines;
+    private Vector3f cameraWorldPosition;
 
-    public DrawConfiguration(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines) {
+    public DrawConfiguration(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition) {
         this.extract = extract;
         this.camera = camera;
         this.modelMatrix = modelMatrix;
@@ -27,6 +29,7 @@ public class DrawConfiguration {
         this.isVisible = isVisible;
         this.isSelected = isSelected;
         this.drawLines = drawLines;
+        this.cameraWorldPosition = cameraWorldPosition;
     }
 
     public RenderExtract getExtract() {
@@ -63,5 +66,9 @@ public class DrawConfiguration {
 
     public boolean isDrawLines() {
         return drawLines;
+    }
+
+    public Vector3f getCameraWorldPosition() {
+        return cameraWorldPosition;
     }
 }
