@@ -231,30 +231,8 @@ public final class OpenGLContext {
         }
     }
 
-    private static List<Semaphore> textureUnitsLock = new CopyOnWriteArrayList();
-    static {
-        for(int i = 0; i < 16; i++) {
-            textureUnitsLock.add(new Semaphore(1));
-        }
-    }
-
-
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
         OpenGLContext.getInstance().execute(() -> {
-            if(textureUnitIndex > 14) {
-                if(textureId > 0) {
-                    try {
-                        textureUnitsLock.get(textureUnitIndex).acquire();
-                        LOGGER.finer("Lock acquired for unit " + textureUnitIndex);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    textureUnitsLock.get(textureUnitIndex).release();
-                    LOGGER.finer("Lock released for unit " + textureUnitIndex);
-                    return;
-                }
-            }
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {

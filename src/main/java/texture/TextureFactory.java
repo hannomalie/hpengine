@@ -48,6 +48,7 @@ import static renderer.constants.GlTextureTarget.*;
  */
 public class TextureFactory {
     private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
+    private static final int TEXTURE_FACTORY_THREAD_COUNT = 5;
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
@@ -137,21 +138,18 @@ public class TextureFactory {
                             texture.unload();
                         }
                     }
-//                    try {
-//                        sleep(500);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
                 }
             }.start();
         }
 
-        new TimeStepThread("TextureFactory", 0f) {
-            @Override
-            public void update(float seconds) {
-                commandQueue.executeCommands();
-            }
-        }.start();
+        for(int i = 0; i < TEXTURE_FACTORY_THREAD_COUNT; i++) {
+            new TimeStepThread("TextureFactory" + i, 0f) {
+                @Override
+                public void update(float seconds) {
+                    commandQueue.executeCommands();
+                }
+            }.start();
+        }
     }
 
     public BufferedImage getDefaultTextureAsBufferedImage() {
