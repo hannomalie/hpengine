@@ -5,6 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
+import engine.DrawConfiguration;
 import engine.model.Entity;
 import engine.model.QuadVertexBuffer;
 import engine.model.Transformable;
@@ -335,7 +336,10 @@ public class EnvironmentSampler extends Camera {
 
         for (Entity entity : entities) {
             if(entity.getComponents().containsKey("ModelComponent")) {
-                ModelComponent.class.cast(entity.getComponents().get("ModelComponent")).draw(extract, camera);
+                ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
+                DrawConfiguration drawConfiguration =
+                        new DrawConfiguration(extract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount());
+                ModelComponent.staticDraw(drawConfiguration);
             }
         }
 		GPUProfiler.end();

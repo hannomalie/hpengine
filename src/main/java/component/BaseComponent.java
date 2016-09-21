@@ -7,7 +7,7 @@ import java.io.Serializable;
 public abstract class BaseComponent implements Component, Serializable {
     private static final long serialVersionUID = -224913983270697337L;
 
-    private Entity entity;
+    protected Entity entity;
     transient protected boolean initialized;
 
     public String getIdentifier() { return this.getClass() + " " + System.currentTimeMillis(); }
@@ -22,6 +22,7 @@ public abstract class BaseComponent implements Component, Serializable {
     public boolean isInitialized() {
         return initialized;
     }
+
     @Override
     public Entity getEntity() {
         return entity;

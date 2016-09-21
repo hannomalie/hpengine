@@ -13,6 +13,7 @@ import util.commandqueue.CommandQueue;
 import util.commandqueue.FutureCallable;
 
 import java.awt.*;
+import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -238,6 +239,22 @@ public final class OpenGLContext {
             activeTexture(textureUnitIndex);
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(textureUnitIndex, textureId);
+        });
+    }
+
+    public void bindTextures(IntBuffer textureIds) {
+        OpenGLContext.getInstance().execute(() -> {
+            GL44.glBindTextures(0, textureIds.capacity(), textureIds);
+        });
+    }
+    public void bindTextures(int count, IntBuffer textureIds) {
+        OpenGLContext.getInstance().execute(() -> {
+            GL44.glBindTextures(0, count, textureIds);
+        });
+    }
+    public void bindTextures(int firstUnit, int count, IntBuffer textureIds) {
+        OpenGLContext.getInstance().execute(() -> {
+            GL44.glBindTextures(firstUnit, count, textureIds);
         });
     }
 

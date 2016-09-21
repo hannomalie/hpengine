@@ -51,14 +51,14 @@ public class GPUProfiler {
 		}
 		if (PROFILING_ENABLED) {
 			currentTask = new ProfilingTask().init(null,
-					"Frame " + (++frameCounter), getQuery());
+					"Frame " + (++frameCounter));
 			tasks.add(currentTask);
 		}
 	}
 
 	public static void start(String name) {
 		if (PROFILING_ENABLED && currentTask != null) {
-			currentTask = new ProfilingTask().init(currentTask, name, getQuery());
+			currentTask = new ProfilingTask().init(currentTask, name);
 			tasks.add(currentTask);
 		}
 	}
@@ -103,7 +103,7 @@ public class GPUProfiler {
 		}
 	}
 
-	private static int getQuery() {
+	public static int getQuery() {
 		int query;
 		if (!queryObjects.isEmpty()) {
 			query = queryObjects.remove(queryObjects.size() - 1);

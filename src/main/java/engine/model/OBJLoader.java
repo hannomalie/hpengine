@@ -2,11 +2,10 @@ package engine.model;
 
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.OpenGLContext;
 import renderer.material.Material;
 import renderer.material.Material.MAP;
 import renderer.material.MaterialFactory;
-import renderer.material.MaterialFactory.MaterialInfo;
+import renderer.material.MaterialInfo;
 import texture.TextureFactory;
 
 import java.io.*;

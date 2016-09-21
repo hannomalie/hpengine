@@ -24,7 +24,7 @@ import renderer.command.InitMaterialCommand.MaterialResult;
 import renderer.material.Material;
 import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
-import renderer.material.MaterialFactory.MaterialInfo;
+import renderer.material.MaterialInfo;
 import texture.Texture;
 import texture.TextureFactory;
 import util.gui.input.*;

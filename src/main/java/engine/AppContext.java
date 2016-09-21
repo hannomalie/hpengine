@@ -33,6 +33,7 @@ import renderer.light.PointLight;
 import renderer.lodstrategy.ModelLod;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
+import renderer.material.MaterialInfo;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
@@ -354,7 +355,7 @@ public class AppContext implements Extractor<RenderExtract> {
                 for (int j = 0; j < entityCount; j++) {
                     for (int k = 0; k < entityCount; k++) {
 
-                        MaterialFactory.MaterialInfo materialInfo = new MaterialFactory.MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
+                        MaterialInfo materialInfo = new MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
                                 .setDiffuse(new Vector3f(1, 1, 1))
                                 .setRoughness((float) i / entityCount)
                                 .setMetallic((float) j / entityCount)

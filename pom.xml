@@ -13,8 +13,12 @@
             <id>java.net</id>
             <url>https://maven.java.net/content/repositories/public/</url>
         </repository>
+        <repository>
+            <id>my-bintray-repo</id>
+            <name>my-bintray-repo</name>
+            <url>https://dl.bintray.com/h-pernpeintner/maven-repo</url>
+        </repository>
     </repositories>
-
     <build>
         <plugins>
             <plugin>
@@ -23,7 +27,9 @@
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
-                        <goals><goal>add-source</goal></goals>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
                         <configuration>
                             <sources>
                                 <source>src</source>
@@ -95,32 +101,32 @@
                                     <targetPath>${basedir}/target</targetPath>
                                     <directory>libs/lwjgl-2.9.3/native/windows</directory>
                                     <includes>
-                                        <include> **/*.dll</include>
+                                        <include>**/*.dll</include>
                                     </includes>
                                 </resource>
                                 <resource>
                                     <targetPath>${basedir}/target</targetPath>
                                     <directory>libs/lwjgl-2.9.3/native/linux</directory>
                                     <includes>
-                                        <include> **/*.so</include>
+                                        <include>**/*.so</include>
                                     </includes>
                                 </resource>
                                 <resource>
                                     <targetPath>${basedir}/target/hp</targetPath>
                                     <directory>hp</directory>
                                     <includes>
-                                        <include> **/*.*</include>
+                                        <include>**/*.*</include>
                                     </includes>
                                 </resource>
                                 <resource>
                                     <targetPath>${basedir}/target</targetPath>
                                     <directory>.</directory>
                                     <includes>
-                                        <include> **/*.sh</include>
+                                        <include>**/*.sh</include>
                                     </includes>
                                 </resource>
-                            </resources>         
-                        </configuration>            
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -289,6 +295,12 @@
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>fst</artifactId>
             <version>2.33</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.hanno.compiler</groupId>
+            <artifactId>java-compiler</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 </project>

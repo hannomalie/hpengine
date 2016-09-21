@@ -172,6 +172,7 @@ void main(void) {
     float alpha = materialTransparency;
 	if(material.hasDiffuseMap != 0) {
     	color = texture(diffuseMap, UV);
+    	//color = textureLod(diffuseMap, UV, 6);
         alpha *= color.a;
         if(color.a<0.1)
         {
@@ -220,5 +221,6 @@ void main(void) {
 		out_color.rgb = vec3(1,0,0);
 	}
 //	out_color.rgb = vec3(1,0,0);
+//	out_color.rgb = position_world.rgb/100.0;
 	//out_normal.a = 1;
 }

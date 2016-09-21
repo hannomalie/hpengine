@@ -28,13 +28,12 @@ public class ProfilingTask {
 		children = new ArrayList<>();
 	}
 
-	public ProfilingTask init(ProfilingTask parent, String name,
-			int startQuery) {
+	public ProfilingTask init(ProfilingTask parent, String name) {
 
 		this.parent = parent;
 		this.name = name;
-		this.startQuery = startQuery;
-		this.startTimeCpu = System.nanoTime();
+		this.startQuery = GPUProfiler.getQuery();
+        this.startTimeCpu = System.nanoTime();
 
 		if (parent != null) {
 			parent.addChild(this);

@@ -6,14 +6,10 @@ import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
-import renderer.material.Material.ENVIRONMENTMAPTYPE;
 import renderer.material.Material.MAP;
-import renderer.material.Material.MaterialType;
 import shader.OpenGLBuffer;
 import shader.PersistentMappedBuffer;
-import texture.Texture;
 import texture.TextureFactory;
 import util.Util;
 
@@ -22,7 +18,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static renderer.material.Material.MaterialType.DEFAULT;
 import static renderer.material.Material.getDirectory;
 import static renderer.material.Material.write;
 
@@ -188,117 +183,7 @@ public class MaterialFactory {
         return materialBuffer;
     }
 
-    public static final class MaterialInfo implements Serializable {
-		private static final long serialVersionUID = 3564429930446909410L;
-
-		public MaterialInfo(MaterialMap maps) {
-			this.maps = maps;
-		}
-
-		public MaterialInfo setName(String name) {
-			this.name = name;
-			return this;
-		}
-
-		public MaterialInfo() {
-		}
-
-		public MaterialInfo(String name, MaterialMap maps) {
-			this(maps);
-		}
-
-		public MaterialInfo(MaterialInfo materialInfo) {
-			this.maps = materialInfo.maps;
-			this.environmentMapType = materialInfo.environmentMapType;
-			this.name = materialInfo.name;
-			this.diffuse = new Vector3f(materialInfo.diffuse);
-			this.roughness = materialInfo.roughness;
-			this.metallic = materialInfo.metallic;
-			this.ambient = materialInfo.ambient;
-			this.transparency = materialInfo.transparency;
-			this.parallaxScale = materialInfo.parallaxScale;
-			this.parallaxBias = materialInfo.parallaxBias;
-			this.materialType = materialInfo.materialType;
-		}
-
-		public MaterialMap maps = new MaterialMap();
-		public ENVIRONMENTMAPTYPE environmentMapType = ENVIRONMENTMAPTYPE.GENERATED;
-		public String name = "";
-		public Vector3f diffuse = new Vector3f(1,1,1);
-		public float roughness = 0.95f;
-		public float metallic = 0f;
-		public float ambient = 0;
-		public float transparency = 0;
-		public float parallaxScale = 0.04f;
-		public float parallaxBias = 0.02f;
-		public MaterialType materialType = DEFAULT;
-		
-		public boolean textureLess;
-		public void put(MAP map, Texture texture) {
-			maps.put(map, texture);
-		}
-
-		public MaterialInfo setRoughness(float roughness) {
-			this.roughness = roughness;
-			return this;
-		}
-
-		public MaterialInfo setMetallic(float metallic) {
-			this.metallic = metallic;
-			return this;
-		}
-
-		public MaterialInfo setDiffuse(Vector3f diffuse) {
-			this.diffuse.set(diffuse);
-			return this;
-		}
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            MaterialInfo that = (MaterialInfo) o;
-
-            if (Float.compare(that.roughness, roughness) != 0) return false;
-            if (Float.compare(that.metallic, metallic) != 0) return false;
-            if (Float.compare(that.ambient, ambient) != 0) return false;
-            if (Float.compare(that.transparency, transparency) != 0) return false;
-            if (Float.compare(that.parallaxScale, parallaxScale) != 0) return false;
-            if (Float.compare(that.parallaxBias, parallaxBias) != 0) return false;
-            if (textureLess != that.textureLess) return false;
-            if (maps != null ? !maps.equals(that.maps) : that.maps != null) return false;
-            if (environmentMapType != that.environmentMapType) return false;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
-            if (diffuse != null ? !diffuse.equals(that.diffuse) : that.diffuse != null) return false;
-            return materialType == that.materialType;
-
-        }
-
-        @Override
-        public int hashCode() {
-            int result = maps != null ? maps.hashCode() : 0;
-            result = 31 * result + (environmentMapType != null ? environmentMapType.hashCode() : 0);
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            result = 31 * result + (diffuse != null ? diffuse.hashCode() : 0);
-            result = 31 * result + (roughness != +0.0f ? Float.floatToIntBits(roughness) : 0);
-            result = 31 * result + (metallic != +0.0f ? Float.floatToIntBits(metallic) : 0);
-            result = 31 * result + (ambient != +0.0f ? Float.floatToIntBits(ambient) : 0);
-            result = 31 * result + (transparency != +0.0f ? Float.floatToIntBits(transparency) : 0);
-            result = 31 * result + (parallaxScale != +0.0f ? Float.floatToIntBits(parallaxScale) : 0);
-            result = 31 * result + (parallaxBias != +0.0f ? Float.floatToIntBits(parallaxBias) : 0);
-            result = 31 * result + (materialType != null ? materialType.hashCode() : 0);
-            result = 31 * result + (textureLess ? 1 : 0);
-            return result;
-        }
-
-		public MaterialInfo setAmbient(float ambient) {
-			this.ambient = ambient;
-			return this;
-		}
-	}
-
-	public void putAll(Map<String, MaterialInfo> materialLib) {
+    public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
 			addMaterial(key, getMaterial(materialLib.get(key)));
 		}

@@ -4,6 +4,7 @@ import camera.Camera;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
+import engine.DrawConfiguration;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -238,8 +239,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                         lightInjectedFramesAgo = 0;
                         ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
                         voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
-                        int currentVerticesCount = modelComponent
-                                .draw(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), true, entity.isSelected());
+                        int currentVerticesCount = ModelComponent.staticDraw(new DrawConfiguration(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, orthoCam.getWorldPosition() , modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount()));
+
                         firstPassResult.verticesDrawn += currentVerticesCount;
                         if (currentVerticesCount > 0) {
                             firstPassResult.entitiesDrawn++;

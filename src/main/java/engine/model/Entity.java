@@ -266,7 +266,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     Matrix4f lastUsedTransformationMatrix;
 	public Vector4f[] getMinMaxWorld() {
         if(!getTransform().isDirty() && minMax != null) {
-            if(getTransform().getTransformation().equals(lastUsedTransformationMatrix)) {
+            if(lastUsedTransformationMatrix == null || getTransform().getTransformation().equals(lastUsedTransformationMatrix)) {
                 return minMax;
             }
         }

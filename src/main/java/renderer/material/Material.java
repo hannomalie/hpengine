@@ -6,12 +6,12 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
-import renderer.material.MaterialFactory.MaterialInfo;
 import shader.Bufferable;
 import shader.Program;
 import shader.ProgramFactory;
 import texture.Texture;
 import texture.TextureFactory;
+import util.stopwatch.GPUProfiler;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -121,23 +121,37 @@ public class Material implements Serializable, Bufferable {
 			return;
 		}
 
-		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
-			MAP map = entry.getKey();
-			Texture texture = entry.getValue();
-			texture.bind(map.textureSlot);
-		}
+//		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
+//			MAP map = entry.getKey();
+//			Texture texture = entry.getValue();
+//			texture.bind(map.textureSlot);
+//		}
+
+        OpenGLContext.getInstance().bindTextures(0, materialInfo.maps.getTextures().entrySet().size(), materialInfo.getTextureIds());
 	}
 	public void setTexturesActive(Program program, boolean withoutSetUsed) {
 		if (!program.needsTextures()) {
 			return;
 		}
 
-		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
-			MAP map = entry.getKey();
-            if(map.equals(MAP.OCCLUSION)) { continue; }
-			Texture texture = entry.getValue();
-			texture.bind(map.textureSlot, withoutSetUsed);
-		}
+//		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
+//			MAP map = entry.getKey();
+//            if(map.equals(MAP.OCCLUSION)) { continue; }
+//			Texture texture = entry.getValue();
+//			texture.bind(map.textureSlot, withoutSetUsed);
+//		}
+
+        GPUProfiler.start("bindTextures");
+        OpenGLContext.getInstance().bindTextures(0, materialInfo.maps.getTextures().entrySet().size(), materialInfo.getTextureIds());
+        if(!withoutSetUsed) {
+            for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
+                MAP map = entry.getKey();
+                if(map.equals(MAP.OCCLUSION)) { continue; }
+                Texture texture = entry.getValue();
+                texture.setUsedNow();
+            }
+        }
+        GPUProfiler.end();
 	}
 
 	public void setTexturesInactive() {

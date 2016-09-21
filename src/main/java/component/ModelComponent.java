@@ -1,9 +1,6 @@
 package component;
 
-import camera.Camera;
-import engine.AppContext;
 import engine.DrawConfiguration;
-import engine.Drawable;
 import engine.model.DataChannels;
 import engine.model.Model;
 import engine.model.VertexBuffer;
@@ -12,13 +9,10 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
-import renderer.RenderExtract;
 import renderer.constants.GlCap;
-import renderer.lodstrategy.ModelLod;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
-import shader.ProgramFactory;
 import texture.Texture;
 
 import java.io.Serializable;
@@ -26,10 +20,9 @@ import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ModelComponent extends BaseComponent implements Drawable, Serializable {
+public class ModelComponent extends BaseComponent implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
     public static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
@@ -80,22 +73,8 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         this.model = model;
         createFloatArray(model);
     }
-    @Override
-    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram) {
-        return draw(extract, camera, modelMatrix, firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
-    }
-    @Override
-    public int draw(RenderExtract extract, Camera camera) {
-        return draw(extract, camera, getEntity().getModelMatrixAsBuffer(), ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected());
-    }
 
-    @Override
-    public int draw(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected) {
-        return draw(new DrawConfiguration(extract, camera, getEntity().getModelMatrixAsBuffer(), firstPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(getEntity()), AppContext.getInstance().getScene().getEntityIndexOf(getEntity()), getEntity().isVisible(), getEntity().isSelected(), false, camera.getWorldPosition()));
-    }
-
-    @Override
-    public int draw(DrawConfiguration drawConfiguration) {
+    public static int staticDraw(DrawConfiguration drawConfiguration) {
         if(!drawConfiguration.isVisible()) {
             return 0;
         }
@@ -108,26 +87,16 @@ public class ModelComponent extends BaseComponent implements Drawable, Serializa
         currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
         currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
 
-        // TODO: Implement strategy pattern
-        Vector3f centerWorld = getEntity().getCenterWorld();
-        Vector3f.sub(drawConfiguration.getCameraWorldPosition(), centerWorld, distance);
-        float distanceToCamera = distance.length();
-        if(LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.finer("boundingSphere " + model.getBoundingSphereRadius());
-            LOGGER.finer("distanceToCamera " + distanceToCamera);
-        }
-        boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f*model.getBoundingSphereRadius();
-        Material material = getMaterial();
-        material.setTexturesActive(currentProgram, isInReachForTextureLoading);
+        Material material = drawConfiguration.getMaterial();
+        material.setTexturesActive(currentProgram, drawConfiguration.isInReachForTextureLoading());
 
-        if(getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
         if (drawConfiguration.isDrawLines()) {
-            return vertexBuffer.drawDebug(2, ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(drawConfiguration.getExtract(), this));
+            return drawConfiguration.getVertexBuffer().drawDebug(2, 0);//ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(drawConfiguration.getExtract(), this));
         } else {
-            //return vertexBuffer.draw(Config.MODEL_LOD_STRATEGY.getIndexBufferIndex(extract, this));
-            return vertexBuffer.drawInstanced(getEntity().getInstanceCount());
+            return drawConfiguration.getVertexBuffer().drawInstanced(drawConfiguration.getInstanceCount());
         }
     }
 
