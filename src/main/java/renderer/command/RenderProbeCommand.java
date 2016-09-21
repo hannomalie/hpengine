@@ -21,10 +21,6 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	
 	@Override
 	public Result execute(AppContext appContext) {
-
-		// TODO: Remove this f***
-		probe.draw(urgent, new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false, appContext.getScene().getMinMax()[0], appContext.getScene().getMinMax()[1], null));
-
 		return new Result();
 	}
 

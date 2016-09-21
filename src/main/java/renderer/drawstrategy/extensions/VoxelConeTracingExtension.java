@@ -4,7 +4,7 @@ import camera.Camera;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
-import engine.DrawConfiguration;
+import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -16,6 +16,7 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
+import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.FirstPassResult;
 import renderer.drawstrategy.SecondPassResult;
 import renderer.material.MaterialFactory;
@@ -164,7 +165,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         if(lightInjectedFramesAgo == null) {
             lightInjectedFramesAgo = 0;
         }
-        boolean sceneContainsDynamicObjects = renderExtract.entities.stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
+        boolean sceneContainsDynamicObjects = renderExtract.perEntityInfos().stream().anyMatch(e -> e.getUpdate().equals(Entity.Update.DYNAMIC));
         boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved)) || !renderExtract.sceneInitiallyDrawn;
         boolean needsLightInjection = lightInjectedFramesAgo < bounces-1;
         if(entityOrDirectionalLightHasMoved) {
@@ -229,24 +230,21 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 OpenGLContext.getInstance().disable(CULL_FACE);
                 GL11.glColorMask(false, false, false, false);
 
-                for (Entity entity : renderExtract.entities) {
-                    if (entity.getComponents().containsKey("ModelComponent")) {
-                        boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                        if (renderExtract.sceneInitiallyDrawn && isStatic) {
-                            continue;
-                        }
-                        if(!entityOrDirectionalLightHasMoved) { continue; }
-                        lightInjectedFramesAgo = 0;
-                        ModelComponent modelComponent = ModelComponent.class.cast(entity.getComponents().get("ModelComponent"));
-                        voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
-                        int currentVerticesCount = ModelComponent.staticDraw(new DrawConfiguration(renderExtract, orthoCam, null, voxelizer, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, orthoCam.getWorldPosition() , modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount()));
+                for (PerEntityInfo entity : renderExtract.perEntityInfos()) {
+                    boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
+                    if (renderExtract.sceneInitiallyDrawn && isStatic) {
+                        continue;
+                    }
+                    if(!entityOrDirectionalLightHasMoved) { continue; }
+                    lightInjectedFramesAgo = 0;
+                    voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
+                    int currentVerticesCount = DrawStrategy.draw(entity);
 
-                        firstPassResult.verticesDrawn += currentVerticesCount;
-                        if (currentVerticesCount > 0) {
-                            firstPassResult.entitiesDrawn++;
-                        } else if (currentVerticesCount < 0) {
-                            firstPassResult.notYetUploadedVertexBufferDrawn = true;
-                        }
+                    firstPassResult.verticesDrawn += currentVerticesCount;
+                    if (currentVerticesCount > 0) {
+                        firstPassResult.entitiesDrawn++;
+                    } else if (currentVerticesCount < 0) {
+                        firstPassResult.notYetUploadedVertexBufferDrawn = true;
                     }
                 }
                 GPUProfiler.end();

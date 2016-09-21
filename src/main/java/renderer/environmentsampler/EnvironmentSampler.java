@@ -5,7 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
-import engine.DrawConfiguration;
+import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.QuadVertexBuffer;
 import engine.model.Transformable;
@@ -22,6 +22,7 @@ import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
+import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.light.*;
 import renderer.material.MaterialFactory;
@@ -337,9 +338,9 @@ public class EnvironmentSampler extends Camera {
         for (Entity entity : entities) {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-                DrawConfiguration drawConfiguration =
-                        new DrawConfiguration(extract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount());
-                ModelComponent.staticDraw(drawConfiguration);
+                PerEntityInfo perEntityInfo =
+                        new PerEntityInfo(camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1]);
+                DrawStrategy.draw(perEntityInfo);
             }
         }
 		GPUProfiler.end();

@@ -1,6 +1,5 @@
 package component;
 
-import engine.DrawConfiguration;
 import engine.model.DataChannels;
 import engine.model.Model;
 import engine.model.VertexBuffer;
@@ -8,8 +7,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.OpenGLContext;
-import renderer.constants.GlCap;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
@@ -72,32 +69,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         this.materialName = materialName;
         this.model = model;
         createFloatArray(model);
-    }
-
-    public static int staticDraw(DrawConfiguration drawConfiguration) {
-        if(!drawConfiguration.isVisible()) {
-            return 0;
-        }
-
-        if (drawConfiguration.getFirstPassProgram() == null) {
-            return 0;
-        }
-        Program currentProgram = drawConfiguration.getFirstPassProgram();
-
-        currentProgram.setUniform("entityIndex", drawConfiguration.getEntityIndex());
-        currentProgram.setUniform("entityBaseIndex", drawConfiguration.getEntityBaseIndex());
-
-        Material material = drawConfiguration.getMaterial();
-        material.setTexturesActive(currentProgram, drawConfiguration.isInReachForTextureLoading());
-
-        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-            OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
-        }
-        if (drawConfiguration.isDrawLines()) {
-            return drawConfiguration.getVertexBuffer().drawDebug(2, 0);//ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(drawConfiguration.getExtract(), this));
-        } else {
-            return drawConfiguration.getVertexBuffer().drawInstanced(drawConfiguration.getInstanceCount());
-        }
     }
 
     private transient Vector3f distance = new Vector3f();

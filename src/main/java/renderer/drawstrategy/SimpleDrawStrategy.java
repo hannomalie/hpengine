@@ -6,7 +6,7 @@ import config.Config;
 import container.EntitiesContainer;
 import engine.AppContext;
 import engine.CountingCompletionService;
-import engine.DrawConfiguration;
+import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import org.lwjgl.opengl.*;
@@ -153,8 +153,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return new DrawResult(firstPassResult, secondPassResult);
     }
 
-    ExecutorService pool = Executors.newFixedThreadPool(4);
-    final CountingCompletionService<DrawConfiguration> completionService = new CountingCompletionService<>(pool);
     public FirstPassResult drawFirstPass(AppContext appContext, RenderExtract renderExtract) {
         firstPassResult.reset();
 
@@ -168,8 +166,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.depthFunc(LESS);
         openGLContext.disable(GlCap.BLEND);
         GPUProfiler.end();
-
-        List<Entity> visibleEntities = renderExtract.visibleEntities;
 
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
         FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
@@ -197,38 +193,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             GPUProfiler.end();
 
-            Vector3f cameraWorldPosition = camera.getWorldPosition();
-
-            List<Future<DrawConfiguration>> resultList = new ArrayList<>();
-
-            for (Entity entity : visibleEntities) {
-                if (entity.getComponents().containsKey("ModelComponent")) {
-                    completionService.submit(() -> {
-                        // TODO: Implement strategy pattern
-                        Vector3f centerWorld = entity.getCenterWorld();
-                        Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
-                        float distanceToCamera = distance.length();
-                        ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-                        boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
-
-                        return new DrawConfiguration(renderExtract, camera, null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount());
-
-                    });
-                }
-            }
-
-            while(completionService.hasUncompletedTasks()) {
-
+            for(PerEntityInfo info : renderExtract.perEntityInfos()) {
                 OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
-                DrawConfiguration drawConfiguration = null;
-                try {
-                    drawConfiguration = completionService.take().get();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-                int currentVerticesCount = ModelComponent.staticDraw(drawConfiguration);
+                int currentVerticesCount = DrawStrategy.draw(info);
                 firstPassResult.verticesDrawn += currentVerticesCount;
                 if (currentVerticesCount > 0) {
                     firstPassResult.entitiesDrawn++;

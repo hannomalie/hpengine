@@ -366,8 +366,9 @@ public class DebugFrame {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
                             AppContext appContext = AppContext.getInstance();
 							// TODO: Remove this f***
-							EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,true, AppContext.getInstance().getScene().getMinMax()[0], AppContext.getInstance().getScene().getMinMax()[1], null));
-							return new Result<>(true);
+                            EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
+                            Renderer.getInstance().addRenderProbeCommand(probe, true);
+                            return new Result<>(true);
 						});
 
 						return future.get(5, TimeUnit.MINUTES);

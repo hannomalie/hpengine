@@ -3,6 +3,7 @@ package renderer.drawstrategy.extensions;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import engine.AppContext;
+import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import event.DirectionalLightHasMovedEvent;
@@ -72,7 +73,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         OpenGLContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
-        List<Entity> visibles = renderExtract.entities.stream().filter(e -> e.isInFrustum(directionalLight.getCamera()) || e.getInstanceCount() > 1).collect(Collectors.toList());Collectors.toList();
+        List<PerEntityInfo> visibles = renderExtract.perEntityInfos();
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
@@ -81,23 +82,20 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", directionalLight.getCamera().getViewMatrixAsBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
 
-        for (Entity e : visibles) {
-            e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-
-                if (modelComponent.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-                    OpenGLContext.getInstance().disable(CULL_FACE);
-                } else {
-                    OpenGLContext.getInstance().enable(CULL_FACE);
-                }
+        for (PerEntityInfo e : visibles) {
+            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+                OpenGLContext.getInstance().disable(CULL_FACE);
+            } else {
+                OpenGLContext.getInstance().enable(CULL_FACE);
+            }
 //                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-                modelComponent.getMaterial().setTexturesActive(directionalShadowPassProgram);
-                directionalShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-                directionalShadowPassProgram.setUniform("entityIndex", AppContext.getInstance().getScene().getEntities().indexOf(e));
-                directionalShadowPassProgram.setUniform("entityBaseIndex", AppContext.getInstance().getScene().getEntityIndexOf(e));
-                directionalShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+            e.getMaterial().setTexturesActive(directionalShadowPassProgram);
+            directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+            directionalShadowPassProgram.setUniform("entityIndex", e.getEntityIndex());
+            directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBaseIndex());
+            directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
-                modelComponent.getVertexBuffer().drawInstanced(e.getInstanceCount());
-            });
+            e.getVertexBuffer().drawInstanced(e.getInstanceCount());
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;

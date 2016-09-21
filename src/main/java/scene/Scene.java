@@ -1,6 +1,5 @@
 package scene;
 
-import camera.Camera;
 import container.EntitiesContainer;
 import container.SimpleContainer;
 import engine.AppContext;
@@ -13,6 +12,7 @@ import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
+import renderer.Renderer;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.PointLight;
@@ -61,7 +61,8 @@ public class Scene implements LifeCycle, Serializable {
                 try {
                     AppContext appContext = AppContext.getInstance();
 					// TODO: Remove this f***
-                    EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight()).draw(new RenderExtract().init(appContext.getActiveCamera(), appContext.getScene().getEntities(), appContext.getScene().getDirectionalLight(),true,true,true,false, new Vector4f(min), new Vector4f(max), null));
+                    EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
+                    Renderer.getInstance().addRenderProbeCommand(probe);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

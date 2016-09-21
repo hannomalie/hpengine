@@ -1,35 +1,38 @@
 package engine;
 
 import camera.Camera;
+import engine.model.Entity;
 import engine.model.VertexBuffer;
 import org.lwjgl.util.vector.Vector3f;
-import renderer.RenderExtract;
+import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
 import shader.Program;
 
 import java.nio.FloatBuffer;
 
-public class DrawConfiguration {
-    private final RenderExtract extract;
+public class PerEntityInfo {
     private final Camera camera;
     private final FloatBuffer modelMatrix;
-    private final Program firstPassProgram;
+    private final Program program;
     private final int entityIndex;
     private final int entityBaseIndex;
     private final boolean isVisible;
     private final boolean isSelected;
     private final boolean drawLines;
+    private final Vector4f minWorld;
+    private final Vector4f maxWorld;
     private Vector3f cameraWorldPosition;
     private Material material;
-    private boolean inReachForTextureLoading;
+    private boolean isInReachForTextureStreaming;
     private VertexBuffer vertexBuffer;
     private int instanceCount;
+    private boolean visibleForCamera;
+    private Entity.Update update;
 
-    public DrawConfiguration(RenderExtract extract, Camera camera, FloatBuffer modelMatrix, Program firstPassProgram, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount) {
-        this.extract = extract;
+    public PerEntityInfo(Camera camera, FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld) {
         this.camera = camera;
         this.modelMatrix = modelMatrix;
-        this.firstPassProgram = firstPassProgram;
+        this.program = program;
         this.entityIndex = entityIndex;
         this.entityBaseIndex = entityBaseIndex;
         this.isVisible = isVisible;
@@ -39,10 +42,11 @@ public class DrawConfiguration {
         this.material = material;
         this.vertexBuffer = vertexBuffer;
         this.instanceCount = instanceCount;
-    }
-
-    public RenderExtract getExtract() {
-        return extract;
+        this.isInReachForTextureStreaming = isInReachForTextureStreaming;
+        this.visibleForCamera = visibleForCamera;
+        this.update = update;
+        this.minWorld = minWorld;
+        this.maxWorld = maxWorld;
     }
 
     public Camera getCamera() {
@@ -53,8 +57,8 @@ public class DrawConfiguration {
         return modelMatrix;
     }
 
-    public Program getFirstPassProgram() {
-        return firstPassProgram;
+    public Program getProgram() {
+        return program;
     }
 
     public int getEntityIndex() {
@@ -67,6 +71,9 @@ public class DrawConfiguration {
 
     public boolean isVisible() {
         return isVisible;
+    }
+    public boolean isVisibleForCamera() {
+        return visibleForCamera;
     }
 
     public boolean isSelected() {
@@ -86,7 +93,7 @@ public class DrawConfiguration {
     }
 
     public boolean isInReachForTextureLoading() {
-        return inReachForTextureLoading;
+        return isInReachForTextureStreaming;
     }
 
     public VertexBuffer getVertexBuffer() {
@@ -95,5 +102,21 @@ public class DrawConfiguration {
 
     public int getInstanceCount() {
         return instanceCount;
+    }
+
+    public Entity.Update getUpdate() {
+        return update;
+    }
+
+    public Vector4f getMinWorld() {
+        return minWorld;
+    }
+
+    public Vector4f getMaxWorld() {
+        return maxWorld;
+    }
+
+    public boolean isInReachForTextureStreaming() {
+        return isInReachForTextureStreaming;
     }
 }

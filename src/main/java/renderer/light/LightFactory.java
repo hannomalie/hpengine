@@ -5,6 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
+import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.Model;
 import engine.model.OBJLoader;
@@ -406,7 +407,7 @@ public class LightFactory {
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
 			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
-			List<Entity> visibles = new ArrayList<>(renderExtract.entities);
+			List<PerEntityInfo> visibles = new ArrayList<>(renderExtract.perEntityInfos());
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
             pointCubeShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
@@ -433,15 +434,13 @@ public class LightFactory {
 			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", AppContext.getInstance().getActiveCamera().getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
-			for (Entity e : visibles) {
-				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					pointCubeShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-					modelComponent.getMaterial().setTexturesActive(pointCubeShadowPassProgram);
-					pointCubeShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-					pointCubeShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+			for (PerEntityInfo e : visibles) {
+                pointCubeShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrix());
+                e.getMaterial().setTexturesActive(pointCubeShadowPassProgram);
+                pointCubeShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
+                pointCubeShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
-					modelComponent.getVertexBuffer().draw();
-				});
+                e.getVertexBuffer().draw();
 			}
 			GPUProfiler.end();
 		}

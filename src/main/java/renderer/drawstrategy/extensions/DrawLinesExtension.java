@@ -2,6 +2,7 @@ package renderer.drawstrategy.extensions;
 
 import config.Config;
 import engine.AppContext;
+import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
@@ -43,13 +44,10 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
 
-            for (Entity entity : renderExtract.visibleEntities) {
-                if(entity.getComponents().containsKey("ModelComponent")){// && entity.getName().equals("sponza_322")) {
-                    Vector4f[] minMax = entity.getMinMaxWorld();
-                    Vector3f min = new Vector3f(minMax[0].x, minMax[0].y, minMax[0].z);
-                    Vector3f max = new Vector3f(minMax[1].x, minMax[1].y, minMax[1].z);
-                    Renderer.getInstance().batchLine(min, max);
-                }
+            for (PerEntityInfo entity : renderExtract.perEntityInfos()) {
+                Vector3f min = new Vector3f(entity.getMinWorld().x, entity.getMinWorld().y, entity.getMinWorld().z);
+                Vector3f max = new Vector3f(entity.getMaxWorld().x, entity.getMaxWorld().y, entity.getMaxWorld().z);
+                Renderer.getInstance().batchLine(min, max);
             }
             Renderer.getInstance().drawLines(linesProgram);
 

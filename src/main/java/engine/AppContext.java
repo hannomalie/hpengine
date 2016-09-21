@@ -4,6 +4,7 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
+import component.ModelComponent;
 import component.PhysicsComponent;
 import config.Config;
 import engine.input.Input;
@@ -37,6 +38,7 @@ import renderer.material.MaterialInfo;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
+import shader.ProgramFactory;
 import texture.Texture;
 import util.gui.DebugFrame;
 import util.script.ScriptManager;
@@ -52,6 +54,9 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -60,6 +65,10 @@ public class AppContext implements Extractor<RenderExtract> {
     public static int WINDOW_HEIGHT = Config.HEIGHT;
 
     private static volatile AppContext instance = null;
+
+
+    private final ExecutorService pool = Executors.newFixedThreadPool(4);
+    private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
     private TimeStepThread thread;
     private volatile boolean frameFinished = true;
@@ -508,12 +517,15 @@ public class AppContext implements Extractor<RenderExtract> {
 
 
         if((entityHasMoved || entityAdded) && scene != null) {
-            EntityFactory.getInstance().bufferEntities(); entityAdded = false;
+            EntityFactory.getInstance().bufferEntities();
+            entityAdded = false;
             directionalLightNeedsShadowMapRedraw = true;
         }
-        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult);
+        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, getPerEntityInfos(camera));
         if (Renderer.getInstance().isFrameFinished()) {
+
             OpenGLContext.getInstance().blockUntilEmpty();
+
             OpenGLContext.getInstance().execute(() -> {
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
@@ -528,6 +540,39 @@ public class AppContext implements Extractor<RenderExtract> {
         }
     }
 
+    public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
+        Vector3f cameraWorldPosition = camera.getWorldPosition();
+        for (Entity entity : scene.getEntities()) {
+            if (entity.getComponents().containsKey("ModelComponent")) {
+                completionService.submit(() -> {
+                    // TODO: Implement strategy pattern
+                    Vector3f centerWorld = entity.getCenterWorld();
+                    Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
+                    float distanceToCamera = distance.length();
+                    ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
+                    boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
+
+                    boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+                    return new PerEntityInfo(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1]);
+                });
+            }
+        }
+
+        List<PerEntityInfo> perEntityInfos= new ArrayList<>();
+        while(completionService.hasUncompletedTasks()) {
+            PerEntityInfo perEntityInfo = null;
+            try {
+                perEntityInfo = completionService.take().get();
+                perEntityInfos.add(perEntityInfo);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        return perEntityInfos;
+    }
+
     @Override
     public void resetState(RenderExtract currentExtract) {
         entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
@@ -536,8 +581,8 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     @Override
-    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult) {
-        return new RenderExtract().init(extractedCamera, scene.getEntities(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
+    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos) {
+        return new RenderExtract().init(extractedCamera, directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
     }
 
     JFrame frame;

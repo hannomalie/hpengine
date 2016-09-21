@@ -2,8 +2,8 @@ package renderer;
 
 import config.Config;
 import engine.AppContext;
+import engine.PerEntityInfo;
 import engine.Transform;
-import engine.graphics.query.GLSamplesPassedQuery;
 import engine.input.Input;
 import engine.model.*;
 import event.PointLightMovedEvent;
@@ -12,7 +12,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import renderer.command.Command;
 import renderer.command.RenderProbeCommandQueue;
 import renderer.command.Result;
@@ -34,7 +33,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.OpenGLStopWatch;
 import util.stopwatch.ProfilingTask;
-import util.stopwatch.StopWatch;
 
 import javax.vecmath.Vector2f;
 import java.io.File;

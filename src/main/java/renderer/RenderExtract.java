@@ -1,61 +1,40 @@
 package renderer;
 
 import camera.Camera;
-import config.Config;
+import engine.PerEntityInfo;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.drawstrategy.DrawResult;
 import renderer.light.DirectionalLight;
-import renderer.material.MaterialFactory;
-import util.stopwatch.GPUProfiler;
 
 import java.util.*;
 
 public class RenderExtract {
+    private DrawResult latestDrawResult;
     public boolean anEntityHasMoved;
     public boolean directionalLightNeedsShadowMapRender;
     public Camera camera = new Camera();
-    public List<Entity> entities = new ArrayList<>();
-    public List<Entity> visibleEntities = new ArrayList<>();
     public DirectionalLight directionalLight = new DirectionalLight();
     public boolean anyPointLightHasMoved;
     public boolean sceneInitiallyDrawn;
     public Vector4f sceneMin = new Vector4f();
     public Vector4f sceneMax = new Vector4f();
     private Map properties = new HashMap<>();
+    private List<PerEntityInfo> perEntityInfos;
 
     /**
      * Copy constructor
      * @param source
      */
     public RenderExtract(RenderExtract source) {
-        this.anEntityHasMoved = source.anEntityHasMoved;
-        this.directionalLightNeedsShadowMapRender = source.directionalLightNeedsShadowMapRender;
-        this.camera = source.camera;
-        this.entities = source.entities;
-        this.visibleEntities = source.visibleEntities;
-        this.directionalLight = source.directionalLight;
-        this.anyPointLightHasMoved = source.anyPointLightHasMoved;
-        this.sceneInitiallyDrawn = source.sceneInitiallyDrawn;
-        this.sceneMin = source.sceneMin;
-        this.sceneMax = source.sceneMax;
-        this.properties.putAll(properties);
+        init(source.camera, source.directionalLight, source.anEntityHasMoved, source.directionalLightNeedsShadowMapRender, source.anyPointLightHasMoved, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.perEntityInfos);
     }
 
     public RenderExtract() {
     }
 
-    public RenderExtract init(Camera camera, List<Entity> entities, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult) {
+    public RenderExtract init(Camera camera, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos) {
         this.camera.init(camera);
-        this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
-        visibleEntities.clear();
-        if (Config.useFrustumCulling) {
-            for (int i = 0; i < entities.size(); i++) {
-                if (entities.get(i).isInFrustum(camera) || entities.get(i).getInstanceCount() > 1) { // TODO: Better culling for instances
-                    visibleEntities.add(entities.get(i));
-                }
-            }
-        }
         this.directionalLight = directionalLight;
         this.anEntityHasMoved = anEntityHasMoved;
         this.directionalLightNeedsShadowMapRender = directionalLightNeedsShadowMapRender;
@@ -66,7 +45,12 @@ public class RenderExtract {
         if(latestDrawResult != null) {
             this.properties.putAll(latestDrawResult.getProperties());
         }
-
+        this.perEntityInfos = Collections.unmodifiableList(perEntityInfos);
+        this.latestDrawResult = latestDrawResult;
         return this;
+    }
+
+    public List<PerEntityInfo> perEntityInfos() {
+        return perEntityInfos;
     }
 }
