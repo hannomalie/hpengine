@@ -149,7 +149,7 @@ public class EnvironmentProbeFactory {
 		}
 	}
 	
-	public void drawAlternating(Entity camera, DirectionalLight light, int frameCount) {
+	public void drawAlternating(Entity camera) {
 		if(!Config.DRAW_PROBES) { return; }
 
 		prepareProbeRendering();

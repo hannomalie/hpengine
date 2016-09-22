@@ -5,9 +5,7 @@ import component.ModelComponent;
 import config.Config;
 import container.EntitiesContainer;
 import engine.AppContext;
-import engine.CountingCompletionService;
 import engine.PerEntityInfo;
-import engine.model.Entity;
 import engine.model.EntityFactory;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
@@ -37,7 +35,6 @@ import util.stopwatch.GPUProfiler;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
 import static renderer.constants.BlendMode.Factor.ONE;
@@ -119,7 +116,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         if (!Config.DEBUGDRAW_PROBES) {
-            environmentProbeFactory.drawAlternating(renderExtract.camera, light, Renderer.getInstance().getFrameCount());
+            environmentProbeFactory.drawAlternating(renderExtract.camera);
             Renderer.getInstance().executeRenderProbeCommands(renderExtract);
             GPUProfiler.start("Shadowmap pass");
             {
