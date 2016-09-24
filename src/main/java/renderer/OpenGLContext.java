@@ -354,6 +354,10 @@ public final class OpenGLContext {
         execute(runnable, true);
     }
     public Exception execute(Runnable runnable, boolean andBlock) {
+        if(util.Util.isOpenGLThread()) {
+            runnable.run();
+            return null;
+        }
         CompletableFuture<Object> future = execute(() -> {
             try {
                 runnable.run();
