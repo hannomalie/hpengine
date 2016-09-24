@@ -2,7 +2,6 @@ package renderer;
 
 import config.Config;
 import engine.AppContext;
-import engine.PerEntityInfo;
 import engine.Transform;
 import engine.input.Input;
 import engine.model.*;
@@ -172,7 +171,7 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer(AppContext.getInstance()));
+		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer());
 
 		OpenGLContext.getInstance().execute(() -> {
 			setMaxTextureUnits(GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));

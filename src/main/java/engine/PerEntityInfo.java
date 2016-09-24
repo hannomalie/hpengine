@@ -21,15 +21,18 @@ public class PerEntityInfo {
     private final boolean drawLines;
     private final Vector4f minWorld;
     private final Vector4f maxWorld;
-    private Vector3f cameraWorldPosition;
-    private Material material;
+    private final Vector3f cameraWorldPosition;
+    private final Material material;
+    private final int baseVertex;
     private boolean isInReachForTextureStreaming;
-    private VertexBuffer vertexBuffer;
+    private final VertexBuffer vertexBuffer;
     private int instanceCount;
     private boolean visibleForCamera;
-    private Entity.Update update;
+    private final Entity.Update update;
+    private int indexCount;
+    private int indexOffset;
 
-    public PerEntityInfo(Camera camera, FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld) {
+    public PerEntityInfo(Camera camera, FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
         this.camera = camera;
         this.modelMatrix = modelMatrix;
         this.program = program;
@@ -47,6 +50,9 @@ public class PerEntityInfo {
         this.update = update;
         this.minWorld = minWorld;
         this.maxWorld = maxWorld;
+        this.indexCount = indexCount;
+        this.indexOffset = indexOffset;
+        this.baseVertex = baseVertex;
     }
 
     public Camera getCamera() {
@@ -118,5 +124,18 @@ public class PerEntityInfo {
 
     public boolean isInReachForTextureStreaming() {
         return isInReachForTextureStreaming;
+    }
+
+
+    public int getIndexCount() {
+        return indexCount;
+    }
+
+    public int getIndexOffset() {
+        return indexOffset;
+    }
+
+    public int getBaseVertex() {
+        return baseVertex;
     }
 }

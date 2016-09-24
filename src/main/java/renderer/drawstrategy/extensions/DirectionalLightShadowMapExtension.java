@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
+import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.FirstPassResult;
 import renderer.light.DirectionalLight;
 import renderer.material.Material;
@@ -83,11 +84,11 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
 
         for (PerEntityInfo e : visibles) {
-            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-                OpenGLContext.getInstance().disable(CULL_FACE);
-            } else {
-                OpenGLContext.getInstance().enable(CULL_FACE);
-            }
+//            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+//                OpenGLContext.getInstance().disable(CULL_FACE);
+//            } else {
+//                OpenGLContext.getInstance().enable(CULL_FACE);
+//            }
 //                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
             e.getMaterial().setTexturesActive(directionalShadowPassProgram);
             directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
@@ -95,7 +96,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBaseIndex());
             directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
-            e.getVertexBuffer().drawInstanced(e.getInstanceCount());
+            DrawStrategy.draw(e, directionalShadowPassProgram);
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;

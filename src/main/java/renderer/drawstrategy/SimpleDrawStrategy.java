@@ -190,6 +190,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             GPUProfiler.end();
 
+            ModelComponent.getGlobalIndexBuffer().bind();
             for(PerEntityInfo info : renderExtract.perEntityInfos()) {
                 OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
                 int currentVerticesCount = DrawStrategy.draw(info);
@@ -200,6 +201,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     firstPassResult.notYetUploadedVertexBufferDrawn = true;
                 }
             }
+            ModelComponent.getGlobalIndexBuffer().unbind();
         }
         GPUProfiler.end();
 

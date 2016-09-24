@@ -81,6 +81,8 @@ import java.util.logging.Logger;
  */
 public class LodGenerator {
 
+    public static int MAX_LOD_PER_MESH = 5;
+
     private static final Logger LOGGER = Logger.getLogger(LodGenerator.class.getName());
     private static final float NEVER_COLLAPSE_COST = Float.MAX_VALUE;
     private static final float UNINITIALIZED_COLLAPSE_COST = Float.POSITIVE_INFINITY;

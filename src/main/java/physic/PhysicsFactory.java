@@ -124,7 +124,7 @@ public class PhysicsFactory {
         }
 
         float[] vertices = modelComponent.getVertexBuffer().getValues(DataChannels.POSITION3);
-        int[] indices = modelComponent.getVertexBuffer().getIndices();
+        int[] indices = modelComponent.getIndices();
         ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 4);
         ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
 

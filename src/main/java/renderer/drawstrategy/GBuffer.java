@@ -62,7 +62,7 @@ public class GBuffer {
 
 	private final int exposureIndex = 0;
 
-    public GBuffer(AppContext appContext) {
+    public GBuffer() {
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
 						.add(5, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))

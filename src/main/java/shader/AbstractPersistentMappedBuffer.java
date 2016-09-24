@@ -14,7 +14,8 @@ import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer> implements OpenGLBuffer {
     protected final int target;
     private int id;
-    protected BUFFER_TYPE buffer;
+    protected volatile BUFFER_TYPE buffer;
+    private boolean bound = false;
 
     public AbstractPersistentMappedBuffer(int target) {
         this.target = target;
@@ -41,6 +42,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
 
     protected void setCapacityInBytes(int requestedCapacity) {
         int capacityInBytes = requestedCapacity;
+        if(capacityInBytes <= 0) { capacityInBytes = 10; }
 
         if(buffer != null) {
             boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes() < capacityInBytes;
@@ -54,35 +56,41 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
                         glDeleteBuffers(id);
                         id = -1;
                     }
+                    unbind();
                 });
             } else {
                 return;
             }
         }
         {
+            int finalCapacityInBytes = 2*capacityInBytes;
             OpenGLContext.getInstance().execute(() -> {
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-                GL44.glBufferStorage(target, capacityInBytes, flags);
-                buffer = mapBuffer(capacityInBytes, flags);
-
+                GL44.glBufferStorage(target, finalCapacityInBytes, flags);
+                buffer = mapBuffer(finalCapacityInBytes, flags);
+                unbind();
             });
         }
     }
 
-    abstract protected BUFFER_TYPE mapBuffer(int capacity, int flags);
+    abstract protected BUFFER_TYPE mapBuffer(int capacityInBytes, int flags);
 
     @Override
     public void bind() {
+//        TODO: Make this somehow possible
+//        if(bound) {return;}
         OpenGLContext.getInstance().execute(() -> {
             if(id <= 0) {id = glGenBuffers(); }
             glBindBuffer(target, id);
         });
+        bound = true;
     }
 
     @Override
     public void unbind() {
         OpenGLContext.getInstance().execute(() -> glBindBuffer(target, 0));
+        bound = false;
     }
 
     @Override

@@ -54,7 +54,8 @@ public class Scene implements LifeCycle, Serializable {
 //        entityContainer = new Octree(new Vector3f(), 600, 5);
         entityContainer = new SimpleContainer();
 		entityContainer.init();
-		entities.forEach(entity -> entity.init());
+        entities.forEach(entity -> entity.init());
+        entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene()));
 		addAll(entities);
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().execute(() -> {
@@ -191,6 +192,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void addAll(List<Entity> entities) {
 //		initializationWrapped(() -> {
 			entityContainer.insert(entities);
+            entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene()));
         calculateMinMax(entities);
 //			return null;
 //		});
@@ -198,6 +200,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void add(Entity entity) {
 //		initializationWrapped(() -> {
 			entityContainer.insert(entity.getAllChildrenAndSelf());
+            entity.getComponents().values().forEach(c -> c.registerInScene());
         calculateMinMax(entities);
 //			return null;
 //		});

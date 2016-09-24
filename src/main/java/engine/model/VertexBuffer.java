@@ -2,20 +2,14 @@ package engine.model;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 import shader.AbstractPersistentMappedBuffer;
 import shader.Bufferable;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
@@ -24,25 +18,8 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
 
-    private transient volatile boolean uploaded = false;
-    private boolean hasIndexBuffer;
-
-    public void setIndexBuffers(List<IntBuffer> indexBuffers) {
-        this.indexBuffers = indexBuffers;
-        hasIndexBuffer = true;
-    }
-
-    public int[] getIndices() {
-        int[] dst = new int[indexBuffers.get(0).capacity()];
-        indexBuffers.get(0).rewind();
-        indexBuffers.get(0).get(dst);
-        return dst;
-    }
-
-    public int getTriangleCount() {
-        return triangleCount;
-    }
-
+    private transient volatile boolean uploaded = true;
+    private int maxLod;
     public enum Usage {
 		DYNAMIC(GL15.GL_DYNAMIC_DRAW),
 		STATIC(GL15.GL_STATIC_DRAW);
@@ -58,49 +35,39 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		}
 	}
 
-    private volatile int[] indexBufferNames;
 	private volatile VertexArrayObject vertexArrayObject;
-    private List<IntBuffer> indexBuffers = new ArrayList<>();
 	private int verticesCount;
     private int triangleCount;
 	public EnumSet<DataChannels> channels;
 
     public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
         super(GL15.GL_ARRAY_BUFFER);
-        setInternals(values, channels, Usage.STATIC);
+        setInternals(values, channels);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
-        this(buffer, channels, Usage.STATIC);
-	}
-	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
         super(GL15.GL_ARRAY_BUFFER);
-        setInternals(buffer, channels, usage);
+        setInternals(buffer, channels);
 	}
 
-    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IntBuffer ... indicesBuffer) {
+    public VertexBuffer(FloatBuffer verticesFloatBuffer, EnumSet<DataChannels> channels, IndexBuffer ... indicesBuffer) {
         this(verticesFloatBuffer, channels);
-        setIndexBuffers(Arrays.asList(indicesBuffer));
     }
 
-    private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels, Usage usage) {
+    private void setInternals(FloatBuffer buffer, EnumSet<DataChannels> channels) {
         float[] values = new float[buffer.capacity()];
         buffer.get(values);
-        setInternals(values, channels, usage);
+        setInternals(values, channels);
     }
-    private void setInternals(float[] values, EnumSet<DataChannels> channels, Usage usage) {
+
+    private void setInternals(float[] values, EnumSet<DataChannels> channels) {
         this.channels = channels;
-        setCapacityInBytes(values.length*getPrimitiveSizeInBytes());
         OpenGLContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         });
+        setCapacityInBytes(values.length * getPrimitiveSizeInBytes());
         this.verticesCount = calculateVerticesCount(buffer, channels);
-//        IntBuffer indexBuffer = BufferUtils.createIntBuffer(verticesCount);
-//        this.indexBuffers.add(indexBuffer);
-//        for (int i = 0; i < verticesCount; i++) {
-//            indexBuffer.put(i, i);
-//        }
-//        setHasIndexBuffer(true);
+        setMaxLod(1);
         this.triangleCount = verticesCount / 3;
         putValues(values);
     }
@@ -151,6 +118,9 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         return verticesCount;
     }
     public static int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
+        if(floatBuffer == null) {
+            return 0;
+        }
         floatBuffer.rewind();
         float[] floatArray = new float[floatBuffer.capacity()];
         floatBuffer.get(floatArray);
@@ -175,36 +145,22 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     public VertexBuffer upload() {
         buffer.rewind();
-		uploaded = false;
         OpenGLContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-
-            if (hasIndexBuffer) {
-                int indexBufferIndex = 0;
-                indexBufferNames = new int[indexBuffers.size()];
-                for(IntBuffer indexBuffer : indexBuffers) {
-                    setIndexBufferName(indexBufferIndex, GL15.glGenBuffers());
-                    GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBufferNames[indexBufferIndex]);
-                    indexBuffer.rewind();
-                    GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, Usage.STATIC.getValue());
-                    GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-                    indexBufferIndex++;
-                }
-            }
-
-            uploaded = true;
         }, false);
 
         return this;
     }
 
     protected FloatBuffer mapBuffer(int capacityInBytes, int flags)  {
-        return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asFloatBuffer();
-    }
-
-    private void setIndexBufferName(int indexBufferIndex, int indexBufferName) {
-        indexBufferNames[indexBufferIndex] = indexBufferName;
+        FloatBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asFloatBuffer();
+        if(buffer != null) {
+            buffer.rewind();
+            newBuffer.put(buffer);
+            newBuffer.rewind();
+        }
+        return newBuffer;
     }
 
     public void delete() {
@@ -214,37 +170,66 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	}
 
     public int draw() {
-        return draw(0);
+        return draw(null);
     }
-    public int draw(int lodLevel) {
+    public int draw(IndexBuffer indexBuffer) {
         if(!uploaded) { return -1; }
         bind();
-        return drawActually(lodLevel);
+        return drawActually(indexBuffer);
     }
 
-    private int drawActually(int lodLevel) {
+    /**
+     *
+     * @return triangleCount tha twas drawn
+     */
+    private int drawActually(IndexBuffer indexBuffer) {
         LOGGER.finest("drawActually called");
-        if(hasIndexBuffer) {
-            lodLevel = Math.min(indexBuffers.size() - 1, lodLevel);
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffers.get(lodLevel));
-            return indexBuffers.get(lodLevel).capacity()/3;
+        if(indexBuffer != null) {
+            indexBuffer.bind();
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer.getValues());
+            return indexBuffer.getValues().capacity()/3;
         } else {
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
             return verticesCount;
         }
     }
 
-    public int drawInstanced(int instanceCount) {
+    public int drawInstanced(IndexBuffer indexBuffer, int indexCount, int instanceCount, int indexOffset, int baseVertexIndex) {
         if(!uploaded) { return 0; }
         bind();
-        if(hasIndexBuffer) {
-            // TODO: use lod
-            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexBuffers.get(0), instanceCount);
+        if(indexBuffer != null) {
+            drawInstancedBaseVertex(indexBuffer, indexCount, instanceCount, indexOffset, baseVertexIndex);
         } else {
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
         }
 
         return verticesCount;
+    }
+
+
+    /**
+     *
+     *
+     * @param indexCount
+     * @param instanceCount
+     * @param indexOffset
+     * @param baseVertexIndex the integer index, not the byte offset
+     * @return
+     */
+    public int drawInstancedBaseVertex(IndexBuffer indexBuffer, int indexCount, int instanceCount, int indexOffset, int baseVertexIndex) {
+        if(!uploaded) { return 0; }
+        bind();
+        if(indexBuffer != null) {
+            // TODO: use lod
+            indexBuffer.bind();
+//            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexBuffers.get(0), instanceCount);
+//            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, baseVertexIndex, instanceCount);
+            GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, baseVertexIndex);
+        } else {
+            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
+        }
+
+        return indexCount/3;
     }
 
     @Override
@@ -284,6 +269,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     @Override
     public void putValues(FloatBuffer values) {
+        buffer.rewind();
         buffer.put(values);
     }
 
@@ -296,7 +282,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     public void putValues(int offset, FloatBuffer values) {
         if(values == buffer) { return; }
         if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
-        bind();
+//        bind();
         values.rewind();
         buffer.position(offset);
         buffer.put(values);
@@ -314,13 +300,14 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     @Override
     public void putValues(int offset, float... values) {
-        bind();
+//        bind();
         setCapacityInBytes((offset + values.length)* getPrimitiveSizeInBytes());
         buffer.position(offset);
         buffer.put(values);
+        buffer.rewind();
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-        verticesCount = values.length/totalElementsPerVertex;
+        verticesCount = (offset+values.length)/totalElementsPerVertex;
         triangleCount = verticesCount/3;
     }
 
@@ -350,33 +337,30 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         put(0, bufferable);
     }
 
-    public void drawAgain() {
+    public void drawAgain(IndexBuffer indexBuffer) {
         if(!uploaded) { return; }
-        drawActually(0);
+        drawActually(indexBuffer);
     }
 
     public int drawDebug() {
-        return drawDebug(0);
+        return drawDebug();
     }
 
-    public int drawDebug(int lodLevel) {
+    public int drawDebug(IndexBuffer indexBuffer) {
 		if(!uploaded) { return 0; }
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(1f);
         bind();
-        drawActually(lodLevel);
+        drawActually(indexBuffer);
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
         return verticesCount;
 	}
-    public int drawDebug(float lineWidth) {
-        return drawDebug(lineWidth, 0);
-    }
-    public int drawDebug(float lineWidth, int lodLevel) {
+    public int drawDebug(IndexBuffer indexBuffer, float lineWidth) {
 		if(!uploaded) { return 0; }
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 		GL11.glLineWidth(lineWidth);
 		bind();
-        drawActually(lodLevel);
+        drawActually(indexBuffer);
 		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 		return verticesCount;
 	}
@@ -433,11 +417,12 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         this.vertexArrayObject = vertexArrayObject;
     }
 
-    public void setIndexBufferNames(int indexBufferName) {
-        this.indexBufferNames[0] = indexBufferName;
+    public int getTriangleCount() {
+        return triangleCount;
     }
 
-    public void setHasIndexBuffer(boolean hasIndexBuffer) {
-        this.hasIndexBuffer = hasIndexBuffer;
+    public void setMaxLod(int maxLod) {
+        this.maxLod = maxLod;
     }
+
 }

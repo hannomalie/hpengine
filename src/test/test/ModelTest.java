@@ -33,8 +33,6 @@ public class ModelTest extends TestWithAppContext {
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
         VertexBuffer buffer = modelComponent.getVertexBuffer();
 
-        Assert.assertArrayEquals(expectedIndexBufferValues, buffer.getIndices());
-
         float[] expectedVerticesValues = new float[planeModel.getVertices().size() * 3];
         for(int i = 0; i < planeModel.getVertices().size(); i++) {
             Vector3f vertex = planeModel.getVertices().get(expectedIndexBufferValues[i]);
@@ -84,7 +82,6 @@ public class ModelTest extends TestWithAppContext {
 
 		Assert.assertEquals(8, buffer.getVerticesCount());
         Assert.assertEquals(12, buffer.getTriangleCount());
-        Assert.assertEquals(3*buffer.getTriangleCount(), buffer.getIndices().length);
 
 		float[] vertexData = buffer.getValues(DataChannels.POSITION3);
 		Assert.assertEquals(24*buffer.totalElementsPerVertex(), buffer.getVertexData().length);

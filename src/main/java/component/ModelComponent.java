@@ -1,12 +1,14 @@
 package component;
 
 import engine.model.DataChannels;
+import engine.model.IndexBuffer;
 import engine.model.Model;
 import engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import shader.Program;
@@ -17,6 +19,7 @@ import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class ModelComponent extends BaseComponent implements Serializable {
@@ -29,6 +32,30 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public boolean instanced = false;
 
     transient protected VertexBuffer vertexBuffer;
+    private static Object globalLock = new Object();
+    public static VertexBuffer globalVertexBuffer;
+    public static IndexBuffer globalIndexBuffer;
+    public static AtomicInteger currentBaseVertex = new AtomicInteger();
+    public static AtomicInteger currentIndexOffset = new AtomicInteger();
+    private int indexOffset;
+    private int baseVertex;
+
+    public static VertexBuffer getGlobalVertexBuffer(){
+        synchronized (globalLock) {
+            if(globalVertexBuffer == null) {
+                globalVertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);
+            }
+            return globalVertexBuffer;
+        }
+    }
+    public static IndexBuffer getGlobalIndexBuffer(){
+        synchronized (globalLock) {
+            if(globalIndexBuffer == null) {
+                globalIndexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
+            }
+            return globalIndexBuffer;
+        }
+    }
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();
 
@@ -114,8 +141,12 @@ public class ModelComponent extends BaseComponent implements Serializable {
     @Override
     public void init() {
         super.init();
-        createVertexBuffer();
         initialized = true;
+    }
+
+    @Override
+    public void registerInScene() {
+        createVertexBuffer();
     }
 
     public void setLodLevels(List<int[]> lodLevels) {
@@ -217,8 +248,22 @@ public class ModelComponent extends BaseComponent implements Serializable {
             indexBuffer.rewind();
 
         }
-        vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS, indexBuffers.toArray(new IntBuffer[0]));
-        vertexBuffer.upload();
+//        vertexBuffer = new VertexBuffer(verticesFloatBuffer, DEFAULTCHANNELS);
+//        vertexBuffer.upload();
+
+        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+
+        baseVertex = currentBaseVertex.get();
+        indexOffset = currentIndexOffset.get();
+        OpenGLContext.getInstance().execute(() -> {
+            getGlobalVertexBuffer().putValues(baseVertex*totalElementsPerVertex, floatArray);
+            getGlobalIndexBuffer().appendIndices(indexOffset, getIndices());
+            LOGGER.fine("Current IndexOffset: " + indexOffset);
+            LOGGER.fine("Current BaseVertex: " + baseVertex);
+            getGlobalVertexBuffer().upload();
+        });
+        currentBaseVertex.getAndSet(baseVertex + floatArray.length/ totalElementsPerVertex);
+        currentIndexOffset.getAndSet(indexOffset + getIndices().length);
     }
 
     @Override
@@ -236,5 +281,21 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public Vector3f getCenter() {
         return model.getCenter();
+    }
+
+    public int getIndexCount() {
+        return getIndices().length;
+
+    }
+    public int getIndexOffset() {
+        return indexOffset;
+    }
+
+    public void setBaseVertex(int baseVertex) {
+        this.baseVertex = baseVertex;
+    }
+
+    public int getBaseVertex() {
+        return baseVertex;
     }
 }

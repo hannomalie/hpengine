@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -375,19 +376,32 @@ public class Util {
 		printFloatBuffer(values, 4);
 	}
 
-	public static void printFloatBuffer(FloatBuffer buffer, int columns) {
-		buffer.rewind();
-		StringBuilder builder = new StringBuilder();
-		int columnCounter = 1;
-		while (buffer.hasRemaining()) {
-			builder.append(buffer.get());
-			builder.append(" ");
-			if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
-			columnCounter++;
-		}
-		buffer.rewind();
-		LOGGER.info(builder.toString());
-	}
+    public static void printFloatBuffer(FloatBuffer buffer, int columns) {
+        buffer.rewind();
+        StringBuilder builder = new StringBuilder();
+        int columnCounter = 1;
+        while (buffer.hasRemaining()) {
+            builder.append(buffer.get());
+            builder.append(" ");
+            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
+            columnCounter++;
+        }
+        buffer.rewind();
+        LOGGER.info(builder.toString());
+    }
+    public static void printIntBuffer(IntBuffer buffer, int columns) {
+        buffer.rewind();
+        StringBuilder builder = new StringBuilder();
+        int columnCounter = 1;
+        while (buffer.hasRemaining()) {
+            builder.append(buffer.get());
+            builder.append(" ");
+            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
+            columnCounter++;
+        }
+        buffer.rewind();
+        LOGGER.info(builder.toString());
+    }
 	
 	/**
 	 *

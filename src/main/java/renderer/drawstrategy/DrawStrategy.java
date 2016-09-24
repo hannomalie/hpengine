@@ -1,5 +1,6 @@
 package renderer.drawstrategy;
 
+import component.ModelComponent;
 import engine.PerEntityInfo;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
@@ -13,6 +14,9 @@ import javax.annotation.Nullable;
 public interface DrawStrategy {
 
     static int draw(PerEntityInfo perEntityInfo) {
+        return draw(perEntityInfo, perEntityInfo.getProgram());
+    }
+    static int draw(PerEntityInfo perEntityInfo, Program program) {
         if(!perEntityInfo.isVisible() || !perEntityInfo.isVisibleForCamera()) {
             return 0;
         }
@@ -20,21 +24,26 @@ public interface DrawStrategy {
         if (perEntityInfo.getProgram() == null) {
             return 0;
         }
-        Program currentProgram = perEntityInfo.getProgram();
+        Program currentProgram = program;
         currentProgram.setUniform("entityIndex", perEntityInfo.getEntityIndex());
         currentProgram.setUniform("entityBaseIndex", perEntityInfo.getEntityBaseIndex());
 
         Material material = perEntityInfo.getMaterial();
         material.setTexturesActive(currentProgram, perEntityInfo.isInReachForTextureLoading());
 
-        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
+//        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
+        {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
-        if (perEntityInfo.isDrawLines()) {
-            return perEntityInfo.getVertexBuffer().drawDebug(2, 0);//ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(perEntityInfo.getExtract(), this));
-        } else {
-            return perEntityInfo.getVertexBuffer().drawInstanced(perEntityInfo.getInstanceCount());
-        }
+
+        int temp = ModelComponent.getGlobalVertexBuffer()
+                .drawInstancedBaseVertex(ModelComponent.getGlobalIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
+        return temp;
+//        if (perEntityInfo.isDrawLines()) {
+//            return perEntityInfo.getVertexBuffer().drawDebug(2, 0);//ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(perEntityInfo.getExtract(), this));
+//        } else {
+//            return perEntityInfo.getVertexBuffer().drawInstanced(perEntityInfo.getInstanceCount());
+//        }
     }
 
     default DrawResult draw(RenderExtract renderExtract) {

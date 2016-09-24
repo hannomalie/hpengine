@@ -5,8 +5,8 @@ import java.io.Serializable;
 import camera.Camera;
 import component.ModelComponent;
 import engine.model.Entity;
+import engine.model.IndexBuffer;
 import engine.model.Model;
-import renderer.RenderExtract;
 import renderer.material.MaterialFactory;
 import shader.Bufferable;
 import shader.Program;
@@ -58,11 +58,11 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		});
 	}
 
-	public void drawAgain(Program program) {
+	public void drawAgain(IndexBuffer indexBuffer, Program program) {
 		if(!isInitialized()) { return; }
 		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
-			modelComponent.getVertexBuffer().drawAgain();
+			modelComponent.getVertexBuffer().drawAgain(indexBuffer);
 		});
 	}
 

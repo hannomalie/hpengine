@@ -21,7 +21,12 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     protected DoubleBuffer mapBuffer(int capacityInBytes, int flags) {
-        return glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes* getPrimitiveSizeInBytes())).asDoubleBuffer();
+        DoubleBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * getPrimitiveSizeInBytes())).asDoubleBuffer();
+        if(buffer != null) {
+            newBuffer.put(buffer);
+            newBuffer.rewind();
+        }
+        return newBuffer;
     }
 
     @Override

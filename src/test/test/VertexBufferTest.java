@@ -32,7 +32,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
         float[] vertexData2 = new float[] {
-                -1.0f, -1.0f, 0.0f,   0f, 0f,
+                -91.0f, -1.0f, 0.0f,   0f, 0f,
                 1.0f, -1.0f, 0.0f,    0f, 0f,
                 -1.0f,  1.0f, 0.0f,   0f,  1.0f,
                 -1.0f,  1.0f, 0.0f,   0f,  0f,
@@ -50,8 +50,19 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         Assert.assertArrayEquals(vertexData, bufferedData, 0f);
         Assert.assertEquals(6, buffer.getVerticesCount());
 
-//        buffer.putValues(vertexData2);
-//        buffer.upload();
+        buffer.putValues(vertexData2);
+        buffer.upload();
+        float[] bufferedData2 = buffer.getVertexData();
+        for(int i = 0; i < vertexData2.length; i++) {
+            Assert.assertTrue("Vertexdata " + i + " was wrong", vertexData2[i] == bufferedData2[i]);
+        }
+
+        buffer.putValues(vertexData2.length, vertexData2);
+        buffer.upload();
+        float[] bufferedData3 = buffer.getVertexData();
+        for(int i = 0; i < vertexData2.length+vertexData2.length; i++) {
+            Assert.assertTrue("Vertexdata " + i + " was wrong", vertexData2[i%vertexData2.length] == bufferedData3[i]);
+        }
     }
 
 	@Test
@@ -105,17 +116,8 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         };
 
         VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)).upload();
-        int[] indices = buffer.getIndices();
         Assert.assertEquals(6, buffer.getVerticesCount());
         Assert.assertEquals(2, buffer.getTriangleCount());
-        Assert.assertEquals(6, indices.length);
-
-        Assert.assertEquals(0, indices[0]);
-        Assert.assertEquals(1, indices[1]);
-        Assert.assertEquals(2, indices[2]);
-        Assert.assertEquals(3, indices[3]);
-        Assert.assertEquals(4, indices[4]);
-        Assert.assertEquals(5, indices[5]);
 
     }
 

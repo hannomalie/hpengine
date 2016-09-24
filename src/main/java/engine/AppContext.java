@@ -521,6 +521,9 @@ public class AppContext implements Extractor<RenderExtract> {
             entityAdded = false;
             directionalLightNeedsShadowMapRedraw = true;
         }
+        if(directionalLight.hasMoved()) {
+            directionalLightNeedsShadowMapRedraw = true;
+        }
         currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, getPerEntityInfos(camera));
         if (Renderer.getInstance().isFrameFinished()) {
 
@@ -553,7 +556,7 @@ public class AppContext implements Extractor<RenderExtract> {
                     boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
                     boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
-                    return new PerEntityInfo(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1]);
+                    return new PerEntityInfo(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 });
             }
         }
@@ -576,7 +579,7 @@ public class AppContext implements Extractor<RenderExtract> {
     @Override
     public void resetState(RenderExtract currentExtract) {
         entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
-        directionalLightNeedsShadowMapRedraw = currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered() ? false : directionalLightNeedsShadowMapRedraw;
+        directionalLightNeedsShadowMapRedraw = (currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
         sceneInitiallyDrawn = (!currentExtract.sceneInitiallyDrawn && !latestDrawResult.notYetUploadedVertexBufferDrawn() ? true : sceneInitiallyDrawn);
     }
 
