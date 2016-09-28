@@ -259,8 +259,10 @@ public class DeferredRenderer implements Renderer {
 //		}
 
 		frameCount++;
-		Input.update();
+        Input.update();
+        GPUProfiler.start("Waiting for driver");
 		Display.update();
+        GPUProfiler.end();
         return drawResult;
 	}
 

@@ -6,12 +6,15 @@ import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
 import shader.AbstractPersistentMappedBuffer;
 import shader.Bufferable;
+import shader.OpenGLBuffer;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.EnumSet;
 import java.util.logging.Logger;
 
+import static engine.model.CommandBuffer.DrawElementsIndirectCommand.sizeInBytes;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
@@ -222,14 +225,21 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         if(indexBuffer != null) {
             // TODO: use lod
             indexBuffer.bind();
-//            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexBuffers.get(0), instanceCount);
-//            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, baseVertexIndex, instanceCount);
-            GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, baseVertexIndex);
+//            GL32.glDrawElementsInstancedBaseVertex(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex);
+            GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex, 0);
+
         } else {
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
         }
 
         return indexCount/3;
+    }
+
+    public static void drawInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, IntBuffer commandBuffer, int primitiveCount) {
+        vertexBuffer.bind();
+        // TODO: use lod
+        indexBuffer.bind();
+        GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
     }
 
     @Override

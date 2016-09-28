@@ -6,7 +6,10 @@ import config.Config;
 import container.EntitiesContainer;
 import engine.AppContext;
 import engine.PerEntityInfo;
+import engine.model.CommandBuffer;
+import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
+import engine.model.VertexBuffer;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -16,11 +19,15 @@ import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
-import renderer.drawstrategy.extensions.*;
+import renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension;
+import renderer.drawstrategy.extensions.DrawLinesExtension;
+import renderer.drawstrategy.extensions.PixelPerfectPickingExtension;
+import renderer.drawstrategy.extensions.RenderExtension;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.light.TubeLight;
+import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
@@ -33,8 +40,8 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.IntBuffer;
+import java.util.*;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
 import static renderer.constants.BlendMode.Factor.ONE;
@@ -44,6 +51,7 @@ import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
 public class SimpleDrawStrategy extends BaseDrawStrategy {
+    private static final boolean INDIRECT_DRAWING = false;
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
@@ -191,17 +199,48 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.end();
 
             ModelComponent.getGlobalIndexBuffer().bind();
+            MaterialFactory.getInstance().getDefaultMaterial().setTexturesActive(firstpassDefaultProgram);
+            List<DrawElementsIndirectCommand> commands = new ArrayList<>(renderExtract.perEntityInfos().size());
+            Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap<>();
+            Material material = MaterialFactory.getInstance().getDefaultMaterial();
+            material.setTexturesActive(firstpassDefaultProgram, true);
             for(PerEntityInfo info : renderExtract.perEntityInfos()) {
                 OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
-                int currentVerticesCount = DrawStrategy.draw(info);
+                int currentVerticesCount = info.getIndexCount()/3;
+                if(!INDIRECT_DRAWING) {
+                    currentVerticesCount = DrawStrategy.draw(info);
+                } else {
+
+                    int count = info.getIndexCount();
+                    int firstIndex = info.getIndexOffset();
+                    int primCount = info.getInstanceCount();
+                    int baseVertex = info.getBaseVertex();
+                    int baseInstance = 0;
+
+                    DrawElementsIndirectCommand command = new DrawElementsIndirectCommand(count, primCount, firstIndex, baseVertex, baseInstance);
+                    commandsMap.put(info.getEntityIndex(), command);
+                }
+
                 firstPassResult.verticesDrawn += currentVerticesCount;
                 if (currentVerticesCount > 0) {
                     firstPassResult.entitiesDrawn++;
-                } else if(currentVerticesCount < 0){
-                    firstPassResult.notYetUploadedVertexBufferDrawn = true;
                 }
             }
-            ModelComponent.getGlobalIndexBuffer().unbind();
+            if(INDIRECT_DRAWING) {
+                SortedSet<Integer> keys = new TreeSet<>(commandsMap.keySet());
+                for (Integer key : keys) {
+                    DrawElementsIndirectCommand command = commandsMap.get(key);
+                    commands.add(command);
+                }
+                material.setTexturesActive(firstpassDefaultProgram, true);
+                firstpassDefaultProgram.setUniform("entityIndex", 0);
+                firstpassDefaultProgram.setUniform("entityBaseIndex", 0);
+                CommandBuffer.getGlobalCommandBuffer().put(util.Util.toArray(commands, DrawElementsIndirectCommand.class));
+                CommandBuffer.getGlobalCommandBuffer().bind();
+                VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
+                ModelComponent.getGlobalIndexBuffer().unbind();
+                CommandBuffer.getGlobalCommandBuffer().unbind();
+            }
         }
         GPUProfiler.end();
 

@@ -19,15 +19,6 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
 
     public AbstractPersistentMappedBuffer(int target) {
         this.target = target;
-//        ParameterizedType superClass = (ParameterizedType) getClass().getGenericSuperclass();
-//        Class type = (Class) superClass.getActualTypeArguments()[0];
-//        try {
-//            BUFFER_TYPE t = (BUFFER_TYPE) type.newInstance();
-//        } catch (InstantiationException e) {
-//            e.printStackTrace();
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        }
     }
 
     public BUFFER_TYPE map(int requestedCapacityInBytes) {

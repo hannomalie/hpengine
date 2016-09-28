@@ -8,7 +8,6 @@ layout(binding=6) uniform samplerCube environmentMap;
 layout(binding=7) uniform sampler2D roughnessMap;
 
 uniform layout(binding = 5, rgba8) image3D out_voxel;
-uniform int materialIndex;
 uniform bool isSelected = false;
 
 uniform bool useParallax;

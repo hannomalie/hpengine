@@ -1,3 +1,4 @@
+#extension GL_ARB_shader_draw_parameters : require
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -5,8 +6,8 @@ uniform mat4 lastViewMatrix;
 //uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
-uniform int entityIndex;
-uniform int entityBaseIndex;
+uniform int entityIndex = 0;
+uniform int entityBaseIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
 //uniform vec3 lightPosition;
@@ -55,9 +56,10 @@ flat out Material outMaterial;
 
 void main(void) {
 
-    outEntityBufferIndex = entityBaseIndex + gl_InstanceID;
+    outEntityBufferIndex = gl_DrawIDARB + entityBaseIndex + gl_InstanceID;
+    outEntityIndex = entityIndex + gl_DrawIDARB;
+
     Entity entity = entities[outEntityBufferIndex];
-    outEntityIndex = entityIndex;
     outEntity = entity;
     Material material = materials[int(entity.materialIndex)];
     outMaterial = material;

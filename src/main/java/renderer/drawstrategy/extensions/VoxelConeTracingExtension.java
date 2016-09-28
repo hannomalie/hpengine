@@ -243,8 +243,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     firstPassResult.verticesDrawn += currentVerticesCount;
                     if (currentVerticesCount > 0) {
                         firstPassResult.entitiesDrawn++;
-                    } else if (currentVerticesCount < 0) {
-                        firstPassResult.notYetUploadedVertexBufferDrawn = true;
                     }
                 }
                 GPUProfiler.end();

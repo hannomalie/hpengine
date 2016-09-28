@@ -34,7 +34,4 @@ public class DrawResult {
         return firstPassResult.getProperties();
     }
 
-    public boolean notYetUploadedVertexBufferDrawn() {
-        return firstPassResult.notYetUploadedVertexBufferDrawn;
-    }
 }

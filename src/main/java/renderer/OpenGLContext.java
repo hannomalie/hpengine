@@ -124,7 +124,7 @@ public final class OpenGLContext {
 				.withProfileCompatibility(true)
                 .withForwardCompatible(true)
 //                .withProfileCore(true)
-                .withDebug(true)
+//                .withDebug(true)
                 ;
 
         LOGGER.info("OpenGLContext before setDisplayMode");
@@ -132,6 +132,7 @@ public final class OpenGLContext {
         LOGGER.info("OpenGLContext after setDisplayMode");
         Display.setTitle("DeferredRenderer");
         Display.create(pixelFormat, contextAttributes);
+        Display.setVSyncEnabled(false);
 
         ContextCapabilities capabilities = GLContext.getCapabilities();
 //        System.out.println("######## Sparse texutre ext available:");

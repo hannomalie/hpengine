@@ -580,7 +580,7 @@ public class AppContext implements Extractor<RenderExtract> {
     public void resetState(RenderExtract currentExtract) {
         entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
         directionalLightNeedsShadowMapRedraw = (currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
-        sceneInitiallyDrawn = (!currentExtract.sceneInitiallyDrawn && !latestDrawResult.notYetUploadedVertexBufferDrawn() ? true : sceneInitiallyDrawn);
+        sceneInitiallyDrawn = (!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
     }
 
     @Override
