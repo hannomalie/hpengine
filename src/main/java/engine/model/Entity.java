@@ -479,7 +479,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         double materialIndex = getComponents().containsKey("ModelComponent") ?
                 MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
         doubles[index++] = materialIndex;
-        doubles[index++] = 0;
+        doubles[index++] = AppContext.getInstance().getScene().getEntityIndexOf(this);
         doubles[index++] = 0;
         return index;
     }

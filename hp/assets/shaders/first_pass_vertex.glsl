@@ -20,6 +20,9 @@ layout(std430, binding=1) buffer _materials {
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
+layout(std430, binding=4) buffer _entityOffsets {
+	int entityOffsets[1000];
+};
 
 
 in vec3 in_Position;
@@ -56,7 +59,8 @@ flat out Material outMaterial;
 
 void main(void) {
 
-    outEntityBufferIndex = gl_DrawIDARB + entityBaseIndex + gl_InstanceID;
+    int offset = entityOffsets[gl_DrawIDARB];
+    outEntityBufferIndex = gl_DrawIDARB + offset + entityBaseIndex + gl_InstanceID;
     outEntityIndex = entityIndex + gl_DrawIDARB;
 
     Entity entity = entities[outEntityBufferIndex];

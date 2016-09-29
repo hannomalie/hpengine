@@ -33,28 +33,44 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     transient protected VertexBuffer vertexBuffer;
     private static Object globalLock = new Object();
-    public static VertexBuffer globalVertexBuffer;
-    public static IndexBuffer globalIndexBuffer;
-    public static AtomicInteger currentBaseVertex = new AtomicInteger();
-    public static AtomicInteger currentIndexOffset = new AtomicInteger();
+    public static volatile VertexBuffer globalVertexBuffer;
+    public static volatile IndexBuffer globalEntityOffsetBuffer;
+    public static volatile IndexBuffer globalIndexBuffer;
+    public static volatile AtomicInteger currentBaseVertex = new AtomicInteger();
+    public static volatile AtomicInteger currentIndexOffset = new AtomicInteger();
+    public static volatile AtomicInteger currentEntityOffset = new AtomicInteger();
     private int indexOffset;
     private int baseVertex;
 
     public static VertexBuffer getGlobalVertexBuffer(){
-        synchronized (globalLock) {
-            if(globalVertexBuffer == null) {
-                globalVertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);
+        if(globalVertexBuffer == null) {
+            synchronized (globalLock) {
+                if(globalVertexBuffer == null) {
+                    globalVertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);
+                }
             }
-            return globalVertexBuffer;
         }
+        return globalVertexBuffer;
     }
     public static IndexBuffer getGlobalIndexBuffer(){
-        synchronized (globalLock) {
-            if(globalIndexBuffer == null) {
-                globalIndexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
+        if (globalIndexBuffer == null) {
+            synchronized (globalLock) {
+                if (globalIndexBuffer == null) {
+                    globalIndexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
+                }
             }
-            return globalIndexBuffer;
         }
+        return globalIndexBuffer;
+    }
+    public static IndexBuffer getGlobalEntityOffsetBuffer(){
+        if(globalEntityOffsetBuffer == null) {
+            synchronized (globalLock) {
+                if (globalEntityOffsetBuffer == null) {
+                    globalEntityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(1000));
+                }
+            }
+        }
+        return globalEntityOffsetBuffer;
     }
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();
@@ -298,4 +314,5 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public int getBaseVertex() {
         return baseVertex;
     }
+
 }
