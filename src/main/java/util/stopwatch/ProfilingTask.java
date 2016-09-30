@@ -46,9 +46,9 @@ public class ProfilingTask {
 		children.add(profilerTask);
 	}
 
-	public ProfilingTask end(int endQuery) {
-		this.endQuery = endQuery;
+	public ProfilingTask end() {
 		this.endTimeCpu = System.nanoTime();
+		this.endQuery = GPUProfiler.getQuery();
 		return parent;
 	}
 

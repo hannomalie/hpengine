@@ -380,8 +380,8 @@ public class DeferredRenderer implements Renderer {
 		lastFrameTime = getTime();
         fpsCounter.update();
 //		OpenGLContext.getInstance().execute(() -> {
-			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms",
-                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame()));
+			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
 //		});
 	}
 	private long getTime() {

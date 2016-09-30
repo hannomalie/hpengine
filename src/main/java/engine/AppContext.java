@@ -38,6 +38,7 @@ import renderer.material.MaterialInfo;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
+import shader.Program;
 import shader.ProgramFactory;
 import texture.Texture;
 import util.gui.DebugFrame;
@@ -67,7 +68,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private static volatile AppContext instance = null;
 
 
-    private final ExecutorService pool = Executors.newFixedThreadPool(4);
+    private final ExecutorService pool = Executors.newFixedThreadPool(1);
     private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
     private TimeStepThread thread;
@@ -80,6 +81,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private RenderExtract nextExtract = new RenderExtract();
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
     private volatile RenderExtract currentExtract;
+    private final FPSCounter updateFpsCounter = new FPSCounter();
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -311,21 +313,12 @@ public class AppContext implements Extractor<RenderExtract> {
 
         thread.start();
 
-//        new TimeStepThread("Render", 0.002f) {
-//            @Override
-//            public void update(float seconds) {
-//                if (Renderer.getInstance().isFrameFinished()) {
-//                System.out.println(OpenGLContext.getInstance().blockUntilEmpty());
-//                    OpenGLContext.getInstance().execute(() -> {
-//                            Renderer.getInstance().startFrame();
-//                            latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
-//                            latestGPUProfilingResult = Renderer.getInstance().endFrame();
-//                            resetState(currentExtract);
-//                            AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
-//                    }, false);
-//                }
-//            }
-//        }.start();
+        new TimeStepThread("Render", 0.002f) {
+            @Override
+            public void update(float seconds) {
+                actuallyDraw(getScene().getDirectionalLight());
+            }
+        }.start();
     }
 
 
@@ -507,6 +500,10 @@ public class AppContext implements Extractor<RenderExtract> {
         LightFactory.getInstance().update(seconds);
         StopWatch.getInstance().stopAndPrintMS();
 
+//        actuallyDraw(directionalLight);
+    }
+
+    private void actuallyDraw(DirectionalLight directionalLight) {
         boolean anyPointLightHasMoved = scene.getPointLights().stream()
                         .filter(light -> light.hasMoved()).collect(Collectors.toList())
                         .isEmpty();
@@ -514,7 +511,6 @@ public class AppContext implements Extractor<RenderExtract> {
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
         }
-
 
         if((entityHasMoved || entityAdded) && scene != null) {
             EntityFactory.getInstance().bufferEntities();
@@ -524,9 +520,11 @@ public class AppContext implements Extractor<RenderExtract> {
         if(directionalLight.hasMoved()) {
             directionalLightNeedsShadowMapRedraw = true;
         }
-        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, getPerEntityInfos(camera));
-        if (Renderer.getInstance().isFrameFinished()) {
+        List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
 
+        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
+        updateFpsCounter.update();
+        if (Renderer.getInstance().isFrameFinished()) {
             OpenGLContext.getInstance().blockUntilEmpty();
 
             OpenGLContext.getInstance().execute(() -> {
@@ -545,34 +543,27 @@ public class AppContext implements Extractor<RenderExtract> {
 
     public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
-        for (Entity entity : scene.getEntities()) {
-            if (entity.getComponents().containsKey("ModelComponent")) {
-                completionService.submit(() -> {
-                    // TODO: Implement strategy pattern
-                    Vector3f centerWorld = entity.getCenterWorld();
-                    Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
-                    float distanceToCamera = distance.length();
-                    ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-                    boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
-
-                    boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
-                    return new PerEntityInfo(camera, null, ProgramFactory.getInstance().getFirstpassDefaultProgram(), AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.getComponentOption(ModelComponent.class).isPresent()).collect(Collectors.toList()).indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                });
-            }
-        }
-
         List<PerEntityInfo> perEntityInfos= new ArrayList<>();
-        while(completionService.hasUncompletedTasks()) {
-            PerEntityInfo perEntityInfo = null;
-            try {
-                perEntityInfo = completionService.take().get();
-                perEntityInfos.add(perEntityInfo);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+
+        Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+        List<Entity> entitiesWithModelComponent = AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList());
+
+        for (Entity entity : entitiesWithModelComponent) {
+            // TODO: Implement strategy pattern
+
+            Vector3f centerWorld = entity.getCenterWorld();
+            Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
+            float distanceToCamera = distance.length();
+            ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
+            boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
+
+            boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+
+            int entityIndex = entitiesWithModelComponent.indexOf(entity);
+            int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
+            perEntityInfos.add(new PerEntityInfo(camera, null, firstpassDefaultProgram, entityIndex, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
         }
+
         return perEntityInfos;
     }
 
@@ -687,5 +678,9 @@ public class AppContext implements Extractor<RenderExtract> {
 
     public JFrame getFrame() {
         return frame;
+    }
+
+    public FPSCounter getUpdateFpsCounter() {
+        return updateFpsCounter;
     }
 }

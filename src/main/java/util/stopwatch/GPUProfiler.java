@@ -65,7 +65,7 @@ public class GPUProfiler {
 
 	public static void end() {
 		if (PROFILING_ENABLED && currentTask != null) {
-			currentTask = currentTask.end(getQuery());
+			currentTask = currentTask.end();
 		}
 	}
 
@@ -78,7 +78,7 @@ public class GPUProfiler {
 				return;
 				//throw new IllegalStateException("Error ending frame. Not all tasks finished.");
 			}
-			currentTask.end(getQuery());
+			currentTask.end();
 
 			tasks.remove(currentTask);
 

@@ -101,7 +101,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public <T extends Component> T getComponent(Class<T> type) {
-		Component component = getComponents().get(type.getSimpleName().toString());
+		Component component = getComponents().get(type.getSimpleName());
 		return type.cast(component);
 	}
 	public <T extends Component> T getComponent(Class<T> type, String key) {
@@ -110,12 +110,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
-		Component component = getComponents().get(type.getSimpleName().toString());
+		Component component = getComponents().get(type.getSimpleName());
 		return Optional.ofNullable(type.cast(component));
 	}
 
-	private boolean hasComponent(Class<? extends Component> type) {
-		return getComponents().keySet().contains(type.getSimpleName().toString());
+	public boolean hasComponent(Class<? extends Component> type) {
+		return getComponents().keySet().contains(type.getSimpleName());
 	}
 
 	public List<Entity> getAllChildrenAndSelf() {

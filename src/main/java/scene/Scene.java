@@ -6,13 +6,13 @@ import container.SimpleContainer;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
+import engine.model.Model;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
-import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
@@ -20,6 +20,7 @@ import renderer.light.PointLight;
 import renderer.light.TubeLight;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class Scene implements LifeCycle, Serializable {
 	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
 	private List<AreaLight> areaLights = new CopyOnWriteArrayList<>();
 	private DirectionalLight directionalLight = new DirectionalLight();
+	private boolean updateCache = true;
 
 	public Scene() {
         this("new-scene-" + System.currentTimeMillis());
@@ -195,6 +197,7 @@ public class Scene implements LifeCycle, Serializable {
 			entityContainer.insert(entities);
             entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene()));
         calculateMinMax(entities);
+		updateCache = true;
 //			return null;
 //		});
 	}
@@ -203,6 +206,7 @@ public class Scene implements LifeCycle, Serializable {
 			entityContainer.insert(entity.getAllChildrenAndSelf());
             entity.getComponents().values().forEach(c -> c.registerInScene());
         calculateMinMax(entities);
+		updateCache = true;
 //			return null;
 //		});
 	}
@@ -284,12 +288,28 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
+
+	private volatile List<Integer> cachedEntityIndices = new ArrayList();
     public int getEntityIndexOf(Entity entity) {
-        int index = 0;
-        for(Entity current : entityContainer.getEntities().stream().filter(e -> e.getComponent(ModelComponent.class) != null).collect(Collectors.toList())) {
-            if(current.equals(entity)) { return index; }
-            index += current.getInstanceCount();
-        }
-        return index;
+    	cacheEntityIndices();
+		return entitiesWithModelComponent.indexOf(entity);
     }
+
+	private final List<Entity> entitiesWithModelComponent = new ArrayList<>();
+	private void cacheEntityIndices() {
+		if(updateCache)
+		{
+			entitiesWithModelComponent.clear();
+			int index = 0;
+			int i = 0;
+			for(Entity current : entityContainer.getEntities()) {
+				if(!current.hasComponent(ModelComponent.class)) { continue; }
+				entitiesWithModelComponent.add(current);
+				index += current.getInstanceCount();
+				cachedEntityIndices.add(i, index);
+				i++;
+			}
+			updateCache = false;
+		}
+	}
 }
