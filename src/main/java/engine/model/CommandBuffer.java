@@ -120,18 +120,20 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
     }
 
     public static class DrawElementsIndirectCommand implements Bufferable {
-        public int count;
-        public int primCount;
-        public int firstIndex;
-        public int baseVertex;
-        public int baseInstance;
+        public final int count;
+        public final int primCount;
+        public final int firstIndex;
+        public final int baseVertex;
+        public final int baseInstance;
+        public final int entityOffset;
 
-        public DrawElementsIndirectCommand(int count, int primCount, int firstIndex, int baseVertex, int baseInstance) {
+        public DrawElementsIndirectCommand(int count, int primCount, int firstIndex, int baseVertex, int baseInstance, int entityBaseIndex) {
             this.count = count;
             this.primCount = primCount;
             this.firstIndex = firstIndex;
             this.baseVertex = baseVertex;
             this.baseInstance = baseInstance;
+            entityOffset = entityBaseIndex;
         }
 
         @Override

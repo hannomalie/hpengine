@@ -1,9 +1,6 @@
 package component;
 
-import engine.model.DataChannels;
-import engine.model.IndexBuffer;
-import engine.model.Model;
-import engine.model.VertexBuffer;
+import engine.model.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -152,6 +149,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public void setMaterial(String materialName) {
         this.materialName = materialName;
         model.setMaterial(MaterialFactory.getInstance().get(materialName));
+        for(Entity child : entity.getChildren()) {
+            child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialName));
+        }
     }
 
     @Override

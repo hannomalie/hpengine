@@ -1,13 +1,8 @@
-layout(binding=0) uniform sampler2D diffuseMap;
-layout(binding=1) uniform sampler2D normalMap;
-layout(binding=2) uniform sampler2D specularMap;
-layout(binding=3) uniform sampler2D occlusionMap;
-layout(binding=4) uniform sampler2D heightMap;
-//layout(binding=5) uniform sampler2D reflectionMap;
-layout(binding=6) uniform samplerCube environmentMap;
-layout(binding=7) uniform sampler2D roughnessMap;
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 
-uniform layout(binding = 5, rgba8) image3D out_voxel;
+layout(binding=6) uniform samplerCube environmentMap;
+
 uniform bool isSelected = false;
 
 uniform bool useParallax;
@@ -16,9 +11,6 @@ uniform bool useSteepParallax;
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
-};
-layout(std430, binding=3) buffer _entities {
-	Entity entities[2000];
 };
 
 uniform mat4 viewMatrix;
@@ -29,7 +21,6 @@ uniform int time = 0;
 uniform bool useRainEffect = false;
 uniform float rainEffect = 0.0;
 
-uniform bool writeVoxels = false;
 uniform float sceneScale = 1f;
 uniform float inverseSceneScale = 1f;
 uniform int gridSize;
@@ -57,6 +48,7 @@ flat in Entity outEntity;
 flat in Material outMaterial;
 flat in int outEntityIndex;
 flat in int outEntityBufferIndex;
+flat in int outMaterialIndex;
 uniform float near = 0.1;
 uniform float far = 100.0;
 
@@ -95,9 +87,7 @@ void main(void) {
     int entityIndex = outEntityBufferIndex;
     Entity entity = outEntity;
 
-//	Material material = outMaterial;
-    int materialIndex = int(entity.materialIndex);
-    Material material = materials[materialIndex];
+	Material material = outMaterial;
 
     vec3 materialDiffuseColor = vec3(material.diffuseR,
                                      material.diffuseG,
@@ -135,9 +125,11 @@ void main(void) {
     #define use_precomputed_tangent_space_
 	if(useNormalMaps && material.hasNormalMap != 0) {
         #ifdef use_precomputed_tangent_space
-            PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
+            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+            PN_world = transpose(TBN) * normalize((texture(_normalMap, UV)*2-1).xyz);
         #else
-            PN_world = normalize(perturb_normal(old_PN_world, V, UV, normalMap));
+            sampler2D _normalMap = sampler2D(uint64_t(material.handleNormal));
+            PN_world = normalize(perturb_normal(old_PN_world, V, UV, _normalMap));
         #endif
         PN_view = normalize((viewMatrix * vec4(PN_world, 0)).xyz);
     }
@@ -145,7 +137,9 @@ void main(void) {
 
 	vec2 uvParallax = vec2(0,0);
 	if(material.hasHeightMap != 0) {
-		float height = (texture(heightMap, UV).rgb).r;
+        sampler2D _heightMap = sampler2D(uint64_t(material.handleHeight));
+
+		float height = (texture(_heightMap, UV).rgb).r;
 
         #ifdef use_precomputed_tangent_space
             vec3 viewVectorTangentSpace = normalize((TBN) * (V));
@@ -170,8 +164,10 @@ void main(void) {
 	vec4 color = vec4(materialDiffuseColor, 1);
     float alpha = materialTransparency;
 	if(material.hasDiffuseMap != 0) {
-    	color = texture(diffuseMap, UV);
-    	//color = textureLod(diffuseMap, UV, 6);
+        sampler2D _diffuseMap = sampler2D(uint64_t(material.handleDiffuse));
+
+    	color = texture(_diffuseMap, UV);
+    	//color = textureLod(_diffuseMap, UV, 6);
         alpha *= color.a;
         if(color.a<0.1)
         {
@@ -187,7 +183,8 @@ void main(void) {
 
 	out_position.w = materialRoughness;
 	if(material.hasRoughnessMap != 0) {
-        float r = texture(roughnessMap, UV).x;
+        sampler2D _roughnessMap = sampler2D(uint64_t(material.handleRoughness));
+        float r = texture(_roughnessMap, UV).x;
         out_position.w = materialRoughness*r;
     }
 
@@ -203,7 +200,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,materialIndex,outEntityIndex);
+  	out_visibility = vec4(1,depth,outMaterialIndex,outEntityIndex);
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
@@ -219,7 +216,7 @@ void main(void) {
 	{
 		out_color.rgb = vec3(1,0,0);
 	}
-//	out_color.rgb = vec3(1,0,0);
+	//out_color.rgb = vec3(1,0,0);
 //	out_color.rgb = position_world.rgb/100.0;
 	//out_normal.a = 1;
 }

@@ -1,5 +1,6 @@
 package scene;
 
+import component.ModelComponent;
 import container.EntitiesContainer;
 import container.SimpleContainer;
 import engine.AppContext;
@@ -285,7 +286,7 @@ public class Scene implements LifeCycle, Serializable {
 
     public int getEntityIndexOf(Entity entity) {
         int index = 0;
-        for(Entity current : entityContainer.getEntities()) {
+        for(Entity current : entityContainer.getEntities().stream().filter(e -> e.getComponent(ModelComponent.class) != null).collect(Collectors.toList())) {
             if(current.equals(entity)) { return index; }
             index += current.getInstanceCount();
         }

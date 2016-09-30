@@ -18,6 +18,16 @@ struct Material {
 	double hasHeightMap;
 	double hasOcclusionMap;
 	double hasRoughnessMap;
+
+    double handleDiffuse;
+    double handleNormal;
+    double handleSpecular;
+    double handleHeight;
+
+    double handleOcclusion;
+    double handleRoughness;
+    double placeHolder0;
+    double placeHolder1;
 };
 
 struct PointLight {

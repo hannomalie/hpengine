@@ -1,6 +1,7 @@
 package renderer.drawstrategy;
 
 import camera.Camera;
+import com.google.common.primitives.Ints;
 import component.ModelComponent;
 import config.Config;
 import container.EntitiesContainer;
@@ -10,6 +11,7 @@ import engine.model.CommandBuffer;
 import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.VertexBuffer;
+import org.jfree.util.ArrayUtilities;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -42,6 +44,7 @@ import util.stopwatch.GPUProfiler;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.stream.Collector;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
 import static renderer.constants.BlendMode.Factor.ONE;
@@ -51,7 +54,7 @@ import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
 public class SimpleDrawStrategy extends BaseDrawStrategy {
-    private static final boolean INDIRECT_DRAWING = false;
+    private static final boolean INDIRECT_DRAWING = true;
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
@@ -199,13 +202,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             GPUProfiler.end();
 
+            GPUProfiler.start("Actual draw entities");
             ModelComponent.getGlobalIndexBuffer().bind();
-            MaterialFactory.getInstance().getDefaultMaterial().setTexturesActive(firstpassDefaultProgram);
             List<DrawElementsIndirectCommand> commands = new ArrayList<>(renderExtract.perEntityInfos().size());
             Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap<>();
-            Material material = MaterialFactory.getInstance().getDefaultMaterial();
-            material.setTexturesActive(firstpassDefaultProgram, true);
             for(PerEntityInfo info : renderExtract.perEntityInfos()) {
+                if(!info.isVisibleForCamera()) {
+                    continue;
+                }
                 OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
                 int currentVerticesCount = info.getIndexCount()/3;
                 if(!INDIRECT_DRAWING) {
@@ -218,7 +222,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     int baseVertex = info.getBaseVertex();
                     int baseInstance = 0;
 
-                    DrawElementsIndirectCommand command = new DrawElementsIndirectCommand(count, primCount, firstIndex, baseVertex, baseInstance);
+                    DrawElementsIndirectCommand command = new DrawElementsIndirectCommand(count, primCount, firstIndex, baseVertex, baseInstance, info.getEntityBaseIndex());
                     commandsMap.put(info.getEntityIndex(), command);
                 }
 
@@ -233,15 +237,16 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     DrawElementsIndirectCommand command = commandsMap.get(key);
                     commands.add(command);
                 }
-                material.setTexturesActive(firstpassDefaultProgram, true);
                 firstpassDefaultProgram.setUniform("entityIndex", 0);
                 firstpassDefaultProgram.setUniform("entityBaseIndex", 0);
+                ModelComponent.getGlobalEntityOffsetBuffer().put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
                 CommandBuffer.getGlobalCommandBuffer().put(util.Util.toArray(commands, DrawElementsIndirectCommand.class));
                 CommandBuffer.getGlobalCommandBuffer().bind();
                 VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
                 ModelComponent.getGlobalIndexBuffer().unbind();
                 CommandBuffer.getGlobalCommandBuffer().unbind();
             }
+            GPUProfiler.end();
         }
         GPUProfiler.end();
 

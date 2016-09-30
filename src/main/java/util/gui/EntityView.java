@@ -207,11 +207,6 @@ public class EntityView extends WebPanel {
                 WebComboBox cb = (WebComboBox) e.getSource();
                 Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
                 entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-                if(entity.hasChildren()) {
-                    for (Entity child : entity.getChildren()) {
-                        child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-                    }
-                }
                 AppContext.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
             });
             webComponentPanel.addElement(materialSelect);

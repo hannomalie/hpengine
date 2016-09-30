@@ -1,6 +1,7 @@
 package engine.model;
 
 import com.google.common.eventbus.Subscribe;
+import component.ModelComponent;
 import engine.AppContext;
 import engine.model.Entity.Update;
 import event.EntityAddedEvent;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class EntityFactory {
     private static EntityFactory instance;
@@ -142,13 +144,16 @@ public class EntityFactory {
 
     public void bufferEntities(List<Entity> entities) {
         entitiesBuffer.put(Util.toArray(entities, Entity.class));
+        for(int i = 0; i < entities.size(); i++) {
+            ModelComponent.getGlobalEntityOffsetBuffer().put(i, AppContext.getInstance().getScene().getEntityIndexOf(entities.get(i)));
+        }
     }
 
     public void bufferEntities() {
         if(AppContext.getInstance().getScene() != null) {
 //            TODO: Execute this outside of the renderloop
             OpenGLContext.getInstance().execute(() -> {
-                bufferEntities(AppContext.getInstance().getScene().getEntities());
+                bufferEntities(AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.getComponent(ModelComponent.class) != null).collect(Collectors.toList()));
             });
         }
     }

@@ -97,10 +97,23 @@ public class Texture implements Serializable, Reloadable {
     protected int minFilter = GL11.GL_LINEAR;
     protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
+    private long handle =-1L;
+
 
     protected Texture() {
+        genHandle();
     }
-	
+
+    private void genHandle() {
+        OpenGLContext.getInstance().execute(() -> {
+            if(handle <= 0) {
+                bind(15);
+                handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
+                unbind(15);
+            }
+        });
+    }
+
     /**
      * Create a new texture
      */
@@ -242,8 +255,13 @@ public class Texture implements Serializable, Reloadable {
                     bind(15);
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     unbind(15);
+
                     setUploaded();
                 }
+            });
+            genHandle();
+            OpenGLContext.getInstance().execute(() -> {
+                ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
             AppContext.getEventBus().post(new TexturesChangedEvent());
         };
@@ -579,7 +597,7 @@ public class Texture implements Serializable, Reloadable {
 
                 } else {
                     bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
-                    LOGGER.severe("Texture cannot be read, default texture data inserted instead...");
+                    LOGGER.severe("Texture " + path + " cannot be read, default texture data inserted instead...");
                 }
 
                 setWidth(bufferedImage.getWidth());
@@ -724,6 +742,9 @@ public class Texture implements Serializable, Reloadable {
             LOGGER.info("New Base Level: " + newBaseLevel);
             LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
         });
+    }
+    public long getHandle() {
+        return handle;
     }
 
     private void bindWithoutReupload() {

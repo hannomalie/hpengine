@@ -97,7 +97,7 @@ void main(void) {
 	vec3 old_PN_world = PN_world;
 
     #define use_precomputed_tangent_space_
-	if(material.hasDiffuseMap != 0) {
+	if(material.hasNormalMap != 0) {
         #ifdef use_precomputed_tangent_space
             PN_world = transpose(TBN) * normalize((texture(normalMap, UV)*2-1).xyz);
         #else

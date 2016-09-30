@@ -70,7 +70,8 @@ public class MaterialView extends WebPanel {
 				MaterialResult result;
 				try {
         			result = future.get(1, TimeUnit.MINUTES);
-					if(result.equals(Boolean.TRUE)) {
+					if(result.material != null) {
+                        toSave = result.material;
 						showNotification(NotificationIcon.plus, "Material changed");
 					} else {
 						showNotification(NotificationIcon.error, "Not able to change material");
