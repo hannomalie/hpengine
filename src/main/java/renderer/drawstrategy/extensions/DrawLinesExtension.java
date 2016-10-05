@@ -34,7 +34,6 @@ public class DrawLinesExtension implements RenderExtension {
             OpenGLContext openGLContext = OpenGLContext.getInstance();
             openGLContext.disable(CULL_FACE);
             openGLContext.depthMask(false);
-//            openGLContext.disable(GlCap.DEPTH_TEST);
 
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
@@ -88,6 +87,18 @@ public class DrawLinesExtension implements RenderExtension {
             Renderer.getInstance().batchLine(min, max);
         }
         {
+            Vector3f min = new Vector3f(minWorld.x, maxWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, minWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, maxWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(minWorld.x, maxWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+
+
+        {
             Vector3f min = new Vector3f(maxWorld.x, maxWorld.y, minWorld.z);
             Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z);
             Renderer.getInstance().batchLine(min, max);
@@ -100,6 +111,26 @@ public class DrawLinesExtension implements RenderExtension {
         {
             Vector3f min = new Vector3f(minWorld.x, maxWorld.y, maxWorld.z);
             Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, minWorld.y, maxWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, minWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(maxWorld.x, minWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, minWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(maxWorld.x, maxWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, minWorld.y, minWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, maxWorld.y, maxWorld.z);
+            Vector3f max = new Vector3f(minWorld.x, minWorld.y, maxWorld.z);
             Renderer.getInstance().batchLine(min, max);
         }
     }
