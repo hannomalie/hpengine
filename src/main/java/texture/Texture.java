@@ -718,28 +718,7 @@ public class Texture implements Serializable, Reloadable {
         uploadState = NOT_UPLOADED;
 
         OpenGLContext.getInstance().execute(() -> {
-
-            int internalformat = EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-            if(srgba) {
-                internalformat = EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-            }
-
-            bindWithoutReupload();
-            int newBaseLevel = mipmapCount - 2;
-            for(int i = 0; i < newBaseLevel; i++) {
-                GL11.glTexImage2D(target.glTarget,
-                        i,
-                        internalformat,
-                        0,
-                        0,
-                        0,
-                        srcPixelFormat,
-                        GL11.GL_UNSIGNED_BYTE,
-                        (ByteBuffer) null);
-            }
-
-            GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, newBaseLevel);
-            LOGGER.info("New Base Level: " + newBaseLevel);
+            ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle);
             LOGGER.info("Free VRAM: " + OpenGLContext.getInstance().getAvailableVRAM());
         });
     }

@@ -154,6 +154,13 @@ public class Material implements Serializable, Bufferable {
         GPUProfiler.end();
 	}
 
+	public void setTexturesUsed() {
+        for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
+            Texture texture = entry.getValue();
+            texture.setUsedNow();
+        }
+    }
+
 	public void setTexturesInactive() {
 		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();

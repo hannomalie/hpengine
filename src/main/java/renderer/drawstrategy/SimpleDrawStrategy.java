@@ -216,6 +216,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                     currentVerticesCount = DrawStrategy.draw(info);
                 } else {
 
+                    info.getMaterial().setTexturesUsed();
                     int count = info.getIndexCount();
                     int firstIndex = info.getIndexOffset();
                     int primCount = info.getInstanceCount();
