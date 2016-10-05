@@ -4,13 +4,11 @@ import config.Config;
 import engine.AppContext;
 import engine.PerEntityInfo;
 import engine.Transform;
-import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
-import renderer.constants.GlCap;
 import renderer.drawstrategy.FirstPassResult;
 import shader.Program;
 import shader.ProgramFactory;
@@ -45,9 +43,7 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
 
             for (PerEntityInfo entity : renderExtract.perEntityInfos()) {
-                Vector3f min = new Vector3f(entity.getMinWorld().x, entity.getMinWorld().y, entity.getMinWorld().z);
-                Vector3f max = new Vector3f(entity.getMaxWorld().x, entity.getMaxWorld().y, entity.getMaxWorld().z);
-                Renderer.getInstance().batchLine(min, max);
+                drawAABB(entity.getMinWorld(), entity.getMaxWorld());
             }
             Renderer.getInstance().drawLines(linesProgram);
 
@@ -72,6 +68,39 @@ public class DrawLinesExtension implements RenderExtension {
 
             AppContext.getInstance().getPhysicsFactory().debugDrawWorld();
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
+        }
+    }
+
+    private void drawAABB(Vector4f minWorld, Vector4f maxWorld) {
+        {
+            Vector3f min = new Vector3f(minWorld.x, minWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(minWorld.x, minWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, minWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(minWorld.x, maxWorld.y, minWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, minWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, minWorld.y, minWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(maxWorld.x, maxWorld.y, minWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(maxWorld.x, minWorld.y, maxWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
+        }
+        {
+            Vector3f min = new Vector3f(minWorld.x, maxWorld.y, maxWorld.z);
+            Vector3f max = new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z);
+            Renderer.getInstance().batchLine(min, max);
         }
     }
 }

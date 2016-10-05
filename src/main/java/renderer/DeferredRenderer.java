@@ -420,8 +420,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public int drawLines(Program program) {
-//		program.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
