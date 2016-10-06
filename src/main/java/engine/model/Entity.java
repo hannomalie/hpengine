@@ -262,32 +262,18 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.visible = visible;
 	}
 
-    Vector4f[] minMax;
-    Matrix4f lastUsedTransformationMatrix;
+    private transient Vector4f[] minMax;
+    private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector4f[] getMinMaxWorld() {
         if(!getTransform().isDirty() && minMax != null) {
-            if(lastUsedTransformationMatrix == null || getTransform().getTransformation().equals(lastUsedTransformationMatrix)) {
+            if(lastUsedTransformationMatrix != null && getTransform().getTransformation().equals(lastUsedTransformationMatrix)) {
                 return minMax;
             }
         }
         centerWorld = null;
-        if(hasComponent(ModelComponent.class) || getComponents().containsKey("ModelComponent")) {
+        if(hasComponent(ModelComponent.class)) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class);
-			minMax = modelComponent.getMinMax();
-
-			Vector4f minWorld = new Vector4f(0,0,0,1);
-			Vector4f maxWorld = new Vector4f(0,0,0,1);
-
-			Matrix4f modelMatrix = getModelMatrix();
-
-			Matrix4f.transform(modelMatrix, minMax[0], minWorld);
-			Matrix4f.transform(modelMatrix, minMax[1], maxWorld);
-
-			minWorld.w = 0;
-			maxWorld.w = 0;
-			minMax = new Vector4f[] {minWorld, maxWorld};
-
-			return minMax;
+			minMax = modelComponent.getMinMax(getModelMatrix());
 		} else {
 			minMax = new Vector4f[2];
 			float amount = 5;

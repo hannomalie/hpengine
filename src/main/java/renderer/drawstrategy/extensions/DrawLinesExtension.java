@@ -16,6 +16,7 @@ import shader.ProgramFactory;
 import java.nio.FloatBuffer;
 
 import static renderer.constants.GlCap.CULL_FACE;
+import static renderer.constants.GlCap.DEPTH_TEST;
 
 public class DrawLinesExtension implements RenderExtension {
 
@@ -24,7 +25,7 @@ public class DrawLinesExtension implements RenderExtension {
 
     public DrawLinesExtension() throws Exception {
         identityMatrix44Buffer = new Transform().getTransformationBuffer();
-        linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+        linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl");
     }
 
     @Override
@@ -46,8 +47,7 @@ public class DrawLinesExtension implements RenderExtension {
             }
             Renderer.getInstance().drawLines(linesProgram);
 
-            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-
+//            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
 //            for(int x = -max; x < max; x+=25) {
 //                for(int y = -max; y < max; y+=25) {
@@ -61,6 +61,7 @@ public class DrawLinesExtension implements RenderExtension {
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
             Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
             int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
             firstPassResult.linesDrawn += linesDrawn;
 

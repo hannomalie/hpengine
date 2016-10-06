@@ -2,6 +2,7 @@ package component;
 
 import engine.model.*;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -315,4 +316,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return baseVertex;
     }
 
+    public Vector4f[] getMinMax(Matrix4f modelMatrix) {
+        return model.getMinMax(modelMatrix);
+    }
 }

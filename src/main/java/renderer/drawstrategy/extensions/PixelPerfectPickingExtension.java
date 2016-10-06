@@ -1,5 +1,6 @@
 package renderer.drawstrategy.extensions;
 
+import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
 import engine.model.Entity;
@@ -14,6 +15,8 @@ import renderer.RenderExtract;
 import renderer.drawstrategy.FirstPassResult;
 
 import java.nio.FloatBuffer;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class PixelPerfectPickingExtension implements RenderExtension {
 
@@ -36,12 +39,13 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             int adjustedX = (int) (Mouse.getX() * ratio.x);
             int adjustedY = (int) (Mouse.getY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
+            Logger.getGlobal().info("Picked: " + adjustedX + " : " + adjustedY);
             try {
                 int componentIndex = 3; // alpha component
                 appContext.getScene().getEntities().parallelStream().forEach(e -> {
                     e.setSelected(false);
                 });
-                Entity entity = appContext.getScene().getEntities().get((int) floatBuffer.get(componentIndex));
+                Entity entity = appContext.getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).get((int) floatBuffer.get(componentIndex));
                 entity.setSelected(true);
                 AppContext.getEventBus().post(new EntitySelectedEvent(entity));
             } catch (Exception e) {

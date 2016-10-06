@@ -2,6 +2,7 @@ package engine.model;
 
 import component.ModelComponent;
 import org.apache.commons.lang.NotImplementedException;
+import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -86,6 +87,7 @@ public class Model implements Serializable {
 
     private transient Vector3f min;
     private transient Vector3f max;
+    private transient Matrix4f lastUsedModelMatrix = null;
     private float boundSphereRadius = -1;
 
     public Model(String name, List<Vector3f> vertices, List<Vector2f> texCoords, List<Vector3f> normals) {
@@ -190,33 +192,7 @@ public class Model implements Serializable {
     }
 
     public Vector4f[] getMinMax() {
-        if (min == null || max == null)
-        {
-            min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-            max = new Vector3f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
-
-            for (int i = 0; i < faces.size(); i++) {
-                Face face = faces.get(i);
-
-                int[] referencedVertices = face.getVertices();
-
-                for (int j = 0; j < 3; j++) {
-                    Vector3f position = getVertices().get(referencedVertices[j] - 1);
-
-                    min.x = position.x < min.x ? position.x : min.x;
-                    min.y = position.y < min.y ? position.y : min.y;
-                    min.z = position.z < min.z ? position.z : min.z;
-
-                    max.x = position.x > max.x ? position.x : max.x;
-                    max.y = position.y > max.y ? position.y : max.y;
-                    max.z = position.z > max.z ? position.z : max.z;
-                }
-            }
-        }
-
-        boundSphereRadius = (Vector3f.sub(max, min, null).scale(0.5f)).length();
-
-        return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
+        return getMinMax(null);
     }
 
     public float getBoundingSphereRadius() {
@@ -240,5 +216,40 @@ public class Model implements Serializable {
 
     public int[] getIndexBufferValuesArray() {
         return indexBufferValuesArray;
+    }
+
+    public Vector4f[] getMinMax(Matrix4f modelMatrix) {
+        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !lastUsedModelMatrix.equals(modelMatrix))
+        {
+            min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+            max = new Vector3f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
+
+            for (int i = 0; i < faces.size(); i++) {
+                Face face = faces.get(i);
+
+                int[] referencedVertices = face.getVertices();
+
+                for (int j = 0; j < 3; j++) {
+                    Vector3f positionV3 = getVertices().get(referencedVertices[j] - 1);
+                    Vector4f position = new Vector4f(positionV3.x, positionV3.y, positionV3.z, 1);
+                    if(modelMatrix != null) {
+                        Matrix4f.transform(modelMatrix, position, position);
+                    }
+
+                    min.x = position.x < min.x ? position.x : min.x;
+                    min.y = position.y < min.y ? position.y : min.y;
+                    min.z = position.z < min.z ? position.z : min.z;
+
+                    max.x = position.x > max.x ? position.x : max.x;
+                    max.y = position.y > max.y ? position.y : max.y;
+                    max.z = position.z > max.z ? position.z : max.z;
+                }
+            }
+        }
+
+        boundSphereRadius = (Vector3f.sub(max, min, null).scale(0.5f)).length();
+        lastUsedModelMatrix = modelMatrix;
+
+        return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
     }
 }
