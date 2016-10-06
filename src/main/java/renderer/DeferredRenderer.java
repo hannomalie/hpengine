@@ -217,9 +217,6 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Frame");
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 		GPUProfiler.end();
-        if(Config.DRAWLINES_ENABLED) {
-            drawToQuad(gBuffer.getColorReflectivenessMap(), fullscreenBuffer);
-        }
 		if (Config.DEBUGFRAME_ENABLED) {
 			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);

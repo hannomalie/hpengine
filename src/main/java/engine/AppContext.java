@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -507,13 +508,12 @@ public class AppContext implements Extractor<RenderExtract> {
         boolean anyPointLightHasMoved = scene.getPointLights().stream()
                         .filter(light -> light.hasMoved()).collect(Collectors.toList())
                         .isEmpty();
-        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
+        if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
         }
 
         if((entityHasMoved || entityAdded) && scene != null) {
-            EntityFactory.getInstance().bufferEntities();
             entityAdded = false;
             directionalLightNeedsShadowMapRedraw = true;
         }
@@ -522,23 +522,28 @@ public class AppContext implements Extractor<RenderExtract> {
         }
         List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
 
-        currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
         updateFpsCounter.update();
         if (Renderer.getInstance().isFrameFinished()) {
+            currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
             OpenGLContext.getInstance().blockUntilEmpty();
 
             OpenGLContext.getInstance().execute(() -> {
+                RenderExtract extractCopy = new RenderExtract(currentExtract);
+                if(extractCopy.anEntityHasMoved) {
+                    EntityFactory.getInstance().bufferEntities();
+                }
                 Renderer.getInstance().startFrame();
-                latestDrawResult = Renderer.getInstance().draw(new RenderExtract(currentExtract));
+                latestDrawResult = Renderer.getInstance().draw(extractCopy);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
-                resetState(currentExtract);
+                resetState(extractCopy);
                 AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+
+                if(scene != null) {
+                    scene.endFrame();
+                }
             }, false);
         }
 
-        if(scene != null) {
-            scene.endFrame();
-        }
     }
 
     public List<PerEntityInfo> getPerEntityInfos(Camera camera) {

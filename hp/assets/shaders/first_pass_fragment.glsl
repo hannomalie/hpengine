@@ -200,7 +200,7 @@ void main(void) {
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
   	out_normal.a = materialAmbient;
-  	out_visibility = vec4(1,depth,outMaterialIndex,outEntityIndex);
+  	out_visibility = vec4(1,depth,outMaterialIndex, float(entity.entityBaseIndex));
 
   	if(RAINEFFECT) {
 		float n = surface3(vec3(UV, 0.01));
