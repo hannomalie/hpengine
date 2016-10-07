@@ -49,4 +49,9 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     public void eval(String script) {
         ScriptManager.getInstance().eval(getContext(), script);
     }
+
+    @Override
+    public void reload() {
+        init();
+    }
 }

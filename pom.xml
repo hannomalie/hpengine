@@ -300,7 +300,7 @@
         <dependency>
             <groupId>de.hanno.compiler</groupId>
             <artifactId>java-compiler</artifactId>
-            <version>1.0</version>
+            <version>1.2</version>
         </dependency>
     </dependencies>
 </project>
