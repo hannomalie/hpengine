@@ -479,10 +479,20 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         return instancesCount;
     }
 
-    public void addInstance(Transform instance) {
-        if(getParent() != null) {
-            instance.setParent(getParent().getTransform());
-        }
-        instances.add(instance);
-    }
+	public void addInstance(Transform instance) {
+		if(getParent() != null) {
+			instance.setParent(getParent().getTransform());
+		}
+		instances.add(instance);
+		AppContext.getEventBus().post(new EntityAddedEvent());
+	}
+	public void addInstances(List<Transform> instances) {
+		if(getParent() != null) {
+			for(Transform instance : instances) {
+				instance.setParent(getParent().getTransform());
+			}
+		}
+		this.instances.addAll(instances);
+		AppContext.getEventBus().post(new EntityAddedEvent());
+	}
 }
