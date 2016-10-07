@@ -133,7 +133,11 @@ public class DebugFrame {
         { AppContext.getEventBus().register(this); }
         @Subscribe @Handler public void handle(EntityAddedEvent e) { sceneTree.reload();viewport.setView((sceneTree)); }
     };
-	private final ReloadableScrollPane probesPane = new ReloadableScrollPane(new ProbesTree());
+    private final ProbesTree probesTree = new ProbesTree();
+    private final ReloadableScrollPane probesPane = new ReloadableScrollPane(probesTree) {
+        { AppContext.getEventBus().register(this); }
+        @Subscribe @Handler public void handle(ProbeAddedEvent e) { probesTree.reload();viewport.setView((sceneTree)); }
+    };
     private final JTextPane output = new JTextPane();
     private final ReloadableScrollPane outputPane = new ReloadableScrollPane(output);
     private final JTextPane infoLeft = new JTextPane();
@@ -202,7 +206,7 @@ public class DebugFrame {
 	private PerformanceMonitor performanceMonitor;
 	private WebProgressBar progressBar = new WebProgressBar();
 
-	public DebugFrame() {
+    public DebugFrame() {
 		AppContext.getEventBus().register(this);
 
         mainFrame.setLayout(new BorderLayout(5,5));
@@ -232,8 +236,6 @@ public class DebugFrame {
 	private void init(AppContextInitializedEvent appContextInitializedEvent) {
 		createTubeLightsTab();
 		createAreaLightsTab();
-
-		addProbes(AppContext.getInstance());
 
 		initPerformanceChart();
 //		redirectSystemStreams();
@@ -376,7 +378,6 @@ public class DebugFrame {
 
 					@Override
 					public void done(Result result) {
-						probesPane.reload();
 					}
 
 				}.execute();
@@ -1228,18 +1229,6 @@ public class DebugFrame {
                 }
             }
         });
-	}
-
-
-	private void addProbes(AppContext appContext) {
-		List<EnvironmentProbe> probes = EnvironmentProbeFactory.getInstance().getProbes();
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Probes (" + probes.size() + ")");
-		for (EnvironmentProbe environmentProbe : probes) {
-			top.add(new DefaultMutableTreeNode(environmentProbe));
-		}
-		this.probes = new WebCheckBoxTree<>(top);
-        this.probes.addCheckStateChangeListener(new SetVisibilityCheckStateListener());
-		new SetSelectedListener(this.probes, appContext);
 	}
 
 	public void showSuccess(String content) {

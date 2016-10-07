@@ -6,6 +6,7 @@ import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
 import container.Octree;
+import event.ProbeAddedEvent;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
@@ -83,6 +84,7 @@ public class EnvironmentProbeFactory {
 		EnvironmentProbe probe = new EnvironmentProbe(AppContext.getInstance(), center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
+        AppContext.getEventBus().post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
