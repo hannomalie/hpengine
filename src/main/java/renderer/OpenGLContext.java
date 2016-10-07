@@ -83,8 +83,8 @@ public final class OpenGLContext {
 
             @Override
             public void update(float seconds) {
-                Thread.currentThread().setName(OPENGL_THREAD_NAME);
                 if (!context.isInitialized()) {
+                    Thread.currentThread().setName(OPENGL_THREAD_NAME);
                     try {
                         try {
                             context.privateInit();

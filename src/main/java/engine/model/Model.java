@@ -7,6 +7,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
+import util.Util;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -219,7 +220,7 @@ public class Model implements Serializable {
     }
 
     public Vector4f[] getMinMax(Matrix4f modelMatrix) {
-        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !lastUsedModelMatrix.equals(modelMatrix))
+        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !Util.equals(lastUsedModelMatrix, modelMatrix))
         {
             min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
             max = new Vector3f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);

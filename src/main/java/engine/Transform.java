@@ -31,7 +31,7 @@ public class Transform implements Serializable, Transformable {
 	public static Vector4f IDENTITY_LOCAL_WORLD_V4 = new Vector4f(1,1,1,1);
 	
 	private Transform parent;
-	private Matrix4f parentMatrix = new Matrix4f();
+	private Matrix4f parentMatrix = null;
 	private List<Transform> children = new ArrayList<>();
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
@@ -215,12 +215,14 @@ public class Transform implements Serializable, Transformable {
 		return localToWorld(new Vector4f(localPosition.x, localPosition.y, localPosition.z, 1f));
 	}
 
+	private Matrix4f tempOrientationLocalToWorldMatrix = new Matrix4f();
 	public Vector3f localDirectionToWorld(Vector3f localAxis) {
-		Vector4f temp = Matrix4f.transform((Matrix4f)Util.toMatrix(getOrientation()).invert(), new Vector4f(localAxis.x,localAxis.y,localAxis.z, 0), null);
+		Vector4f temp = Matrix4f.transform((Matrix4f)Util.toMatrix(getOrientation(), tempOrientationLocalToWorldMatrix).invert(), new Vector4f(localAxis.x,localAxis.y,localAxis.z, 0), null);
 		return new Vector3f(temp.x, temp.y, temp.z);
 	}
+	private Matrix4f tempOrientationWorldToLocalMatrix = new Matrix4f();
 	public Vector3f worldDirectionToLocal(Vector3f worldAxis) {
-		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation()), new Vector4f(worldAxis.x,worldAxis.y,worldAxis.z, 0), null);
+		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation(), tempOrientationWorldToLocalMatrix), new Vector4f(worldAxis.x,worldAxis.y,worldAxis.z, 0), null);
 		return new Vector3f(temp.x, temp.y, temp.z);
 	}
 	
@@ -239,42 +241,41 @@ public class Transform implements Serializable, Transformable {
 		return transformation;
 	}
 
+	private Matrix4f tempTransformationMatrix = new Matrix4f();
+	private Matrix4f tempOrientationMatrix = new Matrix4f();
 	private Matrix4f calculateTransformation() {
-		Matrix4f temp = new Matrix4f();
-		temp.setIdentity();
-		Matrix4f.translate(position, temp, temp);
-		Matrix4f.mul(temp, Util.toMatrix(orientation), temp);
-		temp.scale(scale);
+		tempTransformationMatrix.setIdentity();
+		Matrix4f.translate(position, tempTransformationMatrix, tempTransformationMatrix);
+		Matrix4f.mul(tempTransformationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTransformationMatrix);
+		tempTransformationMatrix.scale(scale);
 		if(parent != null) {
 			parentMatrix = parent.getTransformation();
 		}
-		if(parentMatrix == null) {
-			parentMatrix = new Matrix4f();
-			Matrix4f.setIdentity(parentMatrix);
+		if(parentMatrix != null) {
+			Matrix4f.mul(parentMatrix, tempTransformationMatrix, tempTransformationMatrix);
 		}
-		temp = Matrix4f.mul(parentMatrix, temp, null);
 
-		return temp;
+		return tempTransformationMatrix;
 	}
+
+	private Matrix4f tempTranslationRotationMatrix = new Matrix4f();
 	private Matrix4f calculateTranslationRotation() {
-		Matrix4f temp = new Matrix4f();
-		temp.setIdentity();
-		Matrix4f.translate(position, temp, temp);
-		Matrix4f.mul(temp, Util.toMatrix(orientation), temp); // TODO: SWITCH THESE LINES....
-        temp.scale(new Vector3f(1,1,1));
+		tempTranslationRotationMatrix.setIdentity();
+		Matrix4f.translate(position, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
+		Matrix4f.mul(tempTranslationRotationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTranslationRotationMatrix); // TODO: SWITCH THESE LINES....
+		tempTranslationRotationMatrix.scale(new Vector3f(1,1,1));
 
 		if(parent != null) {
 			parentMatrix = parent.getTranslationRotation();
 		}
-		if(parentMatrix == null) {
-			parentMatrix = new Matrix4f();
-			Matrix4f.setIdentity(parentMatrix);
+		if(parentMatrix != null) {
+			Matrix4f.mul(parentMatrix, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
 		}
-		temp = Matrix4f.mul(parentMatrix, temp, null);
 
-		return temp;
+		return tempTranslationRotationMatrix;
 	}
 
+	private Matrix4f tempViewMatrix = new Matrix4f();
 	private Matrix4f calculateViewMatrix() {
 //		Matrix4f temp = new Matrix4f();
 //		temp.setIdentity();
@@ -289,7 +290,8 @@ public class Transform implements Serializable, Transformable {
 //		}
 //		temp = Matrix4f.mul(parentMatrix, temp, null);
 
-		return (Matrix4f) new Matrix4f(translationRotation).invert();
+		tempViewMatrix.load(translationRotation).invert();
+		return tempViewMatrix;
 //		return temp;
 	}
 
@@ -346,9 +348,11 @@ public class Transform implements Serializable, Transformable {
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
+	Matrix4f tempView = new Matrix4f();
 	public Matrix4f getViewMatrix() {
 		recalculateIfDirty();
-		return new Matrix4f(viewMatrix);
+		tempView.load(viewMatrix);
+		return tempView;
 	}
 
 	public void init() {

@@ -27,8 +27,9 @@ public class MathTest {
 	public void QuaternionRotation() {
 		Quaternion ninetyDegreesXAxis = new Quaternion();
 		ninetyDegreesXAxis.setFromAxisAngle(new Vector4f(1, 0, 0, (float) Math.toRadians(90f)));
-		
-		Matrix4f rotMatrix = Util.toMatrix(ninetyDegreesXAxis);
+
+		Matrix4f tempRotationMatrix = new Matrix4f();
+		Matrix4f rotMatrix = Util.toMatrix(ninetyDegreesXAxis, tempRotationMatrix);
 		
 		Assert.assertEquals(1.0f, rotMatrix.m00, delta);
 		Assert.assertEquals(0f, rotMatrix.m10, delta);
@@ -54,8 +55,9 @@ public class MathTest {
 	public void QuaternionRotation2() {
 		Quaternion hundretAndEightyDegreesYAxis = new Quaternion();
 		hundretAndEightyDegreesYAxis.setFromAxisAngle(new Vector4f(0, 1, 0, (float) Math.toRadians(180f)));
-		
-		Matrix4f rotMatrix = Util.toMatrix(hundretAndEightyDegreesYAxis);
+
+		Matrix4f tempRotationMatrix = new Matrix4f();
+		Matrix4f rotMatrix = Util.toMatrix(hundretAndEightyDegreesYAxis, tempRotationMatrix);
 		
 		Assert.assertEquals(-1.0f, rotMatrix.m00, delta);
 		Assert.assertEquals(0f, rotMatrix.m10, delta);

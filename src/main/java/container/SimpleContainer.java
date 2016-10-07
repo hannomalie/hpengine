@@ -6,12 +6,14 @@ import renderer.Renderer;
 import shader.Program;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 public class SimpleContainer implements EntitiesContainer {
 
     private Set<Entity> entities = new CopyOnWriteArraySet<>();
+    List<Entity> result = new CopyOnWriteArrayList<>();
     private boolean initialized;
 
     @Override
@@ -47,7 +49,7 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public List<Entity> getEntities() {
-        List<Entity> result = new ArrayList<>();
+        result.clear();
         result.addAll(entities);
         return result;
     }

@@ -7,6 +7,7 @@ import component.PhysicsComponent;
 import engine.AppContext;
 import engine.Transform;
 import engine.lifecycle.LifeCycle;
+import event.EntityAddedEvent;
 import event.UpdateChangedEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -14,6 +15,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.MaterialFactory;
 import shader.Bufferable;
+import util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -115,7 +117,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public boolean hasComponent(Class<? extends Component> type) {
-		return getComponents().keySet().contains(type.getSimpleName());
+		return getComponents().containsKey(type.getSimpleName());
 	}
 
 	public List<Entity> getAllChildrenAndSelf() {
@@ -266,7 +268,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector4f[] getMinMaxWorld() {
         if(!getTransform().isDirty() && minMax != null) {
-            if(lastUsedTransformationMatrix != null && getTransform().getTransformation().equals(lastUsedTransformationMatrix)) {
+            if(lastUsedTransformationMatrix != null && Util.equals(getTransform().getTransformation(), lastUsedTransformationMatrix)) {
                 return minMax;
             }
         }

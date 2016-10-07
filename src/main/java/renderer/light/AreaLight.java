@@ -2,14 +2,12 @@ package renderer.light;
 
 import camera.Camera;
 import camera.Frustum;
-import component.ModelComponent;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.RenderExtract;
 import renderer.rendertarget.RenderTarget;
 import util.Util;
 
@@ -69,12 +67,14 @@ public class AreaLight extends Camera {
 //		});
 //	}
 
+	Matrix4f tempOrientationMatrix = new Matrix4f();
+	Matrix4f tempModelMatrixWithLowerScale = new Matrix4f();
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
-		Matrix4f temp = new Matrix4f();
-		Matrix4f.translate(getPosition(), temp, temp);
-		Matrix4f.mul(Util.toMatrix(getOrientation()), temp, temp);
-		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
-		return temp;
+		tempModelMatrixWithLowerScale.setIdentity();
+		Matrix4f.translate(getPosition(), tempModelMatrixWithLowerScale, tempModelMatrixWithLowerScale);
+		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), tempModelMatrixWithLowerScale, tempModelMatrixWithLowerScale);
+		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), tempModelMatrixWithLowerScale, tempModelMatrixWithLowerScale);
+		return tempModelMatrixWithLowerScale;
 	}
 	
 	public static float[] convert(List<AreaLight> list) {

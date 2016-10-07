@@ -6,6 +6,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public abstract class TimeStepThread extends Thread {
+    private final String name;
     private Logger LOGGER;
 
     private long start = 0l;
@@ -23,7 +24,7 @@ public abstract class TimeStepThread extends Thread {
         super();
         LOGGER = LogManager.getLogManager().getLogger(TimeStepThread.class.getName() + " " + name);
         setMinimumCycleTimeInSeconds(minimumCycleTimeInSeconds);
-        setName(name);
+        this.name = name;
         setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
@@ -42,6 +43,7 @@ public abstract class TimeStepThread extends Thread {
     }
     @Override
     public void run() {
+        setName(name);
 
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;

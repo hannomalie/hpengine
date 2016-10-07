@@ -66,10 +66,11 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		});
 	}
 
+	private Matrix4f tempOrientationMatrix = new Matrix4f();
 	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
 		Matrix4f temp = new Matrix4f();
 		Matrix4f.translate(getPosition(), temp, temp);
-		Matrix4f.mul(Util.toMatrix(getOrientation()), temp, temp);
+		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
 		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
 		return temp;
 	}

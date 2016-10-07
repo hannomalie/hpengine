@@ -6,6 +6,7 @@ import camera.Camera;
 import component.ModelComponent;
 import engine.model.Entity;
 import engine.model.Model;
+import org.lwjgl.util.vector.Matrix;
 import renderer.Renderer;
 import renderer.material.MaterialFactory;
 import shader.Program;
@@ -64,10 +65,11 @@ public class TubeLight extends Entity {
 		});
 	}
 
+	Matrix4f tempOrientationMatrix = new Matrix4f();
     private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
 		Matrix4f temp = new Matrix4f();
 		Matrix4f.translate(getPosition(), temp, temp);
-		Matrix4f.mul(Util.toMatrix(getOrientation()), temp, temp);
+		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
 		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
 		return temp;
 	}

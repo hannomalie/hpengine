@@ -79,6 +79,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private FirstPassResult firstPassResult = new FirstPassResult();
+    private List<DrawElementsIndirectCommand> commands = new ArrayList();
+    private Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap();
+    private SortedSet<Integer> keys = new TreeSet<>();;
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -204,8 +207,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             GPUProfiler.start("Actual draw entities");
             ModelComponent.getGlobalIndexBuffer().bind();
-            List<DrawElementsIndirectCommand> commands = new ArrayList<>(renderExtract.perEntityInfos().size());
-            Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap<>();
+            commandsMap.clear();
             for(PerEntityInfo info : renderExtract.perEntityInfos()) {
                 if(!info.isVisibleForCamera()) {
                     continue;
@@ -233,10 +235,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 }
             }
             if(INDIRECT_DRAWING) {
-                SortedSet<Integer> keys = new TreeSet<>(commandsMap.keySet());
+                keys.clear();
+                keys.addAll(commandsMap.keySet());
+                commands.clear();
                 for (Integer key : keys) {
-                    DrawElementsIndirectCommand command = commandsMap.get(key);
-                    commands.add(command);
+                    commands.add(commandsMap.get(key));
                 }
                 firstpassDefaultProgram.setUniform("entityIndex", 0);
                 firstpassDefaultProgram.setUniform("entityBaseIndex", 0);

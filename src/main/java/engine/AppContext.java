@@ -508,7 +508,7 @@ public class AppContext implements Extractor<RenderExtract> {
         boolean anyPointLightHasMoved = scene.getPointLights().stream()
                         .filter(light -> light.hasMoved()).collect(Collectors.toList())
                         .isEmpty();
-        if(scene.getEntities().stream().anyMatch(entity -> entity.hasMoved())) {
+        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
         }

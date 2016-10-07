@@ -21,7 +21,6 @@ import java.nio.FloatBuffer;
 public class DirectionalLight extends Entity {
 
 	private boolean castsShadows = false;
-	transient FloatBuffer entityBuffer;
 
 	private Vector3f color = new Vector3f(1,1,1);
 	private float scatterFactor = 1f;
@@ -98,7 +97,6 @@ public class DirectionalLight extends Entity {
 	public void init() {
 		super.init();
 		initialized = false;
-		entityBuffer = BufferUtils.createFloatBuffer(16);
 
         setHasMoved(true);
 		initialized = true;

@@ -180,9 +180,7 @@ public class Util {
 		return new Vector3f(temp.x, temp.y, temp.z);
 	}
 	
-	public static Matrix4f toMatrix(Quaternion q) {
-		Matrix4f m = new Matrix4f();
-
+	public static Matrix4f toMatrix(Quaternion q, Matrix4f out) {
 		float qx = q.getX();
         float qy = q.getY();
         float qz = q.getZ();
@@ -193,26 +191,26 @@ public class Util {
         float qy2 = qy * qy;
         float qz2 = qz * qz;
 
-        m.m00 = 1 - 2 * qy2 - 2 * qz2;
-        m.m01 = 2 * qx * qy + 2 * qz * qw;
-        m.m02 = 2 * qx * qz - 2 * qy * qw;
-        m.m03 = 0;
+        out.m00 = 1 - 2 * qy2 - 2 * qz2;
+        out.m01 = 2 * qx * qy + 2 * qz * qw;
+        out.m02 = 2 * qx * qz - 2 * qy * qw;
+        out.m03 = 0;
 
-        m.m10 = 2 * qx * qy - 2 * qz * qw;
-        m.m11 = 1 - 2 * qx2 - 2 * qz2;
-        m.m12 = 2 * qy * qz + 2 * qx * qw;
-        m.m13 = 0;
+        out.m10 = 2 * qx * qy - 2 * qz * qw;
+        out.m11 = 1 - 2 * qx2 - 2 * qz2;
+        out.m12 = 2 * qy * qz + 2 * qx * qw;
+        out.m13 = 0;
 
-        m.m20 = 2 * qx * qz + 2 * qy * qw;
-        m.m21 = 2 * qy * qz - 2 * qx * qw;
-        m.m22 = 1 - 2 * qx2 - 2 * qy2;
-        m.m23 = 0;
+        out.m20 = 2 * qx * qz + 2 * qy * qw;
+        out.m21 = 2 * qy * qz - 2 * qx * qw;
+        out.m22 = 1 - 2 * qx2 - 2 * qy2;
+        out.m23 = 0;
 
-        m.m30 = 0;
-        m.m31 = 0;
-        m.m32 = 0;
+        out.m30 = 0;
+        out.m31 = 0;
+        out.m32 = 0;
 
-        return m;
+        return out;
     }
 
 //	public static Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
@@ -510,4 +508,23 @@ public class Util {
     public static boolean equals(Quaternion a, Quaternion b) {
         return a.x == b.x && a.y == b.y && a.x == b.x && a.w == b.w;
     }
+
+	public static boolean equals(Matrix4f a, Matrix4f b) {
+		return  a.m00 == b.m00 &&
+				a.m01 == b.m01 &&
+				a.m02 == b.m02 &&
+				a.m03 == b.m03 &&
+				a.m10 == b.m10 &&
+				a.m11 == b.m11 &&
+				a.m12 == b.m12 &&
+				a.m13 == b.m13 &&
+				a.m20 == b.m20 &&
+				a.m21 == b.m21 &&
+				a.m22 == b.m22 &&
+				a.m23 == b.m23 &&
+				a.m30 == b.m30 &&
+				a.m31 == b.m31 &&
+				a.m32 == b.m32 &&
+				a.m33 == b.m33;
+	}
 }
