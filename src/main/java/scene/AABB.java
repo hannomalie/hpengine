@@ -22,6 +22,9 @@ public class AABB implements Serializable {
 	public float sizeY;
 	public float sizeZ;
 
+    public Vector3f getMin() { return bottomLeftBackCorner; }
+    public Vector3f getMax() { return topRightForeCorner; }
+
 	public AABB(Vector3f center, float size) {
 		this(center, size, size, size);
 	}

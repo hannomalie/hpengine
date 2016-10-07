@@ -222,7 +222,7 @@ public class Model implements Serializable {
         if(!(lastUsedModelMatrix == null && modelMatrix == null) || !lastUsedModelMatrix.equals(modelMatrix))
         {
             min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-            max = new Vector3f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
+            max = new Vector3f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
 
             for (int i = 0; i < faces.size(); i++) {
                 Face face = faces.get(i);

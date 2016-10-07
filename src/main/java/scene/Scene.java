@@ -2,6 +2,7 @@ package scene;
 
 import component.ModelComponent;
 import container.EntitiesContainer;
+import container.Octree;
 import container.SimpleContainer;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
@@ -10,6 +11,7 @@ import engine.model.Model;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
@@ -152,7 +154,7 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
     static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-    static final Vector4f absoluteMinimum = new Vector4f(Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE,Float.MIN_VALUE);
+    static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
     Vector4f min = new Vector4f();
     Vector4f max = new Vector4f();
     Vector4f[] minMax = new Vector4f[]{min, max};
