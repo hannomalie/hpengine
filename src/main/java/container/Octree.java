@@ -1,12 +1,14 @@
 package container;
 
 import camera.Camera;
+import com.google.common.eventbus.Subscribe;
 import engine.AppContext;
 import engine.lifecycle.LifeCycle;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
 import renderer.Renderer;
+import renderer.drawstrategy.extensions.DrawLinesExtension;
 import scene.AABB;
 import shader.Program;
 import util.stopwatch.StopWatch;
@@ -23,13 +25,11 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static log.ConsoleLogger.getLogger;
-
 public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	private static final long serialVersionUID = 1L;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(8);
 	private static ExecutorService executorService = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
-	private static Logger LOGGER = LogManager.getLogManager().getLogger(Octree.class.getName());
+	private static Logger LOGGER = Logger.getLogger(Octree.class.getName());
 	private static FloatBuffer matrix44Buffer = null;
 	private static Matrix4f modelMatrix = new Matrix4f();
 	public static final float DEFAULT_SIZE = 1000;
@@ -76,6 +76,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
+        AppContext.getEventBus().register(this);
 	}
 
 	@Override
@@ -162,23 +163,36 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	
 	@Override
     public void drawDebug(Renderer renderer, Camera camera, Program program) {
-		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
-		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
-		
-		// List of 24*3 = 72 floats per floatarray
-		List<float[]> arrays = rootNode.getPointsForLineDrawing(camera);
-		float[] points = new float[arrays.size() * 72];
-		for (int i = 0; i < arrays.size(); i++) {
-			float[] array = arrays.get(i);
-			for (int z = 0; z < 72; z++) {
-				points[24*3*i + z] = array[z];
-			}
-			
-		};
-		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
-		buffer.drawDebug();
-		buffer.delete();
+//		program.setUniformAsMatrix4("modelMatrix", matrix44Buffer);
+//		program.setUniform("materialDiffuseColor", new Vector3f(1,0,0));
+//
+//		// List of 24*3 = 72 floats per floatarray
+//		List<float[]> arrays = rootNode.getPointsForLineDrawing(camera);
+//		float[] points = new float[arrays.size() * 72];
+//		for (int i = 0; i < arrays.size(); i++) {
+//			float[] array = arrays.get(i);
+//			for (int z = 0; z < 72; z++) {
+//				points[24*3*i + z] = array[z];
+//			}
+//
+//		};
+//		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+//		buffer.drawDebug();
+//		buffer.delete();
+
+        batchLines(rootNode);
+        Renderer.getInstance().drawLines(program);
 	}
+
+	private void batchLines(Node node) {
+        if(node.hasChildren()) {
+            for(Node child : node.children) {
+                batchLines(child);
+            }
+        } else if(node.hasEntities()){
+            DrawLinesExtension.batchAABBLines(node.looseAabb.getMin(), node.looseAabb.getMax());
+        }
+    }
 
 	public void setAppContext(AppContext appContext) {
     }
