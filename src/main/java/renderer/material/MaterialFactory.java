@@ -292,7 +292,7 @@ public class MaterialFactory {
 	private void bufferMaterials() {
         OpenGLContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
-            materialBuffer.put(Util.toArray(MATERIALS.values(), Material.class));
+            materialBuffer.put(Util.toArray(materials, Material.class));
         });
     }
 }

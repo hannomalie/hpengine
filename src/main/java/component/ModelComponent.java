@@ -72,6 +72,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();
+    private int[] indicesCounts;
 
     protected String materialName = "";
 
@@ -195,6 +196,10 @@ public class ModelComponent extends BaseComponent implements Serializable {
 //        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
         lodLevels.add(indices.get(0));
         indices = lodLevels;
+        indicesCounts = new int[indices.size()];
+        for(int i = 0; i < indicesCounts.length; i++) {
+            indicesCounts[i] = indices.get(0).length;
+        }
         LOGGER.fine("############## faces count before reduction: " + sizeBeforeReduction);
         LOGGER.fine("############## lodlevels calculated: " + lodLevels.size());
     }
@@ -301,7 +306,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
 
     public int getIndexCount() {
-        return getIndices().length;
+        return indicesCounts[0];
 
     }
     public int getIndexOffset() {

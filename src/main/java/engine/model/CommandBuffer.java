@@ -32,6 +32,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
     @Override
     protected IntBuffer mapBuffer(int capacityInBytes, int flags) {
         IntBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * getPrimitiveSizeInBytes())).asIntBuffer();
+
         if(buffer != null) {
             newBuffer.put(buffer);
             newBuffer.rewind();
@@ -41,7 +42,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
 
     @Override
     public int getPrimitiveSizeInBytes() {
-        return 1;
+        return sizeInBytes();
     }
 
     @Override

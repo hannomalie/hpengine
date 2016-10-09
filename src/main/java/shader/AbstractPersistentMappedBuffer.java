@@ -31,7 +31,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         return buffer;
     }
 
-    protected void setCapacityInBytes(int requestedCapacity) {
+    protected synchronized void setCapacityInBytes(int requestedCapacity) {
         int capacityInBytes = requestedCapacity;
         if(capacityInBytes <= 0) { capacityInBytes = 10; }
 

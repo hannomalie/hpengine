@@ -25,12 +25,9 @@ public abstract class TimeStepThread extends Thread {
         LOGGER = LogManager.getLogManager().getLogger(TimeStepThread.class.getName() + " " + name);
         setMinimumCycleTimeInSeconds(minimumCycleTimeInSeconds);
         this.name = name;
-        setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                LOGGER.severe("An error!");
-                e.printStackTrace();
-            }
+        setUncaughtExceptionHandler((t, e) -> {
+            LOGGER.severe("An error!");
+            e.printStackTrace();
         });
     }
 
@@ -66,19 +63,19 @@ public abstract class TimeStepThread extends Thread {
         float secondsLeft = (minimumCycleTimeInSeconds - actualS);
         if(secondsLeft <= 0) { return; }
 
-//        boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
-//        if(moreThanThreeMsToWait) {
-//            try {
-//                long timeBeforeSleep = System.nanoTime();
-//                Thread.sleep((long) (actualS * 0.9f/1000f));
-//                long sleptNanoSeconds = System.nanoTime() - timeBeforeSleep;
-//                long sleptMs = sleptNanoSeconds / 1000 / 1000;
-//                secondsLeft -= sleptMs/1000f;
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//
-//        }
+        boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
+        if(moreThanThreeMsToWait) {
+            try {
+                long timeBeforeSleep = System.nanoTime();
+                Thread.sleep(0, 500);
+                long sleptNanoSeconds = System.nanoTime() - timeBeforeSleep;
+                long sleptMs = sleptNanoSeconds / 1000 / 1000;
+                secondsLeft -= sleptMs/1000f;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
 
         long nanoSecondsLeft = (long) (secondsLeft * 1000 * 1000 * 1000);
         long startTime = System.nanoTime();

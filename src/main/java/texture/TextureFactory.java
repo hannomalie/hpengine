@@ -143,7 +143,7 @@ public class TextureFactory {
         }
 
         for(int i = 0; i < TEXTURE_FACTORY_THREAD_COUNT; i++) {
-            new TimeStepThread("TextureFactory" + i, 0f) {
+            new TimeStepThread("TextureFactory" + i, 0.001f) {
                 @Override
                 public void update(float seconds) {
                     commandQueue.executeCommands();

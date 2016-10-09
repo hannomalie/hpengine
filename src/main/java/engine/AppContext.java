@@ -314,7 +314,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
         thread.start();
 
-        new TimeStepThread("Render", 0.002f) {
+        new TimeStepThread("Render", 0.00f) {
             @Override
             public void update(float seconds) {
                 actuallyDraw(getScene().getDirectionalLight());
@@ -525,7 +525,8 @@ public class AppContext implements Extractor<RenderExtract> {
         updateFpsCounter.update();
         if (Renderer.getInstance().isFrameFinished()) {
             currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
-            OpenGLContext.getInstance().blockUntilEmpty();
+            long blockedMs = OpenGLContext.getInstance().blockUntilEmpty();
+            LOGGER.fine("Waited ms for renderer to complete: " + blockedMs);
 
             OpenGLContext.getInstance().execute(() -> {
                 RenderExtract extractCopy = new RenderExtract(currentExtract);
@@ -551,22 +552,20 @@ public class AppContext implements Extractor<RenderExtract> {
         List<PerEntityInfo> perEntityInfos= new ArrayList<>();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
-        List<Entity> entitiesWithModelComponent = AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList());
 
-        for (Entity entity : entitiesWithModelComponent) {
+        for (ModelComponent modelComponent : AppContext.getInstance().getScene().getModelComponents()) {
             // TODO: Implement strategy pattern
 
+            Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
             Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
             float distanceToCamera = distance.length();
-            ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
-            int entityIndex = entitiesWithModelComponent.indexOf(entity);
             int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
-            perEntityInfos.add(new PerEntityInfo(camera, null, firstpassDefaultProgram, entityIndex, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
+            perEntityInfos.add(new PerEntityInfo(camera, null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
         }
 
         return perEntityInfos;

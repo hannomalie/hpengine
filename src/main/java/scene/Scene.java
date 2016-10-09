@@ -22,10 +22,8 @@ import renderer.light.PointLight;
 import renderer.light.TubeLight;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -246,7 +244,7 @@ public class Scene implements LifeCycle, Serializable {
 		return entityContainer.getEntities();
 	}
 	public Optional<Entity> getEntity(String name) {
-		List<Entity> candidates = getEntities().stream().filter(e -> { return e.getName().equals(name); }).collect(Collectors.toList());
+		List<Entity> candidates = getEntities().stream().filter(e -> e.getName().equals(name)).collect(Collectors.toList());
 		return candidates.size() > 0 ? Optional.of(candidates.get(0)) : Optional.of(null);
 	}
 	public boolean isInitialized() {
@@ -294,10 +292,19 @@ public class Scene implements LifeCycle, Serializable {
 	private volatile List<Integer> cachedEntityIndices = new ArrayList();
     public int getEntityIndexOf(Entity entity) {
     	cacheEntityIndices();
-		return entitiesWithModelComponent.indexOf(entity);
+		return entitiesWithModelComponent.get(entity);
     }
 
-	private final List<Entity> entitiesWithModelComponent = new ArrayList<>();
+
+    public Map<Entity, Integer> getEntitiesWithModelComponent() {
+        return entitiesWithModelComponent;
+    }
+    public List<ModelComponent> getModelComponents() {
+        return modelComponents;
+    }
+
+    private final Map<Entity, Integer> entitiesWithModelComponent = new ConcurrentHashMap<>();
+    private final List<ModelComponent> modelComponents = new CopyOnWriteArrayList<>();
 	private void cacheEntityIndices() {
 		if(updateCache)
 		{
@@ -306,7 +313,8 @@ public class Scene implements LifeCycle, Serializable {
 			int i = 0;
 			for(Entity current : entityContainer.getEntities()) {
 				if(!current.hasComponent(ModelComponent.class)) { continue; }
-				entitiesWithModelComponent.add(current);
+                entitiesWithModelComponent.put(current, i);
+                modelComponents.add(current.getComponent(ModelComponent.class, "ModelComponent"));
 				index += current.getInstanceCount();
 				cachedEntityIndices.add(i, index);
 				i++;

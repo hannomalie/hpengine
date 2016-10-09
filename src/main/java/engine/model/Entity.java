@@ -116,9 +116,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return Optional.ofNullable(type.cast(component));
 	}
 
-	public boolean hasComponent(Class<? extends Component> type) {
-		return getComponents().containsKey(type.getSimpleName());
-	}
+    public boolean hasComponent(Class<? extends Component> type) {
+        return getComponents().containsKey(type.getSimpleName());
+    }
+    public boolean hasComponent(String key) {
+        return getComponents().containsKey(key);
+    }
 
 	public List<Entity> getAllChildrenAndSelf() {
 		List<Entity> allChildrenAndSelf = new ArrayList<>();
@@ -265,6 +268,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
     private transient Vector4f[] minMax;
+    private transient float boundingSphereRadius = -1;
     private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector4f[] getMinMaxWorld() {
         if(!getTransform().isDirty() && minMax != null) {
@@ -273,9 +277,10 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
             }
         }
         centerWorld = null;
-        if(hasComponent(ModelComponent.class)) {
-			ModelComponent modelComponent = getComponent(ModelComponent.class);
+        if(hasComponent("ModelComponent")) {
+			ModelComponent modelComponent = getComponent(ModelComponent.class, "ModelComponent");
 			minMax = modelComponent.getMinMax(getModelMatrix());
+            modelComponent.getBoundingSphereRadius();
 		} else {
 			minMax = new Vector4f[2];
 			float amount = 5;
@@ -283,6 +288,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			Vector4f vectorMax = new Vector4f(getPosition().x+amount, getPosition().y+amount, getPosition().z+amount, 1);
 			minMax[0] = vectorMin;
 			minMax[1] = vectorMax;
+            boundingSphereRadius = Model.getBoundingSphereRadius(vectorMin, vectorMax);
 		}
         lastUsedTransformationMatrix = new Matrix4f(getTransform().getTransformation());
 
@@ -296,6 +302,10 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 		return minMax;
 	}
+
+    public float getBoundingSphereRadius() {
+        return boundingSphereRadius;
+    }
 
 
 	public Vector3f[] getMinMaxWorldVec3() {
@@ -399,7 +409,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public Update getUpdate() {
-        if(hasComponent(PhysicsComponent.class) && getComponent(PhysicsComponent.class).isDynamic()) {
+        if(hasComponent("PhysicsComponent") && getComponent(PhysicsComponent.class, "PhysicsComponent").isDynamic()) {
             return Update.DYNAMIC;
         }
 		return update;

@@ -1,16 +1,14 @@
 package renderer.fps;
 
 
+import java.util.Stack;
+
 public class FPSCounter {
 	
-	private final long[] lastFrameTimes = new long[] {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	
+	SizedStack<Long> stack = new SizedStack<>(10);
 	
 	public void update() {
-		for(int i = 0; i < lastFrameTimes.length-1; i++) {
-			lastFrameTimes[i] = lastFrameTimes[i+1];
-		}
-		lastFrameTimes[lastFrameTimes.length-1] = getTime();
+		stack.push(getTime());
 	}
 	private static long getTime() {
 		return System.nanoTime();
@@ -22,7 +20,31 @@ public class FPSCounter {
 	}
 	
 	public float getMsPerFrame() {
-		return ((lastFrameTimes[lastFrameTimes.length-1] - lastFrameTimes[0]) / lastFrameTimes.length) / 1000000f;
+		return ((stack.getLast() - stack.get(0)) / stack.getMaxSize()) / 1000000f;
 	}
-	
+
+    public class SizedStack<T> extends Stack<T> {
+        private int maxSize;
+
+        public SizedStack(int size) {
+            super();
+            this.maxSize = size;
+        }
+
+        @Override
+        public Object push(Object object) {
+            while (this.size() >= maxSize) {
+                this.remove(0);
+            }
+            return super.push((T) object);
+        }
+
+        public int getMaxSize() {
+            return maxSize;
+        }
+
+        public T getLast() {
+            return this.get(this.size()-1);
+        }
+    }
 }

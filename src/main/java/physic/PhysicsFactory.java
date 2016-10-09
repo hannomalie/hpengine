@@ -47,7 +47,7 @@ public class PhysicsFactory {
 	}
 	public PhysicsFactory(Vector3f gravity) {
         setupBullet(gravity);
-        new TimeStepThread("Physics", 0) {
+        new TimeStepThread("Physics", 0.001f) {
 
             @Override
             public void update(float seconds) {

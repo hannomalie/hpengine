@@ -248,9 +248,16 @@ public class Model implements Serializable {
             }
         }
 
-        boundSphereRadius = (Vector3f.sub(max, min, null).scale(0.5f)).length();
+        boundSphereRadius = getBoundingSphereRadius(min, max);
         lastUsedModelMatrix = modelMatrix;
 
         return new Vector4f[] {new Vector4f(min.x, min.y, min.z, 1), new Vector4f(max.x, max.y, max.z, 1)};
+    }
+
+    public static float getBoundingSphereRadius(Vector3f min, Vector3f max) {
+        return (Vector3f.sub(max, min, null).scale(0.5f)).length();
+    }
+    public static float getBoundingSphereRadius(Vector4f min, Vector4f max) {
+        return getBoundingSphereRadius(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
     }
 }

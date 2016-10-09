@@ -30,11 +30,13 @@ public class SimpleContainer implements EntitiesContainer {
     @Override
     public void insert(Entity entity) {
         entities.add(entity);
+        result = Collections.unmodifiableList(new ArrayList<>(entities));
     }
 
     @Override
     public void insert(List<Entity> toDispatch) {
         entities.addAll(toDispatch);
+        result = Collections.unmodifiableList(new ArrayList<>(entities));
     }
 
     @Override
@@ -49,8 +51,6 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public List<Entity> getEntities() {
-        result.clear();
-        result.addAll(entities);
         return result;
     }
 
@@ -61,6 +61,8 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public boolean removeEntity(Entity entity) {
-        return entities.remove(entity);
+        boolean remove = entities.remove(entity);
+        result = Collections.unmodifiableList(result);
+        return remove;
     }
 }

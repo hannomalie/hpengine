@@ -417,7 +417,11 @@ public final class OpenGLContext {
     public long blockUntilEmpty() {
         long start = System.currentTimeMillis();
         while(commandQueue.size() > 0) {
-
+            try {
+                Thread.sleep(0, 100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         return System.currentTimeMillis() - start;
     }
