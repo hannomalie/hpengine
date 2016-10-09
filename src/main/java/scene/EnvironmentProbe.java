@@ -5,6 +5,7 @@ import engine.AppContext;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.environmentsampler.EnvironmentSampler;
@@ -158,7 +159,7 @@ public class EnvironmentProbe extends Entity {
 
 	public int getTextureUnitIndex() {
 		int index = getIndex();
-		return renderer.getMaxTextureUnits() - index - 1;
+		return OpenGLContext.getInstance().getMaxTextureUnits() - index - 1;
 	}
 
 	public int getIndex() {

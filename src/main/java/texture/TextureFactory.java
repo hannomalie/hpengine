@@ -52,7 +52,11 @@ public class TextureFactory {
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
-    private static volatile boolean USE_TEXTURE_STREAMING = false;
+    private static volatile boolean USE_TEXTURE_STREAMING = true;
+
+    public CubeMap getCubeMap() {
+        return cubeMap;
+    }
 
     public CommandQueue getCommandQueue() {
         return commandQueue;
@@ -65,6 +69,7 @@ public class TextureFactory {
     }
 
     private static Texture lensFlareTexture;
+    public static CubeMap cubeMap;
     private final ComputeShaderProgram blur2dProgramSeperableHorizontal;
     private final ComputeShaderProgram blur2dProgramSeperableVertical;
 
@@ -79,6 +84,13 @@ public class TextureFactory {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
         lensFlareTexture = instance.getTexture("hp\\assets\\textures\\lens_flare_tex.jpg", true);
+        try {
+            cubeMap = instance.getCubeMap("hp\\assets\\textures\\skybox.png");
+            OpenGLContext.getInstance().activeTexture(0);
+            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
+        } catch (IOException e) {
+            LOGGER.severe(e.getMessage());
+        }
     }
 
     /** The table of textures that have been loaded in this loader */

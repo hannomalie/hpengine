@@ -217,7 +217,7 @@ public class EnvironmentSampler extends Camera {
 				GPUProfiler.start("Second pass");
 				EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
                 OpenGLContext.getInstance().clearDepthAndColorBuffer();
-				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights(), renderer.getEnvironmentMap());
+				drawSecondPass(i, light, scene.getPointLights(), scene.getTubeLights(), scene.getAreaLights());
 				GPUProfiler.end();
 				registerSideAsDrawn(i);
 			} else {
@@ -347,7 +347,7 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().enable(CULL_FACE);
 	}
 
-	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights, CubeMap cubeMap) {
+	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = getWorldPosition();//.negate(null);
 		Vector3f.add(camPosition, (Vector3f) getViewDirection().scale(getNear()), camPosition);
@@ -365,7 +365,7 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
 		OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
 		OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
-		cubeMap.bind(4);
+		TextureFactory.getInstance().getCubeMap().bind(4);
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
@@ -424,7 +424,7 @@ public class EnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, colorMap);
 		OpenGLContext.getInstance().bindTexture(8, TEXTURE_2D, colorMap);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
-		renderer.getEnvironmentMap().bind(9);
+		TextureFactory.getInstance().getCubeMap().bind(9);
 
 		OpenGLContext.getInstance().bindImageTexture(6, EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();

@@ -38,6 +38,8 @@ public final class OpenGLContext {
     private CommandQueue commandQueue = new CommandQueue();
     private volatile boolean initialized = false;
     public volatile boolean errorOccured = false;
+    private int maxTextureUnits;
+
     public static OpenGLContext getInstance() {
         if(instance == null) {
             synchronized(OpenGLContext.class) {
@@ -165,6 +167,7 @@ public final class OpenGLContext {
 
         // Map the internal OpenGL coordinate system to the entire screen
         viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
+        maxTextureUnits = (GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 
         initialized = true;
         LOGGER.info("OpenGLContext initialized");
@@ -434,6 +437,10 @@ public final class OpenGLContext {
         return calculate(() -> {
             return GL20.glCreateProgram();
         });
+    }
+
+    public int getMaxTextureUnits() {
+        return maxTextureUnits;
     }
 
     public CommandQueue getCommandQueue() {

@@ -74,7 +74,7 @@ public class Material implements Serializable, Bufferable {
 				if(map.equals(MAP.ENVIRONMENT)) {
 					tex = TextureFactory.getInstance().getCubeMap(name);
 					if(tex == null) {
-						tex = Renderer.getInstance().getEnvironmentMap();
+						tex = TextureFactory.getInstance().getCubeMap();
 					}
 				} else {
 					tex = TextureFactory.getInstance().getTexture(name);
@@ -85,7 +85,7 @@ public class Material implements Serializable, Bufferable {
 			}
 		}
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, Renderer.getInstance().getEnvironmentMap());
+			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, TextureFactory.getInstance().getCubeMap());
 		}
 	}
 

@@ -6,6 +6,7 @@ import engine.model.VertexBuffer;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
+import renderer.rendertarget.RenderTarget;
 import scene.EnvironmentProbe;
 import shader.Program;
 import texture.CubeMap;
@@ -13,25 +14,15 @@ import texture.CubeMap;
 public interface Renderer extends LifeCycle {
     boolean CHECKERRORS = false;
 
-    default void destroy() {};
+    default void destroy() {}
 
     DrawResult draw(RenderExtract renderExtract);
 
     void update(float seconds);
 
-    CubeMap getEnvironmentMap();
-
-    Model getSphere();
-
     void batchLine(Vector3f from, Vector3f to);
 
     int drawLines(Program firstPassProgram);
-
-    int getMaxTextureUnits();
-
-    void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
-
-    void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes);
 
     void addRenderProbeCommand(EnvironmentProbe probe);
 
@@ -40,8 +31,6 @@ public interface Renderer extends LifeCycle {
     float getCurrentFPS();
 
     double getDeltaInS();
-
-    int getFrameCount();
 
     String endFrame();
 
