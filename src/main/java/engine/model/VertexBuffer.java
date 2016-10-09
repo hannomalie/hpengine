@@ -234,12 +234,37 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
         return indexCount/3;
     }
+    public int drawLinesInstancedBaseVertex(IndexBuffer indexBuffer, int indexCount, int instanceCount, int indexOffset, int baseVertexIndex) {
+        if(!uploaded) { return 0; }
+        bind();
+        if(indexBuffer != null) {
+            GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+            GL11.glLineWidth(1f);
+            indexBuffer.bind();
+            GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex, 0);
+            GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+
+        } else {
+            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
+        }
+
+        return indexCount/3;
+    }
 
     public static void drawInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, IntBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         // TODO: use lod
         indexBuffer.bind();
         GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
+    }
+    public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, IntBuffer commandBuffer, int primitiveCount) {
+        vertexBuffer.bind();
+        // TODO: use lod
+        indexBuffer.bind();
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+        GL11.glLineWidth(1f);
+        GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
+        GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
     }
 
     @Override

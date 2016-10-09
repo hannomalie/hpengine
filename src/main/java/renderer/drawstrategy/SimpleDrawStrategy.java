@@ -81,7 +81,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private FirstPassResult firstPassResult = new FirstPassResult();
     private List<DrawElementsIndirectCommand> commands = new ArrayList();
     private Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap();
-    private SortedSet<Integer> keys = new TreeSet<>();;
+    private SortedSet<Integer> keys = new TreeSet<>();
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -246,7 +246,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 ModelComponent.getGlobalEntityOffsetBuffer().put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
                 CommandBuffer.getGlobalCommandBuffer().put(util.Util.toArray(commands, DrawElementsIndirectCommand.class));
                 CommandBuffer.getGlobalCommandBuffer().bind();
-                VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
+                if(Config.DRAWLINES_ENABLED) {
+                    VertexBuffer.drawLinesInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
+                } else {
+                    VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
+                }
                 ModelComponent.getGlobalIndexBuffer().unbind();
                 CommandBuffer.getGlobalCommandBuffer().unbind();
             }

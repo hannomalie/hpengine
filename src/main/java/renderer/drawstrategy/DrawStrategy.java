@@ -1,6 +1,7 @@
 package renderer.drawstrategy;
 
 import component.ModelComponent;
+import config.Config;
 import engine.PerEntityInfo;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
@@ -36,14 +37,12 @@ public interface DrawStrategy {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
 
-        int temp = ModelComponent.getGlobalVertexBuffer()
+        if (Config.DRAWLINES_ENABLED) {
+            return ModelComponent.getGlobalVertexBuffer()
+                    .drawLinesInstancedBaseVertex(ModelComponent.getGlobalIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
+        } else {return ModelComponent.getGlobalVertexBuffer()
                 .drawInstancedBaseVertex(ModelComponent.getGlobalIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
-        return temp;
-//        if (perEntityInfo.isDrawLines()) {
-//            return perEntityInfo.getVertexBuffer().drawDebug(2, 0);//ModelLod.ModelLodStrategy.DISTANCE_BASED.getIndexBufferIndex(perEntityInfo.getExtract(), this));
-//        } else {
-//            return perEntityInfo.getVertexBuffer().drawInstanced(perEntityInfo.getInstanceCount());
-//        }
+        }
     }
 
     default DrawResult draw(RenderExtract renderExtract) {
