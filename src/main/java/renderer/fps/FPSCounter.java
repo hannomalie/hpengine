@@ -6,6 +6,12 @@ import java.util.Stack;
 public class FPSCounter {
 	
 	SizedStack<Long> stack = new SizedStack<>(10);
+
+    public FPSCounter() {
+        for(int i = 0; i < stack.maxSize; i++) {
+            stack.push(0L);
+        }
+    }
 	
 	public void update() {
 		stack.push(getTime());

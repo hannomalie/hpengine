@@ -505,12 +505,18 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     private void actuallyDraw(DirectionalLight directionalLight) {
-        boolean anyPointLightHasMoved = scene.getPointLights().stream()
-                        .filter(light -> light.hasMoved()).collect(Collectors.toList())
-                        .isEmpty();
-        if(scene.getEntities().parallelStream().anyMatch(entity -> entity.hasMoved())) {
+        boolean anyPointLightHasMoved = false;
+        for(int i = 0; i < scene.getPointLights().size(); i++) {
+            if(!scene.getPointLights().get(i).hasMoved()) { continue; }
+            anyPointLightHasMoved = true;
+            break;
+        }
+
+        for(int i = 0; i < scene.getEntities().size(); i++) {
+            if(!scene.getEntities().get(i).hasMoved()) { continue; }
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
+            break;
         }
 
         if((entityHasMoved || entityAdded) && scene != null) {
@@ -542,24 +548,30 @@ public class AppContext implements Extractor<RenderExtract> {
                 if(scene != null) {
                     scene.endFrame();
                 }
+
+                Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                        Renderer.getInstance().getFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
             }, false);
+
         }
 
     }
 
+    private Vector3f tempDistVector = new Vector3f();
     public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
-        List<PerEntityInfo> perEntityInfos= new ArrayList<>();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
-        for (ModelComponent modelComponent : AppContext.getInstance().getScene().getModelComponents()) {
+        List<ModelComponent> modelComponents = AppContext.getInstance().getScene().getModelComponents();
+        List<PerEntityInfo> perEntityInfos = new ArrayList<>(modelComponents.size());
+        for (ModelComponent modelComponent : modelComponents) {
             // TODO: Implement strategy pattern
 
             Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
-            Vector3f distance = Vector3f.sub(cameraWorldPosition, centerWorld, null);
-            float distanceToCamera = distance.length();
+            Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
+            float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances

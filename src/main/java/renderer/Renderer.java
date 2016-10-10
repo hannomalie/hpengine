@@ -313,6 +313,10 @@ public interface Renderer extends LifeCycle {
         }
     }
 
+    float getMsPerFrame();
+
+    float getFPS();
+
     class SingletonHelper {
         protected static volatile Renderer instance;
     }

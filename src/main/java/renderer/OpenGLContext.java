@@ -132,7 +132,7 @@ public final class OpenGLContext {
         LOGGER.info("OpenGLContext before setDisplayMode");
         Display.setDisplayMode(new DisplayMode(Config.WIDTH, Config.HEIGHT));
         LOGGER.info("OpenGLContext after setDisplayMode");
-        Display.setTitle("DeferredRenderer");
+        Display.setTitle("HPEngine");
         Display.create(pixelFormat, contextAttributes);
         Display.setVSyncEnabled(false);
 

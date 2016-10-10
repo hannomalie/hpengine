@@ -222,23 +222,20 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.name = string;
 	}
 
+	private Vector3f tempDistVector = new Vector3f();
 	public boolean isInFrustum(Camera camera) {
-		Vector4f[] minMaxWorld = getMinMaxWorld();
-		Vector4f minWorld = minMaxWorld[0];
-		Vector4f maxWorld = minMaxWorld[1];
+		Vector3f[] minMaxWorld = getMinMaxWorldVec3();
 
 		Vector3f centerWorld = getCenterWorld();
 		
-		Vector3f distVector = new Vector3f();
-		Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-						new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+		Vector3f.sub(minMaxWorld[1], minMaxWorld[0], tempDistVector);
 
 //		if (camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
 //			camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
 //		if (camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
 //		if (camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
 //				|| camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
+		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, tempDistVector.length()/2)) {
 			return true;
 		}
 		return false;
@@ -268,6 +265,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
     private transient Vector4f[] minMax;
+    private transient Vector3f[] minMaxVector3;
     private transient float boundingSphereRadius = -1;
     private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector4f[] getMinMaxWorld() {
@@ -290,6 +288,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			minMax[1] = vectorMax;
             boundingSphereRadius = Model.getBoundingSphereRadius(vectorMin, vectorMax);
 		}
+        minMaxVector3 = new Vector3f[2];
+        minMaxVector3[0] = new Vector3f(minMax[0].x, minMax[0].y, minMax[0].z);
+        minMaxVector3[1] = new Vector3f(minMax[1].x, minMax[1].y, minMax[1].z);
         lastUsedTransformationMatrix = new Matrix4f(getTransform().getTransformation());
 
 //		if(hasChildren()) {
@@ -309,10 +310,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 
 	public Vector3f[] getMinMaxWorldVec3() {
-		Vector4f[] asVec4 = getMinMaxWorld();
-		Vector3f[] result = {new Vector3f(asVec4[0].x, asVec4[0].y, asVec4[0].z),
-							new Vector3f(asVec4[1].x, asVec4[1].y, asVec4[1].z)};
-		return result;
+        getMinMaxWorld();
+        return minMaxVector3;
 	}
 
 	public boolean isSelected() {
@@ -405,7 +404,15 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     }
 
 	public boolean hasMoved() {
-		return transform.isHasMoved() || instances.stream().anyMatch(inst -> inst.isHasMoved());
+	    if(transform.isHasMoved()) { return true; }
+	    if(getInstanceCount() <= 1) { return false; }
+
+	    for(int i = 0; i < instances.size(); i++) {
+	        if(instances.get(i).isHasMoved()) {
+	            return true;
+            }
+        }
+        return false;
 	}
 
 	public Update getUpdate() {
@@ -485,7 +492,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     public int getInstanceCount() {
         int instancesCount = instances.size() + 1;
 
-        if(hasParent() && getParent().getInstanceCount() > 1) {
+        if(hasParent()) {
             instancesCount *= getParent().getInstanceCount();
         }
         return instancesCount;

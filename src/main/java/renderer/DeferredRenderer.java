@@ -362,10 +362,6 @@ public class DeferredRenderer implements Renderer {
 	private void setLastFrameTime() {
 		lastFrameTime = getTime();
         fpsCounter.update();
-//		OpenGLContext.getInstance().execute(() -> {
-			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
-//		});
 	}
 	private long getTime() {
 		return System.currentTimeMillis();
@@ -526,6 +522,16 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public boolean isFrameFinished() {
         return frameStarted.get() == 0;
+	}
+
+	@Override
+	public float getMsPerFrame() {
+		return fpsCounter.getMsPerFrame();
+	}
+
+	@Override
+	public float getFPS() {
+		return fpsCounter.getFPS();
 	}
 
 }
