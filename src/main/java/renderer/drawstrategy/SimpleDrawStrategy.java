@@ -10,6 +10,7 @@ import engine.PerEntityInfo;
 import engine.model.CommandBuffer;
 import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
+import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
 import org.jfree.util.ArrayUtilities;
 import org.lwjgl.opengl.*;
@@ -332,7 +333,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(secondPassDirectionalProgram);
         GPUProfiler.start("Draw fullscreen buffer");
-        Renderer.getInstance().getFullscreenBuffer().draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
         GPUProfiler.end();
 
         GPUProfiler.end();
@@ -507,7 +508,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //				e.printStackTrace();
 //			}
             OpenGLContext.getInstance().bindTexture(9, GlTextureTarget.TEXTURE_2D, LightFactory.getInstance().getDepthMapForAreaLight(areaLight));
-            Renderer.getInstance().getFullscreenBuffer().draw();
+            QuadVertexBuffer.getFullscreenBuffer().draw();
 //			areaLight.getVertexBuffer().drawDebug();
         }
 
@@ -548,7 +549,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
 
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
-        Renderer.getInstance().getFullscreenBuffer().draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
         OpenGLContext.getInstance().enable(DEPTH_TEST);
         TextureFactory.getInstance().generateMipMaps(gBuffer.getHalfScreenBuffer().getRenderedTexture());
         GPUProfiler.end();
@@ -596,7 +597,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(reflectionProgram);
             reflectionProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
             reflectionProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
-            Renderer.getInstance().getFullscreenBuffer().draw();
+            QuadVertexBuffer.getFullscreenBuffer().draw();
             reflectionBuffer.unuse();
         } else {
             GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
@@ -654,7 +655,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(11, TEXTURE_2D, gBuffer.getAmbientOcclusionScatteringMap());
         OpenGLContext.getInstance().bindTexture(12, TEXTURE_CUBE_MAP_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayCube());
 
-        Renderer.getInstance().getFullscreenBuffer().draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
 
         if (target == null) {
             OpenGLContext.getInstance().bindFrameBuffer(0);
@@ -679,7 +680,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
         OpenGLContext.getInstance().bindTexture(4, TEXTURE_2D, TextureFactory.getInstance().getLensFlareTexture().getTextureID());
-        Renderer.getInstance().getFullscreenBuffer().draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
 
         GPUProfiler.end();
     }

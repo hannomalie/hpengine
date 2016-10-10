@@ -8,6 +8,7 @@ import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
+import engine.model.QuadVertexBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -363,7 +364,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
         voxelConeTraceProgram.setUniform("screenWidth", (float) Config.WIDTH);
         voxelConeTraceProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        Renderer.getInstance().getFullscreenBuffer().draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
 //        boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || renderExtract.directionalLightNeedsShadowMapRender;
 //        if(entityOrDirectionalLightHasMoved)
 //        {

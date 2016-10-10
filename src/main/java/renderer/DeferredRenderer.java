@@ -71,8 +71,6 @@ public class DeferredRenderer implements Renderer {
 	private static Program bilateralBlurProgram;
 	private static Program linesProgram;
 
-	private VertexBuffer fullscreenBuffer;
-	private VertexBuffer debugBuffer;
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
 	private OBJLoader objLoader;
@@ -150,8 +148,6 @@ public class DeferredRenderer implements Renderer {
 
         initIdentityMatrixBuffer();
 
-		fullscreenBuffer = new QuadVertexBuffer( true).upload();
-		debugBuffer = new QuadVertexBuffer( false).upload();
 		sixDebugBuffers = new ArrayList<VertexBuffer>() {{
 			float height = -2f/3f;
 			float width = 2f;
@@ -205,7 +201,7 @@ public class DeferredRenderer implements Renderer {
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getColorReflectivenessMap(), debugBuffer);
+			drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);
 //			for(int i = 0; i < 6; i++) {
 //				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
@@ -262,7 +258,7 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-		drawToQuad(texture, fullscreenBuffer, renderToQuadProgram);
+		drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), renderToQuadProgram);
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
@@ -317,7 +313,7 @@ public class DeferredRenderer implements Renderer {
 		blurProgram.setUniform("mipmap", mipmap);
 		blurProgram.setUniform("scaleX", scaleForShaderX);
 		blurProgram.setUniform("scaleY", scaleForShaderY);
-		fullscreenBuffer.draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
         target.unuse();
 		GL11.glDeleteTextures(copyTextureId);
 		GPUProfiler.end();
@@ -352,7 +348,7 @@ public class DeferredRenderer implements Renderer {
 		bilateralBlurProgram.use();
 		bilateralBlurProgram.setUniform("scaleX", scaleForShaderX);
 		bilateralBlurProgram.setUniform("scaleY", scaleForShaderY);
-		fullscreenBuffer.draw();
+        QuadVertexBuffer.getFullscreenBuffer().draw();
 		fullScreenTarget.unuse();
 		GL11.glDeleteTextures(copyTextureId);
 	}
@@ -485,11 +481,6 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public GBuffer getGBuffer() {
 		return gBuffer;
-	}
-
-	@Override
-	public VertexBuffer getFullscreenBuffer() {
-		return fullscreenBuffer;
 	}
 
     @Override

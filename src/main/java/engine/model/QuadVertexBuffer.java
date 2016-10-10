@@ -5,7 +5,17 @@ import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
 public class QuadVertexBuffer extends VertexBuffer{
-	
+
+    private static final VertexBuffer fullscreenBuffer = new QuadVertexBuffer(true).upload();
+    private static final VertexBuffer debugBuffer = new QuadVertexBuffer(false).upload();
+
+    public static VertexBuffer getFullscreenBuffer() {
+        return fullscreenBuffer;
+    }
+    public static VertexBuffer getDebugBuffer() {
+        return debugBuffer;
+    }
+
 	public QuadVertexBuffer(boolean fullscreen) {
 		super(getPositionsAndTexCoords(fullscreen), EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 	}

@@ -24,7 +24,7 @@ public interface Renderer extends LifeCycle {
 
     int drawLines(Program firstPassProgram);
 
-    void addRenderProbeCommand(EnvironmentProbe probe);
+    default void addRenderProbeCommand(EnvironmentProbe probe) { addRenderProbeCommand(probe, false); }
 
     void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);
 
@@ -32,15 +32,14 @@ public interface Renderer extends LifeCycle {
 
     double getDeltaInS();
 
+    void startFrame();
     String endFrame();
 
     GBuffer getGBuffer();
 
     void executeRenderProbeCommands(RenderExtract extract);
 
-    void drawToQuad(int colorReflectivenessMap);
-
-    VertexBuffer getFullscreenBuffer();
+    void drawToQuad(int texture);
 
     default void batchVector(Vector3f vector) {
         batchVector(vector, 0.1f);
@@ -290,8 +289,6 @@ public interface Renderer extends LifeCycle {
             }
         }
     }
-
-    void startFrame();
 
     boolean isFrameFinished();
 
