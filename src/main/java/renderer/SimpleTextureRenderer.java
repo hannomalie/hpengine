@@ -208,10 +208,10 @@ public class SimpleTextureRenderer implements Renderer {
 	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
 	}
 
-	public float getCurrentFPS() {
-        return fpsCounter.getFPS();
-	}
-
+    @Override
+    public FPSCounter getFPSCounter() {
+        return fpsCounter;
+    }
 
 	private void setCurrentState(String newState) {
 	}

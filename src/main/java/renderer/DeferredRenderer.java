@@ -449,7 +449,12 @@ public class DeferredRenderer implements Renderer {
 		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);
 	}
 
-	public int getMaxTextureUnits() {
+    @Override
+    public FPSCounter getFPSCounter() {
+        return fpsCounter;
+    }
+
+    public int getMaxTextureUnits() {
 		return maxTextureUnits;
 	}
 
@@ -514,15 +519,4 @@ public class DeferredRenderer implements Renderer {
 	public boolean isFrameFinished() {
         return frameStarted.get() == 0;
 	}
-
-	@Override
-	public float getMsPerFrame() {
-		return fpsCounter.getMsPerFrame();
-	}
-
-	@Override
-	public float getFPS() {
-		return fpsCounter.getFPS();
-	}
-
 }

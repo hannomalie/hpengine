@@ -14,9 +14,9 @@ public class FPSCounter {
     }
 	
 	public void update() {
-		stack.push(getTime());
+		stack.push(getNanoTime());
 	}
-	private static long getTime() {
+	private static long getNanoTime() {
 		return System.nanoTime();
 	}
 	
@@ -26,8 +26,14 @@ public class FPSCounter {
 	}
 	
 	public float getMsPerFrame() {
-		return ((stack.getLast() - stack.get(0)) / stack.getMaxSize()) / 1000000f;
+        long diffInNanosForNFrames = stack.getLast() - stack.get(0);
+        return (diffInNanosForNFrames / stack.getMaxSize()) / (1000f * 1000f);
 	}
+
+    public double getDeltaInS() {
+        long diffInNanos = stack.get(1) - stack.get(0);
+        return diffInNanos / (1000f * 1000f * 1000f);
+    }
 
     public class SizedStack<T> extends Stack<T> {
         private int maxSize;

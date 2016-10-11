@@ -6,6 +6,7 @@ import engine.model.VertexBuffer;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
+import renderer.fps.FPSCounter;
 import renderer.rendertarget.RenderTarget;
 import scene.EnvironmentProbe;
 import shader.Program;
@@ -28,9 +29,10 @@ public interface Renderer extends LifeCycle {
 
     void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent);
 
-    float getCurrentFPS();
-
-    double getDeltaInS();
+    FPSCounter getFPSCounter();
+    default float getCurrentFPS() { return getFPSCounter().getFPS(); }
+    default double getDeltaInS() { return getFPSCounter().getDeltaInS(); }
+    default float getMsPerFrame() { return getFPSCounter().getMsPerFrame(); }
 
     void startFrame();
     String endFrame();
@@ -309,10 +311,6 @@ public interface Renderer extends LifeCycle {
             e.printStackTrace();
         }
     }
-
-    float getMsPerFrame();
-
-    float getFPS();
 
     class SingletonHelper {
         protected static volatile Renderer instance;

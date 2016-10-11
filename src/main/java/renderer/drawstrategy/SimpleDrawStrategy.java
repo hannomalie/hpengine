@@ -658,8 +658,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         QuadVertexBuffer.getFullscreenBuffer().draw();
 
         if (target == null) {
-            OpenGLContext.getInstance().bindFrameBuffer(0);
-            OpenGLContext.getInstance().viewPort(0,0,AppContext.WINDOW_WIDTH, AppContext.WINDOW_HEIGHT);
+            RenderTarget.getFrontBuffer().use(true);
         } else {
             target.use(true);
         }

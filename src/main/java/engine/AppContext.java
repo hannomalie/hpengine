@@ -2,6 +2,7 @@ package engine;
 
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
+import com.alee.utils.text.SimpleTextProvider;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
 import component.ModelComponent;
@@ -21,9 +22,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import physic.PhysicsFactory;
-import renderer.DeferredRenderer;
-import renderer.OpenGLContext;
-import renderer.RenderExtract;
+import renderer.*;
 import renderer.Renderer;
 import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
@@ -206,6 +205,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
         EntityFactory.create();
         Renderer.init(DeferredRenderer.class);
+//        Renderer.init(SimpleTextureRenderer.class);
         EntityFactory.init();
 //        MaterialFactory.getInstance().initDefaultMaterials();
 
@@ -550,7 +550,7 @@ public class AppContext implements Extractor<RenderExtract> {
                 }
 
                 Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                        Renderer.getInstance().getFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+                        Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
             }, false);
 
         }

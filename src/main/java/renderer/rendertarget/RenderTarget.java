@@ -1,5 +1,6 @@
 package renderer.rendertarget;
 
+import config.Config;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
@@ -16,6 +17,27 @@ import java.util.logging.Logger;
 public class RenderTarget {
 
     private static final Logger LOGGER = Logger.getLogger(RenderTarget.class.getName());
+
+    private static final RenderTarget frontBuffer = new RenderTarget() {
+        @Override
+        public int getWidth() {
+            return Config.WIDTH;
+        }
+        @Override
+        public int getHeight() {
+            return Config.HEIGHT;
+        }
+        @Override
+        public void use(boolean clear) {
+            super.use(false);
+        }
+    };
+    static {
+        frontBuffer.framebufferLocation = 0;
+    }
+    public static RenderTarget getFrontBuffer() {
+        return frontBuffer;
+    }
 
     private boolean useDepthBuffer;
     protected int framebufferLocation = -1;
@@ -132,7 +154,7 @@ public class RenderTarget {
 
     public void use(boolean clear) {
         OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
-        OpenGLContext.getInstance().viewPort(0, 0, width, height);
+        OpenGLContext.getInstance().viewPort(0, 0, getWidth(), getHeight());
         if (clear) {
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
         }
