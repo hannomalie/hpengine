@@ -127,6 +127,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
         public final int baseVertex;
         public final int baseInstance;
         public final int entityOffset;
+        private final int[] asInts;
 
         public DrawElementsIndirectCommand(int count, int primCount, int firstIndex, int baseVertex, int baseInstance, int entityBaseIndex) {
             this.count = count;
@@ -135,6 +136,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
             this.baseVertex = baseVertex;
             this.baseInstance = baseInstance;
             entityOffset = entityBaseIndex;
+            asInts = new int[]{count, primCount, firstIndex, baseVertex, baseInstance};
         }
 
         @Override
@@ -142,7 +144,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
             throw new IllegalStateException("Not implemented");
         }
         public int[] getAsInts() {
-            return new int[] {count, primCount, firstIndex, baseVertex, baseInstance};
+            return asInts;
         }
 
         public static int sizeInBytes() {

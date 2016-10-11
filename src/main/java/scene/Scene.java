@@ -216,11 +216,12 @@ public class Scene implements LifeCycle, Serializable {
 			pointLightsIterator.next().update(seconds);
 		}
 
-		for (AreaLight areaLight : areaLights) {
-			areaLight.update(seconds);
+		for(int i = 0; i < areaLights.size(); i++) {
+			areaLights.get(i).update(seconds);
 		}
-		for (Entity entity : entityContainer.getEntities()) {
-			entity.update(seconds);
+		List<Entity> entities = entityContainer.getEntities();
+		for(int i = 0; i < entities.size(); i++) {
+			entities.get(i).update(seconds);
 		}
 		directionalLight.update(seconds);
 	}

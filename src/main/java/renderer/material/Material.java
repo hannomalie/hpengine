@@ -155,10 +155,7 @@ public class Material implements Serializable, Bufferable {
 	}
 
 	public void setTexturesUsed() {
-        for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
-            Texture texture = entry.getValue();
-            texture.setUsedNow();
-        }
+		materialInfo.maps.getTextures().forEach((key, value) -> value.setUsedNow());
     }
 
 	public void setTexturesInactive() {

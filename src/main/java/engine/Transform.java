@@ -47,8 +47,7 @@ public class Transform implements Serializable, Transformable {
 	transient protected FloatBuffer viewMatrixBuffer;
 
 	private transient Vector3f tempVec3;
-	private transient Quaternion tempQuat;
-	
+
 	public Transform() {
 		orientation.setIdentity();
 		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
@@ -84,25 +83,32 @@ public class Transform implements Serializable, Transformable {
 		children.add(transform);
 	}
 
+	private Vector3f tempV3 = new Vector3f();
 	private Vector3f setAndReturnCopy(Vector3f in) {
 //		tempVec3.set(in.x, in.y, in.z);
 //		return tempVec3;
-		return new Vector3f(in);
+		return tempV3.set(in);
 	}
+	private Vector4f tempV4 = new Vector4f();
 	private Vector4f setAndReturnCopy(Vector4f in) {
 //		tempVec3.set(in.x, in.y, in.z);
 //		return tempVec3;
-		return new Vector4f(in);
+		return tempV4.set(in);
 	}
+	private Vector3f tempV3_0 = new Vector3f();
 	private Vector3f setAndReturnCopyAsVec3(Vector4f in) {
 //		tempVec3.set(in.x, in.y, in.z);
 //		return tempVec3;
-		return new Vector3f(in.x, in.y, in.z);
+		tempV3_0.x = in.x;
+		tempV3_0.y = in.y;
+		tempV3_0.z = in.z;
+		return tempV3_0;
 	}
+	Quaternion tempQuat = new Quaternion();
 	private Quaternion setAndReturnCopy(Quaternion in) {
 //		tempQuat.set(in.x, in.y, in.z, in.w);
 //		return tempQuat;
-		return new Quaternion(in);
+		return tempQuat.set(in);
 	}
 
 	public List<Transform> getChildren() {

@@ -2,7 +2,6 @@ package engine;
 
 import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
-import com.alee.utils.text.SimpleTextProvider;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
 import component.ModelComponent;
@@ -53,13 +52,12 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class AppContext implements Extractor<RenderExtract> {
     public static int WINDOW_WIDTH = Config.WIDTH;
@@ -82,6 +80,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
     private volatile RenderExtract currentExtract;
     private final FPSCounter updateFpsCounter = new FPSCounter();
+    private boolean MULTITHREADED_RENDERING;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -317,7 +316,9 @@ public class AppContext implements Extractor<RenderExtract> {
         new TimeStepThread("Render", 0.00f) {
             @Override
             public void update(float seconds) {
-                actuallyDraw(getScene().getDirectionalLight());
+                if(MULTITHREADED_RENDERING) {
+                    actuallyDraw(getScene().getDirectionalLight());
+                }
             }
         }.start();
     }
@@ -501,7 +502,10 @@ public class AppContext implements Extractor<RenderExtract> {
         LightFactory.getInstance().update(seconds);
         StopWatch.getInstance().stopAndPrintMS();
 
-//        actuallyDraw(directionalLight);
+        updateFpsCounter.update();
+        if(!MULTITHREADED_RENDERING) {
+            actuallyDraw(getScene().getDirectionalLight());
+        }
     }
 
     private void actuallyDraw(DirectionalLight directionalLight) {
@@ -526,13 +530,12 @@ public class AppContext implements Extractor<RenderExtract> {
         if(directionalLight.hasMoved()) {
             directionalLightNeedsShadowMapRedraw = true;
         }
-        List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
 
-        updateFpsCounter.update();
+        List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
         if (Renderer.getInstance().isFrameFinished()) {
             currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
-            long blockedMs = OpenGLContext.getInstance().blockUntilEmpty();
-            LOGGER.fine("Waited ms for renderer to complete: " + blockedMs);
+//            long blockedMs = OpenGLContext.getInstance().blockUntilEmpty();
+//            LOGGER.fine("Waited ms for renderer to complete: " + blockedMs);
 
             OpenGLContext.getInstance().execute(() -> {
                 RenderExtract extractCopy = new RenderExtract(currentExtract);
@@ -551,20 +554,22 @@ public class AppContext implements Extractor<RenderExtract> {
 
                 Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
                         Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
-            }, false);
+            }, true);
 
         }
 
     }
 
     private Vector3f tempDistVector = new Vector3f();
+    Map<ModelComponent, PerEntityInfo> cash0 = new HashMap<>();
     public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
         List<ModelComponent> modelComponents = AppContext.getInstance().getScene().getModelComponents();
-        List<PerEntityInfo> perEntityInfos = new ArrayList<>(modelComponents.size());
+        List<PerEntityInfo> currentPerEntityInfos = new ArrayList<>(modelComponents.size());
+        currentPerEntityInfos.clear();
         for (ModelComponent modelComponent : modelComponents) {
             // TODO: Implement strategy pattern
 
@@ -577,10 +582,19 @@ public class AppContext implements Extractor<RenderExtract> {
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
             int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
-            perEntityInfos.add(new PerEntityInfo(camera, null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
+            PerEntityInfo info = cash0.get(modelComponent);
+            if(info != null) {
+                info.init(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+            } else {
+                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                cash0.put(modelComponent, info);
+            }
+
+            currentPerEntityInfos.add(info);
         }
 
-        return perEntityInfos;
+        List<PerEntityInfo> temp = currentPerEntityInfos;
+        return temp;
     }
 
     @Override
