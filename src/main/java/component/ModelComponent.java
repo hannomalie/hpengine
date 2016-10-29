@@ -80,12 +80,14 @@ public class ModelComponent extends BaseComponent implements Serializable {
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
             DataChannels.NORMAL,
+            DataChannels.LIGHTMAP_TEXCOORD,
             DataChannels.TANGENT,
             DataChannels.BINORMAL
             ) : EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
-            DataChannels.NORMAL);
+            DataChannels.NORMAL,
+            DataChannels.LIGHTMAP_TEXCOORD);
     public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.NORMAL
@@ -323,5 +325,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public Vector4f[] getMinMax(Matrix4f modelMatrix) {
         return model.getMinMax(modelMatrix);
+    }
+
+    public Model getModel() {
+        return model;
     }
 }

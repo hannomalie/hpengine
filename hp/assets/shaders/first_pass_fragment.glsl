@@ -2,8 +2,11 @@
 #extension GL_ARB_bindless_texture : enable
 
 layout(binding=6) uniform samplerCube environmentMap;
+layout(binding=7) uniform sampler2D lightMap;
 
 uniform bool isSelected = false;
+
+uniform int entityCount = 1;
 
 uniform bool useParallax;
 uniform bool useSteepParallax;
@@ -29,6 +32,7 @@ uniform bool useNormalMaps = true;
 
 in vec4 color;
 in vec2 texCoord;
+in vec3 lightmapTextureCoord;
 in vec3 normalVec;
 in vec3 normal_model;
 in vec3 normal_world;
@@ -176,6 +180,11 @@ void main(void) {
 	}
   	out_color = color;
   	out_color.w = float(materialMetallic);
+
+  	float inverseEntityCount = 1f/float(entityCount);
+    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, inverseEntityCount, entityIndex, entityCount);
+
+  	//out_color = textureLod(lightMap, finalLightMapCoords.xy, 0);
 
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);

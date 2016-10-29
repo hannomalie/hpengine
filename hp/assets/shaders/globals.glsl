@@ -677,3 +677,14 @@ vec3 Decode( vec2 encN )
 //    n.z = g-1;
 //    return normalize(-n);
 //}
+
+vec2 scaleLightmapCoords(vec3 in_LightmapTextureCoord, float inverseEntityCount, int offset, int entityCount) {
+    vec2 scaledLightmapCoords = in_LightmapTextureCoord.xy;
+    //scaledLightmapCoords.x * (1f/6f);
+    //scaledLightmapCoords.x += in_LightmapTextureCoord.z * (1f/6f);
+
+    vec2 screenCoords = scaledLightmapCoords; // between 0 and 1
+    screenCoords.x *= inverseEntityCount; // between 0 and 1/entityCount
+    screenCoords.x += float(offset)/float(entityCount); // offset based on entity index}
+    return screenCoords;
+}

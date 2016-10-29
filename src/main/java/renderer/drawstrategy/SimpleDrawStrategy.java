@@ -22,10 +22,7 @@ import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.constants.GlTextureTarget;
-import renderer.drawstrategy.extensions.DirectionalLightShadowMapExtension;
-import renderer.drawstrategy.extensions.DrawLinesExtension;
-import renderer.drawstrategy.extensions.PixelPerfectPickingExtension;
-import renderer.drawstrategy.extensions.RenderExtension;
+import renderer.drawstrategy.extensions.*;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
@@ -55,7 +52,7 @@ import static renderer.constants.GlDepthFunc.LESS;
 import static renderer.constants.GlTextureTarget.*;
 
 public class SimpleDrawStrategy extends BaseDrawStrategy {
-    private static final boolean INDIRECT_DRAWING = true;
+    public static final boolean INDIRECT_DRAWING = true;
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
@@ -79,6 +76,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     OpenGLContext openGLContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
+    private final DrawLightMapExtension lightMapExtension;
     private FirstPassResult firstPassResult = new FirstPassResult();
     private List<DrawElementsIndirectCommand> commands = new ArrayList();
     private Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap();
@@ -114,6 +112,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         registerRenderExtension(new DrawLinesExtension());
 //        registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
+        lightMapExtension = new DrawLightMapExtension();
     }
 
     @Override
@@ -130,23 +129,24 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract);
         GPUProfiler.end();
 
+        environmentProbeFactory.drawAlternating(renderExtract.camera);
+        Renderer.getInstance().executeRenderProbeCommands(renderExtract);
+        GPUProfiler.start("Shadowmap pass");
+        {
+            directionalLightShadowMapExtension.renderFirstPass(renderExtract, firstPassResult);
+        }
+        lightFactory.renderAreaLightShadowMaps(octree);
+        if (Config.USE_DPSM) {
+            lightFactory.renderPointLightShadowMaps_dpsm(octree);
+        } else {
+            lightFactory.renderPointLightShadowMaps(renderExtract);
+        }
+        GPUProfiler.end();
+        GPUProfiler.start("Second pass");
+        secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderExtract);
+        GPUProfiler.end();
+
         if (!Config.DEBUGDRAW_PROBES) {
-            environmentProbeFactory.drawAlternating(renderExtract.camera);
-            Renderer.getInstance().executeRenderProbeCommands(renderExtract);
-            GPUProfiler.start("Shadowmap pass");
-            {
-                directionalLightShadowMapExtension.renderFirstPass(renderExtract, firstPassResult);
-            }
-            lightFactory.renderAreaLightShadowMaps(octree);
-            if (Config.USE_DPSM) {
-                lightFactory.renderPointLightShadowMaps_dpsm(octree);
-            } else {
-                lightFactory.renderPointLightShadowMaps(renderExtract);
-            }
-            GPUProfiler.end();
-            GPUProfiler.start("Second pass");
-            secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderExtract);
-            GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
@@ -154,11 +154,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             combinePass(target, renderExtract);
             GPUProfiler.end();
         } else {
-            OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
-            OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
-
-            OpenGLContext.getInstance().bindFrameBuffer(0);
+            RenderTarget.getFrontBuffer().use(true);
             Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         }
 
@@ -204,6 +201,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
+            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, lightMapExtension.getLightMapTarget().getRenderedTexture());
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
@@ -244,6 +242,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
                 }
                 firstpassDefaultProgram.setUniform("entityIndex", 0);
                 firstpassDefaultProgram.setUniform("entityBaseIndex", 0);
+                firstpassDefaultProgram.setUniform("entityCount", commands.size());
                 ModelComponent.getGlobalEntityOffsetBuffer().put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
                 CommandBuffer.getGlobalCommandBuffer().put(util.Util.toArray(commands, DrawElementsIndirectCommand.class));
                 CommandBuffer.getGlobalCommandBuffer().bind();
@@ -265,6 +264,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             extension.renderFirstPass(renderExtract, firstPassResult);
             GPUProfiler.end();
         }
+
+        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+        lightMapExtension.renderFirstPass(renderExtract, firstPassResult);
 
         if (Config.DEBUGDRAW_PROBES) {
 //            debugDrawProbes(camera, renderExtract);
@@ -721,5 +723,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     public DirectionalLightShadowMapExtension getDirectionalLightExtension() {
         return directionalLightShadowMapExtension;
+    }
+
+    public DrawLightMapExtension getLightMapExtension() {
+        return lightMapExtension;
     }
 }

@@ -28,11 +28,13 @@ in vec3 in_Position;
 in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
+in vec3 in_LightmapTextureCoord;
 in vec3 in_Tangent;
 in vec3 in_Binormal;
 
 out vec4 color;
 out vec2 texCoord;
+out vec3 lightmapTextureCoord;
 out vec3 normalVec;
 out vec3 normal_model;
 out vec3 normal_world;
@@ -94,6 +96,8 @@ void main(void) {
 	color = in_Color;
 	texCoord = in_TextureCoord;
 	texCoord.y = 1 - in_TextureCoord.y;
+
+	lightmapTextureCoord = in_LightmapTextureCoord;
 	
 	normalVec = in_Normal;
 	normal_model = (vec4(in_Normal,0)).xyz;

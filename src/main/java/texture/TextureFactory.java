@@ -52,7 +52,7 @@ public class TextureFactory {
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
-    private static volatile boolean USE_TEXTURE_STREAMING = true;
+    private static volatile boolean USE_TEXTURE_STREAMING = false;
 
     public CubeMap getCubeMap() {
         return cubeMap;

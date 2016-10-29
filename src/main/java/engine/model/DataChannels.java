@@ -7,8 +7,9 @@ public enum DataChannels {
 	COLOR("in_Color", 3, 1, POSITION3.siB()),
 	TEXCOORD("in_TextureCoord", 2, 2, POSITION3.siB() + COLOR.siB()),
 	NORMAL("in_Normal", 3, 3, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB()),
-	BINORMAL("in_Binormal", 3, 4, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB()),
-	TANGENT("in_Tangent", 3, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() +  BINORMAL.siB());
+    LIGHTMAP_TEXCOORD("in_LightmapTextureCoord", 3, 4, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB()),
+	BINORMAL("in_Binormal", 3, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB()),
+	TANGENT("in_Tangent", 3, 6, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB() +  BINORMAL.siB());
 
 	private String binding;
 	private int size;

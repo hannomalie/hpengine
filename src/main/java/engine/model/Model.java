@@ -7,8 +7,11 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
+import util.Geometry;
 import util.Util;
 
+import javax.swing.*;
+import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +23,7 @@ public class Model implements Serializable {
 	private List<Vector3f> vertices = new ArrayList<>();
     private List<Vector2f> texCoords = new ArrayList<>();
     private List<Vector3f> normals = new ArrayList<>();
+    private List<Vector3f> lightmapTexCoords = new ArrayList<>();
     private List<Face> faces = new ArrayList<>();
 	private String name = "";
 	private Material material;
@@ -51,6 +55,10 @@ public class Model implements Serializable {
 
     public List<Vector3f> getNormals() {
         return normals;
+    }
+
+    public List<Vector3f> getLightmapTexCoords() {
+        return lightmapTexCoords;
     }
 
     public List<Face> getFaces() {
@@ -100,13 +108,95 @@ public class Model implements Serializable {
 
     public void init() {
 
-        List<Float> values = new ArrayList<>();
+        List<Float> values = new ArrayList<>(faces.size() * 5);
+        List<Vector3f[]> allLightMapCoords = new ArrayList<>(faces.size());
 
         for(Face face : faces) {
             int[] referencedVertices = face.getVertices();
+            Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
+            referencedVerticesAsVec3[0] = vertices.get(referencedVertices[0]-1);
+            referencedVerticesAsVec3[1] = vertices.get(referencedVertices[1]-1);
+            referencedVerticesAsVec3[2] = vertices.get(referencedVertices[2]-1);
+            Vector3f[] lightmapCoords = getLightMapCoords(referencedVerticesAsVec3);
+
+            allLightMapCoords.add(lightmapCoords);
+        }
+
+        float minU = allLightMapCoords.get(0)[0].getX();
+        float minV = allLightMapCoords.get(0)[0].getY();
+        float maxU = allLightMapCoords.get(0)[0].getX();
+        float maxV = allLightMapCoords.get(0)[0].getY();
+
+        for(Vector3f[] lightMapCoords : allLightMapCoords) {
+            for(int i = 0; i < 3; i++) {
+                minU = lightMapCoords[i].getX() < minU ? lightMapCoords[i].getX() : minU;
+                minV = lightMapCoords[i].getY() < minV ? lightMapCoords[i].getY() : minV;
+
+                maxU = lightMapCoords[i].getX() > maxU ? lightMapCoords[i].getX() : maxU;
+                maxV = lightMapCoords[i].getY() > maxV ? lightMapCoords[i].getY() : maxU;
+            }
+        }
+
+        float finalMaxU = maxU;
+        float finalMaxV = maxV;
+
+        List<Vector3f[]> copy = new ArrayList();
+        for(Vector3f[] source : allLightMapCoords) {
+            Vector3f[] target = new Vector3f[3];
+            for(int i = 0; i < 3; i++) {
+                target[i] = new Vector3f(source[i]);
+                Vector3f.sub(target[i], new Vector3f(minU, minV, 0), target[0]);
+                target[i] = (Vector3f) target[i].scale(10);
+            }
+            copy.add(target);
+        }
+
+        float currentMaxV = maxV;
+        for(int i = 0; i < allLightMapCoords.size() - 1; i++) {
+            Vector3f[] lightMapCoordsA = allLightMapCoords.get(i);
+
+            for(int z = i+1; z < allLightMapCoords.size() - 1; z++) {
+                Vector3f[] lightMapCoordsB = allLightMapCoords.get(z);
+                if(/*lightMapCoordsA[0].z == lightMapCoordsB[0].z &&*/ Geometry.triangleIntersect(lightMapCoordsA, lightMapCoordsB)) {
+                    float localMaxV = lightMapCoordsB[0].y;
+                    float localMinV = lightMapCoordsB[0].y;
+                    for(int index = 0; index < 3; index++) {
+                        if(lightMapCoordsB[index].y < localMinV) { localMinV = lightMapCoordsB[index].y; }
+                    }
+                    for(int index = 0; index < 3; index++) {
+                        lightMapCoordsB[index].y += currentMaxV-localMinV;
+                        if(lightMapCoordsB[index].y > localMaxV) { localMaxV = lightMapCoordsB[index].y; }
+                    }
+                    currentMaxV = localMaxV;
+                }
+            }
+        }
+
+        float deltaU = maxU - minU;
+        float deltaV = currentMaxV - minV;
+
+        for(Vector3f[] lightMapCoords : allLightMapCoords) {
+            for (int i = 0; i < 3; i++) {
+                lightMapCoords[i].x -= minU;
+                lightMapCoords[i].y -= minV;
+                lightMapCoords[i].x /= deltaU;
+                lightMapCoords[i].y /= deltaV;
+
+                lightmapTexCoords.add(lightMapCoords[i]);
+            }
+        }
+
+
+        for(int i = 0; i < faces.size(); i++) {
+            Face face = faces.get(i);
+
+            int[] referencedVertices = face.getVertices();
             int[] referencedNormals = face.getNormalIndices();
             int[] referencedTexcoords = face.getTextureCoordinateIndices();
-
+            Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
+            referencedVerticesAsVec3[0] = vertices.get(referencedVertices[0]-1);
+            referencedVerticesAsVec3[1] = vertices.get(referencedVertices[1]-1);
+            referencedVerticesAsVec3[2] = vertices.get(referencedVertices[2]-1);
 
             for (int j = 0; j < 3; j++) {
                 Vector3f referencedVertex = vertices.get(referencedVertices[j]-1);
@@ -127,6 +217,10 @@ public class Model implements Serializable {
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
+                values.add(allLightMapCoords.get(i)[j].getX());
+                values.add(allLightMapCoords.get(i)[j].getY());
+                values.add(allLightMapCoords.get(i)[j].getZ());
+
                 if(ModelComponent.USE_PRECOMPUTED_TANGENTSPACE) {
                     throw new NotImplementedException("Implement former logic from ModelComponent here");
                 }
@@ -134,7 +228,7 @@ public class Model implements Serializable {
 
         }
 
-        int valuesPerVertex = ModelComponent.USE_PRECOMPUTED_TANGENTSPACE ? 14 : 8;
+        int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);//ModelComponent.USE_PRECOMPUTED_TANGENTSPACE ? 14 : 8;
         vertexBufferValues = new ArrayList<>();
         vertices = new ArrayList<>();
         texCoords = new ArrayList<>();
@@ -190,6 +284,50 @@ public class Model implements Serializable {
         for(int indexIndex = 0; indexIndex < indexBufferValues.size(); indexIndex++) {
             indexBufferValuesArray[indexIndex] = indexBufferValues.get(indexIndex);
         }
+    }
+
+    private Vector3f[] getLightMapCoords(Vector3f[] referencedVerticesAsVec3) {
+        Vector3f[] result = new Vector3f[3];
+        result[0] = new Vector3f();
+        result[1] = new Vector3f();
+        result[2] = new Vector3f();
+        Vector3f poly_normal = Face.calculateFaceNormal(referencedVerticesAsVec3[0], referencedVerticesAsVec3[1], referencedVerticesAsVec3[2]);
+        if (Math.abs(poly_normal.x) > Math.abs(poly_normal.y) && Math.abs(poly_normal.x) > Math.abs(poly_normal.z)) {
+            int negativePlane = poly_normal.x < 0 ? 1 : 0;
+            result[0].x = referencedVerticesAsVec3[0].y;
+            result[0].y = referencedVerticesAsVec3[0].z;
+            result[0].z = negativePlane;
+            result[1].x = referencedVerticesAsVec3[1].y;
+            result[1].y = referencedVerticesAsVec3[1].z;
+            result[1].z = negativePlane;
+            result[2].x = referencedVerticesAsVec3[2].y;
+            result[2].y = referencedVerticesAsVec3[2].z;
+            result[2].z = negativePlane;
+        } else if (Math.abs(poly_normal.y) > Math.abs(poly_normal.x) && Math.abs(poly_normal.y) > Math.abs(poly_normal.z)) {
+            int negativePlane = poly_normal.y < 0 ? 3 : 2;
+            result[0].x = referencedVerticesAsVec3[0].x;
+            result[0].y = referencedVerticesAsVec3[0].z;
+            result[0].z = negativePlane;
+            result[1].x = referencedVerticesAsVec3[1].x;
+            result[1].y = referencedVerticesAsVec3[1].z;
+            result[1].z = negativePlane;
+            result[2].x = referencedVerticesAsVec3[2].x;
+            result[2].y = referencedVerticesAsVec3[2].z;
+            result[2].z = negativePlane;
+        } else {
+            int negativePlane = poly_normal.z < 0 ? 5 : 4;
+            result[0].x = referencedVerticesAsVec3[0].x;
+            result[0].y = referencedVerticesAsVec3[0].y;
+            result[0].z = negativePlane;
+            result[1].x = referencedVerticesAsVec3[1].x;
+            result[1].y = referencedVerticesAsVec3[1].y;
+            result[1].z = negativePlane;
+            result[2].x = referencedVerticesAsVec3[2].x;
+            result[2].y = referencedVerticesAsVec3[2].y;
+            result[2].z = negativePlane;
+        }
+
+        return result;
     }
 
     public Vector4f[] getMinMax() {
