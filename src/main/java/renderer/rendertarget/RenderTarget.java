@@ -1,6 +1,7 @@
 package renderer.rendertarget;
 
 import config.Config;
+import engine.AppContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
@@ -21,11 +22,11 @@ public class RenderTarget {
     private static final RenderTarget frontBuffer = new RenderTarget() {
         @Override
         public int getWidth() {
-            return Config.WIDTH;
+            return AppContext.WINDOW_WIDTH;
         }
         @Override
         public int getHeight() {
-            return Config.HEIGHT;
+            return AppContext.WINDOW_HEIGHT;
         }
         @Override
         public void use(boolean clear) {
