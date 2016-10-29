@@ -59,7 +59,6 @@
                     <finalName>hpengine</finalName>
                 </configuration>
             </plugin>
-
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
@@ -295,6 +294,11 @@
             <groupId>de.ruedigermoeller</groupId>
             <artifactId>fst</artifactId>
             <version>2.33</version>
+        </dependency>
+        <dependency>
+            <groupId>com.carrotsearch</groupId>
+            <artifactId>hppc</artifactId>
+            <version>0.7.2</version>
         </dependency>
 
         <dependency>
