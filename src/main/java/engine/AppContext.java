@@ -4,6 +4,7 @@ import camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
 import component.InputControllerComponent;
+import component.JavaComponent;
 import component.ModelComponent;
 import component.PhysicsComponent;
 import config.Config;
@@ -15,6 +16,7 @@ import engine.model.OBJLoader;
 import event.*;
 import event.bus.EventBus;
 import net.engio.mbassy.listener.Handler;
+import org.apache.commons.io.IOUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -50,7 +52,11 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -138,6 +144,14 @@ public class AppContext implements Extractor<RenderExtract> {
             Renderer.getInstance();
             Scene scene = Scene.read(sceneName);
             AppContext.getInstance().setScene(scene);
+        }
+
+        try {
+            JavaComponent initScript = new JavaComponent(new String(Files.readAllBytes(FileSystems.getDefault().getPath(AppContext.WORKDIR_NAME + "/assets/scripts/Init.java"))));
+            initScript.init();
+            System.out.println("initScript = " + initScript.isInitialized());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -579,7 +593,8 @@ public class AppContext implements Extractor<RenderExtract> {
             float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-            boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+            // TODO: Fix this
+            boolean visibleForCamera = true;//entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
             int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
             PerEntityInfo info = cash0.get(modelComponent);
