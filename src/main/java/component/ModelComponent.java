@@ -29,7 +29,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public boolean instanced = false;
 
-    transient protected VertexBuffer vertexBuffer;
     private static Object globalLock = new Object();
     public static volatile VertexBuffer globalVertexBuffer;
     public static volatile IndexBuffer globalEntityOffsetBuffer;
@@ -123,18 +122,18 @@ public class ModelComponent extends BaseComponent implements Serializable {
         }
     }
 
-    public int drawDebug(Program program, FloatBuffer modelMatrix) {
-
-        if(!getEntity().isVisible()) {
-            return 0;
-        }
-
-        program.setUniformAsMatrix4("modelMatrix", modelMatrix);
-
-        model.getMaterial().setTexturesActive(program);
-        vertexBuffer.drawDebug();
-        return 0;
-    }
+//    public int drawDebug(Program program, FloatBuffer modelMatrix) {
+//
+//        if(!getEntity().isVisible()) {
+//            return 0;
+//        }
+//
+//        program.setUniformAsMatrix4("modelMatrix", modelMatrix);
+//
+//        model.getMaterial().setTexturesActive(program);
+//        vertexBuffer.drawDebug();
+//        return 0;
+//    }
 
 
     private transient WeakReference<Material> materialCache = null;
@@ -293,10 +292,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
     @Override
     public String getIdentifier() {
         return "ModelComponent";
-    }
-
-    public VertexBuffer getVertexBuffer() {
-        return vertexBuffer;
     }
 
     public Vector4f[] getMinMax() {

@@ -1,7 +1,6 @@
 package engine;
 
 import engine.model.Entity;
-import engine.model.VertexBuffer;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
@@ -23,18 +22,17 @@ public class PerEntityInfo {
     private Material material;
     private int baseVertex;
     private boolean isInReachForTextureStreaming;
-    private VertexBuffer vertexBuffer;
     private int instanceCount;
     private boolean visibleForCamera;
     private Entity.Update update;
     private int indexCount;
     private int indexOffset;
 
-    public PerEntityInfo(FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
-        init(modelMatrix, program, entityIndex, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, material, isInReachForTextureStreaming, vertexBuffer, instanceCount, visibleForCamera, update, minWorld, maxWorld, indexCount, indexOffset, baseVertex);
+    public PerEntityInfo(FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
+        init(modelMatrix, program, entityIndex, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, material, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, indexCount, indexOffset, baseVertex);
     }
 
-    public void init(FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, VertexBuffer vertexBuffer, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
+    public void init(FloatBuffer modelMatrix, Program program, int entityIndex, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, Material material, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
         this.modelMatrix = modelMatrix;
         this.program = program;
         this.entityIndex = entityIndex;
@@ -44,7 +42,6 @@ public class PerEntityInfo {
         this.drawLines = drawLines;
         this.cameraWorldPosition = cameraWorldPosition;
         this.material = material;
-        this.vertexBuffer = vertexBuffer;
         this.instanceCount = instanceCount;
         this.isInReachForTextureStreaming = isInReachForTextureStreaming;
         this.visibleForCamera = visibleForCamera;
@@ -97,10 +94,6 @@ public class PerEntityInfo {
 
     public boolean isInReachForTextureLoading() {
         return isInReachForTextureStreaming;
-    }
-
-    public VertexBuffer getVertexBuffer() {
-        return vertexBuffer;
     }
 
     public int getInstanceCount() {

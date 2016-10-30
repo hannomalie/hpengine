@@ -133,9 +133,10 @@ public class DirectionalLight extends Entity {
 	}
 
 	public void drawDebug(Program program) {
-		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			modelComponent.drawDebug(program, getTransform().getTransformationBuffer());
-		});
+        throw new IllegalStateException("Currently not implemented!");
+//		box.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+//			modelComponent.drawDebug(program, getTransform().getTransformationBuffer());
+//		});
 	}
 
 	public Vector3f getDirection () {

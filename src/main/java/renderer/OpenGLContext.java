@@ -367,6 +367,7 @@ public final class OpenGLContext {
                 runnable.run();
             } catch(Exception e) {
                 LOGGER.severe(e.toString());
+                e.printStackTrace();
                 return e;
             }
             return null;

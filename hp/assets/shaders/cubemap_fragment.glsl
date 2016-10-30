@@ -654,7 +654,7 @@ void main()
     out_color.a = depth;
     out_color.a = any(hasOverhead)? 0 : 1;
 
-    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic); // biased, since specular term is only valid at POI of the probe...mäh
+    vec3 diffuseColor = mix(color.rgb, vec3(0,0,0), metallic); // biased, since specular term is only valid at POI of the probe...mï¿½h
     vec3 specularColor = mix(vec3(0.04,0.04,0.04), color.rgb, metallic);
     
 	vec3 PN_world = normalize(normal_world);
@@ -707,8 +707,9 @@ void main()
 	}
 	
 	// Fake the other missing bounces with some ambient light...
-	out_color.rgb += 0.0125 * color.rgb;
+	out_color.rgb += 0.125 * color.rgb;
 	
 	//out_color.rgb = PN_world;
 	//out_color.rgb = vec3(metallic,metallic,metallic);
+	//out_color = vec4(color.rgb,1);
 }

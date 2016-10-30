@@ -16,7 +16,6 @@ import engine.model.OBJLoader;
 import event.*;
 import event.bus.EventBus;
 import net.engio.mbassy.listener.Handler;
-import org.apache.commons.io.IOUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -52,7 +51,6 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
@@ -331,7 +329,11 @@ public class AppContext implements Extractor<RenderExtract> {
             @Override
             public void update(float seconds) {
                 if(MULTITHREADED_RENDERING) {
-                    actuallyDraw(getScene().getDirectionalLight());
+                    try {
+                        actuallyDraw(getScene().getDirectionalLight());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }.start();
@@ -599,9 +601,9 @@ public class AppContext implements Extractor<RenderExtract> {
             int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
             PerEntityInfo info = cash0.get(modelComponent);
             if(info != null) {
-                info.init(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                info.init(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
             } else {
-                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, modelComponent.getVertexBuffer(), entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 cash0.put(modelComponent, info);
             }
 

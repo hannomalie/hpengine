@@ -10,13 +10,11 @@ import org.lwjgl.util.vector.Vector3f;
 import renderer.command.LoadModelCommand.EntityListResult;
 
 import javax.swing.*;
-import javax.vecmath.Vector4f;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class LoadModelCommand implements Command<EntityListResult> {
     private final File file;

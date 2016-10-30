@@ -95,18 +95,19 @@ public class PhysicsFactory {
 	}
 
 	public PhysicsComponent addHullPhysicsComponent(Entity owner, float mass) {
-		ObjectArrayList<Vector3f> list = new ObjectArrayList<>();
-		ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
-
-		float[] vertices = modelComponent.getVertexBuffer().getValues(DataChannels.POSITION3);
-		for (int i = 0; i < vertices.length; i += 3) {
-			list.add(new Vector3f(vertices[i], vertices[i+1], vertices[i+2]));
-		}
-		
-		CollisionShape shape = new ConvexHullShape(list);
-		Vector3f inertia = new Vector3f();
-		shape.calculateLocalInertia(1f, inertia);
-		return addPhysicsComponent(new MeshShapeInfo( () -> shape, owner, mass, inertia));
+        throw new IllegalStateException("Currently not implemented!");
+//		ObjectArrayList<Vector3f> list = new ObjectArrayList<>();
+//		ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
+//
+//		float[] vertices = modelComponent.getVertices();
+//		for (int i = 0; i < vertices.length; i += 3) {
+//			list.add(new Vector3f(vertices[i], vertices[i+1], vertices[i+2]));
+//		}
+//
+//		CollisionShape shape = new ConvexHullShape(list);
+//		Vector3f inertia = new Vector3f();
+//		shape.calculateLocalInertia(1f, inertia);
+//		return addPhysicsComponent(new MeshShapeInfo( () -> shape, owner, mass, inertia));
 	}
 	
 	public PhysicsComponent addMeshPhysicsComponent(Entity owner, float mass) {
@@ -118,37 +119,38 @@ public class PhysicsFactory {
 	}
 
     public CollisionShape supplyCollisionShape(Entity owner, float mass, Vector3f inertia) {
-        ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
-        if(modelComponent == null || !modelComponent.isInitialized()) {
-            throw new IllegalStateException("ModelComponent null or not initialized");
-        }
-
-        float[] vertices = modelComponent.getVertexBuffer().getValues(DataChannels.POSITION3);
-        int[] indices = modelComponent.getIndices();
-        ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 4);
-        ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
-
-        for (int i = 0; i < vertices.length; i+=3) {
-            org.lwjgl.util.vector.Vector3f vec = new org.lwjgl.util.vector.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
-            org.lwjgl.util.vector.Vector3f scaledVec = org.lwjgl.util.vector.Vector3f.cross(vec, owner.getScale(), null);
-
-            vertexBuffer.putFloat(scaledVec.x);
-            vertexBuffer.putFloat(scaledVec.y);
-            vertexBuffer.putFloat(scaledVec.z);
-        }
-        for (int i = 0; i < indices.length; i+=3) {
-            indexBuffer.putFloat(indices[i]);
-            indexBuffer.putFloat(indices[i+1]);
-            indexBuffer.putFloat(indices[i+2]);
-        }
-
-        vertexBuffer.rewind();
-        indexBuffer.rewind();
-
-        TriangleIndexVertexArray vertexArray = new TriangleIndexVertexArray(indices.length/3, indexBuffer, 0, vertices.length,vertexBuffer, 0);
-        BvhTriangleMeshShape shape = new BvhTriangleMeshShape(vertexArray, true);
-        shape.calculateLocalInertia(mass, inertia);
-        return shape;
+        throw new IllegalStateException("Currently not implemented!");
+//        ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
+//        if(modelComponent == null || !modelComponent.isInitialized()) {
+//            throw new IllegalStateException("ModelComponent null or not initialized");
+//        }
+//
+//        float[] vertices = modelComponent.getVertices();
+//        int[] indices = modelComponent.getIndices();
+//        ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 4);
+//        ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
+//
+//        for (int i = 0; i < vertices.length; i+=3) {
+//            org.lwjgl.util.vector.Vector3f vec = new org.lwjgl.util.vector.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
+//            org.lwjgl.util.vector.Vector3f scaledVec = org.lwjgl.util.vector.Vector3f.cross(vec, owner.getScale(), null);
+//
+//            vertexBuffer.putFloat(scaledVec.x);
+//            vertexBuffer.putFloat(scaledVec.y);
+//            vertexBuffer.putFloat(scaledVec.z);
+//        }
+//        for (int i = 0; i < indices.length; i+=3) {
+//            indexBuffer.putFloat(indices[i]);
+//            indexBuffer.putFloat(indices[i+1]);
+//            indexBuffer.putFloat(indices[i+2]);
+//        }
+//
+//        vertexBuffer.rewind();
+//        indexBuffer.rewind();
+//
+//        TriangleIndexVertexArray vertexArray = new TriangleIndexVertexArray(indices.length/3, indexBuffer, 0, vertices.length,vertexBuffer, 0);
+//        BvhTriangleMeshShape shape = new BvhTriangleMeshShape(vertexArray, true);
+//        shape.calculateLocalInertia(mass, inertia);
+//        return shape;
     }
 
     public CommandQueue getCommandQueue() {

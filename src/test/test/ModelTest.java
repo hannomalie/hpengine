@@ -31,7 +31,6 @@ public class ModelTest extends TestWithAppContext {
 
         Entity entity = EntityFactory.getInstance().getEntity(planeModel);
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-        VertexBuffer buffer = modelComponent.getVertexBuffer();
 
         float[] expectedVerticesValues = new float[planeModel.getVertices().size() * 3];
         for(int i = 0; i < planeModel.getVertices().size(); i++) {
@@ -42,9 +41,6 @@ public class ModelTest extends TestWithAppContext {
         }
 
 //        float[] temp = entity.getComponent(ModelComponent.class).floatArray;
-
-        float[] actualPositionValuesFromVertexBuffer = buffer.getValues(DataChannels.POSITION3);
-        Assert.assertArrayEquals(expectedVerticesValues, actualPositionValuesFromVertexBuffer, 0.000001f);
 
         LodGenerator lodGenerator = new LodGenerator(modelComponent);
         lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.3f);
@@ -72,49 +68,7 @@ public class ModelTest extends TestWithAppContext {
         Assert.assertArrayEquals(expectedIndexBufferValues, modelComponent.getLodLevels().get(1));
     }
 	
-	@Test
-	public void loadsCorrectly() throws Exception {
-        List<Model> box = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj"));
-        Entity entity = EntityFactory.getInstance().getEntity(box.get(0));
-		VertexBuffer buffer = entity.getComponent(ModelComponent.class).getVertexBuffer();
 
-        Assert.assertEquals(8, box.get(0).getVertices().size());
-
-		Assert.assertEquals(8, buffer.getVerticesCount());
-        Assert.assertEquals(12, buffer.getTriangleCount());
-
-		float[] vertexData = buffer.getValues(DataChannels.POSITION3);
-		Assert.assertEquals(24*buffer.totalElementsPerVertex(), buffer.getVertexData().length);
-
-		int elementsToCheckCount = 18;
-		float[] actuals = new float[elementsToCheckCount];
-		for (int i = 0; i < elementsToCheckCount; i++) {
-			actuals[i] = vertexData[i];
-		}
-		
-		float[] expecteds = new float[]{
-				-0.5f, 0.5f, -0.5f,
-				-0.5f, 0.5f, 0.5f,
-				0.5f, 0.5f, 0.5f,
-
-				-0.5f, 0.5f, -0.5f,
-				0.5f, 0.5f, 0.5f,
-				0.5f, 0.5f, -0.5f
-		};
-		// Korrekte Werte eingelesen
-		Assert.assertArrayEquals(expecteds, actuals, 0);
-		
-		entity.move(new Vector3f(10,10,10));
-		
-		Assert.assertTrue(new Vector3f(10,10,10).equals(entity.getPosition()));
-		Vector4f[] minMaxWorld = entity.getMinMaxWorld();
-		Vector4f min = minMaxWorld[0];
-		Vector4f max = minMaxWorld[1];
-
-		Assert.assertEquals(new Vector4f(9.5f, 9.5f, 9.5f, 0), min);
-		Assert.assertEquals(new Vector4f(10.5f, 10.5f, 10.5f, 0), max);
-	}
-	
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
