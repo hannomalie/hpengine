@@ -12,7 +12,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.light.DirectionalLight;
+import renderer.drawstrategy.extensions.DrawLightMapExtension;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import scene.EnvironmentProbe.Update;
 import shader.AbstractProgram;
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
+import static renderer.drawstrategy.extensions.DrawLightMapExtension.PROBE_COUNT;
 
 public class EnvironmentProbeFactory {
 	public static final int MAX_PROBES = 25;
@@ -33,11 +34,16 @@ public class EnvironmentProbeFactory {
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
 	
 	public static Update DEFAULT_PROBE_UPDATE = Update.DYNAMIC;
-    private static EnvironmentProbeFactory instance;
+    private volatile static EnvironmentProbeFactory instance;
 
     public static EnvironmentProbeFactory getInstance() {
         if(instance == null) {
-            throw new IllegalStateException("Call AppContext.init() before using it");
+            synchronized (EnvironmentProbeFactory.class) {
+                if(instance == null) {
+                    init();
+                }
+            }
+//            throw new IllegalStateException("Call AppContext.init() before using it");
         }
         return instance;
     }
@@ -45,27 +51,34 @@ public class EnvironmentProbeFactory {
         instance = new EnvironmentProbeFactory();
     }
 
-	private Renderer renderer;
-	
 	private List<EnvironmentProbe> probes = new ArrayList<>();
 
 	private CubeMapArray environmentMapsArray;
 	private CubeMapArray environmentMapsArray1;
 	private CubeMapArray environmentMapsArray2;
 	private CubeMapArray environmentMapsArray3;
-	private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
+    private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
+
+    private CubeMapArray lightmapEnvironmentMapsArray;
+    private CubeMapArrayRenderTarget lightMapCubeMapArrayRenderTarget;
 
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
-	public EnvironmentProbeFactory() {
-        renderer = Renderer.getInstance();
-		this.environmentMapsArray = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR);
-		this.environmentMapsArray1 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
-		this.environmentMapsArray2 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8);
-		this.environmentMapsArray3 = new CubeMapArray(renderer, MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+    public CubeMapArrayRenderTarget getLightMapCubeMapArrayRenderTarget() {
+        return lightMapCubeMapArrayRenderTarget;
+    }
+
+    public EnvironmentProbeFactory() {
+		this.environmentMapsArray = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR, RESOLUTION);
+		this.environmentMapsArray1 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray2 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
+		this.environmentMapsArray3 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+
+        this.lightmapEnvironmentMapsArray = new CubeMapArray(PROBE_COUNT, GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_RGBA8, DrawLightMapExtension.PROBE_RESOLUTION);
+        this.lightMapCubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(DrawLightMapExtension.PROBE_RESOLUTION, DrawLightMapExtension.PROBE_RESOLUTION, 1, lightmapEnvironmentMapsArray);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}
@@ -147,7 +160,7 @@ public class EnvironmentProbeFactory {
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 			//environmentProbe.draw(octree, light);
-			renderer.addRenderProbeCommand(environmentProbe, urgent);
+			Renderer.getInstance().addRenderProbeCommand(environmentProbe, urgent);
 		}
 	}
 	
@@ -177,7 +190,7 @@ public class EnvironmentProbeFactory {
 //			if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 //			environmentProbe.draw(octree, light);
-			renderer.addRenderProbeCommand(environmentProbe);
+            Renderer.getInstance().addRenderProbeCommand(environmentProbe);
 		}
 	}
 
@@ -200,7 +213,7 @@ public class EnvironmentProbeFactory {
 //			renderer.batchLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
-		    renderer.drawLines(program);
+            Renderer.getInstance().drawLines(program);
 		}
 		
 		// 72 floats per array
@@ -217,7 +230,7 @@ public class EnvironmentProbeFactory {
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-				renderer.batchLine(probe.getCenter(), e.getPosition());
+                Renderer.getInstance().batchLine(probe.getCenter(), e.getPosition());
 			});
 		});
 		buffer.delete();
@@ -260,6 +273,10 @@ public class EnvironmentProbeFactory {
 			return null;
 		}
 	}
+
+    public CubeMapArray getLightmapEnvironmentMapsArray() {
+        return lightmapEnvironmentMapsArray;
+    }
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
 		return probes.stream().filter(probe -> {

@@ -58,7 +58,7 @@ public class OpenGLThread extends Thread {
 
 			drawable.releaseContext();
 			drawable.destroy();
-		} catch (LWJGLException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		setRunnable(null);

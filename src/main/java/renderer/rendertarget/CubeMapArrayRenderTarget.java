@@ -1,18 +1,16 @@
 package renderer.rendertarget;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
+import texture.CubeMapArray;
+import util.Util;
+
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.lwjgl.opengl.*;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-import texture.CubeMapArray;
-import util.Util;
-
-import org.lwjgl.BufferUtils;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
 
@@ -43,7 +41,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			}
 			GL20.glDrawBuffers(scratchBuffer);
 
-            CubeMapArray depthCubeMapArray = new CubeMapArray(Renderer.getInstance(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthbufferLocation = depthCubeMapArray.getTextureID();
@@ -53,6 +51,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
 				System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
 				System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
+                new Exception().printStackTrace();
 				System.exit(0);
 			}
 		});

@@ -25,7 +25,6 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
-import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.material.Material;
@@ -34,6 +33,7 @@ import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
+import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import shader.*;
 import texture.CubeMapArray;
@@ -144,7 +144,7 @@ public class LightFactory {
 		} else {
 			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
 
-			CubeMapArray cubeMapArray = new CubeMapArray(Renderer.getInstance(), MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F);
+			CubeMapArray cubeMapArray = new CubeMapArray(MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION);
 			pointLightDepthMapsArrayCube = cubeMapArray.getTextureID();
 			this.cubemapArrayRenderTarget = new CubeMapArrayRenderTarget(
 					AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);

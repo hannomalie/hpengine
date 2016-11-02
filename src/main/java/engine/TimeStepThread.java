@@ -49,7 +49,7 @@ public abstract class TimeStepThread extends Thread {
             try {
                 update(seconds);
 
-            }catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             lastFrame = System.nanoTime();

@@ -7,8 +7,10 @@ import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.CommandBuffer;
 import engine.model.EntityFactory;
+import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.ReadableVector3f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
@@ -17,11 +19,15 @@ import renderer.Renderer;
 import renderer.constants.GlCap;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.FirstPassResult;
+import renderer.drawstrategy.SecondPassResult;
 import renderer.drawstrategy.SimpleDrawStrategy;
+import renderer.environmentsampler.LightmapEnvironmentSampler;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
+import scene.EnvironmentProbeFactory;
+import shader.AbstractProgram;
 import shader.Program;
 import shader.ProgramFactory;
 import texture.TextureFactory;
@@ -33,17 +39,28 @@ import java.util.*;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
+import static renderer.constants.GlTextureTarget.*;
 
 public class DrawLightMapExtension implements RenderExtension {
 
-    private static boolean DRAW_LIGHTMAP = false;
+    public static final int PROBE_RESOLUTION = 16;
+    public static final int PROBE_SIZE = 2;
+    public static final int PROBE_COUNT_X = 10;
+    public static final int PROBE_COUNT_X_HALF = PROBE_COUNT_X/2;
+    public static final int PROBE_COUNT_Z = 10;
+    public static final int PROBE_COUNT_Z_HALF = PROBE_COUNT_Z/2;
+    public static final int PROBE_COUNT = PROBE_COUNT_X * PROBE_COUNT_Z;
+    private static boolean DRAW_LIGHTMAP = true;
     private final Program lightMapProgram;
+    private Program lightmapEvaluationProgram;
     private final FloatBuffer identityMatrix44Buffer;
 
     private List<CommandBuffer.DrawElementsIndirectCommand> commands = new ArrayList();
     private Map<Integer, CommandBuffer.DrawElementsIndirectCommand> commandsMap = new HashMap();
     private SortedSet<Integer> keys = new TreeSet<>();
     CommandBuffer globalCommandBuffer = new CommandBuffer(16000);
+
+    private List<LightmapEnvironmentSampler> samplers = new ArrayList<>();
 
     private final RenderTarget lightMapTarget = new RenderTargetBuilder()
             .setWidth(1000)
@@ -55,6 +72,13 @@ public class DrawLightMapExtension implements RenderExtension {
     public DrawLightMapExtension() throws Exception {
         identityMatrix44Buffer = new Transform().getTransformationBuffer();
         lightMapProgram = ProgramFactory.getInstance().getProgram("lightmap_vertex.glsl", "lightmap_fragment.glsl");
+        lightmapEvaluationProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl");
+
+        for(int x = -PROBE_COUNT_X_HALF; x < PROBE_COUNT_X_HALF; x++) {
+            for(int z = -PROBE_COUNT_Z_HALF; z < PROBE_COUNT_Z_HALF; z++) {
+                samplers.add(new LightmapEnvironmentSampler(new Vector3f(x * PROBE_SIZE, 0, z * PROBE_SIZE)));
+            }
+        }
     }
 
     @Override
@@ -127,11 +151,48 @@ public class DrawLightMapExtension implements RenderExtension {
             openGLContext.enable(DEPTH_TEST);
 
 //            TextureFactory.getInstance().blur2DTextureRGBA16F(lightMapTarget.getRenderedTexture(), lightMapTarget.getWidth(), lightMapTarget.getHeight(), 0, 0);
+
+            GPUProfiler.start("Draw lightmap probes");
+            for(LightmapEnvironmentSampler sampler : samplers) {
+                sampler.drawCubeMap(false, null);
+            }
+            GPUProfiler.end();
         }
     }
+
+    @Override
+    public void renderSecondPassFullScreen(RenderExtract renderExtract, SecondPassResult secondPassResult) {
+
+        GPUProfiler.start("Evaluate lightmap");
+        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
+        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
+        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
+        OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        EnvironmentProbeFactory.getInstance().getLightmapEnvironmentMapsArray().bind(8);
+//        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
+
+        OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, getLightMapTarget().getRenderedTexture());
+//        TextureFactory.getInstance().getCubeMap().bind(10);
+        OpenGLContext.getInstance().bindTexture(10, TEXTURE_CUBE_MAP, samplers.get(0).getCubeMapView());
+
+        lightmapEvaluationProgram.use();
+        lightmapEvaluationProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());
+        lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
+        lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
+        lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
+        lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.WIDTH);
+        lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.HEIGHT);
+        QuadVertexBuffer.getFullscreenBuffer().draw();
+        GPUProfiler.end();
+    }
+
 
     public RenderTarget getLightMapTarget() {
         return lightMapTarget;
     }
 
+    public List<LightmapEnvironmentSampler> getSamplers() {
+        return samplers;
+    }
 }

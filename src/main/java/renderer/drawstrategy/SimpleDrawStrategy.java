@@ -353,6 +353,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
+        lightMapExtension.renderSecondPassFullScreen(renderExtract, secondPassResult);
         OpenGLContext.getInstance().disable(BLEND);
 
         renderAOAndScattering(renderExtract);

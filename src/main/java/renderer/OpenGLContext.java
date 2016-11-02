@@ -77,6 +77,9 @@ public final class OpenGLContext {
             System.exit(-1);
         }
     }
+    public boolean isError() {
+        return OpenGLContext.getInstance().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
+    }
 
     public static void init() throws LWJGLException {
         OpenGLContext context = new OpenGLContext();
@@ -98,7 +101,11 @@ public final class OpenGLContext {
                         System.exit(-1);
                     }
                 } else {
-                    instance.update(seconds);
+                    try {
+                        instance.update(seconds);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         };
@@ -126,7 +133,7 @@ public final class OpenGLContext {
 				.withProfileCompatibility(true)
                 .withForwardCompatible(true)
 //                .withProfileCore(true)
-//                .withDebug(true)
+                .withDebug(true)
                 ;
 
         LOGGER.info("OpenGLContext before setDisplayMode");
