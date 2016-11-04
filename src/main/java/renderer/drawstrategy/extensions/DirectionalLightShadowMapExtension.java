@@ -1,14 +1,8 @@
 package renderer.drawstrategy.extensions;
 
-import com.google.common.eventbus.Subscribe;
-import component.ModelComponent;
 import engine.AppContext;
 import engine.PerEntityInfo;
-import engine.model.Entity;
 import engine.model.EntityFactory;
-import event.DirectionalLightHasMovedEvent;
-import event.EntityAddedEvent;
-import net.engio.mbassy.listener.Handler;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLContext;
@@ -16,7 +10,6 @@ import renderer.RenderExtract;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.FirstPassResult;
 import renderer.light.DirectionalLight;
-import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
@@ -27,7 +20,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -41,7 +33,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public DirectionalLightShadowMapExtension() {
 
-        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_ssbo_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_ssbo_vertex.glsl", "shadowmap_fragment.glsl", true);
 
         renderTarget = new RenderTargetBuilder()
                 .setWidth(SHADOWMAP_RESOLUTION)

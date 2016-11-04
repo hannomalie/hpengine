@@ -1,7 +1,6 @@
 package renderer.drawstrategy;
 
 import camera.Camera;
-import com.google.common.primitives.Ints;
 import component.ModelComponent;
 import config.Config;
 import container.EntitiesContainer;
@@ -12,11 +11,9 @@ import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
-import org.jfree.util.ArrayUtilities;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
@@ -27,7 +24,6 @@ import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.light.TubeLight;
-import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
@@ -35,14 +31,12 @@ import scene.EnvironmentProbeFactory;
 import shader.ComputeShaderProgram;
 import shader.Program;
 import shader.ProgramFactory;
-import texture.CubeMap;
 import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
-import java.util.stream.Collector;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
 import static renderer.constants.BlendMode.Factor.ONE;
@@ -85,16 +79,16 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public SimpleDrawStrategy() throws Exception {
         super();
         ProgramFactory programFactory = ProgramFactory.getInstance();
-        secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-        secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-        secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-        secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-        instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+        secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", false);
+        secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", false);
+        secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", false);
+        secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", false);
+        instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", false);
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
-        combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
-        postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", DeferredRenderer.RENDERTOQUAD, false);
+        combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", false);
+        postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", false);
 
         aoScatteringProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "scattering_ao_fragment.glsl");
         highZProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");

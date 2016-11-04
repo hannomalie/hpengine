@@ -28,7 +28,6 @@ import com.google.common.eventbus.Subscribe;
 public class Program extends AbstractProgram implements Reloadable {
 	private static Logger LOGGER = getLogger();
 	
-	private EnumSet<DataChannels> channels;
 	private boolean needsTextures = true;
 
 	private Map<String, Object> localDefines = new HashMap<>();
@@ -48,8 +47,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	private FileAlterationObserver observerFragmentShader;
 
 	protected Program(ShaderSource vertexShaderSource, ShaderSource geometryShaderSource, ShaderSource fragmentShaderSource,
-                      EnumSet<DataChannels> channels, boolean needsTextures, String fragmentDefines) {
-		this.channels = channels;
+                      boolean needsTextures, String fragmentDefines) {
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
 		
@@ -196,8 +194,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		
 		Program otherProgram = (Program) other;
 		
-		if (this.channels == otherProgram.channels &&
-			this.needsTextures == otherProgram.needsTextures &&
+		if (this.needsTextures == otherProgram.needsTextures &&
 				((this.geometryShaderSource == null && otherProgram.geometryShaderSource == null) ||
 				(this.geometryShaderSource.equals(otherProgram.geometryShaderSource))) &&
 			this.vertexShaderSource.equals(otherProgram.vertexShaderSource) &&
@@ -211,7 +208,6 @@ public class Program extends AbstractProgram implements Reloadable {
 	@Override
 	public int hashCode() {
 		int hash = 0;
-		hash += (channels != null? channels.hashCode() : 0);
 		hash += (geometryShaderSource != null? geometryShaderSource.hashCode() : 0);
 		hash += (vertexShaderSource != null? vertexShaderSource.hashCode() : 0);
 		hash += (fragmentShaderSource != null? fragmentShaderSource.hashCode() : 0);

@@ -11,7 +11,6 @@ import engine.model.Entity;
 import event.MaterialChangedEvent;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
@@ -20,7 +19,6 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
-import renderer.Renderer;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.drawstrategy.extensions.DrawLightMapExtension;
@@ -48,7 +46,7 @@ import static renderer.constants.GlDepthFunc.LEQUAL;
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 
 public class LightmapEnvironmentSampler extends Camera {
-    private static int currentVolumeIndex;
+    private static int currentVolumeIndex = 0;
     private final int volumeIndex;
     private final CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
     private Program cubeMapProgram;
@@ -58,11 +56,10 @@ public class LightmapEnvironmentSampler extends Camera {
 
 	private int cubeMapFaceViews[] = new int[6];
 
-	private RenderTarget renderTarget;
-
 	public LightmapEnvironmentSampler(Vector3f position) throws Exception {
 		super(0.1f, 5000f, 90f, 1f);
-        volumeIndex = currentVolumeIndex++;
+        volumeIndex = currentVolumeIndex;
+        currentVolumeIndex++;
         setPosition(position);
 		init();
         float far = 5000f;
@@ -81,7 +78,7 @@ public class LightmapEnvironmentSampler extends Camera {
 //		setPosition(position);
 
 		ProgramFactory programFactory = ProgramFactory.getInstance();
-		cubeMapProgram = programFactory.getProgram("first_pass_vertex.glsl", "lightmap_cubemap_fragment.glsl");
+		cubeMapProgram = programFactory.getProgram("lightmap_cubemap_vertex.glsl", "lightmap_cubemap_geometry.glsl", "lightmap_cubemap_fragment.glsl", true);
 
 		cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getLightMapCubeMapArrayRenderTarget();
 		cubeMapView = OpenGLContext.getInstance().genTextures();
@@ -95,14 +92,6 @@ public class LightmapEnvironmentSampler extends Camera {
             GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, Util.calculateMipMapCount(DrawLightMapExtension.PROBE_RESOLUTION), 6*volumeIndex, 6);
 
             DeferredRenderer.exitOnGLError("EnvironmentSampler constructor B");
-
-            renderTarget = new RenderTargetBuilder()
-                    .setWidth(DrawLightMapExtension.PROBE_RESOLUTION)
-                    .setHeight(DrawLightMapExtension.PROBE_RESOLUTION)
-                    .add(new ColorAttachmentDefinition()
-                            .setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat()))
-                    .build();
-            DeferredRenderer.exitOnGLError("LightmapEnvironmentSampler constructor");
 
         });
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
@@ -128,16 +117,17 @@ public class LightmapEnvironmentSampler extends Camera {
 		OpenGLContext.getInstance().enable(DEPTH_TEST);
 		OpenGLContext.getInstance().depthFunc(LEQUAL);
 
-        renderTarget.use(false);
-//        cubeMapArrayRenderTarget.use(false);
+        cubeMapArrayRenderTarget.use(false);
 		bindProgramSpecificsPerCubeMap();
 
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
 
 			GPUProfiler.start("side " + i);
-            cubeMapArrayRenderTarget.setCubeMapFace(0, 0, volumeIndex, i);
-            OpenGLContext.getInstance().clearDepthAndColorBuffer();
+            cubeMapProgram.setUniform("layer", 6 * volumeIndex + i);
+            //TODO Fix color clearing....
+//            OpenGLContext.getInstance().clearDepthAndColorBuffer();
+            OpenGLContext.getInstance().clearDepthBuffer();
             drawEntities(cubeMapProgram, octree.getEntities(), getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
 			GPUProfiler.end();
 		}
