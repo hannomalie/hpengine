@@ -1,3 +1,5 @@
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 
 layout(binding=0) uniform sampler2D positionMap;
 layout(binding=1) uniform sampler2D normalMap;
@@ -34,6 +36,11 @@ uniform int activeProbeCount;
 uniform vec3 environmentMapMin[100];
 uniform vec3 environmentMapMax[100];
 uniform float environmentMapWeights[100];
+
+uniform samplerCube handle;
+uniform samplerCube handles[256];
+
+uniform int probeSize = 1;
 
 in vec2 pass_TextureCoord;
 
@@ -1330,7 +1337,7 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 }
 
 int indexForPosition(vec3 positionWorld) {
-    return 0;
+    return max(min(10*int(positionWorld.x/probeSize + 5)+int(positionWorld.z/probeSize + 5), 100), 0);
 }
 
 void main()
@@ -1353,15 +1360,26 @@ void main()
 	float metallic = colorMetallic.a;
 
 	vec3 result = vec3(0,0,0);
+    int index = indexForPosition(positionWorld);
+    samplerCube probe = handles[index];
 
-    int index = 0;
-	vec3 sampleVector = vec3(0,1,0);
-	vec2 lightmapCoords = textureLod(probes, vec4(normalWorld, index), 0).xy;
-	vec3 lightmapSample = textureLod(lightmap, lightmapCoords, 0).rgb;
-	//result += clamp(dot(normalWorld, sampleVector), 0.0, 1.0) * lightmapSample;
-	//result += lightmapSample;
-	result = vec3(lightmapCoords, 0);
-	//result = textureLod(environmentMap, vec3(0,1,0), 0).rgb;
+    vec2 lightmapCoords = textureLod(probe, normalWorld, 0).rg;
+    vec3 lightmapSample = textureLod(lightmap, lightmapCoords, 0).rgb;
+    result += lightmapSample;
 
+    const vec3[6] sampleVectors = { vec3(0,0,1),
+                                    vec3(0,1,0),
+                                    vec3(1,0,0),
+                                    vec3(0,0,-1),
+                                    vec3(0,-1,0),
+                                    vec3(-1,0,0),
+                                    };
+    for(int i = 0; i < 6; i++) {
+        vec2 _lightmapCoords = textureLod(probe, sampleVectors[i], 0).rg;
+        vec3 _lightmapSample = textureLod(lightmap, _lightmapCoords, 0).rgb;
+        result += _lightmapSample * clamp(dot(sampleVectors[i], normalWorld), 0., 1.);
+    }
+
+//    result = vec3(lightmapCoords, 0);
 	out_environment.rgb = result;
 }

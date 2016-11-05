@@ -97,7 +97,7 @@ public class Texture implements Serializable, Reloadable {
     protected int minFilter = GL11.GL_LINEAR;
     protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
-    private long handle =-1L;
+    protected long handle =-1L;
 
 
     protected Texture() {

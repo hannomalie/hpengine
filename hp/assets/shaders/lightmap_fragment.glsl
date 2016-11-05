@@ -39,7 +39,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 
 
 	// Surface is fully lit. as the current fragment is before the light occluder
-	if (dist - 0.0001f <= moments.x) {
+	if (dist - 0.001f <= moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}
 	else { return vec3(0); }
@@ -82,6 +82,7 @@ void main()
 	float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1).r;
     out_color.rgb = out_color.rgb * clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility;
 
+    out_color += 0.25f * color;
     //out_color = color;
     //out_color = vec4(lightmapTexCoord, 0, 1);
     //out_color = vec4(position_world.xyz/100f, 1);

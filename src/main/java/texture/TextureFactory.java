@@ -83,11 +83,14 @@ public class TextureFactory {
     public static void init() {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
+        DeferredRenderer.exitOnGLError("After loadDefaultTexture");
         lensFlareTexture = instance.getTexture("hp\\assets\\textures\\lens_flare_tex.jpg", true);
+        DeferredRenderer.exitOnGLError("After load lensFlareTexture");
         try {
             cubeMap = instance.getCubeMap("hp\\assets\\textures\\skybox.png");
+            DeferredRenderer.exitOnGLError("After load cubemap");
             OpenGLContext.getInstance().activeTexture(0);
-            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
+//            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
             LOGGER.severe(e.getMessage());
         }
@@ -282,7 +285,6 @@ public class TextureFactory {
         if (cubeMapPreCompiled(resourceName)) {
         	tex = CubeMap.read(resourceName, createTextureID());
         	if (tex != null) {
-                generateMipMapsCubeMap(tex.getTextureID());
                 TEXTURES.put(resourceName+ "_cube",tex);
                 return tex;
             }
@@ -309,7 +311,7 @@ public class TextureFactory {
          
          // create the texture ID for this texture 
          int textureID = createTextureID(); 
-         CubeMap cubeMap = new CubeMap(resourceName, target, textureID); 
+         CubeMap cubeMap = new CubeMap(resourceName, target);
          
          // bind this texture
         OpenGLContext.getInstance().bindTexture(target, textureID);

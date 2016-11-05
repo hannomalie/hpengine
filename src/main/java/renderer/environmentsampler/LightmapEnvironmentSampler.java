@@ -9,6 +9,7 @@ import engine.AppContext;
 import engine.PerEntityInfo;
 import engine.model.Entity;
 import event.MaterialChangedEvent;
+import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL43;
@@ -25,10 +26,7 @@ import renderer.drawstrategy.extensions.DrawLightMapExtension;
 import renderer.light.AreaLight;
 import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
-import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
-import renderer.rendertarget.RenderTarget;
-import renderer.rendertarget.RenderTargetBuilder;
 import scene.EnvironmentProbeFactory;
 import scene.Scene;
 import shader.Program;
@@ -55,8 +53,9 @@ public class LightmapEnvironmentSampler extends Camera {
 	private int cubeMapView;
 
 	private int cubeMapFaceViews[] = new int[6];
+    private long cubeMapViewHandle;
 
-	public LightmapEnvironmentSampler(Vector3f position) throws Exception {
+    public LightmapEnvironmentSampler(Vector3f position) throws Exception {
 		super(0.1f, 5000f, 90f, 1f);
         volumeIndex = currentVolumeIndex;
         currentVolumeIndex++;
@@ -82,6 +81,7 @@ public class LightmapEnvironmentSampler extends Camera {
 
 		cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getLightMapCubeMapArrayRenderTarget();
 		cubeMapView = OpenGLContext.getInstance().genTextures();
+
 		DeferredRenderer.exitOnGLError("EnvironmentSampler before view creation");
         OpenGLContext.getInstance().execute(() -> {
             for (int z = 0; z < 6; z++) {
@@ -91,6 +91,8 @@ public class LightmapEnvironmentSampler extends Camera {
             DeferredRenderer.exitOnGLError("EnvironmentSampler constructor A");
             GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, Util.calculateMipMapCount(DrawLightMapExtension.PROBE_RESOLUTION), 6*volumeIndex, 6);
 
+            cubeMapViewHandle = ARBBindlessTexture.glGetTextureHandleARB(cubeMapView);
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMapViewHandle);
             DeferredRenderer.exitOnGLError("EnvironmentSampler constructor B");
 
         });
@@ -275,4 +277,7 @@ public class LightmapEnvironmentSampler extends Camera {
 		return cubeMapFaceViews;
 	}
 
+    public long getCubeMapViewHandle() {
+        return cubeMapViewHandle;
+    }
 }

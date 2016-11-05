@@ -3,6 +3,9 @@ package renderer.rendertarget;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import renderer.OpenGLContext;
+import scene.EnvironmentProbeFactory;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedBuffer;
 import texture.CubeMapArray;
 import util.Util;
 
@@ -13,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CubeMapArrayRenderTarget extends RenderTarget {
-
-	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
+    private final ArrayList<long[]> handleLists;
+    private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
 	public CubeMapArrayRenderTarget(int width, int height, int depth, CubeMapArray... cubeMapArray) {
 		this.width = width;
@@ -23,8 +26,27 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		this.clearG = 0.3f;
 		this.clearB = 0.3f;
 		this.clearA = 0;
+        this.handleLists = new ArrayList<>(cubeMapArray.length);
+
 		for(CubeMapArray cma: cubeMapArray) {
-			this.cubeMapArrays.add(cma);	
+			this.cubeMapArrays.add(cma);
+            long[] currentList = new long[cma.getCubemapCount()];
+            handleLists.add(currentList);
+            for(int cubemapIndex = 0; cubemapIndex < cma.getCubemapCount(); cubemapIndex++) {
+                int cubeMapView = OpenGLContext.getInstance().genTextures();
+                int finalCubemapIndex = cubemapIndex;
+                OpenGLContext.getInstance().execute(() -> {
+                    GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
+                            cma.getInternalFormat(), 0, 1,
+                            6 * finalCubemapIndex, 6);
+
+                });
+                long handle = OpenGLContext.getInstance().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                currentList[cubemapIndex] = handle;
+                OpenGLContext.getInstance().execute(() -> {
+                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                });
+            }
 		}
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
@@ -111,5 +133,9 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 	public void bindCubeMapFace(int unit, int attachment, int cubemapIndex, int sideIndex) {
 		cubeMapArrays.get(attachment).bind(6*cubemapIndex + sideIndex, unit);
 	}
+
+    public ArrayList<long[]> getHandleLists() {
+        return handleLists;
+    }
 
 }

@@ -8,6 +8,7 @@ import scene.EnvironmentProbeFactory;
 public class CubeMapArray {
 
     private final int resolution;
+    private final int cubemapCount;
     private int textureId;
 	private int mipMapCount = 1;
 	private int internalFormat;
@@ -46,6 +47,7 @@ public class CubeMapArray {
 				GL30.glGenerateMipmap(GL40.GL_TEXTURE_CUBE_MAP_ARRAY);
 			}
 		});
+        this.cubemapCount = textureCount;
 	}
 	
 	/**
@@ -81,4 +83,7 @@ public class CubeMapArray {
 		return internalFormat;
 	}
 
+    public int getCubemapCount() {
+        return cubemapCount;
+    }
 }

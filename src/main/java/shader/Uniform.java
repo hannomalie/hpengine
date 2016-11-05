@@ -1,7 +1,9 @@
 package shader;
 
 import java.nio.FloatBuffer;
+import java.nio.LongBuffer;
 
+import org.lwjgl.opengl.ARBBindlessTexture;
 import org.lwjgl.opengl.GL20;
 
 
@@ -26,10 +28,10 @@ public class Uniform {
 //		if(location == -1) { return; };
 		GL20.glUniform1f(location, value);
 	}
-	public void set(double value) {
+    public void set(long value) {
 //		if(location == -1) { return; };
-		GL20.glUniform1f(location, (float)value);
-	}
+        ARBBindlessTexture.glUniformHandleui64ARB(location, value);
+    }
 	public void set(float x, float y, float z) {
 //		if(location == -1) { return; };
 		GL20.glUniform3f(location, x, y, z);
@@ -38,6 +40,10 @@ public class Uniform {
 //		if(location == -1) { return; };
 		GL20.glUniformMatrix4(location, false, values);
 	}
+
+    public void set(LongBuffer values) {
+        ARBBindlessTexture.glUniformHandleuARB(location, values);
+    }
 
 	public void setVec3ArrayAsFloatBuffer(FloatBuffer values) {
 		GL20.glUniform3(location, values);

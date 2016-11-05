@@ -2,16 +2,14 @@ package renderer.drawstrategy.extensions;
 
 import component.ModelComponent;
 import config.Config;
-import engine.AppContext;
 import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.CommandBuffer;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.util.vector.ReadableVector3f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
@@ -27,14 +25,13 @@ import renderer.rendertarget.ColorAttachmentDefinition;
 import renderer.rendertarget.RenderTarget;
 import renderer.rendertarget.RenderTargetBuilder;
 import scene.EnvironmentProbeFactory;
-import shader.AbstractProgram;
 import shader.Program;
 import shader.ProgramFactory;
 import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.*;
 
 import static renderer.constants.GlCap.CULL_FACE;
@@ -43,8 +40,8 @@ import static renderer.constants.GlTextureTarget.*;
 
 public class DrawLightMapExtension implements RenderExtension {
 
-    public static final int PROBE_RESOLUTION = 16;
-    public static final int PROBE_SIZE = 2;
+    public static final int PROBE_RESOLUTION = 32;
+    public static final int PROBE_SIZE = 4;
     public static final int PROBE_COUNT_X = 10;
     public static final int PROBE_COUNT_X_HALF = PROBE_COUNT_X/2;
     public static final int PROBE_COUNT_Z = 10;
@@ -52,6 +49,8 @@ public class DrawLightMapExtension implements RenderExtension {
     public static final int PROBE_COUNT = PROBE_COUNT_X * PROBE_COUNT_Z;
     private static boolean DRAW_LIGHTMAP = true;
     private final Program lightMapProgram;
+    private final LongBuffer cubemapHandles;
+    private final long[] cubemapHandlesAsLongs;
     private Program lightmapEvaluationProgram;
     private final FloatBuffer identityMatrix44Buffer;
 
@@ -63,10 +62,10 @@ public class DrawLightMapExtension implements RenderExtension {
     private List<LightmapEnvironmentSampler> samplers = new ArrayList<>();
 
     private final RenderTarget lightMapTarget = new RenderTargetBuilder()
-            .setWidth(1000)
-            .setHeight(1000)
+            .setWidth(1024)
+            .setHeight(1024)
             .removeDepthAttachment()
-            .add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+            .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
             .build();
 
     public DrawLightMapExtension() throws Exception {
@@ -74,11 +73,20 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram = ProgramFactory.getInstance().getProgram("lightmap_vertex.glsl", "lightmap_fragment.glsl");
         lightmapEvaluationProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl");
 
-        for(int x = -PROBE_COUNT_X_HALF; x < PROBE_COUNT_X_HALF; x++) {
-            for(int z = -PROBE_COUNT_Z_HALF; z < PROBE_COUNT_Z_HALF; z++) {
-                samplers.add(new LightmapEnvironmentSampler(new Vector3f(x * PROBE_SIZE, 0, z * PROBE_SIZE)));
+        for(int x = -PROBE_COUNT_X_HALF; x < PROBE_COUNT_X_HALF; x+= 1) {
+            for(int z = -PROBE_COUNT_Z_HALF; z < PROBE_COUNT_Z_HALF; z+= 1) {
+                LightmapEnvironmentSampler currentSampler = new LightmapEnvironmentSampler(new Vector3f(x * PROBE_SIZE, PROBE_SIZE/2, z * PROBE_SIZE));
+                samplers.add(currentSampler);
+                System.out.println("currentSampler.getPosition() = " + currentSampler.getPosition());
             }
         }
+        cubemapHandlesAsLongs = new long[PROBE_COUNT];
+        for(int i = 0; i < PROBE_COUNT; i++) {
+            cubemapHandlesAsLongs[i] = samplers.get(i).getCubeMapViewHandle();
+        }
+        cubemapHandles = BufferUtils.createLongBuffer(cubemapHandlesAsLongs.length);
+        cubemapHandles.put(cubemapHandlesAsLongs);
+        cubemapHandles.rewind();
     }
 
     @Override
@@ -177,10 +185,15 @@ public class DrawLightMapExtension implements RenderExtension {
         OpenGLContext.getInstance().bindTexture(10, TEXTURE_CUBE_MAP, samplers.get(0).getCubeMapView());
 
         lightmapEvaluationProgram.use();
+        lightmapEvaluationProgram.setUniform("probeSize", PROBE_SIZE);
         lightmapEvaluationProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());
         lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
         lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
         lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
+
+//        lightmapEvaluationProgram.setUniform("handle", EnvironmentProbeFactory.getInstance().getLightMapCubeMapArrayRenderTarget().getHandleLists().get(0)[0]);
+        lightmapEvaluationProgram.setUniform("handles", cubemapHandles);
+        lightmapEvaluationProgram.setUniform("handle", TextureFactory.getInstance().getCubeMap().getHandle());
         lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.WIDTH);
         lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.HEIGHT);
         QuadVertexBuffer.getFullscreenBuffer().draw();

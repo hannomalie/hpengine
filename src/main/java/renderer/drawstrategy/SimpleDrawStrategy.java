@@ -669,7 +669,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
         postProcessProgram.setUniform("cameraRightDirection", renderExtract.camera.getTransform().getRightDirection());
         postProcessProgram.setUniform("cameraViewDirection", renderExtract.camera.getTransform().getViewDirection());
-        postProcessProgram.setUniform("seconds", Renderer.getInstance().getDeltaInS());
+        postProcessProgram.setUniform("seconds", (float)Renderer.getInstance().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
