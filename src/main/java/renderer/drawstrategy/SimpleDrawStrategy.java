@@ -11,6 +11,7 @@ import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
+import javafx.scene.effect.Light;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -28,6 +29,7 @@ import renderer.material.MaterialFactory;
 import renderer.rendertarget.RenderTarget;
 import scene.AABB;
 import scene.EnvironmentProbeFactory;
+import scene.LightmapManager;
 import shader.ComputeShaderProgram;
 import shader.Program;
 import shader.ProgramFactory;
@@ -195,6 +197,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
+            firstpassDefaultProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
+            firstpassDefaultProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
             OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, lightMapExtension.getLightMapTarget().getRenderedTexture());
             GPUProfiler.end();
 

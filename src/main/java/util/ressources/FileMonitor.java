@@ -1,5 +1,6 @@
 package util.ressources;
 
+import config.Config;
 import renderer.Renderer;
 
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -18,8 +19,10 @@ public class FileMonitor {
 	static {
 		instance = new FileMonitor(500);
 		try {
-			instance.monitor.start();
-			instance.running = true;
+            if(Config.FILE_RELOADING) {
+                instance.monitor.start();
+                instance.running = true;
+            }
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -33,6 +36,9 @@ public class FileMonitor {
 	}
 	
 	public void add(FileAlterationObserver observer) {
+        if(!Config.FILE_RELOADING) {
+            return;
+        }
 		if (running) {
 			try {
 				observer.initialize();
@@ -44,10 +50,11 @@ public class FileMonitor {
 	}
 	
 	public void checkAndNotify() {
-//		StopWatch.getInstance().start("CheckAndNotify");
+        if(!Config.FILE_RELOADING) {
+            return;
+        }
 		if (!FileMonitor.getInstance().running) { return; }
 		monitor.getObservers().forEach(o -> {o.checkAndNotify();});
-//		StopWatch.getInstance().stopAndPrintMS();
 	}
 
 }

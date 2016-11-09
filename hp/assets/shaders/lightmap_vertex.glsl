@@ -12,6 +12,9 @@ uniform int time = 0;
 //uniform vec3 lightPosition;
 uniform int entityCount = 1;
 
+uniform float lightmapWidth;
+uniform float lightmapHeight;
+
 
 //include(globals_structs.glsl)
 layout(std430, binding=1) buffer _materials {
@@ -84,10 +87,9 @@ void main(void) {
 	mat4 mvp = (projectionMatrix * viewMatrix * modelMatrix);
 
     float inverseEntityCount = 1f/float(entityCount);
-    vec2 scaledLightmapCoords = scaleLightmapCoords(in_LightmapTextureCoord, inverseEntityCount, realEntityIndex, entityCount);
+    vec2 scaledLightmapCoords = scaleLightmapCoords(in_LightmapTextureCoord, lightmapWidth, lightmapHeight);
 
     lightmapTexCoord = scaledLightmapCoords.xy;
-	//lightmapTexCoord.y = 1 - lightmapTexCoord.y;
     vec2 screenCoords = scaledLightmapCoords.xy;
     screenCoords *= 2;
     screenCoords -= 1;

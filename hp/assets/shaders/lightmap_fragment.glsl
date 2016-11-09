@@ -82,8 +82,9 @@ void main()
 	float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1).r;
     out_color.rgb = out_color.rgb * clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility;
 
-    out_color += 0.25f * color;
-    //out_color = color;
-    //out_color = vec4(lightmapTexCoord, 0, 1);
+    out_color += 0.025f * color;
+//    out_color = color;
+//    out_color = vec4(lightmapTexCoord, 0, 1);
     //out_color = vec4(position_world.xyz/100f, 1);
+    out_color.a = 1;
 }

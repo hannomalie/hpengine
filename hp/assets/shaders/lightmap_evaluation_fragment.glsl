@@ -40,7 +40,10 @@ uniform float environmentMapWeights[100];
 uniform samplerCube handle;
 uniform samplerCube handles[256];
 
-uniform int probeSize = 1;
+uniform int countX;
+uniform int countZ;
+
+uniform int probeSize;
 
 in vec2 pass_TextureCoord;
 
@@ -1336,8 +1339,8 @@ ProbeSample getProbeColors(vec3 positionWorld, vec3 V, vec3 normalWorld, float r
 	return result;
 }
 
-int indexForPosition(vec3 positionWorld) {
-    return max(min(10*int(positionWorld.x/probeSize + 5)+int(positionWorld.z/probeSize + 5), 100), 0);
+int indexForPosition(vec3 positionWorld, int countX, int countZ) {
+    return max(min(countZ*int(positionWorld.x/probeSize + (countZ/2))+int(positionWorld.z/probeSize + (countX/2)), countX*countZ), 0);
 }
 
 void main()
@@ -1360,7 +1363,7 @@ void main()
 	float metallic = colorMetallic.a;
 
 	vec3 result = vec3(0,0,0);
-    int index = indexForPosition(positionWorld);
+    int index = indexForPosition(positionWorld, countX, countZ);
     samplerCube probe = handles[index];
 
     vec2 lightmapCoords = textureLod(probe, normalWorld, 0).rg;
@@ -1375,7 +1378,7 @@ void main()
                                     vec3(-1,0,0),
                                     };
     for(int i = 0; i < 6; i++) {
-        vec2 _lightmapCoords = textureLod(probe, sampleVectors[i], 0).rg;
+        vec2 _lightmapCoords = textureLod(probe, sampleVectors[i], 10).rg;
         vec3 _lightmapSample = textureLod(lightmap, _lightmapCoords, 0).rgb;
         result += _lightmapSample * clamp(dot(sampleVectors[i], normalWorld), 0., 1.);
     }

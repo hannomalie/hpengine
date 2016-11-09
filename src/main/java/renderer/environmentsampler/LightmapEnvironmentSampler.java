@@ -28,9 +28,11 @@ import renderer.light.DirectionalLight;
 import renderer.light.LightFactory;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import scene.EnvironmentProbeFactory;
+import scene.LightmapManager;
 import scene.Scene;
 import shader.Program;
 import shader.ProgramFactory;
+import texture.TextureFactory;
 import util.Util;
 import util.stopwatch.GPUProfiler;
 
@@ -55,7 +57,7 @@ public class LightmapEnvironmentSampler extends Camera {
 	private int cubeMapFaceViews[] = new int[6];
     private long cubeMapViewHandle;
 
-    public LightmapEnvironmentSampler(Vector3f position) throws Exception {
+    public LightmapEnvironmentSampler(Vector3f position, Program cubeMapProgram) throws Exception {
 		super(0.1f, 5000f, 90f, 1f);
         volumeIndex = currentVolumeIndex;
         currentVolumeIndex++;
@@ -77,7 +79,7 @@ public class LightmapEnvironmentSampler extends Camera {
 //		setPosition(position);
 
 		ProgramFactory programFactory = ProgramFactory.getInstance();
-		cubeMapProgram = programFactory.getProgram("lightmap_cubemap_vertex.glsl", "lightmap_cubemap_geometry.glsl", "lightmap_cubemap_fragment.glsl", true);
+		this.cubeMapProgram = cubeMapProgram;
 
 		cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getLightMapCubeMapArrayRenderTarget();
 		cubeMapView = OpenGLContext.getInstance().genTextures();
@@ -121,8 +123,11 @@ public class LightmapEnvironmentSampler extends Camera {
 
         cubeMapArrayRenderTarget.use(false);
 		bindProgramSpecificsPerCubeMap();
+        cubeMapProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
+        cubeMapProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
 
-		for(int i = 0; i < 6; i++) {
+
+        for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
 
 			GPUProfiler.start("side " + i);
@@ -133,6 +138,8 @@ public class LightmapEnvironmentSampler extends Camera {
             drawEntities(cubeMapProgram, octree.getEntities(), getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
 			GPUProfiler.end();
 		}
+
+        TextureFactory.getInstance().generateMipMapsCubeMap(cubeMapView);
 		setPosition(initialPosition);
 		setOrientation(initialOrientation);
 		GPUProfiler.end();

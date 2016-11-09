@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
+import static renderer.drawstrategy.extensions.DrawLightMapExtension.LIGHTMAP_INTERNAL_FORMAT;
 import static renderer.drawstrategy.extensions.DrawLightMapExtension.PROBE_COUNT;
 
 public class EnvironmentProbeFactory {
@@ -77,7 +78,7 @@ public class EnvironmentProbeFactory {
 		this.environmentMapsArray3 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
         this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
-        this.lightmapEnvironmentMapsArray = new CubeMapArray(PROBE_COUNT, GL11.GL_LINEAR_MIPMAP_LINEAR, GL11.GL_RGBA8, DrawLightMapExtension.PROBE_RESOLUTION);
+        this.lightmapEnvironmentMapsArray = new CubeMapArray(PROBE_COUNT, GL11.GL_LINEAR_MIPMAP_LINEAR, LIGHTMAP_INTERNAL_FORMAT, DrawLightMapExtension.PROBE_RESOLUTION);
         this.lightMapCubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(DrawLightMapExtension.PROBE_RESOLUTION, DrawLightMapExtension.PROBE_RESOLUTION, 1, lightmapEnvironmentMapsArray);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");

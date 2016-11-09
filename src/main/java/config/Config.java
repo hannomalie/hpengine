@@ -8,8 +8,9 @@ import util.Adjustable;
 import util.Toggable;
 
 public final class Config {
-	
-	public static int WIDTH = 1280;
+
+    public static final boolean FILE_RELOADING = true;
+    public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f, 0.11f);
 

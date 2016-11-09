@@ -554,8 +554,6 @@ public class TextureFactory {
     public void generateMipMapsCubeMap(int textureId) {
         OpenGLContext.getInstance().execute(() -> {
             OpenGLContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
-            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
         });
     }

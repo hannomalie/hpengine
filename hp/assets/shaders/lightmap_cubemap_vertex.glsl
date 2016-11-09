@@ -6,8 +6,11 @@ uniform mat4 viewMatrix;
 uniform int entityIndex = 0;
 //uniform vec3 lightPosition;
 
+uniform float lightmapWidth;
+uniform float lightmapHeight;
 
 //include(globals_structs.glsl)
+//include(globals.glsl)
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
@@ -28,6 +31,7 @@ in vec3 in_Tangent;
 in vec3 in_Binormal;
 
 out vec3 v_lightmapTextureCoord;
+out vec4 v_positionWorld;
 out vec4 position_clip;
 
 void main(void) {
@@ -48,6 +52,7 @@ void main(void) {
 	vec4 position_clip = mvp * positionModel;
 	gl_Position = position_clip;
 
-	v_lightmapTextureCoord = in_LightmapTextureCoord;
+	v_lightmapTextureCoord = vec3(scaleLightmapCoords(in_LightmapTextureCoord, lightmapWidth, lightmapHeight), in_LightmapTextureCoord.z);
+	v_positionWorld = modelMatrix * positionModel;
 
 }

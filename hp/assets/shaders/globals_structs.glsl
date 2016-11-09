@@ -42,6 +42,7 @@ struct PointLight {
 
 struct Entity {
     dmat4 modelMatrix;
+
     double isSelected;
     double materialIndex;
     double entityBaseIndex;

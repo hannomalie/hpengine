@@ -7,6 +7,7 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.material.Material;
+import scene.LightmapManager;
 import util.Geometry;
 import util.Util;
 
@@ -122,70 +123,12 @@ public class Model implements Serializable {
             allLightMapCoords.add(lightmapCoords);
         }
 
-        float minU = allLightMapCoords.get(0)[0].getX();
-        float minV = allLightMapCoords.get(0)[0].getY();
-        float maxU = allLightMapCoords.get(0)[0].getX();
-        float maxV = allLightMapCoords.get(0)[0].getY();
-
-        for(Vector3f[] lightMapCoords : allLightMapCoords) {
-            for(int i = 0; i < 3; i++) {
-                minU = lightMapCoords[i].getX() < minU ? lightMapCoords[i].getX() : minU;
-                minV = lightMapCoords[i].getY() < minV ? lightMapCoords[i].getY() : minV;
-
-                maxU = lightMapCoords[i].getX() > maxU ? lightMapCoords[i].getX() : maxU;
-                maxV = lightMapCoords[i].getY() > maxV ? lightMapCoords[i].getY() : maxU;
-            }
+        List<Vector3f[]> finalLightmapCoords = LightmapManager.getInstance().add(allLightMapCoords);
+        for(Vector3f[] face : finalLightmapCoords) {
+            lightmapTexCoords.add(face[0]);
+            lightmapTexCoords.add(face[1]);
+            lightmapTexCoords.add(face[2]);
         }
-
-        float finalMaxU = maxU;
-        float finalMaxV = maxV;
-
-        List<Vector3f[]> copy = new ArrayList();
-        for(Vector3f[] source : allLightMapCoords) {
-            Vector3f[] target = new Vector3f[3];
-            for(int i = 0; i < 3; i++) {
-                target[i] = new Vector3f(source[i]);
-                Vector3f.sub(target[i], new Vector3f(minU, minV, 0), target[0]);
-                target[i] = (Vector3f) target[i].scale(10);
-            }
-            copy.add(target);
-        }
-
-        float currentMaxV = maxV;
-        for(int i = 0; i < allLightMapCoords.size() - 1; i++) {
-            Vector3f[] lightMapCoordsA = allLightMapCoords.get(i);
-
-            for(int z = i+1; z < allLightMapCoords.size() - 1; z++) {
-                Vector3f[] lightMapCoordsB = allLightMapCoords.get(z);
-                if(/*lightMapCoordsA[0].z == lightMapCoordsB[0].z &&*/ Geometry.triangleIntersect(lightMapCoordsA, lightMapCoordsB)) {
-                    float localMaxV = lightMapCoordsB[0].y;
-                    float localMinV = lightMapCoordsB[0].y;
-                    for(int index = 0; index < 3; index++) {
-                        if(lightMapCoordsB[index].y < localMinV) { localMinV = lightMapCoordsB[index].y; }
-                    }
-                    for(int index = 0; index < 3; index++) {
-                        lightMapCoordsB[index].y += currentMaxV-localMinV;
-                        if(lightMapCoordsB[index].y > localMaxV) { localMaxV = lightMapCoordsB[index].y; }
-                    }
-                    currentMaxV = localMaxV;
-                }
-            }
-        }
-
-        float deltaU = maxU - minU;
-        float deltaV = currentMaxV - minV;
-
-        for(Vector3f[] lightMapCoords : allLightMapCoords) {
-            for (int i = 0; i < 3; i++) {
-                lightMapCoords[i].x -= minU;
-                lightMapCoords[i].y -= minV;
-                lightMapCoords[i].x /= deltaU;
-                lightMapCoords[i].y /= deltaV;
-
-                lightmapTexCoords.add(lightMapCoords[i]);
-            }
-        }
-
 
         for(int i = 0; i < faces.size(); i++) {
             Face face = faces.get(i);
@@ -217,9 +160,9 @@ public class Model implements Serializable {
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
-                values.add(allLightMapCoords.get(i)[j].getX());
-                values.add(allLightMapCoords.get(i)[j].getY());
-                values.add(allLightMapCoords.get(i)[j].getZ());
+                values.add(finalLightmapCoords.get(i)[j].getX());
+                values.add(finalLightmapCoords.get(i)[j].getY());
+                values.add(finalLightmapCoords.get(i)[j].getZ());
 
                 if(ModelComponent.USE_PRECOMPUTED_TANGENTSPACE) {
                     throw new NotImplementedException("Implement former logic from ModelComponent here");

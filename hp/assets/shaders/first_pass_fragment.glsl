@@ -16,6 +16,9 @@ layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
 
+uniform float lightmapWidth;
+uniform float lightmapHeight;
+
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelMatrix;
@@ -181,10 +184,10 @@ void main(void) {
   	out_color = color;
   	out_color.w = float(materialMetallic);
 
-  	float inverseEntityCount = 1f/float(entityCount);
-    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, inverseEntityCount, entityIndex, entityCount);
-
-  	//out_color = textureLod(lightMap, finalLightMapCoords.xy, 0);
+//  	float inverseEntityCount = 1f/float(entityCount);
+//    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, lightmapWidth, lightmapHeight);
+//  	out_color = vec4(finalLightMapCoords, 0, 1);
+//  	out_color = textureLod(lightMap, finalLightMapCoords.xy, 0);
 
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);
