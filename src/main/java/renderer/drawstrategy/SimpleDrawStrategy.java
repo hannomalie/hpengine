@@ -11,7 +11,6 @@ import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
 import engine.model.VertexBuffer;
-import javafx.scene.effect.Light;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -142,7 +141,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderExtract);
         GPUProfiler.end();
 
-        if (!Config.DEBUGDRAW_PROBES) {
+        if (!Config.DIRECT_TEXTURE_OUTPUT) {
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
@@ -199,7 +198,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
             firstpassDefaultProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
             firstpassDefaultProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
-            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, lightMapExtension.getLightMapTarget().getRenderedTexture());
+            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, lightMapExtension.getLightMapTarget().getRenderedTexture(4));
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
@@ -266,7 +265,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         lightMapExtension.renderFirstPass(renderExtract, firstPassResult);
 
-        if (Config.DEBUGDRAW_PROBES) {
+        if (Config.DIRECT_TEXTURE_OUTPUT) {
 //            debugDrawProbes(camera, renderExtract);
             EnvironmentProbeFactory.getInstance().draw();
         }

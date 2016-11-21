@@ -239,7 +239,9 @@ public class DeferredRenderer implements Renderer {
 //		}
 
 		frameCount++;
+        GPUProfiler.start("Updating input");
         Input.update();
+        GPUProfiler.end();
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();
@@ -490,6 +492,15 @@ public class DeferredRenderer implements Renderer {
 
     @Override
     public String endFrame() {
+        resetMovements();
+
+        GPUProfiler.endFrame();
+        frameStarted.getAndDecrement();
+		setLastFrameTime();
+        return dumpTimings();
+    }
+
+    public void resetMovements() {
         for (Entity entity : AppContext.getInstance().getScene().getAreaLights()) {
             entity.setHasMoved(false);
         }
@@ -502,14 +513,9 @@ public class DeferredRenderer implements Renderer {
             }
             entity.setHasMoved(false);
         }
-
-        GPUProfiler.endFrame();
-        frameStarted.getAndDecrement();
-		setLastFrameTime();
-        return dumpTimings();
     }
 
-	@Override
+    @Override
 	public void startFrame() {
 		frameStarted.getAndIncrement();
         GPUProfiler.startFrame();

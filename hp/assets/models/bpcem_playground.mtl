@@ -9,7 +9,6 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm2_1.png
 map_Bump textures_bpcem\textures\vent_box_nm.png
 
 newmtl ball1
@@ -238,7 +237,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\floor_tiles_nm.png
 
 newmtl ceiling.2
@@ -249,7 +247,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\floor_tiles_nm.png
 
 newmtl ceiling.3
@@ -260,7 +257,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\floor_tiles_nm.png
 
 newmtl floor1
@@ -664,7 +660,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\bricks_nm.png
 
 newmtl walls2
@@ -675,7 +670,6 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\bricks_nm.png
 
 newmtl walls3
@@ -686,5 +680,4 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\lm_2_1.png
 map_Bump textures_bpcem\textures\\bricks_nm.png

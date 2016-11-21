@@ -6,18 +6,17 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public abstract class TimeStepThread extends Thread {
-    private final String name;
+    protected final String name;
     private Logger LOGGER;
 
     private long start = 0l;
-    private long lastFrame = 0l;
-    private FPSCounter fpsCounter = new FPSCounter();
+    protected long lastFrame = 0l;
 
     public boolean stopRequested = false;
     private volatile float minimumCycleTimeInSeconds;
 
     //TODO: Consider this public
-    private TimeStepThread(String name) {
+    protected TimeStepThread(String name) {
         this(name, 0.0f);
     }
     public TimeStepThread(String name, float minimumCycleTimeInSeconds) {
@@ -46,20 +45,18 @@ public abstract class TimeStepThread extends Thread {
             long ns = System.nanoTime() - lastFrame;
 
             float seconds = ns / 1000f / 1000f / 1000f;
-            try {
+//            try {
                 update(seconds);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
             lastFrame = System.nanoTime();
             waitIfNecessary(seconds);
-            fpsCounter.update();
         }
         cleanup();
     }
 
-    private void waitIfNecessary(float actualS) {
+    protected void waitIfNecessary(float actualS) {
         float secondsLeft = (minimumCycleTimeInSeconds - actualS);
         if(secondsLeft <= 0) { return; }
 
@@ -82,10 +79,6 @@ public abstract class TimeStepThread extends Thread {
         long targetTime = (startTime + nanoSecondsLeft);
         while(System.nanoTime() < targetTime) {
         }
-    }
-
-    public FPSCounter getFpsCounter() {
-        return fpsCounter;
     }
 
     public void cleanup() {

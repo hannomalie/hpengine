@@ -48,7 +48,7 @@ import static renderer.constants.GlTextureTarget.*;
  */
 public class TextureFactory {
     private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
-    private static final int TEXTURE_FACTORY_THREAD_COUNT = 2;
+    private static final int TEXTURE_FACTORY_THREAD_COUNT = 1;
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
@@ -158,7 +158,7 @@ public class TextureFactory {
         }
 
         for(int i = 0; i < TEXTURE_FACTORY_THREAD_COUNT; i++) {
-            new TimeStepThread("TextureFactory" + i, 0.001f) {
+            new TimeStepThread("TextureFactory" + i, 0.01f) {
                 @Override
                 public void update(float seconds) {
                     commandQueue.executeCommands();

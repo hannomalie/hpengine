@@ -207,6 +207,7 @@ public class Texture implements Serializable, Reloadable {
     }
 	public void upload(boolean srgba) {
         this.srgba = srgba;
+        if(data == null || data[0] == null) { return; }
         upload(buffer(), srgba);
 	}
     Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {

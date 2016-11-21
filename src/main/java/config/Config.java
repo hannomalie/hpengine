@@ -35,8 +35,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES = false;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
+	@Toggable(group = "Debug") public static volatile boolean DIRECT_TEXTURE_OUTPUT = false;
 	@Toggable(group = "Quality settings") public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
 	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;

@@ -64,6 +64,7 @@ layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
 layout(location=3)out vec4 out_motion; // motion, probeIndices
 layout(location=4)out vec4 out_visibility; // visibility
+layout(location=5)out vec4 out_lightmap; // visibility
 
 //include(globals.glsl)
 
@@ -184,10 +185,10 @@ void main(void) {
   	out_color = color;
   	out_color.w = float(materialMetallic);
 
-//  	float inverseEntityCount = 1f/float(entityCount);
-//    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, lightmapWidth, lightmapHeight);
+    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, lightmapWidth, lightmapHeight);
+    out_lightmap.rg = finalLightMapCoords;
 //  	out_color = vec4(finalLightMapCoords, 0, 1);
-//  	out_color = textureLod(lightMap, finalLightMapCoords.xy, 0);
+//  	out_color += textureLod(lightMap, finalLightMapCoords.xy, 0);
 
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);

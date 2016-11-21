@@ -472,41 +472,41 @@ public final class OpenGLContext {
         }
     }
 
-    public void executeNow(Runnable runnable, boolean andBlock) {
-        CompletableFuture result = new CompletableFuture();
-        if(util.Util.isOpenGLThread()) {
-            try {
-                try {
-                    runnable.run();
-                    result.complete(true);
-                } catch(Exception e) {
-                    result.completeExceptionally(e);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
-                                                       @Override
-                                                       public Object execute() throws Exception {
-                                                           try {
-                                                               runnable.run();
-                                                               result.complete(true);
-                                                           } catch(Exception e) {
-                                                               result.completeExceptionally(e);
-                                                           }
-                                                           return true;
-                                                       }
-                                                   });
-        }
-        if(andBlock) {
-            try {
-                result.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    public void executeNow(Runnable runnable, boolean andBlock) {
+//        CompletableFuture result = new CompletableFuture();
+//        if(util.Util.isOpenGLThread()) {
+//            try {
+//                try {
+//                    runnable.run();
+//                    result.complete(true);
+//                } catch(Exception e) {
+//                    result.completeExceptionally(e);
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        } else {
+//            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
+//                                                       @Override
+//                                                       public Object execute() throws Exception {
+//                                                           try {
+//                                                               runnable.run();
+//                                                               result.complete(true);
+//                                                           } catch(Exception e) {
+//                                                               result.completeExceptionally(e);
+//                                                           }
+//                                                           return true;
+//                                                       }
+//                                                   });
+//        }
+//        if(andBlock) {
+//            try {
+//                result.get();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 }

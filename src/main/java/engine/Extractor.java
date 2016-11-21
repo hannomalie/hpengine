@@ -7,7 +7,7 @@ import renderer.light.DirectionalLight;
 import java.util.List;
 
 public interface Extractor<T> {
-    void resetState(T currentExtract);
+    void resetState();
 
-    T extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos);
+    T extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos, boolean entityHasMoved);
 }

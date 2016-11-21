@@ -233,10 +233,6 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
     public void endFrame() {
-		for (Entity entity : entityContainer.getEntities()) {
-			entity.setHasMoved(false);
-		}
-       getDirectionalLight().setHasMoved(false);
 	}
 	public EntitiesContainer getEntitiesContainer() {
 		return entityContainer;

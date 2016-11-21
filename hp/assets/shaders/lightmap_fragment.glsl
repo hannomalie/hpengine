@@ -24,7 +24,10 @@ flat in int outEntityIndex;
 flat in int outEntityBufferIndex;
 flat in int outMaterialIndex;
 
-layout(location=0)out vec4 out_color;
+layout(location=0)out vec4 out_position;
+layout(location=1)out vec4 out_normal;
+layout(location=2)out vec4 out_albedo;
+layout(location=3)out vec4 out_color;
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -79,12 +82,19 @@ void main()
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1).r;
+	float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0).r;
     out_color.rgb = out_color.rgb * clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility;
 
-    out_color += 0.025f * color;
-//    out_color = color;
+//    out_color.rgb += 0.0125f * color.rgb;
+    out_color.rgb += float(material.ambient) * color.rgb;
+//    out_color += color;
 //    out_color = vec4(lightmapTexCoord, 0, 1);
     //out_color = vec4(position_world.xyz/100f, 1);
+    out_color *= 4f;
     out_color.a = 1;
+
+    out_position.rgb = position_world.xyz;
+    out_position.a = 1;
+    out_normal.rgb = normal_world;
+    out_albedo.rgb = color.rgb;
 }

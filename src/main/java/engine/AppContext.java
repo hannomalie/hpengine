@@ -22,7 +22,9 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import physic.PhysicsFactory;
-import renderer.*;
+import renderer.DeferredRenderer;
+import renderer.OpenGLContext;
+import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.drawstrategy.DrawResult;
 import renderer.drawstrategy.GBuffer;
@@ -73,8 +75,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
     private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
-    private TimeStepThread thread;
-    private volatile boolean frameFinished = true;
+    private FpsCountedTimeStepThread thread;
     private DrawResult latestDrawResult = null;
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
@@ -84,7 +85,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
     private volatile RenderExtract currentExtract;
     private final FPSCounter updateFpsCounter = new FPSCounter();
-    private boolean MULTITHREADED_RENDERING;
+    public static boolean MULTITHREADED_RENDERING = true;
 
     public static AppContext getInstance() {
         if (instance == null) {
@@ -316,27 +317,33 @@ public class AppContext implements Extractor<RenderExtract> {
 
         AppContext self = this;
 
-        thread = new TimeStepThread("World Main", 0.005f) {
-            @Override
-            public void update(float seconds) {
-                self.update(seconds);
-            }
-        };
-
+        thread = new WorldMainThread("World Main", 0.005f);
         thread.start();
 
-        new TimeStepThread("Render", 0.00f) {
-            @Override
-            public void update(float seconds) {
-                if(MULTITHREADED_RENDERING) {
-                    try {
-                        actuallyDraw(getScene().getDirectionalLight());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        new RenderThread("Render").start();
+    }
+
+    private static class WorldMainThread extends FpsCountedTimeStepThread {
+
+        public WorldMainThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
+        @Override
+        public void update(float seconds) {
+            AppContext.getInstance().update(seconds);
+        }
+    }
+    private static class RenderThread extends TimeStepThread {
+
+        public RenderThread(String name) { super(name); }
+        @Override
+        public void update(float seconds) {
+            if(MULTITHREADED_RENDERING) {
+                try {
+                    AppContext.getInstance().actuallyDraw(AppContext.getInstance().getScene().getDirectionalLight());
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-        }.start();
+        }
     }
 
 
@@ -524,7 +531,7 @@ public class AppContext implements Extractor<RenderExtract> {
         }
     }
 
-    private void actuallyDraw(DirectionalLight directionalLight) {
+    protected void actuallyDraw(DirectionalLight directionalLight) {
         boolean anyPointLightHasMoved = false;
         for(int i = 0; i < scene.getPointLights().size(); i++) {
             if(!scene.getPointLights().get(i).hasMoved()) { continue; }
@@ -545,23 +552,29 @@ public class AppContext implements Extractor<RenderExtract> {
         }
         if(directionalLight.hasMoved()) {
             directionalLightNeedsShadowMapRedraw = true;
+            scene.getDirectionalLight().setHasMoved(false);
         }
 
         List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
         if (Renderer.getInstance().isFrameFinished()) {
-            currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos);
+            currentExtract = extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos, entityHasMoved);
+
+            if(entityHasMoved) {
+                EntityFactory.getInstance().bufferEntities();
+                entityHasMoved = false;
+                for (Entity entity : scene.getEntities()) {
+                    entity.setHasMoved(false);
+                }
+            }
 //            long blockedMs = OpenGLContext.getInstance().blockUntilEmpty();
 //            LOGGER.fine("Waited ms for renderer to complete: " + blockedMs);
 
             OpenGLContext.getInstance().execute(() -> {
                 RenderExtract extractCopy = new RenderExtract(currentExtract);
-                if(extractCopy.anEntityHasMoved) {
-                    EntityFactory.getInstance().bufferEntities();
-                }
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw(extractCopy);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
-                resetState(extractCopy);
+//                resetState(extractCopy);
                 AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
 
                 if(scene != null) {
@@ -571,6 +584,7 @@ public class AppContext implements Extractor<RenderExtract> {
                 Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
                         Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
             }, true);
+            resetState();
 
         }
 
@@ -615,14 +629,14 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     @Override
-    public void resetState(RenderExtract currentExtract) {
-        entityHasMoved = currentExtract.anEntityHasMoved ? false : entityHasMoved;
-        directionalLightNeedsShadowMapRedraw = (currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
-        sceneInitiallyDrawn = (!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
+    public void resetState() {
+        entityHasMoved = false;
+        directionalLightNeedsShadowMapRedraw = false;//(currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
+        sceneInitiallyDrawn = true;//(!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
     }
 
     @Override
-    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos) {
+    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos, boolean entityHasMoved) {
         return new RenderExtract().init(extractedCamera, directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
     }
 

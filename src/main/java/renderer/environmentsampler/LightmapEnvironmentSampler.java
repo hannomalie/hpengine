@@ -20,6 +20,7 @@ import org.lwjgl.util.vector.Vector4f;
 import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
+import renderer.constants.CullMode;
 import renderer.drawstrategy.DrawStrategy;
 import renderer.drawstrategy.GBuffer;
 import renderer.drawstrategy.extensions.DrawLightMapExtension;
@@ -41,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
 import static renderer.constants.GlDepthFunc.LEQUAL;
 import static renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -58,7 +60,7 @@ public class LightmapEnvironmentSampler extends Camera {
     private long cubeMapViewHandle;
 
     public LightmapEnvironmentSampler(Vector3f position, Program cubeMapProgram) throws Exception {
-		super(0.1f, 5000f, 90f, 1f);
+		super(.1f, 5000f, 90f, 1f);
         volumeIndex = currentVolumeIndex;
         currentVolumeIndex++;
         setPosition(position);
@@ -117,15 +119,17 @@ public class LightmapEnvironmentSampler extends Camera {
 		DirectionalLight light = scene.getDirectionalLight();
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(8);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(0).bind(10);
+        OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, DrawLightMapExtension.getRenderedTexture());
 
-		OpenGLContext.getInstance().enable(DEPTH_TEST);
+        OpenGLContext.getInstance().enable(DEPTH_TEST);
 		OpenGLContext.getInstance().depthFunc(LEQUAL);
+        OpenGLContext.getInstance().cullFace(CullMode.BACK);
+        OpenGLContext.getInstance().enable(CULL_FACE);
 
         cubeMapArrayRenderTarget.use(false);
 		bindProgramSpecificsPerCubeMap();
         cubeMapProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
         cubeMapProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
-
 
         for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
