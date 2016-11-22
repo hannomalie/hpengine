@@ -86,7 +86,7 @@ void main()
     out_color.rgb = out_color.rgb * clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility;
 
 //    out_color.rgb += 0.0125f * color.rgb;
-    out_color.rgb += float(material.ambient) * color.rgb;
+    out_color.rgb += 4*float(material.ambient) * color.rgb;
 //    out_color += color;
 //    out_color = vec4(lightmapTexCoord, 0, 1);
     //out_color = vec4(position_world.xyz/100f, 1);

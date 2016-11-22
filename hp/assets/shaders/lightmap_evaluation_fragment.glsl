@@ -57,6 +57,18 @@ layout(location=1)out vec4 out_refracted;
 //include(globals.glsl)
 
 
+const float blurDistance = 0.0025;
+const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
+					vec2(0, -blurDistance),
+					vec2(blurDistance, -blurDistance),
+					vec2(-blurDistance, 0),
+					vec2(0, 0),
+					vec2(blurDistance, 0),
+					vec2(-blurDistance, blurDistance),
+					vec2(0, blurDistance),
+					vec2(blurDistance, blurDistance)
+};
+
 vec4 bilateralBlur(sampler2D sampler, vec2 texCoords) {
 
 	vec4 result = vec4(0,0,0,0);
@@ -138,8 +150,8 @@ void main()
 //    result = vec3(lightmapSample);
 //    result = probeSample.xyz;
 //	out_environment.rgb = result;
-    out_environment = vec4(textureLod(lightmap, lightmapUVs.xy, 0).rgb,1);
+    out_environment = 4*vec4(textureLod(lightmap, lightmapUVs.xy, 0).rgb,1);
 
-    vec4 bilateralBlurredSample = bilateralBlur(lightmap, lightmapUV.xy);
-    out_environment = vec4(bilateralBlurredSample.rgb, 1);
+//    vec4 bilateralBlurredSample = bilateralBlur(lightmap, lightmapUVs.xy);
+//    out_environment = 4*vec4(bilateralBlurredSample.rgb, 1);
 }
