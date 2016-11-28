@@ -1,18 +1,17 @@
 package scene;
 
 import config.Config;
+import container.Octree;
 import engine.AppContext;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
-import container.Octree;
 import event.ProbeAddedEvent;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.OpenGLContext;
 import renderer.Renderer;
-import renderer.drawstrategy.extensions.DrawLightMapExtension;
 import renderer.rendertarget.CubeMapArrayRenderTarget;
 import scene.EnvironmentProbe.Update;
 import shader.AbstractProgram;
@@ -26,8 +25,6 @@ import java.util.stream.Collectors;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
-import static renderer.drawstrategy.extensions.DrawLightMapExtension.LIGHTMAP_INTERNAL_FORMAT;
-import static renderer.drawstrategy.extensions.DrawLightMapExtension.PROBE_COUNT;
 
 public class EnvironmentProbeFactory {
 	public static final int MAX_PROBES = 25;
@@ -60,16 +57,9 @@ public class EnvironmentProbeFactory {
 	private CubeMapArray environmentMapsArray3;
     private CubeMapArrayRenderTarget cubeMapArrayRenderTarget;
 
-    private CubeMapArray lightmapEnvironmentMapsArray;
-    private CubeMapArrayRenderTarget lightMapCubeMapArrayRenderTarget;
-
 	private FloatBuffer minPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
-
-    public CubeMapArrayRenderTarget getLightMapCubeMapArrayRenderTarget() {
-        return lightMapCubeMapArrayRenderTarget;
-    }
 
     public EnvironmentProbeFactory() {
 		this.environmentMapsArray = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR, RESOLUTION);
@@ -77,9 +67,6 @@ public class EnvironmentProbeFactory {
 		this.environmentMapsArray2 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
 		this.environmentMapsArray3 = new CubeMapArray(MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
         this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
-
-        this.lightmapEnvironmentMapsArray = new CubeMapArray(PROBE_COUNT, GL11.GL_LINEAR_MIPMAP_LINEAR, LIGHTMAP_INTERNAL_FORMAT, DrawLightMapExtension.PROBE_RESOLUTION);
-        this.lightMapCubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(DrawLightMapExtension.PROBE_RESOLUTION, DrawLightMapExtension.PROBE_RESOLUTION, 1, lightmapEnvironmentMapsArray);
 
 //		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
 	}
@@ -274,10 +261,6 @@ public class EnvironmentProbeFactory {
 			return null;
 		}
 	}
-
-    public CubeMapArray getLightmapEnvironmentMapsArray() {
-        return lightmapEnvironmentMapsArray;
-    }
 
 	public List<EnvironmentProbe> getProbesForEntity(Entity entity) {
 		return probes.stream().filter(probe -> {

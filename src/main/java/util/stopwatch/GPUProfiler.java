@@ -47,6 +47,7 @@ public class GPUProfiler {
 
 		if (currentTask != null) {
 			tasks.clear();
+            currentTask = null;
 			return;
 		}
 		if (PROFILING_ENABLED) {
@@ -74,8 +75,8 @@ public class GPUProfiler {
 			if(!startFrameCalledThisFrame || currentTask == null) { return; }
 
 			if (currentTask.getParent() != null) {
-				tasks.clear();
-				return;
+//				tasks.clear();
+//				return;
 				//throw new IllegalStateException("Error ending frame. Not all tasks finished.");
 			}
 			currentTask.end();
@@ -146,7 +147,9 @@ public class GPUProfiler {
 
         dumpRequested = false;
         averagesString = builder.toString();
-	}
+//        System.out.println("averagesString = " + averagesString);
+
+    }
 
 	public static Map<String, AverageHelper> calculateAverages(int sampleCount) {
 		Map<String, AverageHelper> averages = new HashMap<>();

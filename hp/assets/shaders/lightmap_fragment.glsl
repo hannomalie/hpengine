@@ -28,6 +28,7 @@ layout(location=0)out vec4 out_position;
 layout(location=1)out vec4 out_normal;
 layout(location=2)out vec4 out_albedo;
 layout(location=3)out vec4 out_color;
+layout(location=4)out vec4 out_indirect;
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -83,14 +84,14 @@ void main()
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	float visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0f, 1.0).r;
-    out_color.rgb = out_color.rgb * clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility;
+    out_color.rgb = lightDiffuse*vec3(clamp(dot(normal_world, lightDirection), 0.f, 1.f) * visibility);
 
-//    out_color.rgb += 0.0125f * color.rgb;
-    out_color.rgb += 4*float(material.ambient) * color.rgb;
+    out_color.rgb += vec3(float(material.ambient));
+//    out_color.rgb += color.rgb;
 //    out_color += color;
 //    out_color = vec4(lightmapTexCoord, 0, 1);
     //out_color = vec4(position_world.xyz/100f, 1);
-    out_color *= 4f;
+//    out_color *= 4f;
     out_color.a = 1;
 
     out_position.rgb = position_world.xyz;

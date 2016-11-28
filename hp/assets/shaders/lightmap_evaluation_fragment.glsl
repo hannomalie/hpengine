@@ -150,7 +150,8 @@ void main()
 //    result = vec3(lightmapSample);
 //    result = probeSample.xyz;
 //	out_environment.rgb = result;
-    out_environment = 4*vec4(textureLod(lightmap, lightmapUVs.xy, 0).rgb,1);
+//TODO: Figure out this factor....why do I have to boost it so much!?
+    out_environment = vec4(4*textureLod(lightmap, lightmapUVs.xy, 0).rgb,1);
 
 //    vec4 bilateralBlurredSample = bilateralBlur(lightmap, lightmapUVs.xy);
 //    out_environment = 4*vec4(bilateralBlurredSample.rgb, 1);

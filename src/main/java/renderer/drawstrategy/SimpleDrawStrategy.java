@@ -262,8 +262,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.end();
         }
 
+        GPUProfiler.start("RenderExtension lightmap firstpass");
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         lightMapExtension.renderFirstPass(renderExtract, firstPassResult);
+        GPUProfiler.end();
 
         if (Config.DIRECT_TEXTURE_OUTPUT) {
 //            debugDrawProbes(camera, renderExtract);
