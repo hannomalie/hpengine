@@ -2,6 +2,7 @@
 #extension GL_ARB_bindless_texture : enable
 
 layout(binding=6) uniform sampler2D shadowMap;
+uniform layout(binding = 5, rgba16f) image2D sourceTex;
 
 uniform sampler2D renderedTexture;
 uniform vec3 diffuseColor = vec3(1,0,0);
@@ -11,7 +12,12 @@ uniform vec3 lightDiffuse = vec3(1,0,0);
 
 uniform mat4 shadowMatrix;
 
+uniform float lightmapWidth;
+uniform float lightmapHeight;
+
 //include(globals_structs.glsl)
+
+//include(globals.glsl)
 
 in vec2 texCoord;
 in vec3 normal_world;
@@ -29,6 +35,7 @@ layout(location=1)out vec4 out_normal;
 layout(location=2)out vec4 out_albedo;
 layout(location=3)out vec4 out_color;
 layout(location=4)out vec4 out_indirect;
+layout(location=5)out vec4 out_indirect2;
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -98,4 +105,9 @@ void main()
     out_position.a = 1;
     out_normal.rgb = normal_world;
     out_albedo.rgb = color.rgb;
+
+    const bool useSecondBounce = false;
+    if(useSecondBounce) {
+        out_color.rgb = out_color.rgb += 4*imageLoad(sourceTex, ivec2(vec2(lightmapWidth, lightmapHeight)*lightmapTexCoord)).rgb;
+    }
 }
