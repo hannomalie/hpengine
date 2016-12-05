@@ -1,12 +1,11 @@
 package texture;
 
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.opengl.EXTTextureSRGB;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.*;
+import renderer.DeferredRenderer;
 import renderer.OpenGLContext;
 import renderer.constants.GlTextureTarget;
+import util.*;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -22,7 +21,7 @@ public class CubeMap extends Texture implements Serializable {
 
 	protected CubeMap() {}
 	
-	public CubeMap(String path, GlTextureTarget target, int textureID) {
+	public CubeMap(String path, GlTextureTarget target) {
 		super(path, target, false);
 	}
 	
@@ -34,9 +33,11 @@ public class CubeMap extends Texture implements Serializable {
 			{
 				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
 				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-				GL11.glTexParameteri (target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-				GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-				GL11.glTexParameteri (target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width, height)));
 			}
 
 
@@ -48,6 +49,10 @@ public class CubeMap extends Texture implements Serializable {
 			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, buffer(perFaceBuffer, dataList.get(3)));
 			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, buffer(perFaceBuffer, dataList.get(4)));
 			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, buffer(perFaceBuffer, dataList.get(5)));
+
+            TextureFactory.getInstance().generateMipMapsCubeMap(getTextureID());
+            handle = ARBBindlessTexture.glGetTextureHandleARB(textureID);
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
 		});
 	}
 	

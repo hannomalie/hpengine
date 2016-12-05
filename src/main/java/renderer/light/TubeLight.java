@@ -59,10 +59,11 @@ public class TubeLight extends Entity {
 	}
 
     public void draw(Program program) {
-		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
-			modelComponent.getVertexBuffer().draw();
-		});
+        throw new IllegalStateException("Currently not implemented");
+//		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+//			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
+//			modelComponent.getVertexBuffer().draw();
+//		});
 	}
 
 	Matrix4f tempOrientationMatrix = new Matrix4f();

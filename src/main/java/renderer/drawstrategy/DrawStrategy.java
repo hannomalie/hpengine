@@ -46,7 +46,7 @@ public interface DrawStrategy {
     }
 
     default DrawResult draw(RenderExtract renderExtract) {
-            return draw(null, renderExtract);
+        return draw(null, renderExtract);
     }
 
     DrawResult draw(@Nullable RenderTarget renderTarget, RenderExtract renderExtract);

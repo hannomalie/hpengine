@@ -8,8 +8,9 @@ import util.Adjustable;
 import util.Toggable;
 
 public final class Config {
-	
-	public static int WIDTH = 1280;
+
+    public static final boolean FILE_RELOADING = true;
+    public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f, 0.11f);
 
@@ -34,8 +35,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES = false;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGDRAW_PROBES_WITH_CONTENT = false;
+	@Toggable(group = "Debug") public static volatile boolean DIRECT_TEXTURE_OUTPUT = false;
 	@Toggable(group = "Quality settings") public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
 	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;

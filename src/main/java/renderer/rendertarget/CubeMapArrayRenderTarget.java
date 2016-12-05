@@ -1,22 +1,23 @@
 package renderer.rendertarget;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+import renderer.OpenGLContext;
+import scene.EnvironmentProbeFactory;
+import shader.OpenGLBuffer;
+import shader.PersistentMappedBuffer;
+import texture.CubeMapArray;
+import util.Util;
+
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.lwjgl.opengl.*;
-import renderer.OpenGLContext;
-import renderer.Renderer;
-import texture.CubeMapArray;
-import util.Util;
-
-import org.lwjgl.BufferUtils;
-
 public class CubeMapArrayRenderTarget extends RenderTarget {
-
-	private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
+    private final ArrayList<long[]> handleLists;
+    private List<CubeMapArray> cubeMapArrays = new ArrayList<>();
 
 	public CubeMapArrayRenderTarget(int width, int height, int depth, CubeMapArray... cubeMapArray) {
 		this.width = width;
@@ -25,8 +26,27 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		this.clearG = 0.3f;
 		this.clearB = 0.3f;
 		this.clearA = 0;
+        this.handleLists = new ArrayList<>(cubeMapArray.length);
+
 		for(CubeMapArray cma: cubeMapArray) {
-			this.cubeMapArrays.add(cma);	
+			this.cubeMapArrays.add(cma);
+            long[] currentList = new long[cma.getCubemapCount()];
+            handleLists.add(currentList);
+            for(int cubemapIndex = 0; cubemapIndex < cma.getCubemapCount(); cubemapIndex++) {
+                int cubeMapView = OpenGLContext.getInstance().genTextures();
+                int finalCubemapIndex = cubemapIndex;
+                OpenGLContext.getInstance().execute(() -> {
+                    GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
+                            cma.getInternalFormat(), 0, 1,
+                            6 * finalCubemapIndex, 6);
+
+                });
+                long handle = OpenGLContext.getInstance().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                currentList[cubemapIndex] = handle;
+                OpenGLContext.getInstance().execute(() -> {
+                    ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
+                });
+            }
 		}
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
@@ -43,7 +63,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			}
 			GL20.glDrawBuffers(scratchBuffer);
 
-            CubeMapArray depthCubeMapArray = new CubeMapArray(Renderer.getInstance(), depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24);
+            CubeMapArray depthCubeMapArray = new CubeMapArray(depth, GL11.GL_LINEAR, GL14.GL_DEPTH_COMPONENT24, width);
 			int depthCubeMapArrayId = depthCubeMapArray.getTextureID();
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMapArrayId, 0);
 			depthbufferLocation = depthCubeMapArray.getTextureID();
@@ -53,6 +73,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 			if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
 				System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
 				System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
+                new Exception().printStackTrace();
 				System.exit(0);
 			}
 		});
@@ -112,5 +133,9 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 	public void bindCubeMapFace(int unit, int attachment, int cubemapIndex, int sideIndex) {
 		cubeMapArrays.get(attachment).bind(6*cubemapIndex + sideIndex, unit);
 	}
+
+    public ArrayList<long[]> getHandleLists() {
+        return handleLists;
+    }
 
 }

@@ -1,7 +1,6 @@
 package renderer.drawstrategy.extensions;
 
 import camera.Camera;
-import component.ModelComponent;
 import config.Config;
 import engine.AppContext;
 import engine.PerEntityInfo;
@@ -85,7 +84,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         initViewYBuffer();
         initViewZBuffer();
 
-        voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+        voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", true);
         texture3DMipMapAlphaBlendComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
         texture3DMipMapComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
         clearDynamicVoxelsComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");

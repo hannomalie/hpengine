@@ -65,7 +65,7 @@ public class GBuffer {
     public GBuffer() {
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
-						.add(5, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.add(6, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 						.build();
 		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.WIDTH).setHeight(Config.HEIGHT)
 						.add(2, new ColorAttachmentDefinition()
@@ -192,4 +192,8 @@ public class GBuffer {
 	public int getRefractedMap() {
 		return reflectionBuffer.getRenderedTexture(1);
 	}
+
+    public int getLightmapUVMap() {
+        return gBuffer.getRenderedTexture(5);
+    }
 }

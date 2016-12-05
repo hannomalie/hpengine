@@ -1,6 +1,8 @@
 package shader;
 
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.List;
 import event.GlobalDefineChangedEvent;
 
 import net.engio.mbassy.listener.Handler;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
@@ -41,15 +44,34 @@ public abstract class AbstractProgram {
 		putInMapIfAbsent(name);
 		uniforms.get(name).set(valueAsInd);
 	}
-	public void setUniform(String name, float value) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(value);
-	}
-	public void setUniform(String name, double value) {
-		putInMapIfAbsent(name);
-		uniforms.get(name).set(value);
-	}
-	
+    public void setUniform(String name, float value) {
+        putInMapIfAbsent(name);
+        uniforms.get(name).set(value);
+    }
+    public void setUniform(String name, long value) {
+        putInMapIfAbsent(name);
+        uniforms.get(name).set(value);
+    }
+    LongBuffer longBuffer = null;
+    public void setUniform(String name, long[] longs) {
+        if(longBuffer == null) {
+            longBuffer = BufferUtils.createLongBuffer(longs.length);
+            longBuffer.rewind();
+            longBuffer.put(longs);
+        }
+        setUniform(name, longBuffer);
+    }
+
+    public void setUniform(String name, LongBuffer buffer) {
+        buffer.rewind();
+        putInMapIfAbsent(name);
+        uniforms.get(name).set(buffer);
+    }
+    public void setUniform(String name, double value) {
+        putInMapIfAbsent(name);
+        uniforms.get(name).set((float)value);
+    }
+
 	public void setUniformAsMatrix4(String name, FloatBuffer matrixBuffer) {
 		putInMapIfAbsent(name);
 		uniforms.get(name).setAsMatrix4(matrixBuffer);
@@ -124,6 +146,4 @@ public abstract class AbstractProgram {
     @Handler
 	public void handle(GlobalDefineChangedEvent e) {
 	}
-
-
 }

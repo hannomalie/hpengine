@@ -51,19 +51,21 @@ public class PointLight extends Entity implements Serializable, Bufferable
 //	}
 
 	public void draw(Program program) {
-		if(!isInitialized()) { return; }
-		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
-			modelComponent.getVertexBuffer().draw();
-		});
+        throw new IllegalStateException("Currently not implemented!");
+//		if(!isInitialized()) { return; }
+//		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+//			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
+//			modelComponent.getVertexBuffer().draw();
+//		});
 	}
 
 	public void drawAgain(IndexBuffer indexBuffer, Program program) {
-		if(!isInitialized()) { return; }
-		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
-			modelComponent.getVertexBuffer().drawAgain(indexBuffer);
-		});
+        throw new IllegalStateException("Currently not implemented!");
+//		if(!isInitialized()) { return; }
+//		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
+//			program.setUniformAsMatrix4("modelMatrix", getTransform().getTransformationBuffer());
+//			modelComponent.getVertexBuffer().drawAgain(indexBuffer);
+//		});
 	}
 
 	private Matrix4f tempOrientationMatrix = new Matrix4f();

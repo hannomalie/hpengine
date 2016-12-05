@@ -27,7 +27,6 @@ import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import shader.Program;
 import shader.ProgramFactory;
-import texture.CubeMap;
 import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 import util.stopwatch.OpenGLStopWatch;
@@ -181,9 +180,9 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", RENDERTOQUAD, false);
-		blurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", RENDERTOQUAD, false);
-		bilateralBlurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", RENDERTOQUAD, false);
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", false);
+		blurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", false);
+		bilateralBlurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", false);
 		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
 //		DeferredRenderer.exitOnGLError("setupShaders");
@@ -201,11 +200,12 @@ public class DeferredRenderer implements Renderer {
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
-			drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
+//			drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);
-//			for(int i = 0; i < 6; i++) {
-//				drawToQuad(environmentProbeFactory.getProbes().get(0).getSampler().getCubeMapFaceViews()[1][i], sixDebugBuffers.get(i));
-//			}
+			for(int i = 0; i < 6; i++) {
+                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(0).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
+//                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+			}
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
@@ -239,7 +239,9 @@ public class DeferredRenderer implements Renderer {
 //		}
 
 		frameCount++;
+        GPUProfiler.start("Updating input");
         Input.update();
+        GPUProfiler.end();
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();
@@ -490,6 +492,15 @@ public class DeferredRenderer implements Renderer {
 
     @Override
     public String endFrame() {
+        resetMovements();
+
+        GPUProfiler.endFrame();
+        frameStarted.getAndDecrement();
+		setLastFrameTime();
+        return dumpTimings();
+    }
+
+    public void resetMovements() {
         for (Entity entity : AppContext.getInstance().getScene().getAreaLights()) {
             entity.setHasMoved(false);
         }
@@ -502,14 +513,9 @@ public class DeferredRenderer implements Renderer {
             }
             entity.setHasMoved(false);
         }
-
-        GPUProfiler.endFrame();
-        frameStarted.getAndDecrement();
-		setLastFrameTime();
-        return dumpTimings();
     }
 
-	@Override
+    @Override
 	public void startFrame() {
 		frameStarted.getAndIncrement();
         GPUProfiler.startFrame();

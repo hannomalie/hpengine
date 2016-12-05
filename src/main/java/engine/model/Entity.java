@@ -44,8 +44,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
     private List<Transform> instances = new CopyOnWriteArrayList<>();
 
-	protected transient AppContext appContext;
-
 	protected boolean initialized = false;
 
 	protected String name = "Entity_" + System.currentTimeMillis();
@@ -187,10 +185,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		for (Entity child: getChildren()) {
 			child.update(seconds);
 		}
-	}
-
-	public void setAppContext(AppContext appContext) {
-		this.appContext = appContext;
 	}
 
     public Map<String,Component> getComponents() {

@@ -168,9 +168,9 @@ public class Camera extends Entity {
 	}
 
 	public void setWidth(float width) {
-		calculateProjectionMatrix();
-		frustum.calculate(this);
 		this.width = width;
+        calculateProjectionMatrix();
+        frustum.calculate(this);
 	}
 
 	public float getHeight() {
@@ -178,9 +178,9 @@ public class Camera extends Entity {
 	}
 
 	public void setHeight(float height) {
-		calculateProjectionMatrix();
-		frustum.calculate(this);
 		this.height = height;
+        calculateProjectionMatrix();
+        frustum.calculate(this);
 	}
 
 	public boolean isPerspective() {
@@ -201,10 +201,14 @@ public class Camera extends Entity {
 
 	public void setRatio(float ratio) {
 		this.ratio = ratio;
+        calculateProjectionMatrix();
+        frustum.calculate(this);
 	}
 
 	public void setFov(float fov) {
 		this.fov = fov;
+        calculateProjectionMatrix();
+        frustum.calculate(this);
 	}
 
 	public float getFov() {

@@ -1359,6 +1359,5 @@ void main()
 	vec3 result = probeColorsDiffuseSpecular.diffuseColor + probeColorsDiffuseSpecular.specularColor;
 	
 	out_environment.rgb = result;
-	//out_environment.a = getAmbientOcclusion(st);
 	out_refracted.rgb = probeColorsDiffuseSpecular.refractedColor;
 }

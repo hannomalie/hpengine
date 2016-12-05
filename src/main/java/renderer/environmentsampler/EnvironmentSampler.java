@@ -55,7 +55,7 @@ import static renderer.constants.GlTextureTarget.TEXTURE_2D;
 import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 public class EnvironmentSampler extends Camera {
-	public static volatile boolean deferredRenderingForProbes = true;
+	public static volatile boolean deferredRenderingForProbes = false;
 	private final AppContext appContext;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
@@ -73,7 +73,7 @@ public class EnvironmentSampler extends Camera {
 	private int cubeMapView1;
 	private int cubeMapView2;
 
-	private int cubeMapFaceViews[][] = new int[3][6];
+	private int cubeMapFaceViews[][] = new int[4][6];
 	private Program secondPassPointProgram;
 	private Program secondPassTubeProgram;
 	private Program secondPassAreaProgram;
@@ -82,7 +82,10 @@ public class EnvironmentSampler extends Camera {
 	private RenderTarget renderTarget;
 	
 	public EnvironmentSampler(AppContext appContext, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
-		super();
+		super(0.1f, 5000f, 90f, 1f);
+        setWidth(width);
+        setWidth(height);
+        setPosition(position);
 		init();
 		this.appContext = appContext;
         this.renderer = Renderer.getInstance();
@@ -110,10 +113,10 @@ public class EnvironmentSampler extends Camera {
 		tiledProbeLightingProgram = programFactory.getComputeProgram("tiled_probe_lighting_probe_rendering_compute.glsl");
 		cubemapRadianceProgram = programFactory.getComputeProgram("cubemap_radiance_compute.glsl");
 		cubemapRadianceFragmentProgram = programFactory.getProgram("passthrough_vertex.glsl", "cubemap_radiance_fragment.glsl");
-		secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-		secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-		secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
-		secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", ModelComponent.POSITIONCHANNEL, false);
+		secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", false);
+		secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", false);
+		secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", false);
+		secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", false);
 
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget();
 		cubeMapView = GL11.glGenTextures();
@@ -123,23 +126,25 @@ public class EnvironmentSampler extends Camera {
 		for (int z = 0; z < 6; z++) {
 			cubeMapFaceViews[0][z] = GL11.glGenTextures();
 			cubeMapFaceViews[1][z] = GL11.glGenTextures();
-			cubeMapFaceViews[2][z] = GL11.glGenTextures();
+            cubeMapFaceViews[2][z] = GL11.glGenTextures();
+            cubeMapFaceViews[3][z] = GL11.glGenTextures();
 			//GL43.glTextureView(cubeMapFaceViews[i][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(i).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(i).getInternalFormat(), 0, 1, 6 * probe.getIndex() + z, 1);
 			GL43.glTextureView(cubeMapFaceViews[0][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 			GL43.glTextureView(cubeMapFaceViews[1][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
-			GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+            GL43.glTextureView(cubeMapFaceViews[2][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
+            GL43.glTextureView(cubeMapFaceViews[3][z], GL11.GL_TEXTURE_2D, cubeMapArrayRenderTarget.getCubeMapArray(3).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat(), 0, 1, 6 * probeIndex + z, 1);
 		}
 		GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(0).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(0).getInternalFormat(), 0, EnvironmentProbeFactory.getInstance().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
 		GL43.glTextureView(cubeMapView1, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(1).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(1).getInternalFormat(), 0, EnvironmentProbeFactory.getInstance().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
 		GL43.glTextureView(cubeMapView2, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArrayRenderTarget.getCubeMapArray(2).getTextureID(), cubeMapArrayRenderTarget.getCubeMapArray(2).getInternalFormat(), 0, EnvironmentProbeFactory.getInstance().CUBEMAPMIPMAPCOUNT, 6*probeIndex, 6);
 
 
-		renderTarget = new RenderTargetBuilder().setWidth(EnvironmentProbeFactory.RESOLUTION / 2)
-								.setHeight(EnvironmentProbeFactory.RESOLUTION / 2)
+		renderTarget = new RenderTargetBuilder().setWidth(EnvironmentProbeFactory.RESOLUTION )
+								.setHeight(EnvironmentProbeFactory.RESOLUTION )
 								.add(new ColorAttachmentDefinition()
 										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
 								.build();
-		
+
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
 		AppContext.getEventBus().register(this);
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
@@ -188,7 +193,7 @@ public class EnvironmentSampler extends Camera {
 			boolean noNeedToRedraw = !urgent && !fullRerenderRequired && !rerenderLightingRequired;
 
 			if(noNeedToRedraw) {  // early exit if only static objects visible and light didn't change
-				continue;
+//				continue;
 			} else if(rerenderLightingRequired) {
 //				cubeMapLightingProgram.use();
 			} else if(fullRerenderRequired) {
@@ -208,7 +213,7 @@ public class EnvironmentSampler extends Camera {
 					GPUProfiler.end();
 
 					GPUProfiler.start("Fill GBuffer");
-					drawFirstPass(i, this, movedVisibles, extract);
+					drawFirstPass(i, this, scene.getEntities(), extract);
 					EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().resetAttachments();
 
 					GPUProfiler.end();
@@ -298,7 +303,7 @@ public class EnvironmentSampler extends Camera {
 				program.setUniform("roughness", modelComponent.getMaterial().getRoughness());
 				modelComponent.getMaterial().setTexturesActive(program);
 
-				modelComponent.getVertexBuffer().draw();
+                DrawStrategy.draw(new PerEntityInfo(null, program, AppContext.getInstance().getScene().getEntityIndexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
 			});
 		}
 		GPUProfiler.end();
@@ -338,7 +343,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, modelComponent.getVertexBuffer(), entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                        new PerEntityInfo(null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 DrawStrategy.draw(perEntityInfo);
             }
         }

@@ -7,7 +7,8 @@ import java.util.logging.Logger;
 public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
-    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
+//    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
+    private ArrayBlockingQueue<FutureCallable> workQueue = new ArrayBlockingQueue<>(10);
 
     public void executeCommands() {
         while(executeCommand()) {
@@ -74,7 +75,7 @@ public class CommandQueue {
         return workQueue.iterator();
     }
 
-    public LinkedBlockingDeque<FutureCallable> getWorkQueue() {
+    public ArrayBlockingQueue<FutureCallable> getWorkQueue() {
         return workQueue;
     }
 }

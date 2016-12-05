@@ -97,7 +97,7 @@ public class Texture implements Serializable, Reloadable {
     protected int minFilter = GL11.GL_LINEAR;
     protected int magFilter = GL11.GL_LINEAR;
     private int mipmapCount = -1;
-    private long handle =-1L;
+    protected long handle =-1L;
 
 
     protected Texture() {
@@ -207,6 +207,7 @@ public class Texture implements Serializable, Reloadable {
     }
 	public void upload(boolean srgba) {
         this.srgba = srgba;
+        if(data == null || data[0] == null) { return; }
         upload(buffer(), srgba);
 	}
     Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {

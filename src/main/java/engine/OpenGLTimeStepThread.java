@@ -31,6 +31,8 @@ public abstract class OpenGLTimeStepThread extends TimeStepThread {
         start = System.currentTimeMillis();
         lastFrame = System.currentTimeMillis();
     }
+
+    @Override
     public void run() {
         initialized = true;
         Thread.currentThread().setName(name);

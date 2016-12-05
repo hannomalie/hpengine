@@ -25,8 +25,8 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
-import renderer.Renderer;
 import renderer.constants.GlTextureTarget;
+import renderer.drawstrategy.DrawStrategy;
 import renderer.material.Material;
 import renderer.material.MaterialFactory;
 import renderer.rendertarget.ColorAttachmentDefinition;
@@ -123,7 +123,7 @@ public class LightFactory {
 
 		if(Config.USE_DPSM) {
 // TODO: Use wrapper
-			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", true);
 
 			pointLightDepthMapsArrayFront = GL11.glGenTextures();
 			OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
@@ -141,15 +141,15 @@ public class LightFactory {
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 		} else {
-			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", true);
 
-			CubeMapArray cubeMapArray = new CubeMapArray(Renderer.getInstance(), MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F);
+			CubeMapArray cubeMapArray = new CubeMapArray(MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION);
 			pointLightDepthMapsArrayCube = cubeMapArray.getTextureID();
 			this.cubemapArrayRenderTarget = new CubeMapArrayRenderTarget(
 					AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);
 		}
 
-		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", ModelComponent.DEFAULTCHANNELS, true);
+		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", true);
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPARATELY
@@ -381,7 +381,8 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-					modelComponent.getVertexBuffer().draw();
+                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    DrawStrategy.draw(pei);
 				});
 			}
 		}
@@ -440,7 +441,7 @@ public class LightFactory {
                 pointCubeShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
                 pointCubeShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
-                e.getVertexBuffer().draw();
+                DrawStrategy.draw(e, pointCubeShadowPassProgram);
 			}
 			GPUProfiler.end();
 		}
@@ -472,7 +473,8 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-					modelComponent.getVertexBuffer().draw();
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    DrawStrategy.draw(pei);
 				});
 			}
 
@@ -486,7 +488,8 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-					modelComponent.getVertexBuffer().draw();
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    DrawStrategy.draw(pei);
 				});
 			}
 		}

@@ -48,11 +48,11 @@ import static renderer.constants.GlTextureTarget.*;
  */
 public class TextureFactory {
     private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
-    private static final int TEXTURE_FACTORY_THREAD_COUNT = 2;
+    private static final int TEXTURE_FACTORY_THREAD_COUNT = 1;
     private static volatile TextureFactory instance = null;
     private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
-    private static volatile boolean USE_TEXTURE_STREAMING = true;
+    private static volatile boolean USE_TEXTURE_STREAMING = false;
 
     public CubeMap getCubeMap() {
         return cubeMap;
@@ -83,11 +83,14 @@ public class TextureFactory {
     public static void init() {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
+        DeferredRenderer.exitOnGLError("After loadDefaultTexture");
         lensFlareTexture = instance.getTexture("hp\\assets\\textures\\lens_flare_tex.jpg", true);
+        DeferredRenderer.exitOnGLError("After load lensFlareTexture");
         try {
             cubeMap = instance.getCubeMap("hp\\assets\\textures\\skybox.png");
+            DeferredRenderer.exitOnGLError("After load cubemap");
             OpenGLContext.getInstance().activeTexture(0);
-            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
+//            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
             LOGGER.severe(e.getMessage());
         }
@@ -155,7 +158,7 @@ public class TextureFactory {
         }
 
         for(int i = 0; i < TEXTURE_FACTORY_THREAD_COUNT; i++) {
-            new TimeStepThread("TextureFactory" + i, 0.001f) {
+            new TimeStepThread("TextureFactory" + i, 0.01f) {
                 @Override
                 public void update(float seconds) {
                     commandQueue.executeCommands();
@@ -282,7 +285,6 @@ public class TextureFactory {
         if (cubeMapPreCompiled(resourceName)) {
         	tex = CubeMap.read(resourceName, createTextureID());
         	if (tex != null) {
-                generateMipMapsCubeMap(tex.getTextureID());
                 TEXTURES.put(resourceName+ "_cube",tex);
                 return tex;
             }
@@ -309,7 +311,7 @@ public class TextureFactory {
          
          // create the texture ID for this texture 
          int textureID = createTextureID(); 
-         CubeMap cubeMap = new CubeMap(resourceName, target, textureID); 
+         CubeMap cubeMap = new CubeMap(resourceName, target);
          
          // bind this texture
         OpenGLContext.getInstance().bindTexture(target, textureID);
@@ -552,8 +554,6 @@ public class TextureFactory {
     public void generateMipMapsCubeMap(int textureId) {
         OpenGLContext.getInstance().execute(() -> {
             OpenGLContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
-            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-            GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
         });
     }

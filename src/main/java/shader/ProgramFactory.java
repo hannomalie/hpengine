@@ -1,7 +1,6 @@
 package shader;
 
 import engine.AppContext;
-import engine.model.DataChannels;
 import org.apache.commons.io.FileUtils;
 import renderer.OpenGLContext;
 import shader.define.Define;
@@ -9,7 +8,6 @@ import shader.define.Define;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -56,7 +54,7 @@ public class ProgramFactory {
     }
     public Program getProgram(ShaderSource vertexShaderSource, ShaderSource fragmentShaderSource) throws IOException {
 
-        Program program = new Program(vertexShaderSource, null, fragmentShaderSource, EnumSet.allOf(DataChannels.class), true, "");
+        Program program = new Program(vertexShaderSource, null, fragmentShaderSource, true, "");
 
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
@@ -64,7 +62,7 @@ public class ProgramFactory {
 	}
 	
 	public Program getProgram(String defines) {
-		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, EnumSet.allOf(DataChannels.class), true, defines);
+		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, true, defines);
 		LOADED_PROGRAMS.add(program);
 		AppContext.getEventBus().register(program);
 		return program;
@@ -82,16 +80,16 @@ public class ProgramFactory {
         });
 	}
 
-	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
-		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, channels, needsTextures);
+	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, boolean needsTextures) {
+		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, needsTextures);
 	}
-	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, EnumSet<DataChannels> channels, boolean needsTextures) {
+	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, boolean needsTextures) {
 		return OpenGLContext.getInstance().calculate(() -> {
             ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
             ShaderSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
             ShaderSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));
 
-            Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, channels, needsTextures, "");
+            Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, needsTextures, "");
             LOADED_PROGRAMS.add(program);
             AppContext.getEventBus().register(program);
             return program;

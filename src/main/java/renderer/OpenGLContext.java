@@ -77,6 +77,9 @@ public final class OpenGLContext {
             System.exit(-1);
         }
     }
+    public boolean isError() {
+        return OpenGLContext.getInstance().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
+    }
 
     public static void init() throws LWJGLException {
         OpenGLContext context = new OpenGLContext();
@@ -98,7 +101,11 @@ public final class OpenGLContext {
                         System.exit(-1);
                     }
                 } else {
-                    instance.update(seconds);
+                    try {
+                        instance.update(seconds);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         };
@@ -126,7 +133,7 @@ public final class OpenGLContext {
 				.withProfileCompatibility(true)
                 .withForwardCompatible(true)
 //                .withProfileCore(true)
-//                .withDebug(true)
+                .withDebug(true)
                 ;
 
         LOGGER.info("OpenGLContext before setDisplayMode");
@@ -367,6 +374,7 @@ public final class OpenGLContext {
                 runnable.run();
             } catch(Exception e) {
                 LOGGER.severe(e.toString());
+                e.printStackTrace();
                 return e;
             }
             return null;
@@ -464,41 +472,41 @@ public final class OpenGLContext {
         }
     }
 
-    public void executeNow(Runnable runnable, boolean andBlock) {
-        CompletableFuture result = new CompletableFuture();
-        if(util.Util.isOpenGLThread()) {
-            try {
-                try {
-                    runnable.run();
-                    result.complete(true);
-                } catch(Exception e) {
-                    result.completeExceptionally(e);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
-                                                       @Override
-                                                       public Object execute() throws Exception {
-                                                           try {
-                                                               runnable.run();
-                                                               result.complete(true);
-                                                           } catch(Exception e) {
-                                                               result.completeExceptionally(e);
-                                                           }
-                                                           return true;
-                                                       }
-                                                   });
-        }
-        if(andBlock) {
-            try {
-                result.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+//    public void executeNow(Runnable runnable, boolean andBlock) {
+//        CompletableFuture result = new CompletableFuture();
+//        if(util.Util.isOpenGLThread()) {
+//            try {
+//                try {
+//                    runnable.run();
+//                    result.complete(true);
+//                } catch(Exception e) {
+//                    result.completeExceptionally(e);
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        } else {
+//            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
+//                                                       @Override
+//                                                       public Object execute() throws Exception {
+//                                                           try {
+//                                                               runnable.run();
+//                                                               result.complete(true);
+//                                                           } catch(Exception e) {
+//                                                               result.completeExceptionally(e);
+//                                                           }
+//                                                           return true;
+//                                                       }
+//                                                   });
+//        }
+//        if(andBlock) {
+//            try {
+//                result.get();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//    }
 }

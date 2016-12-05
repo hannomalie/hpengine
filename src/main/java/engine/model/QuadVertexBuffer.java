@@ -4,7 +4,7 @@ import javax.vecmath.Vector2f;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
 
-public class QuadVertexBuffer extends VertexBuffer{
+public class QuadVertexBuffer extends VertexBuffer {
 
     private static final VertexBuffer fullscreenBuffer = new QuadVertexBuffer(true).upload();
     private static final VertexBuffer debugBuffer = new QuadVertexBuffer(false).upload();

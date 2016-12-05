@@ -183,8 +183,7 @@ public class DebugFrame {
 	private WebButtonGroup sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
 	
 	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
-	private WebToggleButton toggleDebugDrawProbes = new WebToggleButton("Debug Draw Probes", Config.DEBUGDRAW_PROBES);
-	private WebToggleButton toggleDebugDrawProbesWithContent = new WebToggleButton("Debug Draw Probes Content", Config.DEBUGDRAW_PROBES_WITH_CONTENT);
+	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.DIRECT_TEXTURE_OUTPUT);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
 	private WebToggleButton toggleVSync = new WebToggleButton("Lock FPS", Config.LOCK_FPS);
@@ -838,11 +837,8 @@ public class DebugFrame {
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
 		});
-		toggleDebugDrawProbes.addActionListener(e -> {
-			Config.DEBUGDRAW_PROBES = !Config.DEBUGDRAW_PROBES;
-		});
-		toggleDebugDrawProbesWithContent.addActionListener(e -> {
-			Config.DEBUGDRAW_PROBES_WITH_CONTENT = !Config.DEBUGDRAW_PROBES_WITH_CONTENT;
+		toggleDirectTextureOutput.addActionListener(e -> {
+			Config.DIRECT_TEXTURE_OUTPUT = !Config.DIRECT_TEXTURE_OUTPUT;
 		});
 
 		toggleDebugFrame.addActionListener(e -> {
@@ -917,7 +913,7 @@ public class DebugFrame {
 	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
 	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDebugDrawProbes, toggleDebugDrawProbesWithContent));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.EXPOSURE) {

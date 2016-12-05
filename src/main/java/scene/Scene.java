@@ -233,10 +233,6 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
     public void endFrame() {
-		for (Entity entity : entityContainer.getEntities()) {
-			entity.setHasMoved(false);
-		}
-       getDirectionalLight().setHasMoved(false);
 	}
 	public EntitiesContainer getEntitiesContainer() {
 		return entityContainer;
@@ -293,7 +289,8 @@ public class Scene implements LifeCycle, Serializable {
 	private volatile List<Integer> cachedEntityIndices = new ArrayList();
     public int getEntityIndexOf(Entity entity) {
     	cacheEntityIndices();
-		return entitiesWithModelComponent.get(entity);
+        Integer fromCache = entitiesWithModelComponent.get(entity);
+        return fromCache == null ? -1 : fromCache;
     }
 
 
