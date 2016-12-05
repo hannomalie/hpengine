@@ -14,11 +14,18 @@ void main(){
 	vec4 maxValue = vec4(0);
     vec2 positionToSample;
 
-    for(int x = -1; x < 1; x++) {
-        for(int y = -1; y < 1; y++) {
-            positionToSample = pixelPos + ivec2(x, y);
-            maxValue = max(maxValue, imageLoad(targetImage, ivec2(positionToSample)));
+    maxValue = imageLoad(targetImage, ivec2(pixelPos));
+    if(all(lessThanEqual(maxValue, vec4(0)))) {
+        for(int x = -1; x < 1; x++) {
+            for(int y = -1; y < 1; y++) {
+                positionToSample = pixelPos + ivec2(x, y);
+                if(x == 0 && y == 0) {
+                    continue;
+                }
+                maxValue = max(maxValue, imageLoad(targetImage, ivec2(positionToSample)));
+            }
         }
     }
+
 	imageStore(targetImage, pixelPos, maxValue);
 }

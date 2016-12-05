@@ -7,7 +7,7 @@ import java.io.File;
 
 public class Init implements LifeCycle {
 
-    private boolean initialied;
+    private boolean initialized;
 
     @Override
     public void init() {
@@ -18,7 +18,7 @@ public class Init implements LifeCycle {
             AppContext.getInstance().getScene().addAll(loaded.entities);
             Thread.sleep(500);
             AppContext.getEventBus().post(new EntityAddedEvent());
-            initialied = true;
+            initialized = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -27,6 +27,6 @@ public class Init implements LifeCycle {
 
     @Override
     public boolean isInitialized() {
-        return initialied;
+        return initialized;
     }
 }

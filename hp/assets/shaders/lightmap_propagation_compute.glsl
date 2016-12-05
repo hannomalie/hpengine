@@ -5,6 +5,7 @@ layout(binding=2) uniform sampler2D albedo;
 layout(binding=3) uniform sampler2D lighting;
 
 uniform layout(binding = 4, rgba16f) image2D destTex;
+uniform layout(binding = 5, rgba16f) image2D sourceTex;
 
 const float PI = 3.14159265359;
 
@@ -17,12 +18,16 @@ uniform int height = 256;
 uniform int count = 1;
 uniform int currentCounter = 0;
 
+uniform int start = 0;
+uniform int amount = 256;
+
 struct Surfel
 {
     vec4 pos;
     vec3 dir;
     vec3 alb;
     vec3 shad;
+    vec3 secondBounce;
 };
 
 Surfel getSurfel(vec2 p)
@@ -32,6 +37,8 @@ Surfel getSurfel(vec2 p)
     s.dir = textureLod(direction, p, 0).rgb;
     s.alb = textureLod(albedo, p, 0).rgb;
     s.shad = textureLod(lighting, p, 0).rgb;
+    s.secondBounce = vec3(0f);
+//    s.secondBounce = imageLoad(sourceTex, ivec2(p*vec2(width, height))).rgb;
 
     return s;
 }
@@ -60,7 +67,8 @@ void main()
     vec3 gi = vec3(0.);
 
     for(int x = 0; x < width; x+=1)
-    for(int y = 0; y < height; y+=1)
+//    for(int y = 0; y < height; y+=1)
+    for(int y = start; y < start+amount; y++)
     {
         //Little hack to get the center of the texel
         vec2 p = vec2(float(x*2+1)/float(texSize.x*2.), float(y*2+1)/float(texSize.y*2.));
@@ -72,8 +80,8 @@ void main()
         if(dist < boundingSphere.a + 25) {
 //            x += 150;
 //            y += 150;
-//            x += pow(2, mipLevel)-1.0;
-//            y += pow(2, mipLevel)-1.0;
+//            x += pow(2, int(mipLevel))-1.0;
+//            y += pow(2, int(mipLevel))-1.0;
 //            continue;
         }
 
@@ -88,13 +96,19 @@ void main()
         float cosE = dot( -v, em.dir.xyz );
         float cosR = dot( v, rec.dir.xyz );
 
-//        gi += radiance(cosE, cosR, 1./float(width/4/4),d) * em.alb * em.shad;
         gi += radiance(cosE, cosR, 1./float(width/1),d) * em.alb * em.shad;
+//        gi += 100*radiance(cosE, cosR, 1./float(width/1), d) * em.alb * em.secondBounce;
     }
+
+
+//    if(currentCounter == count) {
+//        gi = rec.alb*gi;
+//    }
 
     vec4 col = 4*3*vec4(rec.alb*gi, 1.);
 //    col = vec4(1,0,0,1);
 //    col = vec4(getSurfel(p).alb.xyz,1);
 //    col = vec4(100*gi,1);
-    imageStore(destTex, storePos, imageLoad(destTex, storePos)+col);
+    imageStore(destTex, storePos, (imageLoad(destTex, storePos)+col));
+//    imageStore(destTex, storePos, col);
 }

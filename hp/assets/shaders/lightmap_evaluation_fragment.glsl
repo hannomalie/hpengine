@@ -57,7 +57,7 @@ layout(location=1)out vec4 out_refracted;
 //include(globals.glsl)
 
 
-const float blurDistance = 0.0025;
+const float blurDistance = 0.025;
 const vec2 offsets[9] = { vec2(-blurDistance, -blurDistance),
 					vec2(0, -blurDistance),
 					vec2(blurDistance, -blurDistance),
