@@ -63,7 +63,6 @@ public class Scene implements LifeCycle, Serializable {
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().execute(() -> {
                 try {
-                    AppContext appContext = AppContext.getInstance();
 					// TODO: Remove this f***
                     EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
                     Renderer.getInstance().addRenderProbeCommand(probe);
