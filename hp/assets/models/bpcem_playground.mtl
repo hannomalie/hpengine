@@ -586,7 +586,6 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd C:\Users\Hanno\weapons\shotgun_Cube_v2.png
 
 newmtl shotgun.1_NONE
 Ns 96.078431
@@ -596,7 +595,7 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd textures_bpcem\textures\\shotgun_diffuse.png
+map_Kd textures_bpcem\textures\shotgun_diffuse.png
 
 newmtl shotgun.1_shotgun_Cube_v2.png
 Ns 96.078431
@@ -606,7 +605,6 @@ Ks 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Kd C:\Users\Hanno\weapons\shotgun_Cube_v2.png
 
 newmtl valve.conection.2
 Ns 96.078431
