@@ -237,7 +237,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\floor_tiles_nm.png
+map_Bump textures_bpcem\textures\floor_tiles_nm.png
 
 newmtl ceiling.2
 Ns 96.078431
@@ -247,7 +247,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\floor_tiles_nm.png
+map_Bump textures_bpcem\textures\floor_tiles_nm.png
 
 newmtl ceiling.3
 Ns 96.078431
@@ -257,7 +257,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\floor_tiles_nm.png
+map_Bump textures_bpcem\textures\floor_tiles_nm.png
 
 newmtl floor1
 Ns 96.078431
@@ -359,7 +359,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\pallet_diff.png
-map_Bump textures_bpcem\textures\\pallet_nm.png
+map_Bump textures_bpcem\textures\pallet_nm.png
 
 newmtl pallet.1
 Ns 182.352941
@@ -370,7 +370,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\pallet_diff.png
-map_Bump textures_bpcem\textures\\pallet_nm.png
+map_Bump textures_bpcem\textures\pallet_nm.png
 
 newmtl pallet_pallet_ao.tga
 Ns 182.352941
@@ -381,7 +381,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\pallet_diff.png
-map_Bump textures_bpcem\textures\\pallet_nm.png
+map_Bump textures_bpcem\textures\pallet_nm.png
 
 newmtl pallet_pallet_ao.tga.001
 Ns 182.352941
@@ -392,7 +392,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\pallet_diff.png
-map_Bump textures_bpcem\textures\\pallet_nm.png
+map_Bump textures_bpcem\textures\pallet_nm.png
 
 newmtl pallet_pallet_ao.tga.002
 Ns 182.352941
@@ -403,7 +403,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\pallet_diff.png
-map_Bump textures_bpcem\textures\\pallet_nm.png
+map_Bump textures_bpcem\textures\pallet_nm.png
 
 newmtl pipe1
 Ns 68.627451
@@ -414,7 +414,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\lm2_1.png
-map_Bump textures_bpcem\textures\\pipe_big_nm.png
+map_Bump textures_bpcem\textures\pipe_big_nm.png
 
 newmtl pipe2
 Ns 68.627451
@@ -425,7 +425,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\lm2_1.png
-map_Bump textures_bpcem\textures\\pipe_big_nm.png
+map_Bump textures_bpcem\textures\pipe_big_nm.png
 
 newmtl pipe3
 Ns 68.627451
@@ -436,7 +436,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\lm2_1.png
-map_Bump textures_bpcem\textures\\pipe_big_nm.png
+map_Bump textures_bpcem\textures\pipe_big_nm.png
 
 newmtl plastic
 Ns 241.176471
@@ -447,8 +447,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic.1
 Ns 241.176471
@@ -459,8 +459,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic.1_NONE
 Ns 241.176471
@@ -470,9 +470,9 @@ Ks 1.859836 1.859836 1.859836
 Ni 1.000000
 d 0.000000
 illum 0
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_Kd textures_bpcem\textures\\plastic_wrap_alpha.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic1
 Ns 241.176471
@@ -483,8 +483,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic1_NONE
 Ns 241.176471
@@ -494,9 +494,9 @@ Ks 1.859836 1.859836 1.859836
 Ni 1.000000
 d 0.000000
 illum 0
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_Kd textures_bpcem\textures\\plastic_wrap_alpha.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic_NONE
 Ns 241.176471
@@ -506,9 +506,9 @@ Ks 1.859836 1.859836 1.859836
 Ni 1.000000
 d 0.000000
 illum 0
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_Kd textures_bpcem\textures\\plastic_wrap_alpha.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic_plastic_wrap.tga.001
 Ns 241.176471
@@ -519,8 +519,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastic_plastic_wrap.tga.002
 Ns 241.176471
@@ -531,8 +531,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastica
 Ns 241.176471
@@ -543,8 +543,8 @@ Ni 1.000000
 d 0.000000
 illum 0
 map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl plastica_NONE
 Ns 241.176471
@@ -554,9 +554,9 @@ Ks 1.859836 1.859836 1.859836
 Ni 1.000000
 d 0.000000
 illum 0
-map_Bump textures_bpcem\textures\\plastic_wrap_nm.png
-map_Kd textures_bpcem\textures\\plastic_wrap_alpha.png
-map_d textures_bpcem\textures\\plastic_wrap_alpha.png
+map_Bump textures_bpcem\textures\plastic_wrap_nm.png
+map_Kd textures_bpcem\textures\plastic_wrap_alpha.png
+map_d textures_bpcem\textures\plastic_wrap_alpha.png
 
 newmtl red
 Ns 96.078431
@@ -615,7 +615,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\lm2_1.png
-map_Bump textures_bpcem\textures\\valve_nm.png
+map_Bump textures_bpcem\textures\valve_nm.png
 
 newmtl valve.conection1
 Ns 96.078431
@@ -626,7 +626,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\valve_ao1.png
-map_Bump textures_bpcem\textures\\valve_nm.png
+map_Bump textures_bpcem\textures\valve_nm.png
 
 newmtl valve.conection1_valve_nm.png
 Ns 96.078431
@@ -637,7 +637,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\valve_nm.png
-map_Bump textures_bpcem\textures\\valve_nm.png
+map_Bump textures_bpcem\textures\valve_nm.png
 
 newmtl valve.conection3
 Ns 96.078431
@@ -648,7 +648,7 @@ Ni 1.000000
 d 1.000000
 illum 0
 map_Kd textures_bpcem\textures\lm2_1.png
-map_Bump textures_bpcem\textures\\valve_nm.png
+map_Bump textures_bpcem\textures\valve_nm.png
 
 newmtl walls1
 Ns 96.078431
@@ -658,7 +658,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\bricks_nm.png
+map_Bump textures_bpcem\textures\bricks_nm.png
 
 newmtl walls2
 Ns 96.078431
@@ -668,7 +668,7 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\bricks_nm.png
+map_Bump textures_bpcem\textures\bricks_nm.png
 
 newmtl walls3
 Ns 96.078431
@@ -678,4 +678,4 @@ Ks 0.500000 0.500000 0.500000
 Ni 1.000000
 d 1.000000
 illum 0
-map_Bump textures_bpcem\textures\\bricks_nm.png
+map_Bump textures_bpcem\textures\bricks_nm.png

@@ -581,8 +581,10 @@ public class AppContext implements Extractor<RenderExtract> {
                     scene.endFrame();
                 }
 
-                Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                        Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+                try {
+                    Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                            Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+                } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/}
             }, true);
             resetState();
 
@@ -612,14 +614,14 @@ public class AppContext implements Extractor<RenderExtract> {
             // TODO: Fix this
             boolean visibleForCamera = true;//entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
-            int entityIndexOf = AppContext.getInstance().getScene().getEntityIndexOf(entity);
+            int entityIndexOf = AppContext.getInstance().getScene().getEntityBufferIndex(entity);
             PerEntityInfo info = cash0.get(modelComponent);
-            if(info != null) {
-                info.init(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-            } else {
-                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+            if(info == null)
+            {
+                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 cash0.put(modelComponent, info);
             }
+            info.init(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
 
             currentPerEntityInfos.add(info);
         }
@@ -657,6 +659,7 @@ public class AppContext implements Extractor<RenderExtract> {
         OpenGLContext.getInstance().execute(() -> {
             StopWatch.getInstance().start("Scene init");
             scene.init();
+            MaterialFactory.getInstance().handle(new MaterialAddedEvent());
             StopWatch.getInstance().stopAndPrintMS();
         }, true);
         restoreWorldCamera();

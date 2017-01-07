@@ -20,7 +20,7 @@ layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
 };
 layout(std430, binding=4) buffer _entityOffsets {
-	int entityOffsets[1000];
+	int entityOffsets[2000];
 };
 
 
@@ -61,16 +61,16 @@ flat out int outMaterialIndex;
 
 void main(void) {
 
-//TODO: Fix this for direct drawing
-    int realEntityIndex = gl_DrawIDARB + entityIndex;
-    outEntityIndex = realEntityIndex;
-
-    int offset = entityOffsets[realEntityIndex];
-    outEntityBufferIndex = offset + gl_InstanceID;
-
-    Entity entity = entities[outEntityBufferIndex];
+    int entityBufferIndex = gl_DrawIDARB + entityIndex + gl_InstanceID;
+    Entity entity = entities[entityBufferIndex];
     outEntity = entity;
-    Material material = materials[int(entity.materialIndex)];
+    outEntityIndex = int(entity.entityIndex);
+
+    outEntityBufferIndex = entityBufferIndex;
+
+    int materialIndex = int(entity.materialIndex);
+//    materialIndex = 3;
+    Material material = materials[materialIndex];
     outMaterial = material;
 
     mat4 modelMatrix = mat4(entity.modelMatrix);

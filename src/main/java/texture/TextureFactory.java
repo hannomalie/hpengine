@@ -99,6 +99,8 @@ public class TextureFactory {
     /** The table of textures that have been loaded in this loader */
     public Map<String, Texture> TEXTURES = new ConcurrentHashMap<>();
 
+    private Set<String> loadingTextures = new HashSet<>();
+
     /** The colour model including alpha for the GL image */
     private ColorModel glAlphaColorModel;
     
@@ -157,7 +159,7 @@ public class TextureFactory {
             }.start();
         }
 
-        for(int i = 0; i < TEXTURE_FACTORY_THREAD_COUNT; i++) {
+        for(int i = 0; i < 1+TEXTURE_FACTORY_THREAD_COUNT; i++) {
             new TimeStepThread("TextureFactory" + i, 0.01f) {
                 @Override
                 public void update(float seconds) {
@@ -238,6 +240,20 @@ public class TextureFactory {
         if(textureLoaded(resourceName)) {
             return TEXTURES.get(resourceName);
         }
+        if(!loadingTextures.contains(resourceName)) {
+            loadingTextures.add(resourceName);
+        } else {
+            while (!textureLoaded(resourceName)) {
+                LOGGER.info("Waiting for texture " + resourceName + " to become available...");
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return TEXTURES.get(resourceName);
+        }
+        LOGGER.info(resourceName + " requested");
         if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
             Texture texture = new Texture(resourceName, srgba);
             TEXTURES.put(resourceName, texture);
@@ -248,7 +264,7 @@ public class TextureFactory {
 
         Texture texture = new Texture(resourceName, srgba);
         TEXTURES.put(resourceName, texture);
-        AppContext.getEventBus().post(new TexturesChangedEvent());
+        LOGGER.severe("Adding " + resourceName);
         texture.convertAndUpload();
         return texture;
     }
@@ -626,9 +642,9 @@ public class TextureFactory {
     private void setupTextureParameters(GlTextureTarget target) {
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL11.GL_REPEAT);
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
         GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, 0);
         GL30.glGenerateMipmap(target.glTarget);
@@ -653,39 +669,51 @@ public class TextureFactory {
     }
 
     public void blur2DTextureRGBA16F(int sourceTexture, int width, int height, int mipmapTarget, int mipmapSource) {
-
+        for(int i = 0; i < mipmapSource; i++ ) {
+            width /= 2;
+            height /=2;
+        }
+        int finalWidth = width;
+        int finalHeight = height;
         OpenGLContext.getInstance().execute(() -> {
             blur2dProgramSeperableHorizontal.use();
             OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
             OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
-            blur2dProgramSeperableHorizontal.setUniform("width", width);
-            blur2dProgramSeperableHorizontal.setUniform("height", height);
+            blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
+            blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
             blur2dProgramSeperableHorizontal.setUniform("mipmapTarget", mipmapTarget);
-            blur2dProgramSeperableHorizontal.dispatchCompute(width/8, height/8, 1);
+            blur2dProgramSeperableHorizontal.dispatchCompute(finalWidth /8, finalHeight /8, 1);
 
             blur2dProgramSeperableVertical.use();
 //            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
 //            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
-            blur2dProgramSeperableVertical.setUniform("width", width);
-            blur2dProgramSeperableVertical.setUniform("height", height);
+            blur2dProgramSeperableVertical.setUniform("width", finalWidth);
+            blur2dProgramSeperableVertical.setUniform("height", finalHeight);
             blur2dProgramSeperableVertical.setUniform("mipmapSource", mipmapSource);
             blur2dProgramSeperableVertical.setUniform("mipmapTarget", mipmapTarget);
-            blur2dProgramSeperableVertical.dispatchCompute(width/8, height/8, 1);
+            blur2dProgramSeperableVertical.dispatchCompute(finalWidth /8, finalHeight /8, 1);
         });
     }
 
     public void blurHorinzontal2DTextureRGBA16F(int sourceTexture, int width, int height, int mipmapTarget, int mipmapSource) {
-
+        for(int i = 0; i < mipmapSource; i++ ) {
+            width /= 2;
+            height /=2;
+        }
+        int finalWidth = width;
+        int finalHeight = height;
         OpenGLContext.getInstance().execute(() -> {
             blur2dProgramSeperableHorizontal.use();
             OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
             OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
-            blur2dProgramSeperableHorizontal.setUniform("width", width);
-            blur2dProgramSeperableHorizontal.setUniform("height", height);
+            blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
+            blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
             blur2dProgramSeperableHorizontal.setUniform("mipmapTarget", mipmapTarget);
-            blur2dProgramSeperableHorizontal.dispatchCompute(width/8, height/8, 1);
+            int num_groups_x = Math.max(1, finalWidth / 8);
+            int num_groups_y = Math.max(1, finalHeight / 8);
+            blur2dProgramSeperableHorizontal.dispatchCompute(num_groups_x, num_groups_y, 1);
         });
     }
 }

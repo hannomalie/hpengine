@@ -31,8 +31,8 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     public FloatBuffer getValuesAsFloats() {
-        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity() / getPrimitiveSizeInBytes());
-        for(int i = 0; i < buffer.capacity() / getPrimitiveSizeInBytes(); i++) {
+        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity());
+        for(int i = 0; i < buffer.capacity(); i++) {
             result.put(i, (float) buffer.get(i));
         }
 
@@ -85,7 +85,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     @Override
     public void putValues(int offset, DoubleBuffer values) {
         if(values == buffer) { return; }
-        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes((offset + values.capacity() )* getPrimitiveSizeInBytes());}
         bind();
         values.rewind();
         buffer.position(offset);
@@ -129,7 +129,7 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
         int currentOffset = 0;
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            setCapacityInBytes(currentOffset + currentBufferable.getElementsPerObject() * getPrimitiveSizeInBytes());
+            setCapacityInBytes((offset+currentOffset + currentBufferable.getElementsPerObject()) * getPrimitiveSizeInBytes());
             double[] currentBufferableArray = currentBufferable.get();
             for (int z = 0; z < currentBufferableArray.length; z++) {
                 buffer.put(offset+currentOffset + z, currentBufferableArray[z]);

@@ -286,7 +286,7 @@ public class Scene implements LifeCycle, Serializable {
 
 
 	private volatile List<Integer> cachedEntityIndices = new ArrayList();
-    public int getEntityIndexOf(Entity entity) {
+    public int getEntityBufferIndex(Entity entity) {
     	cacheEntityIndices();
         Integer fromCache = entitiesWithModelComponent.get(entity);
         return fromCache == null ? -1 : fromCache;
@@ -306,6 +306,7 @@ public class Scene implements LifeCycle, Serializable {
 		if(updateCache)
 		{
 			entitiesWithModelComponent.clear();
+            modelComponents.clear();
 			int index = 0;
 			int i = 0;
 			for(Entity current : entityContainer.getEntities()) {

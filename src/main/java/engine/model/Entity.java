@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
@@ -478,8 +479,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         double materialIndex = getComponents().containsKey("ModelComponent") ?
                 MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
         doubles[index++] = materialIndex;
-        doubles[index++] = AppContext.getInstance().getScene().getEntityIndexOf(this);
-        doubles[index++] = 0;
+        doubles[index++] = AppContext.getInstance().getScene().getEntityBufferIndex(this);
+        doubles[index++] = AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
         return index;
     }
 

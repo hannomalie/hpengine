@@ -4,16 +4,15 @@ import component.ModelComponent;
 import config.Config;
 import engine.PerEntityInfo;
 import engine.Transform;
-import engine.model.CommandBuffer;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
-import engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBClearTexture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLContext;
+import renderer.Pipeline;
 import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
@@ -34,7 +33,6 @@ import util.Util;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.util.*;
 
 import static renderer.constants.GlCap.CULL_FACE;
 import static renderer.constants.GlCap.DEPTH_TEST;
@@ -61,10 +59,7 @@ public class DrawLightMapExtension implements RenderExtension {
     private Program lightmapEvaluationProgram;
     private final FloatBuffer identityMatrix44Buffer;
 
-    private List<CommandBuffer.DrawElementsIndirectCommand> commands = new ArrayList();
-    private Map<Integer, CommandBuffer.DrawElementsIndirectCommand> commandsMap = new HashMap();
-    private SortedSet<Integer> keys = new TreeSet<>();
-    CommandBuffer globalCommandBuffer = new CommandBuffer(16000);
+    Pipeline pipeline;
 
     private final int WIDTH = 128;
     private final int HEIGHT = 128;
@@ -96,6 +91,8 @@ public class DrawLightMapExtension implements RenderExtension {
 
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
+
+        pipeline = new Pipeline();
     }
 
     @Override
@@ -170,7 +167,7 @@ public class DrawLightMapExtension implements RenderExtension {
 
         lightMapProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
         lightMapProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
-        lightMapProgram.bindShaderStorageBuffer(4, ModelComponent.getGlobalEntityOffsetBuffer());
+        lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
 
         lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
@@ -184,47 +181,23 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 
         GPUProfiler.start("Actual draw entities");
-        ModelComponent.getGlobalIndexBuffer().bind();
-        commandsMap.clear();
-        for (PerEntityInfo info : renderExtract.perEntityInfos()) {
-            OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
-            int currentVerticesCount = info.getIndexCount() / 3;
-            if (!SimpleDrawStrategy.INDIRECT_DRAWING) {
-                currentVerticesCount = DrawStrategy.draw(info);
-            } else {
-                //                    info.getMaterial().setTexturesUsed();
-                int count = info.getIndexCount();
-                int firstIndex = info.getIndexOffset();
-                int primCount = info.getInstanceCount();
-                int baseVertex = info.getBaseVertex();
-                int baseInstance = 0;
-
-                CommandBuffer.DrawElementsIndirectCommand command = new CommandBuffer.DrawElementsIndirectCommand(count, primCount, firstIndex, baseVertex, baseInstance, info.getEntityBaseIndex());
-                commandsMap.put(info.getEntityIndex(), command);
-            }
-
-            firstPassResult.verticesDrawn += currentVerticesCount;
-            if (currentVerticesCount > 0) {
-                firstPassResult.entitiesDrawn++;
-            }
-        }
         if (SimpleDrawStrategy.INDIRECT_DRAWING) {
-            keys.clear();
-            keys.addAll(commandsMap.keySet());
-            commands.clear();
-            for (Integer key : keys) {
-                commands.add(commandsMap.get(key));
+            if(true) {
+                pipeline.prepareAndDraw(renderExtract, lightMapProgram, firstPassResult);
+            } else {
+                pipeline.draw(lightMapProgram, firstPassResult);
             }
-            lightMapProgram.setUniform("entityIndex", 0);
-            lightMapProgram.setUniform("entityBaseIndex", 0);
-            lightMapProgram.setUniform("entityCount", commands.size());
-            ModelComponent.getGlobalEntityOffsetBuffer().put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
-            globalCommandBuffer.put(Util.toArray(commands, CommandBuffer.DrawElementsIndirectCommand.class));
-            globalCommandBuffer.bind();
-            VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(), ModelComponent.getGlobalIndexBuffer(), globalCommandBuffer.getBuffer(), commands.size());
-            ModelComponent.getGlobalIndexBuffer().unbind();
-            globalCommandBuffer.unbind();
+        } else {
+            for (PerEntityInfo info : renderExtract.perEntityInfos()) {
+                OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
+                int currentVerticesCount = DrawStrategy.draw(info);
+                firstPassResult.verticesDrawn += currentVerticesCount;
+                if (currentVerticesCount > 0) {
+                    firstPassResult.entitiesDrawn++;
+                }
+            }
         }
+        GPUProfiler.end();
         openGLContext.enable(CULL_FACE);
         openGLContext.depthMask(true);
         openGLContext.enable(DEPTH_TEST);

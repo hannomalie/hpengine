@@ -144,16 +144,16 @@ public class EntityFactory {
 
     public void bufferEntities(List<Entity> entities) {
         entitiesBuffer.put(Util.toArray(entities, Entity.class));
-        for(int i = 0; i < entities.size(); i++) {
-            ModelComponent.getGlobalEntityOffsetBuffer().put(i, AppContext.getInstance().getScene().getEntityIndexOf(entities.get(i)));
-        }
+//        for(int i = 0; i < entities.size(); i++) {
+//            ModelComponent.getGlobalEntityOffsetBuffer().put(i, AppContext.getInstance().getScene().getEntityIndexOf(entities.get(i)));
+//        }
     }
 
     public void bufferEntities() {
         if(AppContext.getInstance().getScene() != null) {
 //            TODO: Execute this outside of the renderloop
             OpenGLContext.getInstance().execute(() -> {
-                bufferEntities(AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.getComponent(ModelComponent.class) != null).collect(Collectors.toList()));
+                bufferEntities(AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()));
             });
         }
     }
@@ -179,11 +179,11 @@ public class EntityFactory {
 
     public void buffer(Entity entity) {
         int offset = 0;
-        for(Entity current : AppContext.getInstance().getScene().getEntities()) {
+        for(Entity current : AppContext.getInstance().getScene().getEntitiesWithModelComponent().keySet()) {
             if(current.equals(entity)) {
                 break;
             }
-            offset += (current.getInstanceCount()) * entity.getElementsPerObject();
+            offset += entity.getElementsPerObject();
         }
 //        entity.getElementsPerObject() * AppContext.getInstance().getScene().getEntities().indexOf(entity);
         entitiesBuffer.put(offset, entity);

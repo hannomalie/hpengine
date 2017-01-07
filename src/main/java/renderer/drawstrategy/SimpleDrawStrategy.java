@@ -6,15 +6,14 @@ import config.Config;
 import container.EntitiesContainer;
 import engine.AppContext;
 import engine.PerEntityInfo;
-import engine.model.CommandBuffer;
 import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
-import engine.model.VertexBuffer;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
+import renderer.Pipeline;
 import renderer.RenderExtract;
 import renderer.Renderer;
 import renderer.constants.GlCap;
@@ -36,7 +35,6 @@ import texture.TextureFactory;
 import util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 
 import static renderer.constants.BlendMode.FUNC_ADD;
@@ -73,9 +71,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private final DrawLightMapExtension lightMapExtension;
     private FirstPassResult firstPassResult = new FirstPassResult();
-    private List<DrawElementsIndirectCommand> commands = new ArrayList();
-    private Map<Integer, DrawElementsIndirectCommand> commandsMap = new HashMap();
-    private SortedSet<Integer> keys = new TreeSet<>();
+    private Pipeline pipeline;
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -108,6 +104,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
         lightMapExtension = new DrawLightMapExtension();
+        pipeline = new Pipeline();
     }
 
     @Override
@@ -182,7 +179,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.use();
             firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
-            firstpassDefaultProgram.bindShaderStorageBuffer(4, ModelComponent.getGlobalEntityOffsetBuffer());
+            firstpassDefaultProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
 //            firstpassDefaultProgram.setUniform("useNormalMaps", !Config.DRAWLINES_ENABLED);
@@ -202,54 +199,23 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
-            ModelComponent.getGlobalIndexBuffer().bind();
-            commandsMap.clear();
-            for(PerEntityInfo info : renderExtract.perEntityInfos()) {
-                if(!info.isVisibleForCamera()) {
-                    continue;
-                }
-                OpenGLContext.getInstance().enable(GlCap.CULL_FACE);
-                int currentVerticesCount = info.getIndexCount()/3;
-                if(!INDIRECT_DRAWING) {
-                    currentVerticesCount = DrawStrategy.draw(info);
-                } else {
 
-                    info.getMaterial().setTexturesUsed();
-                    int count = info.getIndexCount();
-                    int firstIndex = info.getIndexOffset();
-                    int primCount = info.getInstanceCount();
-                    int baseVertex = info.getBaseVertex();
-                    int baseInstance = 0;
-
-                    DrawElementsIndirectCommand command = new DrawElementsIndirectCommand(count, primCount, firstIndex, baseVertex, baseInstance, info.getEntityBaseIndex());
-                    commandsMap.put(info.getEntityIndex(), command);
-                }
-
-                firstPassResult.verticesDrawn += currentVerticesCount;
-                if (currentVerticesCount > 0) {
-                    firstPassResult.entitiesDrawn++;
-                }
-            }
             if(INDIRECT_DRAWING) {
-                keys.clear();
-                keys.addAll(commandsMap.keySet());
-                commands.clear();
-                for (Integer key : keys) {
-                    commands.add(commandsMap.get(key));
+                pipeline.prepareAndDraw(renderExtract, firstpassDefaultProgram, firstPassResult);
+                for(PerEntityInfo info : renderExtract.perEntityInfos()) {
+                    info.getMaterial().setTexturesUsed();
                 }
-                firstpassDefaultProgram.setUniform("entityIndex", 0);
-                firstpassDefaultProgram.setUniform("entityBaseIndex", 0);
-                firstpassDefaultProgram.setUniform("entityCount", commands.size());
-                ModelComponent.getGlobalEntityOffsetBuffer().put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
-                CommandBuffer.getGlobalCommandBuffer().put(util.Util.toArray(commands, DrawElementsIndirectCommand.class));
-                CommandBuffer.getGlobalCommandBuffer().bind();
-                if(Config.DRAWLINES_ENABLED) {
-                    VertexBuffer.drawLinesInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
-                } else {
-                    VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), (IntBuffer) CommandBuffer.getGlobalCommandBuffer().getBuffer(), commands.size());
+            } else {
+                for(PerEntityInfo info : renderExtract.perEntityInfos()) {
+                    if (!info.isVisibleForCamera()) {
+                        continue;
+                    }
+                    int currentVerticesCount = DrawStrategy.draw(info);
+                    firstPassResult.verticesDrawn += currentVerticesCount;
+                    if (currentVerticesCount > 0) {
+                        firstPassResult.entitiesDrawn++;
+                    }
                 }
-                ModelComponent.getGlobalIndexBuffer().unbind();
-                CommandBuffer.getGlobalCommandBuffer().unbind();
             }
             GPUProfiler.end();
         }
@@ -380,9 +346,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         GPUProfiler.start("Blurring");
-        TextureFactory.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.WIDTH, Config.HEIGHT, 7, 8);
+//        GPUProfiler.start("LightAccumulationMap");
+//        TextureFactory.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.WIDTH, Config.HEIGHT, 7, 8);
+//        GPUProfiler.end();
+        GPUProfiler.start("Scattering texture");
         TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
-        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
+        GPUProfiler.end();
+//        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
 //        Renderer.getInstance().blur2DTexture(gBuffer.getHalfScreenBuffer().getRenderedTexture(), 0, Config.WIDTH / 2, Config.HEIGHT / 2, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(gBuffer.getLightAccumulationMapOneId(), 0, Config.WIDTH, Config.HEIGHT, GL30.GL_RGBA16F, false, 1);
 //		renderer.blur2DTexture(getLightAccumulationMapOneId(), 0, (int)(Config.WIDTH*SECONDPASSSCALE), (int)(Config.HEIGHT*SECONDPASSSCALE), GL30.GL_RGBA16F, false, 1);
@@ -521,8 +491,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         if (!Config.useAmbientOcclusion && !Config.SCATTERING) {
             return;
         }
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         GPUProfiler.start("Scattering and AO");
+        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        gBuffer.getHalfScreenBuffer().use(true);
         OpenGLContext.getInstance().disable(DEPTH_TEST);
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
@@ -531,7 +502,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
 
-        gBuffer.getHalfScreenBuffer().use(true);
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use();
         aoScatteringProgram.setUniform("eyePosition", renderExtract.camera.getPosition());
@@ -546,9 +516,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         aoScatteringProgram.setUniform("lightDirection", renderExtract.directionalLight.getViewDirection());
         aoScatteringProgram.setUniform("lightDiffuse", renderExtract.directionalLight.getColor());
         aoScatteringProgram.setUniform("scatterFactor", renderExtract.directionalLight.getScatterFactor());
-//        aoScatteringProgram.setUniform("sceneScale", Renderer.getInstance().getGBuffer().sceneScale);
-//        aoScatteringProgram.setUniform("inverseSceneScale", 1f/Renderer.getInstance().getGBuffer().sceneScale);
-//        aoScatteringProgram.setUniform("gridSize",Renderer.getInstance().getGBuffer().gridSize);
 
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
         QuadVertexBuffer.getFullscreenBuffer().draw();
@@ -672,8 +639,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram.setUniform("worldExposure", Config.EXPOSURE);
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.AUTO_EXPOSURE_ENABLED);
         postProcessProgram.setUniform("usePostProcessing", Config.ENABLE_POSTPROCESSING);
-        postProcessProgram.setUniform("cameraRightDirection", renderExtract.camera.getTransform().getRightDirection());
-        postProcessProgram.setUniform("cameraViewDirection", renderExtract.camera.getTransform().getViewDirection());
+        try {
+            postProcessProgram.setUniform("cameraRightDirection", renderExtract.camera.getTransform().getRightDirection());
+            postProcessProgram.setUniform("cameraViewDirection", renderExtract.camera.getTransform().getViewDirection());
+        } catch (IllegalStateException e) {
+            // Normalizing zero length vector
+        }
         postProcessProgram.setUniform("seconds", (float)Renderer.getInstance().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());

@@ -408,7 +408,9 @@ void main(void) {
 	//vec4 lit = max(vec4(ambientTerm, 1),((vec4(diffuseTerm, 1))) + vec4(specularTerm,1));
 	out_color = lit;
 //	out_color.rgb = mix(out_color.rgb, refracted.rgb, transparency);
-	out_color.rgb *= clamp(ao,0,1);
+    if(useAmbientOcclusion) {
+	    out_color.rgb *= clamp(ao,0,1);
+    }
 	out_color.rgb += (scattering.rgb); //scattering
 	
 	float autoExposure = exposure;

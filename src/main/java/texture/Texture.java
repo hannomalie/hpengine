@@ -20,6 +20,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -180,10 +182,10 @@ public class Texture implements Serializable, Reloadable {
     }
 
 
-    public void setData(byte[] data) {
+    private void setData(byte[] data) {
         setData(0, data);
     }
-    public void setData(int i, byte[] data) {
+    private void setData(int i, byte[] data) {
         this.data[i] = data;
     }
 
@@ -257,13 +259,13 @@ public class Texture implements Serializable, Reloadable {
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
                     unbind(15);
 
-                    setUploaded();
                 }
             });
             genHandle();
             OpenGLContext.getInstance().execute(() -> {
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
+            setUploaded();
             AppContext.getEventBus().post(new TexturesChangedEvent());
         };
 
@@ -544,8 +546,9 @@ public class Texture implements Serializable, Reloadable {
     private static final boolean autoConvertToDDS = true;
 
     public void convertAndUpload() {
-        TextureFactory.getInstance().getCommandQueue().addCommand(() -> {
+        CompletableFuture<Object> future = TextureFactory.getInstance().getCommandQueue().addCommand(() -> {
             try {
+                LOGGER.severe(path);
                 data = new byte[1][];
 
                 boolean imageExists = new File(path).exists();
@@ -553,14 +556,14 @@ public class Texture implements Serializable, Reloadable {
                 BufferedImage bufferedImage;
 
                 long start = System.currentTimeMillis();
-                if(imageExists) {
+                if (imageExists) {
                     LOGGER.info(path + " available as dds: " + textureAvailableAsDDS(path));
-                    if(!textureAvailableAsDDS(path)) {
+                    if (!textureAvailableAsDDS(path)) {
                         bufferedImage = TextureFactory.getInstance().loadImage(path);
                         if (bufferedImage != null) {
-                            data = new byte[util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight()))+1][];
+                            data = new byte[Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][];
                         }
-                        if(autoConvertToDDS) {
+                        if (autoConvertToDDS) {
                             new Thread(() -> {
                                 try {
                                     saveAsDDS(bufferedImage);
@@ -574,9 +577,9 @@ public class Texture implements Serializable, Reloadable {
                         ddsConversionState = CONVERTED;
                         DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
                         int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
-                        mipmapCount = mipMapCountPlusOne -1;
+                        mipmapCount = mipMapCountPlusOne - 1;
                         data = new byte[mipMapCountPlusOne][];
-                        for(int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
+                        for (int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
                             DDSImage.ImageInfo info = ddsImage.getMipMap(i);
 
 //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
@@ -587,7 +590,7 @@ public class Texture implements Serializable, Reloadable {
                         }
                         setWidth(ddsImage.getWidth());
                         setHeight(ddsImage.getHeight());
-                        if(ddsImage.getNumMipMaps() > 1) {
+                        if (ddsImage.getNumMipMaps() > 1) {
                             mipmapsGenerated = true;
                         }
                         sourceDataCompressed = true;
@@ -604,7 +607,7 @@ public class Texture implements Serializable, Reloadable {
                 setWidth(bufferedImage.getWidth());
                 setHeight(bufferedImage.getHeight());
                 int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(getWidth(), getHeight());
-                mipmapCount = mipMapCountPlusOne -1;
+                mipmapCount = mipMapCountPlusOne - 1;
                 setMinFilter(minFilter);
                 setMagFilter(magFilter);
 
@@ -624,9 +627,18 @@ public class Texture implements Serializable, Reloadable {
                 LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
-                Logger.getGlobal().severe("Texture not found: " + path + ". Default texture returned...");
+                LOGGER.severe("Texture not found: " + path + ". Default texture returned...");
             }
+            AppContext.getEventBus().post(new TexturesChangedEvent());
         });
+        try {
+            // TODO: Check out why this is necessary
+            future.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     private static int counter = 14;

@@ -15,15 +15,6 @@ import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
 
-    private static OpenGLBuffer globalCommandBuffer;
-    public static synchronized OpenGLBuffer getGlobalCommandBuffer() {
-        if (globalCommandBuffer == null) {
-            globalCommandBuffer = new CommandBuffer(16000);
-        }
-
-        return globalCommandBuffer;
-    }
-
     public CommandBuffer(int capacityInBytes) {
         super(GL40.GL_DRAW_INDIRECT_BUFFER);
         setCapacityInBytes(capacityInBytes);
@@ -47,7 +38,12 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
 
     @Override
     public FloatBuffer getValuesAsFloats() {
-        throw new IllegalStateException("Not implemented");
+        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity() / getPrimitiveSizeInBytes());
+        for(int i = 0; i < buffer.capacity() / getPrimitiveSizeInBytes(); i++) {
+            result.put(i, (float) buffer.get(i));
+        }
+        result.rewind();
+        return result;
     }
 
     @Override
@@ -120,16 +116,24 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
         put(0, bufferable);
     }
 
-    public static class DrawElementsIndirectCommand implements Bufferable {
-        public final int count;
-        public final int primCount;
-        public final int firstIndex;
-        public final int baseVertex;
-        public final int baseInstance;
-        public final int entityOffset;
-        private final int[] asInts;
+    public final static class DrawElementsIndirectCommand implements Bufferable {
+        public int count;
+        public int primCount;
+        public int firstIndex;
+        public int baseVertex;
+        public int baseInstance;
+        public int entityOffset;
+        private int[] asInts;
+
+        public DrawElementsIndirectCommand() {
+
+        }
 
         public DrawElementsIndirectCommand(int count, int primCount, int firstIndex, int baseVertex, int baseInstance, int entityBaseIndex) {
+            init(count, primCount, firstIndex, baseVertex, baseInstance, entityBaseIndex);
+        }
+
+        public void init(int count, int primCount, int firstIndex, int baseVertex, int baseInstance, int entityBaseIndex) {
             this.count = count;
             this.primCount = primCount;
             this.firstIndex = firstIndex;

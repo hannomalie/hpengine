@@ -31,11 +31,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     private static Object globalLock = new Object();
     public static volatile VertexBuffer globalVertexBuffer;
-    public static volatile IndexBuffer globalEntityOffsetBuffer;
     public static volatile IndexBuffer globalIndexBuffer;
     public static volatile AtomicInteger currentBaseVertex = new AtomicInteger();
     public static volatile AtomicInteger currentIndexOffset = new AtomicInteger();
-    public static volatile AtomicInteger currentEntityOffset = new AtomicInteger();
     private int indexOffset;
     private int baseVertex;
 
@@ -58,16 +56,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
             }
         }
         return globalIndexBuffer;
-    }
-    public static IndexBuffer getGlobalEntityOffsetBuffer(){
-        if(globalEntityOffsetBuffer == null) {
-            synchronized (globalLock) {
-                if (globalEntityOffsetBuffer == null) {
-                    globalEntityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(1000));
-                }
-            }
-        }
-        return globalEntityOffsetBuffer;
     }
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();

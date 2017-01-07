@@ -46,5 +46,5 @@ struct Entity {
     double isSelected;
     double materialIndex;
     double entityBaseIndex;
-    double x;
+    double entityIndex;
 };

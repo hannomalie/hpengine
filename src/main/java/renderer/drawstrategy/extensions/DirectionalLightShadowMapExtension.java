@@ -84,8 +84,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 //                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
             e.getMaterial().setTexturesActive(directionalShadowPassProgram);
             directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
-            directionalShadowPassProgram.setUniform("entityIndex", e.getEntityIndex());
-            directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBaseIndex());
+            directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
             DrawStrategy.draw(e, directionalShadowPassProgram);

@@ -140,7 +140,7 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
     }
 
     public void put(int index, int value) {
-        setCapacityInBytes(4*index+4);
+        setCapacityInBytes(getPrimitiveSizeInBytes()*index+getPrimitiveSizeInBytes());
         buffer.rewind();
         buffer.put(index, value);
     }

@@ -337,11 +337,12 @@ public class DebugFrame {
         	WebMenuItem entityAddMenuItem = new WebMenuItem ( "Add new" );
         	entityAddMenuItem.addActionListener(e -> {
 
-				addEntityFrame = new WebFrame("Add Entity");
-				addEntityFrame.setSize(600, 300);
-				addEntityFrame.add(new AddEntityView(AppContext.getInstance(), addEntityFrame, this));
-				addEntityFrame.setVisible(true);
-
+                SwingUtilities.invokeLater(() -> {
+                    addEntityFrame = new WebFrame("Add Entity");
+                    addEntityFrame.setSize(600, 300);
+                    addEntityFrame.add(new AddEntityView(AppContext.getInstance(), addEntityFrame, this));
+                    addEntityFrame.setVisible(true);
+                });
 			});
 
         	menuEntity.add(entityAddMenuItem);

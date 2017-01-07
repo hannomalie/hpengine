@@ -381,7 +381,7 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}
@@ -473,7 +473,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}
@@ -488,7 +488,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntities().indexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}

@@ -303,7 +303,7 @@ public class EnvironmentSampler extends Camera {
 				program.setUniform("roughness", modelComponent.getMaterial().getRoughness());
 				modelComponent.getMaterial().setTexturesActive(program);
 
-                DrawStrategy.draw(new PerEntityInfo(null, program, AppContext.getInstance().getScene().getEntityIndexOf(e), AppContext.getInstance().getScene().getEntityIndexOf(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
+                DrawStrategy.draw(new PerEntityInfo(null, program, AppContext.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
 			});
 		}
 		GPUProfiler.end();
@@ -343,7 +343,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntities().indexOf(entity), AppContext.getInstance().getScene().getEntityIndexOf(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                        new PerEntityInfo(null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 DrawStrategy.draw(perEntityInfo);
             }
         }

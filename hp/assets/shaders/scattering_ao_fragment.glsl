@@ -477,7 +477,7 @@ void main(void) {
   		out_AOScattering.r = 1;
   	}
   	if(SCATTERING) {
-  		out_AOScattering.gba += scatterFactor * scatter(positionWorld, eyePosition);
+  		out_AOScattering.gba += 0.125*scatterFactor * scatter(positionWorld, eyePosition);
   	} else {
   		out_AOScattering.gba = vec3(0,0,0);
   	}
