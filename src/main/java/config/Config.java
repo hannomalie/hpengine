@@ -1,6 +1,6 @@
 package config;
 
-import engine.AppContext;
+import engine.Engine;
 import event.HeadlessChangedEvent;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.lodstrategy.ModelLod;
@@ -63,6 +63,6 @@ public final class Config {
 
     public static void setHeadless(boolean headless) {
         Config.headless = headless;
-        AppContext.getEventBus().post(new HeadlessChangedEvent());
+        Engine.getEventBus().post(new HeadlessChangedEvent());
     }
 }

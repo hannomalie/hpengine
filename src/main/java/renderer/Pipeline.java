@@ -13,6 +13,7 @@ import renderer.drawstrategy.FirstPassResult;
 import shader.OpenGLBuffer;
 import shader.Program;
 import util.Util;
+import util.stopwatch.GPUProfiler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +44,13 @@ public class Pipeline {
     }
 
     public void draw(Program program, FirstPassResult firstPassResult) {
+        GPUProfiler.start("Draw with indirect pipeline");
         program.setUniform("entityIndex", 0);
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("entityCount", commands.size());
+        program.setUniform("indirect", true);
         commandBuffer.bind();
+        GPUProfiler.start("DrawInstancedIndirectBaseVertex");
         if(Config.DRAWLINES_ENABLED && useLineDrawingIfActivated) {
             if(useBackfaceCulling) { OpenGLContext.getInstance().disable(GlCap.CULL_FACE); }
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
@@ -54,16 +58,18 @@ public class Pipeline {
             if(useBackfaceCulling) { OpenGLContext.getInstance().enable(GlCap.CULL_FACE); }
             VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
         }
+        GPUProfiler.end();
         ModelComponent.getGlobalIndexBuffer().unbind();
-
 
         firstPassResult.verticesDrawn += verticesCount;
         firstPassResult.entitiesDrawn += entitiesDrawn;
+        GPUProfiler.end();
     }
 
     int verticesCount = 0;
     int entitiesDrawn = 0;
     public void prepare(RenderExtract renderExtract) {
+        GPUProfiler.start("Preparing indirect pipeline");
         verticesCount = 0;
         entitiesDrawn = 0;
         commands.clear();
@@ -80,6 +86,7 @@ public class Pipeline {
         }
         entityOffsetBuffer.put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
         commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
+        GPUProfiler.end();
     }
 
     public OpenGLBuffer getEntityOffsetBuffer() {

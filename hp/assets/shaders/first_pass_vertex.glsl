@@ -6,6 +6,7 @@ uniform mat4 lastViewMatrix;
 //uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
+uniform bool indirect = false;
 uniform int entityIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
@@ -62,6 +63,8 @@ flat out int outMaterialIndex;
 void main(void) {
 
     int entityBufferIndex = entityOffsets[gl_DrawIDARB + entityIndex + gl_InstanceID];
+    if(!indirect) { entityBufferIndex = entityIndex + gl_InstanceID; }
+
     Entity entity = entities[entityBufferIndex];
     outEntity = entity;
     outEntityIndex = int(entity.entityIndex);

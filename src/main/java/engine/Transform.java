@@ -44,11 +44,13 @@ public class Transform implements Serializable, Transformable {
 	transient Matrix4f transformation = new Matrix4f();
 
 	transient protected FloatBuffer modelMatrixBuffer;
+    private FloatBuffer modelMatrixReadOnlyBuffer;
 	transient protected FloatBuffer viewMatrixBuffer;
+    private FloatBuffer viewMatrixReadOnlyBuffer;
 
 	private transient Vector3f tempVec3;
 
-	public Transform() {
+    public Transform() {
 		orientation.setIdentity();
 		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		modelMatrixBuffer.rewind();
@@ -376,24 +378,26 @@ public class Transform implements Serializable, Transformable {
 			modelMatrixBuffer.rewind();
 			transformation.store(modelMatrixBuffer);
 			modelMatrixBuffer.rewind();
+            modelMatrixReadOnlyBuffer = modelMatrixBuffer.asReadOnlyBuffer();
 		}
 
 		synchronized(viewMatrixBuffer) {
 			viewMatrixBuffer.rewind();
 			viewMatrix.store(viewMatrixBuffer);
 			viewMatrixBuffer.rewind();
+            viewMatrixReadOnlyBuffer = viewMatrixBuffer.asReadOnlyBuffer();
 		}
 	}
 
 	public FloatBuffer getTransformationBuffer() {
 		recalculateIfDirty();
-		return modelMatrixBuffer.asReadOnlyBuffer();
+		return modelMatrixReadOnlyBuffer;
 	}
 	public FloatBuffer getTranslationRotationBuffer(boolean recalculateBefore) {
 		if(recalculateBefore) {
 			recalculateIfDirty();
 		}
-		return viewMatrixBuffer.asReadOnlyBuffer();
+		return viewMatrixReadOnlyBuffer;
 	}
 
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
