@@ -1,13 +1,13 @@
 package test;
 
-import engine.AppContext;
+import engine.Engine;
 import org.junit.BeforeClass;
 import renderer.Renderer;
 
 public class TestWithRenderer {
 
 	public static Renderer renderer;
-	private static AppContext appContext;
+	private static Engine engine;
 
 	public TestWithRenderer() {
 		super();
@@ -15,8 +15,8 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		AppContext.init(true);
-		appContext = AppContext.getInstance();
+		Engine.init(true);
+		engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}
 }

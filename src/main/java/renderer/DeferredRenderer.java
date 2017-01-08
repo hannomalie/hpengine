@@ -1,7 +1,7 @@
 package renderer;
 
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.Transform;
 import engine.input.Input;
 import engine.model.*;
@@ -129,7 +129,7 @@ public class DeferredRenderer implements Renderer {
 
             sphereModel = null;
             try {
-                sphereModel = objLoader.loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+                sphereModel = objLoader.loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
                 sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -200,12 +200,13 @@ public class DeferredRenderer implements Renderer {
         DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
-//			drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
+//            drawToQuad(gBuffer.getHalfScreenBuffer().getRenderedTexture(0), QuadVertexBuffer.getDebugBuffer());
+            drawToQuad(simpleDrawStrategy.getLightMapExtension().getLightMapTarget().getRenderedTexture(3), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);
-			for(int i = 0; i < 6; i++) {
-                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(0).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
-//                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
-			}
+//			for(int i = 0; i < 6; i++) {
+//                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
+////                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+//			}
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
@@ -230,7 +231,7 @@ public class DeferredRenderer implements Renderer {
 		}
 
 //		if(counter < 20) {
-//            AppContext.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
+//            Engine.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
 //			Config.CONTINUOUS_DRAW_PROBES = true;
 //			counter++;
 //		} else if(counter == 20) {
@@ -428,7 +429,7 @@ public class DeferredRenderer implements Renderer {
 	public void executeRenderProbeCommands(RenderExtract extract) {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(AppContext.getInstance().getActiveCamera()).ifPresent(command -> {
+		renderProbeCommandQueue.takeNearest(Engine.getInstance().getActiveCamera()).ifPresent(command -> {
 			command.getProbe().draw(command.isUrgent(), extract);
 		});
 		counter++;
@@ -478,7 +479,7 @@ public class DeferredRenderer implements Renderer {
 
 	private void setCurrentState(String newState) {
 		currentState = newState;
-		AppContext.getEventBus().post(new StateChangedEvent(newState));
+		Engine.getEventBus().post(new StateChangedEvent(newState));
 	}
 
 	protected void finalize() throws Throwable {
@@ -501,14 +502,14 @@ public class DeferredRenderer implements Renderer {
     }
 
     public void resetMovements() {
-        for (Entity entity : AppContext.getInstance().getScene().getAreaLights()) {
+        for (Entity entity : Engine.getInstance().getScene().getAreaLights()) {
             entity.setHasMoved(false);
         }
 
         boolean pointLightMovePosted = false;
-        for (Entity entity : AppContext.getInstance().getScene().getPointLights()) {
+        for (Entity entity : Engine.getInstance().getScene().getPointLights()) {
             if(!pointLightMovePosted && entity.hasMoved()) {
-                AppContext.getEventBus().post(new PointLightMovedEvent());
+                Engine.getEventBus().post(new PointLightMovedEvent());
                 pointLightMovePosted = true;
             }
             entity.setHasMoved(false);

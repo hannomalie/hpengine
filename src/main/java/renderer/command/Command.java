@@ -1,11 +1,10 @@
 package renderer.command;
 
-import engine.AppContext;
-import renderer.RenderExtract;
+import engine.Engine;
 
 @FunctionalInterface
 public interface Command<T extends Result> {
 
-	T execute(AppContext appContext);
+	T execute(Engine engine);
 
 }

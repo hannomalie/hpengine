@@ -1,6 +1,6 @@
 package test;
 
-import engine.AppContext;
+import engine.Engine;
 import engine.Transform;
 import engine.model.Entity;
 import engine.model.EntityFactory;
@@ -9,18 +9,16 @@ import engine.model.OBJLoader;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
-import util.Util;
 
 import java.io.File;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-public class EntityTest extends TestWithAppContext {
+public class EntityTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws Exception {
-        Entity entity = EntityFactory.getInstance().getEntity(new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
+        Entity entity = EntityFactory.getInstance().getEntity(new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
 		entity.setName("default");
 
 		String filename = "default.hpentity";
@@ -33,18 +31,18 @@ public class EntityTest extends TestWithAppContext {
 	}
     @Test
     public void loadParented() throws Exception {
-        List<Model> models = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+        List<Model> models = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
         Entity entity = EntityFactory.getInstance().getEntity("xxx", models);
-        appContext.getScene().add(entity);
+        engine.getScene().add(entity);
 
-        Assert.assertTrue(appContext.getScene().getEntities().contains(entity));
+        Assert.assertTrue(engine.getScene().getEntities().contains(entity));
         Assert.assertTrue(entity.hasChildren());
         Assert.assertTrue(entity.getName().equals("xxx"));
         for(Model model : models) {
             boolean containsEntity = false;
             for (Entity child : entity.getChildren()) {
                 if(child.getName().equals(model.getName())) { containsEntity = true; }
-                Assert.assertTrue(appContext.getScene().getEntities().contains(child));
+                Assert.assertTrue(engine.getScene().getEntities().contains(child));
             }
             Assert.assertTrue(containsEntity);
         }
@@ -52,21 +50,21 @@ public class EntityTest extends TestWithAppContext {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        List<Model> models = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        List<Model> models = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", models);
         parentEntity.setSelected(true);
         parentEntity.setPosition(new Vector3f(2,2,2));
-        appContext.getScene().add(parentEntity);
-        Assert.assertTrue(appContext.getScene().getEntities().contains(parentEntity));
+        engine.getScene().add(parentEntity);
+        Assert.assertTrue(engine.getScene().getEntities().contains(parentEntity));
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
         Entity childEntity = EntityFactory.getInstance().getEntity("child", models);
         childEntity.setPosition(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
-        appContext.getScene().add(childEntity);
+        engine.getScene().add(childEntity);
 
-        Assert.assertTrue(appContext.getScene().getEntities().contains(childEntity));
+        Assert.assertTrue(engine.getScene().getEntities().contains(childEntity));
         Assert.assertTrue(parentEntity.hasChildren());
         Assert.assertTrue(childEntity.getName().equals("child"));
 
@@ -123,8 +121,8 @@ public class EntityTest extends TestWithAppContext {
 
 
         Entity secondEntity = EntityFactory.getInstance().getEntity("9999998888", models);
-        appContext.getScene().add(secondEntity);
-        Assert.assertTrue(appContext.getScene().getEntities().contains(secondEntity));
+        engine.getScene().add(secondEntity);
+        Assert.assertTrue(engine.getScene().getEntities().contains(secondEntity));
 
 
     }

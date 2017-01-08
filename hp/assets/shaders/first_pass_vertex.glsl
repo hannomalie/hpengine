@@ -61,7 +61,7 @@ flat out int outMaterialIndex;
 
 void main(void) {
 
-    int entityBufferIndex = gl_DrawIDARB + entityIndex + gl_InstanceID;
+    int entityBufferIndex = entityOffsets[gl_DrawIDARB + entityIndex + gl_InstanceID];
     Entity entity = entities[entityBufferIndex];
     outEntity = entity;
     outEntityIndex = int(entity.entityIndex);
@@ -69,7 +69,6 @@ void main(void) {
     outEntityBufferIndex = entityBufferIndex;
 
     int materialIndex = int(entity.materialIndex);
-//    materialIndex = 3;
     Material material = materials[materialIndex];
     outMaterial = material;
 

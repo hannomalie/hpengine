@@ -26,7 +26,7 @@ import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import event.*;
 import net.engio.mbassy.listener.Handler;
 import container.Octree;
@@ -104,7 +104,7 @@ public class DebugFrame {
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
 	
     JTable materialTable = new MaterialTable() {
-        { AppContext.getEventBus().register(this); }
+        { Engine.getEventBus().register(this); }
         @Subscribe @Handler public void handle(MaterialChangedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(MaterialAddedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(SceneInitEvent e) { revalidate(); }
@@ -112,7 +112,7 @@ public class DebugFrame {
     };
     private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);
     JTable textureTable = new JTable(new TextureTableModel()) {
-        { AppContext.getEventBus().register(this); }
+        { Engine.getEventBus().register(this); }
 		@Subscribe @Handler public void handle(TexturesChangedEvent e) { revalidate(); }
 		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
@@ -123,19 +123,19 @@ public class DebugFrame {
     JTable tubeLightsTable = new JTable(new TubeLightsTableModel());
 	private final ReloadableScrollPane tubeLightsPane = new ReloadableScrollPane(tubeLightsTable);
     JTable areaLightsTable = new JTable(new AreaLightsTableModel()) {
-        { AppContext.getEventBus().register(this); }
+        { Engine.getEventBus().register(this); }
         @Subscribe @Handler public void handle(LightChangedEvent e) { revalidate(); }
     };
 	private final ReloadableScrollPane areaLightsPane = new ReloadableScrollPane(areaLightsTable);
 
     private SceneTree sceneTree = new SceneTree();
 	private final ReloadableScrollPane scenePane = new ReloadableScrollPane(sceneTree) {
-        { AppContext.getEventBus().register(this); }
+        { Engine.getEventBus().register(this); }
         @Subscribe @Handler public void handle(EntityAddedEvent e) { sceneTree.reload();viewport.setView((sceneTree)); }
     };
     private final ProbesTree probesTree = new ProbesTree();
     private final ReloadableScrollPane probesPane = new ReloadableScrollPane(probesTree) {
-        { AppContext.getEventBus().register(this); }
+        { Engine.getEventBus().register(this); }
         @Subscribe @Handler public void handle(ProbeAddedEvent e) { probesTree.reload();viewport.setView((sceneTree)); }
     };
     private final JTextPane output = new JTextPane();
@@ -206,7 +206,7 @@ public class DebugFrame {
 	private WebProgressBar progressBar = new WebProgressBar();
 
     public DebugFrame() {
-		AppContext.getEventBus().register(this);
+		Engine.getEventBus().register(this);
 
         mainFrame.setLayout(new BorderLayout(5,5));
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -263,10 +263,10 @@ public class DebugFrame {
         {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
-	        	String initialSelectionValue = AppContext.getInstance().getScene().getName() != "" ? AppContext.getInstance().getScene().getName() : "default";
+	        	String initialSelectionValue = Engine.getInstance().getScene().getName() != "" ? Engine.getInstance().getScene().getName() : "default";
 				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
 	        	if(selection != null) {
-	        		boolean success = AppContext.getInstance().getScene().write(selection.toString());
+	        		boolean success = Engine.getInstance().getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 	                notificationPopup.setIcon(NotificationIcon.clock);
 	                notificationPopup.setDisplayTime( 2000 );
@@ -290,7 +290,7 @@ public class DebugFrame {
                         @Override
                         public Result<Scene> doInBackground() throws Exception {
                             Scene newScene = Scene.read(sceneName);
-                            AppContext.getInstance().setScene(newScene);
+                            Engine.getInstance().setScene(newScene);
                             return new Result(newScene);
                         }
                     }.execute();
@@ -307,10 +307,10 @@ public class DebugFrame {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test scene");
-                        AppContext.getInstance().getScene().addAll(AppContext.getInstance().loadTestScene());
-                        AppContext.getEventBus().post(new EntityAddedEvent());
+                        Engine.getInstance().getScene().addAll(Engine.getInstance().loadTestScene());
+                        Engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
-                        return new Result(AppContext.getInstance().getScene());
+                        return new Result(Engine.getInstance().getScene());
                     }
 
                     @Override
@@ -326,7 +326,7 @@ public class DebugFrame {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
 	    			Scene newScene = new Scene();
-	    			AppContext.getInstance().setScene(newScene);
+	    			Engine.getInstance().setScene(newScene);
 	    			init(new AppContextInitializedEvent());
         	});
 
@@ -340,7 +340,7 @@ public class DebugFrame {
                 SwingUtilities.invokeLater(() -> {
                     addEntityFrame = new WebFrame("Add Entity");
                     addEntityFrame.setSize(600, 300);
-                    addEntityFrame.add(new AddEntityView(AppContext.getInstance(), addEntityFrame, this));
+                    addEntityFrame.add(new AddEntityView(Engine.getInstance(), addEntityFrame, this));
                     addEntityFrame.setVisible(true);
                 });
 			});
@@ -351,7 +351,7 @@ public class DebugFrame {
         	WebMenuItem entityLoadMenuItem = new WebMenuItem ( "Load existing" );
         	entityLoadMenuItem.addActionListener(e -> {
 
-				AppContext.getInstance().getScene().addAll(LoadEntitiyView.showDialog(AppContext.getInstance()));
+				Engine.getInstance().getScene().addAll(LoadEntitiyView.showDialog(Engine.getInstance()));
 				scenePane.reload();
 			});
 
@@ -366,7 +366,7 @@ public class DebugFrame {
 					@Override
 					public Result doInBackground() throws Exception {
 						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-                            AppContext appContext = AppContext.getInstance();
+                            Engine engine = Engine.getInstance();
 							// TODO: Remove this f***
                             EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
                             Renderer.getInstance().addRenderProbeCommand(probe, true);
@@ -391,7 +391,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-					AppContext.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
+					Engine.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
 					return new Result(true);
 				});
 
@@ -417,7 +417,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result<Boolean>> future = OpenGLContext.getInstance().execute(() -> {
-					AppContext.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
+					Engine.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
 					return new Result<>(true);
 				});
 
@@ -443,7 +443,7 @@ public class DebugFrame {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
 				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-					AppContext.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
+					Engine.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
 					return new Result(true);
 				});
 
@@ -469,7 +469,7 @@ public class DebugFrame {
         WebMenuItem runScriptMenuItem = new WebMenuItem("Run Script");
         runScriptMenuItem.addActionListener(e -> {
 			try {
-				AppContext.getInstance().getScriptManager().eval(console.getText());
+				Engine.getInstance().getScriptManager().eval(console.getText());
 			} catch (ScriptException e1) {
 				showError("Line " + e1.getLineNumber() + " contains errors.");
 				e1.printStackTrace();
@@ -554,7 +554,7 @@ public class DebugFrame {
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
-						return new AddTextureCommand(chosenFile.getPath()).execute(AppContext.getInstance());
+						return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
 					});
 					TextureResult result = null;
 					try {
@@ -581,7 +581,7 @@ public class DebugFrame {
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
-						return new AddTextureCommand(chosenFile.getPath(), true).execute(AppContext.getInstance());
+						return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
 					});
 					TextureResult result = null;
 					try {
@@ -610,7 +610,7 @@ public class DebugFrame {
 				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
-						return new AddCubeMapCommand(chosenFile.getPath()).execute(AppContext.getInstance());
+						return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());
 					});
 
 					TextureResult result = null;
@@ -755,7 +755,7 @@ public class DebugFrame {
 		for (Field field : Config.class.getDeclaredFields()) {
 			for (Annotation annotation : field.getDeclaredAnnotations()) {
 				if(annotation instanceof Toggable) {
-					createWebToggableButton(AppContext.getInstance(), toggleButtonsWithGroups, field, annotation);
+					createWebToggableButton(Engine.getInstance(), toggleButtonsWithGroups, field, annotation);
 				} else if(annotation instanceof Adjustable) {
 // TODO: FEINSCHLIFF
 //					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
@@ -787,7 +787,7 @@ public class DebugFrame {
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			Config.useAmbientOcclusion = !Config.useAmbientOcclusion;
-//			appContext.getEventBus().post(new GlobalDefineChangedEvent());
+//			engine.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
@@ -829,11 +829,11 @@ public class DebugFrame {
 		});
 		toggleUseFirstBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE = !GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE;
-			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			Engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
 		});
 		toggleUseSecondBounceForProbeRendering.addActionListener(e -> {
 			GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE = !GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE;
-			AppContext.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
+			Engine.getEventBus().post(new MaterialChangedEvent()); // TODO: Create custom event class...should redraw probes
 		});
 		toggleUseComputeShaderForReflections.addActionListener(e -> {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
@@ -853,9 +853,9 @@ public class DebugFrame {
 //			Config.LOCK_FPS = !Config.LOCK_FPS;
 //			OpenGLContext.getInstance().addCommand(new Command<Result>() {
 //				@Override
-//				public Result execute(AppContext appContext) {
+//				public Result execute(Engine engine) {
 //					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
-//					appContext.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
+//					engine.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
 //					return new Result();
 //				}
 //			});
@@ -923,13 +923,13 @@ public class DebugFrame {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    AppContext.getInstance().getScene().getDirectionalLight().setScatterFactor((float)value);
+                    Engine.getInstance().getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.RAINEFFECT)) {
 				@Override public void onValueChange(int value, int delta) {
 					Config.RAINEFFECT = (float) value/100;
-					AppContext.getEventBus().post(new GlobalDefineChangedEvent());
+					Engine.getEventBus().post(new GlobalDefineChangedEvent());
 				}
 			},
 			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.CAMERA_SPEED)) {
@@ -952,11 +952,11 @@ public class DebugFrame {
         mainPane.getVerticalScrollBar().setUnitIncrement(32);
 	}
 
-	private void createWebSlider(AppContext appContext,
-			Map<String, List<Component>> toggleButtonsWithGroups, Field field,
-			Annotation annotation) {
+	private void createWebSlider(Engine engine,
+                                 Map<String, List<Component>> toggleButtonsWithGroups, Field field,
+                                 Annotation annotation) {
 		try {
-			float f = field.getFloat(appContext);
+			float f = field.getFloat(engine);
 			Adjustable adjustable = (Adjustable) annotation;
 			
 			List<Component> groupList;
@@ -980,7 +980,7 @@ public class DebugFrame {
 				@Override
 				public void stateChanged(ChangeEvent e) {
 					try {
-						float currentValue = field.getFloat(appContext);
+						float currentValue = field.getFloat(engine);
 					} catch (IllegalArgumentException | IllegalAccessException e2) {
 						e2.printStackTrace();
 					}
@@ -989,8 +989,8 @@ public class DebugFrame {
 					int value = slider.getValue();
 					float valueAsFactor = ((float) value) / adjustable.factor();
 					try {
-						field.setFloat(appContext, valueAsFactor);
-						AppContext.getEventBus().post(new GlobalDefineChangedEvent());
+						field.setFloat(engine, valueAsFactor);
+						Engine.getEventBus().post(new GlobalDefineChangedEvent());
 					} catch (IllegalArgumentException | IllegalAccessException e1) {
 						e1.printStackTrace();
 					}
@@ -1006,11 +1006,11 @@ public class DebugFrame {
 		}
 	}
 
-	private void createWebToggableButton(AppContext appContext,
-			Map<String, List<Component>> toggleButtonsWithGroups,
-			Field field, Annotation annotation) {
+	private void createWebToggableButton(Engine engine,
+                                         Map<String, List<Component>> toggleButtonsWithGroups,
+                                         Field field, Annotation annotation) {
 		try {
-			boolean b = field.getBoolean(appContext);
+			boolean b = field.getBoolean(engine);
 			Toggable toggable = (Toggable) annotation;
 			List<Component> groupList;
 			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
@@ -1023,9 +1023,9 @@ public class DebugFrame {
 			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
 				boolean currentValue;
 				try {
-					currentValue = field.getBoolean(appContext);
-					field.setBoolean(appContext, !currentValue);
-					AppContext.getEventBus().post(new GlobalDefineChangedEvent());
+					currentValue = field.getBoolean(engine);
+					field.setBoolean(engine, !currentValue);
+					Engine.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
@@ -1162,12 +1162,12 @@ public class DebugFrame {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        PointLight selectedLight = AppContext.getInstance().getScene().getPointLights().get(selectedRow[i]);
+                        PointLight selectedLight = Engine.getInstance().getScene().getPointLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new PointLightView(AppContext.getInstance(), debugFrame, (PointLight) selectedLight));
+                        entityViewFrame.add(new PointLightView(Engine.getInstance(), debugFrame, (PointLight) selectedLight));
                         entityViewFrame.setVisible(true);
                     }
                 }
@@ -1188,12 +1188,12 @@ public class DebugFrame {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        TubeLight selectedLight = AppContext.getInstance().getScene().getTubeLights().get(selectedRow[i]);
+                        TubeLight selectedLight = Engine.getInstance().getScene().getTubeLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new TubeLightView(AppContext.getInstance(), debugFrame, (TubeLight) selectedLight));
+                        entityViewFrame.add(new TubeLightView(Engine.getInstance(), debugFrame, (TubeLight) selectedLight));
                         entityViewFrame.setVisible(true);
                     }
                 }
@@ -1215,12 +1215,12 @@ public class DebugFrame {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        AreaLight selectedLight = AppContext.getInstance().getScene().getAreaLights().get(selectedRow[i]);
+                        AreaLight selectedLight = Engine.getInstance().getScene().getAreaLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
                         entityViewFrame.setSize(1000, 600);
-                        entityViewFrame.add(new AreaLightView(AppContext.getInstance(), debugFrame, selectedLight));
+                        entityViewFrame.add(new AreaLightView(Engine.getInstance(), debugFrame, selectedLight));
                         entityViewFrame.setVisible(true);
                     }
                 }
@@ -1254,7 +1254,7 @@ public class DebugFrame {
 		entityViewFrame.getContentPane().removeAll();
 		entityViewFrame.pack();
 		entityViewFrame.setSize(600, 700);
-		entityViewFrame.add(new EntityView(AppContext.getInstance(), e.getEntity()));
+		entityViewFrame.add(new EntityView(Engine.getInstance(), e.getEntity()));
 		entityViewFrame.setVisible(true);
 	}
 

@@ -432,7 +432,7 @@ public class Util {
 	}
 
 	public static boolean isOpenGLThread() {
-		return Thread.currentThread().getName().startsWith(OpenGLContext.OPENGL_THREAD_NAME);
+		return OpenGLContext.isOpenGLThread();
 	}
 
 	public static <T> T[] toArray(Collection<T> values, Class<T> clazz) {

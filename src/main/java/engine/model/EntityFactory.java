@@ -2,7 +2,7 @@ package engine.model;
 
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity.Update;
 import event.EntityAddedEvent;
 import event.EntityChangedMaterialEvent;
@@ -19,7 +19,6 @@ import util.Util;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +27,7 @@ public class EntityFactory {
     private volatile transient OpenGLBuffer entitiesBuffer;
 
     private EntityFactory() {
-        AppContext.getEventBus().register(this);
+        Engine.getEventBus().register(this);
 	}
 	public Entity getEntity() {
 		Entity entity = new Entity();
@@ -145,15 +144,15 @@ public class EntityFactory {
     public void bufferEntities(List<Entity> entities) {
         entitiesBuffer.put(Util.toArray(entities, Entity.class));
 //        for(int i = 0; i < entities.size(); i++) {
-//            ModelComponent.getGlobalEntityOffsetBuffer().put(i, AppContext.getInstance().getScene().getEntityIndexOf(entities.get(i)));
+//            ModelComponent.getGlobalEntityOffsetBuffer().put(i, Engine.getInstance().getScene().getEntityIndexOf(entities.get(i)));
 //        }
     }
 
     public void bufferEntities() {
-        if(AppContext.getInstance().getScene() != null) {
+        if(Engine.getInstance().getScene() != null) {
 //            TODO: Execute this outside of the renderloop
             OpenGLContext.getInstance().execute(() -> {
-                bufferEntities(AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()));
+                bufferEntities(Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()));
             });
         }
     }
@@ -171,21 +170,22 @@ public class EntityFactory {
     @Subscribe
     @Handler
     public void handle(EntityChangedMaterialEvent event) {
-        if(AppContext.getInstance().getScene() != null) {
+        if(Engine.getInstance().getScene() != null) {
             Entity entity = event.getEntity();
-            buffer(entity);
+//            buffer(entity);
+            bufferEntities();
         }
     }
 
     public void buffer(Entity entity) {
         int offset = 0;
-        for(Entity current : AppContext.getInstance().getScene().getEntitiesWithModelComponent().keySet()) {
+        for(Entity current : Engine.getInstance().getScene().getEntitiesWithModelComponent().keySet()) {
             if(current.equals(entity)) {
                 break;
             }
             offset += entity.getElementsPerObject();
         }
-//        entity.getElementsPerObject() * AppContext.getInstance().getScene().getEntities().indexOf(entity);
+//        entity.getElementsPerObject() * Engine.getInstance().getScene().getEntities().indexOf(entity);
         entitiesBuffer.put(offset, entity);
     }
 }

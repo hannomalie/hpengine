@@ -1,8 +1,7 @@
 package container;
 
 import camera.Camera;
-import com.google.common.eventbus.Subscribe;
-import engine.AppContext;
+import engine.Engine;
 import engine.lifecycle.LifeCycle;
 import engine.model.DataChannels;
 import engine.model.Entity;
@@ -21,7 +20,6 @@ import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -76,7 +74,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		entityNodeMappings = new ConcurrentHashMap();
 		this.rootNode = new Node(this, center, size);
 		rootNode.span();
-        AppContext.getEventBus().register(this);
+        Engine.getEventBus().register(this);
 	}
 
 	@Override
@@ -192,9 +190,6 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
         } else if(node.hasEntities()){
             DrawLinesExtension.batchAABBLines(node.looseAabb.getMin(), node.looseAabb.getMax());
         }
-    }
-
-	public void setAppContext(AppContext appContext) {
     }
 
     /**

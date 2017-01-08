@@ -65,11 +65,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-public class AppContext implements Extractor<RenderExtract> {
+public class Engine implements Extractor<RenderExtract> {
     public static int WINDOW_WIDTH = Config.WIDTH;
     public static int WINDOW_HEIGHT = Config.HEIGHT;
 
-    private static volatile AppContext instance = null;
+    private static volatile Engine instance = null;
 
 
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
@@ -87,9 +87,9 @@ public class AppContext implements Extractor<RenderExtract> {
     private final FPSCounter updateFpsCounter = new FPSCounter();
     public static boolean MULTITHREADED_RENDERING = true;
 
-    public static AppContext getInstance() {
+    public static Engine getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("Call AppContext.init() before using it");
+            throw new IllegalStateException("Call Engine.init() before using it");
         }
         return instance;
     }
@@ -104,7 +104,7 @@ public class AppContext implements Extractor<RenderExtract> {
     private Camera camera;
     private Camera activeCamera;
 
-    private static final Logger LOGGER = Logger.getLogger(AppContext.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Engine.class.getName());
     private volatile boolean initialized;
 
     private OpenGLStopWatch glWatch;
@@ -142,11 +142,11 @@ public class AppContext implements Extractor<RenderExtract> {
         if (sceneName != null) {
             Renderer.getInstance();
             Scene scene = Scene.read(sceneName);
-            AppContext.getInstance().setScene(scene);
+            Engine.getInstance().setScene(scene);
         }
 
         try {
-            JavaComponent initScript = new JavaComponent(new String(Files.readAllBytes(FileSystems.getDefault().getPath(AppContext.WORKDIR_NAME + "/assets/scripts/Init.java"))));
+            JavaComponent initScript = new JavaComponent(new String(Files.readAllBytes(FileSystems.getDefault().getPath(Engine.WORKDIR_NAME + "/assets/scripts/Init.java"))));
             initScript.init();
             System.out.println("initScript = " + initScript.isInitialized());
         } catch (IOException e) {
@@ -162,12 +162,12 @@ public class AppContext implements Extractor<RenderExtract> {
     }
 
     public static void init(boolean headless) {
-        instance = new AppContext();
+        instance = new Engine();
         instance.initialize(headless);
         instance.simulate();
     }
 
-    private AppContext() {
+    private Engine() {
     }
 
     private void initialize(boolean headless) {
@@ -209,8 +209,8 @@ public class AppContext implements Extractor<RenderExtract> {
         }
         frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent evt) {
-                AppContext.WINDOW_WIDTH = frame.getWidth();
-                AppContext.WINDOW_HEIGHT = frame.getHeight();
+                Engine.WINDOW_WIDTH = frame.getWidth();
+                Engine.WINDOW_HEIGHT = frame.getHeight();
             }
         });
         initOpenGLContext();
@@ -227,8 +227,8 @@ public class AppContext implements Extractor<RenderExtract> {
         ScriptManager.getInstance().defineGlobals();
 
         scene = new Scene();
-        AppContext.getEventBus().register(scene);
-        AppContext self = this;
+        Engine.getEventBus().register(scene);
+        Engine self = this;
         OpenGLContext.getInstance().execute(() -> {
             scene.init();
         }, true);
@@ -315,7 +315,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
     public void simulate() {
 
-        AppContext self = this;
+        Engine self = this;
 
         thread = new WorldMainThread("World Main", 0.005f);
         thread.start();
@@ -328,7 +328,7 @@ public class AppContext implements Extractor<RenderExtract> {
         public WorldMainThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
         @Override
         public void update(float seconds) {
-            AppContext.getInstance().update(seconds);
+            Engine.getInstance().update(seconds);
         }
     }
     private static class RenderThread extends TimeStepThread {
@@ -338,7 +338,7 @@ public class AppContext implements Extractor<RenderExtract> {
         public void update(float seconds) {
             if(MULTITHREADED_RENDERING) {
                 try {
-                    AppContext.getInstance().actuallyDraw(AppContext.getInstance().getScene().getDirectionalLight());
+                    Engine.getInstance().actuallyDraw(Engine.getInstance().getScene().getDirectionalLight());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -371,12 +371,12 @@ public class AppContext implements Extractor<RenderExtract> {
         OpenGLContext.exitOnGLError("loadTestScene");
 
         try {
-//            Model skyBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+//            Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
 //            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            Model sphere = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -417,7 +417,7 @@ public class AppContext implements Extractor<RenderExtract> {
             }
 
 //			StopWatch.getInstance().start("Load Sponza");
-//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
+//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
 //			for (Model model : sponza) {
 ////				model.setMaterial(mirror);
 ////				if(model.getMaterial().getName().contains("fabric")) {
@@ -429,7 +429,7 @@ public class AppContext implements Extractor<RenderExtract> {
 //				entity.setScale(scale);
 //				entities.add(entity);
 //			}
-//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/skybox.obj"));
+//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
 //			for (Model model : skyBox) {
 //				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 //				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
@@ -459,7 +459,7 @@ public class AppContext implements Extractor<RenderExtract> {
         StopWatch.getInstance().start("Controls update");
         if(Input.isMouseClicked(0)) {
             if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
-                AppContext.getEventBus().post(new ClickEvent());
+                Engine.getEventBus().post(new ClickEvent());
             }
             MOUSE_LEFT_PRESSED_LAST_FRAME = true;
         } else {
@@ -575,7 +575,7 @@ public class AppContext implements Extractor<RenderExtract> {
                 latestDrawResult = Renderer.getInstance().draw(extractCopy);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
 //                resetState(extractCopy);
-                AppContext.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+                Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
 
                 if(scene != null) {
                     scene.endFrame();
@@ -583,7 +583,7 @@ public class AppContext implements Extractor<RenderExtract> {
 
                 try {
                     Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                            Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+                            Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
                 } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/}
             }, true);
             resetState();
@@ -599,11 +599,10 @@ public class AppContext implements Extractor<RenderExtract> {
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
-        List<ModelComponent> modelComponents = AppContext.getInstance().getScene().getModelComponents();
+        List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
         List<PerEntityInfo> currentPerEntityInfos = new ArrayList<>(modelComponents.size());
         currentPerEntityInfos.clear();
         for (ModelComponent modelComponent : modelComponents) {
-            // TODO: Implement strategy pattern
 
             Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
@@ -611,10 +610,9 @@ public class AppContext implements Extractor<RenderExtract> {
             float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-            // TODO: Fix this
-            boolean visibleForCamera = true;//entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+            boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
-            int entityIndexOf = AppContext.getInstance().getScene().getEntityBufferIndex(entity);
+            int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
             PerEntityInfo info = cash0.get(modelComponent);
             if(info == null)
             {

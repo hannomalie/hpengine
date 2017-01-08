@@ -1,7 +1,7 @@
 package util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
-import engine.AppContext;
+import engine.Engine;
 import scene.EnvironmentProbe;
 import scene.EnvironmentProbeFactory;
 import util.gui.SetSelectedListener;
@@ -22,7 +22,7 @@ public class ProbesTree extends WebCheckBoxTree {
     }
 
     public void reload() {
-        addProbes(AppContext.getInstance());
+        addProbes(Engine.getInstance());
         DefaultTreeModel model = (DefaultTreeModel)getModel();
         model.reload();
         revalidate();
@@ -31,7 +31,7 @@ public class ProbesTree extends WebCheckBoxTree {
     }
 
 
-    private void addProbes(AppContext appContext) {
+    private void addProbes(Engine engine) {
 
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
@@ -42,7 +42,7 @@ public class ProbesTree extends WebCheckBoxTree {
         }
 
         if(selectionListener == null) {
-            selectionListener = new SetSelectedListener(this, appContext);
+            selectionListener = new SetSelectedListener(this, engine);
             addCheckStateChangeListener(new SetVisibilityCheckStateListener());
         }
     }

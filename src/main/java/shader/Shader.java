@@ -1,6 +1,6 @@
 package shader;
 
-import engine.AppContext;
+import engine.Engine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
@@ -138,7 +138,7 @@ public interface Shader extends Reloadable {
 	}
 
     static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/shaders/";
+		return Engine.WORKDIR_NAME + "/assets/shaders/";
 	}
 
     void setId(int shaderID);

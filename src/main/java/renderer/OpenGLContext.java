@@ -26,6 +26,7 @@ public final class OpenGLContext {
     private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
 
     private static final int MAX_WORKITEMS = 1000;
+    private static long OPENGL_THREAD_ID = -1;
 
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
 
@@ -90,6 +91,8 @@ public final class OpenGLContext {
             public void update(float seconds) {
                 if (!context.isInitialized()) {
                     Thread.currentThread().setName(OPENGL_THREAD_NAME);
+                    OPENGL_THREAD_ID = Thread.currentThread().getId();
+                    System.out.println("OPENGL_THREAD_ID is " + OPENGL_THREAD_ID);
                     try {
                         try {
                             context.privateInit();
@@ -110,7 +113,7 @@ public final class OpenGLContext {
             }
         };
         executorService.submit(context.openGLThread);
-        System.out.println("OpenGLContext thread submitted");
+        System.out.println("OpenGLContext thread submitted with id " + OPENGL_THREAD_ID);
         waitForInitialization(context);
     }
 
@@ -470,6 +473,11 @@ public final class OpenGLContext {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static boolean isOpenGLThread() {
+        if(OPENGL_THREAD_ID == -1) throw new IllegalStateException("OpenGLThread id is -1, initialization failed!");
+        return Thread.currentThread().getId() == OPENGL_THREAD_ID;
     }
 
 //    public void executeNow(Runnable runnable, boolean andBlock) {

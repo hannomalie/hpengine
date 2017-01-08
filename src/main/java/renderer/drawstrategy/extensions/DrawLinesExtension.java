@@ -1,12 +1,11 @@
 package renderer.drawstrategy.extensions;
 
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
 import engine.Transform;
 import org.lwjgl.util.vector.ReadableVector3f;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.RenderExtract;
 import renderer.Renderer;
@@ -48,7 +47,7 @@ public class DrawLinesExtension implements RenderExtension {
             Renderer.getInstance().drawLines(linesProgram);
 
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            AppContext.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderExtract.camera, linesProgram);
+            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderExtract.camera, linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
@@ -69,7 +68,7 @@ public class DrawLinesExtension implements RenderExtension {
             firstPassResult.linesDrawn += linesDrawn;
 
 
-            AppContext.getInstance().getPhysicsFactory().debugDrawWorld();
+            Engine.getInstance().getPhysicsFactory().debugDrawWorld();
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }

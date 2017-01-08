@@ -1,7 +1,7 @@
 package scene;
 
 import camera.Camera;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -29,11 +29,11 @@ public class EnvironmentProbe extends Entity {
 	private float weight;
 	
 
-	protected EnvironmentProbe(AppContext appContext, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
+	protected EnvironmentProbe(Engine engine, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
         this.renderer = Renderer.getInstance();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
-		sampler = new EnvironmentSampler(appContext, this, center, resolution, resolution, probeIndex);
+		sampler = new EnvironmentSampler(engine, this, center, resolution, resolution, probeIndex);
 		sampler.init();
 		this.setWeight(weight);
 		super.init();

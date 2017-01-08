@@ -1,9 +1,8 @@
 package renderer.command;
 
 import engine.Transform;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Transformable;
-import renderer.RenderExtract;
 import scene.EnvironmentProbe;
 
 public class RenderProbeCommand implements Command<Result>, Transformable {
@@ -20,7 +19,7 @@ public class RenderProbeCommand implements Command<Result>, Transformable {
 	}
 	
 	@Override
-	public Result execute(AppContext appContext) {
+	public Result execute(Engine engine) {
 		return new Result();
 	}
 

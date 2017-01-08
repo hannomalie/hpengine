@@ -1,12 +1,10 @@
 package renderer.drawstrategy;
 
 import camera.Camera;
-import component.ModelComponent;
 import config.Config;
 import container.EntitiesContainer;
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
-import engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import engine.model.EntityFactory;
 import engine.model.QuadVertexBuffer;
 import org.lwjgl.opengl.*;
@@ -110,15 +108,15 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     @Override
     public DrawResult draw(RenderTarget target, RenderExtract renderExtract) {
         SecondPassResult secondPassResult = null;
-        AppContext appContext = AppContext.getInstance();
-        EntitiesContainer octree = appContext.getScene().getEntitiesContainer();
+        Engine engine = Engine.getInstance();
+        EntitiesContainer octree = engine.getScene().getEntitiesContainer();
 
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
         DirectionalLight light = renderExtract.directionalLight;
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(appContext, renderExtract);
+        FirstPassResult firstPassResult = drawFirstPass(engine, renderExtract);
         GPUProfiler.end();
 
         environmentProbeFactory.drawAlternating(renderExtract.camera);
@@ -135,7 +133,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
         GPUProfiler.start("Second pass");
-        secondPassResult = drawSecondPass(renderExtract.camera, light, appContext.getScene().getTubeLights(), appContext.getScene().getAreaLights(), renderExtract);
+        secondPassResult = drawSecondPass(renderExtract.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderExtract);
         GPUProfiler.end();
 
         if (!Config.DIRECT_TEXTURE_OUTPUT) {
@@ -154,7 +152,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return new DrawResult(firstPassResult, secondPassResult);
     }
 
-    public FirstPassResult drawFirstPass(AppContext appContext, RenderExtract renderExtract) {
+    public FirstPassResult drawFirstPass(Engine engine, RenderExtract renderExtract) {
         firstPassResult.reset();
 
         Camera camera = renderExtract.camera;
@@ -173,7 +171,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Draw entities");
 
-        if (Config.DRAWSCENE_ENABLED && AppContext.getInstance().getScene() != null) {
+        if (Config.DRAWSCENE_ENABLED && Engine.getInstance().getScene() != null) {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
@@ -187,7 +185,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-            firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
+            firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getDirectionalLight().getViewDirection());
             firstpassDefaultProgram.setUniform("near", camera.getNear());
             firstpassDefaultProgram.setUniform("far", camera.getFar());
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
@@ -370,7 +368,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     private void doPointLights(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
-        if (AppContext.getInstance().getScene().getPointLights().isEmpty()) {
+        if (Engine.getInstance().getScene().getPointLights().isEmpty()) {
             return;
         }
         GPUProfiler.start("Seconds pass PointLights");
@@ -647,7 +645,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         postProcessProgram.setUniform("seconds", (float)Renderer.getInstance().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
-//        postProcessProgram.bindShaderStorageBuffer(1, AppContext.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
+//        postProcessProgram.bindShaderStorageBuffer(1, Engine.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());

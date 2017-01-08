@@ -1,7 +1,7 @@
 package renderer.material;
 
 import com.google.common.eventbus.Subscribe;
-import engine.AppContext;
+import engine.Engine;
 import event.MaterialAddedEvent;
 import event.MaterialChangedEvent;
 import net.engio.mbassy.listener.Handler;
@@ -29,7 +29,7 @@ public class MaterialFactory {
 
     public static MaterialFactory getInstance() {
         if(instance == null) {
-            throw new IllegalStateException("Call AppContext.init() before using it");
+            throw new IllegalStateException("Call Engine.init() before using it");
         }
         return instance;
     }
@@ -51,7 +51,7 @@ public class MaterialFactory {
 		defaultTemp.diffuse.setX(1.0f);
 		defaultMaterial = getMaterialWithoutRead(defaultTemp);
 
-		AppContext.getEventBus().register(this);
+		Engine.getEventBus().register(this);
 	}
 
 	public void initDefaultMaterials() {
@@ -102,7 +102,7 @@ public class MaterialFactory {
 		material = read(getDirectory() + materialInfo.name);
 
 		if(material != null) {
-            AppContext.getEventBus().post(new MaterialAddedEvent());
+            Engine.getEventBus().post(new MaterialAddedEvent());
 			return material;
 		}
 		
@@ -110,7 +110,7 @@ public class MaterialFactory {
 		material.setMaterialInfo(new MaterialInfo(materialInfo));
 		initMaterial(material);
 		write(material, materialInfo.name);
-		AppContext.getEventBus().post(new MaterialAddedEvent());
+		Engine.getEventBus().post(new MaterialAddedEvent());
 		return material;
 	}
 
@@ -159,7 +159,7 @@ public class MaterialFactory {
 
     private void addMaterial(String key, Material material) {
         MATERIALS.put(key, material);
-        AppContext.getEventBus().post(new MaterialChangedEvent());
+        Engine.getEventBus().post(new MaterialChangedEvent());
     }
     private void addMaterial(Material material) {
         addMaterial(material.getName(), material);
@@ -237,7 +237,7 @@ public class MaterialFactory {
 	}
 
 	public int indexOf(Material material) {
-		return new ArrayList<Material>(MATERIALS.values()).indexOf(material);
+		return new ArrayList<>(MATERIALS.values()).indexOf(material);
 	}
 
 	@Subscribe
@@ -293,6 +293,7 @@ public class MaterialFactory {
         OpenGLContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
             materialBuffer.put(Util.toArray(materials, Material.class));
+            LOGGER.info("Buffering materials");
         });
     }
 }

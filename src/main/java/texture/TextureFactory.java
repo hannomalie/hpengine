@@ -1,6 +1,6 @@
 package texture;
 
-import engine.AppContext;
+import engine.Engine;
 import engine.TimeStepThread;
 import event.TexturesChangedEvent;
 import org.apache.commons.io.FileUtils;
@@ -75,7 +75,7 @@ public class TextureFactory {
 
     public static TextureFactory getInstance() {
         if(instance == null) {
-            throw new IllegalStateException("Call AppContext.init() before using it");
+            throw new IllegalStateException("Call Engine.init() before using it");
         }
         return instance;
     }
@@ -257,7 +257,7 @@ public class TextureFactory {
         if (Texture.COMPILED_TEXTURES && texturePreCompiled(resourceName)) {
             Texture texture = new Texture(resourceName, srgba);
             TEXTURES.put(resourceName, texture);
-            AppContext.getEventBus().post(new TexturesChangedEvent());
+            Engine.getEventBus().post(new TexturesChangedEvent());
             texture.readAndUpload();
             return texture;
         }

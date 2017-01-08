@@ -1,6 +1,6 @@
 package shader;
 
-import engine.AppContext;
+import engine.Engine;
 import org.apache.commons.io.FileUtils;
 import renderer.OpenGLContext;
 import shader.define.Define;
@@ -57,14 +57,14 @@ public class ProgramFactory {
         Program program = new Program(vertexShaderSource, null, fragmentShaderSource, true, "");
 
 		LOADED_PROGRAMS.add(program);
-		AppContext.getEventBus().register(program);
+		Engine.getEventBus().register(program);
 		return program;
 	}
 	
 	public Program getProgram(String defines) {
 		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, true, defines);
 		LOADED_PROGRAMS.add(program);
-		AppContext.getEventBus().register(program);
+		Engine.getEventBus().register(program);
 		return program;
 	}
 
@@ -75,7 +75,7 @@ public class ProgramFactory {
         return OpenGLContext.getInstance().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
-            AppContext.getEventBus().register(program);
+            Engine.getEventBus().register(program);
             return program;
         });
 	}
@@ -91,7 +91,7 @@ public class ProgramFactory {
 
             Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, needsTextures, "");
             LOADED_PROGRAMS.add(program);
-            AppContext.getEventBus().register(program);
+            Engine.getEventBus().register(program);
             return program;
         });
 	}

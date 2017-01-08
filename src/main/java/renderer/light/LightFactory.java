@@ -4,7 +4,7 @@ import camera.Camera;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.Model;
@@ -57,7 +57,7 @@ public class LightFactory {
     private static LightFactory instance;
     public static LightFactory getInstance() {
         if(instance == null) {
-            throw new IllegalStateException("Call AppContext.init() before using it");
+            throw new IllegalStateException("Call Engine.init() before using it");
         }
         return instance;
     }
@@ -101,11 +101,11 @@ public class LightFactory {
 	public LightFactory() {
 		sphereModel = null;
 		try {
-			sphereModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+			sphereModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
 			sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            cubeModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
+            cubeModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
             cubeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            planeModel = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
+            planeModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
             planeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -168,7 +168,7 @@ public class LightFactory {
 
 //		lightBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(1000));
 		lightBuffer = OpenGLContext.getInstance().calculate(() -> new PersistentMappedBuffer(1000));
-		AppContext.getEventBus().register(this);
+		Engine.getEventBus().register(this);
 	}
 
     public void update(float seconds) {
@@ -202,8 +202,8 @@ public class LightFactory {
 		float[] colors = new float[pointLightsForwardMaxCount*3];
 		float[] radiuses = new float[pointLightsForwardMaxCount];
 		
-		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, AppContext.getInstance().getScene().getPointLights().size()); i++) {
-			PointLight light =  AppContext.getInstance().getScene().getPointLights().get(i);
+		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, Engine.getInstance().getScene().getPointLights().size()); i++) {
+			PointLight light =  Engine.getInstance().getScene().getPointLights().get(i);
 			positions[3*i] = light.getPosition().x;
 			positions[3*i+1] = light.getPosition().y;
 			positions[3*i+2] = light.getPosition().z;
@@ -289,7 +289,7 @@ public class LightFactory {
 	}
 	
 	private void updateAreaLightArrays() {
-		List<AreaLight> areaLights = AppContext.getInstance().getScene().getAreaLights();
+		List<AreaLight> areaLights = Engine.getInstance().getScene().getAreaLights();
 
 		float[] positions = new float[areaLightsForwardMaxCount*3];
 		float[] colors = new float[areaLightsForwardMaxCount*3];
@@ -346,7 +346,7 @@ public class LightFactory {
 	}
 
 	public void renderAreaLightShadowMaps(EntitiesContainer octree) {
-        Scene scene = AppContext.getInstance().getScene();
+        Scene scene = Engine.getInstance().getScene();
         if(scene == null) { return; }
 
         List<AreaLight> areaLights = scene.getAreaLights();
@@ -381,7 +381,7 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}
@@ -390,7 +390,7 @@ public class LightFactory {
 	}
 
 	public void renderPointLightShadowMaps(RenderExtract renderExtract) {
-        Scene scene = AppContext.getInstance().getScene();
+        Scene scene = Engine.getInstance().getScene();
         if(scene == null) { return; }
 
         boolean noNeedToRedraw = !(renderExtract.anEntityHasMoved || renderExtract.anyPointLightHasMoved);
@@ -407,7 +407,7 @@ public class LightFactory {
 
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
-			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
+			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
 			List<PerEntityInfo> visibles = new ArrayList<>(renderExtract.perEntityInfos());
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
@@ -430,9 +430,9 @@ public class LightFactory {
                 pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[" + floatBufferIndex + "]", projectionMatrices[floatBufferIndex]);
 //				floatBuffers[floatBufferIndex] = null;
 			}
-			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", AppContext.getInstance().getActiveCamera().getProjectionMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", AppContext.getInstance().getActiveCamera().getViewMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", AppContext.getInstance().getActiveCamera().getViewProjectionMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", Engine.getInstance().getActiveCamera().getProjectionMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", Engine.getInstance().getActiveCamera().getViewMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", Engine.getInstance().getActiveCamera().getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerEntityInfo e : visibles) {
@@ -456,11 +456,11 @@ public class LightFactory {
 		renderTarget.use(false);
 
 		pointShadowPassProgram.use();
-		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, AppContext.getInstance().getScene().getPointLights().size()); i++) {
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, Engine.getInstance().getScene().getPointLights().size()); i++) {
 			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i);
 
 			OpenGLContext.getInstance().clearDepthAndColorBuffer();
-			PointLight light = AppContext.getInstance().getScene().getPointLights().get(i);
+			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
 			List<Entity> visibles = octree.getEntities();
 			pointShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
 			pointShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
@@ -473,7 +473,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}
@@ -488,7 +488,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, AppContext.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(pei);
 				});
 			}
@@ -497,7 +497,7 @@ public class LightFactory {
 	}
 
 	public int getDepthMapForAreaLight(AreaLight light) {
-		int index = AppContext.getInstance().getScene().getAreaLights().indexOf(light);
+		int index = Engine.getInstance().getScene().getAreaLights().indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 
 		return areaLightDepthMaps.get(index);
@@ -530,7 +530,7 @@ public class LightFactory {
 	}
 
 	private void bufferLights() {
-		List<PointLight> pointLights = AppContext.getInstance().getScene().getPointLights();
+		List<PointLight> pointLights = Engine.getInstance().getScene().getPointLights();
 		OpenGLContext.getInstance().execute(() -> {
 			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {

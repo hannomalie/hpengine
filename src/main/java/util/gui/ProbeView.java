@@ -12,7 +12,7 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import event.ProbesChangedEvent;
 import org.lwjgl.util.vector.Vector3f;
@@ -34,12 +34,12 @@ import java.util.concurrent.TimeUnit;
 public class ProbeView extends WebPanel {
 
 	private EnvironmentProbe probe;
-	private AppContext appContext;
+	private Engine engine;
 	private WebFormattedTextField nameField;
 
-	public ProbeView(AppContext appContext, EnvironmentProbe selected) {
+	public ProbeView(Engine engine, EnvironmentProbe selected) {
 		this.probe = selected;
-		this.appContext = appContext;
+		this.engine = engine;
 		setUndecorated(true);
 		this.setSize(600, 600);
 		setMargin(20);
@@ -73,7 +73,7 @@ public class ProbeView extends WebPanel {
     			result = future.get(1, TimeUnit.MINUTES);
 				if(result.equals(Boolean.TRUE)) {
 					showNotification(NotificationIcon.plus, "Probe removed");
-					AppContext.getEventBus().post(new ProbesChangedEvent());
+					Engine.getEventBus().post(new ProbesChangedEvent());
 				} else {
 					showNotification(NotificationIcon.error, "Not able to remove probe");
 				}
@@ -85,10 +85,10 @@ public class ProbeView extends WebPanel {
 
         webComponentPanel.addElement(removeProbeButton);
         webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-        	appContext.setActiveCamera(probe.getSampler());
+        	engine.setActiveCamera(probe.getSampler());
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-        	appContext.restoreWorldCamera();
+        	engine.restoreWorldCamera();
         });}});
 
         webComponentPanel.addElement(new MovablePanel<Entity>(probe));

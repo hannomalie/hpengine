@@ -13,7 +13,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
-import engine.AppContext;
+import engine.Engine;
 import event.EntityAddedEvent;
 import event.MaterialAddedEvent;
 import renderer.Renderer;
@@ -28,13 +28,13 @@ import java.util.List;
 
 public class AddEntityView extends WebPanel {
 
-	private AppContext appContext;
+	private Engine engine;
 	private WebFormattedTextField nameField;
 	private DebugFrame debugFrame;
 	private WebFrame parentFrame;
 
-	public AddEntityView(AppContext appContext, WebFrame addEntityFrame, DebugFrame debugFrame) {
-		this.appContext = appContext;
+	public AddEntityView(Engine engine, WebFrame addEntityFrame, DebugFrame debugFrame) {
+		this.engine = engine;
 		this.debugFrame = debugFrame;
 		this.parentFrame = addEntityFrame;
 		setUndecorated(true);
@@ -71,16 +71,16 @@ public class AddEntityView extends WebPanel {
                         new SwingWorkerWithProgress<EntityListResult>(Renderer.getInstance(), debugFrame, "Load model", "Unable to load " + chosenFile.getAbsolutePath()) {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
-								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(AppContext.getInstance());
-                                appContext.getScene().addAll(result.entities);
+								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(Engine.getInstance());
+                                engine.getScene().addAll(result.entities);
                                 Thread.sleep(100);
 								return result;
 							}
 
 							@Override
 							public void done(EntityListResult result) {
-                                AppContext.getEventBus().post(new MaterialAddedEvent());
-								AppContext.getEventBus().post(new EntityAddedEvent());
+                                Engine.getEventBus().post(new MaterialAddedEvent());
+								Engine.getEventBus().post(new EntityAddedEvent());
 							}
 						}.execute();
 					}

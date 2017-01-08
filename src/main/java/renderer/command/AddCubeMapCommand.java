@@ -1,7 +1,6 @@
 package renderer.command;
 
-import engine.AppContext;
-import renderer.RenderExtract;
+import engine.Engine;
 import texture.Texture;
 import texture.TextureFactory;
 
@@ -14,7 +13,7 @@ public class AddCubeMapCommand extends AddTextureCommand {
 	}
 
 	@Override
-	public TextureResult execute(AppContext appContext) {
+	public TextureResult execute(Engine engine) {
 		Texture texture = null;
 		try {
 			texture = TextureFactory.getInstance().getCubeMap(path);

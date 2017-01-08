@@ -5,7 +5,7 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import physic.PhysicsFactory;
 import util.Util;
@@ -47,10 +47,10 @@ public class PhysicsComponent extends BaseComponent {
 
     private void registerRigidBody() {
         try {
-            AppContext.getInstance().getPhysicsFactory().getCommandQueue().addCommand(new FutureCallable<Object>() {
+            Engine.getInstance().getPhysicsFactory().getCommandQueue().addCommand(new FutureCallable<Object>() {
                 @Override
                 public Object execute() throws Exception {
-                    AppContext.getInstance().getPhysicsFactory().registerRigidBody(rigidBody);
+                    Engine.getInstance().getPhysicsFactory().registerRigidBody(rigidBody);
                     return null;
                 }
             }).get();
@@ -75,7 +75,7 @@ public class PhysicsComponent extends BaseComponent {
 
     public void reset() {
         if(isInitialized()) {
-            AppContext.getInstance().getPhysicsFactory().unregisterRigidBody(rigidBody);
+            Engine.getInstance().getPhysicsFactory().unregisterRigidBody(rigidBody);
             actuallyCreatePhysicsObject();
         }
     }

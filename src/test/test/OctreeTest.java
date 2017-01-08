@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 
 import static log.ConsoleLogger.getLogger;
 
-public class OctreeTest extends TestWithAppContext {
+public class OctreeTest extends TestWithEngine {
 
     private static final Logger LOGGER = Logger.getLogger(OctreeTest.class.getName());
 

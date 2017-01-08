@@ -7,7 +7,7 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import renderer.OpenGLContext;
@@ -23,7 +23,7 @@ public class LoadEntitiyView extends WebPanel {
 
 	private LoadEntitiyView() { }
 	
-	public static List<Entity> showDialog(AppContext appContext) {
+	public static List<Entity> showDialog(Engine engine) {
 		
 		Customizer<WebFileChooser> customizer = new Customizer<WebFileChooser>() {
 			@Override

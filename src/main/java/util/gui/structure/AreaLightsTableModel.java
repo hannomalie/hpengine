@@ -1,6 +1,6 @@
 package util.gui.structure;
 
-import engine.AppContext;
+import engine.Engine;
 import renderer.light.AreaLight;
 
 import javax.swing.table.AbstractTableModel;
@@ -14,22 +14,22 @@ public class AreaLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        if(AppContext.getInstance().getScene() != null) {
-            return AppContext.getInstance().getScene().getAreaLights().size();
+        if(Engine.getInstance().getScene() != null) {
+            return Engine.getInstance().getScene().getAreaLights().size();
         }
         return 0;
     }
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            AreaLight light = AppContext.getInstance().getScene().getAreaLights().get(row);
+            AreaLight light = Engine.getInstance().getScene().getAreaLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().z);
 
         } else if (col == 1) {
-            return vectorToString(AppContext.getInstance().getScene().getAreaLights().get(row).getPosition());
+            return vectorToString(Engine.getInstance().getScene().getAreaLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return vectorToString(AppContext.getInstance().getScene().getAreaLights().get(row).getColor());
+            return vectorToString(Engine.getInstance().getScene().getAreaLights().get(row).getColor());
 
         }
         return "";

@@ -3,26 +3,17 @@ package test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL15;
-import renderer.OpenGLContext;
 import shader.Bufferable;
 import shader.OpenGLBuffer;
 import shader.PersistentMappedBuffer;
-import shader.StorageBuffer;
 
-import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
-import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
 import static org.lwjgl.opengl.ARBBufferStorage.glBufferStorage;
-import static org.lwjgl.opengl.GL15.glBindBuffer;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
-import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
-import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class StorageBufferTest extends TestWithAppContext {
+public class StorageBufferTest extends TestWithEngine {
 
 	@Test
 	public void storageBuffersGetsCorrectValues() {

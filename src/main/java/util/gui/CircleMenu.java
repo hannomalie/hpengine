@@ -9,7 +9,7 @@ import com.alee.laf.text.WebTextField;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.IntTextDocument;
 import com.google.common.eventbus.Subscribe;
-import engine.AppContext;
+import engine.Engine;
 import event.ClickEvent;
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Synchronized;
@@ -20,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 public class CircleMenu {
 
@@ -48,7 +47,7 @@ public class CircleMenu {
             webMenu.addItem ( item );
         }
 
-        AppContext.getEventBus().register(this);
+        Engine.getEventBus().register(this);
     }
 
     final WebDynamicMenu webMenu = new WebDynamicMenu();
@@ -70,7 +69,7 @@ public class CircleMenu {
             System.out.println("Set true");
 
             SwingUtils.invokeLater(() -> {
-                webMenu.showMenu(Display.getParent(), Mouse.getX(), AppContext.getInstance().getFrame().getHeight()-Mouse.getY());
+                webMenu.showMenu(Display.getParent(), Mouse.getX(), Engine.getInstance().getFrame().getHeight()-Mouse.getY());
                 System.out.println("Menu shown");
                 if(!isBusy.compareAndSet(true, false)) {
                     throw new IllegalStateException("Illegal State with isBusy!");

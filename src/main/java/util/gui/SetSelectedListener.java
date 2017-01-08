@@ -1,7 +1,7 @@
 package util.gui;
 
 import com.alee.laf.rootpane.WebFrame;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import scene.EnvironmentProbe;
 
@@ -19,11 +19,11 @@ public class SetSelectedListener implements TreeSelectionListener {
     static {
         entityViewFrame.setVisible(false);
     }
-	private AppContext appContext;
+	private Engine engine;
 
-	public SetSelectedListener(JTree tree, AppContext appContext) {
+	public SetSelectedListener(JTree tree, Engine engine) {
 		this.tree = tree;
-		this.appContext = appContext;
+		this.engine = engine;
 
 		tree.addTreeSelectionListener(this);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
@@ -73,7 +73,7 @@ public class SetSelectedListener implements TreeSelectionListener {
 			entityViewFrame.getContentPane().removeAll();
 			entityViewFrame.pack();
 			entityViewFrame.setSize(600, 600);
-			entityViewFrame.add(new ProbeView(appContext, selected));
+			entityViewFrame.add(new ProbeView(engine, selected));
 			entityViewFrame.setVisible(true);
 		} else if (nodeInfo instanceof Entity) {
         	Entity selected = (Entity) nodeInfo;
@@ -81,7 +81,7 @@ public class SetSelectedListener implements TreeSelectionListener {
 	    	entityViewFrame.getContentPane().removeAll();
 	    	entityViewFrame.pack();
 	    	entityViewFrame.setSize(600, 600);
-	    	entityViewFrame.add(new EntityView(appContext, selected));
+	    	entityViewFrame.add(new EntityView(engine, selected));
 	    	entityViewFrame.setVisible(true);
         }
     }

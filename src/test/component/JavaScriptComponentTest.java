@@ -6,13 +6,13 @@ import engine.model.EntityFactory;
 import junit.framework.Assert;
 import org.junit.Test;
 
-public class JavaScriptComponentTest extends TestWithAppContext {
+public class JavaScriptComponentTest extends TestWithEngine {
 
     @Test
     public void globalDefines() {
-        appContext.getScriptManager().getGlobalContext().put("myInt", 2);
+        engine.getScriptManager().getGlobalContext().put("myInt", 2);
 
-        Assert.assertEquals(2, appContext.getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(2, engine.getScriptManager().getGlobalContext().get("myInt"));
     }
 
     @Test
@@ -27,9 +27,9 @@ public class JavaScriptComponentTest extends TestWithAppContext {
 
     @Test
     public void globalScopeFromLocalScope() {
-        appContext.getScriptManager().getGlobalContext().put("myInt", 242);
+        engine.getScriptManager().getGlobalContext().put("myInt", 242);
 
-        Assert.assertEquals(242, appContext.getScriptManager().getGlobalContext().get("myInt"));
+        Assert.assertEquals(242, engine.getScriptManager().getGlobalContext().get("myInt"));
 
         String script = "var myInt = myInt;";
         JavaScriptComponent component = new JavaScriptComponent(script);
@@ -41,11 +41,11 @@ public class JavaScriptComponentTest extends TestWithAppContext {
 
     @Test
     public void scriptUpdateFunctionCall() {
-        appContext.getScriptManager().getGlobalContext().put("initCalled", false);
-        appContext.getScriptManager().getGlobalContext().put("updateCalled", false);
+        engine.getScriptManager().getGlobalContext().put("initCalled", false);
+        engine.getScriptManager().getGlobalContext().put("updateCalled", false);
 
-        Assert.assertEquals(false, appContext.getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(false, appContext.getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(false, engine.getScriptManager().getGlobalContext().get("initCalled"));
+        Assert.assertEquals(false, engine.getScriptManager().getGlobalContext().get("updateCalled"));
 
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
@@ -62,7 +62,7 @@ public class JavaScriptComponentTest extends TestWithAppContext {
 //        }
 
         component.update(0.1f);
-        Assert.assertEquals(true, appContext.getScriptManager().getGlobalContext().get("initCalled"));
-        Assert.assertEquals(true, appContext.getScriptManager().getGlobalContext().get("updateCalled"));
+        Assert.assertEquals(true, engine.getScriptManager().getGlobalContext().get("initCalled"));
+        Assert.assertEquals(true, engine.getScriptManager().getGlobalContext().get("updateCalled"));
     }
 }

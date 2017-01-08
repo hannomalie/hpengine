@@ -2,17 +2,14 @@ package renderer.light;
 
 import camera.Camera;
 import component.InputControllerComponent;
-import component.ModelComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.input.Input;
 import engine.model.Entity;
 import event.DirectionalLightHasMovedEvent;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import renderer.RenderExtract;
 import shader.Program;
 import util.Util;
 
@@ -105,7 +102,7 @@ public class DirectionalLight extends Entity {
 	@Override
 	public void update(float seconds) {
 		if(hasMoved()) {
-            AppContext.getEventBus().post(new DirectionalLightHasMovedEvent());
+            Engine.getEventBus().post(new DirectionalLightHasMovedEvent());
         }
         super.update(seconds);
 	}

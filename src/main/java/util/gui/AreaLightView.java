@@ -7,7 +7,7 @@ import com.alee.laf.label.WebLabel;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import engine.AppContext;
+import engine.Engine;
 import org.lwjgl.util.vector.Vector4f;
 import renderer.OpenGLContext;
 import renderer.light.AreaLight;
@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 public class AreaLightView extends EntityView {
 	private AreaLight light;
 
-	public AreaLightView(AppContext appContext, DebugFrame debugFrame, AreaLight light) {
-		super(appContext, light);
+	public AreaLightView(Engine engine, DebugFrame debugFrame, AreaLight light) {
+		super(engine, light);
 		this.light = light;
 	}
 
@@ -49,10 +49,10 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-        	appContext.setActiveCamera(LightFactory.getInstance().getCameraForAreaLight(light));
+        	engine.setActiveCamera(LightFactory.getInstance().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-			appContext.restoreWorldCamera();
+			engine.restoreWorldCamera();
         });}});
         addRemoveButton(webComponentPanel);
 
@@ -65,7 +65,7 @@ public class AreaLightView extends EntityView {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
 			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
-				return AppContext.getInstance().getScene().getAreaLights().remove(light);
+				return Engine.getInstance().getScene().getAreaLights().remove(light);
 			});
 
 			Boolean result;

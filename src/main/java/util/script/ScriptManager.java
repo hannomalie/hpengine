@@ -1,7 +1,7 @@
 package util.script;
 
 import component.JavaScriptComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.EntityFactory;
 import engine.model.OBJLoader;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -20,28 +20,28 @@ public class ScriptManager {
 
     private static volatile ScriptManager instance;
     private final ScriptContext globalContext;
-	private AppContext appContext;
-	private ScriptEngine engine;
+	private Engine engine;
+	private ScriptEngine scriptEngine;
 	private DefaultCompletionProvider provider;
 	private Bindings globalBindings;
 
-	private ScriptManager(AppContext appContext) {
-		this.appContext = appContext;
+	private ScriptManager(Engine engine) {
+		this.engine = engine;
 		NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-		engine = factory.getScriptEngine(new String[] { "--global-per-engine" });
-		globalContext = engine.getContext();
+		this.scriptEngine = factory.getScriptEngine(new String[] { "--global-per-engine" });
+		globalContext = this.scriptEngine.getContext();
 		globalBindings = globalContext.getBindings(ScriptContext.ENGINE_SCOPE);
 		provider = new DefaultCompletionProvider();
 	}
 	
 
 	public void eval(String script) throws ScriptException {
-		engine.eval(script);
+		scriptEngine.eval(script);
 		LOGGER.info("Script executed...");
 	}
 
 	public void defineGlobals() {
-		define("world", appContext);
+		define("world", scriptEngine);
         define("renderer", Renderer.getInstance());
         define("entityFactory", EntityFactory.getInstance());
 		define("materialFactory", MaterialFactory.getInstance());
@@ -50,7 +50,7 @@ public class ScriptManager {
 	}
 	
 	public void define(String name, Object object) {
-//		engine.put(name, object);
+//		scriptEngine.put(name, object);
 		globalContext.getBindings(ScriptContext.ENGINE_SCOPE).put(name, object);
 	    provider.addCompletion(new BasicCompletion(provider, name));
 	}
@@ -63,10 +63,10 @@ public class ScriptManager {
 	}
 
 	public void evalUpdate(JavaScriptComponent javaScriptComponent, float seconds) {
-		engine.setContext(javaScriptComponent.getContext());
+		scriptEngine.setContext(javaScriptComponent.getContext());
 		try {
-			((Invocable)engine).invokeFunction("update", seconds);
-//			engine.eval(String.format("update(%s)", seconds, javaScriptComponent.getContext()));
+			((Invocable) scriptEngine).invokeFunction("update", seconds);
+//			scriptEngine.eval(String.format("update(%s)", seconds, javaScriptComponent.getContext()));
 		} catch (ScriptException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
@@ -76,7 +76,7 @@ public class ScriptManager {
 
 	public ScriptContext createContext() {
 		ScriptContext context = new SimpleScriptContext();
-		context.setBindings(appContext.getScriptManager().getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
+		context.setBindings(engine.getScriptManager().getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
 		context.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
 		return context;
 	}
@@ -87,11 +87,11 @@ public class ScriptManager {
 
 	public void evalInit(JavaScriptComponent javaScriptComponent) {
 		try {
-			engine.eval(javaScriptComponent.getScript(), javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE));
+			scriptEngine.eval(javaScriptComponent.getScript(), javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE));
 
-			engine.setContext(javaScriptComponent.getContext());
+			scriptEngine.setContext(javaScriptComponent.getContext());
 			javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("entity", javaScriptComponent.getEntity());
-			((Invocable)engine).invokeFunction("init", appContext);
+			((Invocable) scriptEngine).invokeFunction("init", scriptEngine);
 
 		} catch (ScriptException e) {
 			e.printStackTrace();
@@ -102,7 +102,7 @@ public class ScriptManager {
 
 	public void eval(ScriptContext context, String script) {
 		try {
-			engine.eval(script, context.getBindings(ScriptContext.ENGINE_SCOPE));
+			scriptEngine.eval(script, context.getBindings(ScriptContext.ENGINE_SCOPE));
 		} catch (ScriptException e) {
 			e.printStackTrace();
 		}
@@ -110,7 +110,7 @@ public class ScriptManager {
 
     public static ScriptManager getInstance() {
         if(instance == null) {
-            instance = new ScriptManager(AppContext.getInstance());
+            instance = new ScriptManager(Engine.getInstance());
         }
         return instance;
     }

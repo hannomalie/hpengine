@@ -2,7 +2,7 @@ package scene;
 
 import config.Config;
 import container.Octree;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.DataChannels;
 import engine.model.Entity;
 import engine.model.VertexBuffer;
@@ -41,7 +41,7 @@ public class EnvironmentProbeFactory {
                     init();
                 }
             }
-//            throw new IllegalStateException("Call AppContext.init() before using it");
+//            throw new IllegalStateException("Call Engine.init() before using it");
         }
         return instance;
     }
@@ -82,10 +82,10 @@ public class EnvironmentProbeFactory {
 		return getProbe(center, new Vector3f(size, size, size), update, weight);
 	}
 	public EnvironmentProbe getProbe(Vector3f center, Vector3f size, Update update, float weight) throws Exception {
-		EnvironmentProbe probe = new EnvironmentProbe(AppContext.getInstance(), center, size, RESOLUTION, update, getProbes().size(), weight);
+		EnvironmentProbe probe = new EnvironmentProbe(Engine.getInstance(), center, size, RESOLUTION, update, getProbes().size(), weight);
 		probes.add(probe);
 		updateBuffers();
-        AppContext.getEventBus().post(new ProbeAddedEvent(probe));
+        Engine.getEventBus().post(new ProbeAddedEvent(probe));
 		return probe;
 	}
 	
@@ -295,7 +295,7 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void clearProbes() {
-		probes.forEach( p -> { AppContext.getEventBus().unregister(p.getSampler()); });
+		probes.forEach( p -> { Engine.getEventBus().unregister(p.getSampler()); });
 		probes.clear();
 	}
 

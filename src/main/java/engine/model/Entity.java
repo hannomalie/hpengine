@@ -4,7 +4,7 @@ import camera.Camera;
 import component.Component;
 import component.ModelComponent;
 import component.PhysicsComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.Transform;
 import engine.lifecycle.LifeCycle;
 import event.EntityAddedEvent;
@@ -346,7 +346,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/entities/";
+		return Engine.WORKDIR_NAME + "/assets/entities/";
 	}
 	public boolean equals(Object other) {
 		if (!(other instanceof Entity)) {
@@ -424,7 +424,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 				child.setUpdate(update);
 			}
 		}
-		AppContext.getEventBus().post(new UpdateChangedEvent(this));
+		Engine.getEventBus().post(new UpdateChangedEvent(this));
 	}
 
 
@@ -479,8 +479,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         double materialIndex = getComponents().containsKey("ModelComponent") ?
                 MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
         doubles[index++] = materialIndex;
-        doubles[index++] = AppContext.getInstance().getScene().getEntityBufferIndex(this);
-        doubles[index++] = AppContext.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
+        doubles[index++] = Engine.getInstance().getScene().getEntityBufferIndex(this);
+        doubles[index++] = Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
         return index;
     }
 
@@ -498,7 +498,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			instance.setParent(getParent().getTransform());
 		}
 		instances.add(instance);
-		AppContext.getEventBus().post(new EntityAddedEvent());
+		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 	public void addInstances(List<Transform> instances) {
 		if(getParent() != null) {
@@ -507,6 +507,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			}
 		}
 		this.instances.addAll(instances);
-		AppContext.getEventBus().post(new EntityAddedEvent());
+		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 }

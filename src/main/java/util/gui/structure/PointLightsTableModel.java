@@ -1,6 +1,6 @@
 package util.gui.structure;
 
-import engine.AppContext;
+import engine.Engine;
 import renderer.light.PointLight;
 import scene.Scene;
 
@@ -15,7 +15,7 @@ public class PointLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        Scene scene = AppContext.getInstance().getScene();
+        Scene scene = Engine.getInstance().getScene();
         if(scene != null) {
             return scene.getPointLights().size();
         }
@@ -24,14 +24,14 @@ public class PointLightsTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            PointLight light = AppContext.getInstance().getScene().getPointLights().get(row);
+            PointLight light = Engine.getInstance().getScene().getPointLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 
         } else if (col == 1) {
-            return vectorToString(AppContext.getInstance().getScene().getPointLights().get(row).getPosition());
+            return vectorToString(Engine.getInstance().getScene().getPointLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return vectorToString(AppContext.getInstance().getScene().getPointLights().get(row).getColor());
+            return vectorToString(Engine.getInstance().getScene().getPointLights().get(row).getColor());
 
         }
         return "";

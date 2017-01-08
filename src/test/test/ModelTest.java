@@ -1,7 +1,7 @@
 package test;
 
 import component.ModelComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.*;
 import jme3tools.optimize.LodGenerator;
 import org.junit.Assert;
@@ -11,13 +11,12 @@ import org.lwjgl.util.vector.Vector4f;
 
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
 
-public class ModelTest extends TestWithAppContext {
+public class ModelTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        List<Model> plane = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/plane.obj"));
+        List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
         Model planeModel = plane.get(0);
         Assert.assertEquals(4, planeModel.getVertices().size());
         Assert.assertEquals(4, planeModel.getNormals().size());
@@ -50,7 +49,7 @@ public class ModelTest extends TestWithAppContext {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        List<Model> plane = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Model planeModel = plane.get(0);
         Assert.assertEquals(6, planeModel.getVertices().size());
         Assert.assertEquals(6, planeModel.getNormals().size());
@@ -72,7 +71,7 @@ public class ModelTest extends TestWithAppContext {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        List<Model> sphere = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        List<Model> sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity entity = EntityFactory.getInstance().getEntity(sphere.get(0));
 		
 		entity.setPosition(new Vector3f(0, 0, 0));

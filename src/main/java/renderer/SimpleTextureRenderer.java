@@ -1,6 +1,6 @@
 package renderer;
 
-import engine.AppContext;
+import engine.Engine;
 import engine.input.Input;
 import engine.model.DataChannels;
 import engine.model.QuadVertexBuffer;
@@ -153,7 +153,7 @@ public class SimpleTextureRenderer implements Renderer {
 		program.use();
 
         OpenGLContext.getInstance().bindFrameBuffer(0);
-        OpenGLContext.getInstance().viewPort(0,0,AppContext.WINDOW_WIDTH, AppContext.WINDOW_HEIGHT);
+        OpenGLContext.getInstance().viewPort(0,0, Engine.WINDOW_WIDTH, Engine.WINDOW_HEIGHT);
         OpenGLContext.getInstance().disable(GlCap.DEPTH_TEST);
 
 		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
@@ -168,7 +168,7 @@ public class SimpleTextureRenderer implements Renderer {
         fpsCounter.update();
 //		OpenGLContext.getInstance().execute(() -> {
 			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), AppContext.getInstance().getFPSCounter().getFPS(), AppContext.getInstance().getFPSCounter().getMsPerFrame()));
+                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
 //		});
 	}
 	private long getTime() {

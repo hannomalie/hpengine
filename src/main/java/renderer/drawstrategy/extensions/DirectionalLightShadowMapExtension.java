@@ -1,6 +1,6 @@
 package renderer.drawstrategy.extensions;
 
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
 import engine.model.EntityFactory;
 import org.lwjgl.opengl.GL11;
@@ -45,7 +45,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
                         .setTextureFilter(GL11.GL_LINEAR))
                 .build();
 
-        AppContext.getEventBus().register(this);
+        Engine.getEventBus().register(this);
     }
 
     @Override

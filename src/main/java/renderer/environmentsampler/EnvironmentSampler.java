@@ -4,7 +4,7 @@ import camera.Camera;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
 import engine.model.Entity;
 import engine.model.QuadVertexBuffer;
@@ -56,7 +56,7 @@ import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 public class EnvironmentSampler extends Camera {
 	public static volatile boolean deferredRenderingForProbes = false;
-	private final AppContext appContext;
+	private final Engine engine;
 	private Program cubeMapProgram;
 	private Program cubeMapLightingProgram;
 	private Program depthPrePassProgram;
@@ -81,13 +81,13 @@ public class EnvironmentSampler extends Camera {
 	
 	private RenderTarget renderTarget;
 	
-	public EnvironmentSampler(AppContext appContext, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
+	public EnvironmentSampler(Engine engine, EnvironmentProbe probe, Vector3f position, int width, int height, int probeIndex) throws Exception {
 		super(0.1f, 5000f, 90f, 1f);
         setWidth(width);
         setWidth(height);
         setPosition(position);
 		init();
-		this.appContext = appContext;
+		this.engine = engine;
         this.renderer = Renderer.getInstance();
 		this.probe = probe;
 		float far = 5000f;
@@ -146,7 +146,7 @@ public class EnvironmentSampler extends Camera {
 								.build();
 
 		fullscreenBuffer = new QuadVertexBuffer(true).upload();
-		AppContext.getEventBus().register(this);
+		Engine.getEventBus().register(this);
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
@@ -155,7 +155,7 @@ public class EnvironmentSampler extends Camera {
 	}
 	
 	private void drawCubeMapSides(boolean urgent, RenderExtract extract) {
-        Scene scene = AppContext.getInstance().getScene();
+        Scene scene = Engine.getInstance().getScene();
         if(scene == null) { return; }
 
         EntitiesContainer octree = scene.getEntitiesContainer();
@@ -264,12 +264,12 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		cubeMapProgram.setUniform("probePosition", probe.getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
-		cubeMapProgram.setUniform("activePointLightCount", appContext.getScene().getPointLights().size());
+		cubeMapProgram.setUniform("activePointLightCount", engine.getScene().getPointLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", LightFactory.getInstance().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", LightFactory.getInstance().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", LightFactory.getInstance().getPointLightRadiuses());
 		
-		cubeMapProgram.setUniform("activeAreaLightCount", appContext.getScene().getAreaLights().size());
+		cubeMapProgram.setUniform("activeAreaLightCount", engine.getScene().getAreaLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", LightFactory.getInstance().getAreaLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", LightFactory.getInstance().getAreaLightColors());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", LightFactory.getInstance().getAreaLightWidthHeightRanges());
@@ -277,8 +277,8 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", LightFactory.getInstance().getAreaLightUpDirections());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", LightFactory.getInstance().getAreaLightRightDirections());
 		
-		for(int i = 0; i < Math.min(appContext.getScene().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
-			AreaLight areaLight =appContext.getScene().getAreaLights().get(i);
+		for(int i = 0; i < Math.min(engine.getScene().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight = engine.getScene().getAreaLights().get(i);
 			OpenGLContext.getInstance().bindTexture(9 + i, TEXTURE_2D, LightFactory.getInstance().getDepthMapForAreaLight(areaLight));
 			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", LightFactory.getInstance().getShadowMatrixForAreaLight(areaLight));
 		}
@@ -303,7 +303,7 @@ public class EnvironmentSampler extends Camera {
 				program.setUniform("roughness", modelComponent.getMaterial().getRoughness());
 				modelComponent.getMaterial().setTexturesActive(program);
 
-                DrawStrategy.draw(new PerEntityInfo(null, program, AppContext.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
+                DrawStrategy.draw(new PerEntityInfo(null, program, Engine.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
 			});
 		}
 		GPUProfiler.end();
@@ -334,7 +334,7 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", appContext.getScene().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getDirectionalLight().getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -343,7 +343,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(null, firstpassDefaultProgram, AppContext.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                        new PerEntityInfo(null, firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 DrawStrategy.draw(perEntityInfo);
             }
         }
@@ -447,7 +447,7 @@ public class EnvironmentSampler extends Camera {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = appContext.getScene().getDirectionalLight();
+		DirectionalLight light = engine.getScene().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", Config.AMBIENT_LIGHT);

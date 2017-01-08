@@ -1,29 +1,29 @@
 package test;
 
-import engine.AppContext;
+import engine.Engine;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import renderer.Renderer;
 
-public class TestWithAppContext {
+public class TestWithEngine {
 
 	public static Renderer renderer;
-    public static AppContext appContext;
+    public static Engine engine;
 
-    public TestWithAppContext() {
+    public TestWithEngine() {
 		super();
 	}
 	
 	@BeforeClass
 	public static void init() {
         // TODO: Make this work headless
-        AppContext.init(false);
-        appContext = AppContext.getInstance();
+        Engine.init(false);
+        engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}
 	
 	@AfterClass
 	public static void kill() {
-//        AppContext.getInstance().destroy();
+//        Engine.getInstance().destroy();
 	}
 }

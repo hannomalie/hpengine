@@ -1,6 +1,6 @@
 package util.gui.structure;
 
-import engine.AppContext;
+import engine.Engine;
 import renderer.light.TubeLight;
 
 import javax.swing.table.AbstractTableModel;
@@ -14,22 +14,22 @@ public class TubeLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        if(AppContext.getInstance().getScene() != null) {
-            return AppContext.getInstance().getScene().getTubeLights().size();
+        if(Engine.getInstance().getScene() != null) {
+            return Engine.getInstance().getScene().getTubeLights().size();
         }
         return 0;
     }
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            TubeLight light = AppContext.getInstance().getScene().getTubeLights().get(row);
+            TubeLight light = Engine.getInstance().getScene().getTubeLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 
         } else if (col == 1) {
-            return vectorToString(AppContext.getInstance().getScene().getTubeLights().get(row).getPosition());
+            return vectorToString(Engine.getInstance().getScene().getTubeLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return vectorToString(AppContext.getInstance().getScene().getTubeLights().get(row).getColor());
+            return vectorToString(Engine.getInstance().getScene().getTubeLights().get(row).getColor());
 
         }
         return "";

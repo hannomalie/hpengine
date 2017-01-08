@@ -1,13 +1,13 @@
 package util.gui;
 
-import test.TestWithAppContext;
+import test.TestWithEngine;
 
 import javax.swing.*;
 
 /**
  * Created by pernpeintner on 01.06.2016.
  */
-public class ViewTest extends TestWithAppContext {
+public class ViewTest extends TestWithEngine {
     protected void openViewInFrame(JPanel panel) {
         JFrame frame = new JFrame();
         frame.getContentPane().add(panel);

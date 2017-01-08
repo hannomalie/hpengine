@@ -31,8 +31,8 @@ import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import component.ModelComponent;
 import config.Config;
-import engine.AppContext;
-import engine.model.Entity;
+import scriptEngine.Engine;
+import scriptEngine.model.Entity;
 <<<<<<< Updated upstream
 import event.*;
 =======
@@ -192,7 +192,7 @@ public class DebugFrame {
 	public DebugFrame() {
 		AppContext.getEventBus().register(this);
 <<<<<<< Updated upstream
-		init(appContext);
+		init(scriptEngine);
         infoSplitPane.setOneTouchExpandable ( true );
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
         infoSplitPane.setDividerLocation ( 125 );
@@ -719,7 +719,7 @@ public class DebugFrame {
 		WebTextField sceneViewFilterField = new WebTextField(15);
 		WebCheckBoxTree<DefaultMutableTreeNode> probes = new WebCheckBoxTree<DefaultMutableTreeNode>();
 	}
-	private void initActionListeners(AppContext appContext,
+	private void initActionListeners(AppContext scriptEngine,
 	List<Component> mainButtonElements) {
 //		toggleFileReload.addActionListener( e -> {
 //			FileMonitor.getInstance().running = !FileMonitor.getInstance().running;
@@ -766,7 +766,7 @@ public class DebugFrame {
 		for (Field field : Config.class.getDeclaredFields()) {
 			for (Annotation annotation : field.getDeclaredAnnotations()) {
 				if(annotation instanceof Toggable) {
-					createWebToggableButton(appContext, toggleButtonsWithGroups, field, annotation);
+					createWebToggableButton(scriptEngine, toggleButtonsWithGroups, field, annotation);
 				} else if(annotation instanceof Adjustable) {
 // TODO: FEINSCHLIFF
 //					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
@@ -798,7 +798,7 @@ public class DebugFrame {
 
 		toggleAmbientOcclusion.addActionListener(e -> {
 			Config.useAmbientOcclusion = !Config.useAmbientOcclusion;
-//			appContext.getEventBus().post(new GlobalDefineChangedEvent());
+//			scriptEngine.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
@@ -872,9 +872,9 @@ public class DebugFrame {
 //			Config.LOCK_FPS = !Config.LOCK_FPS;
 //			OpenGLContext.getInstance().addCommand(new Command<Result>() {
 //				@Override
-//				public Result execute(AppContext appContext) {
+//				public Result execute(AppContext scriptEngine) {
 //					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
-//					appContext.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
+//					scriptEngine.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
 //					return new Result();
 //				}
 //			});
@@ -941,9 +941,9 @@ public class DebugFrame {
 			@Override public void onValueChange(int value, int delta) {
 				Config.EXPOSURE = value;
 			}},
-			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) appContext.getScene().getDirectionalLight().getScatterFactor()) {
+			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, (int) scriptEngine.getScene().getDirectionalLight().getScatterFactor()) {
 				@Override public void onValueChange(int value, int delta) {
-					appContext.getScene().getDirectionalLight().setScatterFactor((float)value);
+					scriptEngine.getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.RAINEFFECT)) {
@@ -970,11 +970,11 @@ public class DebugFrame {
         mainPane = new WebScrollPane(buttonGridPanel);
 	}
 
-	private void createWebSlider(AppContext appContext,
+	private void createWebSlider(AppContext scriptEngine,
 			Map<String, List<Component>> toggleButtonsWithGroups, Field field,
 			Annotation annotation) {
 		try {
-			float f = field.getFloat(appContext);
+			float f = field.getFloat(scriptEngine);
 			Adjustable adjustable = (Adjustable) annotation;
 			
 			List<Component> groupList;
@@ -998,7 +998,7 @@ public class DebugFrame {
 				@Override
 				public void stateChanged(ChangeEvent e) {
 					try {
-						float currentValue = field.getFloat(appContext);
+						float currentValue = field.getFloat(scriptEngine);
 					} catch (IllegalArgumentException | IllegalAccessException e2) {
 						e2.printStackTrace();
 					}
@@ -1007,7 +1007,7 @@ public class DebugFrame {
 					int value = slider.getValue();
 					float valueAsFactor = ((float) value) / adjustable.factor();
 					try {
-						field.setFloat(appContext, valueAsFactor);
+						field.setFloat(scriptEngine, valueAsFactor);
 						AppContext.getEventBus().post(new GlobalDefineChangedEvent());
 					} catch (IllegalArgumentException | IllegalAccessException e1) {
 						e1.printStackTrace();
@@ -1024,11 +1024,11 @@ public class DebugFrame {
 		}
 	}
 
-	private void createWebToggableButton(AppContext appContext,
+	private void createWebToggableButton(AppContext scriptEngine,
 			Map<String, List<Component>> toggleButtonsWithGroups,
 			Field field, Annotation annotation) {
 		try {
-			boolean b = field.getBoolean(appContext);
+			boolean b = field.getBoolean(scriptEngine);
 			Toggable toggable = (Toggable) annotation;
 			List<Component> groupList;
 			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
@@ -1041,8 +1041,8 @@ public class DebugFrame {
 			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
 				boolean currentValue;
 				try {
-					currentValue = field.getBoolean(appContext);
-					field.setBoolean(appContext, !currentValue);
+					currentValue = field.getBoolean(scriptEngine);
+					field.setBoolean(scriptEngine, !currentValue);
 					AppContext.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -1373,7 +1373,7 @@ public class DebugFrame {
 		});
 	}
 
-	private void createMaterialPane(AppContext appContext) {
+	private void createMaterialPane(AppContext scriptEngine) {
 		DebugFrame debugFrame = this;
 		MaterialFactory materialFactory = MaterialFactory.getInstance();
 		TableModel materialDataModel = new AbstractTableModel() {
@@ -1414,7 +1414,7 @@ public class DebugFrame {
 	        	materialViewFrame.getContentPane().removeAll();
 	        	materialViewFrame.pack();
 	        	materialViewFrame.setSize(600, 600);
-	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, appContext, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
+	        	WebScrollPane scrollPane = new WebScrollPane(new MaterialView(debugFrame, scriptEngine, (Material) materialTable.getValueAt(materialTable.getSelectedRow(), 1)));
 	        	scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 	        	materialViewFrame.add(scrollPane);
 	            materialViewFrame.setVisible(true);
@@ -1464,10 +1464,10 @@ public class DebugFrame {
 		};
 	}
 
-	private void addSceneObjects(AppContext appContext) {
+	private void addSceneObjects(AppContext scriptEngine) {
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene");
 		
-		for (Entity e : appContext.getScene().getEntities()) {
+		for (Entity e : scriptEngine.getScene().getEntities()) {
 			DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode(e.getName());
 			
 			Material material = e.getComponent(ModelComponent.class).getMaterial();
@@ -1487,7 +1487,7 @@ public class DebugFrame {
 		
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, appContext, this, entityViewFrame);
+		new SetSelectedListener(scene, scriptEngine, this, entityViewFrame);
 	}
 
 	private void addCheckStateListener(WebCheckBoxTree<DefaultMutableTreeNode> scene) {
@@ -1515,7 +1515,7 @@ public class DebugFrame {
 		});
 	}
 
-	private void addProbes(AppContext appContext) {
+	private void addProbes(AppContext scriptEngine) {
 		List<EnvironmentProbe> probes = EnvironmentProbeFactory.getInstance().getProbes();
 		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Probes (" + probes.size() + ")");
 		for (EnvironmentProbe environmentProbe : probes) {
@@ -1523,21 +1523,21 @@ public class DebugFrame {
 		}
 		this.probes = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(this.probes);
-		new SetSelectedListener(this.probes, appContext, this, probeViewFrame);
+		new SetSelectedListener(this.probes, scriptEngine, this, probeViewFrame);
 
 		tabbedPane.remove(probesPane);
 		probesPane = new JScrollPane(this.probes);
 		tabbedPane.addTab("Probes", probesPane);
 	}
 	
-	private void addOctreeSceneObjects(AppContext appContext) {
-		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + appContext.getScene().getEntities().size() + " entities)");
+	private void addOctreeSceneObjects(AppContext scriptEngine) {
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Scene (" + scriptEngine.getScene().getEntities().size() + " entities)");
 		
-		addOctreeChildren(top, appContext.getScene().getOctree().rootNode);
-		System.out.println("Added " + appContext.getScene().getEntities().size());
+		addOctreeChildren(top, scriptEngine.getScene().getOctree().rootNode);
+		System.out.println("Added " + scriptEngine.getScene().getEntities().size());
 		scene = new WebCheckBoxTree<DefaultMutableTreeNode>(top);
 		addCheckStateListener(scene);
-		new SetSelectedListener(scene, appContext, this, entityViewFrame);
+		new SetSelectedListener(scene, scriptEngine, this, entityViewFrame);
 		scene.setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(scene) {
             private JLabel lblNull = new JLabel("");
 

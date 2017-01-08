@@ -2,7 +2,7 @@ package renderer.drawstrategy.extensions;
 
 import camera.Camera;
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.PerEntityInfo;
 import engine.Transform;
 import engine.model.Entity;
@@ -159,7 +159,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean entityOrDirectionalLightHasMoved = renderExtract.anEntityHasMoved || directionalLightMoved;
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        Scene scene = AppContext.getInstance().getScene();
+        Scene scene = Engine.getInstance().getScene();
         int bounces = 4;
         Integer lightInjectedFramesAgo = (Integer) firstPassResult.getProperty("vctLightInjectedFramesAgo");
         if(lightInjectedFramesAgo == null) {

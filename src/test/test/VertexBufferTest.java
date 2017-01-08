@@ -1,10 +1,8 @@
 package test;
 
 import component.ModelComponent;
-import engine.AppContext;
 import engine.graphics.query.GLTimerQuery;
 import engine.model.DataChannels;
-import engine.model.OBJLoader;
 import engine.model.VertexBuffer;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -15,7 +13,6 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import renderer.OpenGLContext;
-import renderer.Renderer;
 
 import java.util.EnumSet;
 

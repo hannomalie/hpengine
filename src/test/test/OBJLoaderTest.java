@@ -1,6 +1,6 @@
 package test;
 
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Face;
 import engine.model.Model;
 import engine.model.OBJLoader;
@@ -18,7 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class OBJLoaderTest extends TestWithAppContext {
+public class OBJLoaderTest extends TestWithEngine {
 
 	@Test
 	public void parseVertex() {
@@ -62,7 +62,7 @@ public class OBJLoaderTest extends TestWithAppContext {
 
     @Test
     public void loadsMaterial() throws Exception {
-        List<Model> sibenik = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        List<Model> sibenik = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sibenik.obj"));
         Material material = sibenik.get(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
@@ -74,7 +74,7 @@ public class OBJLoaderTest extends TestWithAppContext {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-        List<Model> sponza = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/sponza.obj"));
+        List<Model> sponza = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}

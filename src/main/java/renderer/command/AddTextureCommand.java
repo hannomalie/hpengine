@@ -1,7 +1,6 @@
 package renderer.command;
 
-import engine.AppContext;
-import renderer.RenderExtract;
+import engine.Engine;
 import renderer.command.AddTextureCommand.TextureResult;
 import texture.Texture;
 import texture.TextureFactory;
@@ -21,7 +20,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	}
 	
 	@Override
-	public TextureResult execute(AppContext appContext) {
+	public TextureResult execute(Engine engine) {
 		Texture texture = null;
 		try {
 			texture = TextureFactory.getInstance().getTexture(path, srgba);

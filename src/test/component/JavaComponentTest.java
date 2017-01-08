@@ -4,11 +4,11 @@ import engine.model.Entity;
 import engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import test.TestWithAppContext;
+import test.TestWithEngine;
 
 import java.io.IOException;
 
-public class JavaComponentTest extends TestWithAppContext {
+public class JavaComponentTest extends TestWithEngine {
 
     @Test
     public void testCompilation() {
@@ -37,6 +37,6 @@ public class JavaComponentTest extends TestWithAppContext {
         entity.addComponent(new JavaComponent("public class Bla implements engine.lifecycle.LifeCycle {" +
                 "public void update(float seconds) { System.out.println(\"blubb\"); }" +
                 "}"));
-        appContext.getScene().add(entity);
+        engine.getScene().add(entity);
     }
 }

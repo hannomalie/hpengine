@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 import static org.junit.Assert.*;
 import static texture.Texture.UploadState.*;
 
-public class TextureTest extends TestWithAppContext {
+public class TextureTest extends TestWithEngine {
 
     private static final Logger LOGGER = Logger.getLogger(TextureTest.class.getName());
 

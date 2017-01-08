@@ -15,7 +15,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import component.ModelComponent;
 import component.PhysicsComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.Transform;
 import engine.model.Entity;
 import event.EntityAddedEvent;
@@ -45,12 +45,12 @@ import java.util.logging.Logger;
 public class EntityView extends WebPanel {
 
 	protected Entity entity;
-	protected AppContext appContext;
+	protected Engine engine;
 	protected WebFormattedTextField nameField;
 	protected Renderer renderer;
 
-	public EntityView(AppContext appContext, Entity entity) {
-		this.appContext = appContext;
+	public EntityView(Engine engine, Entity entity) {
+		this.engine = engine;
         this.renderer = Renderer.getInstance();
 		setUndecorated(true);
 		this.setSize(600, 700);
@@ -128,14 +128,14 @@ public class EntityView extends WebPanel {
                 if(entity.getComponentOption(ModelComponent.class) != null) {
                     radius = entity.getComponent(ModelComponent.class).getBoundingSphereRadius();
                 }
-                PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addBallPhysicsComponent(entity, radius, 0.0f);
+                PhysicsComponent physicsComponent = Engine.getInstance().getPhysicsFactory().addBallPhysicsComponent(entity, radius, 0.0f);
             });
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
             if(entity.getComponentOption(ModelComponent.class).isPresent()) {
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
-                    PhysicsComponent physicsComponent = AppContext.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
+                    PhysicsComponent physicsComponent = Engine.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
                     physicsComponent.init();
                     physicsComponent.getRigidBody().setMassProps(0, new javax.vecmath.Vector3f(0,0,0));
                 });
@@ -176,7 +176,7 @@ public class EntityView extends WebPanel {
         WebButton removeEntityButton = new WebButton("Remove Entity");
         removeEntityButton.addActionListener(e -> {
             CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
-                return new RemoveEntityCommand(entity).execute(appContext);
+                return new RemoveEntityCommand(entity).execute(engine);
             });
 
             Result result = null;
@@ -191,7 +191,7 @@ public class EntityView extends WebPanel {
                 showNotification(NotificationIcon.error, "Not able to remove entity");
             } else {
                 showNotification(NotificationIcon.plus, "Entity removed");
-                AppContext.getEventBus().post(new EntityAddedEvent());
+                Engine.getEventBus().post(new EntityAddedEvent());
             }
         });
         webComponentPanel.addElement(removeEntityButton);
@@ -207,7 +207,7 @@ public class EntityView extends WebPanel {
                 WebComboBox cb = (WebComboBox) e.getSource();
                 Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
                 entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-                AppContext.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
+                Engine.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own event type
             });
             webComponentPanel.addElement(materialSelect);
 
@@ -248,10 +248,10 @@ public class EntityView extends WebPanel {
             webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
 
         } else {
-            WebComboBox parentSelect = new WebComboBox(new Vector<>(appContext.getScene().getEntities()));
+            WebComboBox parentSelect = new WebComboBox(new Vector<>(engine.getScene().getEntities()));
             parentSelect.addActionListener(e ->{
                 int index = parentSelect.getSelectedIndex();
-                Entity newParent = appContext.getScene().getEntities().get(index);
+                Entity newParent = engine.getScene().getEntities().get(index);
                 entity.setParent(newParent);
             });
             webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));

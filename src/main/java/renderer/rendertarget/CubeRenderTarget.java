@@ -2,20 +2,12 @@ package renderer.rendertarget;
 
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
-import engine.AppContext;
 import org.lwjgl.opengl.*;
-import renderer.Renderer;
-import renderer.constants.GlTextureTarget;
-import texture.CubeMap;
 import texture.TextureFactory;
 import util.Util;
 
 import org.lwjgl.BufferUtils;
-
-import static renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
 
 public class CubeRenderTarget extends RenderTarget {
 
@@ -58,8 +50,8 @@ public class CubeRenderTarget extends RenderTarget {
 	}
 //
 //	public void setCubeMapFace(int index) {
-//		AppContext.getInstance().getRenderer().getOpenGLContext().clearDepthBuffer();
-//		AppContext.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
+//		Engine.getInstance().getRenderer().getOpenGLContext().clearDepthBuffer();
+//		Engine.getInstance().getRenderer().getOpenGLContext().bindTexture(TEXTURE_CUBE_MAP, cubeMap.getTextureID());
 //		GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X + index, cubeMap.getTextureID(), 0);
 //	}
 

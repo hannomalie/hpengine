@@ -2,16 +2,13 @@ package scene;
 
 import component.ModelComponent;
 import container.EntitiesContainer;
-import container.Octree;
 import container.SimpleContainer;
-import engine.AppContext;
+import engine.Engine;
 import engine.lifecycle.LifeCycle;
 import engine.model.Entity;
-import engine.model.Model;
 import event.LightChangedEvent;
 import event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import renderer.OpenGLContext;
@@ -73,7 +70,7 @@ public class Scene implements LifeCycle, Serializable {
 		}
 		initLights();
 		initialized = true;
-		AppContext.getEventBus().post(new SceneInitEvent());
+		Engine.getEventBus().post(new SceneInitEvent());
 	}
 	private void initLights() {
 		for(PointLight pointLight : pointLights) {
@@ -189,7 +186,7 @@ public class Scene implements LifeCycle, Serializable {
     }
 
 	public static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/scenes/";
+		return Engine.WORKDIR_NAME + "/assets/scenes/";
 	}
 	public void addAll(List<Entity> entities) {
 //		initializationWrapped(() -> {
@@ -277,7 +274,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	public void addPointLight(PointLight pointLight) {
 		pointLights.add(pointLight);
-		AppContext.getEventBus().post(new LightChangedEvent());
+		Engine.getEventBus().post(new LightChangedEvent());
 	}
 
 	public void addTubeLight(TubeLight tubeLight) {

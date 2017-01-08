@@ -3,7 +3,7 @@ package util.gui.structure;
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
 import container.EntitiesContainer;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import util.gui.DebugFrame;
 import util.gui.SetSelectedListener;
@@ -30,7 +30,7 @@ public class SceneTree extends WebCheckBoxTree {
         super(new DefaultMutableTreeNode("Scene"));
         addOctreeSceneObjects();
         addCheckStateChangeListener(new SetVisibilityCheckStateListener());
-        AppContext.getEventBus().register(this);
+        Engine.getEventBus().register(this);
     }
 
     public void reload() {
@@ -43,18 +43,18 @@ public class SceneTree extends WebCheckBoxTree {
     }
 
     private DefaultMutableTreeNode addOctreeSceneObjects() {
-        AppContext appContext = AppContext.getInstance();
+        Engine engine = Engine.getInstance();
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
 
-        if(appContext.getScene() != null) {
-            spanTree(top, appContext.getScene().getEntitiesContainer());
-            LOGGER.info("Added " + appContext.getScene().getEntities().size());
+        if(engine.getScene() != null) {
+            spanTree(top, engine.getScene().getEntitiesContainer());
+            LOGGER.info("Added " + engine.getScene().getEntities().size());
         } else {
             LOGGER.info("Scene is currently null");
         }
         if(selectionListener == null) {
-            selectionListener = new SetSelectedListener(this, appContext);
+            selectionListener = new SetSelectedListener(this, engine);
         }
         setCheckBoxTreeCellRenderer(new WebCheckBoxTreeCellRenderer(this) {
             private JLabel lblNull = new JLabel("");

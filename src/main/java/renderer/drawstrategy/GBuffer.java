@@ -1,16 +1,14 @@
 package renderer.drawstrategy;
 
 import config.Config;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
 import engine.model.OBJLoader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import renderer.DeferredRenderer;
@@ -103,7 +101,7 @@ public class GBuffer {
 	public void init() {
 		probeBox = null;
 		try {
-			probeBox = new OBJLoader().loadTexturedModel(new File(AppContext.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
+			probeBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
 			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);

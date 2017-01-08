@@ -2,7 +2,7 @@ package texture;
 
 import ddsutil.DDSUtil;
 import ddsutil.ImageRescaler;
-import engine.AppContext;
+import engine.Engine;
 import event.TexturesChangedEvent;
 import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
@@ -266,7 +266,7 @@ public class Texture implements Serializable, Reloadable {
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
             setUploaded();
-            AppContext.getEventBus().post(new TexturesChangedEvent());
+            Engine.getEventBus().post(new TexturesChangedEvent());
         };
 
         TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
@@ -454,7 +454,7 @@ public class Texture implements Serializable, Reloadable {
 	}
 	
 	public static String getDirectory() {
-		return AppContext.WORKDIR_NAME + "/assets/textures/";
+		return Engine.WORKDIR_NAME + "/assets/textures/";
 	}
 	
 	public String getPath() {
@@ -629,7 +629,7 @@ public class Texture implements Serializable, Reloadable {
                 e.printStackTrace();
                 LOGGER.severe("Texture not found: " + path + ". Default texture returned...");
             }
-            AppContext.getEventBus().post(new TexturesChangedEvent());
+            Engine.getEventBus().post(new TexturesChangedEvent());
         });
         try {
             // TODO: Check out why this is necessary

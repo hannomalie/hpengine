@@ -1,7 +1,7 @@
 package renderer.command;
 
 import component.ModelComponent;
-import engine.AppContext;
+import engine.Engine;
 import engine.model.Entity;
 import engine.model.EntityFactory;
 import engine.model.Model;
@@ -25,7 +25,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
         this.name = name;
     }
 
-    public EntityListResult execute(AppContext appContext) {
+    public EntityListResult execute(Engine engine) {
         EntityListResult result = new EntityListResult();
         try {
             List<Model> models = new OBJLoader().loadTexturedModel(file);
