@@ -189,7 +189,7 @@ public class OBJLoader {
         String[] twoStrings = line.split(" ");
 
         String fileName = twoStrings[1];
-        String path = f.getParent() + "\\";
+        String path = f.getParent() + "/";
         String finalPath = path + fileName;
 
         BufferedReader materialFileReader = null;

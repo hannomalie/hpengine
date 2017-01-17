@@ -282,7 +282,7 @@ public class DebugFrame {
             Customizer<WebFileChooser> customizer = arg0 -> arg0.setFileFilter(new FileNameExtensionFilter("HP scenes", "hpscene"));
 
             sceneLoadMenuItem.addActionListener(e -> {
-                File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\scenes\\", customizer);
+                File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/scenes/", customizer);
                 if(chosenFile != null) {
 
                     String sceneName = FilenameUtils.getBaseName(chosenFile.getAbsolutePath());
@@ -521,7 +521,7 @@ public class DebugFrame {
         });
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
         loadMaterial.addActionListener(e -> {
-        	File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\materials\\", choser -> {
+        	File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/materials/", choser -> {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
@@ -551,7 +551,7 @@ public class DebugFrame {
         	textureAddMenuItem.addActionListener(e -> {
 
 				Customizer<WebFileChooser> customizer = arg0 -> {};
-				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
+				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
 						return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
@@ -578,7 +578,7 @@ public class DebugFrame {
         	textureSrgbaAddMenuItem.addActionListener(e -> {
 
 				Customizer<WebFileChooser> customizer = arg0 -> {};
-				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
+				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
 						return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
@@ -607,7 +607,7 @@ public class DebugFrame {
     		textureAddMenuItem.addActionListener(e -> {
 
 				Customizer<WebFileChooser> customizer = arg0 -> {};
-				File chosenFile = WebFileChooser.showOpenDialog(".\\hp\\assets\\models\\textures", customizer);
+				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
 					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
 						return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());

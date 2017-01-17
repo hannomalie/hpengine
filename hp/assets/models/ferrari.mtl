@@ -50,7 +50,7 @@ Ni 1.000000
 d 0.000000
 illum 2
 map_Kd C:\Users\Hanno\Downloads\a1ov50wjokqo-California\California\nodamage.tga
-map_d C:\\Users\\Hanno\\Downloads\\a1ov50wjokqo-California\\California\\nodamage.tga
+map_d C:/Users/Hanno/Downloads/a1ov50wjokqo-California/California/nodamage.tga
 
 newmtl black
 Ns 25.490196
@@ -158,7 +158,7 @@ Ni 1.000000
 d 0.000000
 illum 2
 map_Kd C:\Users\Hanno\Downloads\a1ov50wjokqo-California\California\lights.tga
-map_d C:\\Users\\Hanno\\Downloads\\a1ov50wjokqo-California\\California\\lights.tga
+map_d C:/Users/Hanno/Downloads/a1ov50wjokqo-California/California/lights.tga
 
 newmtl mirror
 Ns 13.725490

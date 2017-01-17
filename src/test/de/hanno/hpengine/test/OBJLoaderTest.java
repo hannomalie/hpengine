@@ -66,7 +66,7 @@ public class OBJLoaderTest extends TestWithEngine {
         Material material = sibenik.get(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
-        Assert.assertEquals("hp\\assets\\models\\textures\\KAMEN-stup", material.getMaterialInfo().maps.get(Material.MAP.DIFFUSE).getName());
+        Assert.assertEquals("hp/assets/models/textures/KAMEN-stup", material.getMaterialInfo().maps.get(Material.MAP.DIFFUSE).getName());
         Assert.assertEquals(1, material.getTextures().size());
     }
 	

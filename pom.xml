@@ -198,6 +198,21 @@
                             <generatePom>true</generatePom>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>weblaf-complete</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <groupId>de.sciss</groupId>
+                            <artifactId>weblaf</artifactId>
+                            <version>1.28</version>
+                            <packaging>jar</packaging>
+                            <file>${basedir}/libs/weblaf-complete-1.28.jar</file>
+                            <generatePom>true</generatePom>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

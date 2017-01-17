@@ -62,7 +62,7 @@ public class AddEntityView extends WebPanel {
 		};
 		
 		saveButton.addActionListener(e -> {
-			List<File> chosenFiles = WebFileChooser.showMultiOpenDialog(".\\hp\\assets\\models\\", customizer);
+			List<File> chosenFiles = WebFileChooser.showMultiOpenDialog("./hp/assets/models/", customizer);
 			if(chosenFiles != null) {
 				for (File chosenFile : chosenFiles) {
 					if (chosenFile != null) {

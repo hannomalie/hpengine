@@ -84,10 +84,10 @@ public class TextureFactory {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
         DeferredRenderer.exitOnGLError("After loadDefaultTexture");
-        lensFlareTexture = instance.getTexture("hp\\assets\\textures\\lens_flare_tex.jpg", true);
+        lensFlareTexture = instance.getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
         DeferredRenderer.exitOnGLError("After load lensFlareTexture");
         try {
-            cubeMap = instance.getCubeMap("hp\\assets\\textures\\skybox.png");
+            cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
             DeferredRenderer.exitOnGLError("After load cubemap");
             OpenGLContext.getInstance().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
@@ -174,7 +174,7 @@ public class TextureFactory {
     }
 
     public void loadDefaultTexture() {
-        String defaultTexturePath = "hp\\assets\\models\\textures\\gi_flag.png";
+        String defaultTexturePath = "hp/assets/models/textures/gi_flag.png";
         defaultTexture = getTexture(defaultTexturePath, true);
         try {
             defaultTextureAsBufferedImage = loadImage(defaultTexturePath);

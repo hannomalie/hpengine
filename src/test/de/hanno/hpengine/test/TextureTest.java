@@ -241,8 +241,8 @@ public class TextureTest extends TestWithEngine {
         }
         @Test
         public void testPathHandlingBackslashes() {
-            String fileName = "hp\\assets\\textures\\wood_diffuse.png";
-            Assert.assertEquals("hp\\assets\\textures\\wood_diffuse.dds", Texture.getFullPathAsDDS(fileName));
+            String fileName = "hp/assets/textures/wood_diffuse.png";
+            Assert.assertEquals("hp/assets/textures/wood_diffuse.dds", Texture.getFullPathAsDDS(fileName));
         }
         @Test
         public void testFilenameHandlingDDS() {
@@ -258,12 +258,12 @@ public class TextureTest extends TestWithEngine {
         public void testExistingDDS() {
             String fileName = "testfolder/stone_normal.png";
             File fileAsPNG = new File(fileName);
-            Assert.assertEquals("testfolder\\stone_normal.png", fileAsPNG.getPath());
+            Assert.assertEquals("testfolder/stone_normal.png", fileAsPNG.getPath());
             Assert.assertTrue("Missing: " + fileAsPNG.getAbsolutePath(), fileAsPNG.exists());
 
             File fileAsDDS = new File(Texture.getFullPathAsDDS(fileName));
             String absolutePathToDDS = fileAsDDS.getAbsolutePath();
-            Assert.assertEquals("testfolder\\stone_normal.dds", fileAsDDS.getPath());
+            Assert.assertEquals("testfolder/stone_normal.dds", fileAsDDS.getPath());
             Assert.assertTrue("Missing: " + absolutePathToDDS, fileAsDDS.exists());
         }
     }

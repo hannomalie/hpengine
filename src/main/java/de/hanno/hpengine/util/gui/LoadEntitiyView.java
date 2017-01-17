@@ -32,7 +32,7 @@ public class LoadEntitiyView extends WebPanel {
 			}
 		};
 		
-		List<File> chosenFiles = WebFileChooser.showMultiOpenDialog(".\\hp\\assets\\entities\\", customizer);
+		List<File> chosenFiles = WebFileChooser.showMultiOpenDialog("./hp/assets/entities/", customizer);
 		List<Entity> entitiesToAdd = new ArrayList();
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
