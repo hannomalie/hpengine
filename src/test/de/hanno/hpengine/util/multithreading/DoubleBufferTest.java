@@ -1,6 +1,5 @@
 package de.hanno.hpengine.util.multithreading;
 
-import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -68,33 +67,63 @@ public class DoubleBufferTest {
     }
 
     @Test
+    public void testPrepareSwapSinglethreaded() throws InterruptedException {
+        AtomicLong instanceA = new AtomicLong();
+        AtomicLong instanceB = new AtomicLong();
+        DoubleBuffer<AtomicLong> doubleBuffer = new DoubleBuffer(instanceA, instanceB);
+
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+        doubleBuffer.update();
+
+        Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
+    }
+    @Test
     public void testPrepareSwapMultithreaded() throws InterruptedException {
-        Object instanceA = new Object();
-        Object instanceB = new Object();
-        final AtomicLong swapCounter = new AtomicLong();
-        DoubleBuffer doubleBuffer = new DoubleBuffer(instanceA, instanceB) {
-            @Override
-            public void swap() {
-                swapCounter.getAndIncrement();
-                super.swap();
-            }
-        };
+        AtomicLong instanceA = new AtomicLong();
+        AtomicLong instanceB = new AtomicLong();
+        DoubleBuffer<AtomicLong> doubleBuffer = new DoubleBuffer(instanceA, instanceB);
+
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
 
         int threadCount = 6;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         for(int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
-                int counter = 100000;
+                int counter = 100;
                 for(int currentCounter = 0; currentCounter < counter; currentCounter++) {
-                    doubleBuffer.swap();
+                    doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+                    doubleBuffer.update();
                 }
             });
         }
 
         executorService.shutdown();
         executorService.awaitTermination(99, TimeUnit.DAYS);
-        Assert.assertEquals(instanceA, doubleBuffer.getCurrentReadState());
-        Assert.assertEquals(instanceB, doubleBuffer.getCurrentWriteState());
+        Assert.assertEquals(3+600, doubleBuffer.getCurrentReadState().get());
+        Assert.assertEquals(3+600, doubleBuffer.getCurrentWriteState().get());
     }
 
+    @Test
+    public void testReadBlockedSinglethreaded() throws InterruptedException {
+        AtomicLong instanceA = new AtomicLong();
+        AtomicLong instanceB = new AtomicLong();
+        DoubleBuffer<AtomicLong> doubleBuffer = new DoubleBuffer(instanceA, instanceB);
+
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+        doubleBuffer.update();
+        Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
+
+        doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
+        doubleBuffer.startRead();
+        Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
+        boolean updated = doubleBuffer.update();
+        Assert.assertFalse(updated);
+        doubleBuffer.stopRead();
+        updated = doubleBuffer.update();
+        Assert.assertTrue(updated);
+
+        Assert.assertEquals(2, doubleBuffer.getCurrentReadState().get());
+    }
 }
