@@ -1,9 +1,4 @@
-import engine.AppContext;
-import engine.lifecycle.LifeCycle;
-import event.EntityAddedEvent;
-import renderer.command.LoadModelCommand;
-
-import java.io.File;
+import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 
 public class Init implements LifeCycle {
 
@@ -13,11 +8,11 @@ public class Init implements LifeCycle {
     public void init() {
 
         try {
-            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(AppContext.WORKDIR_NAME + "/assets/models/cornellbox.obj"), "cornellbox").execute(AppContext.getInstance());
-            System.out.println("loaded entities : " + loaded.entities.size());
-            AppContext.getInstance().getScene().addAll(loaded.entities);
-            Thread.sleep(500);
-            AppContext.getEventBus().post(new EntityAddedEvent());
+//            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(Engine.WORKDIR_NAME + "/assets/models/bpcem_playground.obj"), "cornellbox").execute(Engine.getInstance());
+//            System.out.println("loaded entities : " + loaded.entities.size());
+//            Engine.getInstance().getScene().addAll(loaded.entities);
+//            Thread.sleep(500);
+//            Engine.getEventBus().post(new EntityAddedEvent());
             initialized = true;
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,0 +1,95 @@
+package de.hanno.hpengine.renderer;
+
+import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.model.CommandBuffer;
+import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
+import de.hanno.hpengine.engine.model.IndexBuffer;
+import de.hanno.hpengine.engine.model.VertexBuffer;
+import org.lwjgl.BufferUtils;
+import de.hanno.hpengine.renderer.constants.GlCap;
+import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.shader.OpenGLBuffer;
+import de.hanno.hpengine.shader.Program;
+import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Pipeline {
+
+    protected final List<DrawElementsIndirectCommand> commands = new ArrayList();
+    protected final IndexBuffer entityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(1000));
+    protected final CommandBuffer commandBuffer = new CommandBuffer(16000);
+    private final boolean useBackfaceCulling;
+    private final boolean useLineDrawingIfActivated;
+    private final boolean useFrustumCulling;
+
+    public Pipeline() {
+        this(true, true, true);
+    }
+
+    public Pipeline(boolean useFrustumCulling, boolean useBackFaceCulling, boolean useLineDrawingIfActivated) {
+        this.useFrustumCulling = useFrustumCulling;
+        this.useBackfaceCulling = useBackFaceCulling;
+        this.useLineDrawingIfActivated = useLineDrawingIfActivated;
+    }
+
+    public void prepareAndDraw(RenderExtract renderExtract, Program program, FirstPassResult firstPassResult) {
+        prepare(renderExtract);
+
+        draw(program, firstPassResult);
+    }
+
+    public void draw(Program program, FirstPassResult firstPassResult) {
+        GPUProfiler.start("Draw with indirect pipeline");
+        program.setUniform("entityIndex", 0);
+        program.setUniform("entityBaseIndex", 0);
+        program.setUniform("entityCount", commands.size());
+        program.setUniform("indirect", true);
+        commandBuffer.bind();
+        GPUProfiler.start("DrawInstancedIndirectBaseVertex");
+        if(Config.DRAWLINES_ENABLED && useLineDrawingIfActivated) {
+            if(useBackfaceCulling) { OpenGLContext.getInstance().disable(GlCap.CULL_FACE); }
+            VertexBuffer.drawLinesInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+        } else {
+            if(useBackfaceCulling) { OpenGLContext.getInstance().enable(GlCap.CULL_FACE); }
+            VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+        }
+        GPUProfiler.end();
+        ModelComponent.getGlobalIndexBuffer().unbind();
+
+        firstPassResult.verticesDrawn += verticesCount;
+        firstPassResult.entitiesDrawn += entitiesDrawn;
+        GPUProfiler.end();
+    }
+
+    int verticesCount = 0;
+    int entitiesDrawn = 0;
+    public void prepare(RenderExtract renderExtract) {
+        GPUProfiler.start("Preparing indirect pipeline");
+        verticesCount = 0;
+        entitiesDrawn = 0;
+        commands.clear();
+        ModelComponent.getGlobalIndexBuffer().bind();
+        for (PerEntityInfo info : renderExtract.perEntityInfos()) {
+            if(useFrustumCulling && !info.isVisibleForCamera()) {
+                continue;
+            }
+            commands.add(info.getDrawElementsIndirectCommand());
+            verticesCount += info.getVertexCount();
+            if (info.getVertexCount() > 0) {
+                entitiesDrawn++;
+            }
+        }
+        entityOffsetBuffer.put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
+        commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
+        GPUProfiler.end();
+    }
+
+    public OpenGLBuffer getEntityOffsetBuffer() {
+        return entityOffsetBuffer;
+    }
+}

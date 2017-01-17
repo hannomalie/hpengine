@@ -18,7 +18,7 @@
  *   without specific prior written permission.
  *
  * This class is the java implementation of
- * the enhanced version of Ogre engine Lod generator, by Péter Szücs, originally
+ * the enhanced version of Ogre de.hanno.hpengine.engine Lod generator, by Péter Szücs, originally
  * based on Stan Melax "easy mesh simplification". The MIT licenced C++ source
  * code can be found here
  * https://github.com/worldforge/ember/tree/master/src/components/ogre/lod
@@ -47,7 +47,7 @@
  */
 package jme3tools.optimize;
 
-import component.ModelComponent;
+import de.hanno.hpengine.component.ModelComponent;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * arbitrary mesh. It computes a collapse cost for each vertex and each edges.
  * The higher the cost the most likely collapsing the edge or the vertex will
  * produce artifacts on the mesh. <p>This class is the java implementation of
- * the enhanced version of Ogre engine Lod generator, by Péter Szücs, originally
+ * the enhanced version of Ogre de.hanno.hpengine.engine Lod generator, by Péter Szücs, originally
  * based on Stan Melax "easy mesh simplification". The MIT licenced C++ source
  * code can be found here
  * https://github.com/worldforge/ember/tree/master/src/components/ogre/lod more
@@ -487,7 +487,7 @@ public class LodGenerator {
             }
         }
 
-        // check for texture seam ripping
+        // check for de.hanno.hpengine.texture seam ripping
         if (src.isSeam) {
             if (!dest.isSeam) {
                 cost += meshBoundingSphereRadius;
