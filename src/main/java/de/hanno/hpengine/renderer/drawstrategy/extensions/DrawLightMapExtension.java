@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.ARBClearTexture;
 import org.lwjgl.opengl.GL11;
@@ -12,7 +13,6 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Pipeline;
-import de.hanno.hpengine.renderer.RenderExtract;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
@@ -95,15 +95,15 @@ public class DrawLightMapExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
-        if(DRAW_LIGHTMAP && (renderExtract.directionalLightNeedsShadowMapRender || currentCounter < count)) {
+    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+        if(DRAW_LIGHTMAP && (renderState.directionalLightNeedsShadowMapRender || currentCounter < count)) {
             if(currentCounter >= count) {
                 currentSource = currentTarget;
                 currentTarget = currentTarget == 4 ? 5 : 4;
                 currentCounter = 0;
             }
             if(currentCounter == 0) {
-                drawLightmap(renderExtract, firstPassResult);
+                drawLightmap(renderState, firstPassResult);
             }
 
 
@@ -152,7 +152,7 @@ public class DrawLightMapExtension implements RenderExtension {
         }
     }
 
-    public void drawLightmap(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void drawLightmap(RenderState renderState, FirstPassResult firstPassResult) {
         lightMapTarget.use(false);
         ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(currentTarget), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
 
@@ -168,12 +168,12 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
         lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
 
-        lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderExtract.directionalLight.getViewProjectionMatrixAsBuffer());
+        lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-        lightMapProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
-        lightMapProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
-        lightMapProgram.setUniform("lightDirection", renderExtract.directionalLight.getDirection());
-        lightMapProgram.setUniform("lightDiffuse", renderExtract.directionalLight.getColor());
+        lightMapProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+        lightMapProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+        lightMapProgram.setUniform("lightDirection", renderState.directionalLight.getDirection());
+        lightMapProgram.setUniform("lightDiffuse", renderState.directionalLight.getColor());
         lightMapProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
         lightMapProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
         lightMapProgram.setUniform("width", lightMapTarget.getWidth());
@@ -182,14 +182,14 @@ public class DrawLightMapExtension implements RenderExtension {
         GPUProfiler.start("Actual draw entities lightmap");
         if (SimpleDrawStrategy.INDIRECT_DRAWING) {
             if(true) {
-                pipeline.prepareAndDraw(renderExtract, lightMapProgram, firstPassResult);
+                pipeline.prepareAndDraw(renderState, lightMapProgram, firstPassResult);
             } else {
-                pipeline.draw(lightMapProgram, firstPassResult);
+                pipeline.draw(renderState, lightMapProgram, firstPassResult);
             }
         } else {
-            for (PerEntityInfo info : renderExtract.perEntityInfos()) {
+            for (PerEntityInfo info : renderState.perEntityInfos()) {
                 OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
-                int currentVerticesCount = DrawStrategy.draw(info);
+                int currentVerticesCount = DrawStrategy.draw(renderState, info);
                 firstPassResult.verticesDrawn += currentVerticesCount;
                 if (currentVerticesCount > 0) {
                     firstPassResult.entitiesDrawn++;
@@ -218,7 +218,7 @@ public class DrawLightMapExtension implements RenderExtension {
     }
 
     @Override
-    public void renderSecondPassFullScreen(RenderExtract renderExtract, SecondPassResult secondPassResult) {
+    public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
 
         GPUProfiler.start("Evaluate lightmap");
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
@@ -234,9 +234,9 @@ public class DrawLightMapExtension implements RenderExtension {
         OpenGLContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
 
         lightmapEvaluationProgram.use();
-        lightmapEvaluationProgram.setUniform("eyePosition", renderExtract.camera.getWorldPosition());
-        lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
-        lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
+        lightmapEvaluationProgram.setUniform("eyePosition", renderState.camera.getWorldPosition());
+        lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+        lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
 
         lightmapEvaluationProgram.setUniform("handle", TextureFactory.getInstance().getCubeMap().getHandle());

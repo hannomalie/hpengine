@@ -195,9 +195,9 @@ public class DeferredRenderer implements Renderer {
 	// I need this to force probe redrawing after de.hanno.hpengine.engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public DrawResult draw(RenderExtract renderExtract) {
+	public DrawResult draw(RenderState renderState) {
 		GPUProfiler.start("Frame");
-        DrawResult drawResult = simpleDrawStrategy.draw(renderExtract);
+        DrawResult drawResult = simpleDrawStrategy.draw(renderState);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
 //            drawToQuad(gBuffer.getHalfScreenBuffer().getRenderedTexture(0), QuadVertexBuffer.getDebugBuffer());
@@ -426,7 +426,7 @@ public class DeferredRenderer implements Renderer {
 
 
 	@Override
-	public void executeRenderProbeCommands(RenderExtract extract) {
+	public void executeRenderProbeCommands(RenderState extract) {
 		int counter = 0;
 		
 		renderProbeCommandQueue.takeNearest(Engine.getInstance().getActiveCamera()).ifPresent(command -> {

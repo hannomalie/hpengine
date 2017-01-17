@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
+import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.shader.Program;
@@ -39,10 +39,10 @@ public class EnvironmentProbe extends Entity {
 		super.init();
 	}
 
-	public void draw(RenderExtract extract) {
+	public void draw(RenderState extract) {
 		draw(false, extract);
 	}
-	public void draw(boolean urgent, RenderExtract extract) {
+	public void draw(boolean urgent, RenderState extract) {
 		sampler.drawCubeMap(urgent, extract);
 	}
 	

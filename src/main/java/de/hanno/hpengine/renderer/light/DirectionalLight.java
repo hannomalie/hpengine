@@ -107,7 +107,7 @@ public class DirectionalLight extends Entity {
         super.update(seconds);
 	}
 
-//	public void drawAsMesh(RenderExtract extract, Camera de.hanno.hpengine.camera) {
+//	public void drawAsMesh(RenderState extract, Camera de.hanno.hpengine.camera) {
 //		getComponentOption(ModelComponent.class).ifPresent(de.hanno.hpengine.component -> {
 //			de.hanno.hpengine.component.draw(extract, de.hanno.hpengine.camera, getTransform().getTransformationBuffer(), 0);
 //		});

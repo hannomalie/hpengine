@@ -50,7 +50,7 @@ public class AreaLight extends Camera {
 		return String.format("AreaLight_%d", System.currentTimeMillis());
 	}
 
-//	public void drawAsMesh(Camera de.hanno.hpengine.camera, RenderExtract extract) {
+//	public void drawAsMesh(Camera de.hanno.hpengine.camera, RenderState extract) {
 //		getComponentOption(ModelComponent.class).ifPresent(de.hanno.hpengine.component -> {
 //			de.hanno.hpengine.component.draw(extract, de.hanno.hpengine.camera, getTransform().getTransformationBuffer(), 0);
 //		});
@@ -61,7 +61,7 @@ public class AreaLight extends Camera {
 //        }
 //	}
 
-//	public void draw(Camera de.hanno.hpengine.camera, RenderExtract extract) {
+//	public void draw(Camera de.hanno.hpengine.camera, RenderState extract) {
 //		getComponentOption(ModelComponent.class).ifPresent(de.hanno.hpengine.component -> {
 //			de.hanno.hpengine.component.draw(extract, de.hanno.hpengine.camera, getTransform().getTransformationBuffer(), 0);
 //		});

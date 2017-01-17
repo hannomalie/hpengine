@@ -6,9 +6,12 @@ import de.hanno.hpengine.container.SimpleContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.IndexBuffer;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.LightChangedEvent;
 import de.hanno.hpengine.event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import de.hanno.hpengine.renderer.OpenGLContext;
@@ -22,12 +25,24 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static de.hanno.hpengine.component.ModelComponent.DEFAULTCHANNELS;
 
 public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
-	
+
+	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
+
+	private static Object globalLock = new Object();
+	public volatile VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);;
+	public volatile IndexBuffer indexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
+	public volatile AtomicInteger currentBaseVertex = new AtomicInteger();
+	public volatile AtomicInteger currentIndexOffset = new AtomicInteger();
+
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
@@ -55,7 +70,7 @@ public class Scene implements LifeCycle, Serializable {
         entityContainer = new SimpleContainer();
 		entityContainer.init();
         entities.forEach(entity -> entity.init());
-        entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene()));
+        entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
 		addAll(entities);
 		for (ProbeData data : probes) {
 			OpenGLContext.getInstance().execute(() -> {
@@ -189,22 +204,18 @@ public class Scene implements LifeCycle, Serializable {
 		return Engine.WORKDIR_NAME + "/assets/scenes/";
 	}
 	public void addAll(List<Entity> entities) {
-//		initializationWrapped(() -> {
-			entityContainer.insert(entities);
-            entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene()));
+		entityContainer.insert(entities);
+		entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
         calculateMinMax(entities);
 		updateCache = true;
-//			return null;
-//		});
 	}
 	public void add(Entity entity) {
-//		initializationWrapped(() -> {
-			entityContainer.insert(entity.getAllChildrenAndSelf());
-            entity.getComponents().values().forEach(c -> c.registerInScene());
+		entityContainer.insert(entity.getAllChildrenAndSelf());
+		entity.getComponents().values().forEach(c -> {
+			c.registerInScene(Scene.this);
+		});
         calculateMinMax(entities);
 		updateCache = true;
-//			return null;
-//		});
 	}
 	public void update(float seconds) {
 		Iterator<PointLight> pointLightsIterator = pointLights.iterator();
@@ -316,5 +327,21 @@ public class Scene implements LifeCycle, Serializable {
 			}
 			updateCache = false;
 		}
+	}
+
+	public AtomicInteger getCurrentBaseVertex() {
+		return currentBaseVertex;
+	}
+
+	public AtomicInteger getCurrentIndexOffset() {
+		return currentIndexOffset;
+	}
+
+	public VertexBuffer getVertexBuffer() {
+		return vertexBuffer;
+	}
+
+	public IndexBuffer getIndexBuffer() {
+		return indexBuffer;
 	}
 }

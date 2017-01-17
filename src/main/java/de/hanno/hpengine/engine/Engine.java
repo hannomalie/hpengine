@@ -15,6 +15,7 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
+import de.hanno.hpengine.renderer.RenderState;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -24,7 +25,6 @@ import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
@@ -63,7 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-public class Engine implements Extractor<RenderExtract> {
+public class Engine implements Extractor<RenderState> {
     public static int WINDOW_WIDTH = Config.WIDTH;
     public static int WINDOW_HEIGHT = Config.HEIGHT;
 
@@ -78,10 +78,10 @@ public class Engine implements Extractor<RenderExtract> {
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
     private volatile boolean sceneInitiallyDrawn;
-    private RenderExtract currentRenderExtract = new RenderExtract();
-    private RenderExtract nextExtract = new RenderExtract();
+    private RenderState currentRenderState = new RenderState();
+    private RenderState nextExtract = new RenderState();
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
-    private volatile RenderExtract currentExtract;
+    private volatile RenderState currentExtract;
     private final FPSCounter updateFpsCounter = new FPSCounter();
     public static boolean MULTITHREADED_RENDERING = true;
 
@@ -568,7 +568,7 @@ public class Engine implements Extractor<RenderExtract> {
 //            LOGGER.fine("Waited ms for renderer to complete: " + blockedMs);
 
             OpenGLContext.getInstance().execute(() -> {
-                RenderExtract extractCopy = new RenderExtract(currentExtract);
+                RenderState extractCopy = new RenderState(currentExtract);
                 Renderer.getInstance().startFrame();
                 latestDrawResult = Renderer.getInstance().draw(extractCopy);
                 latestGPUProfilingResult = Renderer.getInstance().endFrame();
@@ -635,8 +635,8 @@ public class Engine implements Extractor<RenderExtract> {
     }
 
     @Override
-    public RenderExtract extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos, boolean entityHasMoved) {
-        return new RenderExtract().init(extractedCamera, directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
+    public RenderState extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos, boolean entityHasMoved) {
+        return new RenderState().init(scene.getVertexBuffer(), scene.getIndexBuffer(), extractedCamera, directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
     }
 
     JFrame frame;
@@ -725,10 +725,10 @@ public class Engine implements Extractor<RenderExtract> {
 
 //    TODO: Use this
     private void switchExtracts() {
-        synchronized (currentRenderExtract) {
+        synchronized (currentRenderState) {
             synchronized (nextExtract) {
-                RenderExtract temp = currentRenderExtract;
-                currentRenderExtract = nextExtract;
+                RenderState temp = currentRenderState;
+                currentRenderState = nextExtract;
                 nextExtract = temp;
             }
         }

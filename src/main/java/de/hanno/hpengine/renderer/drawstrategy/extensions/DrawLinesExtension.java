@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.Transform;
 import org.lwjgl.util.vector.ReadableVector3f;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
+import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.shader.Program;
@@ -28,7 +28,7 @@ public class DrawLinesExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
 
         if(Config.DRAWLINES_ENABLED) {
             OpenGLContext openGLContext = OpenGLContext.getInstance();
@@ -38,16 +38,16 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.use();
             linesProgram.setUniform("diffuseColor", new Vector3f(0,1,0));
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-            linesProgram.setUniformAsMatrix4("viewMatrix", renderExtract.camera.getViewMatrixAsBuffer());
-            linesProgram.setUniformAsMatrix4("projectionMatrix", renderExtract.camera.getProjectionMatrixAsBuffer());
+            linesProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+            linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
 
-            for (PerEntityInfo entity : renderExtract.perEntityInfos()) {
+            for (PerEntityInfo entity : renderState.perEntityInfos()) {
                 batchAABBLines(entity.getMinWorld(), entity.getMaxWorld());
             }
             Renderer.getInstance().drawLines(linesProgram);
 
             linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderExtract.camera, linesProgram);
+            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;

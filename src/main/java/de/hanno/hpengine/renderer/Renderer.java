@@ -13,7 +13,7 @@ public interface Renderer extends LifeCycle {
 
     default void destroy() {}
 
-    DrawResult draw(RenderExtract renderExtract);
+    DrawResult draw(RenderState renderState);
 
     void update(float seconds);
 
@@ -35,7 +35,7 @@ public interface Renderer extends LifeCycle {
 
     GBuffer getGBuffer();
 
-    void executeRenderProbeCommands(RenderExtract extract);
+    void executeRenderProbeCommands(RenderState extract);
 
     void drawToQuad(int texture);
 

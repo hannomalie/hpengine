@@ -42,7 +42,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		return color;
 	}
 
-//	public void drawAsMesh(Camera de.hanno.hpengine.camera, RenderExtract extract) {
+//	public void drawAsMesh(Camera de.hanno.hpengine.camera, RenderState extract) {
 //		if(!isInitialized()) { return; }
 //		getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
 //			modelComponent.draw(extract, de.hanno.hpengine.camera, getTransform().getTransformationBuffer(), 0);

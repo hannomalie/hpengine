@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.Transformable;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.MaterialChangedEvent;
 import de.hanno.hpengine.container.EntitiesContainer;
+import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -20,7 +21,6 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
@@ -150,11 +150,11 @@ public class EnvironmentSampler extends Camera {
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}
 
-	public void drawCubeMap(boolean urgent, RenderExtract extract) {
+	public void drawCubeMap(boolean urgent, RenderState extract) {
 		drawCubeMapSides(urgent, extract);
 	}
 	
-	private void drawCubeMapSides(boolean urgent, RenderExtract extract) {
+	private void drawCubeMapSides(boolean urgent, RenderState extract) {
         Scene scene = Engine.getInstance().getScene();
         if(scene == null) { return; }
 
@@ -227,7 +227,7 @@ public class EnvironmentSampler extends Camera {
 			} else {
 				EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
                 OpenGLContext.getInstance().clearDepthAndColorBuffer();
-				drawEntities(cubeMapProgram, movedVisibles, getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
+				drawEntities(extract, cubeMapProgram, movedVisibles, getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -287,7 +287,7 @@ public class EnvironmentSampler extends Camera {
 		EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(cubeMapProgram);
 	}
 
-	private void drawEntities(Program program, List<Entity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+	private void drawEntities(RenderState renderState, Program program, List<Entity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
@@ -303,13 +303,13 @@ public class EnvironmentSampler extends Camera {
 				program.setUniform("roughness", modelComponent.getMaterial().getRoughness());
 				modelComponent.getMaterial().setTexturesActive(program);
 
-                DrawStrategy.draw(new PerEntityInfo(null, program, Engine.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
+                DrawStrategy.draw(renderState, new PerEntityInfo(null, program, Engine.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
 			});
 		}
 		GPUProfiler.end();
 	}
 	
-	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities, RenderExtract extract) {
+	void drawFirstPass(int sideIndex, Camera camera, List<Entity> entities, RenderState extract) {
 		camera.update(0.1f);
 //		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().getFrameBufferLocation());
 //		EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().resetAttachments();
@@ -344,7 +344,7 @@ public class EnvironmentSampler extends Camera {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
                         new PerEntityInfo(null, firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                DrawStrategy.draw(perEntityInfo);
+                DrawStrategy.draw(extract, perEntityInfo);
             }
         }
 		GPUProfiler.end();

@@ -4,7 +4,7 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
+import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
@@ -14,10 +14,10 @@ import javax.annotation.Nullable;
 
 public interface DrawStrategy {
 
-    static int draw(PerEntityInfo perEntityInfo) {
-        return draw(perEntityInfo, perEntityInfo.getProgram());
+    static int draw(RenderState renderState, PerEntityInfo perEntityInfo) {
+        return draw(renderState, perEntityInfo, perEntityInfo.getProgram());
     }
-    static int draw(PerEntityInfo perEntityInfo, Program program) {
+    static int draw(RenderState renderState, PerEntityInfo perEntityInfo, Program program) {
         if(!perEntityInfo.isVisible() || !perEntityInfo.isVisibleForCamera()) {
             return 0;
         }
@@ -38,16 +38,16 @@ public interface DrawStrategy {
         }
 
         if (Config.DRAWLINES_ENABLED) {
-            return ModelComponent.getGlobalVertexBuffer()
-                    .drawLinesInstancedBaseVertex(ModelComponent.getGlobalIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
-        } else {return ModelComponent.getGlobalVertexBuffer()
-                .drawInstancedBaseVertex(ModelComponent.getGlobalIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
+            return renderState.getVertexBuffer()
+                    .drawLinesInstancedBaseVertex(renderState.getIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
+        } else {return renderState.getVertexBuffer()
+                .drawInstancedBaseVertex(renderState.getIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
         }
     }
 
-    default DrawResult draw(RenderExtract renderExtract) {
-        return draw(null, renderExtract);
+    default DrawResult draw(RenderState renderState) {
+        return draw(null, renderState);
     }
 
-    DrawResult draw(@Nullable RenderTarget renderTarget, RenderExtract renderExtract);
+    DrawResult draw(@Nullable RenderTarget renderTarget, RenderState renderState);
 }

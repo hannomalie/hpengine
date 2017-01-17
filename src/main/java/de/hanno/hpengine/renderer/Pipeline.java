@@ -37,13 +37,13 @@ public class Pipeline {
         this.useLineDrawingIfActivated = useLineDrawingIfActivated;
     }
 
-    public void prepareAndDraw(RenderExtract renderExtract, Program program, FirstPassResult firstPassResult) {
-        prepare(renderExtract);
+    public void prepareAndDraw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
+        prepare(renderState);
 
-        draw(program, firstPassResult);
+        draw(renderState, program, firstPassResult);
     }
 
-    public void draw(Program program, FirstPassResult firstPassResult) {
+    public void draw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
         GPUProfiler.start("Draw with indirect pipeline");
         program.setUniform("entityIndex", 0);
         program.setUniform("entityBaseIndex", 0);
@@ -53,13 +53,13 @@ public class Pipeline {
         GPUProfiler.start("DrawInstancedIndirectBaseVertex");
         if(Config.DRAWLINES_ENABLED && useLineDrawingIfActivated) {
             if(useBackfaceCulling) { OpenGLContext.getInstance().disable(GlCap.CULL_FACE); }
-            VertexBuffer.drawLinesInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+            VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer.getBuffer(), commands.size());
         } else {
             if(useBackfaceCulling) { OpenGLContext.getInstance().enable(GlCap.CULL_FACE); }
-            VertexBuffer.drawInstancedIndirectBaseVertex(ModelComponent.getGlobalVertexBuffer(),ModelComponent.getGlobalIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+            VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer.getBuffer(), commands.size());
         }
         GPUProfiler.end();
-        ModelComponent.getGlobalIndexBuffer().unbind();
+        renderState.getIndexBuffer().unbind();
 
         firstPassResult.verticesDrawn += verticesCount;
         firstPassResult.entitiesDrawn += entitiesDrawn;
@@ -68,13 +68,13 @@ public class Pipeline {
 
     int verticesCount = 0;
     int entitiesDrawn = 0;
-    public void prepare(RenderExtract renderExtract) {
+    public void prepare(RenderState renderState) {
         GPUProfiler.start("Preparing indirect pipeline");
         verticesCount = 0;
         entitiesDrawn = 0;
         commands.clear();
-        ModelComponent.getGlobalIndexBuffer().bind();
-        for (PerEntityInfo info : renderExtract.perEntityInfos()) {
+        renderState.getIndexBuffer().bind();
+        for (PerEntityInfo info : renderState.perEntityInfos()) {
             if(useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }

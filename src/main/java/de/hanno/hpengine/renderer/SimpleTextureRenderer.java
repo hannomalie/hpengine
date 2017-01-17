@@ -117,7 +117,7 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
 
-	public DrawResult draw(RenderExtract renderExtract) {
+	public DrawResult draw(RenderState renderState) {
 		GPUProfiler.start("Frame");
         DrawResult drawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
 		GPUProfiler.end();
@@ -198,7 +198,7 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
 	@Override
-	public void executeRenderProbeCommands(RenderExtract extract) {
+	public void executeRenderProbeCommands(RenderState extract) {
 	}
 
 	@Override

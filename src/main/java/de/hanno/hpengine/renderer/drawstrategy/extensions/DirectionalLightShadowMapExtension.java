@@ -3,10 +3,10 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
@@ -49,16 +49,16 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
-        if(renderExtract.directionalLightNeedsShadowMapRender) {
+    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+        if(renderState.directionalLightNeedsShadowMapRender) {
             GPUProfiler.start("Directional shadowmap");
-            drawShadowMap(renderExtract, firstPassResult);
+            drawShadowMap(renderState, firstPassResult);
             GPUProfiler.end();
         }
     }
 
-    private void drawShadowMap(RenderExtract renderExtract, FirstPassResult firstPassResult) {
-        DirectionalLight directionalLight = renderExtract.directionalLight;
+    private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
+        DirectionalLight directionalLight = renderState.directionalLight;
         if(!directionalLight.isInitialized()) { return; }
         OpenGLContext.getInstance().depthMask(true);
         OpenGLContext.getInstance().enable(DEPTH_TEST);
@@ -66,7 +66,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         OpenGLContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
-        List<PerEntityInfo> visibles = renderExtract.perEntityInfos();
+        List<PerEntityInfo> visibles = renderState.perEntityInfos();
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
@@ -87,7 +87,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
-            DrawStrategy.draw(e, directionalShadowPassProgram);
+            DrawStrategy.draw(renderState, e, directionalShadowPassProgram);
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;

@@ -5,12 +5,12 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.event.EntitySelectedEvent;
+import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector2f;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderExtract;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 
 import java.nio.FloatBuffer;
@@ -26,7 +26,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
         floatBuffer = BufferUtils.createFloatBuffer(4);
     }
     @Override
-    public void renderFirstPass(RenderExtract renderExtract, FirstPassResult firstPassResult) {
+    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
 
         Engine engine = Engine.getInstance();
         if (engine.PICKING_CLICK == 1) {
