@@ -62,7 +62,7 @@ flat out int outMaterialIndex;
 
 void main(void) {
 
-    int entityBufferIndex = entityOffsets[gl_DrawIDARB + entityIndex + gl_InstanceID];
+    int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(!indirect) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
     Entity entity = entities[entityBufferIndex];

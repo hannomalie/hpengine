@@ -126,7 +126,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public void registerInScene(Scene scene) {
-        createVertexBuffer();
 
         baseVertex = scene.getCurrentBaseVertex().get();
         indexOffset = scene.getCurrentIndexOffset().get();
@@ -226,26 +225,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         result[4] = tangent3;
         result[5] = bitangent;
         return result;
-    }
-
-    public void createVertexBuffer() {
-
-        // TODO: Remove this stuff
-        FloatBuffer verticesFloatBuffer = BufferUtils.createFloatBuffer(floatArray.length);
-        verticesFloatBuffer.rewind();
-        verticesFloatBuffer.put(floatArray);
-        verticesFloatBuffer.rewind();
-
-        List<IntBuffer> indexBuffers = new ArrayList<>();
-        for(int[] indexArray : indices) {
-            int[] indicesTemp = indexArray;
-            LOGGER.fine(Arrays.toString(indicesTemp));
-            IntBuffer indexBuffer = BufferUtils.createIntBuffer(indicesTemp.length);
-            indexBuffers.add(indexBuffer);
-            indexBuffer.rewind();
-            indexBuffer.put(indicesTemp);
-            indexBuffer.rewind();
-        }
     }
 
     @Override

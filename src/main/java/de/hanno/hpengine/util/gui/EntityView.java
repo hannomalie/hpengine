@@ -83,6 +83,7 @@ public class EntityView extends WebPanel {
         WebButton addInstanceButton = new WebButton("Add Entity");
         addInstanceButton.addActionListener(e -> {
             entity.addInstance(new Transform());
+            Engine.getEventBus().post(new EntityAddedEvent());
 //            TODO: Make this possible
 //            init(entity);
         });

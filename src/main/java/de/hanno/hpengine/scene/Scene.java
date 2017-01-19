@@ -296,7 +296,9 @@ public class Scene implements LifeCycle, Serializable {
 	private volatile List<Integer> cachedEntityIndices = new ArrayList();
     public int getEntityBufferIndex(Entity entity) {
     	cacheEntityIndices();
-        Integer fromCache = entitiesWithModelComponent.get(entity);
+        Integer index = entitiesWithModelComponent.get(entity);
+        if(index == null) { return -1; }
+		Integer fromCache = cachedEntityIndices.get(index);
         return fromCache == null ? -1 : fromCache;
     }
 
@@ -315,20 +317,24 @@ public class Scene implements LifeCycle, Serializable {
 		{
 			entitiesWithModelComponent.clear();
             modelComponents.clear();
+            cachedEntityIndices.clear();
 			int index = 0;
 			int i = 0;
 			for(Entity current : entityContainer.getEntities()) {
 				if(!current.hasComponent(ModelComponent.class)) { continue; }
                 entitiesWithModelComponent.put(current, i);
                 modelComponents.add(current.getComponent(ModelComponent.class, "ModelComponent"));
-				index += current.getInstanceCount();
 				cachedEntityIndices.add(i, index);
+				index += current.getInstanceCount();
 				i++;
 			}
 			updateCache = false;
 		}
 	}
 
+	public void setUpdateCache(boolean updateCache) {
+		this.updateCache = updateCache;
+	}
 	public AtomicInteger getCurrentBaseVertex() {
 		return currentBaseVertex;
 	}

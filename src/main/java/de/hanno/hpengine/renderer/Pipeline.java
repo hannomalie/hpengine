@@ -1,19 +1,19 @@
 package de.hanno.hpengine.renderer;
 
-import de.hanno.hpengine.component.ModelComponent;
+import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.lwjgl.BufferUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,17 +74,21 @@ public class Pipeline {
         entitiesDrawn = 0;
         commands.clear();
         renderState.getIndexBuffer().bind();
+        IntArrayList offsets = new IntArrayList(renderState.perEntityInfos().size());
         for (PerEntityInfo info : renderState.perEntityInfos()) {
             if(useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }
             commands.add(info.getDrawElementsIndirectCommand());
-            verticesCount += info.getVertexCount();
+            verticesCount += info.getVertexCount()*info.getInstanceCount();
             if (info.getVertexCount() > 0) {
-                entitiesDrawn++;
+                entitiesDrawn+=info.getInstanceCount();
             }
+            offsets.add(info.getDrawElementsIndirectCommand().entityOffset);
         }
-        entityOffsetBuffer.put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
+
+        entityOffsetBuffer.put(0, offsets.toArray());
+//        entityOffsetBuffer.put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
         commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
         GPUProfiler.end();
     }

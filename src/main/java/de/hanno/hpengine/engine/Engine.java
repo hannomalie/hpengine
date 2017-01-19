@@ -709,6 +709,7 @@ public class Engine implements Extractor<RenderState> {
         entityAdded = true;
         directionalLightNeedsShadowMapRedraw = true;
         sceneInitiallyDrawn = false;
+        scene.setUpdateCache(true);
     }
 
     @Subscribe
