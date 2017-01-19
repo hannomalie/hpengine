@@ -128,8 +128,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public void registerInScene(Scene scene) {
         createVertexBuffer();
 
-        int baseVertex = scene.getCurrentBaseVertex().get();
-        int indexOffset = scene.getCurrentIndexOffset().get();
+        baseVertex = scene.getCurrentBaseVertex().get();
+        indexOffset = scene.getCurrentIndexOffset().get();
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         OpenGLContext.getInstance().execute(() -> {
             scene.getVertexBuffer().putValues(baseVertex*totalElementsPerVertex, floatArray);
