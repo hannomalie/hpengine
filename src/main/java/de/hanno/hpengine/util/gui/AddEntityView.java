@@ -78,8 +78,6 @@ public class AddEntityView extends WebPanel {
 
 							@Override
 							public void done(EntityListResult result) {
-                                Engine.getEventBus().post(new MaterialAddedEvent());
-								Engine.getEventBus().post(new EntityAddedEvent());
 							}
 						}.execute();
 					}

@@ -35,13 +35,13 @@ import static de.hanno.hpengine.renderer.constants.GlTextureTarget.*;
 
 /**
  * A utility class to load textures for JOGL. This source is based
- * on a de.hanno.hpengine.texture that can be found in the Java Gaming (www.javagaming.org)
+ * on a texture that can be found in the Java Gaming (www.javagaming.org)
  * Wiki. It has been simplified slightly for explicit 2D graphics use.
  * 
  * OpenGL uses a particular image format. Since the images that are 
  * loaded from disk may not match this format this loader introduces
  * a intermediate image which the source image is copied into. In turn,
- * this image is used as source for the OpenGL de.hanno.hpengine.texture.
+ * this image is used as source for the OpenGL texture.
  *
  * @author Kevin Glass
  * @author Brian Matzon

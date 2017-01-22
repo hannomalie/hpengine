@@ -70,8 +70,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
-        directionalShadowPassProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-        directionalShadowPassProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
+        directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+        directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", directionalLight.getCamera().getViewMatrixAsBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
 

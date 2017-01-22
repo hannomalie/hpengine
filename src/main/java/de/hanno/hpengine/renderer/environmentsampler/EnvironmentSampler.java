@@ -327,7 +327,7 @@ public class EnvironmentSampler extends Camera {
 		GPUProfiler.start("Draw entities");
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
         firstpassDefaultProgram.use();
-        firstpassDefaultProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
+        firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
         firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
         firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
         firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());

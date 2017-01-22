@@ -41,12 +41,7 @@ public class MaterialFactory {
 
 	private Material defaultMaterial;
 
-	private OpenGLBuffer materialBuffer;
-
 	private MaterialFactory() {
-//		materialBuffer = OpenGLContext.getInstance().calculate(() -> new StorageBuffer(20000));
-        materialBuffer = new PersistentMappedBuffer(20000);
-
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
 		defaultMaterial = getMaterialWithoutRead(defaultTemp);
@@ -102,7 +97,6 @@ public class MaterialFactory {
 		material = read(getDirectory() + materialInfo.name);
 
 		if(material != null) {
-            Engine.getEventBus().post(new MaterialAddedEvent());
 			return material;
 		}
 		
@@ -110,7 +104,6 @@ public class MaterialFactory {
 		material.setMaterialInfo(new MaterialInfo(materialInfo));
 		initMaterial(material);
 		write(material, materialInfo.name);
-		Engine.getEventBus().post(new MaterialAddedEvent());
 		return material;
 	}
 
@@ -159,7 +152,6 @@ public class MaterialFactory {
 
     private void addMaterial(String key, Material material) {
         MATERIALS.put(key, material);
-        Engine.getEventBus().post(new MaterialChangedEvent());
     }
     private void addMaterial(Material material) {
         addMaterial(material.getName(), material);
@@ -178,10 +170,6 @@ public class MaterialFactory {
         }
 		return material;
 	}
-
-    public OpenGLBuffer getMaterialBuffer() {
-        return materialBuffer;
-    }
 
     public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
@@ -240,60 +228,4 @@ public class MaterialFactory {
 		return new ArrayList<>(MATERIALS.values()).indexOf(material);
 	}
 
-	@Subscribe
-    @Handler
-	public void handle(MaterialAddedEvent event) {
-        bufferMaterials();
-	}
-
-	@Subscribe
-    @Handler
-	public void handle(MaterialChangedEvent event) {
-		if(event.getMaterial().isPresent()) {
-			bufferMaterial(event.getMaterial().get());
-		} else {
-			bufferMaterials();
-		}
-//		bufferMaterials();
-
-//            DoubleBuffer temp = materialBuffer.getValues();
-//            for(int i = 0; i < materials.size()*16; i++) {
-//
-//                int index = i + 1;
-//
-//                if(index%14 == 0) {
-//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-//                } else if(index%15 == 0) {
-//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-//                } else if(index%16 == 0) {
-//                    System.out.print(Double.doubleToRawLongBits(temp.get(i)));
-//                } else {
-//                    System.out.print(temp.get(i));
-//                }
-//                System.out.print(" ");
-//
-//                if(index%16 == 0) {
-//                    System.out.print(" (index " + ((i/15)-1) + ") ");
-//                    System.out.print(materials.get((i / 15) - 1 ).getName());
-//                    System.out.println();
-//                }
-//            }
-	}
-
-	private void bufferMaterial(Material material) {
-		OpenGLContext.getInstance().execute(() -> {
-			ArrayList<Material> materials = new ArrayList<>(MATERIALS.values());
-
-			int offset = material.getElementsPerObject() * materials.indexOf(material);
-			materialBuffer.put(offset, material);
-		});
-	}
-
-	private void bufferMaterials() {
-        OpenGLContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(getMaterials().values());
-            materialBuffer.put(Util.toArray(materials, Material.class));
-            LOGGER.info("Buffering materials");
-        });
-    }
 }

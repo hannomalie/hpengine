@@ -1,9 +1,17 @@
 package de.hanno.hpengine.renderer;
 
 import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.shader.OpenGLBuffer;
+import de.hanno.hpengine.shader.PersistentMappedBuffer;
+import de.hanno.hpengine.util.Util;
 import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
@@ -21,9 +29,11 @@ public class RenderState {
     public Vector4f sceneMin = new Vector4f();
     public Vector4f sceneMax = new Vector4f();
     private Map properties = new HashMap<>();
-    private List<PerEntityInfo> perEntityInfos;
+    private List<PerEntityInfo> perEntityInfos = new ArrayList<>();
     private IndexBuffer indexBuffer;
     private VertexBuffer vertexBuffer;
+    private OpenGLBuffer entitiesBuffer = new PersistentMappedBuffer(16000);
+    private OpenGLBuffer materialBuffer = new PersistentMappedBuffer(20000);
 
     /**
      * Copy constructor
@@ -65,5 +75,41 @@ public class RenderState {
 
     public VertexBuffer getVertexBuffer() {
         return vertexBuffer;
+    }
+
+    public void setVertexBuffer(VertexBuffer vertexBuffer) {
+        this.vertexBuffer = vertexBuffer;
+    }
+
+    public void setIndexBuffer(IndexBuffer indexBuffer) {
+        this.indexBuffer = indexBuffer;
+    }
+
+    public void bufferEntites(List<Entity> entities) {
+        entitiesBuffer.put(Util.toArray(entities, Entity.class));
+    }
+
+    public void bufferMaterial(Material material) {
+        OpenGLContext.getInstance().execute(() -> {
+            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials().values());
+
+            int offset = material.getElementsPerObject() * materials.indexOf(material);
+            materialBuffer.put(offset, material);
+        });
+    }
+
+    public void bufferMaterials() {
+        OpenGLContext.getInstance().execute(() -> {
+            ArrayList<Material> materials = new ArrayList<Material>(MaterialFactory.getInstance().getMaterials().values());
+            materialBuffer.put(Util.toArray(materials, Material.class));
+        });
+    }
+
+    public OpenGLBuffer getEntitiesBuffer() {
+        return entitiesBuffer;
+    }
+
+    public OpenGLBuffer getMaterialBuffer() {
+        return materialBuffer;
     }
 }

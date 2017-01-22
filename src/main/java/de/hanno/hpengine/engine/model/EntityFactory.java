@@ -1,30 +1,18 @@
 package de.hanno.hpengine.engine.model;
 
-import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity.Update;
-import de.hanno.hpengine.event.EntityAddedEvent;
-import de.hanno.hpengine.event.EntityChangedMaterialEvent;
-import de.hanno.hpengine.event.SceneInitEvent;
-import net.engio.mbassy.listener.Handler;
+import de.hanno.hpengine.renderer.material.Material;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.shader.OpenGLBuffer;
-import de.hanno.hpengine.shader.PersistentMappedBuffer;
-import de.hanno.hpengine.util.Util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EntityFactory {
     private static EntityFactory instance;
-    private volatile transient OpenGLBuffer entitiesBuffer;
 
     private EntityFactory() {
         Engine.getEventBus().register(this);
@@ -133,59 +121,5 @@ public class EntityFactory {
     public static void create() {
         instance = new EntityFactory();
     }
-    public static void init() {
-        instance.entitiesBuffer = new PersistentMappedBuffer(16000);
-    }
 
-    public OpenGLBuffer getEntitiesBuffer() {
-        return entitiesBuffer;
-    }
-
-    public void bufferEntities(List<Entity> entities) {
-        entitiesBuffer.put(Util.toArray(entities, Entity.class));
-//        for(int i = 0; i < entities.size(); i++) {
-//            ModelComponent.getGlobalEntityOffsetBuffer().put(i, Engine.getInstance().getScene().getEntityIndexOf(entities.get(i)));
-//        }
-    }
-
-    public void bufferEntities() {
-        if(Engine.getInstance().getScene() != null) {
-//            TODO: Execute this outside of the renderloop
-            OpenGLContext.getInstance().execute(() -> {
-                bufferEntities(Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()));
-            });
-        }
-    }
-
-    @Subscribe
-    @Handler
-    public void handle(EntityAddedEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
-    public void handle(SceneInitEvent event) {
-        bufferEntities();
-    }
-    @Subscribe
-    @Handler
-    public void handle(EntityChangedMaterialEvent event) {
-        if(Engine.getInstance().getScene() != null) {
-            Entity entity = event.getEntity();
-//            buffer(entity);
-            bufferEntities();
-        }
-    }
-
-    public void buffer(Entity entity) {
-        int offset = 0;
-        for(Entity current : Engine.getInstance().getScene().getEntitiesWithModelComponent().keySet()) {
-            if(current.equals(entity)) {
-                break;
-            }
-            offset += entity.getElementsPerObject();
-        }
-//        entity.getElementsPerObject() * Engine.getInstance().getScene().getEntities().indexOf(entity);
-        entitiesBuffer.put(offset, entity);
-    }
 }

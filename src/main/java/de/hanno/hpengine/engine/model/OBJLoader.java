@@ -139,13 +139,14 @@ public class OBJLoader {
                     LOGGER.log(Level.INFO, "No material found!!!");
                     currentMaterial = MaterialFactory.getInstance().getDefaultMaterial();
                 }
-                if (currentState != State.READING_FACE) {
+                {
                     model.setMaterial(currentMaterial);
-                } else {
+                    for(Model candidate : models) {
+                        if(candidate.getMaterial() == null) { candidate.setMaterial(currentMaterial); }
+                    }
                     model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
                     model.setMaterial(currentMaterial);
                 }
-//	    		  LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("Material %s set for %s", material.getName(), model.getName()));
             } else if ("o".equals(firstToken) || "g".equals(firstToken) || line.startsWith("# object ")) {
                 model = newModelHelper(models, vertices, texCoords, normals, line, line.replaceAll("o ", "").replaceAll("# object ", "").replaceAll("g ", ""));
             } else if ("v".equals(firstToken)) {

@@ -167,8 +167,8 @@ public class DrawLightMapExtension implements RenderExtension {
         OpenGLContext.getInstance().bindImageTexture(5, lightMapTarget.getRenderedTexture(currentSource), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
         lightMapProgram.use();
 
-        lightMapProgram.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-        lightMapProgram.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
+        lightMapProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+        lightMapProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
         lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
 
         lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());

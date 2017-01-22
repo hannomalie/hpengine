@@ -22,7 +22,7 @@ public class Camera extends Entity {
 	transient FloatBuffer projectionMatrixBuffer = BufferUtils.createFloatBuffer(16);
 	transient FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
-	protected Matrix4f projectionMatrix = null;
+	protected Matrix4f projectionMatrix = new Matrix4f();
 	protected Matrix4f viewProjectionMatrix = null;
 
 	protected Frustum frustum;
@@ -73,7 +73,7 @@ public class Camera extends Entity {
         this.far = far;
         this.fov = fov;
         this.ratio = ratio;
-        this.projectionMatrix = projectionMatrix;
+        this.projectionMatrix.load(projectionMatrix);
 
         frustum = new Frustum(this);
         saveViewMatrixAsLastViewMatrix();

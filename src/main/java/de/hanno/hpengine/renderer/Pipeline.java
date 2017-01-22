@@ -14,9 +14,12 @@ import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL42;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
 public class Pipeline {
 
@@ -68,13 +71,14 @@ public class Pipeline {
 
     int verticesCount = 0;
     int entitiesDrawn = 0;
+    IntArrayList offsets = new IntArrayList();
     public void prepare(RenderState renderState) {
         GPUProfiler.start("Preparing indirect pipeline");
         verticesCount = 0;
         entitiesDrawn = 0;
         commands.clear();
         renderState.getIndexBuffer().bind();
-        IntArrayList offsets = new IntArrayList(renderState.perEntityInfos().size());
+        offsets.clear();
         for (PerEntityInfo info : renderState.perEntityInfos()) {
             if(useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
@@ -88,7 +92,6 @@ public class Pipeline {
         }
 
         entityOffsetBuffer.put(0, offsets.toArray());
-//        entityOffsetBuffer.put(0, commands.stream().mapToInt(c -> c.entityOffset).toArray());
         commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
         GPUProfiler.end();
     }

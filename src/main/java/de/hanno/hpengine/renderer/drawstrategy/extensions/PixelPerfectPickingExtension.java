@@ -40,7 +40,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
             Logger.getGlobal().info("Picked: " + adjustedX + " : " + adjustedY);
             try {
-                int componentIndex = 3; // alpha de.hanno.hpengine.component
+                int componentIndex = 3; // alpha component
                 engine.getScene().getEntities().parallelStream().forEach(e -> {
                     e.setSelected(false);
                 });

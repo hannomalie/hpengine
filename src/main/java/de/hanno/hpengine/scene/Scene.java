@@ -8,7 +8,9 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.LightChangedEvent;
+import de.hanno.hpengine.event.MaterialAddedEvent;
 import de.hanno.hpengine.event.SceneInitEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
@@ -37,7 +39,6 @@ public class Scene implements LifeCycle, Serializable {
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
 
-	private static Object globalLock = new Object();
 	public volatile VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);;
 	public volatile IndexBuffer indexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
 	public volatile AtomicInteger currentBaseVertex = new AtomicInteger();
@@ -56,7 +57,7 @@ public class Scene implements LifeCycle, Serializable {
 	private boolean updateCache = true;
 
 	public Scene() {
-        this("new-de.hanno.hpengine.scene-" + System.currentTimeMillis());
+        this("new-scene-" + System.currentTimeMillis());
 	}
 	public Scene(String name) {
 		this.name = name;
@@ -208,6 +209,8 @@ public class Scene implements LifeCycle, Serializable {
 		entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
         calculateMinMax(entities);
 		updateCache = true;
+		Engine.getEventBus().post(new MaterialAddedEvent());
+		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 	public void add(Entity entity) {
 		entityContainer.insert(entity.getAllChildrenAndSelf());
@@ -216,6 +219,8 @@ public class Scene implements LifeCycle, Serializable {
 		});
         calculateMinMax(entities);
 		updateCache = true;
+		Engine.getEventBus().post(new MaterialAddedEvent());
+		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 	public void update(float seconds) {
 		Iterator<PointLight> pointLightsIterator = pointLights.iterator();

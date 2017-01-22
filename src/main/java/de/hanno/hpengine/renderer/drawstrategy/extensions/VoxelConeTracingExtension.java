@@ -207,8 +207,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     voxelizer.setUniform("lightDirection", renderState.directionalLight.getDirection());
                     voxelizer.setUniform("lightColor", renderState.directionalLight.getColor());
                 }
-                voxelizer.bindShaderStorageBuffer(1, MaterialFactory.getInstance().getMaterialBuffer());
-                voxelizer.bindShaderStorageBuffer(3, EntityFactory.getInstance().getEntitiesBuffer());
+                voxelizer.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+                voxelizer.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
                 voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
                 voxelizer.setUniformAsMatrix4("u_MVPy", viewYBuffer);
                 voxelizer.setUniformAsMatrix4("u_MVPz", viewZBuffer);
