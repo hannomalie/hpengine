@@ -331,7 +331,7 @@ public class Engine implements Extractor<RenderState> {
     }
     private static class RenderThread extends TimeStepThread {
 
-        public RenderThread(String name) { super(name); }
+        public RenderThread(String name) { super(name, 0.033f); }
         @Override
         public void update(float seconds) {
             if(MULTITHREADED_RENDERING) {

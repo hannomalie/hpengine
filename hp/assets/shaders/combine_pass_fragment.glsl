@@ -394,7 +394,7 @@ void main(void) {
 	//environmentColor = imageSpaceGatherReflection(diffuseEnvironment, st, roughness).rgb;
 	vec4 environmentLightAO = blur(environment, st, 0, 0.05);
 	vec3 environmentLight = environmentLightAO.rgb;
-	//environmentLight += vec3(0.1) * color.rgb;
+	environmentLight += vec3(0.2) * color.rgb;
 	float ao = AOscattering.r;
 	//environmentLight = bilateralBlurReflection(environment, st, roughness).rgb;
 	
@@ -420,7 +420,8 @@ void main(void) {
 	
 	const float EXPOSURE_BIAS = 1;
 	out_color.rgb = Uncharted2Tonemap(EXPOSURE_BIAS*out_color.rgb);
-	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(11.2,11.2,11.2)); // whitescale marks the maximum value we can have before tone mapping
+	const float maxValue = 11.2;
+	vec3 whiteScale = vec3(1.0,1.0,1.0)/Uncharted2Tonemap(vec3(maxValue)); // whitescale marks the maximum value we can have before tone mapping
 	out_color.rgb = out_color.rgb * whiteScale;
 
 

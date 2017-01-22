@@ -200,9 +200,9 @@ public class DeferredRenderer implements Renderer {
         DrawResult drawResult = simpleDrawStrategy.draw(renderState);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
-//            drawToQuad(gBuffer.getHalfScreenBuffer().getRenderedTexture(0), QuadVertexBuffer.getDebugBuffer());
-            drawToQuad(simpleDrawStrategy.getLightMapExtension().getLightMapTarget().getRenderedTexture(3), QuadVertexBuffer.getDebugBuffer());
-//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), debugBuffer);
+//            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
+            drawToQuad(simpleDrawStrategy.getLightMapExtension().getFinalLightmapTexture(), QuadVertexBuffer.getDebugBuffer());
+//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
 ////                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));

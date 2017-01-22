@@ -14,7 +14,9 @@ public enum BlendMode {
 
 
     public enum Factor {
-        ONE(GL11.GL_ONE);
+        ONE(GL11.GL_ONE),
+        SRC_ALPHA(GL11.GL_SRC_ALPHA),
+        ONE_MINUS_SRC_ALPHA(GL11.GL_ONE_MINUS_SRC_ALPHA);
 
         public final int glFactor;
 

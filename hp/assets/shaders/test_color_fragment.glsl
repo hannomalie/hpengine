@@ -143,78 +143,7 @@ vec4 getViewPosInTextureSpace(vec3 viewPosition) {
 }
 
 void main(void) {
-	
-	vec2 st;
-	st.s = gl_FragCoord.x / screenWidth;
-  	st.t = gl_FragCoord.y / screenHeight;
-  	st /= secondPassScale;
-  	
-	float depth = texture2D(normalMap, st).w;
-	vec3 positionView = texture2D(positionMap, st).xyz;
-	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));
-	//positionView = positionViewPreW.xyz / positionViewPreW.w;
-  	
-  	vec3 positionWorld = (inverse(viewMatrix) * vec4(positionView, 1)).xyz;
-	vec3 color = texture2D(diffuseMap, st).xyz;
-	float roughness = texture2D(positionMap, st).a;
-	
-  	vec4 position_clip_post_w = (projectionMatrix * vec4(positionView,1));
-  	position_clip_post_w = position_clip_post_w/position_clip_post_w.w;
-	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
-	dir.w = 0.0;
-	vec3 V = (inverse(viewMatrix) * dir).xyz;
-	V = positionView;
 
-	// skip background
-	if (positionView.z > -0.0001) {
-//	  discard;
-	}
-	vec4 normalAmbient = texture2D(normalMap, st);
-	vec3 normalView = normalAmbient.xyz;
-	vec3 normalWorld = ((inverse(viewMatrix)) * vec4(normalView,0.0)).xyz;
-	
-	float metallic = texture2D(diffuseMap, st).a;
-	float glossiness = (1-roughness);
-	vec3 maxSpecular = mix(vec3(0.2,0.2,0.2), color, metallic);
-	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
-  	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
+	out_DiffuseSpecular.rgba = vec4(1,0,0, 1);
 
-	vec3 lightDirectionView = (viewMatrix * vec4(lightDirection, 0)).xyz;
-	vec3 finalColor;
-	
-	/////////////////// SHADOWMAP
-	float visibility = 1.0;
-	vec4 positionShadow = (shadowMatrix * vec4(positionWorld.xyz, 1));
-  	positionShadow.xyz /= positionShadow.w;
-  	float depthInLightSpace = positionShadow.z;
-    positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
-	///////////////////
-
-
-	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
-	Material material = materials[materialIndex];
-	if(int(material.materialtype) == 1) {
-		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
-									1, V, positionView, normalView,
-									roughness, 0, diffuseColor, specularColor);
-		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
-	} else {
-		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
-	}
-	
-	finalColor *= visibility;
-
-	out_DiffuseSpecular.rgb = 4 * finalColor;
-	
-	float ambient = normalAmbient.a;
-	ambient += 0.001;
-	out_DiffuseSpecular.rgb += ambient * color.rgb;
-	out_DiffuseSpecular.a = 1;
-
-//	out_DiffuseSpecular = vec4(1,0.1,0, 1);
-
-//	out_DiffuseSpecular = vec4(color,1);
-	//out_DiffuseSpecular.rgb = vec3(depthInLightSpace,depthInLightSpace,depthInLightSpace);
-	//out_DiffuseSpecular.rgb = vec3(positionShadow.xyz);
 }

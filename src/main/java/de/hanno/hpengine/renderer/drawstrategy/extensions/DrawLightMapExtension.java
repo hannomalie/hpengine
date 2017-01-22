@@ -33,6 +33,9 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 
+import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE;
+import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE_MINUS_SRC_ALPHA;
+import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.SRC_ALPHA;
 import static de.hanno.hpengine.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.renderer.constants.GlCap.DEPTH_TEST;
 import static de.hanno.hpengine.renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -219,16 +222,12 @@ public class DrawLightMapExtension implements RenderExtension {
 
     @Override
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
-
         GPUProfiler.start("Evaluate lightmap");
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
         OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
         OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
-//        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
-
-
         OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, getFinalLightmapTexture());
         TextureFactory.getInstance().getCubeMap().bind(10);
         OpenGLContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
@@ -251,6 +250,19 @@ public class DrawLightMapExtension implements RenderExtension {
             return getLightMapTarget().getRenderedTexture(5);
         }
         return getLightMapTarget().getRenderedTexture(4);
+    }
+
+    public int getLightMapPosition() {
+        return getLightMapTarget().getRenderedTexture();
+    }
+    public int getLightMapNormal() {
+        return getLightMapTarget().getRenderedTexture(1);
+    }
+    public int getLightMapAlbedo() {
+        return getLightMapTarget().getRenderedTexture(2);
+    }
+    public int getLightMapColor() {
+        return getLightMapTarget().getRenderedTexture(3);
     }
 
 

@@ -5,15 +5,13 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.graphics.query.GLSamplesPassedQuery;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.Pipeline;
-import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.renderer.drawstrategy.extensions.*;
@@ -132,11 +130,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             lightFactory.renderPointLightShadowMaps(renderState);
         }
         GPUProfiler.end();
-        GPUProfiler.start("Second pass");
-        secondPassResult = drawSecondPass(renderState.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
-        GPUProfiler.end();
 
         if (!Config.DIRECT_TEXTURE_OUTPUT) {
+            GPUProfiler.start("Second pass");
+            secondPassResult = drawSecondPass(renderState.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
+            GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
             OpenGLContext.getInstance().disable(DEPTH_TEST);
@@ -232,7 +230,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         if (Config.DIRECT_TEXTURE_OUTPUT) {
-//            debugDrawProbes(de.hanno.hpengine.camera, renderState);
+//            debugDrawProbes(camera, renderState);
             EnvironmentProbeFactory.getInstance().draw();
         }
         openGLContext.enable(CULL_FACE);
@@ -254,14 +252,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Directional light");
         openGLContext.depthMask(false);
-        openGLContext.enable(DEPTH_TEST);
+        openGLContext.disable(DEPTH_TEST);
         openGLContext.enable(BLEND);
         openGLContext.blendEquation(FUNC_ADD);
         openGLContext.blendFunc(ONE, ONE);
 
         GBuffer gBuffer = Renderer.getInstance().getGBuffer();
         gBuffer.getLightAccumulationBuffer().use(true);
-//		laBuffer.resizeTextures();
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
         OpenGLContext.getInstance().clearColor(0, 0, 0, 0);
         OpenGLContext.getInstance().clearColorBuffer();
@@ -274,12 +271,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(4, TEXTURE_CUBE_MAP, TextureFactory.getInstance().getCubeMap().getTextureID());
         openGLContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         openGLContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, directionalLight.getShadowMapWorldPositionId()); // world position
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, getVisibilityMap());
         openGLContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).getTextureID());
-
         GPUProfiler.end();
 
         secondPassDirectionalProgram.use();
@@ -317,11 +309,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         lightMapExtension.renderSecondPassFullScreen(renderState, secondPassResult);
+
         OpenGLContext.getInstance().disable(BLEND);
+        gBuffer.getLightAccumulationBuffer().unuse();
 
         renderAOAndScattering(renderState);
-
-        gBuffer.getLightAccumulationBuffer().unuse();
 
         GPUProfiler.start("MipMap generation AO and light buffer");
         OpenGLContext.getInstance().activeTexture(0);
