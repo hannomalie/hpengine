@@ -26,7 +26,6 @@ uniform int gridSize;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
-uniform float secondPassScale = 1;
 
 uniform bool useAmbientOcclusion = true;
 
@@ -105,7 +104,6 @@ void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
-  	st /= secondPassScale;
 
 	float depth = texture(normalMap, st).w;
 	vec3 positionView = textureLod(positionMap, st, 0).xyz;

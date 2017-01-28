@@ -17,7 +17,7 @@ public class TestWithEngine {
 	@BeforeClass
 	public static void init() {
         // TODO: Make this work headless
-        Engine.init(false);
+        Engine.init();
         engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}

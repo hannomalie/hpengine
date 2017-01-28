@@ -232,7 +232,7 @@ public class DebugFrame {
 
     @Subscribe
     @Handler
-	private void init(AppContextInitializedEvent appContextInitializedEvent) {
+	private void init(EngineInitializedEvent engineInitializedEvent) {
 		createTubeLightsTab();
 		createAreaLightsTab();
 
@@ -315,7 +315,7 @@ public class DebugFrame {
 
                     @Override
                     public void done(Result<Scene> result) {
-                        init(new AppContextInitializedEvent());
+                        init(new EngineInitializedEvent());
                     }
                 }.execute();
             });
@@ -327,7 +327,7 @@ public class DebugFrame {
         	sceneNewMenuItem.addActionListener(e -> {
 	    			Scene newScene = new Scene();
 	    			Engine.getInstance().setScene(newScene);
-	    			init(new AppContextInitializedEvent());
+	    			init(new EngineInitializedEvent());
         	});
 
 	        menuScene.add(sceneNewMenuItem);
@@ -509,7 +509,7 @@ public class DebugFrame {
     	});
         WebMenuItem refreshAll = new WebMenuItem("Refresh");
         refreshAll.addActionListener(e -> {
-            init(new AppContextInitializedEvent());
+            init(new EngineInitializedEvent());
         });
         WebMenuItem toggleFPS = new WebMenuItem("Toggle FPS");
         toggleFPS.addActionListener(e -> {

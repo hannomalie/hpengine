@@ -3,6 +3,7 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.event.EntitySelectedEvent;
 import de.hanno.hpengine.renderer.RenderState;
@@ -29,7 +30,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
     public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
 
         Engine engine = Engine.getInstance();
-        if (engine.PICKING_CLICK == 1) {
+        if (Input.PICKING_CLICK == 1) {
             OpenGLContext.getInstance().readBuffer(4);
 
             floatBuffer.rewind();
@@ -50,7 +51,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            engine.PICKING_CLICK = 0;
+            Input.PICKING_CLICK = 0;
         }
     }
 }

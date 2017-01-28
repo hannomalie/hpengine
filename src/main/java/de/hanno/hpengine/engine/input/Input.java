@@ -2,8 +2,11 @@ package de.hanno.hpengine.engine.input;
 
 import java.util.ArrayList;
 
+import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.event.ClickEvent;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.Display;
 
 public class Input {
     private static ArrayList<Integer> currentKeys = new ArrayList<>();
@@ -151,12 +154,41 @@ public class Input {
     public static final int KEY_SLEEP = 0xDF;
     private static final boolean HOLD_KEYS_AS_PRESSED_KEYS = true;
 
+    private static boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
+    private static boolean STRG_PRESSED_LAST_FRAME = false;
+    public static volatile int PICKING_CLICK = 0;
+
     public static void update() {
         updateKeyboard();
         updateMouse();
     }
 
     private static void updateKeyboard() {
+
+        if(Input.isMouseClicked(0)) {
+            if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
+                Engine.getEventBus().post(new ClickEvent());
+            }
+            MOUSE_LEFT_PRESSED_LAST_FRAME = true;
+        } else {
+            MOUSE_LEFT_PRESSED_LAST_FRAME = false;
+        }
+        {
+            if (PICKING_CLICK == 0 && Input.isKeyPressed(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+                if (Input.isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
+                    PICKING_CLICK = 1;
+                    STRG_PRESSED_LAST_FRAME = true;
+                }
+//                else if (Input.isMouseClicked(1) && !STRG_PRESSED_LAST_FRAME) {
+//                    getScene().getEntities().parallelStream().forEach(e -> {
+//                        e.setSelected(false);
+//                    });
+//                }
+            } else {
+                STRG_PRESSED_LAST_FRAME = false;
+            }
+        }
+
         downKeys.clear();
         upKeys.clear();
 

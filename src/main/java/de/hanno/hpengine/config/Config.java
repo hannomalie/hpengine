@@ -51,18 +51,8 @@ public final class Config {
 	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
 	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
-    private static volatile boolean headless = false;
 
     public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
     private Config() { super(); }
-
-    public static boolean isHeadless() {
-        return headless;
-    }
-
-    public static void setHeadless(boolean headless) {
-        Config.headless = headless;
-        Engine.getEventBus().post(new HeadlessChangedEvent());
-    }
 }

@@ -148,7 +148,7 @@ public final class OpenGLContext {
         Display.create(pixelFormat, contextAttributes);
         Display.setVSyncEnabled(false);
 
-        ContextCapabilities capabilities = GLContext.getCapabilities();
+//        ContextCapabilities capabilities = GLContext.getCapabilities();
 //        System.out.println("######## Sparse texutre ext available:");
 //        System.out.println(capabilities.GL_ARB_sparse_texture);
 //        System.out.println(capabilities.GL_EXT_direct_state_access);

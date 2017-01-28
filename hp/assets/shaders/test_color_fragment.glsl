@@ -17,7 +17,6 @@ layout(std430, binding=1) buffer _materials {
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
-uniform float secondPassScale = 1;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;

@@ -15,7 +15,7 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		Engine.init(true);
+		Engine.init();
 		engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}

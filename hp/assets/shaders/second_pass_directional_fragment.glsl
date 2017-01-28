@@ -17,7 +17,6 @@ layout(std430, binding=1) buffer _materials {
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
-uniform float secondPassScale = 1;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -147,8 +146,7 @@ void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
-  	st /= secondPassScale;
-  	
+
 	float depth = texture2D(normalMap, st).w;
 	vec3 positionView = texture2D(positionMap, st).xyz;
 	//vec4 positionViewPreW = (inverse(projectionMatrix)*vec4(st, depth, 1));

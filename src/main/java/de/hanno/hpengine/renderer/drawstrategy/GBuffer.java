@@ -32,7 +32,6 @@ import java.nio.FloatBuffer;
 public class GBuffer {
 
 	public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
-	public static float SECONDPASSSCALE = 1f;
 	public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
 	public static volatile boolean RENDER_PROBES_WITH_FIRST_BOUNCE = true;
 	public static volatile boolean RENDER_PROBES_WITH_SECOND_BOUNCE = true;
@@ -71,8 +70,8 @@ public class GBuffer {
 								.setTextureFilter(GL11.GL_LINEAR))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.WIDTH * SECONDPASSSCALE))
-						.setHeight((int) (Config.HEIGHT * SECONDPASSSCALE))
+		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.WIDTH))
+						.setHeight((int) (Config.HEIGHT))
 						.add(2, new ColorAttachmentDefinition()
                                 .setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR))

@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine;
 import de.hanno.hpengine.camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.component.InputControllerComponent;
+import de.hanno.hpengine.camera.MovableCamera;
 import de.hanno.hpengine.component.JavaComponent;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.component.PhysicsComponent;
@@ -17,11 +17,9 @@ import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.physic.PhysicsFactory;
@@ -65,8 +63,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import static de.hanno.hpengine.engine.Transform.WORLD_UP;
-
 public class Engine {
     public static int WINDOW_WIDTH = Config.WIDTH;
     public static int WINDOW_HEIGHT = Config.HEIGHT;
@@ -76,13 +72,14 @@ public class Engine {
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
     private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
-    private WorldMainThread thread;
+    private UpdateThread updateThread;
+    private RenderThread renderThread;
+
     private DrawResult latestDrawResult = null;
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
     private volatile boolean sceneInitiallyDrawn;
     private DoubleBuffer<RenderState> renderState;
-    private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
     private final FPSCounter updateFpsCounter = new FPSCounter();
     public static boolean MULTITHREADED_RENDERING = true;
 
@@ -99,8 +96,7 @@ public class Engine {
     PhysicsFactory physicsFactory;
     Scene scene;
     private int entityCount = 3;
-    public volatile int PICKING_CLICK = 0;
-    private Camera camera;
+    private final Camera camera = new MovableCamera();
     private Camera activeCamera;
 
     private static final Logger LOGGER = Logger.getLogger(Engine.class.getName());
@@ -115,8 +111,6 @@ public class Engine {
         for (String string : args) {
             if ("debug=false".equals(string)) {
                 debug = false;
-            } else if ("secondpassscale=0.5".equals(string)) {
-                GBuffer.SECONDPASSSCALE = 0.5f;
             } else if ("fullhd".equals(string)) {
                 Config.WIDTH = 1920;
                 Config.HEIGHT = 1080;
@@ -157,23 +151,19 @@ public class Engine {
         if (instance != null) {
             return;
         }
-        init(false);
-    }
-
-    public static void init(boolean headless) {
         instance = new Engine();
-        instance.initialize(headless);
-        instance.simulate();
+        instance.initialize();
+        instance.startSimulation();
     }
 
     private Engine() {
     }
 
-    private void initialize(boolean headless) {
+    private void initialize() {
         getEventBus().register(this);
-        Config.setHeadless(headless);
         initWorkDir();
         frame = new JFrame("hpengine");
+        frame.setVisible(false);
         frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
         JLayeredPane layeredPane = new JLayeredPane();
         canvas = new Canvas() {
@@ -224,66 +214,17 @@ public class Engine {
         physicsFactory = new PhysicsFactory();
         ScriptManager.getInstance().defineGlobals();
 
-        renderState = new de.hanno.hpengine.util.multithreading.DoubleBuffer(new RenderState(), new RenderState());
+        renderState = new DoubleBuffer(new RenderState(), new RenderState());
         scene = new Scene();
         Engine.getEventBus().register(scene);
-        Engine self = this;
         OpenGLContext.getInstance().execute(() -> {
             scene.init();
         }, true);
-        float rotationDelta = 125f;
-        float scaleDelta = 0.1f;
-        float posDelta = 100f;
-        camera = (Camera) new Camera().
-                addComponent(new InputControllerComponent() {
-                                 private static final long serialVersionUID = 1L;
-
-                                 @Override
-                                 public void update(float seconds) {
-
-                                     float turbo = 1f;
-                                     if (Input.isKeyPressed(Keyboard.KEY_LSHIFT)) {
-                                         turbo = 3f;
-                                     }
-
-                                     float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Input.isMouseClicked(0)) {
-                                         getEntity().rotate(WORLD_UP, -Input.getDX() * rotationAmount);
-                                     }
-                                     if (Input.isMouseClicked(1)) {
-                                         getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);
-                                     }
-                                     if (Input.isMouseClicked(2)) {
-                                         getEntity().rotate(Transform.WORLD_VIEW, Input.getDX() * rotationAmount);
-                                     }
-
-                                     float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
-                                     if (Input.isKeyPressed(Keyboard.KEY_W)) {
-                                         getEntity().move(new Vector3f(0, 0, -moveAmount));
-                                     }
-                                     if (Input.isKeyPressed(Keyboard.KEY_A)) {
-                                         getEntity().move(new Vector3f(-moveAmount, 0, 0));
-                                     }
-                                     if (Input.isKeyPressed(Keyboard.KEY_S)) {
-                                         getEntity().move(new Vector3f(0, 0, moveAmount));
-                                     }
-                                     if (Input.isKeyPressed(Keyboard.KEY_D)) {
-                                         getEntity().move(new Vector3f(moveAmount, 0, 0));
-                                     }
-                                     if (Input.isKeyPressed(Keyboard.KEY_Q)) {
-                                         getEntity().move(new Vector3f(0, -moveAmount, 0));
-                                     }
-                                     if (Input.isKeyPressed(Keyboard.KEY_E)) {
-                                         getEntity().move(new Vector3f(0, moveAmount, 0));
-                                     }
-                                 }
-                             }
-                );
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
         activeCamera = camera;
         initialized = true;
-        getEventBus().post(new AppContextInitializedEvent());
+        getEventBus().post(new EngineInitializedEvent());
     }
 
     private void initWorkDir() {
@@ -308,19 +249,18 @@ public class Engine {
         return true;
     }
 
-    public void simulate() {
+    public void startSimulation() {
 
-        Engine self = this;
+        updateThread = new UpdateThread("Update", 0.033f);
+        updateThread.start();
 
-        thread = new WorldMainThread("World Main", 0.033f);
-        thread.start();
-
-        new RenderThread("Render").start();
+        renderThread = new RenderThread("Render");
+        renderThread.start();
     }
 
-    private static class WorldMainThread extends FpsCountedTimeStepThread {
+    private static class UpdateThread extends FpsCountedTimeStepThread {
 
-        public WorldMainThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
+        public UpdateThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
         @Override
         public void update(float seconds) {
             Engine.getInstance().update(seconds);
@@ -340,7 +280,6 @@ public class Engine {
             }
         }
     }
-
 
     private void destroyOpenGL() {
         OpenGLContext.getInstance().getDrawThread().stopRequested = true;
@@ -443,59 +382,11 @@ public class Engine {
         }
     }
 
-
-    private boolean STRG_PRESSED_LAST_FRAME = false;
-
     private void update(float seconds) {
         SwingUtilities.invokeLater(() -> {
             //TODO Don't use Display title anymore
             frame.setTitle(Display.getTitle());
         });
-        StopWatch.getInstance().start("Controls update");
-        if(Input.isMouseClicked(0)) {
-            if(!MOUSE_LEFT_PRESSED_LAST_FRAME) {
-                Engine.getEventBus().post(new ClickEvent());
-            }
-            MOUSE_LEFT_PRESSED_LAST_FRAME = true;
-        } else {
-            MOUSE_LEFT_PRESSED_LAST_FRAME = false;
-        }
-
-//        if(Keyboard.isCreated())
-        {
-            if (PICKING_CLICK == 0 && Input.isKeyPressed(Keyboard.KEY_LCONTROL) && Display.isActive()) {
-                if (Input.isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
-                    PICKING_CLICK = 1;
-                    STRG_PRESSED_LAST_FRAME = true;
-                } else if (Input.isMouseClicked(1) && !STRG_PRESSED_LAST_FRAME) {
-                    getScene().getEntities().parallelStream().forEach(e -> {
-                        e.setSelected(false);
-                    });
-                }
-            } else {
-                STRG_PRESSED_LAST_FRAME = false;
-            }
-
-            if(Input.isKeyPressed(Keyboard.KEY_0)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
-                LOGGER.info("Model lod 0");
-            } else if(Input.isKeyPressed(Keyboard.KEY_1)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_1;
-                LOGGER.info("Model lod 1");
-            } else if(Input.isKeyPressed(Keyboard.KEY_2)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_2;
-                LOGGER.info("Model lod 2");
-            } else if(Input.isKeyPressed(Keyboard.KEY_3)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_3;
-                LOGGER.info("Model lod 3");
-            } else if(Input.isKeyPressed(Keyboard.KEY_4)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_4;
-                LOGGER.info("Model lod 4");
-            } else if(Input.isKeyPressed(Keyboard.KEY_5)) {
-                Config.MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL_5;
-                LOGGER.info("Model lod 5");
-            }
-        }
 
         DirectionalLight directionalLight = scene.getDirectionalLight();
 
@@ -663,14 +554,6 @@ public class Engine {
         restoreWorldCamera();
     }
 
-    public Camera getCamera() {
-        return camera;
-    }
-
-    public void setCamera(Camera camera) {
-        this.camera = camera;
-    }
-
     public Camera getActiveCamera() {
         return activeCamera;
     }
@@ -700,7 +583,7 @@ public class Engine {
     }
 
     public FPSCounter getFPSCounter() {
-        return thread.getFpsCounter();
+        return updateThread.getFpsCounter();
     }
 
     private volatile boolean entityAdded = false;

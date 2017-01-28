@@ -1,6 +1,5 @@
 package de.hanno.hpengine.test;
 
-import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -14,7 +13,6 @@ public class TestWithOpenGLContext {
 
     @BeforeClass
     public static void init() throws LWJGLException {
-        Config.setHeadless(true);
         Canvas canvas = new Canvas();
         JFrame frame = new JFrame("hpengine");
         JLayeredPane layeredPane = new JLayeredPane();

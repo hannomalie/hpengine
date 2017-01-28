@@ -55,6 +55,11 @@ public abstract class TimeStepThread extends Thread {
     }
 
     protected void waitIfNecessary(float actualS) {
+        try {
+            Thread.sleep(0);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         float secondsLeft = (minimumCycleTimeInSeconds - actualS);
         if(secondsLeft <= 0) { return; }
 

@@ -65,6 +65,8 @@ void main(void) {
     int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(!indirect) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
+    //entityBufferIndex = 0;
+
     Entity entity = entities[entityBufferIndex];
     outEntity = entity;
     outEntityIndex = int(entity.entityIndex);

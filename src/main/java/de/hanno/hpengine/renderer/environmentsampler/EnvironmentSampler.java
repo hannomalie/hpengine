@@ -378,7 +378,6 @@ public class EnvironmentSampler extends Camera {
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.AMBIENTOCCLUSION_TOTAL_STRENGTH);
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassDirectionalProgram.setUniform("secondPassScale", 1f);
 		FloatBuffer viewMatrix = getViewMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		FloatBuffer projectionMatrix = getProjectionMatrixAsBuffer();
@@ -644,7 +643,6 @@ public class EnvironmentSampler extends Camera {
 		secondPassTubeProgram.use();
 		secondPassTubeProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassTubeProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassTubeProgram.setUniform("secondPassScale", 1);
 		secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		for (TubeLight tubeLight : tubeLights) {
@@ -678,7 +676,6 @@ public class EnvironmentSampler extends Camera {
 		secondPassAreaProgram.use();
 		secondPassAreaProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassAreaProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
-		secondPassAreaProgram.setUniform("secondPassScale", 1f);
 		secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
 		secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		OpenGLContext.getInstance().disable(CULL_FACE);

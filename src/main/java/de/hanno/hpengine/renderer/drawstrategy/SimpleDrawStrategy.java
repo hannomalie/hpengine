@@ -277,7 +277,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.AMBIENTOCCLUSION_TOTAL_STRENGTH);
         secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.WIDTH);
         secondPassDirectionalProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        secondPassDirectionalProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
         FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
@@ -401,7 +400,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassTubeProgram.use();
         secondPassTubeProgram.setUniform("screenWidth", (float) Config.WIDTH);
         secondPassTubeProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        secondPassTubeProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
         secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         for (TubeLight tubeLight : tubeLights) {
@@ -438,7 +436,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassAreaProgram.use();
         secondPassAreaProgram.setUniform("screenWidth", (float) Config.WIDTH);
         secondPassAreaProgram.setUniform("screenHeight", (float) Config.HEIGHT);
-        secondPassAreaProgram.setUniform("secondPassScale", GBuffer.SECONDPASSSCALE);
         secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         for (AreaLight areaLight : areaLights) {

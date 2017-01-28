@@ -9,7 +9,6 @@ layout(binding=7) uniform sampler2D visibilityMap;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
-uniform float secondPassScale = 1;
 
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
@@ -81,8 +80,7 @@ void main(void) {
 	vec2 st;
 	st.s = gl_FragCoord.x / screenWidth;
   	st.t = gl_FragCoord.y / screenHeight;
-  	st /= secondPassScale;
-  
+
 	vec3 positionView = texture2D(positionMap, st).xyz;
 
 	vec3 color = texture2D(diffuseMap, st).xyz;

@@ -27,7 +27,6 @@ uniform vec3 camPosition;
 
 uniform float screenWidth = 1280;
 uniform float screenHeight = 720;
-uniform float secondPassScale = 1;
 
 uniform bool useAmbientOcclusion = true;
 uniform vec3 ambientColor = vec3(0.5,0.5,0.5);
