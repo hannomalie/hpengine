@@ -14,10 +14,13 @@ import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL42;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
@@ -80,7 +83,7 @@ public class Pipeline {
         renderState.getIndexBuffer().bind();
         offsets.clear();
         for (PerEntityInfo info : renderState.perEntityInfos()) {
-            if(useFrustumCulling && !info.isVisibleForCamera()) {
+            if(Config.useFrustumCulling && useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }
             commands.add(info.getDrawElementsIndirectCommand());

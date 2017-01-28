@@ -123,7 +123,6 @@ public class SimpleTextureRenderer implements Renderer {
 		GPUProfiler.end();
         drawToQuad(TextureFactory.getInstance().getDefaultTexture().getTextureID(), QuadVertexBuffer.getFullscreenBuffer());
 
-        Input.update();
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();

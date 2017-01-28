@@ -66,12 +66,12 @@ public class DoubleBuffer<T> {
 
     public boolean update() {
         synchronized (swapLock) {
-            if(readLock.isLocked()) {
-                return false;
-            }
             if(queueCurrentWriteState.size() > 0) {
                 queueCurrentWriteState.executeCommands();
-                swap();
+
+                synchronized (readLock){
+                    swap();
+                }
             }
             return true;
         }

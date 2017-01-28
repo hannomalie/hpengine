@@ -206,7 +206,6 @@ public class DebugFrame {
 	private WebProgressBar progressBar = new WebProgressBar();
 
     public DebugFrame() {
-		Engine.getEventBus().register(this);
 
         mainFrame.setLayout(new BorderLayout(5,5));
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -226,6 +225,7 @@ public class DebugFrame {
         infoSplitPane.setPreferredSize ( new Dimension ( 250, 200 ) );
         infoSplitPane.setDividerLocation(125);
         infoSplitPane.setContinuousLayout(true);
+		Engine.getEventBus().register(this);
 
 //        circleMenu = new CircleMenu();
 	}

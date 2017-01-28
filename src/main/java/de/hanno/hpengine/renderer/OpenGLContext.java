@@ -99,6 +99,7 @@ public final class OpenGLContext {
                             context.privateInit();
                         } catch (Exception e) {
                             LOGGER.severe("Exception during privateInit");
+                            e.printStackTrace();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

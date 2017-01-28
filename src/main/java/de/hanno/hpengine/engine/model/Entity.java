@@ -177,12 +177,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
-//        Iterator<Entity> childrenIterator = getChildren().iterator();
-//        while(childrenIterator.hasNext()) {
-//            Entity current = childrenIterator.next();
-//            current.update(seconds);
-//        }
-
 		for (Entity child: getChildren()) {
 			child.update(seconds);
 		}

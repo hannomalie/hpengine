@@ -25,7 +25,7 @@ public class Camera extends Entity {
 	protected Matrix4f projectionMatrix = new Matrix4f();
 	protected Matrix4f viewProjectionMatrix = null;
 
-	protected Frustum frustum;
+	protected Frustum frustum = new Frustum();
 
 	private float near = 0.1f;
 	private float far = -5000f;
@@ -37,19 +37,23 @@ public class Camera extends Entity {
 	private boolean isPerspective = true;
 	
 	public Camera() {
+		this.name = "Camera_" +  System.currentTimeMillis();
         init(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
+		this.name = "Camera_" +  System.currentTimeMillis();
         init(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
 	}
 
     public Camera(Camera camera) {
+		this.name = "Camera_" +  System.currentTimeMillis();
         init(camera);
     }
 
 
 	public Camera(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
+		this.name = "Camera_" +  System.currentTimeMillis();
         init(projectionMatrix, near, far, fov, ratio);
 	}
 
@@ -68,14 +72,13 @@ public class Camera extends Entity {
     }
 
     public void init(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
-        this.name = "Camera_" +  System.currentTimeMillis();
         this.near = near;
         this.far = far;
         this.fov = fov;
         this.ratio = ratio;
         this.projectionMatrix.load(projectionMatrix);
 
-        frustum = new Frustum(this);
+        frustum.calculate(this);
         saveViewMatrixAsLastViewMatrix();
         transform();
         storeMatrices();

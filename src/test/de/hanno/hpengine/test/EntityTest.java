@@ -75,7 +75,6 @@ public class EntityTest extends TestWithEngine {
         parentEntity.addInstance(instanceTransform);
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
-        EntityFactory.getInstance().bufferEntities();
 
         {
             double[] parentValues = parentEntity.get();
@@ -99,7 +98,7 @@ public class EntityTest extends TestWithEngine {
         }
 
 
-        FloatBuffer floatValues = EntityFactory.getInstance().getEntitiesBuffer().getValuesAsFloats();
+        FloatBuffer floatValues = engine.getRenderState().getCurrentReadState().getEntitiesBuffer().getValuesAsFloats();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);
 

@@ -16,7 +16,8 @@ import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.renderer.RenderState;
-import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.multithreading.DoubleBuffer;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
@@ -64,22 +65,23 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-public class Engine implements Extractor<RenderState> {
+import static de.hanno.hpengine.engine.Transform.WORLD_UP;
+
+public class Engine {
     public static int WINDOW_WIDTH = Config.WIDTH;
     public static int WINDOW_HEIGHT = Config.HEIGHT;
 
     private static volatile Engine instance = null;
 
-
     private final ExecutorService pool = Executors.newFixedThreadPool(1);
     private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
-    private FpsCountedTimeStepThread thread;
+    private WorldMainThread thread;
     private DrawResult latestDrawResult = null;
     private String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
     private volatile boolean sceneInitiallyDrawn;
-    private de.hanno.hpengine.util.multithreading.DoubleBuffer<RenderState> renderState;
+    private DoubleBuffer<RenderState> renderState;
     private boolean MOUSE_LEFT_PRESSED_LAST_FRAME;
     private final FPSCounter updateFpsCounter = new FPSCounter();
     public static boolean MULTITHREADED_RENDERING = true;
@@ -239,10 +241,6 @@ public class Engine implements Extractor<RenderState> {
                                  @Override
                                  public void update(float seconds) {
 
-//                                     if(!Keyboard.isCreated()) {
-//                                         return;
-//                                     }
-
                                      float turbo = 1f;
                                      if (Input.isKeyPressed(Keyboard.KEY_LSHIFT)) {
                                          turbo = 3f;
@@ -250,13 +248,13 @@ public class Engine implements Extractor<RenderState> {
 
                                      float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.CAMERA_SPEED;
                                      if (Input.isMouseClicked(0)) {
-                                         getEntity().rotate(Transform.WORLD_UP, -Mouse.getDX() * rotationAmount);
+                                         getEntity().rotate(WORLD_UP, -Input.getDX() * rotationAmount);
                                      }
                                      if (Input.isMouseClicked(1)) {
-                                         getEntity().rotate(Transform.WORLD_RIGHT, Mouse.getDY() * rotationAmount);
+                                         getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);
                                      }
                                      if (Input.isMouseClicked(2)) {
-                                         getEntity().rotate(Transform.WORLD_VIEW, Mouse.getDX() * rotationAmount);
+                                         getEntity().rotate(Transform.WORLD_VIEW, Input.getDX() * rotationAmount);
                                      }
 
                                      float moveAmount = turbo * posDelta * seconds * Config.CAMERA_SPEED;
@@ -314,7 +312,7 @@ public class Engine implements Extractor<RenderState> {
 
         Engine self = this;
 
-        thread = new WorldMainThread("World Main", 0.005f);
+        thread = new WorldMainThread("World Main", 0.033f);
         thread.start();
 
         new RenderThread("Render").start();
@@ -330,12 +328,12 @@ public class Engine implements Extractor<RenderState> {
     }
     private static class RenderThread extends TimeStepThread {
 
-        public RenderThread(String name) { super(name); }
+        public RenderThread(String name) { super(name, 0.033f); }
         @Override
         public void update(float seconds) {
             if(MULTITHREADED_RENDERING) {
                 try {
-                    Engine.getInstance().actuallyDraw(Engine.getInstance().getScene().getDirectionalLight());
+                    Engine.getInstance().actuallyDraw();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -524,12 +522,9 @@ public class Engine implements Extractor<RenderState> {
 
         updateFpsCounter.update();
         if(!MULTITHREADED_RENDERING) {
-            actuallyDraw(getScene().getDirectionalLight());
+            actuallyDraw();
         }
-        renderState.update();
-    }
 
-    protected void actuallyDraw(DirectionalLight directionalLight) {
         boolean anyPointLightHasMoved = false;
         for(int i = 0; i < scene.getPointLights().size(); i++) {
             if(!scene.getPointLights().get(i).hasMoved()) { continue; }
@@ -554,20 +549,28 @@ public class Engine implements Extractor<RenderState> {
         }
 
         List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
-        if (Renderer.getInstance().isFrameFinished()) {
-            extract(directionalLight, anyPointLightHasMoved, getActiveCamera(), latestDrawResult, perEntityInfos, entityHasMoved);
-            renderState.update();
+        boolean finalAnyPointLightHasMoved = anyPointLightHasMoved;
+        renderState.addCommand((renderStateX1) -> {
+            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
+        });
 
-            if(entityHasMoved) {
-                renderState.addCommand((renderStateX) -> { renderStateX.bufferEntites(scene.getEntities()); });
-                entityHasMoved = false;
-                for (Entity entity : scene.getEntities()) {
-                    entity.setHasMoved(false);
-                }
+        if(entityHasMoved) {
+            renderState.addCommand((renderStateX) -> { renderStateX.bufferEntites(scene.getEntities()); });
+            entityHasMoved = false;
+            for (Entity entity : scene.getEntities()) {
+                entity.setHasMoved(false);
             }
+        }
+        renderState.update();
+    }
 
+    protected void actuallyDraw() {
+//        if (Renderer.getInstance().isFrameFinished())
+        {
             OpenGLContext.getInstance().execute(() -> {
+                Input.update();
                 Renderer.getInstance().startFrame();
+                renderState.startRead();
                 if(scene != null) {
                     renderState.getCurrentWriteState().setVertexBuffer(scene.getVertexBuffer());
                     renderState.getCurrentReadState().setVertexBuffer(scene.getVertexBuffer());
@@ -575,7 +578,6 @@ public class Engine implements Extractor<RenderState> {
                     renderState.getCurrentWriteState().setIndexBuffer(scene.getIndexBuffer());
                     renderState.getCurrentReadState().setIndexBuffer(scene.getIndexBuffer());
                 }
-                renderState.startRead();
 
                 if(scene != null) {
                     latestDrawResult = Renderer.getInstance().draw(renderState.getCurrentReadState());
@@ -633,18 +635,10 @@ public class Engine implements Extractor<RenderState> {
         return temp;
     }
 
-    @Override
     public void resetState() {
         entityHasMoved = false;
         directionalLightNeedsShadowMapRedraw = false;//(currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
         sceneInitiallyDrawn = true;//(!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
-    }
-
-    @Override
-    public void extract(DirectionalLight directionalLight, boolean anyPointLightHasMoved, Camera extractedCamera, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos, boolean entityHasMoved) {
-        renderState.addCommand((renderStateX) -> {
-            renderStateX.init(scene.getVertexBuffer(), scene.getIndexBuffer(), extractedCamera, directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw ,anyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
-        });
     }
 
     JFrame frame;
@@ -781,5 +775,9 @@ public class Engine implements Extractor<RenderState> {
 
     public FPSCounter getUpdateFpsCounter() {
         return updateFpsCounter;
+    }
+
+    public DoubleBuffer<RenderState> getRenderState() {
+        return renderState;
     }
 }
