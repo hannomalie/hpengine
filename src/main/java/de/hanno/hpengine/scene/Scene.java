@@ -66,6 +66,7 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
+		Engine.getEventBus().register(this);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 //        entityContainer = new Octree(new Vector3f(), 600, 5);
         entityContainer = new SimpleContainer();

@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine;
 
-import de.hanno.hpengine.camera.Camera;
 import com.alee.laf.WebLookAndFeel;
 import com.google.common.eventbus.Subscribe;
+import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.camera.MovableCamera;
 import de.hanno.hpengine.component.JavaComponent;
 import de.hanno.hpengine.component.ModelComponent;
@@ -15,24 +15,16 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
-import de.hanno.hpengine.renderer.RenderState;
-import de.hanno.hpengine.util.multithreading.DoubleBuffer;
-import net.engio.mbassy.listener.Handler;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.PointLight;
-import de.hanno.hpengine.renderer.lodstrategy.ModelLod;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.material.MaterialInfo;
@@ -43,9 +35,14 @@ import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.util.gui.DebugFrame;
+import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
+import net.engio.mbassy.listener.Handler;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.util.vector.Vector3f;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,8 +54,10 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -162,46 +161,7 @@ public class Engine {
     private void initialize() {
         getEventBus().register(this);
         initWorkDir();
-        frame = new JFrame("hpengine");
-        frame.setVisible(false);
-        frame.setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-        JLayeredPane layeredPane = new JLayeredPane();
-        canvas = new Canvas() {
-            @Override
-            public void addNotify() {
-                super.addNotify();
-            }
-
-            @Override
-            public void removeNotify() {
-                super.removeNotify();
-            }
-        };
-        canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
-        canvas.setIgnoreRepaint(true);
-        layeredPane.add(canvas, 0);
-//        JPanel overlayPanel = new JPanel();
-//        overlayPanel.setOpaque(true);
-//        overlayPanel.add(new JButton("asdasdasd"));
-//        layeredPane.add(overlayPanel, 1);
-        frame.add(layeredPane);
-        frame.setLayout(new BorderLayout());
-//        frame.getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
-//        frame.getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
-        frame.getContentPane().add(canvas, BorderLayout.CENTER);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
-        try {
-            Display.setParent(canvas);
-        } catch (LWJGLException e) {
-            e.printStackTrace();
-        }
-        frame.addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent evt) {
-                Engine.WINDOW_WIDTH = frame.getWidth();
-                Engine.WINDOW_HEIGHT = frame.getHeight();
-            }
-        });
+        new ApplicationFrame();
         initOpenGLContext();
 
         EntityFactory.create();
@@ -215,14 +175,11 @@ public class Engine {
         ScriptManager.getInstance().defineGlobals();
 
         renderState = new DoubleBuffer(new RenderState(), new RenderState());
-        scene = new Scene();
-        Engine.getEventBus().register(scene);
-        OpenGLContext.getInstance().execute(() -> {
-            scene.init();
-        }, true);
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
         activeCamera = camera;
+        scene = new Scene();
+        scene.init();
         initialized = true;
         getEventBus().post(new EngineInitializedEvent());
     }
@@ -242,7 +199,6 @@ public class Engine {
     }
 
     private boolean createIfAbsent(File folder) {
-
         if (!folder.exists()) {
             return folder.mkdir();
         }
@@ -258,135 +214,7 @@ public class Engine {
         renderThread.start();
     }
 
-    private static class UpdateThread extends FpsCountedTimeStepThread {
-
-        public UpdateThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
-        @Override
-        public void update(float seconds) {
-            Engine.getInstance().update(seconds);
-        }
-    }
-    private static class RenderThread extends TimeStepThread {
-
-        public RenderThread(String name) { super(name, 0.033f); }
-        @Override
-        public void update(float seconds) {
-            if(MULTITHREADED_RENDERING) {
-                try {
-                    Engine.getInstance().actuallyDraw();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private void destroyOpenGL() {
-        OpenGLContext.getInstance().getDrawThread().stopRequested = true;
-        try {
-            Display.destroy();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void destroy() {
-        LOGGER.info("Finalize renderer");
-        destroyOpenGL();
-        if(frame != null) {
-            frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-        }
-        System.exit(0);
-    }
-
-    public List<Entity> loadTestScene() {
-        List<Entity> entities = new ArrayList<>();
-
-        OpenGLContext.exitOnGLError("loadTestScene");
-
-        try {
-//            Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
-//            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
-//            skyBoxEntity.setScale(100);
-//            entities.add(skyBoxEntity);
-
-            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-
-            for (int i = 0; i < entityCount; i++) {
-                for (int j = 0; j < entityCount; j++) {
-                    for (int k = 0; k < entityCount; k++) {
-
-                        MaterialInfo materialInfo = new MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
-                                .setDiffuse(new Vector3f(1, 1, 1))
-                                .setRoughness((float) i / entityCount)
-                                .setMetallic((float) j / entityCount)
-                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
-                                .setAmbient(1);
-                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
-                        mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
-                        mat.setMetallic((float)j/entityCount);
-                        mat.setRoughness((float)k/entityCount);
-
-                        try {
-                            Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
-                            PointLight pointLight = LightFactory.getInstance().getPointLight(10);
-                            pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
-                            scene.addPointLight(pointLight);
-//							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
-//							scale.scale(new Random().nextFloat()*14);
-//							entity.setScale(scale);
-//
-							PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
-                            entity.addComponent(physicsComponent);
-//							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
-//							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
-
-                            entities.add(entity);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-
-//			StopWatch.getInstance().start("Load Sponza");
-//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
-//			for (Model model : sponza) {
-////				model.setMaterial(mirror);
-////				if(model.getMaterial().getName().contains("fabric")) {
-////					model.setMaterial(mirror);
-////				}
-//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
-////				physicsFactory.addMeshPhysicsComponent(entity, 0);
-//				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
-//				entity.setScale(scale);
-//				entities.add(entity);
-//			}
-//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
-//			for (Model model : skyBox) {
-//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
-//				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
-//				entity.setScale(scale);
-//				entities.add(entity);
-//			}
-//			StopWatch.getInstance().stopAndPrintMS();
-
-            for(Entity entity : entities) {
-                entity.init();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            return entities;
-        }
-    }
-
     private void update(float seconds) {
-        SwingUtilities.invokeLater(() -> {
-            //TODO Don't use Display title anymore
-            frame.setTitle(Display.getTitle());
-        });
 
         DirectionalLight directionalLight = scene.getDirectionalLight();
 
@@ -405,7 +233,6 @@ public class Engine {
             });
         }
         StopWatch.getInstance().stopAndPrintMS();
-
         StopWatch.getInstance().start("Entities update");
         scene.update(seconds);
         LightFactory.getInstance().update(seconds);
@@ -532,8 +359,6 @@ public class Engine {
         sceneInitiallyDrawn = true;//(!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
     }
 
-    JFrame frame;
-    Canvas canvas;
     private void initOpenGLContext() {
         OpenGLContext.getInstance();
     }
@@ -652,15 +477,132 @@ public class Engine {
         return physicsFactory;
     }
 
-    public JFrame getFrame() {
-        return frame;
-    }
-
     public FPSCounter getUpdateFpsCounter() {
         return updateFpsCounter;
     }
 
     public DoubleBuffer<RenderState> getRenderState() {
         return renderState;
+    }
+
+    private static class UpdateThread extends FpsCountedTimeStepThread {
+
+        public UpdateThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
+        @Override
+        public void update(float seconds) {
+            Engine.getInstance().update(seconds);
+        }
+    }
+    private static class RenderThread extends TimeStepThread {
+
+        public RenderThread(String name) { super(name, 0.033f); }
+        @Override
+        public void update(float seconds) {
+            if(MULTITHREADED_RENDERING) {
+                try {
+                    Engine.getInstance().actuallyDraw();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void destroyOpenGL() {
+        OpenGLContext.getInstance().getDrawThread().stopRequested = true;
+        try {
+            Display.destroy();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void destroy() {
+        LOGGER.info("Finalize renderer");
+        destroyOpenGL();
+        System.exit(0);
+    }
+
+    public List<Entity> loadTestScene() {
+        List<Entity> entities = new ArrayList<>();
+
+        OpenGLContext.exitOnGLError("loadTestScene");
+
+        try {
+//            Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+//            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
+//            skyBoxEntity.setScale(100);
+//            entities.add(skyBoxEntity);
+
+            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+
+            for (int i = 0; i < entityCount; i++) {
+                for (int j = 0; j < entityCount; j++) {
+                    for (int k = 0; k < entityCount; k++) {
+
+                        MaterialInfo materialInfo = new MaterialInfo().setName("Default" + i + "_" + j + "_" + k)
+                                .setDiffuse(new Vector3f(1, 1, 1))
+                                .setRoughness((float) i / entityCount)
+                                .setMetallic((float) j / entityCount)
+                                .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
+                                .setAmbient(1);
+                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
+                        mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
+                        mat.setMetallic((float)j/entityCount);
+                        mat.setRoughness((float)k/entityCount);
+
+                        try {
+                            Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
+                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
+                            PointLight pointLight = LightFactory.getInstance().getPointLight(10);
+                            pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
+                            scene.addPointLight(pointLight);
+//							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
+//							scale.scale(new Random().nextFloat()*14);
+//							entity.setScale(scale);
+//
+                            PhysicsComponent physicsComponent = physicsFactory.addBallPhysicsComponent(entity);
+                            entity.addComponent(physicsComponent);
+//							physicsComponent.getRigidBody().applyCentralImpulse(new javax.vecmath.Vector3f(10*new Random().nextFloat(), 10*new Random().nextFloat(), 10*new Random().nextFloat()));
+//							physicsComponent.getRigidBody().applyTorqueImpulse(new javax.vecmath.Vector3f(0, 100*new Random().nextFloat(), 0));
+
+                            entities.add(entity);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
+//			StopWatch.getInstance().start("Load Sponza");
+//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
+//			for (Model model : sponza) {
+////				model.setMaterial(mirror);
+////				if(model.getMaterial().getName().contains("fabric")) {
+////					model.setMaterial(mirror);
+////				}
+//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
+////				physicsFactory.addMeshPhysicsComponent(entity, 0);
+//				Vector3f scale = new Vector3f(3.1f, 3.1f, 3.1f);
+//				entity.setScale(scale);
+//				entities.add(entity);
+//			}
+//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
+//			for (Model model : skyBox) {
+//				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
+//				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
+//				entity.setScale(scale);
+//				entities.add(entity);
+//			}
+//			StopWatch.getInstance().stopAndPrintMS();
+
+            for(Entity entity : entities) {
+                entity.init();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            return entities;
+        }
     }
 }
