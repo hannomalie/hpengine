@@ -98,10 +98,22 @@ public class DoubleBufferTest {
                 }
             });
         }
+        executorService.submit(() -> {
+           doubleBuffer.startRead();
+            try {
+                Thread.sleep(1L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
+                doubleBuffer.stopRead();
+            }
+        });
 
         executorService.shutdown();
         executorService.awaitTermination(99, TimeUnit.DAYS);
         Assert.assertEquals(3+600, doubleBuffer.getCurrentReadState().get());
+        Assert.assertEquals(2+600, doubleBuffer.getCurrentWriteState().get());
+        doubleBuffer.update();
         Assert.assertEquals(3+600, doubleBuffer.getCurrentWriteState().get());
     }
 
@@ -110,20 +122,36 @@ public class DoubleBufferTest {
         AtomicLong instanceA = new AtomicLong();
         AtomicLong instanceB = new AtomicLong();
         DoubleBuffer<AtomicLong> doubleBuffer = new DoubleBuffer(instanceA, instanceB);
+        Assert.assertTrue(instanceA == doubleBuffer.getCurrentReadState());
+        Assert.assertTrue(instanceB == doubleBuffer.getCurrentWriteState());
 
         doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
         doubleBuffer.update();
+        Assert.assertTrue(instanceB == doubleBuffer.getCurrentReadState());
+        Assert.assertTrue(instanceA == doubleBuffer.getCurrentWriteState());
         Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
+        Assert.assertEquals(0, doubleBuffer.getCurrentWriteState().get());
+        doubleBuffer.update();
+        Assert.assertTrue(instanceA == doubleBuffer.getCurrentReadState());
+        Assert.assertTrue(instanceB == doubleBuffer.getCurrentWriteState());
+        Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
+        Assert.assertEquals(1, doubleBuffer.getCurrentWriteState().get());
+
 
         doubleBuffer.addCommand((atomicLong) -> atomicLong.getAndIncrement());
         doubleBuffer.startRead();
+        doubleBuffer.update();
+        Assert.assertTrue(instanceA == doubleBuffer.getCurrentReadState());
+        Assert.assertTrue(instanceB == doubleBuffer.getCurrentWriteState());
         Assert.assertEquals(1, doubleBuffer.getCurrentReadState().get());
-        boolean updated = doubleBuffer.update();
-        Assert.assertFalse(updated);
+        Assert.assertEquals(2, doubleBuffer.getCurrentWriteState().get());
         doubleBuffer.stopRead();
-        updated = doubleBuffer.update();
-        Assert.assertTrue(updated);
 
+        doubleBuffer.update();
+        Assert.assertTrue(instanceB == doubleBuffer.getCurrentReadState());
+        Assert.assertTrue(instanceA == doubleBuffer.getCurrentWriteState());
+        doubleBuffer.update();
         Assert.assertEquals(2, doubleBuffer.getCurrentReadState().get());
+        Assert.assertEquals(2, doubleBuffer.getCurrentWriteState().get());
     }
 }

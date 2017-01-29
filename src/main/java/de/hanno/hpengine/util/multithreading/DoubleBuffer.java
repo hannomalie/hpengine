@@ -4,11 +4,9 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class DoubleBuffer<T> {
     private ReentrantLock swapLock = new ReentrantLock();
-    private ReentrantLock readLock = new ReentrantLock();
 
     private T currentReadState;
     private T currentWriteState;
@@ -42,19 +40,18 @@ public class DoubleBuffer<T> {
 
     protected void swap() {
         synchronized (swapLock) {
-            synchronized (readLock) {
-                temp = currentReadState;
-                currentReadState = currentWriteState;
-                currentWriteState = temp;
-                temp = null;
+            if(swapLock.isLocked() && swapLock.isHeldByCurrentThread()) {return;}
+            temp = currentReadState;
+            currentReadState = currentWriteState;
+            currentWriteState = temp;
+            temp = null;
 
-                tempQueue = queueCurrentWriteState;
-                queueCurrentWriteState = queueNextWriteState;
-                queueNextWriteState = tempQueue;
-                tempQueue = null;
-            }
+            tempQueue = queueCurrentWriteState;
+            queueCurrentWriteState = queueNextWriteState;
+            queueNextWriteState = tempQueue;
+            tempQueue = null;
         }
-        update();
+//        update();
     }
 
     public void addCommand(Consumer<T> command) {
@@ -64,16 +61,16 @@ public class DoubleBuffer<T> {
         }
     }
 
-    public boolean update() {
+    public void update() {
         synchronized (swapLock) {
             if(queueCurrentWriteState.size() > 0) {
                 queueCurrentWriteState.executeCommands();
-
-                synchronized (readLock){
-                    swap();
-                }
+                swap();
+                return;
             }
-            return true;
+            if(queueNextWriteState.size() > 0) {
+                swap();
+            }
         }
     }
 
@@ -85,9 +82,9 @@ public class DoubleBuffer<T> {
     }
 
     public void startRead() {
-        readLock.lock();
+        swapLock.lock();
     }
     public void stopRead() {
-        readLock.unlock();
+        swapLock.unlock();
     }
 }
