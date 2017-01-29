@@ -40,7 +40,8 @@ public final class Config {
 	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
-	@Toggable(group = "Debug") public static volatile boolean LOCK_FPS = false;
+	@Toggable(group = "Debug") public static volatile boolean LOCK_FPS = true;
+	@Toggable(group = "Debug") public static volatile boolean LOCK_UPDATERATE = true;
 	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
 	@Toggable(group = "Effects") public static volatile boolean SCATTERING = false;
 	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;

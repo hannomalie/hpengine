@@ -9,13 +9,13 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.UpdateChangedEvent;
+import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.shader.Bufferable;
+import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.shader.Bufferable;
-import de.hanno.hpengine.util.Util;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -173,6 +173,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void update(float seconds) {
+
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);

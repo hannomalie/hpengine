@@ -71,7 +71,8 @@ public class AddEntityView extends WebPanel {
 							@Override
 							public EntityListResult doInBackground() throws Exception {
 								EntityListResult result = new LoadModelCommand(chosenFile, nameField.getText()).execute(Engine.getInstance());
-                                engine.getScene().addAll(result.entities);
+								System.out.println("result.entities.size() = " + result.entities.size());
+								engine.getScene().addAll(result.entities);
                                 Thread.sleep(100);
 								return result;
 							}

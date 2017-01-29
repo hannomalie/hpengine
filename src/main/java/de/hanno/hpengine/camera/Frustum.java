@@ -47,8 +47,11 @@ public class Frustum implements Serializable {
     public float[][] values = new float[6][4];
 	
 	private transient FloatBuffer buffer = BufferUtils.createFloatBuffer(4*6);
+    private float[] proj = new float[16];
+    private float[] modl = new float[16];
+    private float[] clip = new float[16];
 
-	public Frustum(Camera camera) {
+    public Frustum(Camera camera) {
 		calculate(camera);
 	}
 
@@ -60,18 +63,14 @@ public class Frustum implements Serializable {
     public void calculate(Camera camera) {
         buf.rewind();
         camera.getProjectionMatrix().store(buf);
-		float[] proj = new float[16];
 		buf.rewind();
 		buf.get(proj);
 
 		buf.rewind();
 		camera.getViewMatrix().store(buf);
-		float[] modl = new float[16];
 		buf.rewind();
 		buf.get(modl);
-		
-		float[] clip = new float[16];
-		
+
 		clip[ 0] = modl[ 0] * proj[ 0] + modl[ 1] * proj[ 4] + modl[ 2] * proj[ 8] + modl[ 3] * proj[12];
         clip[ 1] = modl[ 0] * proj[ 1] + modl[ 1] * proj[ 5] + modl[ 2] * proj[ 9] + modl[ 3] * proj[13];
         clip[ 2] = modl[ 0] * proj[ 2] + modl[ 1] * proj[ 6] + modl[ 2] * proj[10] + modl[ 3] * proj[14];

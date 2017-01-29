@@ -428,7 +428,12 @@ public class Engine {
         public UpdateThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
         @Override
         public void update(float seconds) {
-            Engine.getInstance().update(seconds);
+            Engine.getInstance().update(seconds > 0.00001f ? seconds : 0.00001f);
+        }
+
+        @Override
+        public float getMinimumCycleTimeInSeconds() {
+            return Config.LOCK_UPDATERATE ? minimumCycleTimeInSeconds : 0f;
         }
     }
     private static class RenderThread extends TimeStepThread {
@@ -443,6 +448,11 @@ public class Engine {
                     e.printStackTrace();
                 }
             }
+        }
+
+        @Override
+        public float getMinimumCycleTimeInSeconds() {
+            return Config.LOCK_FPS ? minimumCycleTimeInSeconds : 0f;
         }
     }
 

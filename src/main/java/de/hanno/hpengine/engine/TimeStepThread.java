@@ -11,7 +11,7 @@ public abstract class TimeStepThread extends Thread {
     protected long lastFrame = 0l;
 
     public boolean stopRequested = false;
-    private volatile float minimumCycleTimeInSeconds;
+    protected volatile float minimumCycleTimeInSeconds;
 
     //TODO: Consider this public
     protected TimeStepThread(String name) {
@@ -60,7 +60,7 @@ public abstract class TimeStepThread extends Thread {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        float secondsLeft = (minimumCycleTimeInSeconds - actualS);
+        float secondsLeft = (getMinimumCycleTimeInSeconds() - actualS);
         if(secondsLeft <= 0) { return; }
 
         boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
@@ -90,7 +90,11 @@ public abstract class TimeStepThread extends Thread {
 
     public abstract void update(float seconds);
 
-    public void setMinimumCycleTimeInSeconds(float minimumCycleTimeInSeconds) {
+    private void setMinimumCycleTimeInSeconds(float minimumCycleTimeInSeconds) {
         this.minimumCycleTimeInSeconds = minimumCycleTimeInSeconds;
+    }
+
+    public float getMinimumCycleTimeInSeconds() {
+        return minimumCycleTimeInSeconds;
     }
 }
