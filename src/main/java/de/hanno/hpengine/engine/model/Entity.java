@@ -41,7 +41,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	private Update update = Update.STATIC;
 
-	private de.hanno.hpengine.engine.Transform transform = new de.hanno.hpengine.engine.Transform();
+	private Transform transform = new Transform();
 
     private List<Transform> instances = new CopyOnWriteArrayList<>();
 
@@ -174,12 +174,13 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	@Override
 	public void update(float seconds) {
 
+
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
-		for (Entity child: getChildren()) {
-			child.update(seconds);
+		for(int i = 0; i < getChildren().size(); i++) {
+			getChildren().get(i).update(seconds);
 		}
 	}
 

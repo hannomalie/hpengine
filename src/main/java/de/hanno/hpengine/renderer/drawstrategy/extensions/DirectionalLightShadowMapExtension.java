@@ -75,7 +75,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", directionalLight.getCamera().getViewMatrixAsBuffer());
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
 
-        for (PerEntityInfo e : visibles) {
+        for(int i = 0; i < visibles.size(); i++) {
+            PerEntityInfo e = visibles.get(i);
 //            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
 //                OpenGLContext.getInstance().disable(CULL_FACE);
 //            } else {

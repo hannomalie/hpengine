@@ -82,7 +82,8 @@ public class Pipeline {
         commands.clear();
         renderState.getIndexBuffer().bind();
         offsets.clear();
-        for (PerEntityInfo info : renderState.perEntityInfos()) {
+        for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
+            PerEntityInfo info = renderState.perEntityInfos().get(i);
             if(Config.useFrustumCulling && useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }

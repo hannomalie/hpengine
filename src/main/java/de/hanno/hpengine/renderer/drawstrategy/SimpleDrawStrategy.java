@@ -195,8 +195,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             if(INDIRECT_DRAWING) {
                 pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
-                for(PerEntityInfo info : renderState.perEntityInfos()) {
-                    info.getMaterial().setTexturesUsed();
+                for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
+                    PerEntityInfo perEntityInfo = renderState.perEntityInfos().get(i);
+                    if(perEntityInfo == null) { continue; }
+                    perEntityInfo.getMaterial().setTexturesUsed();
                 }
             } else {
                 for(PerEntityInfo info : renderState.perEntityInfos()) {

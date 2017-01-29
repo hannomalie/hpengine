@@ -9,6 +9,7 @@ import java.nio.*;
 
 import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand.sizeInBytes;
 import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand.getSizeInInts;
+import static org.lwjgl.opengl.GL30.glCheckFramebufferStatus;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
 public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
@@ -121,7 +122,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
         public int baseVertex;
         public int baseInstance;
         public int entityOffset;
-        private int[] asInts;
+        private int[] asInts = new int[6];
 
         public DrawElementsIndirectCommand() {
 
@@ -138,7 +139,11 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
             this.baseVertex = baseVertex;
             this.baseInstance = baseInstance;
             entityOffset = entityBaseIndex;
-            asInts = new int[]{count, primCount, firstIndex, baseVertex, baseInstance};
+            asInts[0] = count;
+            asInts[1] = primCount;
+            asInts[2] = firstIndex;
+            asInts[3] = baseVertex;
+            asInts[4] = baseInstance;
         }
 
         @Override

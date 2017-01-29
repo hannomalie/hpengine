@@ -61,7 +61,8 @@ public class RenderState {
         if(latestDrawResult != null) {
             this.properties.putAll(latestDrawResult.getProperties());
         }
-        this.perEntityInfos = Collections.unmodifiableList(perEntityInfos);
+        this.perEntityInfos.clear();
+        this.perEntityInfos.addAll(perEntityInfos);
         this.latestDrawResult = latestDrawResult;
         return this;
     }
