@@ -3,9 +3,7 @@ package de.hanno.hpengine.renderer;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.event.PointLightMovedEvent;
 import de.hanno.hpengine.event.StateChangedEvent;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -41,7 +39,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
@@ -90,7 +87,6 @@ public class DeferredRenderer implements Renderer {
 
     VertexBuffer buffer;
 
-	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
 
     public DeferredRenderer() {
@@ -197,6 +193,9 @@ public class DeferredRenderer implements Renderer {
 
 	public DrawResult draw(RenderState renderState) {
 		GPUProfiler.start("Frame");
+		if(renderState.directionalLightNeedsShadowMapRender) {
+			EnvironmentProbeFactory.getInstance().draw(true);
+		}
         DrawResult drawResult = simpleDrawStrategy.draw(renderState);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
@@ -244,16 +243,6 @@ public class DeferredRenderer implements Renderer {
 		Display.update();
         GPUProfiler.end();
         return drawResult;
-	}
-
-	private String dumpTimings() {
-		ProfilingTask tp;
-        StringBuilder builder = new StringBuilder();
-		while((tp = GPUProfiler.getFrameResults()) != null){
-            tp.dump(builder); //Dumps the frame to System.out.
-		}
-        GPUProfiler.dumpAverages();
-        return builder.toString();
 	}
 
 	@Override
@@ -362,14 +351,14 @@ public class DeferredRenderer implements Renderer {
 	private long getTime() {
 		return System.currentTimeMillis();
 	}
-	public double getDeltainMS() {
+	public double getDeltaInMS() {
 		long currentTime = getTime();
 		double delta = (double) currentTime - (double) lastFrameTime;
 		return delta;
 	}
 	@Override
 	public double getDeltaInS() {
-		return (getDeltainMS() / 1000d);
+		return (getDeltaInMS() / 1000d);
 	}
 
 	public static void exitOnGLError(String errorMessage) {
@@ -426,7 +415,7 @@ public class DeferredRenderer implements Renderer {
 	public void executeRenderProbeCommands(RenderState extract) {
 		int counter = 0;
 		
-		renderProbeCommandQueue.takeNearest(Engine.getInstance().getActiveCamera()).ifPresent(command -> {
+		renderProbeCommandQueue.takeNearest(extract.camera).ifPresent(command -> {
 			command.getProbe().draw(command.isUrgent(), extract);
 		});
 		counter++;
@@ -437,7 +426,6 @@ public class DeferredRenderer implements Renderer {
             });
 			counter++;
 		}
-		counter = 0;
 	}
 
 	@Override
@@ -489,38 +477,14 @@ public class DeferredRenderer implements Renderer {
 	}
 
     @Override
-    public String endFrame() {
-        resetMovements();
-
+    public void endFrame() {
         GPUProfiler.endFrame();
-        frameStarted.getAndDecrement();
 		setLastFrameTime();
-        return dumpTimings();
-    }
-
-    public void resetMovements() {
-        for (Entity entity : Engine.getInstance().getScene().getAreaLights()) {
-            entity.setHasMoved(false);
-        }
-
-        boolean pointLightMovePosted = false;
-        for (Entity entity : Engine.getInstance().getScene().getPointLights()) {
-            if(!pointLightMovePosted && entity.hasMoved()) {
-                Engine.getEventBus().post(new PointLightMovedEvent());
-                pointLightMovePosted = true;
-            }
-            entity.setHasMoved(false);
-        }
     }
 
     @Override
 	public void startFrame() {
-		frameStarted.getAndIncrement();
         GPUProfiler.startFrame();
 	}
 
-	@Override
-	public boolean isFrameFinished() {
-        return frameStarted.get() == 0;
-	}
 }

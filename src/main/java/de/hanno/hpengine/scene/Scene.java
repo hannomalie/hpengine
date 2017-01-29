@@ -47,6 +47,8 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
+	private transient volatile boolean initiallyDrawn;
+
 	private transient EntitiesContainer entityContainer = new SimpleContainer();
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
@@ -355,5 +357,13 @@ public class Scene implements LifeCycle, Serializable {
 
 	public IndexBuffer getIndexBuffer() {
 		return indexBuffer;
+	}
+
+	public boolean isInitiallyDrawn() {
+		return initiallyDrawn;
+	}
+
+	public void setInitiallyDrawn(boolean initiallyDrawn) {
+		this.initiallyDrawn = initiallyDrawn;
 	}
 }

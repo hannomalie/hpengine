@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer;
 
+import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -48,7 +48,6 @@ public class SimpleTextureRenderer implements Renderer {
 
 	private ArrayList<VertexBuffer> sixDebugBuffers;
 
-	private volatile AtomicInteger frameStarted = new AtomicInteger(0);
     private FPSCounter fpsCounter = new FPSCounter();
 
     public SimpleTextureRenderer() {
@@ -152,7 +151,7 @@ public class SimpleTextureRenderer implements Renderer {
 		program.use();
 
         OpenGLContext.getInstance().bindFrameBuffer(0);
-        OpenGLContext.getInstance().viewPort(0,0, Engine.WINDOW_WIDTH, Engine.WINDOW_HEIGHT);
+        OpenGLContext.getInstance().viewPort(0,0, ApplicationFrame.WINDOW_WIDTH, ApplicationFrame.WINDOW_HEIGHT);
         OpenGLContext.getInstance().disable(GlCap.DEPTH_TEST);
 
 		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
@@ -225,22 +224,14 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
     @Override
-    public String endFrame() {
+    public void endFrame() {
         GPUProfiler.endFrame();
-        frameStarted.getAndDecrement();
 		setLastFrameTime();
-        return dumpTimings();
     }
 
 	@Override
 	public void startFrame() {
-		frameStarted.getAndIncrement();
         GPUProfiler.startFrame();
-	}
-
-	@Override
-	public boolean isFrameFinished() {
-        return frameStarted.get() == 0;
 	}
 
 }

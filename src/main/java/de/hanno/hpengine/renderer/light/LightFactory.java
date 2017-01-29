@@ -171,9 +171,6 @@ public class LightFactory {
 		Engine.getEventBus().register(this);
 	}
 
-    public void update(float seconds) {
-    }
-	
 	public PointLight getPointLight() {
 		return getPointLight(new Vector3f());
 	}
@@ -430,9 +427,9 @@ public class LightFactory {
                 pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[" + floatBufferIndex + "]", projectionMatrices[floatBufferIndex]);
 //				floatBuffers[floatBufferIndex] = null;
 			}
-			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", Engine.getInstance().getActiveCamera().getProjectionMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", Engine.getInstance().getActiveCamera().getViewMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", Engine.getInstance().getActiveCamera().getViewProjectionMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerEntityInfo e : visibles) {

@@ -142,12 +142,11 @@ public class EnvironmentProbeFactory {
 		prepareProbeRendering();
 		
 		List<EnvironmentProbe> dynamicProbes = probes.stream().
-				filter(probe -> { return probe.update == Update.DYNAMIC; }).
+				filter(probe -> probe.update == Update.DYNAMIC).
 				collect(Collectors.toList());
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-			//environmentProbe.draw(octree, light);
 			Renderer.getInstance().addRenderProbeCommand(environmentProbe, urgent);
 		}
 	}

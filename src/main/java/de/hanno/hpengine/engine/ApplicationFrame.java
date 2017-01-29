@@ -1,16 +1,22 @@
 package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.renderer.*;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
+import javax.swing.Renderer;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
+import static de.hanno.hpengine.renderer.Renderer.*;
+
 public class ApplicationFrame extends JFrame {
 
+    public static int WINDOW_WIDTH = Config.WIDTH;
+    public static int WINDOW_HEIGHT = Config.HEIGHT;
     Canvas canvas;
 
     public ApplicationFrame() throws HeadlessException {
@@ -51,8 +57,8 @@ public class ApplicationFrame extends JFrame {
         ApplicationFrame frame = this;
         addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent evt) {
-                Engine.WINDOW_WIDTH = frame.getWidth();
-                Engine.WINDOW_HEIGHT = frame.getHeight();
+                WINDOW_WIDTH = frame.getWidth();
+                WINDOW_HEIGHT = frame.getHeight();
             }
         });
 
@@ -61,8 +67,14 @@ public class ApplicationFrame extends JFrame {
             @Override
             public void update(float seconds) {
                 SwingUtilities.invokeLater(() -> {
-                    //TODO Don't use Display title anymore
-                    frame.setTitle(Display.getTitle());
+                    try {
+                        frame.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                                getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
+                    } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/}
+                    catch (IllegalStateException | NullPointerException e) {
+                        frame.setTitle("HPEngine Renderer initializing...");
+                    }
+
                 });
             }
         }.start();

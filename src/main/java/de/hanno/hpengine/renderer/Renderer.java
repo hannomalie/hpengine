@@ -31,7 +31,7 @@ public interface Renderer extends LifeCycle {
     default float getMsPerFrame() { return getFPSCounter().getMsPerFrame(); }
 
     void startFrame();
-    String endFrame();
+    void endFrame();
 
     GBuffer getGBuffer();
 
@@ -287,8 +287,6 @@ public interface Renderer extends LifeCycle {
             }
         }
     }
-
-    boolean isFrameFinished();
 
     static Renderer getInstance() {
         if(SingletonHelper.instance == null) {

@@ -22,14 +22,11 @@ import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
-import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.material.MaterialInfo;
-import de.hanno.hpengine.scene.EnvironmentProbe;
-import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
@@ -37,18 +34,14 @@ import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
-import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -58,29 +51,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class Engine {
-    public static int WINDOW_WIDTH = Config.WIDTH;
-    public static int WINDOW_HEIGHT = Config.HEIGHT;
 
     private static volatile Engine instance = null;
-
-    private final ExecutorService pool = Executors.newFixedThreadPool(1);
-    private final CountingCompletionService<PerEntityInfo> completionService = new CountingCompletionService<>(pool);
 
     private UpdateThread updateThread;
     private RenderThread renderThread;
 
     private DrawResult latestDrawResult = null;
-    private String latestGPUProfilingResult = "";
+    private volatile String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
-    private volatile boolean sceneInitiallyDrawn;
     private DoubleBuffer<RenderState> renderState;
-    private final FPSCounter updateFpsCounter = new FPSCounter();
-    public static boolean MULTITHREADED_RENDERING = true;
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -152,7 +135,6 @@ public class Engine {
         }
         instance = new Engine();
         instance.initialize();
-        instance.startSimulation();
     }
 
     private Engine() {
@@ -180,6 +162,7 @@ public class Engine {
         activeCamera = camera;
         scene = new Scene();
         scene.init();
+        instance.startSimulation();
         initialized = true;
         getEventBus().post(new EngineInitializedEvent());
     }
@@ -215,105 +198,62 @@ public class Engine {
     }
 
     private void update(float seconds) {
-
-        DirectionalLight directionalLight = scene.getDirectionalLight();
-
-        StopWatch.getInstance().stopAndPrintMS();
-        StopWatch.getInstance().start("Camera update");
         camera.update(seconds);
-
-        StopWatch.getInstance().stopAndPrintMS();
-        StopWatch.getInstance().start("Light update");
-        if (directionalLight.hasMoved()) {
-            OpenGLContext.getInstance().execute(() -> {
-                for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
-                    Renderer.getInstance().addRenderProbeCommand(probe, true);
-                }
-                EnvironmentProbeFactory.getInstance().draw(true);
-            });
-        }
-        StopWatch.getInstance().stopAndPrintMS();
-        StopWatch.getInstance().start("Entities update");
         scene.update(seconds);
-        LightFactory.getInstance().update(seconds);
-        StopWatch.getInstance().stopAndPrintMS();
-
-        updateFpsCounter.update();
-        if(!MULTITHREADED_RENDERING) {
+        updateRenderState();
+        if(!Config.MULTITHREADED_RENDERING) {
             actuallyDraw();
         }
+    }
 
+    private void updateRenderState() {
         boolean anyPointLightHasMoved = false;
         for(int i = 0; i < scene.getPointLights().size(); i++) {
-            if(!scene.getPointLights().get(i).hasMoved()) { continue; }
+            PointLight pointLight = scene.getPointLights().get(i);
+            if(!pointLight.hasMoved()) { continue; }
             anyPointLightHasMoved = true;
-            break;
+            pointLight.setHasMoved(false);
         }
 
+        boolean entityHasMoved = false;
         for(int i = 0; i < scene.getEntities().size(); i++) {
             if(!scene.getEntities().get(i).hasMoved()) { continue; }
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
-            break;
+            scene.getEntities().get(i).setHasMoved(false);
         }
 
         if((entityHasMoved || entityAdded) && scene != null) {
             entityAdded = false;
             directionalLightNeedsShadowMapRedraw = true;
         }
-        if(directionalLight.hasMoved()) {
+        if(scene.getDirectionalLight().hasMoved()) {
             directionalLightNeedsShadowMapRedraw = true;
             scene.getDirectionalLight().setHasMoved(false);
         }
 
         List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
         boolean finalAnyPointLightHasMoved = anyPointLightHasMoved;
-        renderState.addCommand((renderStateX1) -> {
-            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), directionalLight, entityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (sceneInitiallyDrawn && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos);
-        });
+        boolean finalEntityHasMoved = entityHasMoved;
+        renderState.addCommand((renderStateX1) -> renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos));
 
-        if(entityHasMoved) {
-            renderState.addCommand((renderStateX) -> { renderStateX.bufferEntites(scene.getEntities()); });
-            entityHasMoved = false;
-            for (Entity entity : scene.getEntities()) {
-                entity.setHasMoved(false);
-            }
-        }
         renderState.update();
     }
 
     protected void actuallyDraw() {
-//        if (Renderer.getInstance().isFrameFinished())
-        {
-            OpenGLContext.getInstance().execute(() -> {
-                Input.update();
-                Renderer.getInstance().startFrame();
-                renderState.startRead();
-                if(scene != null) {
-                    renderState.getCurrentWriteState().setVertexBuffer(scene.getVertexBuffer());
-                    renderState.getCurrentReadState().setVertexBuffer(scene.getVertexBuffer());
+        OpenGLContext.getInstance().execute(() -> {
+            Input.update();
+            renderState.startRead();
+            Renderer.getInstance().startFrame();
+            latestDrawResult = Renderer.getInstance().draw(renderState.getCurrentReadState());
+            latestGPUProfilingResult = GPUProfiler.dumpTimings();
+            Renderer.getInstance().endFrame();
+            Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+            scene.endFrame();
 
-                    renderState.getCurrentWriteState().setIndexBuffer(scene.getIndexBuffer());
-                    renderState.getCurrentReadState().setIndexBuffer(scene.getIndexBuffer());
-                }
-
-                if(scene != null) {
-                    latestDrawResult = Renderer.getInstance().draw(renderState.getCurrentReadState());
-                    latestGPUProfilingResult = Renderer.getInstance().endFrame();
-                    Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
-                    scene.endFrame();
-                }
-
-                try {
-                    Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                            Renderer.getInstance().getCurrentFPS(), Renderer.getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
-                } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/}
-                renderState.stopRead();
-            }, true);
-            resetState();
-
-        }
-
+            renderState.stopRead();
+        }, true);
+        resetState();
     }
 
     private Vector3f tempDistVector = new Vector3f();
@@ -354,15 +294,13 @@ public class Engine {
     }
 
     public void resetState() {
-        entityHasMoved = false;
-        directionalLightNeedsShadowMapRedraw = false;//(currentExtract.directionalLightNeedsShadowMapRender && latestDrawResult.directionalLightShadowMapWasRendered()) ? false : directionalLightNeedsShadowMapRedraw;
-        sceneInitiallyDrawn = true;//(!currentExtract.sceneInitiallyDrawn ? true : sceneInitiallyDrawn);
+        directionalLightNeedsShadowMapRedraw = false;
+        scene.setInitiallyDrawn(true);
     }
 
     private void initOpenGLContext() {
         OpenGLContext.getInstance();
     }
-    private volatile boolean entityHasMoved = false;
 
     public Scene getScene() {
         return scene;
@@ -377,6 +315,10 @@ public class Engine {
             StopWatch.getInstance().stopAndPrintMS();
         }, true);
         restoreWorldCamera();
+        renderState.addCommand(renderState1 -> {
+            renderState1.setIndexBuffer(scene.getIndexBuffer());
+            renderState1.setVertexBuffer(scene.getVertexBuffer());
+        });
     }
 
     public Camera getActiveCamera() {
@@ -417,7 +359,7 @@ public class Engine {
     public void handle(EntityAddedEvent e) {
         entityAdded = true;
         directionalLightNeedsShadowMapRedraw = true;
-        sceneInitiallyDrawn = false;
+        scene.setInitiallyDrawn(false);
         scene.setUpdateCache(true);
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
@@ -433,7 +375,7 @@ public class Engine {
     @Subscribe
     @Handler
     public void handle(SceneInitEvent e) {
-        sceneInitiallyDrawn = false;
+        scene.setInitiallyDrawn(false);
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
         }));
@@ -477,10 +419,6 @@ public class Engine {
         return physicsFactory;
     }
 
-    public FPSCounter getUpdateFpsCounter() {
-        return updateFpsCounter;
-    }
-
     public DoubleBuffer<RenderState> getRenderState() {
         return renderState;
     }
@@ -498,7 +436,7 @@ public class Engine {
         public RenderThread(String name) { super(name, 0.033f); }
         @Override
         public void update(float seconds) {
-            if(MULTITHREADED_RENDERING) {
+            if(Config.MULTITHREADED_RENDERING) {
                 try {
                     Engine.getInstance().actuallyDraw();
                 } catch (Exception e) {

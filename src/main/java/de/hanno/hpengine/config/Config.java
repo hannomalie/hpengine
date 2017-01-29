@@ -53,6 +53,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
 
     public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
+    public static boolean MULTITHREADED_RENDERING = true;
 
     private Config() { super(); }
 }

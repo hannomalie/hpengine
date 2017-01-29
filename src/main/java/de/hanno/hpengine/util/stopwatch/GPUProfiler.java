@@ -209,4 +209,15 @@ public class GPUProfiler {
 		public Long getAverageInMS() { return (summedTime / count) / 1000 / 1000; }
 		public Long getAverageCpuInMS() { return (summedTimeCpu / count) / 1000 / 1000; }
 	}
+
+
+	public static String dumpTimings() {
+		ProfilingTask tp;
+		StringBuilder builder = new StringBuilder();
+		while((tp = GPUProfiler.getFrameResults()) != null){
+			tp.dump(builder); //Dumps the frame to System.out.
+		}
+		GPUProfiler.dumpAverages();
+		return builder.toString();
+	}
 }

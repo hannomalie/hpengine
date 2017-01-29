@@ -12,6 +12,7 @@ import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.shader.PersistentMappedBuffer;
 import de.hanno.hpengine.util.Util;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
@@ -30,8 +31,8 @@ public class RenderState {
     public Vector4f sceneMax = new Vector4f();
     private Map properties = new HashMap<>();
     private List<PerEntityInfo> perEntityInfos = new ArrayList<>();
-    private IndexBuffer indexBuffer;
-    private VertexBuffer vertexBuffer;
+    private IndexBuffer indexBuffer = new IndexBuffer();
+    private VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(1), ModelComponent.DEFAULTCHANNELS);
     private OpenGLBuffer entitiesBuffer = new PersistentMappedBuffer(16000);
     private OpenGLBuffer materialBuffer = new PersistentMappedBuffer(20000);
 
