@@ -40,8 +40,6 @@ public final class Config {
 	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
 	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
 	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
-	@Toggable(group = "Debug") public static volatile boolean LOCK_FPS = true;
-	@Toggable(group = "Debug") public static volatile boolean LOCK_UPDATERATE = true;
 	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
 	@Toggable(group = "Effects") public static volatile boolean SCATTERING = false;
 	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
@@ -53,8 +51,11 @@ public final class Config {
 	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = false;
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
 
+	@Toggable(group = "Performance") public static boolean MULTITHREADED_RENDERING = true;
+	@Toggable(group = "Performance") public static volatile boolean LOCK_FPS = true;
+	@Toggable(group = "Performance") public static volatile boolean LOCK_UPDATERATE = true;
+
     public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
-    public static boolean MULTITHREADED_RENDERING = true;
 
     private Config() { super(); }
 }
