@@ -5,7 +5,6 @@ import java.util.Map;
 public class DrawResult {
     private final FirstPassResult firstPassResult;
     private final SecondPassResult secondPassResult;
-    public boolean directionalLightShadowMapRendered = false;
 
     public DrawResult(FirstPassResult firstPassResult, SecondPassResult secondPassResult) {
         this.firstPassResult = firstPassResult;
@@ -26,12 +25,15 @@ public class DrawResult {
                 "Entities visible: " + getEntityCount() + "\n\n";
     }
 
-    public boolean directionalLightShadowMapWasRendered() {
-        return firstPassResult.directionalLightShadowMapWasRendered;
-    }
-
     public Map<String, Object> getProperties() {
         return firstPassResult.getProperties();
     }
 
+    public FirstPassResult getFirstPassResult() {
+        return firstPassResult;
+    }
+
+    public SecondPassResult getSecondPassResult() {
+        return secondPassResult;
+    }
 }

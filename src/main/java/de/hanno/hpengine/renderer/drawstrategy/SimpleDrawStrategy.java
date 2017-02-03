@@ -6,10 +6,10 @@ import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.renderer.*;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.Pipeline;
+import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.renderer.drawstrategy.extensions.*;
@@ -26,9 +26,13 @@ import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.lwjgl.opengl.*;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static de.hanno.hpengine.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE;
@@ -63,7 +67,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private final DrawLightMapExtension lightMapExtension;
-    private FirstPassResult firstPassResult = new FirstPassResult();
     private Pipeline pipeline;
 
     public SimpleDrawStrategy() throws Exception {
@@ -101,8 +104,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     @Override
-    public DrawResult draw(RenderTarget target, RenderState renderState) {
-        SecondPassResult secondPassResult = null;
+    public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
         Engine engine = Engine.getInstance();
         EntitiesContainer octree = engine.getScene().getEntitiesContainer();
 
@@ -111,14 +113,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         DirectionalLight light = renderState.directionalLight;
 
         GPUProfiler.start("First pass");
-        FirstPassResult firstPassResult = drawFirstPass(renderState);
+        drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
 
         environmentProbeFactory.drawAlternating(renderState.camera);
         Renderer.getInstance().executeRenderProbeCommands(renderState);
         GPUProfiler.start("Shadowmap pass");
         {
-            directionalLightShadowMapExtension.renderFirstPass(renderState, firstPassResult);
+            directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
         }
         lightFactory.renderAreaLightShadowMaps(renderState, octree);
         if (Config.USE_DPSM) {
@@ -130,7 +132,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (!Config.DIRECT_TEXTURE_OUTPUT) {
             GPUProfiler.start("Second pass");
-            secondPassResult = drawSecondPass(renderState.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
+            drawSecondPass(result.getSecondPassResult(), renderState.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -143,12 +145,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             RenderTarget.getFrontBuffer().use(true);
             Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         }
-
-        return new DrawResult(firstPassResult, secondPassResult);
     }
 
-    public FirstPassResult drawFirstPass(RenderState renderState) {
-        firstPassResult.reset();
+    public FirstPassResult drawFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
         Camera camera = renderState.camera;
 
@@ -219,13 +218,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         for(RenderExtension extension : renderExtensions) {
             GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
-            extension.renderFirstPass(renderState, firstPassResult);
+            extension.renderFirstPass(firstPassResult, renderState);
             GPUProfiler.end();
         }
 
         GPUProfiler.start("RenderExtension lightmap firstpass");
         OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-        lightMapExtension.renderFirstPass(renderState, firstPassResult);
+        lightMapExtension.renderFirstPass(firstPassResult, renderState);
         GPUProfiler.end();
 
         if (Config.DIRECT_TEXTURE_OUTPUT) {
@@ -243,8 +242,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return firstPassResult;
     }
 
-    public SecondPassResult drawSecondPass(Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
-        SecondPassResult secondPassResult = new SecondPassResult();
+    public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
         Vector3f camPosition = camera.getPosition();
         Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);

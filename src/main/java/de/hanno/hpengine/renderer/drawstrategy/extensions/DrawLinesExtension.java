@@ -28,7 +28,7 @@ public class DrawLinesExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
         if(Config.DRAWLINES_ENABLED) {
             OpenGLContext openGLContext = OpenGLContext.getInstance();

@@ -28,7 +28,6 @@ import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 import javax.vecmath.Vector2f;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
@@ -116,16 +115,15 @@ public class SimpleTextureRenderer implements Renderer {
 	}
 
 
-	public DrawResult draw(RenderState renderState) {
+	@Override
+	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-        DrawResult drawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
 		GPUProfiler.end();
         drawToQuad(TextureFactory.getInstance().getDefaultTexture().getTextureID(), QuadVertexBuffer.getFullscreenBuffer());
 
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();
-        return drawResult;
 	}
 
 	private String dumpTimings() {

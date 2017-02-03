@@ -28,7 +28,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
         floatBuffer = BufferUtils.createFloatBuffer(4);
     }
     @Override
-    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
         Engine engine = Engine.getInstance();
         if (Input.PICKING_CLICK == 1) {

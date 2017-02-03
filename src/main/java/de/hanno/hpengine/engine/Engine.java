@@ -21,6 +21,8 @@ import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.PointLight;
@@ -51,6 +53,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 public class Engine {
@@ -60,7 +63,7 @@ public class Engine {
     private UpdateThread updateThread;
     private RenderThread renderThread;
 
-    private DrawResult latestDrawResult = null;
+    private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
     private volatile String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
     private DoubleBuffer<RenderState> renderState;
@@ -245,7 +248,7 @@ public class Engine {
             Input.update();
             renderState.startRead();
             Renderer.getInstance().startFrame();
-            latestDrawResult = Renderer.getInstance().draw(renderState.getCurrentReadState());
+            Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
             latestGPUProfilingResult = GPUProfiler.dumpTimings();
             Renderer.getInstance().endFrame();
             Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
@@ -258,6 +261,7 @@ public class Engine {
 
     private Vector3f tempDistVector = new Vector3f();
     Map<ModelComponent, PerEntityInfo> cash0 = new HashMap<>();
+    List<PerEntityInfo> currentPerEntityInfos = new CopyOnWriteArrayList<>();
     public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
 
@@ -265,8 +269,8 @@ public class Engine {
 
         List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
 
-        List<PerEntityInfo> currentPerEntityInfos = new ArrayList<>(modelComponents.size());
         currentPerEntityInfos.clear();
+//        currentPerEntityInfos = new ArrayList<>(modelComponents.size());
         for (ModelComponent modelComponent : modelComponents) {
 
             Entity entity = modelComponent.getEntity();
@@ -428,7 +432,7 @@ public class Engine {
         public UpdateThread(String name, float minCycleTimeInS) { super(name, minCycleTimeInS); }
         @Override
         public void update(float seconds) {
-            Engine.getInstance().update(seconds > 0.00001f ? seconds : 0.00001f);
+            Engine.getInstance().update(seconds > 0.001f ? seconds : 0.001f);
         }
 
         @Override

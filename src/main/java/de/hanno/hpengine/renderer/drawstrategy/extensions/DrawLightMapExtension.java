@@ -3,7 +3,6 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.BufferUtils;
@@ -19,7 +18,6 @@ import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.drawstrategy.SimpleDrawStrategy;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
@@ -33,9 +31,6 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 
-import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE;
-import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE_MINUS_SRC_ALPHA;
-import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.SRC_ALPHA;
 import static de.hanno.hpengine.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.renderer.constants.GlCap.DEPTH_TEST;
 import static de.hanno.hpengine.renderer.constants.GlTextureTarget.TEXTURE_2D;
@@ -98,7 +93,7 @@ public class DrawLightMapExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         if(DRAW_LIGHTMAP && (renderState.directionalLightNeedsShadowMapRender || currentCounter < count)) {
             if(currentCounter >= count) {
                 currentSource = currentTarget;

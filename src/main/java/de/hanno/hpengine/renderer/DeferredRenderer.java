@@ -28,7 +28,6 @@ import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
-import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 
 import javax.vecmath.Vector2f;
 import java.io.File;
@@ -191,12 +190,13 @@ public class DeferredRenderer implements Renderer {
 	// I need this to force probe redrawing after de.hanno.hpengine.engine startup....TODO: Find better solution
 	int counter = 0;
 
-	public DrawResult draw(RenderState renderState) {
+    @Override
+	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
 		if(renderState.directionalLightNeedsShadowMapRender) {
 			EnvironmentProbeFactory.getInstance().draw(true);
 		}
-        DrawResult drawResult = simpleDrawStrategy.draw(renderState);
+        simpleDrawStrategy.draw(result, renderState);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
 //            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
@@ -242,7 +242,6 @@ public class DeferredRenderer implements Renderer {
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();
-        return drawResult;
 	}
 
 	@Override

@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
@@ -20,7 +19,6 @@ import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
@@ -154,7 +152,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
         boolean directionalLightMoved = renderState.directionalLightNeedsShadowMapRender;
         boolean entityOrDirectionalLightHasMoved = renderState.anEntityHasMoved || directionalLightMoved;

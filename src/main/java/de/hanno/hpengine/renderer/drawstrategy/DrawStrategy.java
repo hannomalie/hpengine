@@ -1,6 +1,5 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
-import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.renderer.OpenGLContext;
@@ -9,8 +8,6 @@ import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.shader.Program;
-
-import javax.annotation.Nullable;
 
 public interface DrawStrategy {
 
@@ -45,9 +42,9 @@ public interface DrawStrategy {
         }
     }
 
-    default DrawResult draw(RenderState renderState) {
-        return draw(null, renderState);
+    default void draw(DrawResult result, RenderState renderState) {
+        draw(result, null, renderState);
     }
 
-    DrawResult draw(@Nullable RenderTarget renderTarget, RenderState renderState);
+    void draw(DrawResult result, RenderTarget renderTarget, RenderState renderState);
 }

@@ -13,7 +13,7 @@ public interface Renderer extends LifeCycle {
 
     default void destroy() {}
 
-    DrawResult draw(RenderState renderState);
+    void draw(DrawResult result, RenderState renderState);
 
     void update(float seconds);
 

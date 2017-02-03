@@ -2,7 +2,6 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
@@ -10,7 +9,6 @@ import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
@@ -49,7 +47,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     @Override
-    public void renderFirstPass(RenderState renderState, FirstPassResult firstPassResult) {
+    public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         if(renderState.directionalLightNeedsShadowMapRender) {
             GPUProfiler.start("Directional shadowmap");
             drawShadowMap(renderState, firstPassResult);
