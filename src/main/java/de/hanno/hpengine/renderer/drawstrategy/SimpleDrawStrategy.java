@@ -42,7 +42,6 @@ import static de.hanno.hpengine.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.renderer.constants.GlTextureTarget.*;
 
 public class SimpleDrawStrategy extends BaseDrawStrategy {
-    public static final boolean INDIRECT_DRAWING = true;
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
 
@@ -192,11 +191,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
             GPUProfiler.start("Actual draw entities");
 
-            if(INDIRECT_DRAWING) {
+            if(Config.INDIRECT_DRAWING) {
                 pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
                 for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
                     PerEntityInfo perEntityInfo = renderState.perEntityInfos().get(i);
-                    if(perEntityInfo == null) { continue; }
                     perEntityInfo.getMaterial().setTexturesUsed();
                 }
             } else {

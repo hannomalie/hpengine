@@ -6,6 +6,7 @@ uniform mat4 lastViewMatrix;
 //uniform mat4 modelMatrix;
 uniform mat4 lightMatrix;
 
+uniform int indirect = 1;
 uniform int entityIndex = 0;
 uniform vec3 eyePosition;
 uniform int time = 0;
@@ -67,12 +68,10 @@ flat out int outMaterialIndex;
 
 void main(void) {
 
-//TODO: Fix this for direct drawing
-    int realEntityIndex = gl_DrawIDARB + entityIndex;
-    outEntityIndex = realEntityIndex;
+    int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
+    if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
 
-    int offset = entityOffsets[realEntityIndex];
-    outEntityBufferIndex = offset + gl_InstanceID;
+    outEntityBufferIndex = entityBufferIndex;
 
     Entity entity = entities[outEntityBufferIndex];
     outEntity = entity;

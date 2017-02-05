@@ -3,10 +3,11 @@ package de.hanno.hpengine.renderer;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.PerEntityInfo;
-import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
+import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.OpenGLBuffer;
@@ -14,10 +15,11 @@ import de.hanno.hpengine.shader.PersistentMappedBuffer;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.renderer.light.DirectionalLight;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class RenderState {
     private DrawResult latestDrawResult;

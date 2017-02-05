@@ -248,6 +248,7 @@ public class Engine {
             Input.update();
             renderState.startRead();
             Renderer.getInstance().startFrame();
+            latestDrawResult.reset();
             Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
             latestGPUProfilingResult = GPUProfiler.dumpTimings();
             Renderer.getInstance().endFrame();

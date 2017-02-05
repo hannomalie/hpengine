@@ -36,4 +36,9 @@ public class DrawResult {
     public SecondPassResult getSecondPassResult() {
         return secondPassResult;
     }
+
+    public void reset() {
+        firstPassResult.reset();
+        secondPassResult.reset();
+    }
 }

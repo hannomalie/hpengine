@@ -7,12 +7,14 @@ import java.util.logging.Logger;
 public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
-//    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
-    private ArrayBlockingQueue<FutureCallable> workQueue = new ArrayBlockingQueue<>(10);
+    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
 
-    public void executeCommands() {
+    public boolean executeCommands() {
+        boolean executedCommands = false;
         while(executeCommand()) {
+            executedCommands = true;
         }
+        return executedCommands;
     }
 
     public boolean executeCommand() {
@@ -75,7 +77,7 @@ public class CommandQueue {
         return workQueue.iterator();
     }
 
-    public ArrayBlockingQueue<FutureCallable> getWorkQueue() {
+    public LinkedBlockingDeque<FutureCallable> getWorkQueue() {
         return workQueue;
     }
 }

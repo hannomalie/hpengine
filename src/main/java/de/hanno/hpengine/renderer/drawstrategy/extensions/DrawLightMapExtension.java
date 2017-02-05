@@ -17,7 +17,6 @@ import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
-import de.hanno.hpengine.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
@@ -178,7 +177,7 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 
         GPUProfiler.start("Actual draw entities lightmap");
-        if (SimpleDrawStrategy.INDIRECT_DRAWING) {
+        if (Config.INDIRECT_DRAWING) {
             if(true) {
                 pipeline.prepareAndDraw(renderState, lightMapProgram, firstPassResult);
             } else {

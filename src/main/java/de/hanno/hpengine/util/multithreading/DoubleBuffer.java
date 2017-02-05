@@ -2,19 +2,19 @@ package de.hanno.hpengine.util.multithreading;
 
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
+import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class DoubleBuffer<T> {
+    private final QueueStatePair<T> instanceA;
+    private final QueueStatePair<T> instanceB;
     private ReentrantLock swapLock = new ReentrantLock();
 
-    private T currentReadState;
-    private T currentWriteState;
-    private T temp;
-
-    private CommandQueue queueCurrentWriteState = new CommandQueue();
-    private CommandQueue queueNextWriteState = new CommandQueue();
-    private CommandQueue tempQueue;
+    private QueueStatePair<T> currentReadState;
+    private QueueStatePair<T> currentWriteState;
+    private QueueStatePair<T> temp;
 
     /*
         Represents an instance with two copies of an object, so that the object can
@@ -22,63 +22,46 @@ public class DoubleBuffer<T> {
         consumed always, but not while current read and write copies are switched.
         Updates can be done via commands. Commands are recorded in two queues. When
         the doublebuffer is updated, pending commands are executed and the current write
-        state is updated. Afterwars, a swap is performed in order to make the just
-        updated copy the current read copy. The recorded commands are then executed
-        for the current write copy as well.
+        state is updated. Afterwards, a swap is performed in order to make the just
+        updated copy the current read copy. This only happens when there have been
+        some commands to execute at all.
         Swaps are not performed, when a read is currently in progress. This can be signaled
-        with explicitly calling startRead and stopRead. Because reading is the more
-        important operation in my eyes, it gets the favour over the swapping action when
-        updating the doublebuffer.
+        with explicitly calling startRead and stopRead.
      */
     public DoubleBuffer(T instanceA, T instanceB) {
         if(instanceA == null || instanceB == null) {
             throw new IllegalArgumentException("Don't pass null to constructor!");
         }
-        currentReadState = instanceA;
-        currentWriteState = instanceB;
+        currentReadState = new QueueStatePair<>(instanceA);
+        currentWriteState = new QueueStatePair<>(instanceB);
+        this.instanceA = currentReadState;
+        this.instanceB = currentWriteState;
     }
 
     protected void swap() {
-        synchronized (swapLock) {
-            if(swapLock.isLocked() && swapLock.isHeldByCurrentThread()) {return;}
-            temp = currentReadState;
-            currentReadState = currentWriteState;
-            currentWriteState = temp;
-            temp = null;
-
-            tempQueue = queueCurrentWriteState;
-            queueCurrentWriteState = queueNextWriteState;
-            queueNextWriteState = tempQueue;
-            tempQueue = null;
-        }
-//        update();
+        swapLock.lock();
+        temp = currentReadState;
+        currentReadState = currentWriteState;
+        currentWriteState = temp;
+        swapLock.unlock();
     }
 
     public void addCommand(Consumer<T> command) {
-        synchronized (swapLock) {
-            queueCurrentWriteState.addCommand(() -> command.accept(getCurrentWriteState()));
-            queueNextWriteState.addCommand(() -> command.accept(getCurrentWriteState()));
-        }
+        instanceA.addCommand(command);
+        instanceB.addCommand(command);
     }
 
     public void update() {
-        synchronized (swapLock) {
-            if(queueCurrentWriteState.size() > 0) {
-                queueCurrentWriteState.executeCommands();
-                swap();
-                return;
-            }
-            if(queueNextWriteState.size() > 0) {
-                swap();
-            }
+        if(currentWriteState.queue.executeCommands()) {
+            swap();
         }
     }
 
     public T getCurrentReadState() {
-        return currentReadState;
+        return currentReadState.state;
     }
     public T getCurrentWriteState() {
-        return currentWriteState;
+        return currentWriteState.state;
     }
 
     public void startRead() {
@@ -86,5 +69,18 @@ public class DoubleBuffer<T> {
     }
     public void stopRead() {
         swapLock.unlock();
+    }
+
+    private static class QueueStatePair<T> {
+        private final CommandQueue queue = new CommandQueue();
+        private final T state;
+
+        public QueueStatePair(T state) {
+            this.state = state;
+        }
+
+        public void addCommand(Consumer<T> command) {
+            queue.addCommand(() -> command.accept(state));
+        }
     }
 }

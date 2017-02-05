@@ -1,16 +1,14 @@
 package de.hanno.hpengine.config;
 
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.event.HeadlessChangedEvent;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.lodstrategy.ModelLod;
 import de.hanno.hpengine.util.Adjustable;
 import de.hanno.hpengine.util.Toggable;
+import org.lwjgl.util.vector.Vector3f;
 
 public final class Config {
 
     public static final boolean FILE_RELOADING = true;
-    public static int WIDTH = 1280;
+	public static int WIDTH = 1280;
 	public static int HEIGHT = 720;
 	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f, 0.11f);
 
@@ -52,6 +50,7 @@ public final class Config {
 	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
 
 	@Toggable(group = "Performance") public static boolean MULTITHREADED_RENDERING = true;
+	@Toggable(group = "Performance") public static boolean INDIRECT_DRAWING = true;
 	@Toggable(group = "Performance") public static volatile boolean LOCK_FPS = true;
 	@Toggable(group = "Performance") public static volatile boolean LOCK_UPDATERATE = true;
 
