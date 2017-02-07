@@ -26,8 +26,6 @@ public interface DrawStrategy {
         currentProgram.setUniform("entityIndex", perEntityInfo.getEntityBufferIndex());
         currentProgram.setUniform("indirect", false);
 
-        Material material = perEntityInfo.getMaterial();
-        material.setTexturesActive(currentProgram, perEntityInfo.isInReachForTextureLoading());
 
 //        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
         {

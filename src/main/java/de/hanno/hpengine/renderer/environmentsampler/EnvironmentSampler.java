@@ -25,7 +25,6 @@ import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.renderer.light.*;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
@@ -227,7 +226,7 @@ public class EnvironmentSampler extends Camera {
 			} else {
 				EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().setCubeMapFace(3, 0, probe.getIndex(), i);
                 OpenGLContext.getInstance().clearDepthAndColorBuffer();
-				drawEntities(extract, cubeMapProgram, movedVisibles, getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
+				drawEntities(extract, cubeMapProgram, getViewMatrixAsBuffer(), getProjectionMatrixAsBuffer());
 			}
 			GPUProfiler.end();
 		}
@@ -287,24 +286,15 @@ public class EnvironmentSampler extends Camera {
 		EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(cubeMapProgram);
 	}
 
-	private void drawEntities(RenderState renderState, Program program, List<Entity> visibles, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+	private void drawEntities(RenderState renderState, Program program, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
-		for (Entity e : visibles) {
-			if(!e.isInFrustum(this)) { continue; }
-			e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-				program.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-				modelComponent.getMaterial().setTexturesActive(program);
-				program.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-				program.setUniform("hasNormalMap", modelComponent.getMaterial().hasNormalMap());
-				program.setUniform("color", modelComponent.getMaterial().getDiffuse());
-				program.setUniform("metallic", modelComponent.getMaterial().getMetallic());
-				program.setUniform("roughness", modelComponent.getMaterial().getRoughness());
-				modelComponent.getMaterial().setTexturesActive(program);
-
-                DrawStrategy.draw(renderState, new PerEntityInfo(null, program, Engine.getInstance().getScene().getEntityBufferIndex(e), true, false, false, null, modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex()));
-			});
+		for (PerEntityInfo e : renderState.perEntityInfos()) {
+			if (!Entity.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
+				continue;
+			}
+			DrawStrategy.draw(renderState, e);
 		}
 		GPUProfiler.end();
 	}
@@ -343,7 +333,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(null, firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                 DrawStrategy.draw(extract, perEntityInfo);
             }
         }

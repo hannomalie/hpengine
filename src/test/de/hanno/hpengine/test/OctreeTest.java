@@ -203,8 +203,8 @@ public class OctreeTest extends TestWithEngine {
 		Camera camera = new Camera();
 
 		Assert.assertTrue(octree.rootNode.isVisible(camera));
-		Assert.assertTrue(entityBottomLeftBack.isInFrustum(camera));
-		Assert.assertFalse(entityTopRightFront.isInFrustum(camera));
+		Assert.assertTrue(entityBottomLeftBack.isInFrustum((Camera) camera));
+		Assert.assertFalse(entityTopRightFront.isInFrustum((Camera) camera));
 
 		camera.moveInWorld(new Vector3f(0, 0, -2));
 		camera.update(1);

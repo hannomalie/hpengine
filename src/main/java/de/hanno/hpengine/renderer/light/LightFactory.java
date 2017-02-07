@@ -378,7 +378,7 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -433,11 +433,6 @@ public class LightFactory {
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerEntityInfo e : visibles) {
-                pointCubeShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrix());
-                e.getMaterial().setTexturesActive(pointCubeShadowPassProgram);
-                pointCubeShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
-                pointCubeShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
-
                 DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram);
 			}
 			GPUProfiler.end();
@@ -470,7 +465,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -485,7 +480,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(null, pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), modelComponent.getMaterial(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}

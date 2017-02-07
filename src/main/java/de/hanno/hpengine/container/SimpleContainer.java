@@ -41,7 +41,7 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public List<Entity> getVisible(Camera camera) {
-        return entities.stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
+        return entities.stream().filter(e -> e.isInFrustum((Camera) camera)).collect(Collectors.toList());
     }
 
     @Override

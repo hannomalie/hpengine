@@ -80,11 +80,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 //            } else {
 //                OpenGLContext.getInstance().enable(CULL_FACE);
 //            }
-//                directionalShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-            e.getMaterial().setTexturesActive(directionalShadowPassProgram);
-            directionalShadowPassProgram.setUniform("hasDiffuseMap", e.getMaterial().hasDiffuseMap());
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
-            directionalShadowPassProgram.setUniform("color", e.getMaterial().getDiffuse());
 
             DrawStrategy.draw(renderState, e, directionalShadowPassProgram);
         }

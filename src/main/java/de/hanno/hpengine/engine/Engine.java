@@ -217,10 +217,11 @@ public class Engine {
 
         boolean entityHasMoved = false;
         for(int i = 0; i < scene.getEntities().size(); i++) {
-            if(!scene.getEntities().get(i).hasMoved()) { continue; }
+            Entity entity = scene.getEntities().get(i);
+            if(!entity.hasMoved()) { continue; }
             if(getScene() != null) { getScene().calculateMinMax(); }
             entityHasMoved = true;
-            scene.getEntities().get(i).setHasMoved(false);
+            entity.setHasMoved(false);
         }
 
         if((entityHasMoved || entityAdded) && scene != null) {
@@ -234,8 +235,10 @@ public class Engine {
 
         boolean finalAnyPointLightHasMoved = anyPointLightHasMoved;
         boolean finalEntityHasMoved = entityHasMoved;
-        renderState.addCommand((renderStateX1) -> renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult));
-        addPerEntityInfos(renderState, camera);
+        renderState.addCommand((renderStateX1) -> {
+            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
+            addPerEntityInfos(renderState, camera);
+        });
         renderState.update();
     }
 
@@ -271,19 +274,20 @@ public class Engine {
             Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
             float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
+            modelComponent.getMaterial().setTexturesUsed();
 
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
             int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
-            renderState.addCommandToCurrentWriteQueue((renderState1) -> {
-                PerEntityInfo info = renderState1.cash.get(modelComponent);
-                if(info == null) {
-                    info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                } else {
-                    info.init(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                }
-                renderState1.add(info);
-            });
+
+            PerEntityInfo info = renderState.getCurrentWriteState().cash.get(modelComponent);
+            if(info == null) {
+                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                renderState.getCurrentWriteState().cash.put(modelComponent, info);
+            } else {
+                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+            }
+            renderState.getCurrentWriteState().add(info);
         }
     }
 

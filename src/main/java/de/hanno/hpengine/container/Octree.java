@@ -144,7 +144,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 //		rootNode.getVisible(de.hanno.hpengine.camera, result);
 //		rootNode.getVisibleThreaded(de.hanno.hpengine.camera, result);
 
-		result = getEntities().stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
+		result = getEntities().stream().filter(e -> e.isInFrustum((Camera) camera)).collect(Collectors.toList());
 		StopWatch.getInstance().stopAndPrintMS();
 		return new ArrayList<>(result);
 	}

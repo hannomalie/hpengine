@@ -213,13 +213,13 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.name = string;
 	}
 
-	private Vector3f tempDistVector = new Vector3f();
 	public boolean isInFrustum(Camera camera) {
-		Vector3f[] minMaxWorld = getMinMaxWorldVec3();
+		return isInFrustum(camera, getCenterWorld(), getMinMaxWorldVec3()[0], getMinMaxWorldVec3()[1]);
+	}
 
-		Vector3f centerWorld = getCenterWorld();
-		
-		Vector3f.sub(minMaxWorld[1], minMaxWorld[0], tempDistVector);
+	public static boolean isInFrustum(Camera camera, Vector3f centerWorld, Vector3f minWorld, Vector3f maxWorld) {
+		Vector3f tempDistVector = new Vector3f();
+		Vector3f.sub(minWorld, maxWorld, tempDistVector);
 
 //		if (de.hanno.hpengine.camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
 //			de.hanno.hpengine.camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
