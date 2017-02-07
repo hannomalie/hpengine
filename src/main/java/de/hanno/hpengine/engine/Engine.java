@@ -50,10 +50,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 public class Engine {
@@ -235,11 +232,10 @@ public class Engine {
             scene.getDirectionalLight().setHasMoved(false);
         }
 
-        List<PerEntityInfo> perEntityInfos = getPerEntityInfos(camera);
         boolean finalAnyPointLightHasMoved = anyPointLightHasMoved;
         boolean finalEntityHasMoved = entityHasMoved;
-        renderState.addCommand((renderStateX1) -> renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, perEntityInfos));
-
+        renderState.addCommand((renderStateX1) -> renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult));
+        addPerEntityInfos(renderState, camera);
         renderState.update();
     }
 
@@ -261,17 +257,13 @@ public class Engine {
     }
 
     private Vector3f tempDistVector = new Vector3f();
-    Map<ModelComponent, PerEntityInfo> cash0 = new HashMap<>();
-    List<PerEntityInfo> currentPerEntityInfos = new CopyOnWriteArrayList<>();
-    public List<PerEntityInfo> getPerEntityInfos(Camera camera) {
+    public void addPerEntityInfos(DoubleBuffer<RenderState> renderState, Camera camera) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
         List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
 
-        currentPerEntityInfos.clear();
-//        currentPerEntityInfos = new ArrayList<>(modelComponents.size());
         for (ModelComponent modelComponent : modelComponents) {
 
             Entity entity = modelComponent.getEntity();
@@ -283,19 +275,16 @@ public class Engine {
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
             int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
-            PerEntityInfo info = cash0.get(modelComponent);
-            if(info == null)
-            {
-                info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                cash0.put(modelComponent, info);
-            }
-            info.init(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-
-            currentPerEntityInfos.add(info);
+            renderState.addCommandToCurrentWriteQueue((renderState1) -> {
+                PerEntityInfo info = renderState1.cash.get(modelComponent);
+                if(info == null) {
+                    info = new PerEntityInfo(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                } else {
+                    info.init(null, firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, modelComponent.getMaterial(), isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                }
+                renderState1.add(info);
+            });
         }
-
-        List<PerEntityInfo> temp = currentPerEntityInfos;
-        return temp;
     }
 
     public void resetState() {

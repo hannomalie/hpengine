@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 public class RenderState {
+    public final Map<ModelComponent, PerEntityInfo> cash = new HashMap<>();
+
     private DrawResult latestDrawResult;
     public boolean anEntityHasMoved;
     public boolean directionalLightNeedsShadowMapRender;
@@ -43,13 +45,13 @@ public class RenderState {
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.getVertexBuffer(), source.getIndexBuffer(), source.camera, source.directionalLight, source.anEntityHasMoved, source.directionalLightNeedsShadowMapRender, source.anyPointLightHasMoved, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.perEntityInfos);
+        init(source.getVertexBuffer(), source.getIndexBuffer(), source.camera, source.directionalLight, source.anEntityHasMoved, source.directionalLightNeedsShadowMapRender, source.anyPointLightHasMoved, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult);
     }
 
     public RenderState() {
     }
 
-    public RenderState init(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, Camera camera, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult, List<PerEntityInfo> perEntityInfos) {
+    public RenderState init(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, Camera camera, DirectionalLight directionalLight, boolean anEntityHasMoved, boolean directionalLightNeedsShadowMapRender, boolean anyPointLightHasMoved, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult) {
         this.vertexBuffer = vertexBuffer;
         this.indexBuffer = indexBuffer;
         this.camera.init(camera);
@@ -64,7 +66,6 @@ public class RenderState {
             this.properties.putAll(latestDrawResult.getProperties());
         }
         this.perEntityInfos.clear();
-        this.perEntityInfos.addAll(perEntityInfos);
         this.latestDrawResult = latestDrawResult;
         return this;
     }
@@ -115,5 +116,9 @@ public class RenderState {
 
     public OpenGLBuffer getMaterialBuffer() {
         return materialBuffer;
+    }
+
+    public void add(PerEntityInfo info) {
+        perEntityInfos.add(info);
     }
 }

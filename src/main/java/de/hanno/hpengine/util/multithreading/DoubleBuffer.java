@@ -51,6 +51,10 @@ public class DoubleBuffer<T> {
         instanceB.addCommand(command);
     }
 
+    public void addCommandToCurrentWriteQueue(Consumer<T> command) {
+        currentWriteState.addCommand(command);
+    }
+
     public void update() {
         if(currentWriteState.queue.executeCommands()) {
             swap();

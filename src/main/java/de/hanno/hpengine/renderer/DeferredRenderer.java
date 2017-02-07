@@ -187,9 +187,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 
-	// I need this to force probe redrawing after de.hanno.hpengine.engine startup....TODO: Find better solution
-	int counter = 0;
-
     @Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
