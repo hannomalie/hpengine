@@ -246,9 +246,11 @@ public class Engine {
         OpenGLContext.getInstance().execute(() -> {
             Input.update();
             renderState.startRead();
+            
             Renderer.getInstance().startFrame();
             latestDrawResult.reset();
             Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
+            latestDrawResult.setFinished();
             latestGPUProfilingResult = GPUProfiler.dumpTimings();
             Renderer.getInstance().endFrame();
             Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));

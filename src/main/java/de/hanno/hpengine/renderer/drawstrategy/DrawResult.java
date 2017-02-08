@@ -5,6 +5,7 @@ import java.util.Map;
 public class DrawResult {
     private final FirstPassResult firstPassResult;
     private final SecondPassResult secondPassResult;
+    private volatile boolean finished;
 
     public DrawResult(FirstPassResult firstPassResult, SecondPassResult secondPassResult) {
         this.firstPassResult = firstPassResult;
@@ -40,5 +41,14 @@ public class DrawResult {
     public void reset() {
         firstPassResult.reset();
         secondPassResult.reset();
+        finished = false;
+    }
+
+    public void setFinished() {
+        finished = true;
+    }
+
+    public boolean isFinished() {
+        return finished;
     }
 }

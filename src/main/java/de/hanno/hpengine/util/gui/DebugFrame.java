@@ -36,6 +36,7 @@ import de.hanno.hpengine.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.renderer.command.Result;
+import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.renderer.light.AreaLight;
@@ -1263,12 +1264,15 @@ public class DebugFrame {
     public void handle(FrameFinishedEvent event) {
         if(GPUProfiler.PROFILING_ENABLED) {
             SwingUtils.invokeLater(() -> {
-                String drawResult = event.getDrawResult().toString();
-                if(GPUProfiler.DUMP_AVERAGES) {
-                    drawResult += GPUProfiler.getAveragesString();
-                }
-                infoLeft.setText(drawResult);
-                infoRight.setText(event.getLatestGPUProfilingResult());
+				DrawResult drawResult1 = event.getDrawResult();
+				if(drawResult1.isFinished()) {
+					String drawResult = drawResult1.toString();
+					if(GPUProfiler.DUMP_AVERAGES) {
+						drawResult += GPUProfiler.getAveragesString();
+					}
+					infoLeft.setText(drawResult);
+					infoRight.setText(event.getLatestGPUProfilingResult());
+				}
             });
         }
     }
