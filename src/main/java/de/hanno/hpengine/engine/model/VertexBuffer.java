@@ -249,16 +249,18 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         return indexCount/3;
     }
 
-    public static void drawInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, IntBuffer commandBuffer, int primitiveCount) {
+    public static void drawInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         // TODO: use lod
         indexBuffer.bind();
+        commandBuffer.bind();
         GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
     }
-    public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, IntBuffer commandBuffer, int primitiveCount) {
+    public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         // TODO: use lod
         indexBuffer.bind();
+        commandBuffer.bind();
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
         GL11.glLineWidth(1f);
         GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());

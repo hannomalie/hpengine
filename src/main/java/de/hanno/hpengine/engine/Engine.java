@@ -246,7 +246,7 @@ public class Engine {
         OpenGLContext.getInstance().execute(() -> {
             Input.update();
             renderState.startRead();
-            
+
             Renderer.getInstance().startFrame();
             latestDrawResult.reset();
             Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());

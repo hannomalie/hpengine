@@ -2,7 +2,6 @@ package de.hanno.hpengine.component;
 
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.scene.Scene;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -14,8 +13,6 @@ import de.hanno.hpengine.texture.Texture;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -159,7 +156,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
 
     public List<Vector3f> getVertices() {
-        return Collections.unmodifiableList(model.getVertices());
+        return Collections.unmodifiableList(model.getPositions());
     }
 
     public void createFloatArray(Model model) {

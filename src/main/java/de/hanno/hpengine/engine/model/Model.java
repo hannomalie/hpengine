@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
+import com.carrotsearch.hppc.FloatArrayList;
+import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.component.ModelComponent;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.util.vector.Matrix4f;
@@ -11,22 +13,21 @@ import de.hanno.hpengine.scene.LightmapManager;
 import de.hanno.hpengine.util.Util;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class Model implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private List<Vector3f> vertices = new ArrayList<>();
+	private List<Vector3f> positions = new ArrayList<>();
     private List<Vector2f> texCoords = new ArrayList<>();
     private List<Vector3f> normals = new ArrayList<>();
     private List<Vector3f> lightmapTexCoords = new ArrayList<>();
     private List<Face> faces = new ArrayList<>();
+    private List<CompiledFace> compiledFaces = new ArrayList<>();
 	private String name = "";
 	private Material material;
-    private List<Integer> indexBufferValues;
-    private List<Float[]> vertexBufferValues;
+    private IntArrayList indexBufferValues = new IntArrayList();
+    private FloatArrayList vertexBufferValues = new FloatArrayList();
     private int[] indexBufferValuesArray;
 
     public float[] getVertexBufferValuesArray() {
@@ -43,8 +44,8 @@ public class Model implements Serializable {
         return getNormals().size() > 0;
     }
 
-    public List<Vector3f> getVertices() {
-        return vertices;
+    public List<Vector3f> getPositions() {
+        return positions;
     }
 
     public List<Vector2f> getTexCoords() {
@@ -67,19 +68,7 @@ public class Model implements Serializable {
 		this.name  = name;
 	}
 
-	public void setVertices(ArrayList<Vector3f> vertices) {
-		this.vertices = vertices;
-	}
-
-	public void setNormals(ArrayList<Vector3f> normals) {
-		this.normals = normals;
-	}
-
-	public void setTexCoords(ArrayList<Vector2f> texCoords) {
-		this.texCoords = texCoords;
-	}
-
-	public void setMaterial(Material material) {
+    public void setMaterial(Material material) {
 		this.material = material;
 	}
 
@@ -97,24 +86,24 @@ public class Model implements Serializable {
     private transient Matrix4f lastUsedModelMatrix = null;
     private float boundSphereRadius = -1;
 
-    public Model(String name, List<Vector3f> vertices, List<Vector2f> texCoords, List<Vector3f> normals) {
+    public Model(String name, List<Vector3f> positions, List<Vector2f> texCoords, List<Vector3f> normals) {
         this.name = name;
-        this.vertices = vertices;
+        this.positions = positions;
         this.texCoords = texCoords;
         this.normals = normals;
     }
 
     public void init() {
 
-        List<Float> values = new ArrayList<>(faces.size() * 5);
+        FloatArrayList values = new FloatArrayList(faces.size() * 5);
         List<Vector3f[]> allLightMapCoords = new ArrayList<>(faces.size());
 
         for(Face face : faces) {
             int[] referencedVertices = face.getVertices();
             Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
-            referencedVerticesAsVec3[0] = vertices.get(referencedVertices[0]-1);
-            referencedVerticesAsVec3[1] = vertices.get(referencedVertices[1]-1);
-            referencedVerticesAsVec3[2] = vertices.get(referencedVertices[2]-1);
+            referencedVerticesAsVec3[0] = positions.get(referencedVertices[0]-1);
+            referencedVerticesAsVec3[1] = positions.get(referencedVertices[1]-1);
+            referencedVerticesAsVec3[2] = positions.get(referencedVertices[2]-1);
             Vector3f[] lightmapCoords = getLightMapCoords(referencedVerticesAsVec3);
 
             allLightMapCoords.add(lightmapCoords);
@@ -133,20 +122,22 @@ public class Model implements Serializable {
             int[] referencedVertices = face.getVertices();
             int[] referencedNormals = face.getNormalIndices();
             int[] referencedTexcoords = face.getTextureCoordinateIndices();
-            Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
-            referencedVerticesAsVec3[0] = vertices.get(referencedVertices[0]-1);
-            referencedVerticesAsVec3[1] = vertices.get(referencedVertices[1]-1);
-            referencedVerticesAsVec3[2] = vertices.get(referencedVertices[2]-1);
+            Vector3f[] compiledPositions = new Vector3f[3];
+            Vector2f[] compiledTexCoords = new Vector2f[3];
+            Vector3f[] compiledNormals = new Vector3f[3];
+            Vector3f[] compiledLightmapCoords = new Vector3f[3];
 
             for (int j = 0; j < 3; j++) {
-                Vector3f referencedVertex = vertices.get(referencedVertices[j]-1);
+                Vector3f referencedVertex = positions.get(referencedVertices[j]-1);
+                compiledPositions[j] = referencedVertex;
                 Vector2f referencedTexcoord = new Vector2f(0,0);
                 try {
                     referencedTexcoord = texCoords.get(referencedTexcoords[j]-1);
                 } catch (Exception e) {
-
                 }
+                compiledTexCoords[j] = referencedTexcoord;
                 Vector3f referencedNormal = normals.get(referencedNormals[j]-1);
+                compiledNormals[j] = referencedNormal;
 
                 values.add(referencedVertex.x);
                 values.add(referencedVertex.y);
@@ -157,51 +148,39 @@ public class Model implements Serializable {
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
-                values.add(finalLightmapCoords.get(i)[j].getX());
-                values.add(finalLightmapCoords.get(i)[j].getY());
-                values.add(finalLightmapCoords.get(i)[j].getZ());
+                Vector3f lightmapCoords = finalLightmapCoords.get(i)[j];
+                compiledLightmapCoords[j] = lightmapCoords;
+                values.add(lightmapCoords.getX());
+                values.add(lightmapCoords.getY());
+                values.add(lightmapCoords.getZ());
 
                 if(ModelComponent.USE_PRECOMPUTED_TANGENTSPACE) {
                     throw new NotImplementedException("Implement former logic from ModelComponent here");
                 }
             }
+            compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, compiledLightmapCoords));
 
+        }
+
+        List<CompiledVertex> uniqueVertices = new ArrayList<>();
+        for(CompiledFace currentFace : compiledFaces) {
+            for(int i = 0; i < 3; i++) {
+                CompiledVertex currentVertex = currentFace.vertices[i];
+                int indexOf = uniqueVertices.indexOf(currentVertex);
+                if(indexOf >= 0) {
+                    indexBufferValues.add(indexOf);
+                } else {
+                    uniqueVertices.add(currentVertex);
+                    positions.add(currentVertex.position);
+                    texCoords.add(currentVertex.texCoords);
+                    normals.add(currentVertex.normal);
+                    lightmapTexCoords.add(currentVertex.lightmapCoords);
+                    indexBufferValues.add(uniqueVertices.size()-1);
+                }
+            }
         }
 
         int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);//ModelComponent.USE_PRECOMPUTED_TANGENTSPACE ? 14 : 8;
-        vertexBufferValues = new ArrayList<>();
-        vertices = new ArrayList<>();
-        texCoords = new ArrayList<>();
-        normals = new ArrayList<>();
-
-        indexBufferValues = new ArrayList<>();
-        for(int i = 0; i < values.size(); i+=valuesPerVertex) {
-            Float[] vertexValues = new Float[valuesPerVertex];
-            for(int arrayIndex = 0; arrayIndex < valuesPerVertex; arrayIndex++) {
-                vertexValues[arrayIndex] = values.get(i+arrayIndex);
-            }
-
-            boolean containsVertex = false;
-            int indexOfAlreadyContainedVertex = -1;
-            for(int z = 0; z < vertexBufferValues.size(); z++) {
-                Float[] currentVertex = vertexBufferValues.get(z);
-                boolean currentVertexEquals = Arrays.equals(vertexValues, currentVertex);
-                if(currentVertexEquals) {
-                    containsVertex = true;
-                    indexOfAlreadyContainedVertex = z;
-                    break;
-                }
-            }
-            if(containsVertex) {
-                indexBufferValues.add(indexOfAlreadyContainedVertex);
-            } else {
-                vertexBufferValues.add(vertexValues);
-                vertices.add(new Vector3f(vertexValues[0],vertexValues[1],vertexValues[2]));
-                texCoords.add(new Vector2f(vertexValues[3],vertexValues[4]));
-                normals.add(new Vector3f(vertexValues[5],vertexValues[6],vertexValues[7]));
-                indexBufferValues.add(vertexBufferValues.size()-1);
-            }
-        }
 
         faces.clear();
         for(int i = 0; i < indexBufferValues.size(); i+=3) {
@@ -212,13 +191,13 @@ public class Model implements Serializable {
             faces.add(new Face(currentIndices, currentIndices, currentIndices));
         }
 
-        vertexBufferValuesArray = new float[vertexBufferValues.size()*valuesPerVertex];
-        for(int vertexIndex = 0; vertexIndex < vertexBufferValues.size(); vertexIndex++) {
-            Float[] currentVertexValues = vertexBufferValues.get(vertexIndex);
-            for(int attributeIndex = 0; attributeIndex < currentVertexValues.length; attributeIndex++) {
-                vertexBufferValuesArray[vertexIndex*currentVertexValues.length+attributeIndex] = currentVertexValues[attributeIndex];
+        vertexBufferValuesArray = new float[compiledFaces.size()*3*valuesPerVertex];
+        for(CompiledFace currentFace : compiledFaces) {
+            for(int i = 0; i < 3; i++) {
+                vertexBufferValues.add(currentFace.vertices[i].asFloats());
             }
         }
+        vertexBufferValuesArray = vertexBufferValues.toArray();
 
         indexBufferValuesArray = new int[indexBufferValues.size()];
         for(int indexIndex = 0; indexIndex < indexBufferValues.size(); indexIndex++) {
@@ -303,13 +282,13 @@ public class Model implements Serializable {
             min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
             max = new Vector3f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
 
-            for (int i = 0; i < faces.size(); i++) {
-                Face face = faces.get(i);
+            for (int i = 0; i < compiledFaces.size(); i++) {
+                CompiledFace face = compiledFaces.get(i);
 
-                int[] referencedVertices = face.getVertices();
+                CompiledVertex[] vertices = face.vertices;
 
                 for (int j = 0; j < 3; j++) {
-                    Vector3f positionV3 = getVertices().get(referencedVertices[j] - 1);
+                    Vector3f positionV3 = vertices[j].position;
                     Vector4f position = new Vector4f(positionV3.x, positionV3.y, positionV3.z, 1);
                     if(modelMatrix != null) {
                         Matrix4f.transform(modelMatrix, position, position);
@@ -337,5 +316,55 @@ public class Model implements Serializable {
     }
     public static float getBoundingSphereRadius(Vector4f min, Vector4f max) {
         return getBoundingSphereRadius(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
+    }
+
+    private static class CompiledVertex {
+        public final Vector3f position;
+        public final Vector2f texCoords;
+        public final Vector3f normal;
+        public final Vector3f lightmapCoords;
+
+        public CompiledVertex(Vector3f position, Vector2f texCoords, Vector3f normal, Vector3f lightmapCoord) {
+            this.position = position;
+            this.texCoords = texCoords;
+            this.normal = normal;
+            this.lightmapCoords = lightmapCoord;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if(!(other instanceof  CompiledVertex)) {
+                return false;
+            }
+
+            CompiledVertex otherVertex = (CompiledVertex) other;
+            return this.position.equals(otherVertex.position) &&
+                this.texCoords.equals(otherVertex.texCoords) &&
+                this.normal.equals(otherVertex.normal) &&
+                this.lightmapCoords.equals(otherVertex.lightmapCoords);
+        }
+
+        public float[] asFloats() {
+            return new float[] {position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z, lightmapCoords.x, lightmapCoords.y, lightmapCoords.z};
+        }
+    }
+    private static class CompiledFace {
+
+        private CompiledVertex[] vertices = new CompiledVertex[3];
+
+        public CompiledFace(Vector3f[] position, Vector2f[] texCoords, Vector3f[] normal, Vector3f[] lightmapCoords) {
+            for(int i = 0; i < 3; i++) {
+                vertices[i] = new CompiledVertex(position[i], texCoords[i], normal[i], lightmapCoords[i]);
+            }
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if(other instanceof CompiledFace) {
+                CompiledFace otherFace = (CompiledFace) other;
+                return Arrays.equals(this.vertices, otherFace.vertices);
+            }
+            return false;
+        }
     }
 }

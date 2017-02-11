@@ -17,8 +17,8 @@ public class ModelTest extends TestWithEngine {
     @Test
     public void loadsPlaneCorrectly() throws Exception {
         List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
-        Model planeModel = plane.get(0);
-        Assert.assertEquals(4, planeModel.getVertices().size());
+        Model planeModel = plane.get(1);
+        Assert.assertEquals(4, planeModel.getPositions().size());
         Assert.assertEquals(4, planeModel.getNormals().size());
         Assert.assertEquals(4, planeModel.getTexCoords().size());
 
@@ -31,9 +31,9 @@ public class ModelTest extends TestWithEngine {
         Entity entity = EntityFactory.getInstance().getEntity(planeModel);
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
 
-        float[] expectedVerticesValues = new float[planeModel.getVertices().size() * 3];
-        for(int i = 0; i < planeModel.getVertices().size(); i++) {
-            Vector3f vertex = planeModel.getVertices().get(expectedIndexBufferValues[i]);
+        float[] expectedVerticesValues = new float[planeModel.getPositions().size() * 3];
+        for(int i = 0; i < planeModel.getPositions().size(); i++) {
+            Vector3f vertex = planeModel.getPositions().get(expectedIndexBufferValues[i]);
             expectedVerticesValues[i*3] = vertex.x;
             expectedVerticesValues[i*3+1] = vertex.y;
             expectedVerticesValues[i*3+2] = vertex.z;
@@ -51,7 +51,7 @@ public class ModelTest extends TestWithEngine {
     public void calculatesLodsCorrectly() throws Exception {
         List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Model planeModel = plane.get(0);
-        Assert.assertEquals(6, planeModel.getVertices().size());
+        Assert.assertEquals(6, planeModel.getPositions().size());
         Assert.assertEquals(6, planeModel.getNormals().size());
         Assert.assertEquals(6, planeModel.getTexCoords().size());
 

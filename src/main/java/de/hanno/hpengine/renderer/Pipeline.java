@@ -55,14 +55,13 @@ public class Pipeline {
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("entityCount", commands.size());
         program.setUniform("indirect", true);
-        commandBuffer.bind();
         GPUProfiler.start("DrawInstancedIndirectBaseVertex");
         if(Config.DRAWLINES_ENABLED && useLineDrawingIfActivated) {
             if(useBackfaceCulling) { OpenGLContext.getInstance().disable(GlCap.CULL_FACE); }
-            VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+            VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         } else {
             if(useBackfaceCulling) { OpenGLContext.getInstance().enable(GlCap.CULL_FACE); }
-            VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer.getBuffer(), commands.size());
+            VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         }
         GPUProfiler.end();
         renderState.getIndexBuffer().unbind();

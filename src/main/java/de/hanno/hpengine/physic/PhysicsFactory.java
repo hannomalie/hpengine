@@ -94,7 +94,7 @@ public class PhysicsFactory {
 //		ObjectArrayList<Vector3f> list = new ObjectArrayList<>();
 //		ModelComponent modelComponent = owner.getComponent(ModelComponent.class);
 //
-//		float[] vertices = modelComponent.getVertices();
+//		float[] vertices = modelComponent.getPositions();
 //		for (int i = 0; i < vertices.length; i += 3) {
 //			list.add(new Vector3f(vertices[i], vertices[i+1], vertices[i+2]));
 //		}
@@ -120,7 +120,7 @@ public class PhysicsFactory {
 //            throw new IllegalStateException("ModelComponent null or not initialized");
 //        }
 //
-//        float[] vertices = modelComponent.getVertices();
+//        float[] vertices = modelComponent.getPositions();
 //        int[] indices = modelComponent.getIndices();
 //        ByteBuffer vertexBuffer = BufferUtils.createByteBuffer(vertices.length * 4);
 //        ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
