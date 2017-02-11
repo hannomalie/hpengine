@@ -48,6 +48,7 @@
 package jme3tools.optimize;
 
 import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.Model;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
@@ -267,7 +268,13 @@ public class LodGenerator {
     }
 
     private void gatherVertexData(ModelComponent modelComponent, List<Vertex> vertexLookup) {
-        List<Vector3f> vertices = modelComponent.getVertices();
+        List<Model.CompiledFace> faces = modelComponent.getFaces();
+        List<Vector3f> vertices = new ArrayList(faces.size() * 3);
+        for(Model.CompiledFace currentFace : faces) {
+            for(int i = 0; i < 3; i++) {
+                vertices.add(currentFace.vertices[i].position);
+            }
+        }
 
         for(Vector3f pos : vertices) {
             Vertex v = new Vertex();

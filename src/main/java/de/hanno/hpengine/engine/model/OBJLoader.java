@@ -160,7 +160,7 @@ public class OBJLoader {
                 normals.add(parseVertex(line));
             } else if ("f".equals(firstToken)) {
                 setCurrentState(State.READING_FACE);
-                model.getFaces().add(parseFace(line));
+                model.getIndexedFaces().add(parseFace(line));
             }
 
         }

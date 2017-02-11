@@ -155,8 +155,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model.getFaces().size();
     }
 
-    public List<Vector3f> getVertices() {
-        return Collections.unmodifiableList(model.getPositions());
+    public List<Model.CompiledFace> getFaces() {
+        return Collections.unmodifiableList(model.getFaces());
     }
 
     public void createFloatArray(Model model) {

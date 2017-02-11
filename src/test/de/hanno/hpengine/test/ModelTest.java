@@ -18,9 +18,7 @@ public class ModelTest extends TestWithEngine {
     public void loadsPlaneCorrectly() throws Exception {
         List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
         Model planeModel = plane.get(1);
-        Assert.assertEquals(4, planeModel.getPositions().size());
-        Assert.assertEquals(4, planeModel.getNormals().size());
-        Assert.assertEquals(4, planeModel.getTexCoords().size());
+        Assert.assertEquals(4, planeModel.getFaces().size());
 
         Assert.assertEquals(2, planeModel.getFaces().size());
         Assert.assertEquals(6, planeModel.getIndexBufferValuesArray().length);
@@ -30,16 +28,6 @@ public class ModelTest extends TestWithEngine {
 
         Entity entity = EntityFactory.getInstance().getEntity(planeModel);
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-
-        float[] expectedVerticesValues = new float[planeModel.getPositions().size() * 3];
-        for(int i = 0; i < planeModel.getPositions().size(); i++) {
-            Vector3f vertex = planeModel.getPositions().get(expectedIndexBufferValues[i]);
-            expectedVerticesValues[i*3] = vertex.x;
-            expectedVerticesValues[i*3+1] = vertex.y;
-            expectedVerticesValues[i*3+2] = vertex.z;
-        }
-
-//        float[] temp = entity.getComponent(ModelComponent.class).floatArray;
 
         LodGenerator lodGenerator = new LodGenerator(modelComponent);
         lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.3f);
@@ -51,9 +39,7 @@ public class ModelTest extends TestWithEngine {
     public void calculatesLodsCorrectly() throws Exception {
         List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Model planeModel = plane.get(0);
-        Assert.assertEquals(6, planeModel.getPositions().size());
-        Assert.assertEquals(6, planeModel.getNormals().size());
-        Assert.assertEquals(6, planeModel.getTexCoords().size());
+        Assert.assertEquals(6, planeModel.getFaces().size());
 
         Assert.assertEquals(4, planeModel.getFaces().size());
         Assert.assertEquals(12, planeModel.getIndexBufferValuesArray().length);

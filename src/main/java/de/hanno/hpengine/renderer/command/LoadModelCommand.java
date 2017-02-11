@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.Model.CompiledFace;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.command.LoadModelCommand.EntityListResult;
@@ -14,6 +15,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class LoadModelCommand implements Command<EntityListResult> {
@@ -55,7 +57,13 @@ public class LoadModelCommand implements Command<EntityListResult> {
         for(Entity entity : entities) {
             ModelComponent component = entity.getComponent(ModelComponent.class);
             if(component != null) {
-                List<Vector3f> lightmapTexCoords = component.getModel().getLightmapTexCoords();
+                List<CompiledFace> faces = component.getModel().getFaces();
+                List<Vector3f> lightmapTexCoords = new ArrayList<>(3*faces.size());
+                for(CompiledFace currentFace : faces) {
+                    for(int vertexIndex = 0; vertexIndex < 3; vertexIndex++) {
+                        lightmapTexCoords.add(currentFace.vertices[vertexIndex].lightmapCoords);
+                    }
+                }
                 for(Vector3f tempCoords : lightmapTexCoords) {
                     tempCoords.x = tempCoords.x * scale;
                     tempCoords.y = tempCoords.y * scale;
