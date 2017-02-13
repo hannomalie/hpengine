@@ -185,10 +185,8 @@ void main(void) {
   	out_color = color;
   	out_color.w = float(materialMetallic);
 
-    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, lightmapWidth, lightmapHeight);
-    out_lightmap.rg = finalLightMapCoords;
-//  	out_color = vec4(finalLightMapCoords, 0, 1);
-//  	out_color += textureLod(lightMap, finalLightMapCoords.xy, 0);
+//    vec2 finalLightMapCoords = scaleLightmapCoords(lightmapTextureCoord, lightmapWidth, lightmapHeight);
+//    out_lightmap.rg = finalLightMapCoords;
 
 	if(material.hasOcclusionMap != 0) {
 	    //out_color.rgb = clamp(out_color.rgb - texture2D(occlusionMap, UV).xyz, 0, 1);

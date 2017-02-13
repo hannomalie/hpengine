@@ -3,6 +3,7 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.RenderState;
 import org.lwjgl.BufferUtils;
@@ -20,7 +21,6 @@ import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
-import de.hanno.hpengine.scene.LightmapManager;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
@@ -57,9 +57,10 @@ public class DrawLightMapExtension implements RenderExtension {
 
     Pipeline pipeline;
 
-    private final int WIDTH = 128;
-    private final int HEIGHT = 128;
-    private final RenderTarget lightMapTarget = new RenderTargetBuilder()
+    public static int WIDTH = 256;
+    public static int HEIGHT = WIDTH;
+    public static RenderTarget staticLightmapTarget;
+    public final RenderTarget lightMapTarget = new RenderTargetBuilder()
             .setWidth(WIDTH)
             .setHeight(HEIGHT)
             .removeDepthAttachment()
@@ -71,6 +72,7 @@ public class DrawLightMapExtension implements RenderExtension {
     private int currentSource = 5;
 
     public DrawLightMapExtension() throws Exception {
+        staticLightmapTarget = lightMapTarget;
         OpenGLContext.getInstance().execute(() -> {
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture());
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(3));
@@ -88,7 +90,7 @@ public class DrawLightMapExtension implements RenderExtension {
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
 
-        pipeline = new Pipeline();
+        pipeline = new Pipeline(false, false, false);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class DrawLightMapExtension implements RenderExtension {
             lightmapPropagationProgram.setUniform("height", HEIGHT);
             lightmapPropagationProgram.dispatchCompute(WIDTH/16,HEIGHT/16,1);
 
-//            boolean useThreeBounces = false;
+//            boolean useThreeBounces = true;
 //            if(useThreeBounces) {
 //                OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, lightMapTarget.getRenderedTexture(4));
 //                OpenGLContext.getInstance().bindImageTexture(4, lightMapTarget.getRenderedTexture(3), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
@@ -130,7 +132,7 @@ public class DrawLightMapExtension implements RenderExtension {
 //                OpenGLContext.getInstance().bindImageTexture(4, lightMapTarget.getRenderedTexture(4), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
 //                lightmapPropagationProgram.dispatchCompute(WIDTH/16,HEIGHT/16,1);
 //            }
-//            GPUProfiler.end();
+            GPUProfiler.end();
 
             GPUProfiler.start("Lightmap dilation");
             int dilationTimes = 0;
@@ -152,6 +154,10 @@ public class DrawLightMapExtension implements RenderExtension {
     public void drawLightmap(RenderState renderState, FirstPassResult firstPassResult) {
         lightMapTarget.use(false);
         ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(currentTarget), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+        ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(0), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+        ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(1), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+        ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(2), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+        ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(3), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
 
         OpenGLContext openGLContext = OpenGLContext.getInstance();
         openGLContext.disable(CULL_FACE);
@@ -171,8 +177,8 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         lightMapProgram.setUniform("lightDirection", renderState.directionalLight.getDirection());
         lightMapProgram.setUniform("lightDiffuse", renderState.directionalLight.getColor());
-        lightMapProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
-        lightMapProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
+        lightMapProgram.setUniform("lightmapWidth", (float) NewLightmapManager.MAX_WIDTH);
+        lightMapProgram.setUniform("lightmapHeight", (float) NewLightmapManager.MAX_HEIGHT);
         lightMapProgram.setUniform("width", lightMapTarget.getWidth());
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 

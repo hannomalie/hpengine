@@ -4,7 +4,6 @@ import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.scene.LightmapManager;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.util.vector.Matrix4f;
@@ -19,18 +18,19 @@ import java.util.List;
 
 public class Model implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
+
 	private List<Vector3f> positions = new ArrayList<>();
     private List<Vector2f> texCoords = new ArrayList<>();
     private List<Vector3f> normals = new ArrayList<>();
     private List<Vector3f> lightmapTexCoords = new ArrayList<>();
-    private List<Face> faces = new ArrayList<>();
+    private List<Face> indexFaces = new ArrayList<>();
     private List<CompiledFace> compiledFaces = new ArrayList<>();
 	private String name = "";
 	private Material material;
     private IntArrayList indexBufferValues = new IntArrayList();
     private FloatArrayList vertexBufferValues = new FloatArrayList();
     private int[] indexBufferValuesArray;
+    private final int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
 
     public float[] getVertexBufferValuesArray() {
         return vertexBufferValuesArray;
@@ -73,10 +73,10 @@ public class Model implements Serializable {
 
     public void init() {
 
-        FloatArrayList values = new FloatArrayList(faces.size() * 5);
-        List<Vector3f[]> allLightMapCoords = new ArrayList<>(faces.size());
+        FloatArrayList values = new FloatArrayList(indexFaces.size() * valuesPerVertex);
+        List<Vector3f[]> allLightMapCoords = new ArrayList<>(indexFaces.size());
 
-        for(Face face : faces) {
+        for(Face face : indexFaces) {
             int[] referencedVertices = face.getVertices();
             Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
             referencedVerticesAsVec3[0] = positions.get(referencedVertices[0]-1);
@@ -87,15 +87,15 @@ public class Model implements Serializable {
             allLightMapCoords.add(lightmapCoords);
         }
 
-        List<Vector3f[]> finalLightmapCoords = LightmapManager.getInstance().add(allLightMapCoords);
+        List<Vector3f[]> finalLightmapCoords = allLightMapCoords;//LightmapManager.getInstance().add(allLightMapCoords);
         for (Vector3f[] face : finalLightmapCoords) {
             lightmapTexCoords.add(face[0]);
             lightmapTexCoords.add(face[1]);
             lightmapTexCoords.add(face[2]);
         }
 
-        for (int i = 0; i < faces.size(); i++) {
-            Face face = faces.get(i);
+        for (int i = 0; i < indexFaces.size(); i++) {
+            Face face = indexFaces.get(i);
 
             int[] referencedVertices = face.getVertices();
             int[] referencedNormals = face.getNormalIndices();
@@ -136,18 +136,18 @@ public class Model implements Serializable {
                     throw new NotImplementedException("Implement former logic from ModelComponent here");
                 }
             }
-            compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, compiledLightmapCoords));
-
+            compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, allLightMapCoords.get(i), compiledLightmapCoords));
         }
 
         List<CompiledVertex> uniqueVertices = new ArrayList<>();
         for (CompiledFace currentFace : compiledFaces) {
             for (int i = 0; i < 3; i++) {
                 CompiledVertex currentVertex = currentFace.vertices[i];
-                int indexOf = uniqueVertices.indexOf(currentVertex);
-                if (indexOf >= 0) {
-                    indexBufferValues.add(indexOf);
-                } else {
+//                int indexOf = uniqueVertices.indexOf(currentVertex);
+//                if (indexOf >= 0)
+                {
+//                    indexBufferValues.add(indexOf);
+//                } else {
                     uniqueVertices.add(currentVertex);
                     positions.add(currentVertex.position);
                     texCoords.add(currentVertex.texCoords);
@@ -158,17 +158,11 @@ public class Model implements Serializable {
             }
         }
 
-        int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);//ModelComponent.USE_PRECOMPUTED_TANGENTSPACE ? 14 : 8;
+        putToValueArrays();
+    }
 
-        faces.clear();
-        for (int i = 0; i < indexBufferValues.size(); i += 3) {
-            int[] currentIndices = new int[3];
-            currentIndices[0] = indexBufferValues.get(i) + 1;
-            currentIndices[1] = indexBufferValues.get(i + 1) + 1;
-            currentIndices[2] = indexBufferValues.get(i + 2) + 1;
-            faces.add(new Face(currentIndices, currentIndices, currentIndices));
-        }
-
+    public void putToValueArrays() {
+        vertexBufferValues.clear();
         vertexBufferValuesArray = new float[compiledFaces.size() * 3 * valuesPerVertex];
         for (CompiledFace currentFace : compiledFaces) {
             for (int i = 0; i < 3; i++) {
@@ -297,20 +291,22 @@ public class Model implements Serializable {
     }
 
     public List<Face> getIndexedFaces() {
-        return faces;
+        return indexFaces;
     }
 
     public static class CompiledVertex {
         public final Vector3f position;
         public final Vector2f texCoords;
         public final Vector3f normal;
-        public final Vector3f lightmapCoords;
+        public final Vector3f initialLightmapCoords;
+        public Vector3f lightmapCoords;
 
-        public CompiledVertex(Vector3f position, Vector2f texCoords, Vector3f normal, Vector3f lightmapCoord) {
+        public CompiledVertex(Vector3f position, Vector2f texCoords, Vector3f normal, Vector3f initialLightmapCoords, Vector3f lightmapCoords) {
             this.position = position;
             this.texCoords = texCoords;
             this.normal = normal;
-            this.lightmapCoords = lightmapCoord;
+            this.initialLightmapCoords = initialLightmapCoords;
+            this.lightmapCoords = lightmapCoords;
         }
 
         @Override
@@ -332,12 +328,12 @@ public class Model implements Serializable {
     }
     public static class CompiledFace {
 
-        public CompiledVertex[] vertices = new CompiledVertex[3];
-        private Vector3f[] positions;
+        public final CompiledVertex[] vertices = new CompiledVertex[3];
+        private final Vector3f[] positions;
 
-        public CompiledFace(Vector3f[] position, Vector2f[] texCoords, Vector3f[] normal, Vector3f[] lightmapCoords) {
+        public CompiledFace(Vector3f[] position, Vector2f[] texCoords, Vector3f[] normal, Vector3f[] allLightMapCoords, Vector3f[] lightmapCoords) {
             for(int i = 0; i < 3; i++) {
-                vertices[i] = new CompiledVertex(position[i], texCoords[i], normal[i], lightmapCoords[i]);
+                vertices[i] = new CompiledVertex(position[i], texCoords[i], normal[i], allLightMapCoords[i], lightmapCoords[i]);
             }
             positions = position;
         }

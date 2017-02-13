@@ -15,7 +15,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class LoadModelCommand implements Command<EntityListResult> {

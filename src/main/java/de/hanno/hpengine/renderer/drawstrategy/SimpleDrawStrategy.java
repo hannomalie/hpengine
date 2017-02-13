@@ -5,6 +5,7 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Pipeline;
@@ -20,7 +21,6 @@ import de.hanno.hpengine.renderer.light.TubeLight;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.scene.AABB;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
-import de.hanno.hpengine.scene.LightmapManager;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
@@ -65,7 +65,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     OpenGLContext openGLContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-    private final DrawLightMapExtension lightMapExtension;
     private Pipeline pipeline;
 
     public SimpleDrawStrategy() throws Exception {
@@ -98,7 +97,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         registerRenderExtension(new DrawLinesExtension());
 //        registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
-        lightMapExtension = new DrawLightMapExtension();
+//        lightMapExtension = new DrawLightMapExtension();
         pipeline = new Pipeline();
     }
 
@@ -184,9 +183,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
-            firstpassDefaultProgram.setUniform("lightmapWidth", LightmapManager.getInstance().getWidth());
-            firstpassDefaultProgram.setUniform("lightmapHeight", LightmapManager.getInstance().getHeight());
-            OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, lightMapExtension.getLightMapTarget().getRenderedTexture(4));
+//            firstpassDefaultProgram.setUniform("lightmapWidth", (float) NewLightmapManager.MAX_WIDTH);
+//            firstpassDefaultProgram.setUniform("lightmapHeight", (float) NewLightmapManager.MAX_HEIGHT);
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
@@ -218,11 +216,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             extension.renderFirstPass(firstPassResult, renderState);
             GPUProfiler.end();
         }
-
-        GPUProfiler.start("RenderExtension lightmap firstpass");
-        OpenGLContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-        lightMapExtension.renderFirstPass(firstPassResult, renderState);
-        GPUProfiler.end();
 
         if (Config.DIRECT_TEXTURE_OUTPUT) {
 //            debugDrawProbes(camera, renderState);
@@ -300,8 +293,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             extension.renderSecondPassFullScreen(renderState, secondPassResult);
         }
         GPUProfiler.end();
-
-        lightMapExtension.renderSecondPassFullScreen(renderState, secondPassResult);
 
         OpenGLContext.getInstance().disable(BLEND);
         gBuffer.getLightAccumulationBuffer().unuse();
@@ -679,7 +670,4 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
-    public DrawLightMapExtension getLightMapExtension() {
-        return lightMapExtension;
-    }
 }

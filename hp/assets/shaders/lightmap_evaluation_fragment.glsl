@@ -152,7 +152,20 @@ void main()
 //    result = probeSample.xyz;
 //	out_environment.rgb = result;
     out_environment = vec4(clamp(textureLod(lightmap, lightmapUVs.xy, 0).rgb, 0, 1),0.25f);
-
+    const bool debugLightmap = false;
+    if(debugLightmap) {
+        float g = 0;
+        if (int(lightmapUVs.x*textureSize(lightmap,0).x) % 2 == 0) {
+            if(int(lightmapUVs.y*textureSize(lightmap,0).y) % 2 == 0) {
+                g = 0.01f;
+            }
+        } else {
+            if(int(lightmapUVs.y*textureSize(lightmap,0).y) % 2 != 0) {
+                g = 0.01f;
+            }
+        }
+        out_environment = vec4(0, 0, g, 0.25);
+    }
 //    vec4 bilateralBlurredSample = bilateralBlur(lightmap, lightmapUVs.xy);
 //    out_environment = 4*vec4(bilateralBlurredSample.rgb, 1);
 }

@@ -9,10 +9,7 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
@@ -235,6 +232,11 @@ public class Engine {
 
         boolean finalAnyPointLightHasMoved = anyPointLightHasMoved;
         boolean finalEntityHasMoved = entityHasMoved;
+        if(entityHasMoved) {
+            renderState.addCommand((renderStateX1) -> {
+                renderStateX1.bufferEntites(scene.getEntities());
+            });
+        }
         renderState.addCommand((renderStateX1) -> {
             renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
             addPerEntityInfos(renderState, camera);

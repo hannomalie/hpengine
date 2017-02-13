@@ -69,7 +69,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public ModelComponent(Model model, String materialName) {
         this.materialName = materialName;
         this.model = model;
-        createFloatArray(model);
+        createFloatArray();
     }
 
     private transient Vector3f distance = new Vector3f();
@@ -79,20 +79,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
             texture.setUsedNow();
         }
     }
-
-//    public int drawDebug(Program program, FloatBuffer modelMatrix) {
-//
-//        if(!getEntity().isVisible()) {
-//            return 0;
-//        }
-//
-//        program.setUniformAsMatrix4("modelMatrix", modelMatrix);
-//
-//        model.getMaterial().setTexturesActive(program);
-//        vertexBuffer.drawDebug();
-//        return 0;
-//    }
-
 
     private transient WeakReference<Material> materialCache = null;
     public Material getMaterial() {
@@ -123,10 +109,14 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public void registerInScene(Scene scene) {
-
         baseVertex = scene.getCurrentBaseVertex().get();
         indexOffset = scene.getCurrentIndexOffset().get();
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+
+//        NewLightmapManager.getInstance().registerForLightmapCoordsUpdate(this.getModel());
+        this.getModel().putToValueArrays();
+        this.createFloatArray();
+
         OpenGLContext.getInstance().execute(() -> {
             scene.getVertexBuffer().putValues(baseVertex*totalElementsPerVertex, floatArray);
             scene.getIndexBuffer().appendIndices(indexOffset, getIndices());
@@ -159,7 +149,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return Collections.unmodifiableList(model.getFaces());
     }
 
-    public void createFloatArray(Model model) {
+    public void createFloatArray() {
         floatArray = model.getVertexBufferValuesArray();
         indices.add(model.getIndexBufferValuesArray());
 
