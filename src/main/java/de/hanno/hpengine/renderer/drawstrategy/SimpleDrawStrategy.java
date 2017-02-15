@@ -95,9 +95,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 
         registerRenderExtension(new DrawLinesExtension());
-//        registerRenderExtension(new VoxelConeTracingExtension());
+        registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
-//        lightMapExtension = new DrawLightMapExtension();
         pipeline = new Pipeline();
     }
 

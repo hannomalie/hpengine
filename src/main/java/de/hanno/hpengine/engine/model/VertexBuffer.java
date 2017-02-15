@@ -230,7 +230,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, verticesCount, instanceCount);
         }
 
-        return indexCount/3;
+        return indexCount;
     }
     public int drawLinesInstancedBaseVertex(IndexBuffer indexBuffer, int indexCount, int instanceCount, int indexOffset, int baseVertexIndex) {
         if(!uploaded) { return 0; }

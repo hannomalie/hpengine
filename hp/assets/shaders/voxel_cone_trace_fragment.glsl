@@ -96,7 +96,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		alpha += sampledValue.a;
 		currentPosition += step;
 	}
-	return lit;
+	return normalValue;
 }
 
 void main(void) {
@@ -151,7 +151,7 @@ void main(void) {
     vec3 vct;
 
 	const float boost = 1.;
-    const bool debugVoxels = false;
+    const bool debugVoxels = true;
     if(!debugVoxels && useVoxelConeTracing &&
         positionWorld.x > -maxExtent && positionWorld.y > -maxExtent && positionWorld.z > -maxExtent &&
         positionWorld.x < maxExtent && positionWorld.y < maxExtent && positionWorld.z < maxExtent) {

@@ -19,7 +19,7 @@ public interface DrawStrategy {
             return 0;
         }
 
-        if (perEntityInfo.getProgram() == null) {
+        if (program == null) {
             return 0;
         }
         Program currentProgram = program;

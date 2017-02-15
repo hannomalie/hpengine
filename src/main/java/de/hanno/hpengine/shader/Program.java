@@ -94,7 +94,9 @@ public class Program extends AbstractProgram implements Reloadable {
 			bindShaderAttributeChannels();
 
 			GL20.glLinkProgram(id);
-			printError("Link program");
+			if(printError("Link program")) {
+				throw new RuntimeException("Linking failed");
+			}
 			GL20.glValidateProgram(id);
 			printError("Validate program");
 
@@ -110,11 +112,13 @@ public class Program extends AbstractProgram implements Reloadable {
         GL20.glDetachShader(getId(), shader.getId());
     }
 
-    private void printError(String text) {
+    private boolean printError(String text) {
 		int error = GL11.glGetError();
-		if(error != GL11.GL_NO_ERROR) {
+		boolean isError = error != GL11.GL_NO_ERROR;
+		if(isError) {
 			LOGGER.severe(text + " " + GLU.gluErrorString(error));
 		}
+		return isError;
 	}
 
 	private void addFileListeners() {
