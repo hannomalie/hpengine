@@ -5,17 +5,16 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.RenderState;
 import de.hanno.hpengine.renderer.constants.GlCap;
-import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.shader.Program;
 
 public interface DrawStrategy {
 
     static int draw(RenderState renderState, PerEntityInfo perEntityInfo) {
-        return draw(renderState, perEntityInfo, perEntityInfo.getProgram());
+        return draw(renderState, perEntityInfo, perEntityInfo.getProgram(), !perEntityInfo.isVisible() || !perEntityInfo.isVisibleForCamera());
     }
-    static int draw(RenderState renderState, PerEntityInfo perEntityInfo, Program program) {
-        if(!perEntityInfo.isVisible() || !perEntityInfo.isVisibleForCamera()) {
+    static int draw(RenderState renderState, PerEntityInfo perEntityInfo, Program program, boolean invisible) {
+        if(invisible) {
             return 0;
         }
 

@@ -1,15 +1,20 @@
 layout ( triangles ) in;
 layout ( triangle_strip, max_vertices = 3 ) out;
 
+//include(globals_structs.glsl)
+
 in vec3 v_vertex[3];
 in vec3 v_normal[3];
 in vec2 v_texcoord[3];
 
 in vec4 position_world[3];
 
+in int v_materialIndex[3];
+
 out vec3 g_normal;
 out vec3 g_pos;
 out vec2 g_texcoord;
+flat out int g_materialIndex;
 
 flat out int g_axis;   //indicate which axis the projection uses
 flat out vec4 g_AABB;
@@ -107,6 +112,7 @@ void main()
         g_normal = faceNormal;//v_normal[i];
         g_texcoord = v_texcoord[i];
         g_texcoord.y = 1-g_texcoord.y;
+        g_materialIndex = v_materialIndex[i];
         EmitVertex();
 	}
 

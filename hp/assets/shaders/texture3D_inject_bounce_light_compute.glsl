@@ -63,19 +63,19 @@ void main(void) {
     float opacity = color.a;
     float isStatic = normalStaticEmissive.b;
 
-    vec3 finalVoxelColor;
+    vec3 finalVoxelColor = vec3(0);
 
 	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos,0);
-	finalVoxelColor += currentPositionsValues.rgb;// * 0.5 * (1.0/float(bounces+1));
+	finalVoxelColor += currentPositionsValues.rgb;
 
     const int SAMPLE_COUNT = 4;
-    vec4 diffuseVoxelTraced;// = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+sceneScale*g_normal, g_normal, float(0.25*lightInjectedFramesAgo)*.1485, 270); // 0.05
+    vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
+    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+g_normal*sceneScale, g_normal, .25f, 200); // 0.05
 
-    vec3 maxMultipleBounce = vec3(10.5);
-	vec3 multipleBounceColor = voxelSpecular.rgb;//clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
+    vec3 maxMultipleBounce = vec3(1.5);
+	vec3 multipleBounceColor = voxelSpecular.rgb;//(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
 
-	finalVoxelColor += multipleBounceColor * (1/float(bounces+1));
+	finalVoxelColor += color.rgb*color.a*multipleBounceColor * (1f/float(bounces+1));
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, currentPositionsValues.a));
 }

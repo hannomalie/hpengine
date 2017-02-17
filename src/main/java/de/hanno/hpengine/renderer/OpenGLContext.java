@@ -167,6 +167,7 @@ public final class OpenGLContext {
                 if(severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
                     Logger.getGlobal().severe(message);
                     errorOccured = true;
+                    System.out.println("message = " + message);
                     new RuntimeException().printStackTrace();
                 }
             }

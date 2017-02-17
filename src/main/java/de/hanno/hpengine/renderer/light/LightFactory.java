@@ -433,7 +433,7 @@ public class LightFactory {
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerEntityInfo e : visibles) {
-                DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram);
+                DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram, !e.isVisible() || !e.isVisibleForCamera());
 			}
 			GPUProfiler.end();
 		}

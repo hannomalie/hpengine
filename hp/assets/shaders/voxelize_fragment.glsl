@@ -16,6 +16,7 @@ flat in vec4 g_AABB;
 in vec3 g_normal;
 in vec3 g_pos;
 in vec2 g_texcoord;
+flat in int g_materialIndex;
 
 //layout (pixel_center_integer) in vec4 gl_FragCoord;
 
@@ -24,7 +25,6 @@ in vec2 g_texcoord;
 //include(globals.glsl)
 
 
-uniform int materialIndex;
 uniform int entityIndex;
 uniform int isStatic;
 
@@ -91,7 +91,7 @@ void main()
 {
 //	if( g_pos.x < g_AABB.x || g_pos.y < g_AABB.y || g_pos.x > g_AABB.z || g_pos.y > g_AABB.w )
 //		discard;
-	Material material = materials[materialIndex];
+	Material material = materials[g_materialIndex];
 	vec3 materialDiffuseColor = vec3(material.diffuseR,
 									 material.diffuseG,
 									 material.diffuseB);
