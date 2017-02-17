@@ -94,27 +94,12 @@ void main(void) {
   	positionShadow.xyz /= positionShadow.w;
   	float depthInLightSpace = positionShadow.z;
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
-	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0, 1).r;
+	visibility = clamp(getVisibility(depthInLightSpace, positionShadow), 0.0, 1.0).r;
 
 	vec3 lightDirectionTemp = lightDirection;
-//	lightDirectionTemp.z *=-1;
     float NdotL = max(0.0, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
-
-	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos, 0);
-	finalVoxelColor *= 0.5;
-	finalVoxelColor += currentPositionsValues.rgb * 0.5;// * (1/float(bounces+1));
-//	finalVoxelColor /= float(bounces);
-
-    const int SAMPLE_COUNT = 4;
-    vec4 diffuseVoxelTraced;// = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos, g_normal, .485, 270); // 0.05
-
-    vec3 maxMultipleBounce = vec3(10.5);
-	vec3 multipleBounceColor = 0.4*clamp(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);
-
-//	finalVoxelColor += multipleBounceColor;// / max(float(bounces), 1.0f);
+    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

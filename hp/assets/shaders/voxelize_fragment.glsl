@@ -1,10 +1,12 @@
+#extension GL_NV_gpu_shader5 : enable
+#extension GL_ARB_bindless_texture : enable
 layout(binding=0) uniform sampler2D diffuseMap;
 layout(binding=1) uniform sampler2D normalMap;
 layout(binding=2) uniform sampler2D specularMap;
-layout(binding =3, rgba8) uniform image3D out_voxelNormal;
+layout(binding=3, rgba8) uniform image3D out_voxelNormal;
 //layout(binding=3) uniform sampler2D occlusionMap;
 layout(binding=4) uniform sampler2D heightMap;
-layout(binding = 5, rgba8) uniform image3D out_voxelAlbedo;
+layout(binding=5, rgba8) uniform image3D out_voxelAlbedo;
 //layout(binding=5) uniform sampler2D reflectionMap;
 layout(binding=6) uniform sampler2D shadowMap;
 layout(binding=7) uniform sampler2D roughnessMap;
@@ -102,8 +104,8 @@ void main()
 	float metallic = float(material.metallic);
 
 	if(material.hasDiffuseMap != 0) {
-        color = texture(diffuseMap, g_texcoord);
-        metallic = color.a;
+        sampler2D _diffuseMap = sampler2D(uint64_t(material.handleDiffuse));
+        color = texture(_diffuseMap, g_texcoord);
     }
 	if(material.hasRoughnessMap != 0) {
         roughness = texture(roughnessMap, g_texcoord).r;
@@ -131,11 +133,7 @@ void main()
     positionShadow.xyz = positionShadow.xyz * 0.5 + 0.5;
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 
-    float NdotL = max(0.5, clamp(dot(g_normal, lightDirection), 0, 1));
-
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,opacity)).rgb;
-
 	imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(color.rgb, opacity));
 	imageStore(out_voxelNormal, ivec3(round(gridPosition)), vec4(Encode(normalize(g_normal)), isStatic, 0.25*float(material.ambient)));
-//    imageStore(out_voxelAlbedo, ivec3(gridPosition), vec4(1,0,0,1));
+//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(finalVoxelColor) ,1));
 }

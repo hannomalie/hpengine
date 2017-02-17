@@ -238,7 +238,7 @@ public class Engine {
             });
         }
         renderState.addCommand((renderStateX1) -> {
-            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, (scene.isInitiallyDrawn() && !Config.forceRevoxelization), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
+            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
             addPerEntityInfos(renderState, camera);
         });
         renderState.update();

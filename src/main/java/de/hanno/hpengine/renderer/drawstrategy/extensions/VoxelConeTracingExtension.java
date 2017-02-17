@@ -159,23 +159,20 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean entityOrDirectionalLightHasMoved = renderState.anEntityHasMoved || directionalLightMoved;
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        Scene scene = Engine.getInstance().getScene();
-        int bounces = 4;
+        int bounces = 1;
 
-        boolean needsRevoxelization = (useVoxelConeTracing && (entityOrDirectionalLightHasMoved)) || !renderState.sceneInitiallyDrawn;
-        if(entityOrDirectionalLightHasMoved) {
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.forceRevoxelization);
+        if(entityOrDirectionalLightHasMoved || needsRevoxelization || lightInjectedCounter > bounces) {
             lightInjectedCounter = 0;
-        } else if(lightInjectedCounter < bounces) {
-            lightInjectedCounter++;
         }
         boolean needsLightInjection = lightInjectedCounter < bounces;
 
-        voxelizeScene(firstPassResult, renderState, entityOrDirectionalLightHasMoved, clearVoxels, scene, lightInjectedCounter, needsRevoxelization);
-        injectLight(firstPassResult, renderState, scene, bounces, lightInjectedCounter, needsLightInjection);
+        voxelizeScene(firstPassResult, renderState, entityOrDirectionalLightHasMoved, clearVoxels, needsRevoxelization);
+        injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection);
         GPUProfiler.end();
     }
 
-    public void injectLight(FirstPassResult firstPassResult, RenderState renderState, Scene scene, int bounces, int lightInjectedFramesAgo, boolean needsLightInjection) {
+    public void injectLight(RenderState renderState, int bounces, int lightInjectedFramesAgo, boolean needsLightInjection) {
         if(needsLightInjection) {
             GPUProfiler.start("grid shading");
             GL42.glBindImageTexture(0, currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
@@ -191,15 +188,14 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("gridSize", gridSize);
-                if (scene != null) {
-                    injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
-                    injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLight.getCamera().getViewDirection());
-                    injectLightComputeProgram.setUniform("lightColor", renderState.directionalLight.getColor());
-                }
+                injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
+                injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLight.getCamera().getViewDirection());
+                injectLightComputeProgram.setUniform("lightColor", renderState.directionalLight.getColor());
 
                 injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
             }
-            else {
+            else
+            {
                 injectMultipleBounceLightComputeProgram.use();
                 injectMultipleBounceLightComputeProgram.setUniform("bounces", bounces);
                 injectMultipleBounceLightComputeProgram.setUniform("lightInjectedFramesAgo", lightInjectedFramesAgo);
@@ -208,16 +204,17 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectMultipleBounceLightComputeProgram.setUniform("gridSize", gridSize);
                 injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
             }
+            lightInjectedCounter++;
             mipmapGrid();
-            GPUProfiler.end();
             switchCurrentVoxelGrid();
+            GPUProfiler.end();
         }
 
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
         GL11.glColorMask(true, true, true, true);
     }
 
-    public void voxelizeScene(FirstPassResult firstPassResult, RenderState renderState, boolean entityOrDirectionalLightHasMoved, boolean clearVoxels, Scene scene, Integer lightInjectedFramesAgo, boolean needsRevoxelization) {
+    public void voxelizeScene(FirstPassResult firstPassResult, RenderState renderState, boolean entityOrDirectionalLightHasMoved, boolean clearVoxels, boolean needsRevoxelization) {
         if(needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels");
             if(!renderState.sceneInitiallyDrawn) {
@@ -229,7 +226,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 int num_groups_xyz = Math.max(gridSize / 8, 1);
                 GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
                 GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
-//                GL42.glBindImageTexture(2, currentVoxelSource, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
                 GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
                 OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
                 clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
@@ -245,12 +241,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.use();
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-            OpenGLContext.getInstance().bindTexture(8, TEXTURE_3D, currentVoxelSource);
-            if (scene != null) {
-                voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
-                voxelizer.setUniform("lightDirection", renderState.directionalLight.getDirection());
-                voxelizer.setUniform("lightColor", renderState.directionalLight.getColor());
-            }
+            voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
+            voxelizer.setUniform("lightDirection", renderState.directionalLight.getDirection());
+            voxelizer.setUniform("lightColor", renderState.directionalLight.getColor());
             voxelizer.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
             voxelizer.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
@@ -275,7 +268,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
             for (PerEntityInfo entity : renderState.perEntityInfos()) {
                 boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                if (renderState.sceneInitiallyDrawn && isStatic) {
+                if (renderState.sceneInitiallyDrawn && !Config.forceRevoxelization && isStatic) {
                     continue;
                 }
                 if(!entityOrDirectionalLightHasMoved) { continue; }
@@ -337,7 +330,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     @Override
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
-
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
         GPUProfiler.start("VCT second pass");
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());

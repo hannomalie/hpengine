@@ -96,7 +96,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 		alpha += sampledValue.a;
 		currentPosition += step;
 	}
-	return accumAlbedo;
+	return lit;
 }
 
 void main(void) {
@@ -148,7 +148,7 @@ void main(void) {
     float gridSizeHalf = float(gridSize/2);
     float maxExtent = gridSizeHalf * sceneScale;
     const bool useVoxelConeTracing = true;
-    vec3 vct;
+    vec3 vct = vec3(0);
 
 	const float boost = 1.;
     const bool debugVoxels = false;
@@ -159,8 +159,8 @@ void main(void) {
         vec4 voxelDiffuse = vec4(0);
 
         const int SAMPLE_COUNT = 4;
-        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+3*sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld+normalWorld*2*sceneScale);
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
         const bool useTransparency = false;
@@ -181,7 +181,7 @@ void main(void) {
 
     if(debugVoxels) {
     	vct = scatter(eyePosition + normalize(positionWorld-eyePosition), eyePosition);
-    	out_DiffuseSpecular.rgb = 2*vct;
-    	out_AOReflection.rgb = 2*vct;
+    	out_DiffuseSpecular.rgb = vct;
+    	out_AOReflection.rgb = vct;
     }
 }

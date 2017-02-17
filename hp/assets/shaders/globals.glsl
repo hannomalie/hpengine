@@ -567,7 +567,7 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
         H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
         float dotProd = clamp(dot(normalWorld, H),0,1);
-        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, 6, positionWorld, normalize(H), sceneScale*5/float(SAMPLE_COUNT), 150);
+        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, sceneScale/2, positionWorld, normalize(H), sceneScale/float(SAMPLE_COUNT), 150);
     }
 
 
