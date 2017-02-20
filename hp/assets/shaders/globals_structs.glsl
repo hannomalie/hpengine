@@ -45,6 +45,6 @@ struct Entity {
 
     double isSelected;
     double materialIndex;
-    double entityBaseIndex;
+    double isStatic;
     double entityIndex;
 };

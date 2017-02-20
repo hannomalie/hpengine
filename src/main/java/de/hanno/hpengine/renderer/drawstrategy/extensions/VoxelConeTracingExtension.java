@@ -161,11 +161,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.forceRevoxelization);
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.forceRevoxelization || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
         if(entityOrDirectionalLightHasMoved || needsRevoxelization || lightInjectedCounter > bounces) {
             lightInjectedCounter = 0;
         }
-        boolean needsLightInjection = lightInjectedCounter < bounces;
+        boolean needsLightInjection = lightInjectedCounter < bounces || needsRevoxelization;
 
         voxelizeScene(firstPassResult, renderState, entityOrDirectionalLightHasMoved, clearVoxels, needsRevoxelization);
         injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection);
@@ -271,7 +271,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 if (renderState.sceneInitiallyDrawn && !Config.forceRevoxelization && isStatic) {
                     continue;
                 }
-                if(!entityOrDirectionalLightHasMoved) { continue; }
                 voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                 int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
 

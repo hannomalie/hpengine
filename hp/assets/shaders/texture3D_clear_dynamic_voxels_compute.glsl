@@ -15,26 +15,9 @@ void main(void) {
 
 	vec4 currentValue = texelFetch(normalGridTexture, storePos, 0);
 	float isStatic = currentValue.b;
-//	if((isStatic > 0.1))
-	{
-//		vec4 clearColor = vec4(0,1,0,1);
-//        imageStore(albedoGrid, storePos, vec4(0,0,0,0));
-//        imageStore(normalGrid, storePos, vec4(0,0,0,0));
-//        imageStore(grid1, storePos, clearColor);
-//        imageStore(grid2, storePos, clearColor);
-	}
-////	else
-//	{
-//		vec4 clearColor = vec4(1,0,0,1);
-//        imageStore(albedoGrid, storePos, vec4(0,0,0,0));
-//        imageStore(normalGrid, storePos, vec4(0,0,0,0));
-//        imageStore(grid1, storePos, clearColor);
-//        imageStore(grid2, storePos, clearColor);
-//	}
 	if((isStatic < 0.1)) {
         imageStore(albedoGrid, storePos, vec4(0,0,0,0));
-        imageStore(normalGrid, storePos, vec4(0,0,1,0));
-//        imageStore(grid1, storePos, vec4(0,0,0,0));
+        imageStore(normalGrid, storePos, vec4(0,0,0,0));
         imageStore(grid2, storePos, vec4(0,0,0,0));
 	}
 }

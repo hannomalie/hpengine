@@ -60,7 +60,8 @@ public class Engine {
     private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
     private volatile String latestGPUProfilingResult = "";
     private volatile boolean directionalLightNeedsShadowMapRedraw;
-    private DoubleBuffer<RenderState> renderState;
+    private volatile DoubleBuffer<RenderState> renderState;
+    private volatile boolean sceneIsInitiallyDrawn;
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -201,6 +202,7 @@ public class Engine {
         if(!Config.MULTITHREADED_RENDERING) {
             actuallyDraw();
         }
+        sceneIsInitiallyDrawn = true;
     }
 
     private void updateRenderState() {
@@ -238,7 +240,7 @@ public class Engine {
             });
         }
         renderState.addCommand((renderStateX1) -> {
-            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
+            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), scene.getDirectionalLight(), finalEntityHasMoved, directionalLightNeedsShadowMapRedraw, finalAnyPointLightHasMoved, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult);
             addPerEntityInfos(renderState, camera);
         });
         renderState.update();
@@ -260,7 +262,7 @@ public class Engine {
 
             renderState.stopRead();
         }, true);
-        resetState();
+        directionalLightNeedsShadowMapRedraw = false;
     }
 
     private Vector3f tempDistVector = new Vector3f();
@@ -295,11 +297,6 @@ public class Engine {
         }
     }
 
-    public void resetState() {
-        directionalLightNeedsShadowMapRedraw = false;
-        scene.setInitiallyDrawn(true);
-    }
-
     private void initOpenGLContext() {
         OpenGLContext.getInstance();
     }
@@ -321,6 +318,7 @@ public class Engine {
             renderState1.setIndexBuffer(scene.getIndexBuffer());
             renderState1.setVertexBuffer(scene.getVertexBuffer());
         });
+        sceneIsInitiallyDrawn = false;
     }
 
     public Camera getActiveCamera() {
@@ -361,7 +359,6 @@ public class Engine {
     public void handle(EntityAddedEvent e) {
         entityAdded = true;
         directionalLightNeedsShadowMapRedraw = true;
-        scene.setInitiallyDrawn(false);
         scene.setUpdateCache(true);
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
@@ -377,7 +374,6 @@ public class Engine {
     @Subscribe
     @Handler
     public void handle(SceneInitEvent e) {
-        scene.setInitiallyDrawn(false);
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
         }));

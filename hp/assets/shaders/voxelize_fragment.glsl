@@ -119,7 +119,7 @@ void main()
     vec3 gridPosition = vec3(inverseSceneScale) * g_pos.xyz + vec3(gridSizeHalf);
 
 //    vec3 samplePositionNormalized = gridPosition/vec3(gridSize);
-//    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).a > 0) { discard; }
+//    if(textureLod(secondVoxelVolume, samplePositionNormalized, 0).b > 0) { discard; }
 
     float ambientAmount = 0;//.0125f;
     float dynamicAdjust = 0;//.015f;

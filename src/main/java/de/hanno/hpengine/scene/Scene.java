@@ -47,8 +47,6 @@ public class Scene implements LifeCycle, Serializable {
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
-	private transient volatile boolean initiallyDrawn;
-
 	private transient EntitiesContainer entityContainer = new SimpleContainer();
 	transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
@@ -56,7 +54,7 @@ public class Scene implements LifeCycle, Serializable {
 	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
 	private List<AreaLight> areaLights = new CopyOnWriteArrayList<>();
 	private DirectionalLight directionalLight = new DirectionalLight();
-	private boolean updateCache = true;
+	private volatile boolean updateCache = true;
 
 	public Scene() {
         this("new-scene-" + System.currentTimeMillis());
@@ -226,6 +224,7 @@ public class Scene implements LifeCycle, Serializable {
 		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 	public void update(float seconds) {
+		cacheEntityIndices();
 		Iterator<PointLight> pointLightsIterator = pointLights.iterator();
 		while (pointLightsIterator.hasNext()) {
 			pointLightsIterator.next().update(seconds);
@@ -323,6 +322,7 @@ public class Scene implements LifeCycle, Serializable {
 	private void cacheEntityIndices() {
 		if(updateCache)
 		{
+			updateCache = false;
 			entitiesWithModelComponent.clear();
             modelComponents.clear();
             cachedEntityIndices.clear();
@@ -336,7 +336,6 @@ public class Scene implements LifeCycle, Serializable {
 				index += current.getInstanceCount();
 				i++;
 			}
-			updateCache = false;
 		}
 	}
 
@@ -359,11 +358,4 @@ public class Scene implements LifeCycle, Serializable {
 		return indexBuffer;
 	}
 
-	public boolean isInitiallyDrawn() {
-		return initiallyDrawn;
-	}
-
-	public void setInitiallyDrawn(boolean initiallyDrawn) {
-		this.initiallyDrawn = initiallyDrawn;
-	}
 }

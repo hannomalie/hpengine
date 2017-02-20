@@ -39,7 +39,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		DYNAMIC
 	}
 
-	private Update update = Update.STATIC;
+	private Update update = Update.DYNAMIC;
 
 	private Transform transform = new Transform();
 
@@ -475,7 +475,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         double materialIndex = getComponents().containsKey("ModelComponent") ?
                 MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
         doubles[index++] = materialIndex;
-        doubles[index++] = Engine.getInstance().getScene().getEntityBufferIndex(this);
+        doubles[index++] = getUpdate().equals(Update.STATIC) ? 1 : 0;
         doubles[index++] = Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
         return index;
     }
