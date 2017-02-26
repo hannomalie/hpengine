@@ -46,18 +46,17 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         Engine.getEventBus().register(this);
     }
 
+    private long renderedInCycle;
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
-        if(renderState.directionalLightNeedsShadowMapRender) {
-            GPUProfiler.start("Directional shadowmap");
+        GPUProfiler.start("Directional shadowmap");
+        if(renderedInCycle < renderState.directionalLightHasMovedInCycle) {
             drawShadowMap(renderState, firstPassResult);
-            GPUProfiler.end();
         }
+        GPUProfiler.end();
     }
 
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
-        DirectionalLight directionalLight = renderState.directionalLight;
-        if(!directionalLight.isInitialized()) { return; }
         OpenGLContext.getInstance().depthMask(true);
         OpenGLContext.getInstance().enable(DEPTH_TEST);
 //		OpenGLContext.getInstance().cullFace(BACK);
@@ -70,8 +69,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram.use();
         directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         directionalShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-        directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", directionalLight.getCamera().getViewMatrixAsBuffer());
-        directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", directionalLight.getCamera().getProjectionMatrixAsBuffer());
+        directionalShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.getDirectionalLightViewMatrixAsBuffer());
+        directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.getDirectionalLightProjectionMatrixAsBuffer());
 
         for(int i = 0; i < visibles.size(); i++) {
             PerEntityInfo e = visibles.get(i);
@@ -88,6 +87,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
 //		OpenGLContext.getInstance().enable(CULL_FACE);
+        renderedInCycle = renderState.getCycle();
+
     }
 
     public int getShadowMapId() {
@@ -99,4 +100,5 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     public int getShadowMapColorMapId() {
         return renderTarget.getRenderedTexture(1);
     }
+
 }

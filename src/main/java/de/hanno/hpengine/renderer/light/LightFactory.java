@@ -386,12 +386,13 @@ public class LightFactory {
 		GPUProfiler.end();
 	}
 
+	private long pointlightShadowMapsRenderedInCycle;
 	public void renderPointLightShadowMaps(RenderState renderState) {
         Scene scene = Engine.getInstance().getScene();
         if(scene == null) { return; }
 
-        boolean noNeedToRedraw = !(renderState.anEntityHasMoved || renderState.anyPointLightHasMoved);
-        if(noNeedToRedraw) { return; }
+        boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
+        if(needToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
 		OpenGLContext.getInstance().depthMask(true);
@@ -438,6 +439,7 @@ public class LightFactory {
 			GPUProfiler.end();
 		}
 		GPUProfiler.end();
+		pointlightShadowMapsRenderedInCycle = renderState.getCycle();
 	}
 
 	public void renderPointLightShadowMaps_dpsm(RenderState renderState, EntitiesContainer octree) {

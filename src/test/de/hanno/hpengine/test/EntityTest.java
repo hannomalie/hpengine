@@ -55,6 +55,7 @@ public class EntityTest extends TestWithEngine {
         parentEntity.setSelected(true);
         parentEntity.setPosition(new Vector3f(2,2,2));
         engine.getScene().add(parentEntity);
+
         Assert.assertTrue(engine.getScene().getEntities().contains(parentEntity));
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
@@ -75,6 +76,11 @@ public class EntityTest extends TestWithEngine {
         parentEntity.addInstance(instanceTransform);
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
+
+        Entity secondEntity = EntityFactory.getInstance().getEntity("second", models);
+        engine.getScene().add(secondEntity);
+        Assert.assertEquals(0, Engine.getInstance().getScene().getEntityBufferIndex(parentEntity));
+        Assert.assertEquals(4, Engine.getInstance().getScene().getEntityBufferIndex(secondEntity));
 
         {
             double[] parentValues = parentEntity.get();
@@ -98,6 +104,7 @@ public class EntityTest extends TestWithEngine {
         }
 
 
+        engine.getRenderState().getCurrentReadState().bufferEntites(Engine.getInstance().getScene().getEntities());
         FloatBuffer floatValues = engine.getRenderState().getCurrentReadState().getEntitiesBuffer().getValuesAsFloats();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);
@@ -117,11 +124,6 @@ public class EntityTest extends TestWithEngine {
         Assert.assertEquals(15, floatValuesArray[72], 0.00001);
         Assert.assertEquals(15, floatValuesArray[73], 0.00001);
         Assert.assertEquals(15, floatValuesArray[74], 0.00001);
-
-
-        Entity secondEntity = EntityFactory.getInstance().getEntity("9999998888", models);
-        engine.getScene().add(secondEntity);
-        Assert.assertTrue(engine.getScene().getEntities().contains(secondEntity));
 
 
     }

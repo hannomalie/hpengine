@@ -5,7 +5,6 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
-import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Pipeline;
@@ -15,7 +14,6 @@ import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.renderer.light.AreaLight;
-import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.TubeLight;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
@@ -107,7 +105,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         LightFactory lightFactory = LightFactory.getInstance();
         EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
-        DirectionalLight light = renderState.directionalLight;
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -129,7 +126,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         if (!Config.DIRECT_TEXTURE_OUTPUT) {
             GPUProfiler.start("Second pass");
-            drawSecondPass(result.getSecondPassResult(), renderState.camera, light, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
+            drawSecondPass(result.getSecondPassResult(), renderState.camera, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
             GPUProfiler.end();
             OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
             OpenGLContext.getInstance().clearDepthAndColorBuffer();
@@ -176,7 +173,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
             firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-            firstpassDefaultProgram.setUniform("lightDirection", renderState.directionalLight.getViewDirection());
+            firstpassDefaultProgram.setUniform("lightDirection", renderState.directionalLightDirection);
             firstpassDefaultProgram.setUniform("near", camera.getNear());
             firstpassDefaultProgram.setUniform("far", camera.getFar());
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
@@ -231,7 +228,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return firstPassResult;
     }
 
-    public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, DirectionalLight directionalLight, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
+    public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
         Vector3f camPosition = camera.getPosition();
         Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
@@ -270,9 +267,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
-        secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-        secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getCamera().getViewDirection());
-        secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
+        secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
+        secondPassDirectionalProgram.setUniform("lightDirection", renderState.directionalLightDirection);
+        secondPassDirectionalProgram.setUniform("lightDiffuse", renderState.directionalLightColor);
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(secondPassDirectionalProgram);
         GPUProfiler.start("Draw fullscreen buffer");
         QuadVertexBuffer.getFullscreenBuffer().draw();
@@ -485,10 +482,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         aoScatteringProgram.setUniform("screenHeight", (float) Config.HEIGHT / 2);
         aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-        aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
-        aoScatteringProgram.setUniform("lightDirection", renderState.directionalLight.getViewDirection());
-        aoScatteringProgram.setUniform("lightDiffuse", renderState.directionalLight.getColor());
-        aoScatteringProgram.setUniform("scatterFactor", renderState.directionalLight.getScatterFactor());
+        aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
+        aoScatteringProgram.setUniform("lightDirection", renderState.directionalLightDirection);
+        aoScatteringProgram.setUniform("lightDiffuse", renderState.directionalLightColor);
+        aoScatteringProgram.setUniform("scatterFactor", renderState.directionalLightScatterFactor);
 
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
         QuadVertexBuffer.getFullscreenBuffer().draw();

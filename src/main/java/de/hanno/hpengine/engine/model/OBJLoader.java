@@ -145,6 +145,7 @@ public class OBJLoader {
                         if(candidate.getMaterial() == null) { candidate.setMaterial(currentMaterial); }
                     }
                     model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
+//                    TODO: Fix this thing....test with cornellbox
                     model.setMaterial(currentMaterial);
                 }
             } else if ("o".equals(firstToken) || "g".equals(firstToken) || line.startsWith("# object ")) {

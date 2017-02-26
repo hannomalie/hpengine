@@ -96,7 +96,8 @@ public class Scene implements LifeCycle, Serializable {
 		for(AreaLight areaLight : areaLights) {
 			areaLight.init();
 		}
-		
+
+		directionalLight.addInputController();
 		directionalLight.init();
 	}
 	

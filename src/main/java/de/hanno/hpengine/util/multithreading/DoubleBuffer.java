@@ -2,8 +2,6 @@ package de.hanno.hpengine.util.multithreading;
 
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
-import java.util.Queue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
@@ -55,10 +53,12 @@ public class DoubleBuffer<T> {
         currentWriteState.addCommand(command);
     }
 
-    public void update() {
+    public boolean update() {
         if(currentWriteState.queue.executeCommands()) {
             swap();
+            return true;
         }
+        return false;
     }
 
     public T getCurrentReadState() {

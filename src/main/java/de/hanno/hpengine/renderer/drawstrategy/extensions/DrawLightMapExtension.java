@@ -93,9 +93,10 @@ public class DrawLightMapExtension implements RenderExtension {
         pipeline = new Pipeline(false, false, false);
     }
 
+    private long firstPassRenderedInCycle;
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
-        if(DRAW_LIGHTMAP && (renderState.directionalLightNeedsShadowMapRender || currentCounter < count)) {
+        if(DRAW_LIGHTMAP && (renderState.directionalLightHasMovedInCycle > firstPassRenderedInCycle || currentCounter < count)) {
             if(currentCounter >= count) {
                 currentSource = currentTarget;
                 currentTarget = currentTarget == 4 ? 5 : 4;
@@ -148,6 +149,7 @@ public class DrawLightMapExtension implements RenderExtension {
 //            TextureFactory.getInstance().blur2DTextureRGBA16F(lightMapTarget.getRenderedTexture(currentTarget), lightMapTarget.getWidth(), lightMapTarget.getHeight(), 0, 0);
 
             currentCounter++;
+            firstPassRenderedInCycle = renderState.getCycle();
         }
     }
 
@@ -171,12 +173,12 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
         lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
 
-        lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.directionalLight.getViewProjectionMatrixAsBuffer());
+        lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
         lightMapProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-        lightMapProgram.setUniform("lightDirection", renderState.directionalLight.getDirection());
-        lightMapProgram.setUniform("lightDiffuse", renderState.directionalLight.getColor());
+        lightMapProgram.setUniform("lightDirection", renderState.directionalLightDirection);
+        lightMapProgram.setUniform("lightDiffuse", renderState.directionalLightColor);
         lightMapProgram.setUniform("lightmapWidth", (float) NewLightmapManager.MAX_WIDTH);
         lightMapProgram.setUniform("lightmapHeight", (float) NewLightmapManager.MAX_HEIGHT);
         lightMapProgram.setUniform("width", lightMapTarget.getWidth());

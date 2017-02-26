@@ -44,7 +44,6 @@ import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = false;
-	private int frameCount = 0;
 
 	private static Logger LOGGER = getLogger();
 
@@ -190,15 +189,16 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-		if(renderState.directionalLightNeedsShadowMapRender) {
-			EnvironmentProbeFactory.getInstance().draw(true);
-		}
+//		TODO: Reimplement this with a custom field for probes
+//		if(renderState.directionalLightNeedsShadowMapRender) {
+//			EnvironmentProbeFactory.getInstance().draw(true);
+//		}
         simpleDrawStrategy.draw(result, renderState);
 		GPUProfiler.end();
 		if (Config.DEBUGFRAME_ENABLED) {
 //            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
-            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
-//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
+//            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
+			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
 ////                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
@@ -235,7 +235,6 @@ public class DeferredRenderer implements Renderer {
 //			counter++;
 //		}
 
-		frameCount++;
         GPUProfiler.start("Waiting for driver");
 		Display.update();
         GPUProfiler.end();
@@ -452,10 +451,6 @@ public class DeferredRenderer implements Renderer {
 	
 	public float getCurrentFPS() {
         return fpsCounter.getFPS();
-	}
-
-	public int getFrameCount() {
-		return frameCount;
 	}
 
 	private void setCurrentState(String newState) {

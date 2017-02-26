@@ -28,7 +28,6 @@ public class DirectionalLight extends Entity {
 	public DirectionalLight() {
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
-
 		Matrix4f projectionMatrix = Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f);
 		camera = new Camera(projectionMatrix, 0.1f, 500f, 60, 16 / 9);
 		camera.setParent(this);
@@ -38,44 +37,6 @@ public class DirectionalLight extends Entity {
 		camera.setFar(-5000);
 		camera.setPosition(new Vector3f(12f, 300f, 2f));
 		camera.rotate(new Vector4f(1,0,0, 90));
-
-		addComponent(new InputControllerComponent() {
-			private static final long serialVersionUID = 1L;
-
-			@Override public void update(float seconds) {
-
-				float moveAmount = 100* seconds;
-				float rotateAmount = 100*seconds;
-
-//                if(!Keyboard.isCreated()) {
-//                    return;
-//                }
-				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
-					getEntity().move(new Vector3f(0, -moveAmount, 0));
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
-					getEntity().move(new Vector3f(0, moveAmount, 0));
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
-					getEntity().move(new Vector3f(-moveAmount, 0, 0));
-				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
-					getEntity().move(new Vector3f(moveAmount, 0, 0));
-				}
-			}
-		});
 
 //		try {
 //			Model model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
@@ -163,4 +124,41 @@ public class DirectionalLight extends Entity {
 		return camera.getViewProjectionMatrixAsBuffer();
 	}
 
+	public void addInputController() {
+		addComponent(new InputControllerComponent() {
+			private static final long serialVersionUID = 1L;
+
+			@Override public void update(float seconds) {
+
+				float moveAmount = 100* seconds;
+				float rotateAmount = 100*seconds;
+
+				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
+					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
+					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
+					getEntity().move(new Vector3f(0, -moveAmount, 0));
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
+					getEntity().move(new Vector3f(0, moveAmount, 0));
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
+					getEntity().move(new Vector3f(-moveAmount, 0, 0));
+				}
+				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
+					getEntity().move(new Vector3f(moveAmount, 0, 0));
+				}
+				getEntity().getTransform().recalculate(); // TODO: Fix this
+			}
+		});
+	}
 }

@@ -63,7 +63,9 @@ public class Transform implements Serializable, Transformable {
         this.setPosition(other.getPosition());
         this.setOrientation(other.getOrientation());
         this.setScale(other.getScale());
-        this.setParent(other.getParent());
+        if(other.getParent() != null) {
+			this.setParent(other.getParent());
+		}
         for(Transform currentChild : other.getChildren()) {
             this.addChild(currentChild);
         }
