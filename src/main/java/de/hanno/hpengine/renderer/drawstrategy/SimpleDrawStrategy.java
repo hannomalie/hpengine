@@ -100,37 +100,29 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        Engine engine = Engine.getInstance();
-        EntitiesContainer octree = engine.getScene().getEntitiesContainer();
-
-        LightFactory lightFactory = LightFactory.getInstance();
-        EnvironmentProbeFactory environmentProbeFactory = EnvironmentProbeFactory.getInstance();
+        EntitiesContainer octree = Engine.getInstance().getScene().getEntitiesContainer();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
 
-        environmentProbeFactory.drawAlternating(renderState.camera);
+        EnvironmentProbeFactory.getInstance().drawAlternating(renderState.camera);
         Renderer.getInstance().executeRenderProbeCommands(renderState);
+
         GPUProfiler.start("Shadowmap pass");
-        {
-            directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
-        }
-        lightFactory.renderAreaLightShadowMaps(renderState, octree);
+        directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
+        LightFactory.getInstance().renderAreaLightShadowMaps(renderState, octree);
         if (Config.USE_DPSM) {
-            lightFactory.renderPointLightShadowMaps_dpsm(renderState, octree);
+            LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, octree);
         } else {
-            lightFactory.renderPointLightShadowMaps(renderState);
+            LightFactory.getInstance().renderPointLightShadowMaps(renderState);
         }
         GPUProfiler.end();
 
         if (!Config.DIRECT_TEXTURE_OUTPUT) {
             GPUProfiler.start("Second pass");
-            drawSecondPass(result.getSecondPassResult(), renderState.camera, engine.getScene().getTubeLights(), engine.getScene().getAreaLights(), renderState);
+            drawSecondPass(result.getSecondPassResult(), renderState.camera, Engine.getInstance().getScene().getTubeLights(), Engine.getInstance().getScene().getAreaLights(), renderState);
             GPUProfiler.end();
-            OpenGLContext.getInstance().viewPort(0, 0, Config.WIDTH, Config.HEIGHT);
-            OpenGLContext.getInstance().clearDepthAndColorBuffer();
-            OpenGLContext.getInstance().disable(DEPTH_TEST);
             GPUProfiler.start("Combine pass");
             combinePass(target, renderState);
             GPUProfiler.end();
@@ -159,7 +151,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Draw entities");
 
-        if (Config.DRAWSCENE_ENABLED && Engine.getInstance().getScene() != null) {
+        if (Config.DRAWSCENE_ENABLED) {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
@@ -168,7 +160,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
             firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
             firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
-//            firstpassDefaultProgram.setUniform("useNormalMaps", !Config.DRAWLINES_ENABLED);
             firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
@@ -179,17 +170,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
             firstpassDefaultProgram.setUniform("useParallax", Config.useParallax);
             firstpassDefaultProgram.setUniform("useSteepParallax", Config.useSteepParallax);
-//            firstpassDefaultProgram.setUniform("lightmapWidth", (float) NewLightmapManager.MAX_WIDTH);
-//            firstpassDefaultProgram.setUniform("lightmapHeight", (float) NewLightmapManager.MAX_HEIGHT);
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
 
             if(Config.INDIRECT_DRAWING) {
                 pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
-                for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
-                    PerEntityInfo perEntityInfo = renderState.perEntityInfos().get(i);
-                }
             } else {
                 for(PerEntityInfo info : renderState.perEntityInfos()) {
                     if (!info.isVisibleForCamera()) {
@@ -213,10 +199,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.end();
         }
 
-        if (Config.DIRECT_TEXTURE_OUTPUT) {
-//            debugDrawProbes(camera, renderState);
-            EnvironmentProbeFactory.getInstance().draw();
-        }
         openGLContext.enable(CULL_FACE);
 
         GPUProfiler.start("Generate Mipmaps of colormap");
@@ -319,7 +301,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        GPUProfiler.start("LightAccumulationMap");
 //        TextureFactory.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.WIDTH, Config.HEIGHT, 7, 8);
 //        GPUProfiler.end();
-        GPUProfiler.start("Scattering de.hanno.hpengine.texture");
+        GPUProfiler.start("Scattering texture");
         if(Config.SCATTERING || Config.useAmbientOcclusion) {
             TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.WIDTH / 2, Config.HEIGHT / 2, 0, 0);
         }
