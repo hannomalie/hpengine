@@ -117,8 +117,8 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-		GPUProfiler.end();
         drawToQuad(TextureFactory.getInstance().getDefaultTexture().getTextureID(), QuadVertexBuffer.getFullscreenBuffer());
+		GPUProfiler.end();
 
         GPUProfiler.start("Waiting for driver");
 		Display.update();
