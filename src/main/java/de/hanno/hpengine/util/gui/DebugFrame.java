@@ -187,7 +187,7 @@ public class DebugFrame {
 	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.DIRECT_TEXTURE_OUTPUT);
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
-	private WebToggleButton toggleVSync = new WebToggleButton("Lock FPS", Config.LOCK_FPS);
+	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.VSYNC);
 	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
 
 	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
@@ -850,17 +850,10 @@ public class DebugFrame {
 		toggleDrawLights.addActionListener(e -> {
 			Config.DRAWLIGHTS_ENABLED = !Config.DRAWLIGHTS_ENABLED;
 		});
-//		toggleVSync.addActionListener(e -> {
-//			Config.LOCK_FPS = !Config.LOCK_FPS;
-//			OpenGLContext.getInstance().addCommand(new Command<Result>() {
-//				@Override
-//				public Result execute(Engine de.hanno.hpengine.engine) {
-//					float minimumSeconds = !Config.LOCK_FPS ? 0.0f : (0.03f) ;
-//					de.hanno.hpengine.engine.getRenderer().getDrawThread().setMinimumCycleTimeInSeconds(minimumSeconds);
-//					return new Result();
-//				}
-//			});
-//		});
+		toggleVSync.addActionListener(e -> {
+			Config.VSYNC = !Config.VSYNC;
+			OpenGLContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.VSYNC));
+		});
 		toggleAutoExposure.addActionListener(e -> {
 			Config.AUTO_EXPOSURE_ENABLED = !Config.AUTO_EXPOSURE_ENABLED;
 			if(!Config.AUTO_EXPOSURE_ENABLED) { Config.EXPOSURE = 5; }

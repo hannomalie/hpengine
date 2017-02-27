@@ -146,7 +146,7 @@ public final class OpenGLContext {
         LOGGER.info("OpenGLContext after setDisplayMode");
         Display.setTitle("HPEngine");
         Display.create(pixelFormat, contextAttributes);
-        Display.setVSyncEnabled(false);
+        Display.setVSyncEnabled(Config.VSYNC);
 
 //        ContextCapabilities capabilities = GLContext.getCapabilities();
 //        System.out.println("######## Sparse texutre ext available:");

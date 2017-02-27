@@ -1,5 +1,6 @@
 package de.hanno.hpengine.util.stopwatch;
 
+import com.carrotsearch.hppc.LongArrayList;
 import de.hanno.hpengine.util.TypedTuple;
 
 import java.util.ArrayList;
@@ -132,16 +133,30 @@ public class GPUProfiler {
 		if(averages.isEmpty()) { return; }
         StringBuilder builder = new StringBuilder("");
         builder.append("##########################################\n");
-        builder.append("name\t\t\t|  ms\t|ms cpu\t|\tsamples\n");
+        builder.append("name\t\t\t|  ms(variance)\t|ms cpu(variance)\t|\tsamples\n");
 		averages.entrySet().stream().forEach(s -> {
             String name = s.getKey();
             while (name.length() < 30) {
                 name += " ";
             }
 			String clippedName = name.substring(0, Math.min(name.length(), 30));
-			long time = s.getValue().summedTime / s.getValue().count;
-			long timeCpu = s.getValue().summedTimeCpu / s.getValue().count;
-			builder.append(String.format("%s\t| %.5f\t|%.5f\t|\t%s", clippedName, time / 1000 / 1000f, timeCpu / 1000 / 1000f, s.getValue().count));
+			long meanTimeGpu = s.getValue().summedTime / s.getValue().count;
+			long meanTimeCpu = s.getValue().summedTimeCpu / s.getValue().count;
+
+			long varianceCpu = 0;
+			long varianceGpu = 0;
+			for(int i = 0; i < s.getValue().cpuTimes.size(); i++) {
+				long currentTimeCpu = s.getValue().cpuTimes.get(i);
+				long currentTimeGpu = s.getValue().gpuTimes.get(i);
+				varianceCpu += (currentTimeCpu-meanTimeCpu)*(currentTimeCpu-meanTimeCpu);
+				varianceGpu += (currentTimeGpu-meanTimeGpu)*(currentTimeGpu-meanTimeGpu);
+			}
+			varianceCpu /= s.getValue().count;
+			varianceGpu /= s.getValue().count;
+
+			float deviationGpuInSeconds = (float) Math.sqrt(varianceGpu) / 1000f / 1000f;
+			float deviationCpuInSeconds = (float) Math.sqrt(varianceCpu) / 1000f / 1000f;
+			builder.append(String.format("%s\t| %.5f(%.5f)\t|%.5f(%.5f)\t|\t%s", clippedName, meanTimeGpu / 1000 / 1000f, deviationGpuInSeconds, meanTimeCpu / 1000 / 1000f, deviationCpuInSeconds, s.getValue().count));
             builder.append("\n");
         });
 
@@ -165,6 +180,8 @@ public class GPUProfiler {
 				averageHelper.count++;
 				averageHelper.summedTime += record.time;
 				averageHelper.summedTimeCpu += record.timeCpu;
+				averageHelper.addGpuTime(record.time);
+				averageHelper.addCpuTime(record.timeCpu);
 			}
 		}
 		return averages;
@@ -192,8 +209,8 @@ public class GPUProfiler {
 
     public static class Record {
 		public String name = "";
-		public Long time = new Long(0);
-		public Long timeCpu = new Long(0);
+		public long time = 0;
+		public long timeCpu = 0;
 		
 		public Record(String name, long time, long timeCpu) {
 			this.name = name;
@@ -203,11 +220,20 @@ public class GPUProfiler {
 		private Record() {}
 	}
 	public static class AverageHelper {
-		public Integer count = new Integer(0);
-		public Long summedTime = new Long(0);
-		public Long summedTimeCpu = new Long(0);
-		public Long getAverageInMS() { return (summedTime / count) / 1000 / 1000; }
-		public Long getAverageCpuInMS() { return (summedTimeCpu / count) / 1000 / 1000; }
+		public int count = 0;
+		public long summedTime = 0;
+		public long summedTimeCpu = 0;
+		public long getAverageInMS() { return (summedTime / count) / 1000 / 1000; }
+		public long getAverageCpuInMS() { return (summedTimeCpu / count) / 1000 / 1000; }
+		public LongArrayList cpuTimes = new LongArrayList();
+		public LongArrayList gpuTimes = new LongArrayList();
+
+		public void addCpuTime(long time) {
+			cpuTimes.add(time);
+		}
+		public void addGpuTime(long time) {
+			gpuTimes.add(time);
+		}
 	}
 
 
