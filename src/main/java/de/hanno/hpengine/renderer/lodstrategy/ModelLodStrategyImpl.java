@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer.lodstrategy;
 
 import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 
 class ModelLodStrategyImpl {
 

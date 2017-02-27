@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.event.EntitySelectedEvent;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;

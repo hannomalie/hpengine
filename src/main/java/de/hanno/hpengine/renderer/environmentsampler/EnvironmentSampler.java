@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.model.Transformable;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.MaterialChangedEvent;
 import de.hanno.hpengine.container.EntitiesContainer;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
@@ -333,7 +333,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
                 DrawStrategy.draw(extract, perEntityInfo);
             }
         }

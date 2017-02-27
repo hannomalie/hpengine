@@ -1,6 +1,7 @@
 package de.hanno.hpengine.renderer;
 
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;

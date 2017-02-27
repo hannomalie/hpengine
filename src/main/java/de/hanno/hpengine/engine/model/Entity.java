@@ -39,7 +39,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.hasMovedInCycle = hasMovedInCycle;
 	}
 
-	public long getHasMovedInCycle() {
+	public long getLastMovedInCycle() {
 		return hasMovedInCycle;
 	}
 
@@ -413,6 +413,10 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
             }
         }
         return false;
+	}
+
+	public boolean hasMovedSinceCycle(long cycle) {
+		return getLastMovedInCycle() > cycle;
 	}
 
 	public Update getUpdate() {

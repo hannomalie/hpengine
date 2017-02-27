@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.shader.Program;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -22,12 +21,13 @@ public class PerEntityInfo {
     private Vector3f centerWorld;
     private Vector3f minWorldVec3;
     private Vector3f maxWorldVec3;
+    private long lastMovedInCycle;
 
-    public PerEntityInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex) {
-        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex);
+    public PerEntityInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
+        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex, lastMovedInCycle);
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex) {
+    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -42,7 +42,7 @@ public class PerEntityInfo {
         this.maxWorldVec3 = maxWorldVec3;
         this.centerWorld = centerWorld;
         this.drawElementsIndirectCommand.init(indexCount, instanceCount, indexOffset, baseVertex, 0, entityBaseIndex);
-
+        this.lastMovedInCycle = lastMovedInCycle;
     }
 
     public Program getProgram() {
@@ -127,5 +127,9 @@ public class PerEntityInfo {
 
     public Vector3f getMaxWorldVec3() {
         return maxWorldVec3;
+    }
+
+    public long getLastMovedInCycle() {
+        return lastMovedInCycle;
     }
 }

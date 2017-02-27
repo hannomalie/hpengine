@@ -15,7 +15,7 @@ import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -284,7 +284,6 @@ public class Engine {
         List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
 
         for (ModelComponent modelComponent : modelComponents) {
-
             Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
             Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
@@ -296,12 +295,12 @@ public class Engine {
 
             int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
 
-            PerEntityInfo info = renderState.getCurrentWriteState().cash.get(modelComponent);
+            PerEntityInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(modelComponent);
             if(info == null) {
-                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                renderState.getCurrentWriteState().cash.put(modelComponent, info);
+                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+                renderState.getCurrentWriteState().entitiesState.cash.put(modelComponent, info);
             } else {
-                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
             }
             renderState.getCurrentWriteState().add(info);
         }

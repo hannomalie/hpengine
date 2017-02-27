@@ -1,5 +1,6 @@
 package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
+import com.carrotsearch.hppc.ObjectLongHashMap;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
@@ -13,7 +14,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -154,7 +155,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
-        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle > entityOrDirectionalLightHasMovedLastCycle|| renderState.directionalLightHasMovedInCycle > entityOrDirectionalLightHasMovedLastCycle;
+        boolean entityOrDirectionalLightHasMoved = renderState.entitiesState.entityMovedInCycle > entityOrDirectionalLightHasMovedLastCycle|| renderState.directionalLightHasMovedInCycle > entityOrDirectionalLightHasMovedLastCycle;
         if(entityOrDirectionalLightHasMoved) {
             entityOrDirectionalLightHasMovedLastCycle = renderState.getCycle();
         }
@@ -190,8 +191,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("gridSize", gridSize);
                 injectLightComputeProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-                injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLightDirection);
-                injectLightComputeProgram.setUniform("lightColor", renderState.directionalLightColor);
+                injectLightComputeProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+                injectLightComputeProgram.setUniform("lightColor", renderState.directionalLightState.directionalLightColor);
 
                 injectLightComputeProgram.dispatchCompute(num_groups_xyz, num_groups_xyz, num_groups_xyz);
             }
@@ -243,8 +244,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             voxelizer.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
-            voxelizer.setUniform("lightDirection", renderState.directionalLightDirection);
-            voxelizer.setUniform("lightColor", renderState.directionalLightColor);
+            voxelizer.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+            voxelizer.setUniform("lightColor", renderState.directionalLightState.directionalLightColor);
             voxelizer.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
             voxelizer.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
             voxelizer.setUniformAsMatrix4("u_MVPx", viewXBuffer);
@@ -283,6 +284,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GPUProfiler.end();
         }
     }
+    private ObjectLongHashMap movedInCycleCash = new ObjectLongHashMap();
 
     private void mipmapGrid() {
         boolean generatevoxelsMipmap = true;

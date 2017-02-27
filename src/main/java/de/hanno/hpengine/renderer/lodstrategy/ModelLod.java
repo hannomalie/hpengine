@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer.lodstrategy;
 
 import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.renderer.RenderState;
+import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.util.vector.Vector3f;
 
 public class ModelLod {

@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.event.StateChangedEvent;
+import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.glu.GLU;
