@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.input;
 
 import java.util.ArrayList;
 
+import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.ClickEvent;
 import org.lwjgl.input.Keyboard;
@@ -9,13 +10,13 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 
 public class Input {
-    private static ArrayList<Integer> currentKeys = new ArrayList<>();
-    private static ArrayList<Integer> downKeys = new ArrayList<>();
-    private static ArrayList<Integer> upKeys = new ArrayList<>();
+    private static IntArrayList currentKeys = new IntArrayList();
+    private static IntArrayList downKeys = new IntArrayList();
+    private static IntArrayList upKeys = new IntArrayList();
 
-    private static ArrayList<Integer> currentMouse = new ArrayList<>();
-    private static ArrayList<Integer> downMouse = new ArrayList<>();
-    private static ArrayList<Integer> upMouse = new ArrayList<>();
+    private static IntArrayList currentMouse = new IntArrayList();
+    private static IntArrayList downMouse = new IntArrayList();
+    private static IntArrayList upMouse = new IntArrayList();
 
     private static final int NUM_KEYS = 255;
     private static final int NUM_BUTTONS = 3;

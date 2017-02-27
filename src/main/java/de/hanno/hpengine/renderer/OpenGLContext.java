@@ -238,7 +238,6 @@ public final class OpenGLContext {
         OpenGLContext.getInstance().execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
-//            printTextureBindings();
         });
     }
 

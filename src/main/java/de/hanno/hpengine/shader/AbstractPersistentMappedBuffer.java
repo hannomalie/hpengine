@@ -12,7 +12,7 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
 public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer> implements OpenGLBuffer {
-    protected final int target;
+    protected int target = 0;
     private int id;
     protected volatile BUFFER_TYPE buffer;
     private boolean bound = false;
@@ -71,12 +71,16 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
     public void bind() {
 //        TODO: Make this somehow possible
 //        if(bound) {return;}
-        OpenGLContext.getInstance().execute(() -> {
-            if(id <= 0) {id = glGenBuffers(); }
-            glBindBuffer(target, id);
-        });
+        OpenGLContext.getInstance().execute(bindBufferRunnable);
         bound = true;
     }
+
+    private Runnable bindBufferRunnable = () -> {
+        if (getId() <= 0) {
+            setId(glGenBuffers());
+        }
+        glBindBuffer(target, getId());
+    };
 
     @Override
     public void unbind() {
