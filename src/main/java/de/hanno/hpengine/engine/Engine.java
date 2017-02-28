@@ -15,6 +15,7 @@ import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.SimpleTextureRenderer;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
@@ -31,6 +32,7 @@ import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
@@ -49,6 +51,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -255,8 +259,9 @@ public class Engine {
         renderState.update();
     }
 
-    protected void actuallyDraw() {
-        OpenGLContext.getInstance().execute(() -> {
+    Callable drawCallable = new Callable() {
+        @Override
+        public Object call() throws Exception {
             Input.update();
             renderState.startRead();
 
@@ -272,7 +277,17 @@ public class Engine {
 
             cycle.getAndIncrement();
             renderState.stopRead();
-        }, true);
+            return null;
+        }
+    };
+    protected void actuallyDraw() {
+        try {
+            OpenGLContext.getInstance().execute(drawCallable).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     private Vector3f tempDistVector = new Vector3f();

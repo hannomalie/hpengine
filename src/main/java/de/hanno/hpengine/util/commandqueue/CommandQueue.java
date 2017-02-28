@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class CommandQueue {
     private static final Logger LOGGER = Logger.getLogger(CommandQueue.class.getName());
 
-    private LinkedBlockingDeque<FutureCallable> workQueue = new LinkedBlockingDeque<>();
+    private ConcurrentLinkedQueue<FutureCallable> workQueue = new ConcurrentLinkedQueue<>();
 
     public boolean executeCommands() {
         boolean executedCommands = false;
@@ -22,7 +22,7 @@ public class CommandQueue {
         if(command != null) {
             try {
                 command.complete(command.execute());
-                LOGGER.finer(String.valueOf(workQueue.remainingCapacity()));
+                LOGGER.finer(String.valueOf(workQueue.size()));
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -77,7 +77,7 @@ public class CommandQueue {
         return workQueue.iterator();
     }
 
-    public LinkedBlockingDeque<FutureCallable> getWorkQueue() {
+    public ConcurrentLinkedQueue<FutureCallable> getWorkQueue() {
         return workQueue;
     }
 }
