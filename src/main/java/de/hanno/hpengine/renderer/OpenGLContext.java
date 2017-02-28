@@ -370,7 +370,7 @@ public final class OpenGLContext {
         execute(runnable, true);
     }
     public Exception execute(Runnable runnable, boolean andBlock) {
-        if(de.hanno.hpengine.util.Util.isOpenGLThread()) {
+        if(isOpenGLThread()) {
             runnable.run();
             return null;
         }
@@ -405,7 +405,7 @@ public final class OpenGLContext {
 
     public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(Callable<RETURN_TYPE> callable) {
 
-        if(Util.isOpenGLThread()) {
+        if(isOpenGLThread()) {
             try {
                 CompletableFuture<RETURN_TYPE> result = new CompletableFuture();
                 try {

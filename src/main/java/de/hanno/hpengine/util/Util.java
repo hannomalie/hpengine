@@ -431,10 +431,6 @@ public class Util {
 		}
 	}
 
-	public static boolean isOpenGLThread() {
-		return OpenGLContext.isOpenGLThread();
-	}
-
 	public static <T> T[] toArray(Collection<T> values, Class<T> clazz) {
 		T[] array = (T[]) Array.newInstance(clazz, values.size());
 
