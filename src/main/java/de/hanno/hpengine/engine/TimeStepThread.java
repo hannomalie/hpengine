@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -42,12 +43,8 @@ public abstract class TimeStepThread extends Thread {
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;
 
-            float seconds = ns / 1000f / 1000f / 1000f;
-//            try {
-                update(seconds);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            float seconds = TimeUnit.NANOSECONDS.convert(ns, TimeUnit.SECONDS);
+            update(seconds);
             lastFrame = System.nanoTime();
             waitIfNecessary(seconds);
         }

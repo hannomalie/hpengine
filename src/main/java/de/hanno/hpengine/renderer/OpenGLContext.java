@@ -3,15 +3,14 @@ package de.hanno.hpengine.renderer;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
-import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.renderer.constants.*;
+import de.hanno.hpengine.util.commandqueue.CommandQueue;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.util.glu.GLU;
-import de.hanno.hpengine.renderer.constants.*;
-import de.hanno.hpengine.util.commandqueue.CommandQueue;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
 import java.awt.*;
 import java.nio.IntBuffer;
@@ -84,19 +83,18 @@ public final class OpenGLContext {
     }
 
     public static void init() throws LWJGLException {
-        OpenGLContext context = new OpenGLContext();
-        instance = context;
-        context.openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
+        instance = new OpenGLContext();
+        instance.openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
 
             @Override
             public void update(float seconds) {
-                if (!context.isInitialized()) {
+                if (!instance.isInitialized()) {
                     Thread.currentThread().setName(OPENGL_THREAD_NAME);
                     OPENGL_THREAD_ID = Thread.currentThread().getId();
                     System.out.println("OPENGL_THREAD_ID is " + OPENGL_THREAD_ID);
                     try {
                         try {
-                            context.privateInit();
+                            instance.privateInit();
                         } catch (Exception e) {
                             LOGGER.severe("Exception during privateInit");
                             e.printStackTrace();
@@ -114,9 +112,9 @@ public final class OpenGLContext {
                 }
             }
         };
-        executorService.submit(context.openGLThread);
+        executorService.submit(instance.openGLThread);
         System.out.println("OpenGLContext thread submitted with id " + OPENGL_THREAD_ID);
-        waitForInitialization(context);
+        waitForInitialization(instance);
     }
 
     public static final void waitForInitialization(OpenGLContext context) {
@@ -369,26 +367,20 @@ public final class OpenGLContext {
     public void execute(Runnable runnable) {
         execute(runnable, true);
     }
-    public Exception execute(Runnable runnable, boolean andBlock) {
+    public void execute(Runnable runnable, boolean andBlock) {
         if(isOpenGLThread()) {
             runnable.run();
-            return null;
+            return;
         }
-        CompletableFuture<Object> future = execute(() -> {
-            try {
-                runnable.run();
-            } catch(Exception e) {
-                LOGGER.severe(e.toString());
-                e.printStackTrace();
-                return e;
-            }
-            return null;
-        });
 
         if(andBlock) {
-            future.join();
+            commandQueue.execute(runnable, andBlock);
+        } else {
+            calculate(() -> {
+                runnable.run();
+                return null;
+            });
         }
-        return null;
     }
 
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {

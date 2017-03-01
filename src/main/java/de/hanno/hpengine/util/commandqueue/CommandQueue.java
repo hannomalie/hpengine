@@ -34,19 +34,7 @@ public class CommandQueue {
     }
 
     public <RESULT_TYPE extends Object> CompletableFuture<RESULT_TYPE> addCommand(Runnable runnable) {
-        FutureCallable command = new FutureCallable() {
-            @Override
-            public Object execute() throws Exception {
-                try {
-                    runnable.run();
-                    complete(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    completeExceptionally(e);
-                }
-                return null;
-            }
-        };
+        FutureCallable command = new RunnableCallable(runnable);
         workQueue.offer(command);
         return command.getFuture();
     }
@@ -55,14 +43,7 @@ public class CommandQueue {
         return command.getFuture();
     }
     public Exception execute(Runnable runnable, boolean andBlock) {
-        CompletableFuture<Object> future = addCommand(new FutureCallable<Object>() {
-
-            @Override
-            public Object execute() throws Exception {
-                runnable.run();
-                return null;
-            }
-        });
+        CompletableFuture<Object> future = addCommand(new RunnableCallable(runnable));
 
         if(andBlock) {
             future.join();
@@ -79,5 +60,20 @@ public class CommandQueue {
 
     public ConcurrentLinkedQueue<FutureCallable> getWorkQueue() {
         return workQueue;
+    }
+
+    private static class RunnableCallable extends FutureCallable {
+
+        private final Runnable runnable;
+
+        public RunnableCallable(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override
+        public Object execute() throws Exception {
+            runnable.run();
+            return null;
+        }
     }
 }
