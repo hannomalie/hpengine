@@ -10,11 +10,11 @@ class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public void update(float seconds) {
-        Engine.getInstance().update(seconds > 0.005f ? seconds : 0.005f);
+        Engine.getInstance().update(seconds > 0.005f ? seconds : 0.0001f);
     }
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.LOCK_UPDATERATE ? minimumCycleTimeInSeconds : 0f;
+        return Config.LOCK_UPDATERATE ? minimumCycleTimeInSeconds : 0.0001f;
     }
 }
