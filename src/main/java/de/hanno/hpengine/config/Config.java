@@ -51,7 +51,8 @@ public final class Config {
 
 	@Toggable(group = "Performance") public static boolean MULTITHREADED_RENDERING = true;
 	@Toggable(group = "Performance") public static boolean INDIRECT_DRAWING = true;
-	@Toggable(group = "Performance") public static volatile boolean VSYNC = true;
+	@Toggable(group = "Performance") public static volatile boolean LOCK_FPS = true;
+	public static volatile boolean VSYNC = false;
 	@Toggable(group = "Performance") public static volatile boolean LOCK_UPDATERATE = true;
 
     public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;

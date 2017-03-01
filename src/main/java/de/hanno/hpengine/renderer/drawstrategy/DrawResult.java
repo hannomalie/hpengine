@@ -6,6 +6,7 @@ public class DrawResult {
     private final FirstPassResult firstPassResult;
     private final SecondPassResult secondPassResult;
     private volatile boolean finished;
+    public volatile String GPUProfilingResult = "";
 
     public DrawResult(FirstPassResult firstPassResult, SecondPassResult secondPassResult) {
         this.firstPassResult = firstPassResult;

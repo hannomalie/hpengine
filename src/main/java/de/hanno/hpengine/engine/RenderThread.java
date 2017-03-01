@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.config.Config;
 
-class RenderThread extends TimeStepThread {
+public class RenderThread extends TimeStepThread {
 
     public RenderThread(String name) {
         super(name, 0.033f);
@@ -21,6 +21,6 @@ class RenderThread extends TimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return 0;
+        return Config.LOCK_FPS ? 0.33f : 0f;
     }
 }

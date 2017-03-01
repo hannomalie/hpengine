@@ -9,14 +9,15 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.SimpleTextureRenderer;
-import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -28,11 +29,11 @@ import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.material.MaterialInfo;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
@@ -64,10 +65,10 @@ public class Engine {
     private RenderThread renderThread;
 
     private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
-    private volatile String latestGPUProfilingResult = "";
+    private volatile DoubleBuffer<RenderState> renderState;
+
     private volatile long entityMovedInCycle;
     private volatile  long directionalLightMovedInCycle;
-    private volatile DoubleBuffer<RenderState> renderState;
     private volatile boolean sceneIsInitiallyDrawn;
     private volatile AtomicLong cycle = new AtomicLong();
     private long pointLightMovedInCycle;
@@ -262,20 +263,20 @@ public class Engine {
     Callable drawCallable = new Callable() {
         @Override
         public Object call() throws Exception {
-            Input.update();
+            cycle.getAndIncrement();
             renderState.startRead();
+
+            Input.update();
 
             Renderer.getInstance().startFrame();
             latestDrawResult.reset();
-            RenderState currentReadState = renderState.getCurrentReadState();
-            Renderer.getInstance().draw(latestDrawResult, currentReadState);
+            Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
+            latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
             latestDrawResult.setFinished();
-            latestGPUProfilingResult = GPUProfiler.dumpTimings();
             Renderer.getInstance().endFrame();
-            Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult, latestGPUProfilingResult));
+            Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
             scene.endFrame();
 
-            cycle.getAndIncrement();
             renderState.stopRead();
             return null;
         }

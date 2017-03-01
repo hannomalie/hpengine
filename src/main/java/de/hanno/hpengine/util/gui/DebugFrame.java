@@ -109,13 +109,13 @@ public class DebugFrame {
         @Subscribe @Handler public void handle(MaterialChangedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(MaterialAddedEvent e) { revalidate(); }
         @Subscribe @Handler public void handle(SceneInitEvent e) { revalidate(); }
-		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
+//		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
     private final ReloadableScrollPane materialPane =  new ReloadableScrollPane(materialTable);
     JTable textureTable = new JTable(new TextureTableModel()) {
         { Engine.getEventBus().register(this); }
 		@Subscribe @Handler public void handle(TexturesChangedEvent e) { revalidate(); }
-		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
+//		@Subscribe @Handler public void handle(FrameFinishedEvent e) { revalidate(); repaint();}
     };
     private final ReloadableScrollPane texturePane = new ReloadableScrollPane(textureTable);
 	private final ReloadableScrollPane mainLightPane = new ReloadableScrollPane(new MainLightView());
@@ -1261,7 +1261,7 @@ public class DebugFrame {
 				if(drawResult1.isFinished()) {
 					String drawResult = drawResult1.toString();
 					if(GPUProfiler.DUMP_AVERAGES) {
-						drawResult += GPUProfiler.getAveragesString();
+						drawResult += new String(GPUProfiler.getAveragesString());
 					}
 					infoLeft.setText(drawResult);
 					infoRight.setText(event.getLatestGPUProfilingResult());
