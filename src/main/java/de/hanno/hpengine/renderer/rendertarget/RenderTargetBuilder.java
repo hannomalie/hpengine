@@ -1,14 +1,14 @@
 package de.hanno.hpengine.renderer.rendertarget;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.util.AbstractBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, RenderTarget> {
-    int width = Engine.getInstance().getConfig().getWidth();
-    int height = Engine.getInstance().getConfig().getHeight();
+    int width = Config.getInstance().getWidth();
+    int height = Config.getInstance().getHeight();
     float clearR = 0.0f;
     float clearG = 0.0f;
     float clearB = 0.0f;

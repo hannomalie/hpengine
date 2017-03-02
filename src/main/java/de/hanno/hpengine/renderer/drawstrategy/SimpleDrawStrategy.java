@@ -1,6 +1,7 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
 import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
@@ -111,14 +112,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Shadowmap pass");
         directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
         LightFactory.getInstance().renderAreaLightShadowMaps(renderState, octree);
-        if (Engine.getInstance().getConfig().isUseDpsm()) {
+        if (Config.getInstance().isUseDpsm()) {
             LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, octree);
         } else {
             LightFactory.getInstance().renderPointLightShadowMaps(renderState);
         }
         GPUProfiler.end();
 
-        if (!Engine.getInstance().getConfig().isUseDirectTextureOutput()) {
+        if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Second pass");
             drawSecondPass(result.getSecondPassResult(), renderState.camera, Engine.getInstance().getScene().getTubeLights(), Engine.getInstance().getScene().getAreaLights(), renderState);
             GPUProfiler.end();
@@ -150,15 +151,15 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Draw entities");
 
-        if (Engine.getInstance().getConfig().isDrawScene()) {
+        if (Config.getInstance().isDrawScene()) {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             firstpassDefaultProgram.use();
             firstpassDefaultProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
             firstpassDefaultProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
-            firstpassDefaultProgram.setUniform("useRainEffect", Engine.getInstance().getConfig().getRainEffect() == 0.0 ? false : true);
-            firstpassDefaultProgram.setUniform("rainEffect", Engine.getInstance().getConfig().getRainEffect());
+            firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+            firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
             firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
@@ -167,13 +168,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniform("near", camera.getNear());
             firstpassDefaultProgram.setUniform("far", camera.getFar());
             firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
-            firstpassDefaultProgram.setUniform("useParallax", Engine.getInstance().getConfig().isUseParallax());
-            firstpassDefaultProgram.setUniform("useSteepParallax", Engine.getInstance().getConfig().isUseSteepParallax());
+            firstpassDefaultProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
+            firstpassDefaultProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
 
-            if(Engine.getInstance().getConfig().isIndirectDrawing()) {
+            if(Config.getInstance().isIndirectDrawing()) {
                 pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
             } else {
                 for(PerEntityInfo info : renderState.perEntityInfos()) {
@@ -240,10 +241,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         secondPassDirectionalProgram.use();
         secondPassDirectionalProgram.setUniform("eyePosition", camera.getWorldPosition());
-        secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Engine.getInstance().getConfig().getAmbientocclusionRadius());
-        secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Engine.getInstance().getConfig().getAmbientocclusionTotalStrength());
-        secondPassDirectionalProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        secondPassDirectionalProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
+        secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
+        secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        secondPassDirectionalProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
@@ -281,7 +282,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         TextureFactory.getInstance().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
         GPUProfiler.end();
 
-        if (Engine.getInstance().getConfig().isUseGi()) {
+        if (Config.getInstance().isUseGi()) {
             GL11.glDepthMask(false);
             OpenGLContext.getInstance().disable(DEPTH_TEST);
             OpenGLContext.getInstance().disable(BLEND);
@@ -301,8 +302,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        TextureFactory.getInstance().blurHorinzontal2DTextureRGBA16F(gBuffer.getLightAccumulationMapOneId(), Config.getInstance().WIDTH, Config.getInstance().HEIGHT, 7, 8);
 //        GPUProfiler.end();
         GPUProfiler.start("Scattering texture");
-        if(Engine.getInstance().getConfig().isScattering() || Engine.getInstance().getConfig().isUseAmbientOcclusion()) {
-            TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Engine.getInstance().getConfig().getWidth() / 2, Engine.getInstance().getConfig().getHeight() / 2, 0, 0);
+        if(Config.getInstance().isScattering() || Config.getInstance().isUseAmbientOcclusion()) {
+            TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().getWidth() / 2, Config.getInstance().getHeight() / 2, 0, 0);
         }
         GPUProfiler.end();
 //        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().WIDTH / 2, Config.getInstance().HEIGHT / 2, 0, 0);
@@ -333,7 +334,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         openGLContext.bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
         openGLContext.bindTexture(4, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId());
         openGLContext.bindTexture(5, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
-        if (Engine.getInstance().getConfig().isUseDpsm()) {
+        if (Config.getInstance().isUseDpsm()) {
             openGLContext.bindTexture(6, TEXTURE_2D_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayFront());
             openGLContext.bindTexture(7, TEXTURE_2D_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayBack());
         } else {
@@ -342,14 +343,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
-        secondPassPointComputeProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        secondPassPointComputeProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassPointComputeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassPointComputeProgram.setUniform("maxPointLightShadowmaps", LightFactory.MAX_POINTLIGHT_SHADOWMAPS);
         secondPassPointComputeProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         secondPassPointComputeProgram.bindShaderStorageBuffer(2, LightFactory.getInstance().getLightBuffer());
-        secondPassPointComputeProgram.dispatchCompute(Engine.getInstance().getConfig().getWidth() / 16, Engine.getInstance().getConfig().getHeight() / 16, 1);
+        secondPassPointComputeProgram.dispatchCompute(Config.getInstance().getWidth() / 16, Config.getInstance().getHeight() / 16, 1);
         GPUProfiler.end();
     }
 
@@ -363,8 +364,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
 
         secondPassTubeProgram.use();
-        secondPassTubeProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        secondPassTubeProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        secondPassTubeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        secondPassTubeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassTubeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassTubeProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         for (TubeLight tubeLight : tubeLights) {
@@ -399,8 +400,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Area lights: " + areaLights.size());
 
         secondPassAreaProgram.use();
-        secondPassAreaProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        secondPassAreaProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        secondPassAreaProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        secondPassAreaProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassAreaProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
         secondPassAreaProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         for (AreaLight areaLight : areaLights) {
@@ -439,7 +440,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     private void renderAOAndScattering(RenderState renderState) {
-        if (!Engine.getInstance().getConfig().isUseAmbientOcclusion() && !Engine.getInstance().getConfig().isScattering()) {
+        if (!Config.getInstance().isUseAmbientOcclusion() && !Config.getInstance().isScattering()) {
             return;
         }
         GPUProfiler.start("Scattering and AO");
@@ -456,11 +457,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //		halfScreenBuffer.setTargetTexture(halfScreenBuffer.getRenderedTexture(), 0);
         aoScatteringProgram.use();
         aoScatteringProgram.setUniform("eyePosition", renderState.camera.getPosition());
-        aoScatteringProgram.setUniform("useAmbientOcclusion", Engine.getInstance().getConfig().isUseAmbientOcclusion());
-        aoScatteringProgram.setUniform("ambientOcclusionRadius", Engine.getInstance().getConfig().getAmbientocclusionRadius());
-        aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", Engine.getInstance().getConfig().getAmbientocclusionTotalStrength());
-        aoScatteringProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth() / 2);
-        aoScatteringProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight() / 2);
+        aoScatteringProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+        aoScatteringProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
+        aoScatteringProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
+        aoScatteringProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth() / 2);
+        aoScatteringProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight() / 2);
         aoScatteringProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         aoScatteringProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         aoScatteringProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
@@ -508,10 +509,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             reflectionBuffer.use(true);
             reflectionProgram.use();
             reflectionProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
-            reflectionProgram.setUniform("useAmbientOcclusion", Engine.getInstance().getConfig().isUseAmbientOcclusion());
-            reflectionProgram.setUniform("useSSR", Engine.getInstance().getConfig().isUseSSR());
-            reflectionProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-            reflectionProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+            reflectionProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+            reflectionProgram.setUniform("useSSR", Config.getInstance().isUseSSR());
+            reflectionProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+            reflectionProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
             reflectionProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
             reflectionProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
             EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(reflectionProgram);
@@ -523,10 +524,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GL42.glBindImageTexture(6, reflectionBuffer.getRenderedTexture(0), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
             tiledProbeLightingProgram.use();
             tiledProbeLightingProgram.setUniform("N", IMPORTANCE_SAMPLE_COUNT);
-            tiledProbeLightingProgram.setUniform("useAmbientOcclusion", Engine.getInstance().getConfig().isUseAmbientOcclusion());
-            tiledProbeLightingProgram.setUniform("useSSR", Engine.getInstance().getConfig().isUseSSR());
-            tiledProbeLightingProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-            tiledProbeLightingProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+            tiledProbeLightingProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+            tiledProbeLightingProgram.setUniform("useSSR", Config.getInstance().isUseSSR());
+            tiledProbeLightingProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+            tiledProbeLightingProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
             tiledProbeLightingProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
             tiledProbeLightingProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
             tiledProbeLightingProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
@@ -548,13 +549,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         combineProgram.use();
         combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         combineProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
-        combineProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        combineProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        combineProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        combineProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         combineProgram.setUniform("camPosition", renderState.camera.getPosition());
-        combineProgram.setUniform("ambientColor", Engine.getInstance().getConfig().getAmbientLight());
-        combineProgram.setUniform("useAmbientOcclusion", Engine.getInstance().getConfig().isUseAmbientOcclusion());
-        combineProgram.setUniform("worldExposure", Engine.getInstance().getConfig().getExposure());
-        combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", Engine.getInstance().getConfig().isAutoExposureEnabled());
+        combineProgram.setUniform("ambientColor", Config.getInstance().getAmbientLight());
+        combineProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+        combineProgram.setUniform("worldExposure", Config.getInstance().getExposure());
+        combineProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled());
         combineProgram.setUniform("fullScreenMipmapCount", gBuffer.getFullScreenMipmapCount());
         combineProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());
         combineProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
@@ -585,11 +586,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Post processing");
         postProcessProgram.use();
         OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, finalBuffer.getRenderedTexture(0));
-        postProcessProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        postProcessProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
-        postProcessProgram.setUniform("worldExposure", Engine.getInstance().getConfig().getExposure());
-        postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Engine.getInstance().getConfig().isAutoExposureEnabled());
-        postProcessProgram.setUniform("usePostProcessing", Engine.getInstance().getConfig().isEnablePostprocessing());
+        postProcessProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        postProcessProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
+        postProcessProgram.setUniform("worldExposure", Config.getInstance().getExposure());
+        postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled());
+        postProcessProgram.setUniform("usePostProcessing", Config.getInstance().isEnablePostprocessing());
         try {
             postProcessProgram.setUniform("cameraRightDirection", renderState.camera.getTransform().getRightDirection());
             postProcessProgram.setUniform("cameraViewDirection", renderState.camera.getTransform().getViewDirection());

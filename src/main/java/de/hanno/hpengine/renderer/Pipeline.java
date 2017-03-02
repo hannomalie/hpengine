@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer;
 
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
@@ -51,7 +51,7 @@ public class Pipeline {
         program.setUniform("entityCount", commands.size());
         program.setUniform("indirect", true);
         GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-        if(Engine.getInstance().getConfig().isDrawLines() && useLineDrawingIfActivated) {
+        if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
             if(useBackfaceCulling) { OpenGLContext.getInstance().disable(GlCap.CULL_FACE); }
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         } else {
@@ -78,7 +78,7 @@ public class Pipeline {
         offsets.clear();
         for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
             PerEntityInfo info = renderState.perEntityInfos().get(i);
-            if(Engine.getInstance().getConfig().isUseFrustumCulling() && useFrustumCulling && !info.isVisibleForCamera()) {
+            if(Config.getInstance().isUseFrustumCulling() && useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }
             commands.add(info.getDrawElementsIndirectCommand());

@@ -141,9 +141,17 @@ public final class Config {
 
     private ModelLod.ModelLodStrategy modelLodStrategy = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
-	public Config() { super(); }
+	Config() { super(); }
 
-    public boolean isUseFileReloading() {
+	public static Config getInstance() {
+		return instance;
+	}
+
+	public static void setInstance(Config instance) {
+		Config.instance = instance;
+	}
+
+	public boolean isUseFileReloading() {
 		return useFileReloading;
 	}
 

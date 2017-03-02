@@ -1,5 +1,6 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
@@ -60,26 +61,26 @@ public class GBuffer {
 
     public GBuffer() {
 
-        gBuffer = new RenderTargetBuilder().setWidth(Engine.getInstance().getConfig().getWidth()).setHeight(Engine.getInstance().getConfig().getHeight())
+        gBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(6, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 						.build();
-        reflectionBuffer = new RenderTargetBuilder().setWidth(Engine.getInstance().getConfig().getWidth()).setHeight(Engine.getInstance().getConfig().getHeight())
+		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
 								.setTextureFilter(GL11.GL_LINEAR))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-        laBuffer = new RenderTargetBuilder().setWidth((int) (Engine.getInstance().getConfig().getWidth()))
-						.setHeight((int) (Engine.getInstance().getConfig().getHeight()))
+		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.getInstance().getWidth()))
+						.setHeight((int) (Config.getInstance().getHeight()))
 						.add(2, new ColorAttachmentDefinition()
                                 .setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR))
 						.build();
-        finalBuffer = new RenderTargetBuilder().setWidth(Engine.getInstance().getConfig().getWidth()).setHeight(Engine.getInstance().getConfig().getHeight())
+		finalBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL11.GL_RGBA8))
 						.build();
-        halfScreenBuffer = new RenderTargetBuilder().setWidth(Engine.getInstance().getConfig().getWidth() / 2).setHeight(Engine.getInstance().getConfig().getHeight() / 2)
+		halfScreenBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth() / 2).setHeight(Config.getInstance().getHeight() / 2)
 						.add(new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
@@ -87,7 +88,7 @@ public class GBuffer {
 		new Matrix4f().store(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
-        fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Engine.getInstance().getConfig().getWidth(), Engine.getInstance().getConfig().getHeight()));
+		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
 		pixelBufferObject = new PixelBufferObject(1, 1);
 		
          storageBuffer = new PersistentMappedBuffer(4*8);//new StorageBuffer(16);

@@ -17,7 +17,7 @@ import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.*;
 import de.hanno.hpengine.component.PhysicsComponent;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.renderer.Renderer;
@@ -216,7 +216,7 @@ public class PhysicsFactory {
 //                        & DebugDrawModes.DRAW_CONTACT_POINTS
 //                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
                         ;
-                return Engine.getInstance().getConfig().isDrawLines() ? flags : 0;
+                return Config.getInstance().isDrawLines() ? flags : 0;
 			}
 			
 			@Override

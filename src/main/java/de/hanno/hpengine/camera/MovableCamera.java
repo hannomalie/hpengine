@@ -1,7 +1,7 @@
 package de.hanno.hpengine.camera;
 
 import de.hanno.hpengine.component.InputControllerComponent;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.input.Input;
 import org.lwjgl.input.Keyboard;
@@ -27,7 +27,7 @@ public class MovableCamera extends Camera {
                                  turbo = 3f;
                              }
 
-                             float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Engine.getInstance().getConfig().getCameraSpeed();
+                             float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.getInstance().getCameraSpeed();
                              if (Input.isMouseClicked(0)) {
                                  getEntity().rotate(WORLD_UP, -Input.getDX() * rotationAmount);
                              }
@@ -38,7 +38,7 @@ public class MovableCamera extends Camera {
                                  getEntity().rotate(Transform.WORLD_VIEW, Input.getDX() * rotationAmount);
                              }
 
-                             float moveAmount = turbo * posDelta * seconds * Engine.getInstance().getConfig().getCameraSpeed();
+                             float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();
                              if (Input.isKeyPressed(Keyboard.KEY_W)) {
                                  getEntity().move(new Vector3f(0, 0, -moveAmount));
                              }

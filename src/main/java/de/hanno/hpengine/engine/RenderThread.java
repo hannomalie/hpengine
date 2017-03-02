@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine;
 
+import de.hanno.hpengine.config.Config;
+
 public class RenderThread extends TimeStepThread {
 
     public RenderThread(String name) {
@@ -8,7 +10,7 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public void update(float seconds) {
-        if (Engine.getInstance().getConfig().isMultithreadedRendering()) {
+        if (Config.getInstance().isMultithreadedRendering()) {
             try {
                 Engine.getInstance().actuallyDraw();
             } catch (Exception e) {
@@ -19,6 +21,6 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Engine.getInstance().getConfig().isLockFps() ? minimumCycleTimeInSeconds : 0f;
+        return Config.getInstance().isLockFps() ? minimumCycleTimeInSeconds : 0f;
     }
 }

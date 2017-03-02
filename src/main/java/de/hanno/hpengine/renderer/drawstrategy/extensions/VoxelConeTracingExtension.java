@@ -2,7 +2,7 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import com.carrotsearch.hppc.ObjectLongHashMap;
 import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
@@ -163,7 +163,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Engine.getInstance().getConfig().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
         if(entityOrDirectionalLightHasMoved || needsRevoxelization || lightInjectedCounter > bounces) {
             lightInjectedCounter = 0;
         }
@@ -270,7 +270,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
             for (PerEntityInfo entity : renderState.perEntityInfos()) {
                 boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                if (renderState.sceneInitiallyDrawn && !Engine.getInstance().getConfig().isForceRevoxelization() && isStatic) {
+                if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                     continue;
                 }
                 voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
@@ -351,9 +351,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState));
         voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
         voxelConeTraceProgram.setUniform("gridSize", gridSize);
-        voxelConeTraceProgram.setUniform("useAmbientOcclusion", Engine.getInstance().getConfig().isUseAmbientOcclusion());
-        voxelConeTraceProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
-        voxelConeTraceProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
+        voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+        voxelConeTraceProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        voxelConeTraceProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         QuadVertexBuffer.getFullscreenBuffer().draw();
 //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
 //        if(entityOrDirectionalLightHasMoved)
