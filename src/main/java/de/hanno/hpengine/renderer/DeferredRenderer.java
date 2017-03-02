@@ -5,23 +5,22 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.event.StateChangedEvent;
-import de.hanno.hpengine.renderer.state.RenderState;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.command.Command;
 import de.hanno.hpengine.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.renderer.command.Result;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.renderer.drawstrategy.*;
+import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
@@ -29,6 +28,13 @@ import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Vector3f;
 
 import javax.vecmath.Vector2f;
 import java.io.File;
@@ -38,7 +44,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
@@ -113,8 +120,8 @@ public class DeferredRenderer implements Renderer {
             }
             currentDrawStrategy = simpleDrawStrategy;
 
-            fullScreenTarget = new RenderTargetBuilder().setWidth(Config.WIDTH)
-                                        .setHeight(Config.HEIGHT)
+            fullScreenTarget = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth())
+                                        .setHeight(Config.getInstance().getHeight())
                                         .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
                                         .build();
             MaterialFactory.init();
@@ -196,7 +203,7 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		GPUProfiler.end();
-		if (Config.DEBUGFRAME_ENABLED) {
+		if (Config.getInstance().isDebugframeEnabled()) {
 //            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
 //            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
 			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
@@ -229,10 +236,10 @@ public class DeferredRenderer implements Renderer {
 
 //		if(counter < 20) {
 //            Engine.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
-//			Config.CONTINUOUS_DRAW_PROBES = true;
+//			Config.getInstance().CONTINUOUS_DRAW_PROBES = true;
 //			counter++;
 //		} else if(counter == 20) {
-//			Config.CONTINUOUS_DRAW_PROBES = false;
+//			Config.getInstance().CONTINUOUS_DRAW_PROBES = false;
 //			counter++;
 //		}
 
@@ -279,12 +286,12 @@ public class DeferredRenderer implements Renderer {
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
 
-		float scaleForShaderX = (float) (Config.WIDTH / width);
-		float scaleForShaderY = (float) (Config.HEIGHT / height);
+		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
+		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
 		// TODO: Reset de.hanno.hpengine.texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
 			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}
@@ -316,11 +323,11 @@ public class DeferredRenderer implements Renderer {
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
 		
-		float scaleForShaderX = (float) (Config.WIDTH / width);
-		float scaleForShaderY = (float) (Config.HEIGHT / height);
+		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
+		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
 		if(upscaleToFullscreen) {
 			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.WIDTH, Config.HEIGHT, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}

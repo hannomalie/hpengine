@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RenderTargetBuilder extends AbstractBuilder<RenderTargetBuilder, RenderTarget> {
-    int width = Config.WIDTH;
-    int height = Config.HEIGHT;
+    int width = Config.getInstance().getWidth();
+    int height = Config.getInstance().getHeight();
     float clearR = 0.0f;
     float clearG = 0.0f;
     float clearB = 0.0f;

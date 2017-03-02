@@ -30,15 +30,15 @@ public class Camera extends Entity {
 	private float near = 0.1f;
 	private float far = -5000f;
 	private float fov = 60f;
-	private float ratio = (float) Config.WIDTH / (float)Config.HEIGHT;
+	private float ratio = (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight();
 	private float width = 1600f;
 	private float height = 1600f;
 
 	private boolean isPerspective = true;
-	
+
 	public Camera() {
 		this.name = "Camera_" +  System.currentTimeMillis();
-        init(Util.createPerpective(60f, (float)Config.WIDTH / (float)Config.HEIGHT, 0.1f, 5000f), 0.1f, 5000f, 60f, (float)Config.WIDTH / (float)Config.HEIGHT);
+        init(Util.createPerpective(60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {

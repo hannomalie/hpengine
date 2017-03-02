@@ -163,7 +163,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.forceRevoxelization || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
         if(entityOrDirectionalLightHasMoved || needsRevoxelization || lightInjectedCounter > bounces) {
             lightInjectedCounter = 0;
         }
@@ -270,7 +270,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
             for (PerEntityInfo entity : renderState.perEntityInfos()) {
                 boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                if (renderState.sceneInitiallyDrawn && !Config.forceRevoxelization && isStatic) {
+                if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                     continue;
                 }
                 voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
@@ -351,9 +351,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
         voxelConeTraceProgram.setUniform("sceneScale", getSceneScale(renderState));
         voxelConeTraceProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
         voxelConeTraceProgram.setUniform("gridSize", gridSize);
-        voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.useAmbientOcclusion);
-        voxelConeTraceProgram.setUniform("screenWidth", (float) Config.WIDTH);
-        voxelConeTraceProgram.setUniform("screenHeight", (float) Config.HEIGHT);
+        voxelConeTraceProgram.setUniform("useAmbientOcclusion", Config.getInstance().isUseAmbientOcclusion());
+        voxelConeTraceProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        voxelConeTraceProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         QuadVertexBuffer.getFullscreenBuffer().draw();
 //        boolean entityOrDirectionalLightHasMoved = renderState.entityMovedInCycle || renderState.directionalLightNeedsShadowMapRender;
 //        if(entityOrDirectionalLightHasMoved)

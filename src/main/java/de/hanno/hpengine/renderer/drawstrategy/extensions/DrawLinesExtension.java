@@ -4,14 +4,14 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
-import org.lwjgl.util.vector.ReadableVector3f;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import org.lwjgl.util.vector.ReadableVector3f;
+import org.lwjgl.util.vector.Vector3f;
 
 import java.nio.FloatBuffer;
 
@@ -30,7 +30,7 @@ public class DrawLinesExtension implements RenderExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(Config.DRAWLINES_ENABLED) {
+        if(Config.getInstance().isDrawLines()) {
             OpenGLContext openGLContext = OpenGLContext.getInstance();
             openGLContext.disable(CULL_FACE);
             openGLContext.depthMask(false);

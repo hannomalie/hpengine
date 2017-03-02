@@ -5,7 +5,10 @@ import com.bulletphysics.collision.broadphase.DbvtBroadphase;
 import com.bulletphysics.collision.dispatch.CollisionConfiguration;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
-import com.bulletphysics.collision.shapes.*;
+import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.SphereShape;
+import com.bulletphysics.collision.shapes.StaticPlaneShape;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
@@ -17,10 +20,10 @@ import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.model.Entity;
-import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
+import org.lwjgl.util.vector.Vector4f;
 
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
@@ -213,7 +216,7 @@ public class PhysicsFactory {
 //                        & DebugDrawModes.DRAW_CONTACT_POINTS
 //                         DebugDrawModes.MAX_DEBUG_DRAW_MODE
                         ;
-                return Config.DRAWLINES_ENABLED ? flags : 0;
+                return Config.getInstance().isDrawLines() ? flags : 0;
 			}
 			
 			@Override

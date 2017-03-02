@@ -5,12 +5,6 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.renderer.state.RenderState;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.ARBClearTexture;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.Renderer;
@@ -21,12 +15,18 @@ import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.ARBClearTexture;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 
 import java.nio.FloatBuffer;
 
@@ -185,7 +185,7 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 
         GPUProfiler.start("Actual draw entities lightmap");
-        if (Config.INDIRECT_DRAWING) {
+        if (Config.getInstance().isIndirectDrawing()) {
             if(true) {
                 pipeline.prepareAndDraw(renderState, lightMapProgram, firstPassResult);
             } else {
@@ -241,8 +241,8 @@ public class DrawLightMapExtension implements RenderExtension {
         lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
 
         lightmapEvaluationProgram.setUniform("handle", TextureFactory.getInstance().getCubeMap().getHandle());
-        lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.WIDTH);
-        lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.HEIGHT);
+        lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
+        lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         QuadVertexBuffer.getFullscreenBuffer().draw();
         GPUProfiler.end();
     }

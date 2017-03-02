@@ -31,7 +31,7 @@ public interface DrawStrategy {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
 
-        if (Config.DRAWLINES_ENABLED) {
+        if (Config.getInstance().isDrawLines()) {
             return renderState.getVertexBuffer()
                     .drawLinesInstancedBaseVertex(renderState.getIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
         } else {return renderState.getVertexBuffer()

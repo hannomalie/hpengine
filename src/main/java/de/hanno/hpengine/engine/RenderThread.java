@@ -10,7 +10,7 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public void update(float seconds) {
-        if (Config.MULTITHREADED_RENDERING) {
+        if (Config.getInstance().isMultithreadedRendering()) {
             try {
                 Engine.getInstance().actuallyDraw();
             } catch (Exception e) {
@@ -21,6 +21,6 @@ public class RenderThread extends TimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.LOCK_FPS ? 0.33f : 0f;
+        return Config.getInstance().isLockFps() ? minimumCycleTimeInSeconds : 0f;
     }
 }

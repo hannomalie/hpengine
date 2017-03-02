@@ -43,7 +43,7 @@ public abstract class TimeStepThread extends Thread {
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;
 
-            float seconds = TimeUnit.NANOSECONDS.convert(ns, TimeUnit.SECONDS);
+            float seconds = ns / 1000 / 1000;//TimeUnit.NANOSECONDS.convert(ns, TimeUnit.SECONDS);
             update(seconds);
             lastFrame = System.nanoTime();
             waitIfNecessary(seconds);

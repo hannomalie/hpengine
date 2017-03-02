@@ -1,9 +1,10 @@
 package de.hanno.hpengine.renderer.light;
 
-import de.hanno.hpengine.camera.Camera;
 import com.google.common.eventbus.Subscribe;
+import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.Entity;
@@ -12,8 +13,26 @@ import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.event.LightChangedEvent;
 import de.hanno.hpengine.event.PointLightMovedEvent;
 import de.hanno.hpengine.event.SceneInitEvent;
+import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
+import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
+import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
+import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.scene.Scene;
+import de.hanno.hpengine.shader.OpenGLBuffer;
+import de.hanno.hpengine.shader.PersistentMappedBuffer;
+import de.hanno.hpengine.shader.Program;
+import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.texture.CubeMapArray;
+import de.hanno.hpengine.util.TypedTuple;
+import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
-import de.hanno.hpengine.container.EntitiesContainer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -23,22 +42,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
-import de.hanno.hpengine.renderer.state.RenderState;
-import de.hanno.hpengine.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
-import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
-import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
-import de.hanno.hpengine.scene.Scene;
-import de.hanno.hpengine.shader.*;
-import de.hanno.hpengine.texture.CubeMapArray;
-import de.hanno.hpengine.util.TypedTuple;
-import de.hanno.hpengine.util.Util;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,7 +124,7 @@ public class LightFactory {
                                         .setTextureFilter(GL11.GL_NEAREST_MIPMAP_LINEAR))
 								.build();
 
-		if(Config.USE_DPSM) {
+		if(Config.getInstance().isUseDpsm()) {
 // TODO: Use wrapper
 			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", true);
 
@@ -378,7 +381,7 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerEntityInfo pei = new PerEntityInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().getInstance().getInstance().getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -467,7 +470,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -482,7 +485,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}

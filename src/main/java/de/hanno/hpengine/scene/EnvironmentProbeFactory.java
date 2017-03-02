@@ -137,7 +137,7 @@ public class EnvironmentProbeFactory {
 		draw(false);
 	}
 	public void draw(boolean urgent) {
-		if(!Config.DRAW_PROBES) { return; }
+		if(!Config.getInstance().isDrawProbes()) { return; }
 		
 		prepareProbeRendering();
 		
@@ -152,7 +152,7 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void drawAlternating(Entity camera) {
-		if(!Config.DRAW_PROBES) { return; }
+		if(!Config.getInstance().isDrawProbes()) { return; }
 
 		prepareProbeRendering();
 		

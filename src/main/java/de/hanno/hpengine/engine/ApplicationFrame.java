@@ -1,28 +1,26 @@
 package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.config.Config;
-import de.hanno.hpengine.renderer.*;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
-import javax.swing.Renderer;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-import static de.hanno.hpengine.renderer.Renderer.*;
+import static de.hanno.hpengine.renderer.Renderer.getInstance;
 
 public class ApplicationFrame extends JFrame {
 
-    public static int WINDOW_WIDTH = Config.WIDTH;
-    public static int WINDOW_HEIGHT = Config.HEIGHT;
+    public static int WINDOW_WIDTH = Config.getInstance().getWidth();
+    public static int WINDOW_HEIGHT = Config.getInstance().getHeight();
     Canvas canvas;
 
     public ApplicationFrame() throws HeadlessException {
         super("hpengine");
         setVisible(false);
-        setSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+        setSize(new Dimension(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
         JLayeredPane layeredPane = new JLayeredPane();
         canvas = new Canvas() {
             @Override
@@ -35,7 +33,7 @@ public class ApplicationFrame extends JFrame {
                 super.removeNotify();
             }
         };
-        canvas.setPreferredSize(new Dimension(Config.WIDTH, Config.HEIGHT));
+        canvas.setPreferredSize(new Dimension(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
         canvas.setIgnoreRepaint(true);
         layeredPane.add(canvas, 0);
 //        JPanel overlayPanel = new JPanel();

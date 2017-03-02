@@ -10,6 +10,6 @@ public class ShaderDefineTest {
 	@Test
 	public void generatesCorrectDefineString() {
 		String actual = ShaderDefine.getGlobalDefinesString();
-		Assert.assertTrue(actual.contains("const bool RAINEFFECT = " + (Config.RAINEFFECT != 0.0) + ";\n"));
+		Assert.assertTrue(actual.contains("const bool RAINEFFECT = " + (Config.getInstance().getRainEffect() != 0.0) + ";\n"));
 	}
 }

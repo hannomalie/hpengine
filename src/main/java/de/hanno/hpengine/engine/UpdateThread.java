@@ -15,6 +15,6 @@ class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.LOCK_UPDATERATE ? minimumCycleTimeInSeconds : 0.0001f;
+        return Config.getInstance().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.0001f;
     }
 }

@@ -3,59 +3,505 @@ package de.hanno.hpengine.config;
 import de.hanno.hpengine.renderer.lodstrategy.ModelLod;
 import de.hanno.hpengine.util.Adjustable;
 import de.hanno.hpengine.util.Toggable;
+import org.apache.commons.beanutils.BeanUtils;
 import org.lwjgl.util.vector.Vector3f;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 public final class Config {
 
-    public static final boolean FILE_RELOADING = true;
-	public static int WIDTH = 1280;
-	public static int HEIGHT = 720;
-	public static Vector3f AMBIENT_LIGHT = new Vector3f(0.1f, 0.1f, 0.11f);
+	private static Config instance = new Config();
+	
+	static {
+		Properties properties = new Properties();
+        File propertiesFile = new File("hp/default.properties");
+        if(propertiesFile.exists()) {
+            try {
+                properties.load(new FileInputStream(propertiesFile));
 
-	@Toggable(group = "Quality settings") public static volatile boolean useParallax = false;
-	@Toggable(group = "Quality settings") public static volatile boolean useSteepParallax = false;
-	@Toggable(group = "Quality settings") public static volatile boolean useAmbientOcclusion = true;
-	@Toggable(group = "Debug") public static volatile boolean useFrustumCulling = true;
-	public static volatile boolean useInstantRadiosity = false;
-	public static volatile boolean forceRevoxelization = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_GI = false;
-	@Toggable(group = "Quality settings") public static volatile boolean useSSR = false;
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES = true;
-	@Toggable(group = "Quality settings") public static volatile boolean MULTIPLE_DIFFUSE_SAMPLES_PROBES = true;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_DIFFUSE_PROBES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_CONETRACING_FOR_SPECULAR_PROBES = false;
-	@Toggable(group = "Quality settings") public static volatile boolean PRECOMPUTED_RADIANCE = true;
-	@Toggable(group = "Quality settings") public static volatile boolean CALCULATE_ACTUAL_RADIANCE = false;
-	@Toggable(group = "Quality settings") public static volatile boolean SSR_FADE_TO_SCREEN_BORDERS = true;
-	@Toggable(group = "Quality settings") public static volatile boolean SSR_TEMPORAL_FILTERING = true;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_PCF = false;
-	@Toggable(group = "Debug") public static volatile boolean DRAWLINES_ENABLED = false;
-	@Toggable(group = "Debug") public static volatile boolean DRAWSCENE_ENABLED = true;
-	@Toggable(group = "Debug") public static volatile boolean DIRECT_TEXTURE_OUTPUT = false;
-	@Toggable(group = "Quality settings") public static volatile boolean CONTINUOUS_DRAW_PROBES = false;
-	@Toggable(group = "Debug") public static volatile boolean DEBUGFRAME_ENABLED = false;
-	@Toggable(group = "Debug") public static volatile boolean DRAWLIGHTS_ENABLED = false;
-	@Toggable(group = "Quality settings") public static volatile boolean DRAW_PROBES = true;
-	@Adjustable(group = "Debug") public static volatile float CAMERA_SPEED = 1.0f;
-	@Toggable(group = "Effects") public static volatile boolean SCATTERING = false;
-	@Adjustable(group = "Effects") public static volatile float RAINEFFECT = 0.0f;
-	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_TOTAL_STRENGTH = 0.5f;
-	@Adjustable(group = "Effects") public static volatile float AMBIENTOCCLUSION_RADIUS = 0.0250f;
-	@Adjustable(group = "Effects") public static volatile float EXPOSURE = 40f;
-	@Toggable(group = "Effects") public static volatile boolean USE_BLOOM = false;
-	@Toggable(group = "Effects") public static volatile boolean AUTO_EXPOSURE_ENABLED = true;
-	@Toggable(group = "Effects") public static volatile boolean ENABLE_POSTPROCESSING = false;
-	@Toggable(group = "Quality settings") public static volatile boolean USE_DPSM = false;
+                Map propertiesMap = new HashMap<>();
+                for (String key : properties.stringPropertyNames()) {
+                    Object value = properties.get(key);
+                    propertiesMap.put(key, value);
+                }
+                try {
+                    BeanUtils.populate(instance, propertiesMap);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+	}
 
-	@Toggable(group = "Performance") public static boolean MULTITHREADED_RENDERING = true;
-	@Toggable(group = "Performance") public static boolean INDIRECT_DRAWING = true;
-	@Toggable(group = "Performance") public static volatile boolean LOCK_FPS = true;
-	public static volatile boolean VSYNC = false;
-	@Toggable(group = "Performance") public static volatile boolean LOCK_UPDATERATE = true;
+    private final boolean useFileReloading = true;
+	private int width = 1280;
+	private int height = 720;
+	private Vector3f ambientLight = new Vector3f(0.1f, 0.1f, 0.11f);
 
-    public static ModelLod.ModelLodStrategy MODEL_LOD_STRATEGY = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useParallax = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useSteepParallax = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useAmbientOcclusion = true;
+	@Toggable(group = "Debug")
+	private volatile boolean useFrustumCulling = true;
+	private volatile boolean useInstantRadiosity = false;
+	private volatile boolean forceRevoxelization = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useGi = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useSSR = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useMultipleDiffuseSamples = true;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useMultipleDiffuseSamplesProbes = true;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useConetracingForDiffuse = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useConetracingForDiffuseProbes = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useConetracingForSpecular = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useConetracingForSpecularProbes = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean usePrecomputedRadiance = true;
+	@Toggable(group = "Quality settings")
+	private volatile boolean calculateActualRadiance = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean ssrFadeToScreenBorders = true;
+	@Toggable(group = "Quality settings")
+	private volatile boolean ssrTemporalFiltering = true;
+	@Toggable(group = "Quality settings")
+	private volatile boolean usePcf = false;
+	@Toggable(group = "Debug")
+	private volatile boolean drawLines = false;
+	@Toggable(group = "Debug")
+	private volatile boolean drawScene = true;
+	@Toggable(group = "Debug")
+	private volatile boolean useDirectTextureOutput = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean continuousDrawProbes = false;
+	@Toggable(group = "Debug")
+	private volatile boolean debugframeEnabled = false;
+	@Toggable(group = "Debug")
+	private volatile boolean drawlightsEnabled = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean drawProbes = true;
+	@Adjustable(group = "Debug")
+	private volatile float cameraSpeed = 1.0f;
+	@Toggable(group = "Effects")
+	private volatile boolean scattering = false;
+	@Adjustable(group = "Effects")
+	private volatile float rainEffect = 0.0f;
+	@Adjustable(group = "Effects")
+	private volatile float ambientocclusionTotalStrength = 0.5f;
+	@Adjustable(group = "Effects")
+	private volatile float ambientocclusionRadius = 0.0250f;
+	@Adjustable(group = "Effects")
+	private volatile float exposure = 40f;
+	@Toggable(group = "Effects")
+	private volatile boolean useBloom = false;
+	@Toggable(group = "Effects")
+	private volatile boolean autoExposureEnabled = true;
+	@Toggable(group = "Effects")
+	private volatile boolean enablePostprocessing = false;
+	@Toggable(group = "Quality settings")
+	private volatile boolean useDpsm = false;
 
-    private Config() { super(); }
+	@Toggable(group = "Performance")
+	private boolean multithreadedRendering = true;
+	@Toggable(group = "Performance")
+	private boolean indirectDrawing = true;
+	@Toggable(group = "Performance")
+	private volatile boolean lockFps = true;
+	private volatile boolean vsync = false;
+	@Toggable(group = "Performance")
+	private volatile boolean lockUpdaterate = true;
+
+    private ModelLod.ModelLodStrategy modelLodStrategy = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
+
+	private Config() { super(); }
+
+	public static Config getInstance() {
+		return instance;
+	}
+
+	public static void setInstance(Config instance) {
+		Config.instance = instance;
+	}
+
+	public boolean isUseFileReloading() {
+		return useFileReloading;
+	}
+
+	public int getWidth() {
+		return width;
+	}
+
+	public void setWidth(int width) {
+		this.width = width;
+	}
+
+	public int getHeight() {
+		return height;
+	}
+
+	public void setHeight(int height) {
+		this.height = height;
+	}
+
+	public Vector3f getAmbientLight() {
+		return ambientLight;
+	}
+
+	public void setAmbientLight(Vector3f ambientLight) {
+		this.ambientLight = ambientLight;
+	}
+
+	public boolean isUseParallax() {
+		return useParallax;
+	}
+
+	public void setUseParallax(boolean useParallax) {
+		this.useParallax = useParallax;
+	}
+
+	public boolean isUseSteepParallax() {
+		return useSteepParallax;
+	}
+
+	public void setUseSteepParallax(boolean useSteepParallax) {
+		this.useSteepParallax = useSteepParallax;
+	}
+
+	public boolean isUseAmbientOcclusion() {
+		return useAmbientOcclusion;
+	}
+
+	public void setUseAmbientOcclusion(boolean useAmbientOcclusion) {
+		this.useAmbientOcclusion = useAmbientOcclusion;
+	}
+
+	public boolean isUseFrustumCulling() {
+		return useFrustumCulling;
+	}
+
+	public void setUseFrustumCulling(boolean useFrustumCulling) {
+		this.useFrustumCulling = useFrustumCulling;
+	}
+
+	public boolean isUseInstantRadiosity() {
+		return useInstantRadiosity;
+	}
+
+	public void setUseInstantRadiosity(boolean useInstantRadiosity) {
+		this.useInstantRadiosity = useInstantRadiosity;
+	}
+
+	public boolean isForceRevoxelization() {
+		return forceRevoxelization;
+	}
+
+	public void setForceRevoxelization(boolean forceRevoxelization) {
+		this.forceRevoxelization = forceRevoxelization;
+	}
+
+	public boolean isUseGi() {
+		return useGi;
+	}
+
+	public void setUseGi(boolean useGi) {
+		this.useGi = useGi;
+	}
+
+	public boolean isUseSSR() {
+		return useSSR;
+	}
+
+	public void setUseSSR(boolean useSSR) {
+		this.useSSR = useSSR;
+	}
+
+	public boolean isUseMultipleDiffuseSamples() {
+		return useMultipleDiffuseSamples;
+	}
+
+	public void setUseMultipleDiffuseSamples(boolean useMultipleDiffuseSamples) {
+		this.useMultipleDiffuseSamples = useMultipleDiffuseSamples;
+	}
+
+	public boolean isUseMultipleDiffuseSamplesProbes() {
+		return useMultipleDiffuseSamplesProbes;
+	}
+
+	public void setUseMultipleDiffuseSamplesProbes(boolean useMultipleDiffuseSamplesProbes) {
+		this.useMultipleDiffuseSamplesProbes = useMultipleDiffuseSamplesProbes;
+	}
+
+	public boolean isUseConetracingForDiffuse() {
+		return useConetracingForDiffuse;
+	}
+
+	public void setUseConetracingForDiffuse(boolean useConetracingForDiffuse) {
+		this.useConetracingForDiffuse = useConetracingForDiffuse;
+	}
+
+	public boolean isUseConetracingForDiffuseProbes() {
+		return useConetracingForDiffuseProbes;
+	}
+
+	public void setUseConetracingForDiffuseProbes(boolean useConetracingForDiffuseProbes) {
+		this.useConetracingForDiffuseProbes = useConetracingForDiffuseProbes;
+	}
+
+	public boolean isUseConetracingForSpecular() {
+		return useConetracingForSpecular;
+	}
+
+	public void setUseConetracingForSpecular(boolean useConetracingForSpecular) {
+		this.useConetracingForSpecular = useConetracingForSpecular;
+	}
+
+	public boolean isUseConetracingForSpecularProbes() {
+		return useConetracingForSpecularProbes;
+	}
+
+	public void setUseConetracingForSpecularProbes(boolean useConetracingForSpecularProbes) {
+		this.useConetracingForSpecularProbes = useConetracingForSpecularProbes;
+	}
+
+	public boolean isUsePrecomputedRadiance() {
+		return usePrecomputedRadiance;
+	}
+
+	public void setUsePrecomputedRadiance(boolean usePrecomputedRadiance) {
+		this.usePrecomputedRadiance = usePrecomputedRadiance;
+	}
+
+	public boolean isCalculateActualRadiance() {
+		return calculateActualRadiance;
+	}
+
+	public void setCalculateActualRadiance(boolean calculateActualRadiance) {
+		this.calculateActualRadiance = calculateActualRadiance;
+	}
+
+	public boolean isSsrFadeToScreenBorders() {
+		return ssrFadeToScreenBorders;
+	}
+
+	public void setSsrFadeToScreenBorders(boolean ssrFadeToScreenBorders) {
+		this.ssrFadeToScreenBorders = ssrFadeToScreenBorders;
+	}
+
+	public boolean isSsrTemporalFiltering() {
+		return ssrTemporalFiltering;
+	}
+
+	public void setSsrTemporalFiltering(boolean ssrTemporalFiltering) {
+		this.ssrTemporalFiltering = ssrTemporalFiltering;
+	}
+
+	public boolean isUsePcf() {
+		return usePcf;
+	}
+
+	public void setUsePcf(boolean usePcf) {
+		this.usePcf = usePcf;
+	}
+
+	public boolean isDrawLines() {
+		return drawLines;
+	}
+
+	public void setDrawLines(boolean drawLines) {
+		this.drawLines = drawLines;
+	}
+
+	public boolean isDrawScene() {
+		return drawScene;
+	}
+
+	public void setDrawScene(boolean drawScene) {
+		this.drawScene = drawScene;
+	}
+
+	public boolean isUseDirectTextureOutput() {
+		return useDirectTextureOutput;
+	}
+
+	public void setUseDirectTextureOutput(boolean useDirectTextureOutput) {
+		this.useDirectTextureOutput = useDirectTextureOutput;
+	}
+
+	public boolean isContinuousDrawProbes() {
+		return continuousDrawProbes;
+	}
+
+	public void setContinuousDrawProbes(boolean continuousDrawProbes) {
+		this.continuousDrawProbes = continuousDrawProbes;
+	}
+
+	public boolean isDebugframeEnabled() {
+		return debugframeEnabled;
+	}
+
+	public void setDebugframeEnabled(boolean debugframeEnabled) {
+		this.debugframeEnabled = debugframeEnabled;
+	}
+
+	public boolean isDrawlightsEnabled() {
+		return drawlightsEnabled;
+	}
+
+	public void setDrawlightsEnabled(boolean drawlightsEnabled) {
+		this.drawlightsEnabled = drawlightsEnabled;
+	}
+
+	public boolean isDrawProbes() {
+		return drawProbes;
+	}
+
+	public void setDrawProbes(boolean drawProbes) {
+		this.drawProbes = drawProbes;
+	}
+
+	public float getCameraSpeed() {
+		return cameraSpeed;
+	}
+
+	public void setCameraSpeed(float cameraSpeed) {
+		this.cameraSpeed = cameraSpeed;
+	}
+
+	public boolean isScattering() {
+		return scattering;
+	}
+
+	public void setScattering(boolean scattering) {
+		this.scattering = scattering;
+	}
+
+	public float getRainEffect() {
+		return rainEffect;
+	}
+
+	public void setRainEffect(float rainEffect) {
+		this.rainEffect = rainEffect;
+	}
+
+	public float getAmbientocclusionTotalStrength() {
+		return ambientocclusionTotalStrength;
+	}
+
+	public void setAmbientocclusionTotalStrength(float ambientocclusionTotalStrength) {
+		this.ambientocclusionTotalStrength = ambientocclusionTotalStrength;
+	}
+
+	public float getAmbientocclusionRadius() {
+		return ambientocclusionRadius;
+	}
+
+	public void setAmbientocclusionRadius(float ambientocclusionRadius) {
+		this.ambientocclusionRadius = ambientocclusionRadius;
+	}
+
+	public float getExposure() {
+		return exposure;
+	}
+
+	public void setExposure(float exposure) {
+		this.exposure = exposure;
+	}
+
+	public boolean isUseBloom() {
+		return useBloom;
+	}
+
+	public void setUseBloom(boolean useBloom) {
+		this.useBloom = useBloom;
+	}
+
+	public boolean isAutoExposureEnabled() {
+		return autoExposureEnabled;
+	}
+
+	public void setAutoExposureEnabled(boolean autoExposureEnabled) {
+		this.autoExposureEnabled = autoExposureEnabled;
+	}
+
+	public boolean isEnablePostprocessing() {
+		return enablePostprocessing;
+	}
+
+	public void setEnablePostprocessing(boolean enablePostprocessing) {
+		this.enablePostprocessing = enablePostprocessing;
+	}
+
+	public boolean isUseDpsm() {
+		return useDpsm;
+	}
+
+	public void setUseDpsm(boolean useDpsm) {
+		this.useDpsm = useDpsm;
+	}
+
+	public boolean isMultithreadedRendering() {
+		return multithreadedRendering;
+	}
+
+	public void setMultithreadedRendering(boolean multithreadedRendering) {
+		this.multithreadedRendering = multithreadedRendering;
+	}
+
+	public boolean isIndirectDrawing() {
+		return indirectDrawing;
+	}
+
+	public void setIndirectDrawing(boolean indirectDrawing) {
+		this.indirectDrawing = indirectDrawing;
+	}
+
+	public boolean isLockFps() {
+		return lockFps;
+	}
+
+	public void setLockFps(boolean lockFps) {
+		this.lockFps = lockFps;
+	}
+
+	public boolean isVsync() {
+		return vsync;
+	}
+
+	public void setVsync(boolean vsync) {
+		this.vsync = vsync;
+	}
+
+	public boolean isLockUpdaterate() {
+		return lockUpdaterate;
+	}
+
+	public void setLockUpdaterate(boolean lockUpdaterate) {
+		this.lockUpdaterate = lockUpdaterate;
+	}
+
+	public ModelLod.ModelLodStrategy getModelLodStrategy() {
+		return modelLodStrategy;
+	}
+
+	public void setModelLodStrategy(ModelLod.ModelLodStrategy modelLodStrategy) {
+		this.modelLodStrategy = modelLodStrategy;
+	}
 }

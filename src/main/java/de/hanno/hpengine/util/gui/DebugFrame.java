@@ -158,19 +158,19 @@ public class DebugFrame {
 	private WebToggleButton toggleProfiler = new WebToggleButton("Profiling", GPUProfiler.PROFILING_ENABLED);
 	private WebToggleButton toggleProfilerPrint = new WebToggleButton("Print Profiling", GPUProfiler.PRINTING_ENABLED);
 	private WebToggleButton dumpAverages = new WebToggleButton("Dump Averages");
-	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.useParallax);
-	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.useSteepParallax);
-	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.useAmbientOcclusion);
-	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.useFrustumCulling);
-	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.useInstantRadiosity);
-	private WebToggleButton toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", Config.forceRevoxelization);
-	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.DRAWLINES_ENABLED);
-	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", Config.DRAWSCENE_ENABLED);
+	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.getInstance().isUseParallax());
+	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.getInstance().isUseSteepParallax());
+	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.getInstance().isUseAmbientOcclusion());
+	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.getInstance().isUseFrustumCulling());
+	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.getInstance().isUseInstantRadiosity());
+	private WebToggleButton toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", Config.getInstance().isForceRevoxelization());
+	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.getInstance().isDrawLines());
+	private WebToggleButton toggleDrawScene = new WebToggleButton("Draw Scene", Config.getInstance().isDrawScene());
 	private WebToggleButton toggleDrawOctree = new WebToggleButton("Draw Octree", Octree.DRAW_LINES);
-	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", Config.DRAW_PROBES);
+	private WebToggleButton toggleDrawProbes = new WebToggleButton("Draw Probes", Config.getInstance().isDrawProbes());
 	private WebButton forceProbeGBufferRedraw = new WebButton("Redraw Probe GBuffers");
-	private WebToggleButton toggleUseGI = new WebToggleButton("GI", Config.USE_GI);
-	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", Config.useSSR);
+	private WebToggleButton toggleUseGI = new WebToggleButton("GI", Config.getInstance().isUseGi());
+	private WebToggleButton toggleUseSSR = new WebToggleButton("SSR", Config.getInstance().isUseSSR());
 	private WebToggleButton toggleUseComputeShaderForReflections = new WebToggleButton("Computeshader reflections", GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS);
 	private WebToggleButton toggleUseFirstBounceForProbeRendering = new WebToggleButton("First bounce for probes", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 	private WebToggleButton toggleUseSecondBounceForProbeRendering = new WebToggleButton("Second bounce for probes", GBuffer.RENDER_PROBES_WITH_SECOND_BOUNCE);
@@ -184,11 +184,11 @@ public class DebugFrame {
 	private WebButtonGroup sampleCountGroup = new WebButtonGroup(true, toggleSampleCount2, toggleSampleCount4, toggleSampleCount8, toggleSampleCount16, toggleSampleCount32, toggleSampleCount64);
 	
 	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
-	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.DIRECT_TEXTURE_OUTPUT);
-	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.DEBUGFRAME_ENABLED);
-	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.DRAWLIGHTS_ENABLED);
-	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.VSYNC);
-	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.AUTO_EXPOSURE_ENABLED);
+	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.getInstance().isUseDirectTextureOutput());
+	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
+	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.getInstance().isDrawlightsEnabled());
+	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.getInstance().isVsync());
+	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.getInstance().isAutoExposureEnabled());
 
 	private WebToggleButton toggleProbeDrawCountOne = new WebToggleButton("1", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 1);
 	private WebToggleButton toggleProbeDrawCountTwo = new WebToggleButton("2", RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL == 2);
@@ -756,7 +756,7 @@ public class DebugFrame {
 		for (Field field : Config.class.getDeclaredFields()) {
 			for (Annotation annotation : field.getDeclaredAnnotations()) {
 				if(annotation instanceof Toggable) {
-					createWebToggableButton(Engine.getInstance(), toggleButtonsWithGroups, field, annotation);
+					createWebToggableButton(toggleButtonsWithGroups, field, annotation);
 				} else if(annotation instanceof Adjustable) {
 // TODO: FEINSCHLIFF
 //					createWebSlider(world, toggleButtonsWithGroups, field, annotation);
@@ -777,35 +777,35 @@ public class DebugFrame {
 		});
 		
 		toggleParallax.addActionListener( e -> {
-			Config.useParallax = !Config.useParallax;
-			Config.useSteepParallax = false;
+			Config.getInstance().setUseParallax(!Config.getInstance().isUseParallax());
+			Config.getInstance().setUseSteepParallax(false);
 		});
 		
 		toggleSteepParallax.addActionListener(e -> {
-			Config.useSteepParallax = !Config.useSteepParallax;
-			Config.useParallax = false;
+			Config.getInstance().setUseSteepParallax(!Config.getInstance().isUseSteepParallax());
+			Config.getInstance().setUseParallax(false);
 		});
 
 		toggleAmbientOcclusion.addActionListener(e -> {
-			Config.useAmbientOcclusion = !Config.useAmbientOcclusion;
+			Config.getInstance().setUseAmbientOcclusion(!Config.getInstance().isUseAmbientOcclusion());
 //			de.hanno.hpengine.engine.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
 		toggleFrustumCulling.addActionListener(e -> {
-			Config.useFrustumCulling = !Config.useFrustumCulling;
+			Config.getInstance().setUseFrustumCulling(!Config.getInstance().isUseFrustumCulling());
 		});
 		toggleInstantRadiosity.addActionListener(e -> {
-			Config.useInstantRadiosity = !Config.useInstantRadiosity;
+			Config.getInstance().setUseInstantRadiosity(!Config.getInstance().isUseInstantRadiosity());
 		});
 		toggleForceRevoxelization.addActionListener(e -> {
-			Config.forceRevoxelization = !Config.forceRevoxelization;
+			Config.getInstance().setForceRevoxelization(!Config.getInstance().isForceRevoxelization());
 		});
 
 		toggleDrawLines.addActionListener(e -> {
-			Config.DRAWLINES_ENABLED = !Config.DRAWLINES_ENABLED;
+			Config.getInstance().setDrawLines(!Config.getInstance().isDrawLines());
 		});
 		toggleDrawScene.addActionListener(e -> {
-			Config.DRAWSCENE_ENABLED = !Config.DRAWSCENE_ENABLED;
+			Config.getInstance().setDrawScene(!Config.getInstance().isDrawScene());
 		});
 
 		toggleDrawOctree.addActionListener(e -> {
@@ -817,13 +817,13 @@ public class DebugFrame {
 			});
 		});
 		toggleDrawProbes.addActionListener(e -> {
-			Config.DRAW_PROBES = !Config.DRAW_PROBES;
+			Config.getInstance().setDrawProbes(!Config.getInstance().isDrawProbes());
 		});
 		toggleUseGI.addActionListener(e -> {
-			Config.USE_GI = !Config.USE_GI;
+			Config.getInstance().setUseGi(!Config.getInstance().isUseGi());
 		});
 		toggleUseSSR.addActionListener(e -> {
-			Config.useSSR = !Config.useSSR;
+			Config.getInstance().setUseSSR(!Config.getInstance().isUseSSR());
 		});
 		toggleUseDeferredRenderingForProbes.addActionListener(e -> {
 			EnvironmentSampler.deferredRenderingForProbes = !EnvironmentSampler.deferredRenderingForProbes;
@@ -840,30 +840,30 @@ public class DebugFrame {
 			GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS = !GBuffer.USE_COMPUTESHADER_FOR_REFLECTIONS;
 		});
 		toggleDirectTextureOutput.addActionListener(e -> {
-			Config.DIRECT_TEXTURE_OUTPUT = !Config.DIRECT_TEXTURE_OUTPUT;
+			Config.getInstance().setUseDirectTextureOutput(!Config.getInstance().isUseDirectTextureOutput());
 		});
 
 		toggleDebugFrame.addActionListener(e -> {
-			Config.DEBUGFRAME_ENABLED = !Config.DEBUGFRAME_ENABLED;
+			Config.getInstance().setDebugframeEnabled(!Config.getInstance().isDebugframeEnabled());
 		});
 
 		toggleDrawLights.addActionListener(e -> {
-			Config.DRAWLIGHTS_ENABLED = !Config.DRAWLIGHTS_ENABLED;
+			Config.getInstance().setDrawlightsEnabled(!Config.getInstance().isDrawlightsEnabled());
 		});
 		toggleVSync.addActionListener(e -> {
-			Config.VSYNC = !Config.VSYNC;
-			OpenGLContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.VSYNC));
+			Config.getInstance().setVsync(!Config.getInstance().isVsync());
+			OpenGLContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.getInstance().isVsync()));
 		});
 		toggleAutoExposure.addActionListener(e -> {
-			Config.AUTO_EXPOSURE_ENABLED = !Config.AUTO_EXPOSURE_ENABLED;
-			if(!Config.AUTO_EXPOSURE_ENABLED) { Config.EXPOSURE = 5; }
+			Config.getInstance().setAutoExposureEnabled(!Config.getInstance().isAutoExposureEnabled());
+			if(!Config.getInstance().isAutoExposureEnabled()) { Config.getInstance().setExposure(5); }
 		});
 
 	    ambientOcclusionRadiusSlider.setMinimum ( 0 );
 	    ambientOcclusionRadiusSlider.setMaximum ( 1000 );
 	    ambientOcclusionRadiusSlider.setMinorTickSpacing ( 250 );
 	    ambientOcclusionRadiusSlider.setMajorTickSpacing ( 500 );
-	    ambientOcclusionRadiusSlider.setValue((int) (Config.AMBIENTOCCLUSION_RADIUS * 10000f));
+	    ambientOcclusionRadiusSlider.setValue((int) (Config.getInstance().getAmbientocclusionRadius() * 10000f));
 	    ambientOcclusionRadiusSlider.setPaintTicks ( true );
 	    ambientOcclusionRadiusSlider.setPaintLabels ( true );
 	    ambientOcclusionRadiusSlider.addChangeListener(new ChangeListener() {
@@ -873,7 +873,7 @@ public class DebugFrame {
 				WebSlider slider = (WebSlider) e.getSource();
 				int value = slider.getValue();
 				float valueAsFactor = ((float) value) / 10000;
-				Config.AMBIENTOCCLUSION_RADIUS = valueAsFactor;
+				Config.getInstance().setAmbientocclusionRadius(valueAsFactor);
 			}
 		});
 
@@ -881,7 +881,7 @@ public class DebugFrame {
 		ambientOcclusionTotalStrengthSlider.setMaximum ( 200 );
 		ambientOcclusionTotalStrengthSlider.setMinorTickSpacing ( 20 );
 		ambientOcclusionTotalStrengthSlider.setMajorTickSpacing ( 50 );
-		ambientOcclusionTotalStrengthSlider.setValue((int) (Config.AMBIENTOCCLUSION_TOTAL_STRENGTH * 100f));
+		ambientOcclusionTotalStrengthSlider.setValue((int) (Config.getInstance().getAmbientocclusionTotalStrength() * 100f));
 		ambientOcclusionTotalStrengthSlider.setPaintTicks ( true );
 		ambientOcclusionTotalStrengthSlider.setPaintLabels ( true );
 		ambientOcclusionTotalStrengthSlider.addChangeListener(new ChangeListener() {
@@ -890,7 +890,7 @@ public class DebugFrame {
 				WebSlider slider = (WebSlider) e.getSource();
 				int value = slider.getValue();
 				float valueAsFactor = ((float) value) / 100;
-				Config.AMBIENTOCCLUSION_TOTAL_STRENGTH = valueAsFactor;
+				Config.getInstance().setAmbientocclusionTotalStrength(valueAsFactor);
 			}
 		});
 
@@ -911,24 +911,24 @@ public class DebugFrame {
 		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
-			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.EXPOSURE) {
+			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.getInstance().getExposure()) {
 			@Override public void onValueChange(int value, int delta) {
-				Config.EXPOSURE = value;
+				Config.getInstance().setExposure(value);
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
                     Engine.getInstance().getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
-			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.RAINEFFECT)) {
+			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {
 				@Override public void onValueChange(int value, int delta) {
-					Config.RAINEFFECT = (float) value/100;
+					Config.getInstance().setRainEffect((float) value/100);
 					Engine.getEventBus().post(new GlobalDefineChangedEvent());
 				}
 			},
-			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.CAMERA_SPEED)) {
+			new SliderInput("Camera Speed", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getCameraSpeed())) {
 				@Override public void onValueChange(int value, int delta) {
-					Config.CAMERA_SPEED = (float) value/100;
+					Config.getInstance().setCameraSpeed((float) value/100);
 				}
 			},
 			new SliderInput("Texture Streaming Threshold (MS)", WebSlider.HORIZONTAL, 0, 10000, (int) (TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS)) {
@@ -966,7 +966,7 @@ public class DebugFrame {
 			slider.setMaximum ( adjustable.maximum() );
 			slider.setMinorTickSpacing ( adjustable.minorTickSpacing() );
 			slider.setMajorTickSpacing ( adjustable.majorTickSpacing() );
-			slider.setValue((int) (Config.AMBIENTOCCLUSION_RADIUS * adjustable.factor()));
+			slider.setValue((int) (Config.getInstance().getAmbientocclusionRadius() * adjustable.factor()));
 			slider.setPaintTicks ( true );
 			slider.setPaintLabels ( true );
 			slider.addChangeListener(new ChangeListener() {
@@ -993,32 +993,30 @@ public class DebugFrame {
 			groupList.add(new WebLabel(field.getName()));
 			groupList.add(slider);
 			
-		} catch (IllegalArgumentException e1) {
-			e1.printStackTrace();
-		} catch (IllegalAccessException e1) {
+		} catch (IllegalArgumentException | IllegalAccessException e1) {
 			e1.printStackTrace();
 		}
 	}
 
-	private void createWebToggableButton(Engine engine,
-                                         Map<String, List<Component>> toggleButtonsWithGroups,
-                                         Field field, Annotation annotation) {
+	private void createWebToggableButton(Map<String, List<Component>> toggleButtonsWithGroups,
+										 Field field, Annotation annotation) {
 		try {
-			boolean b = field.getBoolean(engine);
+			field.setAccessible(true);
+			boolean b = field.getBoolean(Config.getInstance());
 			Toggable toggable = (Toggable) annotation;
 			List<Component> groupList;
 			if(toggleButtonsWithGroups.containsKey(toggable.group())) {
 				groupList = toggleButtonsWithGroups.get(toggable.group());
 			} else {
-				groupList = new ArrayList<Component>();
+				groupList = new ArrayList<>();
 				toggleButtonsWithGroups.put(toggable.group(), groupList);
 			}
 			
 			WebToggleButton button = new WebToggleButton(field.getName(), b, e -> {
 				boolean currentValue;
 				try {
-					currentValue = field.getBoolean(engine);
-					field.setBoolean(engine, !currentValue);
+					currentValue = field.getBoolean(Config.getInstance());
+					field.setBoolean(Config.getInstance(), !currentValue);
 					Engine.getEventBus().post(new GlobalDefineChangedEvent());
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -1026,9 +1024,7 @@ public class DebugFrame {
 			});
 			groupList.add(button);
 			
-		} catch (IllegalArgumentException e1) {
-			e1.printStackTrace();
-		} catch (IllegalAccessException e1) {
+		} catch (IllegalArgumentException | IllegalAccessException e1) {
 			e1.printStackTrace();
 		}
 	}

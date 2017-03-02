@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 
+import de.hanno.hpengine.config.Config;
 import org.fife.ui.rsyntaxtextarea.PopupWindowDecorator;
 
 

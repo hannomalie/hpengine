@@ -318,8 +318,8 @@ public class EnvironmentSampler extends Camera {
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
         firstpassDefaultProgram.use();
         firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
-        firstpassDefaultProgram.setUniform("useRainEffect", Config.RAINEFFECT == 0.0 ? false : true);
-        firstpassDefaultProgram.setUniform("rainEffect", Config.RAINEFFECT);
+        firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+        firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
         firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
@@ -333,7 +333,7 @@ public class EnvironmentSampler extends Camera {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
                 PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.DRAWLINES_ENABLED, camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
                 DrawStrategy.draw(extract, perEntityInfo);
             }
         }
@@ -364,8 +364,8 @@ public class EnvironmentSampler extends Camera {
 
 		secondPassDirectionalProgram.use();
 		secondPassDirectionalProgram.setUniform("eyePosition", getWorldPosition());
-		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.AMBIENTOCCLUSION_RADIUS);
-		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.AMBIENTOCCLUSION_TOTAL_STRENGTH);
+		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
+		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
 		secondPassDirectionalProgram.setUniform("screenHeight", (float) EnvironmentProbeFactory.RESOLUTION);
 		FloatBuffer viewMatrix = getViewMatrixAsBuffer();
@@ -439,7 +439,7 @@ public class EnvironmentSampler extends Camera {
 		DirectionalLight light = engine.getScene().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
-		cubeMapProgram.setUniform("lightAmbient", Config.AMBIENT_LIGHT);
+		cubeMapProgram.setUniform("lightAmbient", Config.getInstance().getAmbientLight());
 		cubeMapProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
 		cubeMapProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
 		cubeMapProgram.setUniformAsMatrix4("shadowMatrix", light.getViewMatrixAsBuffer());
@@ -447,11 +447,11 @@ public class EnvironmentSampler extends Camera {
 	}
 
 	private void generateCubeMapMipMaps() {
-		if(Config.PRECOMPUTED_RADIANCE) {
+		if(Config.getInstance().isUsePrecomputedRadiance()) {
 			
 			_generateCubeMapMipMaps();
 			
-			if (Config.CALCULATE_ACTUAL_RADIANCE) {
+			if (Config.getInstance().isCalculateActualRadiance()) {
 				GPUProfiler.start("Precompute radiance");
 				
 				CubeMapArray cubeMapArray = EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3);

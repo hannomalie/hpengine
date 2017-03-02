@@ -1,8 +1,7 @@
 package de.hanno.hpengine.util.ressources;
 
-import de.hanno.hpengine.config.Config;
 
-import de.hanno.hpengine.renderer.Renderer;
+import de.hanno.hpengine.config.Config;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 
@@ -17,7 +16,7 @@ public class FileMonitor {
     static {
 		instance = new FileMonitor(500);
 		try {
-            if(Config.FILE_RELOADING) {
+            if(Config.getInstance().isUseFileReloading()) {
                 instance.monitor.start();
                 instance.running = true;
             }
@@ -34,7 +33,7 @@ public class FileMonitor {
 	}
 	
 	public void add(FileAlterationObserver observer) {
-        if(!Config.FILE_RELOADING) {
+        if(!Config.getInstance().isUseFileReloading()) {
             return;
         }
 		if (running) {
@@ -48,7 +47,7 @@ public class FileMonitor {
 	}
 	
 	public void checkAndNotify() {
-        if(!Config.FILE_RELOADING) {
+        if(!Config.getInstance().isUseFileReloading()) {
             return;
         }
 		if (!FileMonitor.getInstance().running) { return; }
