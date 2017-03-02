@@ -8,6 +8,8 @@ import org.lwjgl.util.vector.Vector3f;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,30 +20,38 @@ public final class Config {
 	private static Config instance = new Config();
 	
 	static {
-		Properties properties = new Properties();
-        File propertiesFile = new File("hp/default.properties");
-        if(propertiesFile.exists()) {
+        final File propertiesFile = new File("hp/default.properties");
+        if(propertiesFile != null && propertiesFile.exists()) {
             try {
-                properties.load(new FileInputStream(propertiesFile));
-
-                Map propertiesMap = new HashMap<>();
-                for (String key : properties.stringPropertyNames()) {
-                    Object value = properties.get(key);
-                    propertiesMap.put(key, value);
-                }
-                try {
-                    BeanUtils.populate(instance, propertiesMap);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-            }
-            catch (Exception e) {
+                populateConfigurationWithProperties(instance, new FileInputStream(propertiesFile));
+            } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
         }
 	}
+
+    public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
+        Properties properties = new Properties();
+        try {
+            properties.load(inputStream);
+
+            Map propertiesMap = new HashMap<>();
+            for (String key : properties.stringPropertyNames()) {
+                Object value = properties.get(key);
+                propertiesMap.put(key, value);
+            }
+            try {
+                BeanUtils.populate(instance, propertiesMap);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private final boolean useFileReloading = true;
 	private int width = 1280;
@@ -131,7 +141,7 @@ public final class Config {
 
     private ModelLod.ModelLodStrategy modelLodStrategy = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
-	private Config() { super(); }
+	Config() { super(); }
 
 	public static Config getInstance() {
 		return instance;
