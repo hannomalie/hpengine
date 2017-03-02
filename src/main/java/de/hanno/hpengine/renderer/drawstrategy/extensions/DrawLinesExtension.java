@@ -1,6 +1,5 @@
 package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
@@ -30,7 +29,7 @@ public class DrawLinesExtension implements RenderExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(Config.getInstance().isDrawLines()) {
+        if(Engine.getInstance().getConfig().isDrawLines()) {
             OpenGLContext openGLContext = OpenGLContext.getInstance();
             openGLContext.disable(CULL_FACE);
             openGLContext.depthMask(false);

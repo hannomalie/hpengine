@@ -1,6 +1,5 @@
 package de.hanno.hpengine.scene;
 
-import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.Octree;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -137,7 +136,7 @@ public class EnvironmentProbeFactory {
 		draw(false);
 	}
 	public void draw(boolean urgent) {
-		if(!Config.getInstance().isDrawProbes()) { return; }
+        if(!Engine.getInstance().getConfig().isDrawProbes()) { return; }
 		
 		prepareProbeRendering();
 		
@@ -152,7 +151,7 @@ public class EnvironmentProbeFactory {
 	}
 	
 	public void drawAlternating(Entity camera) {
-		if(!Config.getInstance().isDrawProbes()) { return; }
+        if(!Engine.getInstance().getConfig().isDrawProbes()) { return; }
 
 		prepareProbeRendering();
 		

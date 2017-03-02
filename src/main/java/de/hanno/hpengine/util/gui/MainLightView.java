@@ -15,7 +15,6 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.text.WebFormattedTextField;
-import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.util.gui.input.SliderInput;
@@ -60,7 +59,7 @@ public class MainLightView extends WebPanel {
             @Override
             public void stateChanged(ChangeEvent e) {
                 Color color = ambientLightColorChooserPanel.getColor();
-                Config.getInstance().getAmbientLight().set(new Vector3f(color.getRed() / 255.f,
+                Engine.getInstance().getConfig().getAmbientLight().set(new Vector3f(color.getRed() / 255.f,
                         color.getGreen() / 255.f,
                         color.getBlue() / 255.f));
             }

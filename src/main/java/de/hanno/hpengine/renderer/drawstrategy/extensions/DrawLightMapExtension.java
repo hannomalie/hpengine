@@ -1,6 +1,6 @@
 package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
@@ -185,7 +185,7 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 
         GPUProfiler.start("Actual draw entities lightmap");
-        if (Config.getInstance().isIndirectDrawing()) {
+        if (Engine.getInstance().getConfig().isIndirectDrawing()) {
             if(true) {
                 pipeline.prepareAndDraw(renderState, lightMapProgram, firstPassResult);
             } else {
@@ -241,8 +241,8 @@ public class DrawLightMapExtension implements RenderExtension {
         lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
 
         lightmapEvaluationProgram.setUniform("handle", TextureFactory.getInstance().getCubeMap().getHandle());
-        lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
-        lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
+        lightmapEvaluationProgram.setUniform("screenWidth", (float) Engine.getInstance().getConfig().getWidth());
+        lightmapEvaluationProgram.setUniform("screenHeight", (float) Engine.getInstance().getConfig().getHeight());
         QuadVertexBuffer.getFullscreenBuffer().draw();
         GPUProfiler.end();
     }

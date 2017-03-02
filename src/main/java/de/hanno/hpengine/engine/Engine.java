@@ -61,6 +61,8 @@ public class Engine {
 
     private static volatile Engine instance = null;
 
+    private Config config = new Config();
+
     private UpdateThread updateThread;
     private RenderThread renderThread;
 
@@ -102,8 +104,8 @@ public class Engine {
             if ("debug=false".equals(string)) {
                 debug = false;
             } else if ("fullhd".equals(string)) {
-                Config.getInstance().setWidth(1920);
-                Config.getInstance().setHeight(1080);
+                getInstance().getConfig().setWidth(1920);
+                getInstance().getConfig().setHeight(1080);
             } else {
                 sceneName = string;
                 break;
@@ -209,7 +211,7 @@ public class Engine {
         camera.update(seconds);
         scene.update(seconds);
         updateRenderState();
-        if(!Config.getInstance().isMultithreadedRendering()) {
+        if(!getInstance().getConfig().isMultithreadedRendering()) {
             actuallyDraw();
         }
         sceneIsInitiallyDrawn = true;
@@ -313,10 +315,10 @@ public class Engine {
 
             PerEntityInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(modelComponent);
             if(info == null) {
-                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), getInstance().getConfig().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
                 renderState.getCurrentWriteState().entitiesState.cash.put(modelComponent, info);
             } else {
-                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), getInstance().getConfig().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
             }
             renderState.getCurrentWriteState().add(info);
         }
@@ -537,5 +539,9 @@ public class Engine {
         } finally {
             return entities;
         }
+    }
+
+    public Config getConfig() {
+        return config;
     }
 }

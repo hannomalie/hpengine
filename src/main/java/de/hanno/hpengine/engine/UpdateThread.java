@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine;
 
-import de.hanno.hpengine.config.Config;
-
 class UpdateThread extends FpsCountedTimeStepThread {
 
     public UpdateThread(String name, float minCycleTimeInS) {
@@ -15,6 +13,6 @@ class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public float getMinimumCycleTimeInSeconds() {
-        return Config.getInstance().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.0001f;
+        return Engine.getInstance().getConfig().isLockUpdaterate() ? minimumCycleTimeInSeconds : 0.0001f;
     }
 }

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.shader;
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.material.Material.MAP;
 
 import java.util.EnumSet;
@@ -43,21 +43,21 @@ public enum ShaderDefine {
 	public static String getGlobalDefinesString() {
 		StringBuilder builder = new StringBuilder();
 
-		appendWithSemicolonAndNewLine(builder, "const bool RAINEFFECT = " + (Config.getInstance().getRainEffect() != 0.0));
-		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES = " + Config.getInstance().isUseMultipleDiffuseSamples());
-		appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + Config.getInstance().isUseMultipleDiffuseSamplesProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + Config.getInstance().isUseConetracingForDiffuse());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + Config.getInstance().isUseConetracingForDiffuseProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR = " + Config.getInstance().isUseConetracingForSpecular());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR_PROBES = " + Config.getInstance().isUseConetracingForSpecularProbes());
-		appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + Config.getInstance().isUsePrecomputedRadiance());
-		appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + Config.getInstance().isScattering());
-		appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + Config.getInstance().isCalculateActualRadiance());
-		appendWithSemicolonAndNewLine(builder, "const bool SSR_FADE_TO_SCREEN_BORDERS = " + Config.getInstance().isSsrFadeToScreenBorders());
-		appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + Config.getInstance().isSsrTemporalFiltering());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + Config.getInstance().isUseBloom());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + Config.getInstance().isUsePcf());
-		appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + Config.getInstance().isUseDpsm());
+        appendWithSemicolonAndNewLine(builder, "const bool RAINEFFECT = " + (Engine.getInstance().getConfig().getRainEffect() != 0.0));
+        appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES = " + Engine.getInstance().getConfig().isUseMultipleDiffuseSamples());
+        appendWithSemicolonAndNewLine(builder, "const bool MULTIPLE_DIFFUSE_SAMPLES_PROBES = " + Engine.getInstance().getConfig().isUseMultipleDiffuseSamplesProbes());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE = " + Engine.getInstance().getConfig().isUseConetracingForDiffuse());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_DIFFUSE_PROBES = " + Engine.getInstance().getConfig().isUseConetracingForDiffuseProbes());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR = " + Engine.getInstance().getConfig().isUseConetracingForSpecular());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_CONETRACING_FOR_SPECULAR_PROBES = " + Engine.getInstance().getConfig().isUseConetracingForSpecularProbes());
+        appendWithSemicolonAndNewLine(builder, "const bool PRECOMPUTED_RADIANCE = " + Engine.getInstance().getConfig().isUsePrecomputedRadiance());
+        appendWithSemicolonAndNewLine(builder, "const bool SCATTERING = " + Engine.getInstance().getConfig().isScattering());
+        appendWithSemicolonAndNewLine(builder, "const bool CALCULATE_ACTUAL_RADIANCE = " + Engine.getInstance().getConfig().isCalculateActualRadiance());
+        appendWithSemicolonAndNewLine(builder, "const bool SSR_FADE_TO_SCREEN_BORDERS = " + Engine.getInstance().getConfig().isSsrFadeToScreenBorders());
+        appendWithSemicolonAndNewLine(builder, "const bool SSR_TEMPORAL_FILTERING = " + Engine.getInstance().getConfig().isSsrTemporalFiltering());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_BLOOM = " + Engine.getInstance().getConfig().isUseBloom());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_PCF = " + Engine.getInstance().getConfig().isUsePcf());
+        appendWithSemicolonAndNewLine(builder, "const bool USE_DPSM = " + Engine.getInstance().getConfig().isUseDpsm());
 		
 		return builder.toString();
 	}

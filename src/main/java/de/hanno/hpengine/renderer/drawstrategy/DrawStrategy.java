@@ -1,6 +1,6 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.state.RenderState;
@@ -31,7 +31,7 @@ public interface DrawStrategy {
             OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
         }
 
-        if (Config.getInstance().isDrawLines()) {
+        if (Engine.getInstance().getConfig().isDrawLines()) {
             return renderState.getVertexBuffer()
                     .drawLinesInstancedBaseVertex(renderState.getIndexBuffer(), perEntityInfo.getIndexCount(), perEntityInfo.getInstanceCount(), perEntityInfo.getIndexOffset(), perEntityInfo.getBaseVertex());
         } else {return renderState.getVertexBuffer()

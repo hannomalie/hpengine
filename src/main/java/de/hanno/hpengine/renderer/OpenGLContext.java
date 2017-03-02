@@ -1,6 +1,6 @@
 package de.hanno.hpengine.renderer;
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.renderer.constants.*;
@@ -140,11 +140,11 @@ public final class OpenGLContext {
                 ;
 
         LOGGER.info("OpenGLContext before setDisplayMode");
-        Display.setDisplayMode(new DisplayMode(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
+        Display.setDisplayMode(new DisplayMode(Engine.getInstance().getConfig().getWidth(), Engine.getInstance().getConfig().getHeight()));
         LOGGER.info("OpenGLContext after setDisplayMode");
         Display.setTitle("HPEngine");
         Display.create(pixelFormat, contextAttributes);
-        Display.setVSyncEnabled(Config.getInstance().isVsync());
+        Display.setVSyncEnabled(Engine.getInstance().getConfig().isVsync());
 
 //        ContextCapabilities capabilities = GLContext.getCapabilities();
 //        System.out.println("######## Sparse texutre ext available:");
@@ -177,7 +177,7 @@ public final class OpenGLContext {
         enable(CULL_FACE);
 
         // Map the internal OpenGL coordinate system to the entire screen
-        viewPort(0, 0, Config.getInstance().getWidth(), Config.getInstance().getHeight());
+        viewPort(0, 0, Engine.getInstance().getConfig().getWidth(), Engine.getInstance().getConfig().getHeight());
         maxTextureUnits = (GL11.glGetInteger(GL20.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS));
 
         initialized = true;

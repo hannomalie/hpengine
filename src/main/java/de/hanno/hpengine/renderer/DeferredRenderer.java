@@ -1,6 +1,5 @@
 package de.hanno.hpengine.renderer;
 
-import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
@@ -120,8 +119,8 @@ public class DeferredRenderer implements Renderer {
             }
             currentDrawStrategy = simpleDrawStrategy;
 
-            fullScreenTarget = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth())
-                                        .setHeight(Config.getInstance().getHeight())
+            fullScreenTarget = new RenderTargetBuilder().setWidth(Engine.getInstance().getConfig().getWidth())
+                                        .setHeight(Engine.getInstance().getConfig().getHeight())
                                         .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
                                         .build();
             MaterialFactory.init();
@@ -203,7 +202,7 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		GPUProfiler.end();
-		if (Config.getInstance().isDebugframeEnabled()) {
+        if (Engine.getInstance().getConfig().isDebugframeEnabled()) {
 //            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
 //            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
 			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
@@ -286,12 +285,12 @@ public class DeferredRenderer implements Renderer {
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
 
-		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
-		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
+        float scaleForShaderX = (float) (Engine.getInstance().getConfig().getWidth() / width);
+        float scaleForShaderY = (float) (Engine.getInstance().getConfig().getHeight() / height);
 		// TODO: Reset de.hanno.hpengine.texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
 			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Engine.getInstance().getConfig().getWidth(), Engine.getInstance().getConfig().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}
@@ -322,12 +321,12 @@ public class DeferredRenderer implements Renderer {
 		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
 				width, height, 1);
-		
-		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
-		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
+
+        float scaleForShaderX = (float) (Engine.getInstance().getConfig().getWidth() / width);
+        float scaleForShaderY = (float) (Engine.getInstance().getConfig().getHeight() / height);
 		if(upscaleToFullscreen) {
 			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Engine.getInstance().getConfig().getWidth(), Engine.getInstance().getConfig().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
 		}
