@@ -1,10 +1,10 @@
 package de.hanno.hpengine.shader;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.ressources.Reloadable;
@@ -72,7 +72,7 @@ public interface Shader extends Reloadable {
         final int[] shaderID = new int[1];
         final SHADERTYPE finalShader1 = shader;
         final String finalResultingShaderSource = resultingShaderSource;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             shaderID[0] = GL20.glCreateShader(finalShader.getShaderType().glShaderType);
             finalShader1.setId(shaderID[0]);
             GL20.glShaderSource(shaderID[0], finalResultingShaderSource);
@@ -83,7 +83,7 @@ public interface Shader extends Reloadable {
 
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             if (GL20.glGetShader(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
 //			System.err.println("Dynamic code takes " + newlineCount + " lines");
@@ -99,7 +99,7 @@ public interface Shader extends Reloadable {
         }
 
 		LOGGER.finer(resultingShaderSource);
-        OpenGLContext.exitOnGLError("loadShader");
+        GraphicsContext.exitOnGLError("loadShader");
 
         return shader;
     }

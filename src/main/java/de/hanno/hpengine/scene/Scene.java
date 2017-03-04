@@ -12,11 +12,11 @@ import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.LightChangedEvent;
 import de.hanno.hpengine.event.MaterialAddedEvent;
 import de.hanno.hpengine.event.SceneInitEvent;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.light.AreaLight;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
@@ -75,7 +75,7 @@ public class Scene implements LifeCycle, Serializable {
         entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
 		addAll(entities);
 		for (ProbeData data : probes) {
-			OpenGLContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().execute(() -> {
                 try {
 					// TODO: Remove this f***
                     EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());

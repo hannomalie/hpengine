@@ -1,8 +1,8 @@
 package de.hanno.hpengine.shader;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FileUtils;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.shader.define.Define;
 
 import java.io.File;
@@ -72,7 +72,7 @@ public class ProgramFactory {
         return getComputeProgram(computeShaderLocation, Collections.EMPTY_LIST);
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, List<Define> defines) {
-        return OpenGLContext.getInstance().calculate(() -> {
+        return GraphicsContext.getInstance().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
@@ -84,7 +84,7 @@ public class ProgramFactory {
 		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, needsTextures);
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, boolean needsTextures) {
-		return OpenGLContext.getInstance().calculate(() -> {
+		return GraphicsContext.getInstance().calculate(() -> {
             ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
             ShaderSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
             ShaderSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));

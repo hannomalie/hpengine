@@ -3,9 +3,9 @@ package de.hanno.hpengine.scene;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.environmentsampler.EnvironmentSampler;
@@ -159,7 +159,7 @@ public class EnvironmentProbe extends Entity {
 
 	public int getTextureUnitIndex() {
 		int index = getIndex();
-		return OpenGLContext.getInstance().getMaxTextureUnits() - index - 1;
+		return GraphicsContext.getInstance().getMaxTextureUnits() - index - 1;
 	}
 
 	public int getIndex() {

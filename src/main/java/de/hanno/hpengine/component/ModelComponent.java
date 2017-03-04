@@ -1,12 +1,12 @@
 package de.hanno.hpengine.component;
 
 import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.scene.Scene;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.texture.Texture;
@@ -117,7 +117,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         this.getModel().putToValueArrays();
         this.createFloatArray();
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             scene.getVertexBuffer().putValues(baseVertex*totalElementsPerVertex, floatArray);
             scene.getIndexBuffer().appendIndices(indexOffset, getIndices());
             LOGGER.fine("Current IndexOffset: " + indexOffset);

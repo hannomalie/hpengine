@@ -7,10 +7,10 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.ProbeAddedEvent;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.scene.EnvironmentProbe.Update;
@@ -182,9 +182,9 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void prepareProbeRendering() {
-		OpenGLContext.getInstance().depthMask(true);
-		OpenGLContext.getInstance().enable(DEPTH_TEST);
-		OpenGLContext.getInstance().enable(CULL_FACE);
+        GraphicsContext.getInstance().depthMask(true);
+        GraphicsContext.getInstance().enable(DEPTH_TEST);
+        GraphicsContext.getInstance().enable(CULL_FACE);
 		cubeMapArrayRenderTarget.use(false);
 	}
 	

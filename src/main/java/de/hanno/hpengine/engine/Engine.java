@@ -17,7 +17,7 @@ import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.DeferredRenderer;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -34,6 +34,7 @@ import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
+import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
@@ -155,7 +156,10 @@ public class Engine {
         initOpenGLContext();
 
         EntityFactory.create();
-        Renderer.init(DeferredRenderer.class);
+        ProgramFactory.init();
+        TextureFactory.init();
+        MaterialFactory.init();
+        Renderer.init(Config.getInstance().getRendererClass());
 //        Renderer.init(SimpleTextureRenderer.class);
 //        MaterialFactory.getInstance().initDefaultMaterials();
 
@@ -283,7 +287,7 @@ public class Engine {
     };
     protected void actuallyDraw() {
         try {
-            OpenGLContext.getInstance().execute(drawCallable).get();
+            GraphicsContext.getInstance().execute(drawCallable).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -323,7 +327,7 @@ public class Engine {
     }
 
     private void initOpenGLContext() {
-        OpenGLContext.getInstance();
+        GraphicsContext.getInstance();
     }
 
     public Scene getScene() {
@@ -333,7 +337,7 @@ public class Engine {
     public void setScene(Scene scene) {
         physicsFactory.clearWorld();
         this.scene = scene;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             StopWatch.getInstance().start("Scene init");
             scene.init();
             StopWatch.getInstance().stopAndPrintMS();
@@ -442,7 +446,7 @@ public class Engine {
     }
 
     private void destroyOpenGL() {
-        OpenGLContext.getInstance().getDrawThread().stopRequested = true;
+        GraphicsContext.getInstance().getDrawThread().stopRequested = true;
         try {
             Display.destroy();
         } catch (IllegalStateException e) {
@@ -459,7 +463,7 @@ public class Engine {
     public List<Entity> loadTestScene() {
         List<Entity> entities = new ArrayList<>();
 
-        OpenGLContext.exitOnGLError("loadTestScene");
+        GraphicsContext.exitOnGLError("loadTestScene");
 
         try {
 //            Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);

@@ -1,9 +1,9 @@
 package de.hanno.hpengine.renderer.rendertarget;
 
 import de.hanno.hpengine.engine.ApplicationFrame;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.util.Util;
 
@@ -57,7 +57,7 @@ public class RenderTarget {
 
     public RenderTarget(RenderTargetBuilder renderTargetBuilder) {
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
             colorAttachments = renderTargetBuilder.colorAttachments;
@@ -66,7 +66,7 @@ public class RenderTarget {
             renderedTextures = new int[colorAttachments.size()];
             framebufferLocation = GL30.glGenFramebuffers();
 
-            OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
+            GraphicsContext.getInstance().bindFrameBuffer(framebufferLocation);
 
             scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
@@ -75,7 +75,7 @@ public class RenderTarget {
 
                 int renderedTextureTemp = GL11.glGenTextures();
 
-                OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+                GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -117,7 +117,7 @@ public class RenderTarget {
             }
         });
 
-        OpenGLContext.getInstance().clearColor(clearR, clearG, clearB, clearA);
+        GraphicsContext.getInstance().clearColor(clearR, clearG, clearB, clearA);
     }
 
     public void resizeTextures() {
@@ -128,7 +128,7 @@ public class RenderTarget {
 
             int renderedTextureTemp = renderedTextures[i];
 
-            OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+            GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -153,10 +153,10 @@ public class RenderTarget {
     }
 
     public void use(boolean clear) {
-        OpenGLContext.getInstance().bindFrameBuffer(framebufferLocation);
-        OpenGLContext.getInstance().viewPort(0, 0, getWidth(), getHeight());
+        GraphicsContext.getInstance().bindFrameBuffer(framebufferLocation);
+        GraphicsContext.getInstance().viewPort(0, 0, getWidth(), getHeight());
         if (clear) {
-            OpenGLContext.getInstance().clearDepthAndColorBuffer();
+            GraphicsContext.getInstance().clearDepthAndColorBuffer();
         }
     }
 
@@ -179,7 +179,7 @@ public class RenderTarget {
     }
 
     public void unuse() {
-        OpenGLContext.getInstance().bindFrameBuffer(0);
+        GraphicsContext.getInstance().bindFrameBuffer(0);
     }
 
     public int getRenderedTexture(int index) {

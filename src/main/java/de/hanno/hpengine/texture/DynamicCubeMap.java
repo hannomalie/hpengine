@@ -2,13 +2,13 @@ package de.hanno.hpengine.texture;
 
 import java.nio.FloatBuffer;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL30;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 
 @SuppressWarnings("serial")
@@ -20,7 +20,7 @@ public class DynamicCubeMap extends CubeMap {
 		this.textureID = createTextureID();
 		FloatBuffer dummy = BufferUtils.createFloatBuffer(width*height * 4);
 
-        OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
@@ -48,6 +48,6 @@ public class DynamicCubeMap extends CubeMap {
     }
 
     public void bind() {
-        OpenGLContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
+        GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP, textureID);
     }
 }

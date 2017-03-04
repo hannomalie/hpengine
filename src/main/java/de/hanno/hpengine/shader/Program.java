@@ -11,9 +11,9 @@ import java.util.logging.Logger;
 
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.event.GlobalDefineChangedEvent;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.util.glu.GLU;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
 import de.hanno.hpengine.util.ressources.Reloadable;
@@ -62,7 +62,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
 			clearUniforms();
 
 			try {
@@ -159,7 +159,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-		CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 //			self.unload();
             detachShader(vertexShader);
             detachShader(fragmentShader);

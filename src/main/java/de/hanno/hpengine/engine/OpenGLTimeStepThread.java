@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 
 public abstract class OpenGLTimeStepThread extends TimeStepThread {
 
@@ -12,7 +12,7 @@ public abstract class OpenGLTimeStepThread extends TimeStepThread {
     private String name;
 
     public OpenGLTimeStepThread(String name) {
-        this(name, OpenGLContext.getInstance().calculate(
+        this(name, GraphicsContext.getInstance().calculate(
                 () -> new SharedDrawable(Display.getDrawable())
         ));
     }

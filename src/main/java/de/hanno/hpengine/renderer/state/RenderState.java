@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
@@ -96,7 +96,7 @@ public class RenderState {
     }
 
     public void bufferMaterial(Material material) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials().values());
 
             int offset = material.getElementsPerObject() * materials.indexOf(material);
@@ -105,7 +105,7 @@ public class RenderState {
     }
 
     public void bufferMaterials() {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(MaterialFactory.getInstance().getMaterials().values());
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });

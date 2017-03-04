@@ -1,9 +1,9 @@
 package de.hanno.hpengine.renderer.material;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.shader.Bufferable;
 import de.hanno.hpengine.shader.Program;
@@ -159,7 +159,7 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesInactive() {
 		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
-			OpenGLContext.getInstance().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
+            GraphicsContext.getInstance().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
 		}
 		
 	}

@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.constants.GlCap;
@@ -73,7 +73,7 @@ public class DrawLightMapExtension implements RenderExtension {
 
     public DrawLightMapExtension() throws Exception {
         staticLightmapTarget = lightMapTarget;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture());
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(3));
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(4));
@@ -108,12 +108,12 @@ public class DrawLightMapExtension implements RenderExtension {
 
 
             GPUProfiler.start("Lightmap propagation");
-            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, lightMapTarget.getRenderedTexture());
-            OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, lightMapTarget.getRenderedTexture(1));
-            OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, lightMapTarget.getRenderedTexture(2));
-            OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, lightMapTarget.getRenderedTexture(3));
-            OpenGLContext.getInstance().bindImageTexture(4, lightMapTarget.getRenderedTexture(currentTarget), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
-            OpenGLContext.getInstance().bindImageTexture(5, lightMapTarget.getRenderedTexture(currentSource), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
+            GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, lightMapTarget.getRenderedTexture());
+            GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, lightMapTarget.getRenderedTexture(1));
+            GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, lightMapTarget.getRenderedTexture(2));
+            GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, lightMapTarget.getRenderedTexture(3));
+            GraphicsContext.getInstance().bindImageTexture(4, lightMapTarget.getRenderedTexture(currentTarget), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
+            GraphicsContext.getInstance().bindImageTexture(5, lightMapTarget.getRenderedTexture(currentSource), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
 
             lightmapPropagationProgram.use();
             lightmapPropagationProgram.setUniform("count", count);
@@ -138,7 +138,7 @@ public class DrawLightMapExtension implements RenderExtension {
             GPUProfiler.start("Lightmap dilation");
             int dilationTimes = 0;
             for(int i = 0; i < dilationTimes; i++) {
-                OpenGLContext.getInstance().bindImageTexture(1, lightMapTarget.getRenderedTexture(currentTarget), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
+                GraphicsContext.getInstance().bindImageTexture(1, lightMapTarget.getRenderedTexture(currentTarget), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
                 lightmapDilationProgram.use();
                 lightmapDilationProgram.setUniform("width", WIDTH);
                 lightmapDilationProgram.setUniform("height", HEIGHT);
@@ -161,12 +161,12 @@ public class DrawLightMapExtension implements RenderExtension {
         ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(2), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
         ARBClearTexture.glClearTexImage(lightMapTarget.getRenderedTexture(3), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
 
-        OpenGLContext openGLContext = OpenGLContext.getInstance();
-        openGLContext.disable(CULL_FACE);
-        openGLContext.depthMask(false);
-        openGLContext.disable(DEPTH_TEST);
+        GraphicsContext graphicsContext = GraphicsContext.getInstance();
+        graphicsContext.disable(CULL_FACE);
+        graphicsContext.depthMask(false);
+        graphicsContext.disable(DEPTH_TEST);
 
-        OpenGLContext.getInstance().bindImageTexture(5, lightMapTarget.getRenderedTexture(currentSource), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
+        graphicsContext.bindImageTexture(5, lightMapTarget.getRenderedTexture(currentSource), 0, false, 0, GL15.GL_READ_WRITE, LIGHTMAP_INTERNAL_FORMAT);
         lightMapProgram.use();
 
         lightMapProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
@@ -193,7 +193,7 @@ public class DrawLightMapExtension implements RenderExtension {
             }
         } else {
             for (PerEntityInfo info : renderState.perEntityInfos()) {
-                OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
+                GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
                 int currentVerticesCount = DrawStrategy.draw(renderState, info);
                 firstPassResult.verticesDrawn += currentVerticesCount;
                 if (currentVerticesCount > 0) {
@@ -202,9 +202,9 @@ public class DrawLightMapExtension implements RenderExtension {
             }
         }
         GPUProfiler.end();
-        openGLContext.enable(CULL_FACE);
-        openGLContext.depthMask(true);
-        openGLContext.enable(DEPTH_TEST);
+        graphicsContext.enable(CULL_FACE);
+        graphicsContext.depthMask(true);
+        graphicsContext.enable(DEPTH_TEST);
 
         lightmapBoundingSphereProgram.use();
         int width = WIDTH;
@@ -212,8 +212,8 @@ public class DrawLightMapExtension implements RenderExtension {
         for (int i = 1; i < Util.calculateMipMapCount(WIDTH, HEIGHT); i++) {
             width /= 2;
             height /= 2;
-            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, lightMapTarget.getRenderedTexture(0));
-            OpenGLContext.getInstance().bindImageTexture(1, lightMapTarget.getRenderedTexture(0), i, false, 0, GL15.GL_WRITE_ONLY, LIGHTMAP_INTERNAL_FORMAT);
+            GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, lightMapTarget.getRenderedTexture(0));
+            GraphicsContext.getInstance().bindImageTexture(1, lightMapTarget.getRenderedTexture(0), i, false, 0, GL15.GL_WRITE_ONLY, LIGHTMAP_INTERNAL_FORMAT);
             lightmapBoundingSphereProgram.setUniform("width", width);
             lightmapBoundingSphereProgram.setUniform("height", height);
             lightmapBoundingSphereProgram.setUniform("mipmapSource", i - 1);
@@ -225,14 +225,14 @@ public class DrawLightMapExtension implements RenderExtension {
     @Override
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
         GPUProfiler.start("Evaluate lightmap");
-        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
-        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
-        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
-        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
-        OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
-        OpenGLContext.getInstance().bindTexture(9, TEXTURE_2D, getFinalLightmapTexture());
+        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
+        GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
+        GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+        GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
+        GraphicsContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        GraphicsContext.getInstance().bindTexture(9, TEXTURE_2D, getFinalLightmapTexture());
         TextureFactory.getInstance().getCubeMap().bind(10);
-        OpenGLContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
+        GraphicsContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
 
         lightmapEvaluationProgram.use();
         lightmapEvaluationProgram.setUniform("eyePosition", renderState.camera.getWorldPosition());

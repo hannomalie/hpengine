@@ -1,6 +1,6 @@
 package de.hanno.hpengine.test;
 
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.lwjgl.LWJGLException;
@@ -24,11 +24,11 @@ public class TestWithOpenGLContext {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
         Display.setParent(canvas);
-        OpenGLContext.getInstance();
+        GraphicsContext.getInstance();
     }
 
     @AfterClass
     public static void destroy() {
-        OpenGLContext.getInstance().destroy();
+        GraphicsContext.getInstance().destroy();
     }
 }

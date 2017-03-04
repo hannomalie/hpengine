@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.event.EntitySelectedEvent;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import org.lwjgl.BufferUtils;
@@ -32,7 +32,7 @@ public class PixelPerfectPickingExtension implements RenderExtension {
 
         Engine engine = Engine.getInstance();
         if (Input.PICKING_CLICK == 1) {
-            OpenGLContext.getInstance().readBuffer(4);
+            GraphicsContext.getInstance().readBuffer(4);
 
             floatBuffer.rewind();
             Vector2f ratio = new Vector2f(Float.valueOf(Config.getInstance().getWidth()) / Float.valueOf(ApplicationFrame.WINDOW_WIDTH),

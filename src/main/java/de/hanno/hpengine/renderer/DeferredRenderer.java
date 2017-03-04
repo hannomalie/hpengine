@@ -100,14 +100,16 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void init() {
+    	if(!(GraphicsContext.getInstance() instanceof OpenGLContext)) {
+    		throw new IllegalStateException("Cannot use this DeferredRenderer with a non-OpenGlContext!");
+		}
+
 		Renderer.super.init();
 
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupBuffers();
             objLoader = new OBJLoader();
-            ProgramFactory.init();
-            TextureFactory.init();
             DeferredRenderer.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
@@ -124,7 +126,6 @@ public class DeferredRenderer implements Renderer {
                                         .setHeight(Config.getInstance().getHeight())
                                         .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
                                         .build();
-            MaterialFactory.init();
             LightFactory.init();
             EnvironmentProbeFactory.init();
             gBuffer.init();
@@ -166,10 +167,10 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = OpenGLContext.getInstance().calculate(() -> new GBuffer());
+		gBuffer = GraphicsContext.getInstance().calculate(() -> new GBuffer());
 
-		OpenGLContext.getInstance().execute(() -> {
-			OpenGLContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        GraphicsContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			DeferredRenderer.exitOnGLError("setupGBuffer");
 		});
@@ -259,10 +260,10 @@ public class DeferredRenderer implements Renderer {
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-        OpenGLContext.getInstance().disable(GlCap.DEPTH_TEST);
+        GraphicsContext.getInstance().disable(GlCap.DEPTH_TEST);
 
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
-		OpenGLContext.getInstance().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        GraphicsContext.getInstance().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}
@@ -270,7 +271,7 @@ public class DeferredRenderer implements Renderer {
 	public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes, RenderTarget target) {
 		GPUProfiler.start("BLURRRRRRR");
 		int copyTextureId = GL11.glGenTextures();
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
 //		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
@@ -290,7 +291,7 @@ public class DeferredRenderer implements Renderer {
 		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
 		// TODO: Reset de.hanno.hpengine.texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
-			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+            GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
@@ -299,7 +300,7 @@ public class DeferredRenderer implements Renderer {
 		target.use(false);
         target.setTargetTexture(sourceTextureId, 0);
 
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		blurProgram.use();
 		blurProgram.setUniform("mipmap", mipmap);
@@ -313,7 +314,7 @@ public class DeferredRenderer implements Renderer {
 
 	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
 		int copyTextureId = GL11.glGenTextures();
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 		
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
@@ -326,7 +327,7 @@ public class DeferredRenderer implements Renderer {
 		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
 		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
 		if(upscaleToFullscreen) {
-			OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+            GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
 			scaleForShaderX = 1;
 			scaleForShaderY = 1;
@@ -335,7 +336,7 @@ public class DeferredRenderer implements Renderer {
 		fullScreenTarget.use(false);
 		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
 
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
 		bilateralBlurProgram.use();
 		bilateralBlurProgram.setUniform("scaleX", scaleForShaderX);
@@ -366,7 +367,7 @@ public class DeferredRenderer implements Renderer {
 
 	public static void exitOnGLError(String errorMessage) {
         Exception exception = new Exception();
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             if(IGNORE_GL_ERRORS) { return; }
             int errorValue = GL11.glGetError();
 

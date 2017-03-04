@@ -1,15 +1,14 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.shader.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.shader.Bufferable;
 
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.EnumSet;
 import java.util.logging.Logger;
 
@@ -62,7 +61,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     private void setInternals(float[] values, EnumSet<DataChannels> channels) {
         this.channels = channels;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         });
@@ -146,7 +145,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     public VertexBuffer upload() {
         buffer.rewind();
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         }, false);

@@ -15,7 +15,7 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.MaterialChangedEvent;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.command.GetMaterialCommand;
 import de.hanno.hpengine.renderer.command.InitMaterialCommand;
 import de.hanno.hpengine.renderer.material.Material;
@@ -62,7 +62,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-				CompletableFuture<InitMaterialCommand.MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<InitMaterialCommand.MaterialResult> future = GraphicsContext.getInstance().execute(() -> {
 					return new GetMaterialCommand(newInfo).execute(Engine.getInstance());
 				});
 				InitMaterialCommand.MaterialResult result;
@@ -388,7 +388,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		CompletableFuture<InitMaterialCommand.MaterialResult> future = OpenGLContext.getInstance().execute(() -> {
+		CompletableFuture<InitMaterialCommand.MaterialResult> future = GraphicsContext.getInstance().execute(() -> {
 			return new InitMaterialCommand(material).execute(Engine.getInstance());
 		});
 

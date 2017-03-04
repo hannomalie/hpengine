@@ -7,13 +7,13 @@ import de.hanno.hpengine.engine.PerEntityInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
@@ -178,9 +178,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
         if(needsLightInjection) {
             GPUProfiler.start("grid shading");
             GL42.glBindImageTexture(0, currentVoxelTarget, 0, false, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-            OpenGLContext.getInstance().bindTexture(1, TEXTURE_3D, albedoGrid);
-            OpenGLContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
-            OpenGLContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
+            GraphicsContext.getInstance().bindTexture(1, TEXTURE_3D, albedoGrid);
+            GraphicsContext.getInstance().bindTexture(2, TEXTURE_3D, normalGrid);
+            GraphicsContext.getInstance().bindTexture(3, TEXTURE_3D, currentVoxelSource);
             int num_groups_xyz = Math.max(gridSize / 8, 1);
 
             if(lightInjectedFramesAgo == 0)
@@ -229,7 +229,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 GL42.glBindImageTexture(0, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
                 GL42.glBindImageTexture(1, normalGrid, 0, true, 0, GL15.GL_READ_WRITE, gridTextureFormatSized);
                 GL42.glBindImageTexture(3, currentVoxelTarget, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
-                OpenGLContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
+                GraphicsContext.getInstance().bindTexture(4, TEXTURE_3D, normalGrid);
                 clearDynamicVoxelsComputeProgram.dispatchCompute(num_groups_xyz,num_groups_xyz,num_groups_xyz);
             }
             GPUProfiler.end();
@@ -239,7 +239,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GPUProfiler.start("Voxelization");
             orthoCam.update(0.000001f);
             int gridSizeScaled = (int) (gridSize * getSceneScale(renderState));
-            OpenGLContext.getInstance().viewPort(0, 0, gridSizeScaled, gridSizeScaled);
+            GraphicsContext.getInstance().viewPort(0, 0, gridSizeScaled, gridSizeScaled);
             voxelizer.use();
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
             GL42.glBindImageTexture(5, albedoGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
@@ -262,10 +262,10 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.setUniform("sceneScale", getSceneScale(renderState));
             voxelizer.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
             voxelizer.setUniform("gridSize", gridSize);
-            OpenGLContext.getInstance().depthMask(false);
-            OpenGLContext.getInstance().disable(DEPTH_TEST);
-            OpenGLContext.getInstance().disable(BLEND);
-            OpenGLContext.getInstance().disable(CULL_FACE);
+            GraphicsContext.getInstance().depthMask(false);
+            GraphicsContext.getInstance().disable(DEPTH_TEST);
+            GraphicsContext.getInstance().disable(BLEND);
+            GraphicsContext.getInstance().disable(CULL_FACE);
             GL11.glColorMask(false, false, false, false);
 
             for (PerEntityInfo entity : renderState.perEntityInfos()) {
@@ -334,14 +334,14 @@ public class VoxelConeTracingExtension implements RenderExtension {
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
         GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
         GPUProfiler.start("VCT second pass");
-        OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
-        OpenGLContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
-        OpenGLContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
-        OpenGLContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
-        OpenGLContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
-        OpenGLContext.getInstance().bindTexture(12, TEXTURE_3D, albedoGrid);
-        OpenGLContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelSource);
-        OpenGLContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
+        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
+        GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
+        GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+        GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
+        GraphicsContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        GraphicsContext.getInstance().bindTexture(12, TEXTURE_3D, albedoGrid);
+        GraphicsContext.getInstance().bindTexture(13, TEXTURE_3D, currentVoxelSource);
+        GraphicsContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
 
         voxelConeTraceProgram.use();
         voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getWorldPosition());

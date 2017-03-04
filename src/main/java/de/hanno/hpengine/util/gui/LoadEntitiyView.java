@@ -10,7 +10,7 @@ import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
@@ -42,7 +42,7 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 					entity.init();
 					return true;
 				});

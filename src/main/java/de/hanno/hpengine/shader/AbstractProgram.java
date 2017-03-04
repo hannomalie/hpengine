@@ -8,6 +8,7 @@ import java.util.List;
 
 import de.hanno.hpengine.event.GlobalDefineChangedEvent;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
@@ -16,7 +17,6 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.vector.Vector3f;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.shader.define.Define;
 
 
@@ -24,7 +24,7 @@ public abstract class AbstractProgram {
 
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
     protected List<Define> defines = new ArrayList<>();
-	protected final int id = OpenGLContext.getInstance().createProgramId();
+	protected final int id = GraphicsContext.getInstance().createProgramId();
 	
 	public AbstractProgram() { }
 	

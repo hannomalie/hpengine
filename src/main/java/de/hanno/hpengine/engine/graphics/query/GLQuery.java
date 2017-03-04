@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.query;
 
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL15.GL_QUERY_RESULT_AVAILABLE;
@@ -12,7 +12,7 @@ public interface GLQuery<RESULT> {
     void end();
 
     default boolean resultsAvailable() {
-        return OpenGLContext.getInstance().calculate( () -> glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT_AVAILABLE)) == GL_TRUE;
+        return GraphicsContext.getInstance().calculate( () -> glGetQueryObjectui64(getQueryToWaitFor(), GL_QUERY_RESULT_AVAILABLE)) == GL_TRUE;
     }
 
     int getQueryToWaitFor();

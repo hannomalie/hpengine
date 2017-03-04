@@ -1,6 +1,11 @@
 package de.hanno.hpengine.config;
 
+import de.hanno.hpengine.renderer.DeferredRenderer;
+import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.lodstrategy.ModelLod;
+import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.util.Adjustable;
 import de.hanno.hpengine.util.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
@@ -30,7 +35,9 @@ public final class Config {
         }
 	}
 
-    public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
+	private Class<? extends Renderer> rendererClass = DeferredRenderer.class;
+
+	public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
         Properties properties = new Properties();
         try {
             properties.load(inputStream);
@@ -53,6 +60,7 @@ public final class Config {
         }
     }
 
+	private Class<? extends GraphicsContext> gpuContextClass = OpenGLContext.class;
     private final boolean useFileReloading = true;
 	private int width = 1280;
 	private int height = 720;
@@ -513,5 +521,22 @@ public final class Config {
 
 	public void setModelLodStrategy(ModelLod.ModelLodStrategy modelLodStrategy) {
 		this.modelLodStrategy = modelLodStrategy;
+	}
+
+	public void setGpuContextClass(Class<? extends GraphicsContext> gpuContextClass) {
+		this.gpuContextClass = gpuContextClass;
+	}
+
+	public Class<? extends GraphicsContext> getGpuContextClass() {
+		return gpuContextClass;
+
+	}
+
+	public Class<? extends Renderer> getRendererClass() {
+		return rendererClass;
+	}
+
+	public void setRendererClass(Class <? extends Renderer> rendererClass) {
+		this.rendererClass = rendererClass;
 	}
 }

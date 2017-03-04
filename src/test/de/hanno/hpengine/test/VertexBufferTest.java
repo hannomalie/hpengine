@@ -4,7 +4,7 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         };
 
         VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
-        Assert.assertTrue(OpenGLContext.getInstance().calculate(
+        Assert.assertTrue(GraphicsContext.getInstance().calculate(
                 () -> GL15.glGetBufferParameter(GL15.GL_ARRAY_BUFFER, GL15.GL_BUFFER_MAPPED) == 1));
         buffer.upload();
         float[] bufferedData = buffer.getVertexData();
@@ -123,7 +123,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
     public void benchmarkVAOAndVBB() {
         int count = 100000000;
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             int vbo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(30), VertexBuffer.Usage.STATIC.getValue());
@@ -144,7 +144,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
             System.out.println(GLTimerQuery.getInstance().getResult());
         });
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
 
             GLTimerQuery.getInstance().begin();
@@ -155,7 +155,7 @@ public class VertexBufferTest extends TestWithOpenGLContext {
             System.out.println("VB bind" + GLTimerQuery.getInstance().getResult());
         });
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
 
             GLTimerQuery.getInstance().begin();

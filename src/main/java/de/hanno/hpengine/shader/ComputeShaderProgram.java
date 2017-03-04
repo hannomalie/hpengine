@@ -1,12 +1,12 @@
 package de.hanno.hpengine.shader;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.glu.GLU;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.shader.define.Define;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
@@ -126,7 +126,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void reload() {
 		final ComputeShaderProgram self = this;
 
-		CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 //			self.unload();
             detachShader(computeShader);
             computeShader.reload();

@@ -1,8 +1,8 @@
 package de.hanno.hpengine.texture;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 
 import java.io.*;
@@ -25,7 +25,7 @@ public class CubeMap extends Texture implements Serializable {
 	
 	public void upload() {
 
-		OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
 			bind();
 //        if (target == GL13.GL_TEXTURE_CUBE_MAP)
 			{
@@ -150,6 +150,6 @@ public class CubeMap extends Texture implements Serializable {
 	}
 
 	public void bind(int unit) {
-		OpenGLContext.getInstance().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
+        GraphicsContext.getInstance().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
 	}
 }

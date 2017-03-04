@@ -2,10 +2,10 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
@@ -56,10 +56,10 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
-        OpenGLContext.getInstance().depthMask(true);
-        OpenGLContext.getInstance().enable(DEPTH_TEST);
+        GraphicsContext.getInstance().depthMask(true);
+        GraphicsContext.getInstance().enable(DEPTH_TEST);
 //		OpenGLContext.getInstance().cullFace(BACK);
-        OpenGLContext.getInstance().disable(CULL_FACE);
+        GraphicsContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
         List<PerEntityInfo> visibles = renderState.perEntityInfos();

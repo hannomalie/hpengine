@@ -1,8 +1,8 @@
 package de.hanno.hpengine.renderer.rendertarget;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.texture.CubeMapArray;
 import de.hanno.hpengine.util.Util;
 
@@ -30,17 +30,17 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
             long[] currentList = new long[cma.getCubemapCount()];
             handleLists.add(currentList);
             for(int cubemapIndex = 0; cubemapIndex < cma.getCubemapCount(); cubemapIndex++) {
-                int cubeMapView = OpenGLContext.getInstance().genTextures();
+                int cubeMapView = GraphicsContext.getInstance().genTextures();
                 int finalCubemapIndex = cubemapIndex;
-                OpenGLContext.getInstance().execute(() -> {
+                GraphicsContext.getInstance().execute(() -> {
                     GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cma.getTextureID(),
                             cma.getInternalFormat(), 0, 1,
                             6 * finalCubemapIndex, 6);
 
                 });
-                long handle = OpenGLContext.getInstance().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
+                long handle = GraphicsContext.getInstance().calculate(() ->ARBBindlessTexture.glGetTextureHandleARB(cubeMapView));
                 currentList[cubemapIndex] = handle;
-                OpenGLContext.getInstance().execute(() -> {
+                GraphicsContext.getInstance().execute(() -> {
                     ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
                 });
             }
@@ -48,7 +48,7 @@ public class CubeMapArrayRenderTarget extends RenderTarget {
 		int colorBufferCount = cubeMapArrays.size();
 		renderedTextures = new int[colorBufferCount];
 
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
 			framebufferLocation = GL30.glGenFramebuffers();
 			GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, framebufferLocation);
 			IntBuffer scratchBuffer = BufferUtils.createIntBuffer(colorBufferCount);

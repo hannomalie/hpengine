@@ -1,6 +1,6 @@
 package de.hanno.hpengine.test;
 
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.OpenGLThread;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -17,7 +17,7 @@ public class MultithreadTest extends TestWithRenderer {
 	public void secondThreadUsesGLContext() throws InterruptedException, LWJGLException {
 		Thread worker =	new Thread(new Runnable() {
 
-			SharedDrawable drawable = OpenGLContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
+			SharedDrawable drawable = GraphicsContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
 			
 			@Override
 			public void run() {

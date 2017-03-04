@@ -1,6 +1,5 @@
 package de.hanno.hpengine.renderer;
 
-import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.SharedDrawable;
 
@@ -29,7 +28,7 @@ public class OpenGLThread extends Thread {
 
 	public OpenGLThread(String name, Runnable runnable) {
 		this.name = name;
-		drawable = OpenGLContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
+		drawable = GraphicsContext.getInstance().calculate(() -> new SharedDrawable(Display.getDrawable()));
 		setRunnable(runnable);
 		initialized = true;
 	}

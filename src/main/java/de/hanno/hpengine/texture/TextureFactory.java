@@ -3,13 +3,13 @@ package de.hanno.hpengine.texture;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.event.TexturesChangedEvent;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector2f;
 import de.hanno.hpengine.renderer.DeferredRenderer;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.ProgramFactory;
@@ -89,7 +89,7 @@ public class TextureFactory {
         try {
             cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
             DeferredRenderer.exitOnGLError("After load cubemap");
-            OpenGLContext.getInstance().activeTexture(0);
+            GraphicsContext.getInstance().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
             LOGGER.severe(e.getMessage());
@@ -220,10 +220,7 @@ public class TextureFactory {
      */
     private int createTextureID()
     {
-        return OpenGLContext.getInstance().calculate(() -> {
-                    return getTextureId();
-                }
-        );
+        return GraphicsContext.getInstance().genTextures();
     }
     
     /**
@@ -271,7 +268,7 @@ public class TextureFactory {
 
 
     public static int getTextureId() {
-        return OpenGLContext.getInstance().calculate(() -> GL11.glGenTextures());
+        return GraphicsContext.getInstance().genTextures();
     }
 
     private boolean textureLoaded(String resourceName) {
@@ -332,7 +329,7 @@ public class TextureFactory {
          CubeMap cubeMap = new CubeMap(resourceName, target);
          
          // bind this de.hanno.hpengine.texture
-        OpenGLContext.getInstance().bindTexture(target, textureID);
+        GraphicsContext.getInstance().bindTexture(target, textureID);
 
          BufferedImage bufferedImage = null;
          if (asStream) {
@@ -538,7 +535,7 @@ public class TextureFactory {
     }
 
     private void generateMipMaps(Texture texture, boolean mipmap) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             texture.bind(15);
             if (mipmap) {
 //                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -558,33 +555,33 @@ public class TextureFactory {
         generateMipMaps(textureId, textureMinFilter, GL11.GL_LINEAR);
     }
     public void generateMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
+        GraphicsContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
     }
     public void enableMipMaps(int textureId, int textureMinFilter, int textureMagFilter) {
-        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
+        GraphicsContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, textureMagFilter);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, textureMinFilter);
     }
     
     public void generateMipMapsCubeMap(int textureId) {
-        OpenGLContext.getInstance().execute(() -> {
-            OpenGLContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
+        GraphicsContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().bindTexture(TEXTURE_CUBE_MAP, textureId);
             GL30.glGenerateMipmap(GL13.GL_TEXTURE_CUBE_MAP);
         });
     }
     
     public static ByteBuffer getTextureData(int textureId, int mipLevel, int format, ByteBuffer pixels) {
-        OpenGLContext.getInstance().bindTexture(TEXTURE_2D, textureId);
+        GraphicsContext.getInstance().bindTexture(TEXTURE_2D, textureId);
 		GL11.glGetTexImage(GL11.GL_TEXTURE_2D, mipLevel, format, GL11.GL_UNSIGNED_BYTE, pixels);
 		return pixels;
     }
     
     public static int copyCubeMap(int sourceTextureId, int width, int height, int internalFormat) {
     	int copyTextureId = getTextureId();
-        OpenGLContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId);
+        GraphicsContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, copyTextureId);
 
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
         GL11.glTexParameteri(GL13.GL_TEXTURE_CUBE_MAP, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -602,7 +599,7 @@ public class TextureFactory {
 				copyTextureId, GL13.GL_TEXTURE_CUBE_MAP, 0, 0, 0, 0,
 				width, height, 6);
 
-        OpenGLContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, 0);
+        GraphicsContext.getInstance().bindTexture(15, TEXTURE_CUBE_MAP, 0);
 		return copyTextureId;
     }
     
@@ -628,7 +625,7 @@ public class TextureFactory {
 
     public int getTexture(int width, int height, int format, GlTextureTarget target, int depth) {
         int textureId = createTextureID();
-        OpenGLContext.getInstance().bindTexture(target, textureId);
+        GraphicsContext.getInstance().bindTexture(target, textureId);
 
         setupTextureParameters(target);
 
@@ -655,7 +652,7 @@ public class TextureFactory {
     // TODO return proper object
     public int getTexture3D(int gridSize, int gridTextureFormatSized, int filterMin, int filterMag, int wrapMode) {
         final int[] grid = new int[1];
-        OpenGLContext.getInstance().execute(()-> {
+        GraphicsContext.getInstance().execute(()-> {
             grid[0] = GL11.glGenTextures();
             GL11.glBindTexture(GL12.GL_TEXTURE_3D, grid[0]);
             GL11.glTexParameteri(GL12.GL_TEXTURE_3D, GL11.GL_TEXTURE_MIN_FILTER, filterMin);
@@ -677,10 +674,10 @@ public class TextureFactory {
         }
         int finalWidth = width;
         int finalHeight = height;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             blur2dProgramSeperableHorizontal.use();
-            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
-            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
+            GraphicsContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
             blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
             blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);
@@ -705,10 +702,10 @@ public class TextureFactory {
         }
         int finalWidth = width;
         int finalHeight = height;
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             blur2dProgramSeperableHorizontal.use();
-            OpenGLContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
-            OpenGLContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+            GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, sourceTexture);
+            GraphicsContext.getInstance().bindImageTexture(1,sourceTexture, mipmapTarget, false, mipmapTarget, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
             blur2dProgramSeperableHorizontal.setUniform("width", finalWidth);
             blur2dProgramSeperableHorizontal.setUniform("height", finalHeight);
             blur2dProgramSeperableHorizontal.setUniform("mipmapSource", mipmapSource);

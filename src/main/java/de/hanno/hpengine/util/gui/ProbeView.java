@@ -15,7 +15,7 @@ import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.event.ProbesChangedEvent;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbe.Update;
@@ -64,7 +64,7 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 				return EnvironmentProbeFactory.getInstance().remove(probe);
 			});
     		
@@ -103,7 +103,7 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-				OpenGLContext.getInstance().execute(() -> {
+                GraphicsContext.getInstance().execute(() -> {
 					EnvironmentProbeFactory.getInstance().updateBuffers();
 				});
 			}

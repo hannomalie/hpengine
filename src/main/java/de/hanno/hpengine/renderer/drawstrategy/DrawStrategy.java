@@ -2,7 +2,7 @@ package de.hanno.hpengine.renderer.drawstrategy;
 
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.PerEntityInfo;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
@@ -28,7 +28,7 @@ public interface DrawStrategy {
 
 //        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
         {
-            OpenGLContext.getInstance().disable(GlCap.CULL_FACE);
+            GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
         }
 
         if (Config.getInstance().isDrawLines()) {

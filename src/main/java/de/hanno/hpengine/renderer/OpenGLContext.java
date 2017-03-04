@@ -10,7 +10,6 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.util.glu.GLU;
 
 import java.awt.*;
 import java.nio.IntBuffer;
@@ -22,7 +21,7 @@ import java.util.logging.Logger;
 import static de.hanno.hpengine.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.renderer.constants.GlCap.DEPTH_TEST;
 
-public final class OpenGLContext {
+public final class OpenGLContext implements GraphicsContext {
     private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
 
     private static final int MAX_WORKITEMS = 1000;
@@ -35,99 +34,17 @@ public final class OpenGLContext {
     private TimeStepThread openGLThread;
     private boolean attached;
 
-    private static volatile OpenGLContext instance;
     private CommandQueue commandQueue = new CommandQueue();
     private volatile boolean initialized = false;
     public volatile boolean errorOccured = false;
     private int maxTextureUnits;
 
-    public static OpenGLContext getInstance() {
-        if(instance == null) {
-            synchronized(OpenGLContext.class) {
-                if(instance == null) {
-                    try {
-                        LOGGER.info("OpenGLContext is being initialized");
-                        OpenGLContext.init();
-                        LOGGER.info("OpenGLContext is initialized");
-                    } catch (LWJGLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        } else if(!instance.isInitialized()) {
-            throw new IllegalStateException("OpenGL context not initialized. Init an OpenGLContext first.");
-        }
-        return instance;
+    protected OpenGLContext() {
     }
 
-    private OpenGLContext() {
-    }
-
-    public static void exitOnGLError(String errorMessage) {
-        if (!Renderer.CHECKERRORS) {
-            return;
-        }
-
-        int errorValue = GL11.glGetError();
-
-        if (errorValue != GL11.GL_NO_ERROR) {
-            String errorString = GLU.gluErrorString(errorValue);
-            System.err.println("ERROR - " + errorMessage + ": " + errorString);
-
-            if (Display.isCreated()) Display.destroy();
-            System.exit(-1);
-        }
-    }
+    @Override
     public boolean isError() {
-        return OpenGLContext.getInstance().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
-    }
-
-    public static void init() throws LWJGLException {
-        instance = new OpenGLContext();
-        instance.openGLThread = new TimeStepThread(OPENGL_THREAD_NAME, 0.0f) {
-
-            @Override
-            public void update(float seconds) {
-                if (!instance.isInitialized()) {
-                    Thread.currentThread().setName(OPENGL_THREAD_NAME);
-                    OPENGL_THREAD_ID = Thread.currentThread().getId();
-                    System.out.println("OPENGL_THREAD_ID is " + OPENGL_THREAD_ID);
-                    try {
-                        try {
-                            instance.privateInit();
-                        } catch (Exception e) {
-                            LOGGER.severe("Exception during privateInit");
-                            e.printStackTrace();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.exit(-1);
-                    }
-                } else {
-                    try {
-                        instance.update(seconds);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-        executorService.submit(instance.openGLThread);
-        System.out.println("OpenGLContext thread submitted with id " + OPENGL_THREAD_ID);
-        waitForInitialization(instance);
-    }
-
-    public static final void waitForInitialization(OpenGLContext context) {
-        LOGGER.info("Waiting for OpenGLContext initialization");
-        while(!context.isInitialized()) {
-            LOGGER.info("Waiting for OpenGLContext initialization...");
-            try {
-                Thread.sleep(400);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        LOGGER.info("OpenGLContext ready");
+        return GraphicsContext.getInstance().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
     }
 
     private final void privateInit() throws LWJGLException {
@@ -184,6 +101,7 @@ public final class OpenGLContext {
         LOGGER.info("OpenGLContext initialized");
     }
 
+    @Override
     public void update(float seconds) {
         try {
             commandQueue.executeCommands();
@@ -192,14 +110,17 @@ public final class OpenGLContext {
         }
     }
 
+    @Override
     public void attach(Canvas canvas) throws LWJGLException {
         Display.setParent(canvas);
         attached = true;
     }
+    @Override
     public void detach() throws LWJGLException {
         Display.setParent(null);
         attached = false;
     }
+    @Override
     public void attachOrDetach(Canvas canvas) throws LWJGLException {
         if(attached) {
             detach();
@@ -208,14 +129,17 @@ public final class OpenGLContext {
         }
     }
 
+    @Override
     public void enable(GlCap cap) {
         cap.enable();
     }
+    @Override
     public void disable(GlCap cap) {
         cap.disable();
     }
 
     private int activeTexture = -1;
+    @Override
     public void activeTexture(int textureUnitIndex) {
         int textureIndexGLInt = getOpenGLTextureUnitValue(textureUnitIndex);
 //        TODO: Use this
@@ -232,8 +156,9 @@ public final class OpenGLContext {
     }
 
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
+    @Override
     public void bindTexture(GlTextureTarget target, int textureId) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
@@ -245,8 +170,9 @@ public final class OpenGLContext {
         }
     }
 
+    @Override
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -256,40 +182,48 @@ public final class OpenGLContext {
         });
     }
 
+    @Override
     public void bindTextures(IntBuffer textureIds) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             GL44.glBindTextures(0, textureIds.capacity(), textureIds);
         });
     }
+    @Override
     public void bindTextures(int count, IntBuffer textureIds) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             GL44.glBindTextures(0, count, textureIds);
         });
     }
+    @Override
     public void bindTextures(int firstUnit, int count, IntBuffer textureIds) {
-        OpenGLContext.getInstance().execute(() -> {
+        GraphicsContext.getInstance().execute(() -> {
             GL44.glBindTextures(firstUnit, count, textureIds);
         });
     }
 
+    @Override
     public void viewPort(int x, int y, int width, int height) {
         GL11.glViewport(x, y, width, height);
     }
 
+    @Override
     public void clearColorBuffer() {
         GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
     }
 
+    @Override
     public void clearDepthBuffer() {
         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
     }
 
+    @Override
     public void clearDepthAndColorBuffer() {
         clearDepthBuffer();
         clearColorBuffer();
     }
 
     private int currentFrameBuffer = -1;
+    @Override
     public void bindFrameBuffer(int frameBuffer) {
         if(currentFrameBuffer != frameBuffer) {
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
@@ -298,17 +232,20 @@ public final class OpenGLContext {
     }
 
     private boolean depthMask = false;
+    @Override
     public void depthMask(boolean flag) {
         if(depthMask != flag) {
             GL11.glDepthMask(flag);
             depthMask = flag;
         }
     }
+    @Override
     public void depthFunc(GlDepthFunc func) {
         GL11.glDepthFunc(func.glFunc);
     }
 
     int currentReadBuffer = -1;
+    @Override
     public void readBuffer(int colorAttachmentIndex) {
         int colorAttachment = GL30.GL_COLOR_ATTACHMENT0 + colorAttachmentIndex;
         if(currentReadBuffer != colorAttachment) {
@@ -317,56 +254,70 @@ public final class OpenGLContext {
     }
 
     private BlendMode currentBlendMode = BlendMode.FUNC_ADD;
+    @Override
     public void blendEquation(BlendMode mode) {
         GL14.glBlendEquation(mode.mode);
     }
 
+    @Override
     public void blendFunc(BlendMode.Factor sfactor, BlendMode.Factor dfactor) {
         GL11.glBlendFunc(sfactor.glFactor, dfactor.glFactor);
     }
 
+    @Override
     public void cullFace(CullMode mode) {
         GL11.glCullFace(mode.glMode);
     }
 
+    @Override
     public void clearColor(float r, float g, float b, float a) {
         execute(() -> {
             GL11.glClearColor(r, g, b, a);
         });
     }
 
+    @Override
     public void bindImageTexture(int unit, int textureId, int level, boolean layered, int layer, int access, int internalFormat) {
         // TODO: create access enum
         GL42.glBindImageTexture(unit, textureId, level, layered, layer, access, internalFormat);
     }
 
+    @Override
     public int genTextures() {
         return calculate(() -> GL11.glGenTextures());
     }
 
+    @Override
     public int getAvailableVRAM() {
         return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX));
     }
+    @Override
     public int getAvailableTotalVRAM() {
         return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX));
     }
+    @Override
     public int getDedicatedVRAM() {
         return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX));
     }
+    @Override
     public int getEvictedVRAM() {
         return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX));
     }
+    @Override
     public int getEvictionCount() {
         return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX));
     }
 
+    @Override
     public boolean isInitialized() {
         return initialized;
     }
 
+    @Override
     public void execute(Runnable runnable) {
         execute(runnable, true);
     }
+    @Override
     public void execute(Runnable runnable, boolean andBlock) {
         if(isOpenGLThread()) {
             runnable.run();
@@ -383,6 +334,7 @@ public final class OpenGLContext {
         }
     }
 
+    @Override
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
         try {
             return execute(callable).get();
@@ -395,6 +347,7 @@ public final class OpenGLContext {
         return null;
     }
 
+    @Override
     public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(Callable<RETURN_TYPE> callable) {
 
         if(isOpenGLThread()) {
@@ -422,6 +375,7 @@ public final class OpenGLContext {
         }
     }
 
+    @Override
     public long blockUntilEmpty() {
         long start = System.currentTimeMillis();
         while(commandQueue.size() > 0) {
@@ -434,24 +388,29 @@ public final class OpenGLContext {
         return System.currentTimeMillis() - start;
     }
 
+    @Override
     public TimeStepThread getDrawThread() {
         return openGLThread;
     }
 
+    @Override
     public int createProgramId() {
         return calculate(() -> {
             return GL20.glCreateProgram();
         });
     }
 
+    @Override
     public int getMaxTextureUnits() {
         return maxTextureUnits;
     }
 
+    @Override
     public CommandQueue getCommandQueue() {
         return commandQueue;
     }
 
+    @Override
     public void benchmark(Runnable runnable) {
         GLTimerQuery.getInstance().begin();
         runnable.run();
@@ -459,6 +418,7 @@ public final class OpenGLContext {
         LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
     }
 
+    @Override
     public void destroy() {
         openGLThread.stopRequested = true;
         try {
@@ -469,46 +429,56 @@ public final class OpenGLContext {
         }
     }
 
-    public static boolean isOpenGLThread() {
-        if(OPENGL_THREAD_ID == -1) throw new IllegalStateException("OpenGLThread id is -1, initialization failed!");
-        return Thread.currentThread().getId() == OPENGL_THREAD_ID;
+
+    public void init() {
+        this.openGLThread = new TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
+
+            @Override
+            public void update(float seconds) {
+                if (!OpenGLContext.this.isInitialized()) {
+                    Thread.currentThread().setName(OpenGLContext.OPENGL_THREAD_NAME);
+                    OpenGLContext.OPENGL_THREAD_ID = Thread.currentThread().getId();
+                    System.out.println("OPENGL_THREAD_ID is " + OpenGLContext.OPENGL_THREAD_ID);
+                    try {
+                        try {
+                            OpenGLContext.this.privateInit();
+                        } catch (Exception e) {
+                            OpenGLContext.LOGGER.severe("Exception during privateInit");
+                            e.printStackTrace();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.exit(-1);
+                    }
+                } else {
+                    try {
+                        OpenGLContext.this.update(seconds);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        OpenGLContext.executorService.submit(this.openGLThread);
+        System.out.println("OpenGLContext thread submitted with id " + OpenGLContext.OPENGL_THREAD_ID);
+        waitForInitialization(this);
     }
 
-//    public void executeNow(Runnable runnable, boolean andBlock) {
-//        CompletableFuture result = new CompletableFuture();
-//        if(util.Util.isOpenGLThread()) {
-//            try {
-//                try {
-//                    runnable.run();
-//                    result.complete(true);
-//                } catch(Exception e) {
-//                    result.completeExceptionally(e);
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        } else {
-//            commandQueue.getWorkQueue().addFirst(new FutureCallable() {
-//                                                       @Override
-//                                                       public Object execute() throws Exception {
-//                                                           try {
-//                                                               runnable.run();
-//                                                               result.complete(true);
-//                                                           } catch(Exception e) {
-//                                                               result.completeExceptionally(e);
-//                                                           }
-//                                                           return true;
-//                                                       }
-//                                                   });
-//        }
-//        if(andBlock) {
-//            try {
-//                result.get();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            } catch (ExecutionException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
+    static void waitForInitialization(GraphicsContext context) {
+        OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization");
+        while(!context.isInitialized()) {
+            OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization...");
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        OpenGLContext.LOGGER.info("OpenGLContext ready");
+    }
+
+    static boolean isOpenGLThread() {
+        if(OpenGLContext.OPENGL_THREAD_ID == -1) throw new IllegalStateException("OpenGLThread id is -1, initialization failed!");
+        return Thread.currentThread().getId() == OpenGLContext.OPENGL_THREAD_ID;
+    }
 }

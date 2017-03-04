@@ -1,8 +1,8 @@
 package de.hanno.hpengine.shader;
 
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL44;
-import de.hanno.hpengine.renderer.OpenGLContext;
 
 import java.nio.Buffer;
 
@@ -38,7 +38,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         if(buffer != null) {
             boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes() < capacityInBytes;
             if(needsResize) {
-                OpenGLContext.getInstance().execute(() -> {
+                GraphicsContext.getInstance().execute(() -> {
                     bind();
                     if(GL15.glGetBufferParameter(target, GL15.GL_BUFFER_MAPPED) == 1) {
                         glUnmapBuffer(target);
@@ -55,7 +55,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         }
         {
             int finalCapacityInBytes = 2*capacityInBytes;
-            OpenGLContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().execute(() -> {
                 bind();
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 GL44.glBufferStorage(target, finalCapacityInBytes, flags);
@@ -71,7 +71,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
     public void bind() {
 //        TODO: Make this somehow possible
 //        if(bound) {return;}
-        OpenGLContext.getInstance().execute(bindBufferRunnable);
+        GraphicsContext.getInstance().execute(bindBufferRunnable);
         bound = true;
     }
 
@@ -84,7 +84,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
 
     @Override
     public void unbind() {
-        OpenGLContext.getInstance().execute(() -> glBindBuffer(target, 0));
+        GraphicsContext.getInstance().execute(() -> glBindBuffer(target, 0));
         bound = false;
     }
 

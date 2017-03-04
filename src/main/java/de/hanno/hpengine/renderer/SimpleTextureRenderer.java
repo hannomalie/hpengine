@@ -96,8 +96,8 @@ public class SimpleTextureRenderer implements Renderer {
     private void setUpGBuffer() {
         DeferredRenderer.exitOnGLError("Before setupGBuffer");
 
-		OpenGLContext.getInstance().execute(() -> {
-			OpenGLContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        GraphicsContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			DeferredRenderer.exitOnGLError("setupGBuffer");
 		});
@@ -147,11 +147,11 @@ public class SimpleTextureRenderer implements Renderer {
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
 
-        OpenGLContext.getInstance().bindFrameBuffer(0);
-        OpenGLContext.getInstance().viewPort(0,0, ApplicationFrame.WINDOW_WIDTH, ApplicationFrame.WINDOW_HEIGHT);
-        OpenGLContext.getInstance().disable(GlCap.DEPTH_TEST);
+        GraphicsContext.getInstance().bindFrameBuffer(0);
+        GraphicsContext.getInstance().viewPort(0,0, ApplicationFrame.WINDOW_WIDTH, ApplicationFrame.WINDOW_HEIGHT);
+        GraphicsContext.getInstance().disable(GlCap.DEPTH_TEST);
 
-		OpenGLContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
 
 		buffer.draw();
 	}

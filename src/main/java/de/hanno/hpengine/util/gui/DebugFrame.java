@@ -29,7 +29,7 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.Octree;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.*;
-import de.hanno.hpengine.renderer.OpenGLContext;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.renderer.command.AddTextureCommand;
@@ -366,7 +366,7 @@ public class DebugFrame {
                 new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+						CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
                             Engine engine = Engine.getInstance();
 							// TODO: Remove this f***
                             EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
@@ -391,7 +391,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
 					Engine.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
 					return new Result(true);
 				});
@@ -417,7 +417,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result<Boolean>> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<Result<Boolean>> future = GraphicsContext.getInstance().execute(() -> {
 					Engine.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
 					return new Result<>(true);
 				});
@@ -443,7 +443,7 @@ public class DebugFrame {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
 					Engine.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
 					return new Result(true);
 				});
@@ -489,7 +489,7 @@ public class DebugFrame {
 
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-			CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+			CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
 				GPUProfiler.reset();
 				return new Result(true);
 			});
@@ -526,7 +526,7 @@ public class DebugFrame {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				CompletableFuture<Result> future = OpenGLContext.getInstance().execute(() -> {
+				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
 					MaterialFactory.getInstance().get(chosenFile.getName());
 					return new Result(true);
 				});
@@ -554,7 +554,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
+					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
 						return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
 					});
 					TextureResult result = null;
@@ -581,7 +581,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
+					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
 						return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
 					});
 					TextureResult result = null;
@@ -610,7 +610,7 @@ public class DebugFrame {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = OpenGLContext.getInstance().execute(() -> {
+					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
 						return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());
 					});
 
@@ -717,7 +717,7 @@ public class DebugFrame {
 
 		toggleProfiler.addActionListener( e -> {
 
-			Boolean result = OpenGLContext.getInstance().calculate(() -> {
+			Boolean result = GraphicsContext.getInstance().calculate(() -> {
 				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
 				return true;
 			});
@@ -734,7 +734,7 @@ public class DebugFrame {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 				GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
 				return true;
 			});
@@ -771,7 +771,7 @@ public class DebugFrame {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-			OpenGLContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().execute(() -> {
                 GPUProfiler.DUMP_AVERAGES = ! GPUProfiler.DUMP_AVERAGES;
 			});
 		});
@@ -852,7 +852,7 @@ public class DebugFrame {
 		});
 		toggleVSync.addActionListener(e -> {
 			Config.getInstance().setVsync(!Config.getInstance().isVsync());
-			OpenGLContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.getInstance().isVsync()));
+            GraphicsContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.getInstance().isVsync()));
 		});
 		toggleAutoExposure.addActionListener(e -> {
 			Config.getInstance().setAutoExposureEnabled(!Config.getInstance().isAutoExposureEnabled());

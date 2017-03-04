@@ -8,8 +8,8 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.light.AreaLight;
 import de.hanno.hpengine.renderer.light.LightFactory;
 
@@ -64,7 +64,7 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = OpenGLContext.getInstance().execute(() -> {
+			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
 				return Engine.getInstance().getScene().getAreaLights().remove(light);
 			});
 
