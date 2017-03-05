@@ -69,7 +69,7 @@ public class Engine {
     private volatile DoubleBuffer<RenderState> renderState;
 
     private volatile long entityMovedInCycle;
-    private volatile  long directionalLightMovedInCycle;
+    private volatile long directionalLightMovedInCycle;
     private volatile boolean sceneIsInitiallyDrawn;
     private volatile AtomicLong cycle = new AtomicLong();
     private long pointLightMovedInCycle;
@@ -245,7 +245,7 @@ public class Engine {
         DirectionalLight directionalLight = scene.getDirectionalLight();
         if(directionalLight.hasMoved()) {
             directionalLightMovedInCycle = cycle.get();
-            scene.getDirectionalLight().setHasMoved(false);
+            directionalLight.setHasMoved(false);
         }
 
         if(anyPointLightHasMoved) {

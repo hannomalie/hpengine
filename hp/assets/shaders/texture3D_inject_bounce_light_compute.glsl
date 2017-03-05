@@ -68,9 +68,9 @@ void main(void) {
 	vec4 currentPositionsValues = texelFetch(secondVoxelGrid, storePos,0);
 	finalVoxelColor += currentPositionsValues.rgb;
 
-    const int SAMPLE_COUNT = 4;
+    const int SAMPLE_COUNT = 2;
     vec4 diffuseVoxelTraced = traceVoxelsDiffuse(SAMPLE_COUNT, secondVoxelGrid, gridSize, sceneScale, g_normal, g_pos);
-    vec4 voxelSpecular = voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+g_normal*sceneScale, g_normal, .25f, 200); // 0.05
+    vec4 voxelSpecular = vec4(0);//voxelTraceCone(secondVoxelGrid, gridSize, sceneScale, sceneScale, g_pos+g_normal*sceneScale, g_normal, .25f, 200); // 0.05
 
     vec3 maxMultipleBounce = vec3(1.5);
 	vec3 multipleBounceColor = voxelSpecular.rgb;//(color.rgb*diffuseVoxelTraced.rgb + color.rgb * voxelSpecular.rgb, vec3(0,0,0), maxMultipleBounce);

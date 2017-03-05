@@ -111,6 +111,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         currentVoxelTarget = grid;
         currentVoxelSource = gridTwo;
         voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
+        Config.getInstance().setUseAmbientOcclusion(false);
     }
 
     private void initViewZBuffer() {
@@ -151,25 +152,32 @@ public class VoxelConeTracingExtension implements RenderExtension {
         orthoCam.update(0.000001f);
     }
 
-    private long entityOrDirectionalLightHasMovedLastCycle;
+    private long entityMovedLastInCycle;
+    private long directionalLightMovedLastInCycle;
+
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
-        boolean entityOrDirectionalLightHasMoved = renderState.entitiesState.entityMovedInCycle > entityOrDirectionalLightHasMovedLastCycle|| renderState.directionalLightHasMovedInCycle > entityOrDirectionalLightHasMovedLastCycle;
-        if(entityOrDirectionalLightHasMoved) {
-            entityOrDirectionalLightHasMovedLastCycle = renderState.getCycle();
+        boolean entityMoved = renderState.entitiesState.entityMovedInCycle > entityMovedLastInCycle;
+        boolean directionalLightMoved = renderState.directionalLightHasMovedInCycle > directionalLightMovedLastInCycle;
+        if(entityMoved) {
+            entityMovedLastInCycle = renderState.getCycle();
+        }
+        if(directionalLightMoved) {
+            directionalLightMovedLastInCycle = renderState.getCycle();
+            lightInjectedCounter = 0;
         }
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        int bounces = 1;
+        int bounces = 2;
 
         boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
-        if(entityOrDirectionalLightHasMoved || needsRevoxelization || lightInjectedCounter > bounces) {
+        if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
-        boolean needsLightInjection = lightInjectedCounter < bounces || needsRevoxelization;
+        boolean needsLightInjection = lightInjectedCounter < bounces || needsRevoxelization || directionalLightMoved;
 
-        voxelizeScene(firstPassResult, renderState, entityOrDirectionalLightHasMoved, clearVoxels, needsRevoxelization);
+        voxelizeScene(firstPassResult, renderState, entityMoved, clearVoxels, needsRevoxelization);
         injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection);
         GPUProfiler.end();
     }

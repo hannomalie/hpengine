@@ -135,29 +135,36 @@ public class DirectionalLight extends Entity {
 
 				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
 					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
 					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
 					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
 					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
 					getEntity().move(new Vector3f(0, -moveAmount, 0));
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
 					getEntity().move(new Vector3f(0, moveAmount, 0));
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
 					getEntity().move(new Vector3f(-moveAmount, 0, 0));
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
 					getEntity().move(new Vector3f(moveAmount, 0, 0));
+					getEntity().getTransform().recalculate(); // TODO: Fix this
 				}
-				getEntity().getTransform().recalculate(); // TODO: Fix this
 			}
 		});
 	}
