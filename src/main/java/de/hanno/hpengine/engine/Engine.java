@@ -313,7 +313,7 @@ public class Engine {
 
             for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
                 Mesh mesh = modelComponent.getMeshes().get(i);
-                if(mesh.getMaterial() != null) mesh.getMaterial().setTexturesUsed();
+                mesh.getMaterial().setTexturesUsed();
                 PerMeshInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(mesh);
                 if(info == null) {
                     info = new PerMeshInfo();

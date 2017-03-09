@@ -4,6 +4,7 @@ import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.util.vector.Matrix4f;
@@ -15,8 +16,14 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 
 public class Mesh implements Serializable {
+    private static Logger LOGGER = getLogger();
+
 	private static final long serialVersionUID = 1L;
 
 	private List<Vector3f> positions = new ArrayList<>();
@@ -71,6 +78,11 @@ public class Mesh implements Serializable {
     }
 
     public void init() {
+
+        if (material == null) {
+            LOGGER.log(Level.INFO, "No material found!!!");
+            material = MaterialFactory.getInstance().getDefaultMaterial();
+        }
 
         FloatArrayList values = new FloatArrayList(indexFaces.size() * valuesPerVertex);
         List<Vector3f[]> allLightMapCoords = new ArrayList<>(indexFaces.size());
