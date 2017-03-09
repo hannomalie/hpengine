@@ -2,10 +2,7 @@ package de.hanno.hpengine.test;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.*;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
@@ -18,8 +15,7 @@ public class EntityTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws Exception {
-        Entity entity = EntityFactory.getInstance().getEntity(new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0));
-		entity.setName("default");
+        Entity entity = EntityFactory.getInstance().getEntity("default", new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")));
 
 		String filename = "default.hpentity";
 
@@ -31,17 +27,17 @@ public class EntityTest extends TestWithEngine {
 	}
     @Test
     public void loadParented() throws Exception {
-        List<Model> models = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
-        Entity entity = EntityFactory.getInstance().getEntity("xxx", models);
+        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
+        Entity entity = EntityFactory.getInstance().getEntity("xxx", model);
         engine.getScene().add(entity);
 
         Assert.assertTrue(engine.getScene().getEntities().contains(entity));
         Assert.assertTrue(entity.hasChildren());
         Assert.assertTrue(entity.getName().equals("xxx"));
-        for(Model model : models) {
+        for(Mesh mesh : model.getMeshes()) {
             boolean containsEntity = false;
             for (Entity child : entity.getChildren()) {
-                if(child.getName().equals(model.getName())) { containsEntity = true; }
+                if(child.getName().equals(mesh.getName())) { containsEntity = true; }
                 Assert.assertTrue(engine.getScene().getEntities().contains(child));
             }
             Assert.assertTrue(containsEntity);
@@ -50,8 +46,8 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        List<Model> models = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
-        Entity parentEntity = EntityFactory.getInstance().getEntity("parent", models);
+        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
         parentEntity.setSelected(true);
         parentEntity.setPosition(new Vector3f(2,2,2));
         engine.getScene().add(parentEntity);
@@ -60,7 +56,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
-        Entity childEntity = EntityFactory.getInstance().getEntity("child", models);
+        Entity childEntity = EntityFactory.getInstance().getEntity("child", model);
         childEntity.setPosition(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
         engine.getScene().add(childEntity);
@@ -77,7 +73,7 @@ public class EntityTest extends TestWithEngine {
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 
-        Entity secondEntity = EntityFactory.getInstance().getEntity("second", models);
+        Entity secondEntity = EntityFactory.getInstance().getEntity("second", model);
         engine.getScene().add(secondEntity);
         Assert.assertEquals(0, Engine.getInstance().getScene().getEntityBufferIndex(parentEntity));
         Assert.assertEquals(4, Engine.getInstance().getScene().getEntityBufferIndex(secondEntity));

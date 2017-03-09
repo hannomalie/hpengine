@@ -1,5 +1,6 @@
 package de.hanno.hpengine.component;
 
+import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.scene.Scene;
@@ -30,6 +31,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();
     private int[] indicesCounts;
+    private int[] baseVertices;
 
     protected String materialName = "";
 
@@ -61,13 +63,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private volatile List<int[]> lodLevels = new ArrayList<>();
 
     public ModelComponent(Model model) {
-        this(model, model.getMaterial());
-    }
-    public ModelComponent(Model model, Material material) {
-        this(model, material.getName());
-    }
-    public ModelComponent(Model model, String materialName) {
-        this.materialName = materialName;
         this.model = model;
         createFloatArray();
     }
@@ -113,7 +108,19 @@ public class ModelComponent extends BaseComponent implements Serializable {
         indexOffset = scene.getCurrentIndexOffset().get();
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
 
-//        NewLightmapManager.getInstance().registerForLightmapCoordsUpdate(this.getModel());
+
+        indicesCounts = new int[model.getMeshes().size()];
+        baseVertices = new int[model.getMeshes().size()];
+        int currentBaseVertex = baseVertex;
+        int currentIndexOffset = indexOffset;
+        for(int i = 0; i < indicesCounts.length; i++) {
+            Mesh mesh = model.getMeshes().get(i);
+            indicesCounts[i] = currentIndexOffset;
+            baseVertices[i] = currentBaseVertex;
+            currentBaseVertex += mesh.getVertexBufferValuesArray().length/totalElementsPerVertex;
+            currentIndexOffset += mesh.getIndexBufferValuesArray().length;
+        }
+
         this.getModel().putToValueArrays();
         this.createFloatArray();
 
@@ -142,28 +149,19 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
 
     public int getTriangleCount() {
-        return model.getFaces().size();
-    }
-
-    public List<Model.CompiledFace> getFaces() {
-        return Collections.unmodifiableList(model.getFaces());
+        return model.getTriangleCount();
     }
 
     public void createFloatArray() {
         floatArray = model.getVertexBufferValuesArray();
         indices.add(model.getIndexBufferValuesArray());
 
-        int sizeBeforeReduction = indices.get(0).length/3;
-//        LodGenerator lodGenerator = new LodGenerator(this);
-//        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.25f, 0.5f, 0.75f);
         lodLevels.add(indices.get(0));
         indices = lodLevels;
-        indicesCounts = new int[indices.size()];
-        for(int i = 0; i < indicesCounts.length; i++) {
-            indicesCounts[i] = indices.get(0).length;
-        }
-        LOGGER.fine("############## faces count before reduction: " + sizeBeforeReduction);
-        LOGGER.fine("############## lodlevels calculated: " + lodLevels.size());
+//        indicesCounts = new int[indices.size()];
+//        for(int i = 0; i < indicesCounts.length; i++) {
+//            indicesCounts[i] = indices.get(0).length;
+//        }
     }
 
 
@@ -243,11 +241,27 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return baseVertex;
     }
 
-    public Vector4f[] getMinMax(Matrix4f modelMatrix) {
+    public Vector3f[] getMinMax(Matrix4f modelMatrix) {
         return model.getMinMax(modelMatrix);
     }
 
     public Model getModel() {
         return model;
+    }
+
+    public List<Mesh> getMeshes() {
+        return model.getMeshes();
+    }
+
+    public int getIndexCount(int i) {
+        return model.getMeshIndices()[i].size();
+    }
+
+    public int getIndexOffset(int i) {
+        return indicesCounts[i];
+    }
+
+    public int getBaseVertex(int i) {
+        return baseVertices[i];
     }
 }

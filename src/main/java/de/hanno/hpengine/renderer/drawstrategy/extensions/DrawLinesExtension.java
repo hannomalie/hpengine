@@ -2,7 +2,7 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
@@ -41,7 +41,7 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
 
-            for (PerEntityInfo entity : renderState.perEntityInfos()) {
+            for (PerMeshInfo entity : renderState.perEntityInfos()) {
                 batchAABBLines(entity.getMinWorld(), entity.getMaxWorld());
             }
             Renderer.getInstance().drawLines(linesProgram);

@@ -48,7 +48,7 @@
 package jme3tools.optimize;
 
 import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.Mesh;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.util.*;
@@ -268,33 +268,35 @@ public class LodGenerator {
     }
 
     private void gatherVertexData(ModelComponent modelComponent, List<Vertex> vertexLookup) {
-        List<Model.CompiledFace> faces = modelComponent.getFaces();
-        List<Vector3f> vertices = new ArrayList(faces.size() * 3);
-        for(Model.CompiledFace currentFace : faces) {
-            for(int i = 0; i < 3; i++) {
-                vertices.add(currentFace.vertices[i].position);
+        for (Mesh mesh : modelComponent.getMeshes()) {
+            List<Mesh.CompiledFace> faces = mesh.getFaces();
+            List<Vector3f> vertices = new ArrayList(faces.size() * 3);
+            for (Mesh.CompiledFace currentFace : faces) {
+                for (int i = 0; i < 3; i++) {
+                    vertices.add(currentFace.vertices[i].position);
+                }
             }
-        }
 
-        for(Vector3f pos : vertices) {
-            Vertex v = new Vertex();
-            v.position.setX(pos.x);
-            v.position.setY(pos.y);
-            v.position.setZ(pos.z);
-            v.isSeam = false;
-            Vertex existingV = findSimilar(v);
-            if (existingV != null) {
-                //vertex position already exists
-                existingV.isSeam = true;
-                v.isSeam = true;
-            } else //TODO: Check this for my case...
-            {
-                vertexList.add(v);
+            for (Vector3f pos : vertices) {
+                Vertex v = new Vertex();
+                v.position.setX(pos.x);
+                v.position.setY(pos.y);
+                v.position.setZ(pos.z);
+                v.isSeam = false;
+                Vertex existingV = findSimilar(v);
+                if (existingV != null) {
+                    //vertex position already exists
+                    existingV.isSeam = true;
+                    v.isSeam = true;
+                } else //TODO: Check this for my case...
+                {
+                    vertexList.add(v);
+                }
+                vertexLookup.add(v);
             }
-            vertexLookup.add(v);
-        }
-        if(vertices.size() != vertexLookup.size()) {
-            throw new IllegalStateException("gatherVertexData failed");
+            if (vertices.size() != vertexLookup.size()) {
+                throw new IllegalStateException("gatherVertexData failed");
+            }
         }
     }
 

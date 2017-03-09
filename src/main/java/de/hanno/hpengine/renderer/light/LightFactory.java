@@ -6,7 +6,7 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
@@ -95,21 +95,21 @@ public class LightFactory {
 	private FloatBuffer areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 
-	private Model sphereModel;
-    private Model cubeModel;
-    private Model planeModel;
+	private Model sphereMesh;
+    private Model cubeMesh;
+    private Model planeMesh;
 
 	private volatile OpenGLBuffer lightBuffer;
 	
 	public LightFactory() {
-		sphereModel = null;
+		sphereMesh = null;
 		try {
-			sphereModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-			sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            cubeModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-            cubeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            planeModel = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/planeRotated.obj")).get(0);
-            planeModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+			sphereMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+			sphereMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+            cubeMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cube.obj"));
+            cubeMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+            planeMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/planeRotated.obj"));
+            planeMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
@@ -192,7 +192,7 @@ public class LightFactory {
 	public PointLight getPointLight(Vector3f position, Vector4f colorIntensity, float range) {
 		Material material = MaterialFactory.getInstance().getDefaultMaterial();
 		
-		PointLight light = new PointLight(MaterialFactory.getInstance(), position, sphereModel, colorIntensity, range, material.getName());
+		PointLight light = new PointLight(position, sphereMesh, colorIntensity, range);
 		light.init();
 		updatePointLightArrays();
 		return light;
@@ -265,7 +265,7 @@ public class LightFactory {
 		return getTubeLight(200.0f, 50.0f);
 	}
 	public TubeLight getTubeLight(float length, float radius) {
-		TubeLight tubeLight = new TubeLight(MaterialFactory.getInstance(), new Vector3f(), cubeModel, new Vector3f(1, 1, 1), length, radius);
+		TubeLight tubeLight = new TubeLight(new Vector3f(), cubeMesh, new Vector3f(1, 1, 1), length, radius);
 		return tubeLight;
 	}
 
@@ -283,7 +283,7 @@ public class LightFactory {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
-		AreaLight areaLight = new AreaLight(position, planeModel, color, new Vector3f(width, height, range));
+		AreaLight areaLight = new AreaLight(position, planeMesh, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		return areaLight;
 	}
@@ -381,7 +381,7 @@ public class LightFactory {
 					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().getInstance().getInstance().getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerMeshInfo pei = new PerMeshInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().getInstance().getInstance().getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -409,7 +409,7 @@ public class LightFactory {
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
 			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
-			List<PerEntityInfo> visibles = new ArrayList<>(renderState.perEntityInfos());
+			List<PerMeshInfo> visibles = new ArrayList<>(renderState.perEntityInfos());
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
             pointCubeShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
@@ -436,7 +436,7 @@ public class LightFactory {
 			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
-			for (PerEntityInfo e : visibles) {
+			for (PerMeshInfo e : visibles) {
                 DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram, !e.isVisible() || !e.isVisibleForCamera());
 			}
 			GPUProfiler.end();
@@ -470,7 +470,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerMeshInfo pei = new PerMeshInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}
@@ -485,7 +485,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerEntityInfo pei = new PerEntityInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
+                    PerMeshInfo pei = new PerMeshInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
                     DrawStrategy.draw(renderState, pei);
 				});
 			}

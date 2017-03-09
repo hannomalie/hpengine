@@ -2,6 +2,7 @@ package de.hanno.hpengine.test;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Face;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.renderer.material.Material;
@@ -62,21 +63,27 @@ public class OBJLoaderTest extends TestWithEngine {
 
     @Test
     public void loadsMaterial() throws Exception {
-        List<Model> sibenik = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sibenik.obj"));
-        Material material = sibenik.get(0).getMaterial();
+        Model sibenik = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        Material material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
         Assert.assertEquals("hp/assets/models/textures/KAMEN-stup", material.getMaterialInfo().maps.get(Material.MAP.DIFFUSE).getName());
         Assert.assertEquals(1, material.getTextures().size());
     }
-	
+
 	@Test
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-        List<Model> sponza = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
+		Model sponza = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
+	}
+
+	@Test
+	public void loadCornellBoxTest() throws Exception {
+		Model cornellBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+		Assert.assertEquals(9, cornellBox.getMeshes().size());
 	}
 
 }

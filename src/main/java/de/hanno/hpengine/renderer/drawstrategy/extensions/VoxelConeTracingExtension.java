@@ -3,7 +3,7 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import com.carrotsearch.hppc.ObjectLongHashMap;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.config.Config;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
@@ -276,7 +276,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GraphicsContext.getInstance().disable(CULL_FACE);
             GL11.glColorMask(false, false, false, false);
 
-            for (PerEntityInfo entity : renderState.perEntityInfos()) {
+            for (PerMeshInfo entity : renderState.perEntityInfos()) {
                 boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
                 if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                     continue;

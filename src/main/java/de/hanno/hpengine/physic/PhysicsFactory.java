@@ -77,7 +77,7 @@ public class PhysicsFactory {
 		return addBallPhysicsComponent(entity, 10);
 	}
 	public PhysicsComponent addBoxPhysicsComponent(Entity owner, float mass) {
-		Vector4f[] minMax = owner.getMinMaxWorld();
+		org.lwjgl.util.vector.Vector3f[] minMax = owner.getMinMaxWorld();
 		Vector3f halfExtends = new Vector3f(minMax[1].x - minMax[0].x, minMax[1].y - minMax[0].y, minMax[1].z - minMax[0].z);
 		halfExtends.scale(0.5f);
 		return addBoxPhysicsComponent(owner, halfExtends, mass);

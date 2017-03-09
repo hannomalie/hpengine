@@ -47,4 +47,9 @@ struct Entity {
     double materialIndex;
     double isStatic;
     double entityIndex;
+
+    double entityIndexWithoutMeshIndex; //TODO: Rename this properly
+    double meshIndex;
+    double xxx;
+    double yyy;
 };

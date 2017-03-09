@@ -5,7 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.Transformable;
@@ -290,7 +290,7 @@ public class EnvironmentSampler extends Camera {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
-		for (PerEntityInfo e : renderState.perEntityInfos()) {
+		for (PerMeshInfo e : renderState.perEntityInfos()) {
 			if (!Entity.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
 				continue;
 			}
@@ -332,9 +332,9 @@ public class EnvironmentSampler extends Camera {
         for (Entity entity : entities) {
             if(entity.getComponents().containsKey("ModelComponent")) {
                 ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-                PerEntityInfo perEntityInfo =
-                        new PerEntityInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
-                DrawStrategy.draw(extract, perEntityInfo);
+                PerMeshInfo perMeshInfo =
+                        new PerMeshInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+                DrawStrategy.draw(extract, perMeshInfo);
             }
         }
 		GPUProfiler.end();

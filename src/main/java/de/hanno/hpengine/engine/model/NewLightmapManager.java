@@ -21,7 +21,7 @@ public class NewLightmapManager {
     static {
         EventBus.getInstance().register(instance);
     }
-    private List<WeakReference<Model>> models = new ArrayList<>();
+    private List<WeakReference<Mesh>> models = new ArrayList<>();
     public static int MAX_WIDTH = 0;
     public static int MAX_HEIGHT = 0;
 
@@ -29,23 +29,23 @@ public class NewLightmapManager {
         return instance;
     }
 
-    public void registerForLightmapCoordsUpdate(Model model) {
-        this.models.add(new WeakReference(model));
+    public void registerForLightmapCoordsUpdate(Mesh mesh) {
+        this.models.add(new WeakReference(mesh));
         updateLightmapCoords();
     }
 
     public void updateLightmapCoords() {
-        List<Model.CompiledFace> faces = new ArrayList<>(1000);
-        for(WeakReference<Model> currentModelRef : models) {
-            Model currentModel = currentModelRef.get();
-            if(currentModel != null) {
-                faces.addAll(currentModel.getFaces());
+        List<Mesh.CompiledFace> faces = new ArrayList<>(1000);
+        for(WeakReference<Mesh> currentModelRef : models) {
+            Mesh currentMesh = currentModelRef.get();
+            if(currentMesh != null) {
+                faces.addAll(currentMesh.getFaces());
             } else {
                 models.remove(currentModelRef);
             }
         }
 
-        List<Model.CompiledFace> sortedByLength = faces.stream().sorted((Model.CompiledFace faceOne, Model.CompiledFace faceTwo) -> {
+        List<Mesh.CompiledFace> sortedByLength = faces.stream().sorted((Mesh.CompiledFace faceOne, Mesh.CompiledFace faceTwo) -> {
             Vector2f aOne = new Vector2f(faceOne.vertices[0].initialLightmapCoords.x, faceOne.vertices[0].initialLightmapCoords.y);
             Vector2f cOne = new Vector2f(faceOne.vertices[2].initialLightmapCoords.x, faceOne.vertices[2].initialLightmapCoords.y);
             float heightOne = Vector2f.sub(aOne, cOne, null).length();
@@ -67,7 +67,7 @@ public class NewLightmapManager {
         float lastRowsMaxHeight = 0;
 
         for(int i = 0; i < sortedByLength.size(); i++) {
-            Model.CompiledFace currentFace = sortedByLength.get(i);
+            Mesh.CompiledFace currentFace = sortedByLength.get(i);
             Vector2f a = new Vector2f(currentFace.vertices[0].initialLightmapCoords.x, currentFace.vertices[0].initialLightmapCoords.y);
             Vector2f b = new Vector2f(currentFace.vertices[1].initialLightmapCoords.x, currentFace.vertices[1].initialLightmapCoords.y);
             Vector2f c = new Vector2f(currentFace.vertices[2].initialLightmapCoords.x, currentFace.vertices[2].initialLightmapCoords.y);
@@ -110,7 +110,7 @@ public class NewLightmapManager {
         frame.init(copy).show();
     }
 
-    public void setTheNewValues(int currentWidth, int currentHeight, List<Vector3f> copy, Model.CompiledFace currentFace, float width, float height) {
+    public void setTheNewValues(int currentWidth, int currentHeight, List<Vector3f> copy, Mesh.CompiledFace currentFace, float width, float height) {
         currentFace.vertices[0].lightmapCoords.x = currentWidth;
         currentFace.vertices[0].lightmapCoords.y = currentHeight;
         currentFace.vertices[1].lightmapCoords.x = currentWidth+width;

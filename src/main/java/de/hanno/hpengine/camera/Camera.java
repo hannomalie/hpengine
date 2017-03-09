@@ -2,6 +2,7 @@ package de.hanno.hpengine.camera;
 
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -84,8 +85,8 @@ public class Camera extends Entity {
         storeMatrices();
     }
 
-    public Camera(Vector3f position, String name, Model model, String material) {
-		super(position, name, model, material);
+    public Camera(Vector3f position, String name, Model model) {
+		super(position, name, model);
         saveViewMatrixAsLastViewMatrix();
         transform();
         storeMatrices();

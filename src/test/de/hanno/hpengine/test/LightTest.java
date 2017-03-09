@@ -22,7 +22,7 @@ public class LightTest extends TestWithRenderer {
 		Assert.assertEquals(new Vector3f(50,0,0), tubeLight.getEnd());
 		Assert.assertEquals(new Vector3f(200,100,100), tubeLight.getScale());
 		
-		Vector4f[] minMaxWorld = tubeLight.getMinMaxWorld();
+		Vector3f[] minMaxWorld = tubeLight.getMinMaxWorld();
 		Assert.assertEquals(new Vector4f(-100,-50,-50,0), minMaxWorld[0]);
 		Assert.assertEquals(new Vector4f(100,50,50,0), minMaxWorld[1]);
 	}

@@ -15,6 +15,7 @@ import de.hanno.hpengine.event.SceneInitEvent;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 import de.hanno.hpengine.renderer.Renderer;
@@ -185,9 +186,9 @@ public class Scene implements LifeCycle, Serializable {
         max.set(absoluteMinimum);
 
         for(Entity entity : entities) {
-            Vector4f[] currentMinMax = entity.getMinMaxWorld();
-            Vector4f currentMin = currentMinMax[0];
-            Vector4f currentMax = currentMinMax[1];
+            Vector3f[] currentMinMax = entity.getMinMaxWorld();
+            Vector3f currentMin = currentMinMax[0];
+            Vector3f currentMax = currentMinMax[1];
             min.x = currentMin.x < min.x ? currentMin.x : min.x;
             min.y = currentMin.y < min.y ? currentMin.y : min.y;
             min.z = currentMin.z < min.z ? currentMin.z : min.z;
@@ -334,7 +335,7 @@ public class Scene implements LifeCycle, Serializable {
                 entitiesWithModelComponent.put(current, i);
                 modelComponents.add(current.getComponent(ModelComponent.class, "ModelComponent"));
 				cachedEntityIndices.add(i, index);
-				index += current.getInstanceCount();
+				index += current.getInstanceCount() * current.getComponent(ModelComponent.class).getMeshes().size();
 				i++;
 			}
 		}

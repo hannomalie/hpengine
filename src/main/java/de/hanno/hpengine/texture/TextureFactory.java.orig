@@ -98,7 +98,7 @@ public class TextureFactory {
     }
 
     public void loadDefaultTexture() {
-        defaultTexture = getTexture("hp\\assets\\models\\textures\\gi_flag.png", true);
+        defaultTexture = getTexture("hp\\assets\\meshes\\textures\\gi_flag.png", true);
     }
 
     private void loadAllAvailableTextures() {

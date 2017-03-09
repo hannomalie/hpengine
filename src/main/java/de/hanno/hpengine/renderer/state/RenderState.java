@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer.state;
 
 import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -48,7 +48,6 @@ public class RenderState {
         this.entitiesState.vertexBuffer = vertexBuffer;
         this.entitiesState.indexBuffer = indexBuffer;
         this.camera.init(camera);
-
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
         this.directionalLightState.directionalLightViewMatrixAsBuffer.rewind();
         this.directionalLightState.directionalLightProjectionMatrixAsBuffer = directionalLightProjectionMatrixAsBuffer;
@@ -65,14 +64,14 @@ public class RenderState {
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
-        this.entitiesState.perEntityInfos.clear();
+        this.entitiesState.perMeshInfos.clear();
         this.latestDrawResult = latestDrawResult;
         this.cycle = cycle;
         return this;
     }
 
-    public List<PerEntityInfo> perEntityInfos() {
-        return entitiesState.perEntityInfos;
+    public List<PerMeshInfo> perEntityInfos() {
+        return entitiesState.perMeshInfos;
     }
 
     public IndexBuffer getIndexBuffer() {
@@ -119,8 +118,8 @@ public class RenderState {
         return entitiesState.materialBuffer;
     }
 
-    public void add(PerEntityInfo info) {
-        entitiesState.perEntityInfos.add(info);
+    public void add(PerMeshInfo info) {
+        entitiesState.perMeshInfos.add(info);
     }
 
     public long getCycle() {

@@ -25,7 +25,6 @@ import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
-import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import org.lwjgl.BufferUtils;
@@ -77,7 +76,7 @@ public class DeferredRenderer implements Renderer {
 
 	private OBJLoader objLoader;
 
-	private Model sphereModel;
+	private Model sphereMesh;
 
 	private FloatBuffer identityMatrix44Buffer;
 
@@ -130,10 +129,10 @@ public class DeferredRenderer implements Renderer {
             EnvironmentProbeFactory.init();
             gBuffer.init();
 
-            sphereModel = null;
+            sphereMesh = null;
             try {
-                sphereModel = objLoader.loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
-                sphereModel.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
+                sphereMesh = objLoader.loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+                sphereMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -411,7 +410,7 @@ public class DeferredRenderer implements Renderer {
 	private List<Vector3f> linePoints = new ArrayList<>();
 
 	public Model getSphere() {
-		return sphereModel;
+		return sphereMesh;
 	}
 
 

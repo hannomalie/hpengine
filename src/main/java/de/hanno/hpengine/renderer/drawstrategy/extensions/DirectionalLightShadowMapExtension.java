@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.state.RenderState;
 import org.lwjgl.opengl.GL11;
@@ -62,7 +62,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         GraphicsContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
-        List<PerEntityInfo> visibles = renderState.perEntityInfos();
+        List<PerMeshInfo> visibles = renderState.perEntityInfos();
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
@@ -72,7 +72,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         directionalShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.getDirectionalLightProjectionMatrixAsBuffer());
 
         for(int i = 0; i < visibles.size(); i++) {
-            PerEntityInfo e = visibles.get(i);
+            PerMeshInfo e = visibles.get(i);
 //            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
 //                OpenGLContext.getInstance().disable(CULL_FACE);
 //            } else {

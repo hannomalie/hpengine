@@ -9,7 +9,6 @@ import org.lwjgl.util.vector.Vector3f;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.List;
 
 public class EntityFactory {
     private static EntityFactory instance;
@@ -23,47 +22,15 @@ public class EntityFactory {
 		return entity;
 	}
 
-	public Entity getEntity(String name, List<Model> models) {
-		if(models.size() > 1) {
-            long start = System.currentTimeMillis();
-			Entity entity = new Entity();
-			entity.setName(name);
-			for (Model model : models) {
-				Entity child = getEntity(model);
-				child.setParent(entity);
-			}
-			entity.init();
-			return entity;
-		} else {
-			return getEntity(new Vector3f(), name, models.get(0), models.get(0).getMaterial());
-		}
+	public Entity getEntity(String name, Model model) {
+		return getEntity(new Vector3f(), name, model);
 	}
 
-	public Entity getEntity(Model model) {
-		return getEntity(model, model.getMaterial());
-	}
-
-	public Entity getEntity(Vector3f position, Model model) {
-		return getEntity(position, model.getName(), model, model.getMaterial());
-	}
-
-	public Entity getEntity(Model model, Material material) {
-		return getEntity(new Vector3f(0, 0, 0), model.getName(), model, material);
-	}
-	public Entity getEntity(Vector3f position, String name, Model model, Material material) {
+	public Entity getEntity(Vector3f position, String name, Model model) {
 		Entity entity = null;
-//		try {
-//			entity = read(name);
-//		} catch (IOException e) {
-//			Logger.getGlobal().info(String.format("File not found for %s", name));
-
-			entity = new Entity(position, name, model, material.getName());
-			entity.setPosition(position);
-			entity.setName(name);
-//		} catch (ClassNotFoundException e) {
-//			e.printStackTrace();
-//		}
-
+		entity = new Entity(position, name, model);
+		entity.setPosition(position);
+		entity.setName(name);
 		entity.init();
 		return entity;
 	}

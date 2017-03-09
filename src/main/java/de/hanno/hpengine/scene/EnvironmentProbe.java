@@ -118,11 +118,11 @@ public class EnvironmentProbe extends Entity {
 	public void setSelected(boolean selected) {
 	}
 
-	public boolean contains(Vector4f min, Vector4f max) {
+	public boolean contains(Vector3f min, Vector3f max) {
 		return box.contains(min) && box.contains(max);
 	}
 
-	public boolean contains(Vector4f[] minMaxWorld) {
+	public boolean contains(Vector3f[] minMaxWorld) {
 		return contains(minMaxWorld[0], minMaxWorld[1]);
 	}
 

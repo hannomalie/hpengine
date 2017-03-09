@@ -5,6 +5,7 @@ import java.io.Serializable;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.Bufferable;
@@ -23,8 +24,8 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	public static float DEFAULT_RANGE = 1f;
 	private Vector4f color;
 	
-	protected PointLight(MaterialFactory materialFactory, Vector3f position, Model model, Vector4f colorIntensity, float range, String materialName) {
-		super(position, generateName(), model, materialName);
+	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
+		super(position, generateName(), model);
 		setColor(colorIntensity);
 		setScale(range);
 		init();

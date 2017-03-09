@@ -2,10 +2,7 @@ package de.hanno.hpengine.renderer.drawstrategy;
 
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.PixelBufferObject;
 import de.hanno.hpengine.renderer.material.Material;
@@ -100,11 +97,11 @@ public class GBuffer {
 	public void init() {
 		probeBox = null;
 		try {
-			probeBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/probebox.obj")).get(0);
+			probeBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/probebox.obj"));
 			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);
-            probeBoxEntity = EntityFactory.getInstance().getEntity(probeBox, probeBoxMaterial);
+            probeBoxEntity = EntityFactory.getInstance().getEntity("ProbeBox", probeBox);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

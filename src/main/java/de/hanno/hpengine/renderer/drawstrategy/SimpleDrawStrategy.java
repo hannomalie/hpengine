@@ -4,7 +4,7 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.PerEntityInfo;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Pipeline;
@@ -177,7 +177,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             if(Config.getInstance().isIndirectDrawing()) {
                 pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
             } else {
-                for(PerEntityInfo info : renderState.perEntityInfos()) {
+                for(PerMeshInfo info : renderState.perEntityInfos()) {
                     if (!info.isVisibleForCamera()) {
                         continue;
                     }

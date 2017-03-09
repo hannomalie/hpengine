@@ -32,10 +32,10 @@ public interface Transformable {
     default Matrix4f getViewMatrix() { return getTransform().getViewMatrix(); };
     default void setViewMatrix(Matrix4f viewMatrix) {};
 
-    default Vector4f[] getMinMaxWorld() {
+    default Vector3f[] getMinMaxWorld() {
         Vector3f position = getPosition();
-        Vector4f temp = new Vector4f(position.x, position.y, position.z, 1);
-        return new Vector4f[] {temp, temp};
+        Vector3f temp = new Vector3f(position.x, position.y, position.z);
+        return new Vector3f[] {temp, temp};
     };
 
     default Vector3f getCenter() { return getPosition(); }

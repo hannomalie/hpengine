@@ -411,7 +411,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		public Node insert(Entity entity) {
 //			LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("Inserting %s ...", entity));
 
-			Vector4f[] minMaxWorld = entity.getMinMaxWorld();
+			Vector3f[] minMaxWorld = entity.getMinMaxWorld();
 			
 			if (isLeaf()) {
 				if(contains(minMaxWorld)) {
@@ -524,9 +524,9 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		}
 
 
-		private boolean contains(Vector4f[] minMaxWorld) {
-			Vector4f min = minMaxWorld[0];
-			Vector4f max = minMaxWorld[1];
+		private boolean contains(Vector3f[] minMaxWorld) {
+			Vector3f min = minMaxWorld[0];
+			Vector3f max = minMaxWorld[1];
 			
 			if (looseAabb.contains(min) && looseAabb.contains(max)) {
 //				LOGGER.de.hanno.hpengine.log(Level.INFO, String.format("(%.2f, %.2f, %.2f) is in %s", min.x, min.y, min.z, aabb));

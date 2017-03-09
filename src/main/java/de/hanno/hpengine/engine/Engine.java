@@ -9,14 +9,10 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
-import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
@@ -304,25 +300,28 @@ public class Engine {
         List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
 
         for (ModelComponent modelComponent : modelComponents) {
+
             Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
             Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
             float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
-            modelComponent.getMaterial().setTexturesUsed();
 
             boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
             int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
 
-            PerEntityInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(modelComponent);
-            if(info == null) {
-                info = new PerEntityInfo(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
-                renderState.getCurrentWriteState().entitiesState.cash.put(modelComponent, info);
-            } else {
-                info.init(firstpassDefaultProgram, entityIndexOf, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
+            for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
+                Mesh mesh = modelComponent.getMeshes().get(i);
+                if(mesh.getMaterial() != null) mesh.getMaterial().setTexturesUsed();
+                PerMeshInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(mesh);
+                if(info == null) {
+                    info = new PerMeshInfo();
+                    renderState.getCurrentWriteState().entitiesState.cash.put(mesh, info);
+                }
+                info.init(firstpassDefaultProgram, entityIndexOf+i*entity.getInstanceCount(), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), entity.getLastMovedInCycle());
+                renderState.getCurrentWriteState().add(info);
             }
-            renderState.getCurrentWriteState().add(info);
         }
     }
 
@@ -466,12 +465,12 @@ public class Engine {
         GraphicsContext.exitOnGLError("loadTestScene");
 
         try {
-//            Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+//            Mesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
 //            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")).get(0);
+            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -490,7 +489,7 @@ public class Engine {
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere, mat);
+                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
                             PointLight pointLight = LightFactory.getInstance().getPointLight(10);
                             pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);
@@ -512,8 +511,8 @@ public class Engine {
             }
 
 //			StopWatch.getInstance().start("Load Sponza");
-//			List<Model> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
-//			for (Model model : sponza) {
+//			List<Mesh> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
+//			for (Mesh model : sponza) {
 ////				model.setMaterial(mirror);
 ////				if(model.getMaterial().getName().contains("fabric")) {
 ////					model.setMaterial(mirror);
@@ -524,8 +523,8 @@ public class Engine {
 //				entity.setScale(scale);
 //				entities.add(entity);
 //			}
-//			List<Model> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
-//			for (Model model : skyBox) {
+//			List<Mesh> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
+//			for (Mesh model : skyBox) {
 //				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 //				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
 //				entity.setScale(scale);

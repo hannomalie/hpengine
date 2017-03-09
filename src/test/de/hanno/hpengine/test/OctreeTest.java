@@ -75,10 +75,10 @@ public class OctreeTest extends TestWithEngine {
 			@Override public String getName() { return "testName"; }
 			@Override public void destroy() { }
 			@Override
-			public Vector4f[] getMinMaxWorld() {
-				return new Vector4f[] {
-						new Vector4f(-10, -10, -10, 0),
-						new Vector4f(10, 10, 10, 0)};
+			public Vector3f[] getMinMaxWorld() {
+				return new Vector3f[] {
+						new Vector3f(-10, -10, -10),
+						new Vector3f(10, 10, 10)};
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
@@ -108,17 +108,17 @@ public class OctreeTest extends TestWithEngine {
 			@Override public Vector3f getPosition() { return new Vector3f(-3, -3, -3); }
 			@Override public String getName() { return "entityBottomLeftBack"; }
 			@Override public void destroy() { }
-			@Override public Vector4f[] getMinMaxWorld() {
-						return new Vector4f[] {
-								new Vector4f(-5, -5, -5, 0),
-								new Vector4f(-1, -1, -1, 0)};
+			@Override public Vector3f[] getMinMaxWorld() {
+						return new Vector3f[] {
+								new Vector3f(-5, -5, -5),
+								new Vector3f(-1, -1, -1)};
 			}
 
 			@Override
 			public boolean isInFrustum(Camera camera) {
-				Vector4f[] minMaxWorld = getMinMaxWorld();
-				Vector4f minWorld = minMaxWorld[0];
-				Vector4f maxWorld = minMaxWorld[1];
+				Vector3f[] minMaxWorld = getMinMaxWorld();
+				Vector3f minWorld = minMaxWorld[0];
+				Vector3f maxWorld = minMaxWorld[1];
 				
 				Vector3f centerWorld = new Vector3f();
 				centerWorld.x = (maxWorld.x + minWorld.x)/2;
@@ -149,17 +149,17 @@ public class OctreeTest extends TestWithEngine {
 			@Override public Vector3f getPosition() { return new Vector3f(3, 3, 3); }
 			@Override public String getName() { return "entityTopRightFront"; }
 			@Override public void destroy() { }
-			@Override public Vector4f[] getMinMaxWorld() {
-						return new Vector4f[] {
-								new Vector4f(1, 1, 1, 0),
-								new Vector4f(5, 5, 5, 0)};
+			@Override public Vector3f[] getMinMaxWorld() {
+						return new Vector3f[] {
+								new Vector3f(1, 1, 1),
+								new Vector3f(5, 5, 5)};
 			}
 
 			@Override
 			public boolean isInFrustum(Camera camera) {
-				Vector4f[] minMaxWorld = getMinMaxWorld();
-				Vector4f minWorld = minMaxWorld[0];
-				Vector4f maxWorld = minMaxWorld[1];
+				Vector3f[] minMaxWorld = getMinMaxWorld();
+				Vector3f minWorld = minMaxWorld[0];
+				Vector3f maxWorld = minMaxWorld[1];
 				
 				Vector3f centerWorld = new Vector3f();
 				centerWorld.x = (maxWorld.x + minWorld.x)/2;
@@ -247,9 +247,9 @@ public class OctreeTest extends TestWithEngine {
 			final int rY2 = rY1 + rAddY;
 			final int rZ2 = rZ1 + rAddZ;
 			
-			final Vector4f[] minMax = new Vector4f[] {
-					new Vector4f(Math.min(rX1, rX2), Math.min(rY1, rY2), Math.min(rZ1, rZ2), 0),
-					new Vector4f(Math.max(rX1, rX2), Math.max(rY1, rY2), Math.max(rZ1, rZ2), 0)};
+			final Vector3f[] minMax = new Vector3f[] {
+					new Vector3f(Math.min(rX1, rX2), Math.min(rY1, rY2), Math.min(rZ1, rZ2)),
+					new Vector3f(Math.max(rX1, rX2), Math.max(rY1, rY2), Math.max(rZ1, rZ2))};
 			
 			final Vector3f position = new Vector3f((minMax[0].x + minMax[1].x)/2,
 											 (minMax[0].x + minMax[1].y)/2,
@@ -260,7 +260,7 @@ public class OctreeTest extends TestWithEngine {
 				@Override public Vector3f getPosition() { return position; }
 				@Override public String getName() { return null; }
 				@Override public void destroy() { }
-				@Override public Vector4f[] getMinMaxWorld() {
+				@Override public Vector3f[] getMinMaxWorld() {
 							return minMax;
 				}
 				@Override public boolean isSelected() { return false; }

@@ -15,7 +15,6 @@ import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -68,13 +67,13 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	protected Entity() { }
 
-	protected Entity(Model model, String materialName) {
-		this(new Vector3f(0, 0, 0), model.getName(), model, materialName);
+	protected Entity(String name, Model model) {
+		this(new Vector3f(0, 0, 0), name, model);
 	}
 
-	protected Entity(Vector3f position, String name, Model model, String materialName) {
+	protected Entity(Vector3f position, String name, Model model) {
 		transform.init();
-		addComponent(new ModelComponent(model, materialName));
+		addComponent(new ModelComponent(model));
 		this.name = name;
 		transform.setPosition(position);
 	}
@@ -246,9 +245,9 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		if(centerWorld != null) {
 			return centerWorld;
 		}
-		Vector4f[] minMaxWorld = getMinMaxWorld();
-		Vector4f minWorld = minMaxWorld[0];
-		Vector4f maxWorld = minMaxWorld[1];
+		Vector3f[] minMaxWorld = getMinMaxWorld();
+		Vector3f minWorld = minMaxWorld[0];
+		Vector3f maxWorld = minMaxWorld[1];
 
 		centerWorld = new Vector3f();
 		centerWorld.x = minWorld.x + (maxWorld.x - minWorld.x)/2;
@@ -264,11 +263,10 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		this.visible = visible;
 	}
 
-    private transient Vector4f[] minMax;
-    private transient Vector3f[] minMaxVector3;
+    private transient Vector3f[] minMax;
     private transient float boundingSphereRadius = -1;
     private transient Matrix4f lastUsedTransformationMatrix;
-	public Vector4f[] getMinMaxWorld() {
+	public Vector3f[] getMinMaxWorld() {
         if(!getTransform().isDirty() && minMax != null) {
             if(lastUsedTransformationMatrix != null && Util.equals(getTransform().getTransformation(), lastUsedTransformationMatrix)) {
                 return minMax;
@@ -280,26 +278,15 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			minMax = modelComponent.getMinMax(getModelMatrix());
             modelComponent.getBoundingSphereRadius();
 		} else {
-			minMax = new Vector4f[2];
+			minMax = new Vector3f[2];
 			float amount = 5;
-			Vector4f vectorMin = new Vector4f(getPosition().x-amount, getPosition().y-amount, getPosition().z-amount, 1);
-			Vector4f vectorMax = new Vector4f(getPosition().x+amount, getPosition().y+amount, getPosition().z+amount, 1);
+			Vector3f vectorMin = new Vector3f(getPosition().x-amount, getPosition().y-amount, getPosition().z-amount);
+			Vector3f vectorMax = new Vector3f(getPosition().x+amount, getPosition().y+amount, getPosition().z);
 			minMax[0] = vectorMin;
 			minMax[1] = vectorMax;
-            boundingSphereRadius = Model.getBoundingSphereRadius(vectorMin, vectorMax);
+            boundingSphereRadius = Mesh.getBoundingSphereRadius(vectorMin, vectorMax);
 		}
-        minMaxVector3 = new Vector3f[2];
-        minMaxVector3[0] = new Vector3f(minMax[0].x, minMax[0].y, minMax[0].z);
-        minMaxVector3[1] = new Vector3f(minMax[1].x, minMax[1].y, minMax[1].z);
         lastUsedTransformationMatrix = new Matrix4f(getTransform().getTransformation());
-
-//		if(hasChildren()) {
-//			List<Vector4f[]> minMaxFromChildren = new ArrayList<>();
-//			for (Entity child : children) {
-//				minMaxFromChildren.add(child.getMinMaxWorld());
-//			}
-//			Util.getOverallMinMax(minMax, minMaxFromChildren);
-//		}
 
 		return minMax;
 	}
@@ -311,7 +298,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	public Vector3f[] getMinMaxWorldVec3() {
         getMinMaxWorld();
-        return minMaxVector3;
+        return minMax;
 	}
 
 	public boolean isSelected() {
@@ -439,7 +426,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
     @Override
     public int getElementsPerObject() {
-        return getInstanceCount() * (16+4);
+        return getInstanceCount() * (hasComponent(ModelComponent.class) ? getComponent(ModelComponent.class).getMeshes().size() : 0) * (20+4);
     }
 
 
@@ -449,25 +436,29 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         double[] doubles = new double[getElementsPerObject()];
 
         int index = 0;
-        {
-            Matrix4f mm = getModelMatrix();
-            index = getValues(doubles, index, mm);
-        }
+        int meshIndex = 0;
+        for(Mesh mesh : getComponent(ModelComponent.class).getMeshes()) {
+			{
+				Matrix4f mm = getModelMatrix();
+				index = getValues(doubles, index, mm, mesh, meshIndex);
+			}
 
-        for(Transform instanceTransform : instances) {
-            Matrix4f instanceMatrix = instanceTransform.getTransformation();
-            index = getValues(doubles, index, instanceMatrix);
-        }
-        if(hasParent()) {
-            for(Transform instanceTransform : getParent().getInstances()) {
-                Matrix4f instanceMatrix = instanceTransform.getTransformation();
-                index = getValues(doubles, index, instanceMatrix);
-            }
-        }
+			for(Transform instanceTransform : instances) {
+				Matrix4f instanceMatrix = instanceTransform.getTransformation();
+				index = getValues(doubles, index, instanceMatrix, mesh, meshIndex);
+			}
+			if(hasParent()) {
+				for(Transform instanceTransform : getParent().getInstances()) {
+					Matrix4f instanceMatrix = instanceTransform.getTransformation();
+					index = getValues(doubles, index, instanceMatrix, mesh, meshIndex);
+				}
+			}
+			meshIndex++;
+		}
         return doubles;
     }
 
-    private int getValues(double[] doubles, int index, Matrix4f mm) {
+    private int getValues(double[] doubles, int index, Matrix4f mm, Mesh mesh, int meshIndex) {
         doubles[index++] = mm.m00;
         doubles[index++] = mm.m01;
         doubles[index++] = mm.m02;
@@ -486,10 +477,15 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         doubles[index++] = mm.m33;
         doubles[index++] = isSelected() ? 1d : 0d;
         double materialIndex = getComponents().containsKey("ModelComponent") ?
-                MaterialFactory.getInstance().indexOf(ModelComponent.class.cast(getComponents().get("ModelComponent")).getMaterial()) : 0;
+                MaterialFactory.getInstance().indexOf(mesh.getMaterial()) : 0;
         doubles[index++] = materialIndex;
         doubles[index++] = getUpdate().equals(Update.STATIC) ? 1 : 0;
-        doubles[index++] = Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
+		int entitiyIndex = Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
+		doubles[index++] = entitiyIndex + meshIndex;
+		doubles[index++] = entitiyIndex;
+		doubles[index++] = meshIndex;
+		doubles[index++] = -1;
+		doubles[index++] = -1;
         return index;
     }
 

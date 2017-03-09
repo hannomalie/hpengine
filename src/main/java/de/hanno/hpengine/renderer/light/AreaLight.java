@@ -4,6 +4,7 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.camera.Frustum;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -21,7 +22,7 @@ public class AreaLight extends Camera {
 	transient private RenderTarget renderTarget;
 
 	protected AreaLight(Vector3f position, Model model, Vector3f color, Vector3f scale) {
-		super(position, generateName(), model, model.getMaterial().getName());
+		super(position, generateName(), model);
         projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);
@@ -30,7 +31,7 @@ public class AreaLight extends Camera {
         setFar(5000f);
         setFov(180f);
         setRatio(1);
-        Entity plane = EntityFactory.getInstance().getEntity(model);
+        Entity plane = EntityFactory.getInstance().getEntity(generateName() ,model);
         plane.setPosition(new Vector3f(0, 0, -getNear()));
         plane.setParent(this);
 		init();

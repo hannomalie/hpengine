@@ -27,10 +27,10 @@ public class ProbeTest extends TestWithRenderer {
 			@Override public String getName() { return null; }
 			
 			@Override
-			public Vector4f[] getMinMaxWorld() {
-				return new Vector4f[] {
-						new Vector4f(-1, -1, -1, 0),
-						new Vector4f(1, 1, 1, 0)};
+			public Vector3f[] getMinMaxWorld() {
+				return new Vector3f[] {
+						new Vector3f(-1, -1, -1),
+						new Vector3f(1, 1, 1)};
 			}
 		};
 

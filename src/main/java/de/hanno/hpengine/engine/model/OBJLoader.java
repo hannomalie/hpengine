@@ -107,24 +107,19 @@ public class OBJLoader {
         return face;
     }
 
-    public List<Model> loadTexturedModel(File f) throws Exception {
+    public Model loadTexturedModel(File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
-        List<Model> models = new ArrayList<>();
-        Model model = null;
+        Model resultModel = new Model();
 
-        ArrayList<Vector3f> vertices = new ArrayList<>();
-        ArrayList<Vector2f> texCoords = new ArrayList<>();
-        ArrayList<Vector3f> normals = new ArrayList<>();
+        Mesh currentMesh = null;
+        Material currentMaterial = null;
+
+        int usemtlCounter = 0;
 
         String line;
-        Material currentMaterial = null;
         while ((line = reader.readLine()) != null) {
 
             String[] tokens = line.split(" ");
-
-//            if (line.startsWith("#")) {
-//                continue;
-//            }
 
             String firstToken = "";
             if(tokens != null && tokens.length > 0) {
@@ -139,50 +134,43 @@ public class OBJLoader {
                     LOGGER.log(Level.INFO, "No material found!!!");
                     currentMaterial = MaterialFactory.getInstance().getDefaultMaterial();
                 }
-                {
-                    model.setMaterial(currentMaterial);
-                    for(Model candidate : models) {
-                        if(candidate.getMaterial() == null) { candidate.setMaterial(currentMaterial); }
-                    }
-                    model = newModelHelper(models, vertices, texCoords, normals, line, model.getName() + new Random().nextInt());
-//                    TODO: Fix this thing....test with cornellbox
-                    model.setMaterial(currentMaterial);
-                }
+                usemtlCounter++;
             } else if ("o".equals(firstToken) || "g".equals(firstToken) || line.startsWith("# object ")) {
-                model = newModelHelper(models, vertices, texCoords, normals, line, line.replaceAll("o ", "").replaceAll("# object ", "").replaceAll("g ", ""));
+                currentMesh = newMeshHelper(resultModel.getVertices(), resultModel.getTexCoords(), resultModel.getNormals(), line, line.replaceAll("o ", "").replaceAll("# object ", "").replaceAll("g ", ""));
+                resultModel.addMesh(currentMesh);
+                usemtlCounter = 0;
             } else if ("v".equals(firstToken)) {
                 setCurrentState(State.READING_VERTEX);
-                vertices.add(parseVertex(line));
+                resultModel.addVertex(parseVertex(line));
             } else if ("vt".equals(firstToken)) {
                 setCurrentState(State.READING_UV);
-                texCoords.add(parseTexCoords(line));
+                resultModel.addTexCoords(parseTexCoords(line));
             } else if ("vn".equals(firstToken)) {
                 setCurrentState(State.READING_NORMAL);
-                normals.add(parseVertex(line));
+                resultModel.addNormal(parseVertex(line));
             } else if ("f".equals(firstToken)) {
                 setCurrentState(State.READING_FACE);
-                model.getIndexedFaces().add(parseFace(line));
+                if(usemtlCounter > 1) {
+                    currentMesh = newMeshHelper(resultModel.getVertices(), resultModel.getTexCoords(), resultModel.getNormals(), line, currentMesh.getName() + new Random().nextInt());
+                    resultModel.addMesh(currentMesh);
+                    usemtlCounter = 0;
+                }
+                currentMesh.setMaterial(currentMaterial);
+                currentMesh.getIndexedFaces().add(parseFace(line));
             }
 
         }
         reader.close();
 
-        for (Model currentModel : models) {
-            currentModel.init();
-        }
-        return models;
+        resultModel.init();
+        return resultModel;
     }
 
-    private Model newModelHelper(List<Model> models,
-                                 ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
-                                 ArrayList<Vector3f> normals, String line, String name) {
-        Model model;
-        model = new Model(line, vertices, texCoords, normals);
-
-        models.add(model);
-//		parseName(line, model);
-        model.setName(name);
-        return model;
+    private Mesh newMeshHelper(ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
+                               ArrayList<Vector3f> normals, String line, String name) {
+        Mesh mesh = new Mesh(line, vertices, texCoords, normals);
+        mesh.setName(name);
+        return mesh;
     }
 
 
@@ -280,9 +268,9 @@ public class OBJLoader {
         currentMaterialInfo.maps.put(map, TextureFactory.getInstance().getTexture(path + name, map == MAP.DIFFUSE));
     }
 
-    private void parseName(String line, Model model) {
+    private void parseName(String line, Mesh mesh) {
         String name = line.replaceAll("o ", "");
-        model.setName(name);
+        mesh.setName(name);
     }
 
     private State getCurrentState() {

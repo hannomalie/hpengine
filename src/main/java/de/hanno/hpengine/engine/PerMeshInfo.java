@@ -4,15 +4,14 @@ import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.shader.Program;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
-public class PerEntityInfo {
+public class PerMeshInfo {
     private Program program;
     private boolean isVisible;
     private boolean isSelected;
     private boolean drawLines;
-    private Vector4f minWorld;
-    private Vector4f maxWorld;
+    private Vector3f minWorld;
+    private Vector3f maxWorld;
     private Vector3f cameraWorldPosition;
     private boolean isInReachForTextureStreaming;
     private boolean visibleForCamera;
@@ -23,11 +22,14 @@ public class PerEntityInfo {
     private Vector3f maxWorldVec3;
     private long lastMovedInCycle;
 
-    public PerEntityInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
+    public PerMeshInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
         init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex, lastMovedInCycle);
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector4f minWorld, Vector4f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
+    public PerMeshInfo() {
+    }
+
+    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -84,11 +86,11 @@ public class PerEntityInfo {
         return update;
     }
 
-    public Vector4f getMinWorld() {
+    public Vector3f getMinWorld() {
         return minWorld;
     }
 
-    public Vector4f getMaxWorld() {
+    public Vector3f getMaxWorld() {
         return maxWorld;
     }
 

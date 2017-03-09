@@ -12,21 +12,21 @@ import org.lwjgl.util.vector.Vector4f;
 import java.io.File;
 import java.util.List;
 
-public class ModelTest extends TestWithEngine {
+public class MeshTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
-        Model planeModel = plane.get(1);
-        Assert.assertEquals(4, planeModel.getFaces().size());
+        Model plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
+        Mesh planeMesh = plane.getMesh(0);
+        Assert.assertEquals(4, planeMesh.getFaces().size());
 
-        Assert.assertEquals(2, planeModel.getFaces().size());
-        Assert.assertEquals(6, planeModel.getIndexBufferValuesArray().length);
+        Assert.assertEquals(2, planeMesh.getFaces().size());
+        Assert.assertEquals(6, planeMesh.getIndexBufferValuesArray().length);
 
         int[] expectedIndexBufferValues = {0,1,2,3,0,2};
-        Assert.assertArrayEquals(expectedIndexBufferValues, planeModel.getIndexBufferValuesArray());
+        Assert.assertArrayEquals(expectedIndexBufferValues, planeMesh.getIndexBufferValuesArray());
 
-        Entity entity = EntityFactory.getInstance().getEntity(planeModel);
+        Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
 
         LodGenerator lodGenerator = new LodGenerator(modelComponent);
@@ -37,14 +37,14 @@ public class ModelTest extends TestWithEngine {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        List<Model> plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
-        Model planeModel = plane.get(0);
-        Assert.assertEquals(6, planeModel.getFaces().size());
+        Model plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        Mesh planeMesh = plane.getMesh(0);
+        Assert.assertEquals(6, planeMesh.getFaces().size());
 
-        Assert.assertEquals(4, planeModel.getFaces().size());
-        Assert.assertEquals(12, planeModel.getIndexBufferValuesArray().length);
+        Assert.assertEquals(4, planeMesh.getFaces().size());
+        Assert.assertEquals(12, planeMesh.getIndexBufferValuesArray().length);
 
-        Entity entity = EntityFactory.getInstance().getEntity(planeModel);
+        Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
         ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
 
         Assert.assertEquals(2, modelComponent.getLodLevels().size());
@@ -57,25 +57,25 @@ public class ModelTest extends TestWithEngine {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        List<Model> sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
-        Entity entity = EntityFactory.getInstance().getEntity(sphere.get(0));
+        Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        Entity entity = EntityFactory.getInstance().getEntity("sphere", sphere);
 		
 		entity.setPosition(new Vector3f(0, 0, 0));
 		
-		Vector4f[] minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector4f(-1f, -1f, -1f, 0), minMaxWorld[0]);
-		Assert.assertEquals(new Vector4f(1f, 1f, 1f, 0), minMaxWorld[1]);
+		Vector3f[] minMaxWorld = entity.getMinMaxWorld();
+		Assert.assertEquals(new Vector3f(-1f, -1f, -1f), minMaxWorld[0]);
+		Assert.assertEquals(new Vector3f(1f, 1f, 1f), minMaxWorld[1]);
 		
 
 		entity.setPosition(new Vector3f(1, 0, 0));
 		minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector4f(0, -1f, -1f, 0), minMaxWorld[0]);
-		Assert.assertEquals(new Vector4f(2f, 1f, 1f, 0), minMaxWorld[1]);
+		Assert.assertEquals(new Vector3f(0, -1f, -1f), minMaxWorld[0]);
+		Assert.assertEquals(new Vector3f(2f, 1f, 1f), minMaxWorld[1]);
 
 		entity.setScale(2);
 		minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector4f(-1f, -2f, -2f, 0), minMaxWorld[0]);
-		Assert.assertEquals(new Vector4f(3f, 2f, 2f, 0), minMaxWorld[1]);
+		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorld[0]);
+		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorld[1]);
 
 		Vector3f[] minMaxWorldVec3 = entity.getMinMaxWorldVec3();
 		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3[0]);
