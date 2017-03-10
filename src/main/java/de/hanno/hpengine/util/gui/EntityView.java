@@ -18,6 +18,7 @@ import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.renderer.GraphicsContext;
@@ -34,6 +35,7 @@ import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -61,38 +63,17 @@ public class EntityView extends WebPanel {
 
 	protected void init(Entity entity) {
 		this.entity = entity;
-		List<Component> panels = getPanels();
+        WebTabbedPane tabbedPane = addEntityPanel();
 
-		Component[] components = new Component[panels.size()];
-		panels.toArray(components);
+        addMeshesPanel(entity, tabbedPane);
+        addInstancesPanel(entity, tabbedPane);
 
-		GridPanel gridPanel = new GridPanel ( components.length, 1, components);
-		gridPanel.setLayout(new FlowLayout());
-		this.removeAll();
-		JScrollPane scrollPane = new JScrollPane(gridPanel);
-		scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+        addPhysicsPanel(entity, tabbedPane);
+		this.add(tabbedPane);
+		repaint();
+	}
 
-        WebTabbedPane tabbedPane = new WebTabbedPane();
-        tabbedPane.addTab("Entity", scrollPane);
-        List<Component> instancesPanels = new ArrayList<>();
-        for(Transform instanceTrafo : entity.getInstances()) {
-            instancesPanels.add(new TransformablePanel<>(instanceTrafo));
-        }
-        WebComponentPanel buttonPanel = new WebComponentPanel();
-        buttonPanel.setElementMargin(4);
-        WebButton addInstanceButton = new WebButton("Add Entity");
-        addInstanceButton.addActionListener(e -> {
-            entity.addInstance(new Transform());
-            Engine.getEventBus().post(new EntityAddedEvent());
-//            TODO: Make this possible
-//            init(entity);
-        });
-        buttonPanel.addElement(addInstanceButton);
-        instancesPanels.add(buttonPanel);
-        GridPanel instancesGridPanel = new GridPanel(instancesPanels.size(), 1, instancesPanels.toArray(new Component[0]));
-        JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
-        tabbedPane.addTab("Instances", instancesScrollPane);
-
+    private void addPhysicsPanel(final Entity entity, WebTabbedPane tabbedPane) {
         WebComponentPanel physicsPanel = new WebComponentPanel();
         if(entity.getComponentOption(PhysicsComponent.class).isPresent()) {
             WebButton removePhysicsComponent = new WebButton("Remove PhysicsComponent");
@@ -145,11 +126,68 @@ public class EntityView extends WebPanel {
         }
         GridPanel physicsGridPanel = new GridPanel(physicsPanel);
         tabbedPane.addTab("Physics", physicsGridPanel);
-		this.add(tabbedPane);
-		repaint();
-	}
+    }
 
-	protected List<Component> getPanels() {
+    private void addInstancesPanel(Entity entity, WebTabbedPane tabbedPane) {
+        List<Component> instancesPanels = new ArrayList<>();
+        for(Transform instanceTrafo : entity.getInstances()) {
+            instancesPanels.add(new TransformablePanel<>(instanceTrafo));
+        }
+        WebComponentPanel buttonPanel = new WebComponentPanel();
+        buttonPanel.setElementMargin(4);
+        WebButton addInstanceButton = new WebButton("Add Instance");
+        addInstanceButton.addActionListener(e -> {
+            entity.addInstance(new Transform());
+            Engine.getEventBus().post(new EntityAddedEvent());
+//            TODO: Make this possible
+//            init(entity);
+        });
+        buttonPanel.addElement(addInstanceButton);
+        instancesPanels.add(buttonPanel);
+        GridPanel instancesGridPanel = new GridPanel(instancesPanels.size(), 1, instancesPanels.toArray(new Component[0]));
+        JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
+        tabbedPane.addTab("Instances", instancesScrollPane);
+    }
+    private void addMeshesPanel(Entity entity, WebTabbedPane tabbedPane) {
+	    if(!entity.hasComponent(ModelComponent.class)) { return; }
+
+        List<Component> meshPanels = new ArrayList<>();
+        for(Mesh mesh : entity.getComponent(ModelComponent.class).getMeshes()) {
+            WebComponentPanel materialSelectionPanel = new WebComponentPanel();
+            materialSelectionPanel.setElementMargin(4);
+            WebLabel meshName = new WebLabel(mesh.getName());
+            materialSelectionPanel.addElement(meshName);
+            addMaterialSelect(materialSelectionPanel, e -> {
+                WebComboBox cb = (WebComboBox) e.getSource();
+                Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+                mesh.setMaterial(selectedMaterial);
+                Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+            }, mesh.getMaterial());
+            meshPanels.add(materialSelectionPanel);
+        }
+        GridPanel meshesGridPanel = new GridPanel(meshPanels.size(), 1, meshPanels.toArray(new Component[0]));
+        JScrollPane meshesPanel = new JScrollPane(meshesGridPanel);
+        tabbedPane.addTab("Meshes", meshesPanel);
+    }
+
+    private WebTabbedPane addEntityPanel() {
+        List<Component> panels = getPanels();
+
+        Component[] components = new Component[panels.size()];
+        panels.toArray(components);
+
+        GridPanel gridPanel = new GridPanel ( components.length, 1, components);
+        gridPanel.setLayout(new FlowLayout());
+        this.removeAll();
+        JScrollPane scrollPane = new JScrollPane(gridPanel);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(32);
+
+        WebTabbedPane tabbedPane = new WebTabbedPane();
+        tabbedPane.addTab("Entity", scrollPane);
+        return tabbedPane;
+    }
+
+    protected List<Component> getPanels() {
 		List<Component> panels = new ArrayList<>();
 		addAttributesPanel(panels);
 		return panels;
@@ -197,24 +235,17 @@ public class EntityView extends WebPanel {
         });
         webComponentPanel.addElement(removeEntityButton);
 
-        try {
-            WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
-            Material material = MaterialFactory.getInstance().getDefaultMaterial();
-            if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-                material = entity.getComponent(ModelComponent.class).getMaterial();
-            }
-            materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(material));
-            materialSelect.addActionListener(e -> {
-                WebComboBox cb = (WebComboBox) e.getSource();
-                Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
-                entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
-                Engine.getEventBus().post(new EntityChangedMaterialEvent(entity)); // TODO Create own de.hanno.hpengine.event type
-            });
-            webComponentPanel.addElement(materialSelect);
-
-        } catch (NullPointerException e) {
-            Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
+        Material material = MaterialFactory.getInstance().getDefaultMaterial();
+        if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+            material = entity.getComponent(ModelComponent.class).getMaterial();
         }
+
+        addMaterialSelect(webComponentPanel, e -> {
+            WebComboBox cb = (WebComboBox) e.getSource();
+            Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+            entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+            Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+        }, material);
 
         if(entity.getComponentOption(ModelComponent.class).isPresent()) {
             webComponentPanel.addElement(new WebCheckBox("Instanced") {{
@@ -262,7 +293,20 @@ public class EntityView extends WebPanel {
         return webComponentPanel;
 	}
 
-	protected void addNamePanel(WebComponentPanel webComponentPanel) {
+    private void addMaterialSelect(WebComponentPanel webComponentPanel, ActionListener actionListener, Material initialSelection) {
+        try {
+            WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
+
+            materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(initialSelection));
+            materialSelect.addActionListener(actionListener);
+            webComponentPanel.addElement(materialSelect);
+
+        } catch (NullPointerException e) {
+            Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
+        }
+    }
+
+    protected void addNamePanel(WebComponentPanel webComponentPanel) {
 		WebLabel labelName = new WebLabel("Name");
 		nameField = new WebFormattedTextField();
 		nameField.setValue(entity.getName());

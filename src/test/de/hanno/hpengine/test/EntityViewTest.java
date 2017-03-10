@@ -13,7 +13,7 @@ public class EntityViewTest extends TestWithEngine {
 
     @Test
     public void testEntityViewGui() throws Exception {
-        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
 
         JFrame frame = new JFrame();
@@ -22,7 +22,7 @@ public class EntityViewTest extends TestWithEngine {
 
         frame.setVisible(true);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        while(true) {Thread.sleep(10);}
+        while(true) {Thread.sleep(100);}
     }
 
 }
