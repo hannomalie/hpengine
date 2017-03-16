@@ -15,9 +15,12 @@ import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL11.glFlush;
 
 public class Pipeline {
 
@@ -60,6 +63,7 @@ public class Pipeline {
                 GraphicsContext.getInstance().enable(GlCap.CULL_FACE); }
             VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         }
+        GL11.glFinish(); // TODO: Avoid this somehow, maybe with using updatestep for filling offsetsbuffer
         GPUProfiler.end();
         renderState.getIndexBuffer().unbind();
 

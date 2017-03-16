@@ -638,7 +638,8 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 		}
 
 		public void drawDebug(Renderer renderer, Program program) {
-			VertexBuffer buffer = new VertexBuffer(getPoints(), EnumSet.of(DataChannels.POSITION3)).upload();
+			VertexBuffer buffer = new VertexBuffer(getPoints(), EnumSet.of(DataChannels.POSITION3));
+			buffer.upload();
 			buffer.drawDebug();
 			if (hasChildren()) {
 				for (int i = 0; i < 8; i++) {

@@ -211,7 +211,8 @@ public class EnvironmentProbeFactory {
 				points[24*3*i + z] = array[z];
 			}
 		};
-		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
+		VertexBuffer buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3));
+		buffer.upload();
 		program.setUniform("diffuseColor", new Vector3f(0,1,0));
 		buffer.drawDebug();
 		octree.getEntities().stream().forEach(e -> {

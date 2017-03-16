@@ -284,10 +284,11 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                 int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
 
-                firstPassResult.verticesDrawn += currentVerticesCount;
-                if (currentVerticesCount > 0) {
-                    firstPassResult.entitiesDrawn++;
-                }
+//                TODO: Count this somehow?
+//                firstPassResult.verticesDrawn += currentVerticesCount;
+//                if (currentVerticesCount > 0) {
+//                    firstPassResult.entitiesDrawn++;
+//                }
             }
             GPUProfiler.end();
         }

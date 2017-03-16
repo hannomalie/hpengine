@@ -44,10 +44,14 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
+import static org.lwjgl.opengl.GL11.glFinish;
+import static org.lwjgl.opengl.GL11.glFlush;
 
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = false;
@@ -140,8 +144,9 @@ public class DeferredRenderer implements Renderer {
             }
 
             float[] points = {0f, 0f, 0f, 0f};
-            buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3)).upload();
-            initialized = true;
+            buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3));
+			buffer.upload();
+			initialized = true;
         }
 	}
 
@@ -154,7 +159,9 @@ public class DeferredRenderer implements Renderer {
 			float width = 2f;
 			float widthDiv = width/6f;
 			for (int i = 0; i < 6; i++) {
-				add(new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height)).upload());
+				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
+				add(quadVertexBuffer);
+				quadVertexBuffer.upload();
 			}
 		}};
 		glWatch = new OpenGLStopWatch();
@@ -387,6 +394,7 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	public int drawLines(Program program) {
+
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
@@ -395,8 +403,9 @@ public class DeferredRenderer implements Renderer {
 			points[3*i + 2] = point.z;
 		}
 		buffer.putValues(points);
-        buffer.upload();
-        buffer.drawDebugLines();
+		buffer.upload().join();
+		buffer.drawDebugLines();
+		glFinish();
 		linePoints.clear();
         return points.length / 3 / 2;
 	}
@@ -407,7 +416,7 @@ public class DeferredRenderer implements Renderer {
 		linePoints.add(to);
 	}
 
-	private List<Vector3f> linePoints = new ArrayList<>();
+	private List<Vector3f> linePoints = new CopyOnWriteArrayList<>();
 
 	public Model getSphere() {
 		return sphereMesh;

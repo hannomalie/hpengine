@@ -10,6 +10,7 @@ import de.hanno.hpengine.shader.Bufferable;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.EnumSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
@@ -143,14 +144,13 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		}
 	}
 
-    public VertexBuffer upload() {
+    public CompletableFuture<VertexBuffer> upload() {
         buffer.rewind();
-        GraphicsContext.getInstance().execute(() -> {
+        return GraphicsContext.getInstance().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-        }, false);
-
-        return this;
+            return VertexBuffer.this;
+        });
     }
 
     protected FloatBuffer mapBuffer(int capacityInBytes, int flags)  {

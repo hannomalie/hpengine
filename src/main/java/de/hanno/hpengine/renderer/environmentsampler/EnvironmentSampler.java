@@ -144,7 +144,8 @@ public class EnvironmentSampler extends Camera {
 										.setInternalFormat(cubeMapArrayRenderTarget.getCubeMapArray(3).getInternalFormat()))
 								.build();
 
-		fullscreenBuffer = new QuadVertexBuffer(true).upload();
+		fullscreenBuffer = new QuadVertexBuffer(true);
+		fullscreenBuffer.upload();
 		Engine.getEventBus().register(this);
 		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
 	}

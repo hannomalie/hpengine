@@ -5,9 +5,12 @@ import java.util.EnumSet;
 
 public class QuadVertexBuffer extends VertexBuffer {
 
-    private static final VertexBuffer fullscreenBuffer = new QuadVertexBuffer(true).upload();
-    private static final VertexBuffer debugBuffer = new QuadVertexBuffer(false).upload();
-
+    private static final VertexBuffer fullscreenBuffer = new QuadVertexBuffer(true);
+    private static final VertexBuffer debugBuffer = new QuadVertexBuffer(false);
+	static {
+		fullscreenBuffer.upload();
+		debugBuffer.upload();
+	}
     public static VertexBuffer getFullscreenBuffer() {
         return fullscreenBuffer;
     }

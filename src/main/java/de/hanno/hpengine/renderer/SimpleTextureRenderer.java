@@ -85,7 +85,9 @@ public class SimpleTextureRenderer implements Renderer {
 			float width = 2f;
 			float widthDiv = width/6f;
 			for (int i = 0; i < 6; i++) {
-				add(new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height)).upload());
+				QuadVertexBuffer quadVertexBuffer = new QuadVertexBuffer(new Vector2f(-1f + i * widthDiv, -1f), new Vector2f(-1 + (i + 1) * widthDiv, height));
+				add(quadVertexBuffer);
+				quadVertexBuffer.upload();
 			}
 		}};
 		glWatch = new OpenGLStopWatch();

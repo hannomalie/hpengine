@@ -276,7 +276,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         if(hasComponent("ModelComponent")) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class, "ModelComponent");
 			minMax = modelComponent.getMinMax(getModelMatrix());
-            modelComponent.getBoundingSphereRadius();
 		} else {
 			minMax = new Vector3f[2];
 			float amount = 5;

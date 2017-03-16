@@ -221,10 +221,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model.getMinMax();
     }
 
-    public Vector3f getCenter() {
-        return model.getCenter();
-    }
-
     public int getIndexCount() {
         return indicesCounts[0];
 

@@ -112,7 +112,8 @@ public class VertexBufferTest extends TestWithOpenGLContext {
                 1.0f,  1.0f, 0.0f,    1.0f,  1.0f
         };
 
-        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD)).upload();
+        VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+        buffer.upload();
         Assert.assertEquals(6, buffer.getVerticesCount());
         Assert.assertEquals(2, buffer.getTriangleCount());
 
@@ -145,7 +146,8 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         });
 
         GraphicsContext.getInstance().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
+            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+            buffer.upload();
 
             GLTimerQuery.getInstance().begin();
             for(int i = 0; i < count; i++) {
@@ -156,7 +158,8 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         });
 
         GraphicsContext.getInstance().execute(() -> {
-            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL).upload();
+            VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
+            buffer.upload();
 
             GLTimerQuery.getInstance().begin();
             for(int i = 0; i < count; i++) {

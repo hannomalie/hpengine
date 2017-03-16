@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model;
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.util.Util;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -19,11 +20,9 @@ public class Model {
     private ArrayList<Vector3f> normals = new ArrayList<>();
     private float boundingSphereRadius;
     private int triangleCount;
-    private float[] vertexBufferValuesArray;
-    private int[] indexBufferValuesArray;
     private Vector3f[] minMax = { new Vector3f(), new Vector3f() };
-    private Vector3f center;
     private IntArrayList[] meshIndices;
+    private Matrix4f lastUsedModelMatrix;
 
     public Model() {
 
@@ -55,11 +54,13 @@ public class Model {
 
     public void init() {
         meshIndices = new IntArrayList[meshes.size()];
+        triangleCount = 0;
         for(int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
             mesh.init();
             meshIndices[i] = new IntArrayList();
             meshIndices[i].add(mesh.getIndexBufferValuesArray());
+            triangleCount += mesh.getTriangleCount();
         }
     }
 
@@ -98,14 +99,16 @@ public class Model {
     }
 
     public Vector3f[] getMinMax(Matrix4f modelMatrix) {
-        for(Mesh mesh : meshes) {
-            Mesh.calculateMinMax(modelMatrix, minMax[0], minMax[1], mesh.getFaces());
+        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !Util.equals(lastUsedModelMatrix, modelMatrix))
+
+        lastUsedModelMatrix = modelMatrix;
+
+        for(int i = 0; i < meshes.size(); i++) {
+            Mesh mesh = meshes.get(i);
+            Vector3f[] meshMinMax = mesh.getMinMax(modelMatrix);
+            Mesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
         }
         return minMax;
-    }
-
-    public Vector3f getCenter() {
-        return center;
     }
 
     public void putToValueArrays() {

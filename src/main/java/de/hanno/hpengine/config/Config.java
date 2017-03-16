@@ -105,6 +105,8 @@ public final class Config {
 	@Toggable(group = "Debug")
 	private volatile boolean drawLines = false;
 	@Toggable(group = "Debug")
+	private boolean drawBoundingBoxes = true;
+	@Toggable(group = "Debug")
 	private volatile boolean drawScene = true;
 	@Toggable(group = "Debug")
 	private volatile boolean useDirectTextureOutput = false;
@@ -538,5 +540,9 @@ public final class Config {
 
 	public void setRendererClass(Class <? extends Renderer> rendererClass) {
 		this.rendererClass = rendererClass;
+	}
+
+	public boolean isDrawBoundingBoxes() {
+		return drawBoundingBoxes;
 	}
 }

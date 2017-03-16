@@ -65,8 +65,8 @@ public class Mesh implements Serializable {
 		return name;
 	}
 
-    private transient Vector3f min;
-    private transient Vector3f max;
+    private transient Vector3f min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+    private transient Vector3f max = new Vector3f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
     private transient Matrix4f lastUsedModelMatrix = null;
     private float boundSphereRadius = -1;
 
@@ -232,22 +232,14 @@ public class Mesh implements Serializable {
         return result;
     }
 
-    public Vector3f[] getMinMax() {
-        return getMinMax(null);
-    }
-
     public float getBoundingSphereRadius() {
-        if(boundSphereRadius == -1) {
-            getMinMax();
-        }
         return boundSphereRadius;
     }
 
     private transient Vector3f center;
     public Vector3f getCenter() {
         if(center == null) {
-            getMinMax();
-            center = (Vector3f) Vector3f.add(min, Vector3f.sub(max, min, null), null).scale(0.5f);
+            center = Vector3f.add(min, (Vector3f) Vector3f.sub(max, min, null).scale(0.5f), null);
         }
         return new Vector3f(center);
     }
@@ -260,13 +252,15 @@ public class Mesh implements Serializable {
     }
 
     public Vector3f[] getMinMax(Matrix4f modelMatrix) {
-        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !Util.equals(lastUsedModelMatrix, modelMatrix))
+        boolean cacheInvalid = lastUsedModelMatrix == null || !Util.equals(lastUsedModelMatrix, modelMatrix);
+        if(cacheInvalid)
         {
             calculateMinMax(modelMatrix, min, max, compiledFaces);
+            if(lastUsedModelMatrix == null) { lastUsedModelMatrix = new Matrix4f(); }
+            lastUsedModelMatrix.load(modelMatrix);
+            boundSphereRadius = getBoundingSphereRadius(min, max);
+            center = Vector3f.add(min, (Vector3f) Vector3f.sub(max, min, null).scale(0.5f), null);
         }
-
-        boundSphereRadius = getBoundingSphereRadius(min, max);
-        lastUsedModelMatrix = modelMatrix;
 
         return new Vector3f[] {new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
     }
@@ -298,8 +292,18 @@ public class Mesh implements Serializable {
         }
     }
 
+    public static void calculateMinMax(Vector3f min, Vector3f max, Vector3f[] current) {
+            min.x = current[0].x < min.x ? current[0].x : min.x;
+            min.y = current[0].y < min.y ? current[0].y : min.y;
+            min.z = current[0].z < min.z ? current[0].z : min.z;
+
+            max.x = current[1].x > max.x ? current[1].x : max.x;
+            max.y = current[1].y > max.y ? current[1].y : max.y;
+            max.z = current[1].z > max.z ? current[1].z : max.z;
+    }
+
     public static float getBoundingSphereRadius(Vector3f min, Vector3f max) {
-        return (Vector3f.sub(max, min, null).scale(0.5f)).length();
+        return Vector3f.sub(max, min, null).scale(0.5f).length();
     }
     public static float getBoundingSphereRadius(Vector4f min, Vector4f max) {
         return getBoundingSphereRadius(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
@@ -307,6 +311,10 @@ public class Mesh implements Serializable {
 
     public List<Face> getIndexedFaces() {
         return indexFaces;
+    }
+
+    public int getTriangleCount() {
+        return indexBufferValues.size()/3;
     }
 
     public static class CompiledVertex {

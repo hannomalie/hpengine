@@ -307,19 +307,21 @@ public class Engine {
             float distanceToCamera = tempDistVector.length();
             boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-            boolean visibleForCamera = entity.isInFrustum(camera) || entity.getInstanceCount() > 1; // TODO: Better culling for instances
-
             int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
 
             for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
                 Mesh mesh = modelComponent.getMeshes().get(i);
+                boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter().x, mesh.getCenter().y, mesh.getCenter().z, mesh.getBoundingSphereRadius());
+                boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+
                 mesh.getMaterial().setTexturesUsed();
                 PerMeshInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(mesh);
                 if(info == null) {
                     info = new PerMeshInfo();
                     renderState.getCurrentWriteState().entitiesState.cash.put(mesh, info);
                 }
-                info.init(firstpassDefaultProgram, entityIndexOf+i*entity.getInstanceCount(), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], entity.getMinMaxWorldVec3()[0], entity.getMinMaxWorldVec3()[1], info.getCenterWorld(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), entity.getLastMovedInCycle());
+                Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
+                info.init(firstpassDefaultProgram, entityIndexOf+i*entity.getInstanceCount(), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), entity.getLastMovedInCycle());
                 renderState.getCurrentWriteState().add(info);
             }
         }
