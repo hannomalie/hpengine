@@ -1,11 +1,11 @@
 Vector3f = Java.type('org.lwjgl.util.vector.Vector3f');
 Vector4f = Java.type('org.lwjgl.util.vector.Vector4f');
 Quaternion = Java.type('org.lwjgl.util.vector.Quaternion');
-Transform = Java.type('engine.Transform');
-Engine = Java.type('engine.Engine');
-Renderer = Java.type('renderer.Renderer');
-OpenGLContext = Java.type('renderer.OpenGLContext');
-EntityFactory = Java.type('engine.model.EntityFactory');
+Transform = Java.type('de.hanno.hpengine.engine.Transform');
+Engine = Java.type('de.hanno.hpengine.engine.Engine');
+Renderer = Java.type('de.hanno.hpengine.renderer.Renderer');
+GraphicsContext = Java.type('de.hanno.hpengine.renderer.GraphicsContext');
+EntityFactory = Java.type('de.hanno.hpengine.engine.model.EntityFactory');
 
 
 //print(world.getRenderer().getLightFactory().getDirectionalLight().getCamera().getPosition())
@@ -33,13 +33,9 @@ for(var x = -count; x < count; x++) {
 }
 
 print("adding...." + instances.size());
-OpenGLContext.getInstance().execute(new java.lang.Runnable() {
+GraphicsContext.getInstance().execute(new java.lang.Runnable() {
 	run: function() {
-		for(var i = 0; i < instances.size(); i++) {
-			Engine.getInstance().getScene().getEntities().get(0).addInstance(instances.get(i));
-//			print(instances.get(i));
-		}
+		Engine.getInstance().getScene().getEntities().get(0).addInstances(instances);
 	}
 });
-EntityFactory.getInstance().bufferEntities();
 

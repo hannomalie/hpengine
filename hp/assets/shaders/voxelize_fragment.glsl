@@ -19,7 +19,7 @@ in vec3 g_normal;
 in vec3 g_pos;
 in vec2 g_texcoord;
 flat in int g_materialIndex;
-
+flat in int g_isStatic;
 //layout (pixel_center_integer) in vec4 gl_FragCoord;
 
 
@@ -28,7 +28,6 @@ flat in int g_materialIndex;
 
 
 uniform int entityIndex;
-uniform int isStatic;
 
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
@@ -134,6 +133,6 @@ void main()
 	visibility = clamp(chebyshevUpperBound(depthInLightSpace, positionShadow), 0, 1).r;
 
 	imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(color.rgb, opacity));
-	imageStore(out_voxelNormal, ivec3(round(gridPosition)), vec4(Encode(normalize(g_normal)), isStatic, 0.25*float(material.ambient)));
-//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(finalVoxelColor) ,1));
+	imageStore(out_voxelNormal, ivec3(round(gridPosition)), vec4(Encode(normalize(g_normal)), g_isStatic, 0.25*float(material.ambient)));
+//    imageStore(out_voxelAlbedo, ivec3(round(gridPosition)), vec4(vec3(0,0,isStatic) ,1));
 }

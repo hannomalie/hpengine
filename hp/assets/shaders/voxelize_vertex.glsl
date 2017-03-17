@@ -34,6 +34,7 @@ out vec3 v_normal;
 out vec2 v_texcoord;
 //flat out Entity v_entity;
 out int v_materialIndex;
+out int v_isStatic;
 
 uniform float sceneScale = 1f;
 uniform float inverseSceneScale = 1f;
@@ -44,13 +45,13 @@ uniform vec3 lightColor;
 
 void main(void) {
 
-    int entityBufferIndex = 0;
+    int entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;
     if(indirect == 0) { entityBufferIndex = entityIndex + gl_InstanceID; }
-    else {entityBufferIndex = entityOffsets[gl_DrawIDARB]+gl_InstanceID;}
 
     //entityBufferIndex = 0;
 
     Entity entity = entities[entityBufferIndex];
+    v_isStatic = int(entity.isStatic);
 
     int materialIndex = int(entity.materialIndex);
     Material material = materials[materialIndex];

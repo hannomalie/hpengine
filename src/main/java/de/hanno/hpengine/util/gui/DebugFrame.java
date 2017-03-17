@@ -28,6 +28,7 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.Octree;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.TestSceneUtil;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
@@ -308,7 +309,7 @@ public class DebugFrame {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        Engine.getInstance().getScene().addAll(Engine.getInstance().loadTestScene());
+                        Engine.getInstance().getScene().addAll(TestSceneUtil.loadTestScene(Engine.getInstance().getPhysicsFactory(), Engine.getInstance().getScene()));
                         Engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(Engine.getInstance().getScene());
