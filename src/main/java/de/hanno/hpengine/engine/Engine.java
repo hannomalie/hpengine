@@ -6,7 +6,6 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.camera.MovableCamera;
 import de.hanno.hpengine.component.JavaComponent;
 import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.component.PhysicsComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.*;
@@ -20,11 +19,9 @@ import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
-import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.renderer.material.MaterialInfo;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
@@ -50,6 +47,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -58,6 +56,7 @@ public class Engine {
 
     private static volatile Engine instance = null;
 
+    List<RenderState> renderStateCache = new CopyOnWriteArrayList<>();
     private UpdateThread updateThread;
     private RenderThread renderThread;
 
@@ -254,7 +253,10 @@ public class Engine {
         renderState.addCommand((renderStateX1) -> {
             Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
             renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
-            addPerEntityInfos(renderState, this.camera);
+//            addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
+        });
+        renderState.addCommandToCurrentWriteQueue((renderStateX1) -> {
+            addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
         });
         renderState.update();
     }
@@ -291,7 +293,7 @@ public class Engine {
     }
 
     private Vector3f tempDistVector = new Vector3f();
-    public void addPerEntityInfos(DoubleBuffer<RenderState> renderState, Camera camera) {
+    public void addPerEntityInfos(Camera camera, RenderState currentWriteState) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
@@ -314,15 +316,15 @@ public class Engine {
                 boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
                 mesh.getMaterial().setTexturesUsed();
-                PerMeshInfo info = renderState.getCurrentWriteState().entitiesState.cash.get(mesh);
+                PerMeshInfo info = currentWriteState.entitiesState.cash.get(mesh);
                 if(info == null) {
                     info = new PerMeshInfo();
-                    renderState.getCurrentWriteState().entitiesState.cash.put(mesh, info);
+                    currentWriteState.entitiesState.cash.put(mesh, info);
                 }
                 Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
                 int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
                 info.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), entity.getLastMovedInCycle());
-                renderState.getCurrentWriteState().add(info);
+                currentWriteState.add(info);
             }
         }
     }

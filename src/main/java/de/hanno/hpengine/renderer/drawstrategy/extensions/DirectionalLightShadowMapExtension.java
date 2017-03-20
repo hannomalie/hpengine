@@ -49,7 +49,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("Directional shadowmap");
-        if(renderedInCycle < renderState.directionalLightHasMovedInCycle) {
+        if(renderedInCycle < renderState.directionalLightHasMovedInCycle || renderedInCycle < renderState.entitiesState.entityMovedInCycle) {
             drawShadowMap(renderState, firstPassResult);
         }
         GPUProfiler.end();

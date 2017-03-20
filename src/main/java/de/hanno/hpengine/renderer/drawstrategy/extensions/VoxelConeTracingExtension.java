@@ -169,15 +169,15 @@ public class VoxelConeTracingExtension implements RenderExtension {
         }
         boolean useVoxelConeTracing = true;
         boolean clearVoxels = true;
-        int bounces = 2;
+        int bounces = 1;
 
         boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
         if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
-        boolean needsLightInjection = lightInjectedCounter < bounces || needsRevoxelization || directionalLightMoved;
+        boolean needsLightInjection = lightInjectedCounter < bounces || directionalLightMoved;
 
-        voxelizeScene(firstPassResult, renderState, entityMoved, clearVoxels, needsRevoxelization);
+        voxelizeScene(renderState, clearVoxels, needsRevoxelization);
         injectLight(renderState, bounces, lightInjectedCounter, needsLightInjection);
         GPUProfiler.end();
     }
@@ -224,10 +224,10 @@ public class VoxelConeTracingExtension implements RenderExtension {
         GL11.glColorMask(true, true, true, true);
     }
 
-    public void voxelizeScene(FirstPassResult firstPassResult, RenderState renderState, boolean entityOrDirectionalLightHasMoved, boolean clearVoxels, boolean needsRevoxelization) {
+    public void voxelizeScene(RenderState renderState, boolean clearVoxels, boolean needsRevoxelization) {
         if(needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels");
-            if(!renderState.sceneInitiallyDrawn) {
+            if(Config.getInstance().isForceRevoxelization() || !renderState.sceneInitiallyDrawn) {
                 ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
                 ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
                 ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
@@ -281,7 +281,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                     continue;
                 }
-                voxelizer.setUniform("isStatic", isStatic ? 1 : 0);
                 int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
 
 //                TODO: Count this somehow?

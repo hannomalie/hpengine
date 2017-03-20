@@ -15,7 +15,8 @@ void main(void) {
 
 	vec4 currentValue = texelFetch(normalGridTexture, storePos, 0);
 	float isStatic = currentValue.b;
-	if((isStatic < 0.1)) {
+	if((isStatic < 0.1))
+	{
         imageStore(albedoGrid, storePos, vec4(0,0,0,0));
         imageStore(normalGrid, storePos, vec4(0,0,0,0));
         imageStore(grid2, storePos, vec4(0,0,0,0));
