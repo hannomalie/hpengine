@@ -30,6 +30,7 @@ import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.DoubleBuffer;
+import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
@@ -56,12 +57,11 @@ public class Engine {
 
     private static volatile Engine instance = null;
 
-    List<RenderState> renderStateCache = new CopyOnWriteArrayList<>();
     private UpdateThread updateThread;
     private RenderThread renderThread;
 
     private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
-    private volatile DoubleBuffer<RenderState> renderState;
+    private volatile TripleBuffer<RenderState> renderState;
 
     private volatile long entityMovedInCycle;
     private volatile long directionalLightMovedInCycle;
@@ -162,7 +162,7 @@ public class Engine {
         physicsFactory = new PhysicsFactory();
         ScriptManager.getInstance().defineGlobals();
 
-        renderState = new DoubleBuffer(new RenderState(), new RenderState());
+        renderState = new TripleBuffer<>(new RenderState(), new RenderState(), new RenderState());
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
         activeCamera = camera;
@@ -250,14 +250,16 @@ public class Engine {
                 renderStateX1.bufferEntites(scene.getEntities());
             });
         }
-        renderState.addCommand((renderStateX1) -> {
-            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
-            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
-//            addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
-        });
-        renderState.addCommandToCurrentWriteQueue((renderStateX1) -> {
-            addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
-        });
+//        renderState.addCommand((renderStateX1) -> {
+//            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
+//            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
+//            addPerEntityInfos(this.camera, renderStateX1);
+//        });
+
+        Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
+        renderState.getCurrentWriteState().init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
+        addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
+
         renderState.update();
     }
 
@@ -444,7 +446,7 @@ public class Engine {
         return physicsFactory;
     }
 
-    public DoubleBuffer<RenderState> getRenderState() {
+    public TripleBuffer<RenderState> getRenderState() {
         return renderState;
     }
 

@@ -11,6 +11,7 @@ import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -18,7 +19,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RenderState {
+public class RenderState implements TripleBuffer.State<RenderState> {
 
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
     public final EntitiesState entitiesState = new EntitiesState();
@@ -136,5 +137,10 @@ public class RenderState {
 
     public FloatBuffer getDirectionalLightViewProjectionMatrixAsBuffer() {
         return directionalLightState.directionalLightViewProjectionMatrixAsBuffer;
+    }
+
+    @Override
+    public boolean shouldNotSwap(RenderState currentStaging, RenderState currentRead) {
+        return currentStaging.cycle < currentRead.cycle;
     }
 }
