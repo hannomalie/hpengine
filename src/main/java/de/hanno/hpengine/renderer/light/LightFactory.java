@@ -411,6 +411,8 @@ public class LightFactory {
 			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
 			List<PerMeshInfo> visibles = new ArrayList<>(renderState.perEntityInfos());
 			pointCubeShadowPassProgram.use();
+			pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+			pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
 			pointCubeShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
             pointCubeShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
             pointCubeShadowPassProgram.setUniform("lightIndex", i);
@@ -431,13 +433,13 @@ public class LightFactory {
                 pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrices[" + floatBufferIndex + "]", projectionMatrices[floatBufferIndex]);
 //				floatBuffers[floatBufferIndex] = null;
 			}
-			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
-			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+//			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerMeshInfo e : visibles) {
-                DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram, !e.isVisible() || !e.isVisibleForCamera());
+                DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
 		}

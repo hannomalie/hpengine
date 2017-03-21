@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
+import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
@@ -196,7 +197,7 @@ public class Engine {
 
     public void startSimulation() {
 
-        updateThread = new UpdateThread("Update", 0.033f);
+        updateThread = new UpdateThread("Update", 0.008f);
         updateThread.start();
 
         renderThread = new RenderThread("Render");
@@ -219,6 +220,7 @@ public class Engine {
             PointLight pointLight = scene.getPointLights().get(i);
             if(!pointLight.hasMoved()) { continue; }
             anyPointLightHasMoved = true;
+            getEventBus().post(new PointLightMovedEvent());
             pointLight.setHasMoved(false);
         }
 
@@ -250,6 +252,7 @@ public class Engine {
                 renderStateX1.bufferEntites(scene.getEntities());
             });
         }
+
 //        renderState.addCommand((renderStateX1) -> {
 //            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
 //            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());

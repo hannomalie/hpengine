@@ -44,9 +44,6 @@ public class TripleBuffer<T extends TripleBuffer.State<T>> {
             currentStagingState = temp;
         }
 
-        assert currentReadState != currentWriteState;
-        assert currentReadState != currentStagingState;
-        assert currentWriteState != currentStagingState;
         stagingLock.unlock();
         swapLock.unlock();
     }
@@ -64,10 +61,6 @@ public class TripleBuffer<T extends TripleBuffer.State<T>> {
         instanceA.addCommand(command);
         instanceB.addCommand(command);
         instanceC.addCommand(command);
-    }
-
-    public void addCommandToCurrentWriteQueue(Consumer<T> command) {
-        currentWriteState.addCommand(command);
     }
 
     public boolean update() {
@@ -88,16 +81,16 @@ public class TripleBuffer<T extends TripleBuffer.State<T>> {
         logState();
     }
 
+    public void stopRead() {
+        swap();
+    }
+
     public void logState() {
         if(LOGGER.isLoggable(Level.FINER)) {
             LOGGER.fine("Read  " + (currentReadState == instanceA ? 0 : (currentReadState == instanceB ? 1 : 2)));
             LOGGER.fine("Stage " + (currentStagingState == instanceA ? 0 : (currentStagingState == instanceB ? 1 : 2)));
             LOGGER.fine("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)));
         }
-    }
-
-    public void stopRead() {
-        swap();
     }
 
     private static class QueueStatePair<T> {
