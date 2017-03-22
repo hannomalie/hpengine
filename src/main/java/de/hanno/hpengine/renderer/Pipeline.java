@@ -55,12 +55,12 @@ public class Pipeline {
         program.setUniform("indirect", true);
         GPUProfiler.start("DrawInstancedIndirectBaseVertex");
         if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
-            if(useBackfaceCulling) {
-                GraphicsContext.getInstance().disable(GlCap.CULL_FACE); }
+            GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         } else {
             if(useBackfaceCulling) {
-                GraphicsContext.getInstance().enable(GlCap.CULL_FACE); }
+                GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
+            }
             VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         }
         GL11.glFinish(); // TODO: Avoid this somehow, maybe with using updatestep for filling offsetsbuffer
