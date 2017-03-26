@@ -470,7 +470,6 @@ vec4 voxelFetchBlurred(sampler3D grid, int gridSize, float sceneScale, vec3 posi
 
 vec4 voxelTraceCone(sampler3D grid, int gridSize, float sceneScale, float minVoxelDiameter, vec3 origin, vec3 dir, float coneRatio, float maxDist) {
 	float minVoxelDiameterInv = 1.0/minVoxelDiameter;
-	vec3 samplePos = origin;
 	vec4 accum = vec4(0.0);
 	float minDiameter = minVoxelDiameter;
 	float startDist = minDiameter;
@@ -552,35 +551,35 @@ vec4 traceVoxels(sampler3D grid, int gridSize, float sceneScale, vec3 worldPos, 
 
 vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sceneScale, vec3 normalWorld, vec3 positionWorld) {
     vec4 voxelDiffuse;
-    for (int k = 0; k < SAMPLE_COUNT; k++) {
-        const float PI = 3.1415926536;
-        vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
-        float Phi = 2 * PI * Xi.x;
-        float a = 1;//roughness;
-        float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
-        float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+//    for (int k = 0; k < SAMPLE_COUNT; k++) {
+//        const float PI = 3.1415926536;
+//        vec2 Xi = hammersley2d(k, SAMPLE_COUNT);
+//        float Phi = 2 * PI * Xi.x;
+//        float a = 1;//roughness;
+//        float CosTheta = sqrt( (1 - Xi.y) / (( 1 + (a*a - 1) * Xi.y )) );
+//        float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+//
+//        vec3 H;
+//        H.x = SinTheta * cos( Phi );
+//        H.y = SinTheta * sin( Phi );
+//        H.z = CosTheta;
+//        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
+//
+//        float dotProd = clamp(dot(normalWorld, H),0,1);
+//        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, sceneScale/2, positionWorld, normalize(H), sceneScale/float(SAMPLE_COUNT), 150);
+//    }
 
-        vec3 H;
-        H.x = SinTheta * cos( Phi );
-        H.y = SinTheta * sin( Phi );
-        H.z = CosTheta;
-        H = hemisphereSample_uniform(Xi.x, Xi.y, normalWorld);
 
-        float dotProd = clamp(dot(normalWorld, H),0,1);
-        voxelDiffuse += vec4(dotProd) * voxelTraceCone(grid, gridSize, sceneScale, sceneScale/2, positionWorld, normalize(H), sceneScale/float(SAMPLE_COUNT), 150);
-    }
-
-
-//    vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
-//    vec3 bitangent = cross(normalWorld, tangent);
-//    float minVoxelDiameter = 6*sceneScale;
-//    float coneRatio = 6;
-////https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
-//  voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld), coneRatio, 150);
-//  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + tangent), coneRatio, 150);
-//  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - tangent), coneRatio, 150);
-//  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + bitangent), coneRatio, 150);
-//  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - bitangent), coneRatio, 150);
+    vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
+    vec3 bitangent = cross(normalWorld, tangent);
+    float minVoxelDiameter = sceneScale;
+    float coneRatio = 6;
+//https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
+  voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld), coneRatio, 150);
+  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + tangent), coneRatio, 150);
+  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - tangent), coneRatio, 150);
+  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + bitangent), coneRatio, 150);
+  voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld - bitangent), coneRatio, 150);
 
 //https://github.com/thefranke/dirtchamber/blob/master/shader/vct_tools.hlsl
 //    vec3 diffdir = normalize(normalWorld.zxy);

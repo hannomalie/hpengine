@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -77,6 +78,10 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private final int gridTwo;
     private int lightInjectedCounter;
 
+    private Pipeline pipeline;
+    private FirstPassResult firstPassResult = new FirstPassResult();
+    private boolean useIndirectDrawing = false;
+
     public VoxelConeTracingExtension() throws Exception {
         initOrthoCam();
         initViewXBuffer();
@@ -89,7 +94,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
         clearDynamicVoxelsComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");
         injectLightComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_inject_light_compute.glsl");
         injectMultipleBounceLightComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_inject_bounce_light_compute.glsl");
-
 
         grid = TextureFactory.getInstance().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
@@ -112,44 +116,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         currentVoxelSource = gridTwo;
         voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
         Config.getInstance().setUseAmbientOcclusion(false);
-    }
-
-    private void initViewZBuffer() {
-        viewZTransform = new Transform();
-        viewZTransform.rotate(new Vector3f(0,1,0), 180f);
-        viewZ = Matrix4f.mul(ortho, viewZTransform.getViewMatrix(), null);
-        viewZBuffer.rewind();
-        viewZ.store(viewZBuffer);
-        viewZBuffer.rewind();
-    }
-
-    private void initViewYBuffer() {
-        viewYTransform = new Transform();
-        viewYTransform.rotate(new Vector3f(1, 0, 0), 90f);
-        viewY = Matrix4f.mul(ortho, viewYTransform.getViewMatrix(), null);
-        viewYBuffer.rewind();
-        viewY.store(viewYBuffer);
-        viewYBuffer.rewind();
-    }
-
-    private void initViewXBuffer() {
-        viewXTransform = new Transform();
-        viewXTransform.rotate(new Vector3f(0,1,0), 90f);
-        viewX = Matrix4f.mul(ortho, viewXTransform.getViewMatrix(), null);
-        viewXBuffer.rewind();
-        viewX.store(viewXBuffer);
-        viewXBuffer.rewind();
-    }
-
-    private void initOrthoCam() {
-        ortho = Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
-        orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
-
-        orthoCam.setPerspective(false);
-        orthoCam.setWidth(getGridSizeScaled());
-        orthoCam.setHeight(getGridSizeScaled());
-        orthoCam.setFar(-5000);
-        orthoCam.update(0.000001f);
+        pipeline = new Pipeline(false, false, false);
     }
 
     private long entityMovedLastInCycle;
@@ -246,7 +213,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         if(needsRevoxelization) {
             GPUProfiler.start("Voxelization");
             orthoCam.update(0.000001f);
-            int gridSizeScaled = (int) (gridSize * getSceneScale(renderState));
+            float sceneScale = getSceneScale(renderState);
+            int gridSizeScaled = (int) (gridSize * sceneScale);
             GraphicsContext.getInstance().viewPort(0, 0, gridSizeScaled, gridSizeScaled);
             voxelizer.use();
             GL42.glBindImageTexture(3, normalGrid, 0, true, 0, GL15.GL_WRITE_ONLY, gridTextureFormatSized);
@@ -267,8 +235,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
             voxelizer.setUniform("u_height", gridSize);
 
             voxelizer.setUniform("writeVoxels", true);
-            voxelizer.setUniform("sceneScale", getSceneScale(renderState));
-            voxelizer.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));
+            voxelizer.setUniform("sceneScale", sceneScale);
+            voxelizer.setUniform("inverseSceneScale", 1f / sceneScale);
             voxelizer.setUniform("gridSize", gridSize);
             GraphicsContext.getInstance().depthMask(false);
             GraphicsContext.getInstance().disable(DEPTH_TEST);
@@ -276,18 +244,24 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GraphicsContext.getInstance().disable(CULL_FACE);
             GL11.glColorMask(false, false, false, false);
 
-            for (PerMeshInfo entity : renderState.perEntityInfos()) {
-                boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
-                if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
-                    continue;
-                }
-                int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
+
+            if(useIndirectDrawing && Config.getInstance().isIndirectDrawing()) {
+                firstPassResult.reset();
+                pipeline.prepareAndDraw(renderState, voxelizer, firstPassResult);
+            } else {
+                for (PerMeshInfo entity : renderState.perEntityInfos()) {
+                    boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
+                    if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
+                        continue;
+                    }
+                    int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
 
 //                TODO: Count this somehow?
 //                firstPassResult.verticesDrawn += currentVerticesCount;
 //                if (currentVerticesCount > 0) {
 //                    firstPassResult.entitiesDrawn++;
 //                }
+                }
             }
             GPUProfiler.end();
         }
@@ -340,7 +314,6 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     @Override
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
-        GL42.glMemoryBarrier(GL42.GL_ALL_BARRIER_BITS);
         GPUProfiler.start("VCT second pass");
         GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
         GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
@@ -381,13 +354,14 @@ public class VoxelConeTracingExtension implements RenderExtension {
         float sceneScale = max / (float) gridSizeHalf;
         sceneScale = Math.max(sceneScale, 2.0f);
         boolean sceneScaleChanged = this.sceneScale != sceneScale;
-        if(sceneScaleChanged) {
+        if(sceneScaleChanged)
+        {
+            this.sceneScale = sceneScale;
             initOrthoCam();
             initViewXBuffer();
             initViewYBuffer();
             initViewZBuffer();
         }
-        this.sceneScale = sceneScale;
         return sceneScale;
     }
 
@@ -397,5 +371,43 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private int getGridSizeHalfScaled() {
         return (int)((gridSizeHalf)*sceneScale);
+    }
+
+    private void initViewZBuffer() {
+        viewZTransform = new Transform();
+        viewZTransform.rotate(new Vector3f(0,1,0), 180f);
+        viewZ = Matrix4f.mul(ortho, viewZTransform.getViewMatrix(), null);
+        viewZBuffer.rewind();
+        viewZ.store(viewZBuffer);
+        viewZBuffer.rewind();
+    }
+
+    private void initViewYBuffer() {
+        viewYTransform = new Transform();
+        viewYTransform.rotate(new Vector3f(1, 0, 0), 90f);
+        viewY = Matrix4f.mul(ortho, viewYTransform.getViewMatrix(), null);
+        viewYBuffer.rewind();
+        viewY.store(viewYBuffer);
+        viewYBuffer.rewind();
+    }
+
+    private void initViewXBuffer() {
+        viewXTransform = new Transform();
+        viewXTransform.rotate(new Vector3f(0,1,0), 90f);
+        viewX = Matrix4f.mul(ortho, viewXTransform.getViewMatrix(), null);
+        viewXBuffer.rewind();
+        viewX.store(viewXBuffer);
+        viewXBuffer.rewind();
+    }
+
+    private void initOrthoCam() {
+        ortho = Util.createOrthogonal(-getGridSizeHalfScaled(), getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled(), getGridSizeHalfScaled(), -getGridSizeHalfScaled());
+        orthoCam = new Camera(ortho, getGridSizeHalfScaled(), -getGridSizeHalfScaled(), 90, 1);
+
+        orthoCam.setPerspective(false);
+        orthoCam.setWidth(getGridSizeScaled());
+        orthoCam.setHeight(getGridSizeScaled());
+        orthoCam.setFar(-5000);
+        orthoCam.update(0.000001f);
     }
 }

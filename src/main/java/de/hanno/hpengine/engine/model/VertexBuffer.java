@@ -303,8 +303,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     @Override
     public void putValues(FloatBuffer values) {
-        buffer.rewind();
-        buffer.put(values);
+        putValues(0, values);
     }
 
     @Override
@@ -315,7 +314,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     @Override
     public void putValues(int offset, FloatBuffer values) {
         if(values == buffer) { return; }
-        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity() * getPrimitiveSizeInBytes());}
 //        bind();
         values.rewind();
         buffer.position(offset);

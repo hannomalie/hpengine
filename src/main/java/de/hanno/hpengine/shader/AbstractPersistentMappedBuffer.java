@@ -36,7 +36,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         if(capacityInBytes <= 0) { capacityInBytes = 10; }
 
         if(buffer != null) {
-            boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes() < capacityInBytes;
+            boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes()  < capacityInBytes;
             if(needsResize) {
                 GraphicsContext.getInstance().execute(() -> {
                     bind();

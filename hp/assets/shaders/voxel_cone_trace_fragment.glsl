@@ -75,7 +75,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 	vec3 isStaticValue = vec3(0,0,0);
 	float alpha = 0;
 
-	int mipLevel = 0;
+	int mipLevel = 3;
 	for (int i = 0; i < NB_STEPS; i++) {
 		if(alpha >= 0.01)
 		{
@@ -159,13 +159,13 @@ void main(void) {
         vec4 voxelDiffuse = vec4(0);
 
         const int SAMPLE_COUNT = 4;
-        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld+normalWorld*1*sceneScale);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
         vct += boost*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
         const bool useTransparency = false;
         if(useTransparency) {
-        	vec3 sampledValue = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*2*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
+        	vec3 sampledValue = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
 //        	compensate missing secondary bounces
 //        	sampledValue += 0.1*voxelTraceCone(albedoGrid, gridSize, sceneScale, sceneScale, positionWorld-sceneScale*1*normalWorld, normalize(refract(-V, normalWorld,1-roughness)), 0.1*roughness, 370).rgb;
             vct = /* small boost factor, figure out why */ 4 * boost * color * sampledValue * (transparency) + vct * opacity;

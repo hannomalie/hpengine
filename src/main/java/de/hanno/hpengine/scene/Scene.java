@@ -40,8 +40,8 @@ public class Scene implements LifeCycle, Serializable {
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
 
-	public volatile VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(100000), DEFAULTCHANNELS);;
-	public volatile IndexBuffer indexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100000));
+	public volatile VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(10000), DEFAULTCHANNELS);
+	public volatile IndexBuffer indexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(10000));
 	public volatile AtomicInteger currentBaseVertex = new AtomicInteger();
 	public volatile AtomicInteger currentIndexOffset = new AtomicInteger();
 

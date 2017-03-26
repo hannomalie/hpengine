@@ -7,7 +7,6 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.OpenGLContext;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
@@ -374,7 +373,7 @@ public class Util {
 		printFloatBuffer(values, 4);
 	}
 
-    public static void printFloatBuffer(FloatBuffer buffer, int columns) {
+    public static String printFloatBuffer(FloatBuffer buffer, int columns) {
         buffer.rewind();
         StringBuilder builder = new StringBuilder();
         int columnCounter = 1;
@@ -385,9 +384,11 @@ public class Util {
             columnCounter++;
         }
         buffer.rewind();
-        LOGGER.info(builder.toString());
+		String result = builder.toString();
+		LOGGER.info(result);
+		return result;
     }
-    public static void printIntBuffer(IntBuffer buffer, int columns) {
+    public static String printIntBuffer(IntBuffer buffer, int columns) {
         buffer.rewind();
         StringBuilder builder = new StringBuilder();
         int columnCounter = 1;
@@ -398,7 +399,9 @@ public class Util {
             columnCounter++;
         }
         buffer.rewind();
-        LOGGER.info(builder.toString());
+		String result = builder.toString();
+		LOGGER.info(result);
+		return result;
     }
 	
 	/**

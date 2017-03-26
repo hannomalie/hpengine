@@ -253,12 +253,6 @@ public class Engine {
             });
         }
 
-//        renderState.addCommand((renderStateX1) -> {
-//            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
-//            renderStateX1.init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
-//            addPerEntityInfos(this.camera, renderStateX1);
-//        });
-
         Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
         renderState.getCurrentWriteState().init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
         addPerEntityInfos(this.camera, renderState.getCurrentWriteState());

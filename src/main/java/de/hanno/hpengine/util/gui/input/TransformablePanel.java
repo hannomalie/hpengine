@@ -69,7 +69,7 @@ public class TransformablePanel<T extends Transformable> extends WebComponentPan
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = transformable.getViewDirection().negate(null);
-				axis = new Vector3f(0, 0, -1);
+				axis = new Vector3f(0, 0, 1);
 				transformable.moveInWorld((Vector3f) axis.scale(delta));
 				positionField.setValue(transformable.getPosition());
 			}

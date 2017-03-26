@@ -73,13 +73,14 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
 
     @Override
     public void putValues(int offset, FloatBuffer values) {
-        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
+        if(values.capacity() * getPrimitiveSizeInBytes() > getSizeInBytes()) { setSizeInBytes(values.capacity() * getPrimitiveSizeInBytes());}
         bind();
         values.rewind();
+        buffer.rewind();
         for(int i = offset; i < values.capacity(); i++) {
             buffer.put(i, values.get(i));
         }
-        buffer.reset();
+        buffer.rewind();
     }
 
     @Override

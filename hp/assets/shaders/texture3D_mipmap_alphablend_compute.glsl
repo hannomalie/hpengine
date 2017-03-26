@@ -31,7 +31,7 @@ vec3[8] fetchNormalTexels(ivec3 pos) {
 
 vec4 calculateMipMap(ivec3 pos) {
 
-    const int kernelSizeHalf = 1;
+    const int kernelSizeHalf = 2;
     const int kernelSize = 2 * kernelSizeHalf +1;
 
     vec3 centerNormal = Decode(imageLoad(normalSource, pos).xy);
@@ -94,7 +94,7 @@ void main(void) {
 	ivec3 workGroup = ivec3(gl_WorkGroupID);
 	ivec3 workGroupSize = ivec3(gl_WorkGroupSize.xyz);
 	ivec3 localIndex = ivec3(gl_LocalInvocationID.xyz);
-	ivec3 loadPosition = storePos*2;
+	ivec3 loadPosition = (storePos+ivec3(1))*2-ivec3(1); // TODO: Fix this shit
 
 //	vec4 sourceValue = vec4(0);//imageLoad(source, loadPosition);
 //	float weightSum = 0;

@@ -3,6 +3,7 @@ package de.hanno.hpengine.renderer.light;
 import java.io.Serializable;
 
 import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -91,8 +92,12 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	}
 
 	@Override
+	public int getElementsPerObject() {
+		return 8;
+	}
+	@Override
 	public double[] get() {
-		double[] doubles = new double[7];
+		double[] doubles = new double[8];
 		int index = 0;
 		Vector3f worldPosition = getPosition();
 		doubles[index++] = worldPosition.x;
@@ -103,6 +108,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		doubles[index++] = color.x;
 		doubles[index++] = color.y;
 		doubles[index++] = color.z;
+		doubles[index++] = -1;
 
 		return doubles;
 	}
