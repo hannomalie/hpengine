@@ -24,7 +24,7 @@ public class RenderState implements TripleBuffer.State<RenderState> {
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
     public final EntitiesState entitiesState = new EntitiesState();
 
-    private DrawResult latestDrawResult;
+    public DrawResult latestDrawResult;
     public Camera camera = new Camera();
     public long pointlightMovedInCycle;
     public long directionalLightHasMovedInCycle;
@@ -39,7 +39,13 @@ public class RenderState implements TripleBuffer.State<RenderState> {
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.getVertexBuffer(), source.getIndexBuffer(), source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
+        init(source.entitiesState.vertexBuffer, source.entitiesState.indexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
+        this.entitiesState.perMeshInfos.addAll(source.entitiesState.perMeshInfos);
+//        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
+//        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
+//        this.entitiesState.materialBuffer.putValues(source.entitiesState.materialBuffer.getValuesAsFloats());
+//        this.entitiesState.vertexBuffer.putValues(source.getVertexBuffer().getValuesAsFloats());
+//        this.entitiesState.indexBuffer.put(source.getIndexBuffer().getValues());
     }
 
     public RenderState() {

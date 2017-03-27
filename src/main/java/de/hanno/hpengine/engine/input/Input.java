@@ -1,7 +1,5 @@
 package de.hanno.hpengine.engine.input;
 
-import java.util.ArrayList;
-
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.ClickEvent;
