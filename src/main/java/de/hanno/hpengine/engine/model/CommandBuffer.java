@@ -32,7 +32,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
 
     @Override
     public int getPrimitiveSizeInBytes() {
-        return sizeInBytes();
+        return 4;
     }
 
     @Override

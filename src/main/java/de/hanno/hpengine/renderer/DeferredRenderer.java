@@ -25,6 +25,7 @@ import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import org.lwjgl.BufferUtils;
@@ -493,6 +494,11 @@ public class DeferredRenderer implements Renderer {
     @Override
 	public void startFrame() {
         GPUProfiler.startFrame();
+	}
+
+	@Override
+	public void registerPipelines(TripleBuffer<RenderState> renderstate) {
+		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline()));
 	}
 
 }

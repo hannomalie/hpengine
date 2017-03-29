@@ -2,6 +2,7 @@ package de.hanno.hpengine.renderer;
 
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
@@ -306,6 +307,8 @@ public interface Renderer extends LifeCycle {
             e.printStackTrace();
         }
     }
+
+    default void registerPipelines(TripleBuffer<RenderState> renderState) {}
 
     class SingletonHelper {
         protected static volatile Renderer instance;

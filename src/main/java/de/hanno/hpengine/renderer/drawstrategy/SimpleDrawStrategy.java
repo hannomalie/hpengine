@@ -29,6 +29,7 @@ import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import java.nio.FloatBuffer;
+import java.nio.channels.Pipe;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +64,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     GraphicsContext graphicsContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-    private Pipeline pipeline;
+    private int pipelineIndex;
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -95,7 +96,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         registerRenderExtension(new DrawLinesExtension());
         registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
-        pipeline = new Pipeline();
     }
 
     @Override
@@ -151,6 +151,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Draw entities");
 
+        Pipeline pipeline = renderState.get(pipelineIndex);
         if (Config.getInstance().isDrawScene()) {
             GPUProfiler.start("Set global uniforms first pass");
             Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
@@ -175,7 +176,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.start("Actual draw entities");
 
             if(Config.getInstance().isIndirectDrawing()) {
-                pipeline.prepareAndDraw(renderState, firstpassDefaultProgram, firstPassResult);
+                pipeline.draw(renderState, firstpassDefaultProgram, firstPassResult);
             } else {
                 for(PerMeshInfo info : renderState.perEntityInfos()) {
                     if (!info.isVisibleForCamera()) {
@@ -648,4 +649,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
+    public void setPipelineIndex(int pipelineIndex) {
+        this.pipelineIndex = pipelineIndex;
+    }
+
+    public int getPipelineIndex() {
+        return pipelineIndex;
+    }
 }

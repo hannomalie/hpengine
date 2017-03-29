@@ -8,11 +8,12 @@ import de.hanno.hpengine.component.JavaComponent;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
-import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
@@ -24,13 +25,14 @@ import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.renderer.state.RenderStateRecorder;
+import de.hanno.hpengine.renderer.state.SimpleRenderStateRecorder;
 import de.hanno.hpengine.scene.Scene;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
-import de.hanno.hpengine.util.multithreading.DoubleBuffer;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -49,7 +51,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -57,6 +58,7 @@ import java.util.logging.Logger;
 public class Engine {
 
     private static volatile Engine instance = null;
+    private RenderStateRecorder recorder;
 
     private UpdateThread updateThread;
     private RenderThread renderThread;
@@ -145,6 +147,7 @@ public class Engine {
     }
 
     private void initialize() {
+        recorder = new SimpleRenderStateRecorder();
         getEventBus().register(this);
         initWorkDir();
         new ApplicationFrame();
@@ -164,6 +167,7 @@ public class Engine {
         ScriptManager.getInstance().defineGlobals();
 
         renderState = new TripleBuffer<>(new RenderState(), new RenderState(), new RenderState());
+        Renderer.getInstance().registerPipelines(renderState);
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
         activeCamera = camera;
@@ -215,7 +219,10 @@ public class Engine {
     }
 
     private void updateRenderState() {
+        DirectionalLight directionalLight = scene.getDirectionalLight();
         boolean anyPointLightHasMoved = false;
+        boolean entityMovedThisCycle = false;
+
         for(int i = 0; i < scene.getPointLights().size(); i++) {
             PointLight pointLight = scene.getPointLights().get(i);
             if(!pointLight.hasMoved()) { continue; }
@@ -224,7 +231,6 @@ public class Engine {
             pointLight.setHasMoved(false);
         }
 
-        boolean entityMovedThisCycle = false;
         for(int i = 0; i < scene.getEntities().size(); i++) {
             Entity entity = scene.getEntities().get(i);
             if(!entity.hasMoved()) { continue; }
@@ -238,7 +244,6 @@ public class Engine {
         if((entityMovedThisCycle || entityAdded) && scene != null) {
             entityAdded = false;
         }
-        DirectionalLight directionalLight = scene.getDirectionalLight();
         if(directionalLight.hasMoved()) {
             directionalLightMovedInCycle = cycle.get();
             directionalLight.setHasMoved(false);
@@ -258,6 +263,7 @@ public class Engine {
         addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
 
         renderState.update();
+        renderState.preparePipelines();
     }
 
     Callable drawCallable = new Callable() {
@@ -265,6 +271,7 @@ public class Engine {
         public Object call() throws Exception {
             cycle.getAndIncrement();
             renderState.startRead();
+            recorder.add(renderState.getCurrentReadState());
 
             Input.update();
 

@@ -25,8 +25,8 @@ import static org.lwjgl.opengl.GL11.glFlush;
 public class Pipeline {
 
     protected final List<DrawElementsIndirectCommand> commands = new ArrayList();
-    protected final IndexBuffer entityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(1000));
-    protected final CommandBuffer commandBuffer = new CommandBuffer(16000);
+    protected final IndexBuffer entityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100));
+    protected final CommandBuffer commandBuffer = new CommandBuffer(1600);
     private final boolean useBackfaceCulling;
     private final boolean useLineDrawingIfActivated;
     private final boolean useFrustumCulling;

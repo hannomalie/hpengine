@@ -1,13 +1,17 @@
 package de.hanno.hpengine.util.multithreading;
 
+import de.hanno.hpengine.renderer.Pipeline;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class TripleBuffer<T extends TripleBuffer.State<T>> {
+public class TripleBuffer<T extends RenderState> {
     private static final Logger LOGGER = Logger.getLogger(TripleBuffer.class.getName());
 
     private final QueueStatePair<T> instanceA;
@@ -93,6 +97,28 @@ public class TripleBuffer<T extends TripleBuffer.State<T>> {
         }
     }
 
+    public int registerPipeline(Supplier<Pipeline> supplier) {
+        Pipeline a = supplier.get();
+        Pipeline b = supplier.get();
+        Pipeline c = supplier.get();
+        if(a == b || a == c || b == c) {
+            throw new IllegalArgumentException("Supplier has to provide new instances each time it is called!");
+        }
+        int aInt = instanceA.state.addPipeline(a);
+        int bInt = instanceB.state.addPipeline(b);
+        int cInt = instanceC.state.addPipeline(c);
+        if(aInt != bInt || aInt != cInt || bInt != cInt) {
+            throw new IllegalStateException("Should get the same index for all three states for a single pipeline!");
+        }
+        return aInt;
+    }
+
+    public void preparePipelines() {
+        for(Pipeline currentPipeline : currentWriteState.state.getPipelines()) {
+            currentPipeline.prepare(currentWriteState.state);
+        }
+    }
+
     private static class QueueStatePair<T> {
         private final CommandQueue queue = new CommandQueue();
         private final T state;
@@ -106,7 +132,4 @@ public class TripleBuffer<T extends TripleBuffer.State<T>> {
         }
     }
 
-    public interface State<T> {
-        boolean shouldNotSwap(T currentStaging, T currentRead);
-    }
 }

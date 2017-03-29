@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
@@ -19,7 +20,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RenderState implements TripleBuffer.State<RenderState> {
+public class RenderState {
 
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
     public final EntitiesState entitiesState = new EntitiesState();
@@ -31,6 +32,7 @@ public class RenderState implements TripleBuffer.State<RenderState> {
     public boolean sceneInitiallyDrawn;
     public Vector4f sceneMin = new Vector4f();
     public Vector4f sceneMax = new Vector4f();
+    public List<Pipeline> pipelines = new ArrayList<>();
 
     private long cycle = 0;
 
@@ -145,8 +147,23 @@ public class RenderState implements TripleBuffer.State<RenderState> {
         return directionalLightState.directionalLightViewProjectionMatrixAsBuffer;
     }
 
-    @Override
     public boolean shouldNotSwap(RenderState currentStaging, RenderState currentRead) {
         return currentStaging.cycle < currentRead.cycle;
+    }
+
+    public int addPipeline(Pipeline pipeline) {
+        if(pipelines.add(pipeline)) {
+            return pipelines.indexOf(pipeline);
+        } else {
+            throw new IllegalArgumentException("Pipeline could somehow not be added to state");
+        }
+    }
+
+    public Pipeline get(int index) {
+        return pipelines.get(index);
+    }
+
+    public List<Pipeline> getPipelines() {
+        return pipelines;
     }
 }
