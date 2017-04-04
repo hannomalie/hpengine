@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.config.Config;
 
-class UpdateThread extends FpsCountedTimeStepThread {
+public class UpdateThread extends FpsCountedTimeStepThread {
 
     public UpdateThread(String name, float minCycleTimeInS) {
         super(name, minCycleTimeInS);

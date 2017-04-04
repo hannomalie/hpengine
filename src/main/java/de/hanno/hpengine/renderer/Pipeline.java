@@ -63,7 +63,6 @@ public class Pipeline {
             }
             VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         }
-        GL11.glFinish(); // TODO: Avoid this somehow, maybe with using updatestep for filling offsetsbuffer
         GPUProfiler.end();
         renderState.getIndexBuffer().unbind();
 

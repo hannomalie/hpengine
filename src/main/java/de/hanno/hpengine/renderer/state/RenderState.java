@@ -12,13 +12,15 @@ import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.util.Util;
-import de.hanno.hpengine.util.multithreading.TripleBuffer;
+import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL11.glFlush;
 
 public class RenderState {
 
@@ -35,6 +37,7 @@ public class RenderState {
     public List<Pipeline> pipelines = new ArrayList<>();
 
     private long cycle = 0;
+    private volatile GLSync gpuCommandSync;
 
     /**
      * Copy constructor
@@ -147,7 +150,7 @@ public class RenderState {
         return directionalLightState.directionalLightViewProjectionMatrixAsBuffer;
     }
 
-    public boolean shouldNotSwap(RenderState currentStaging, RenderState currentRead) {
+    public boolean preventSwap(RenderState currentStaging, RenderState currentRead) {
         return currentStaging.cycle < currentRead.cycle;
     }
 
@@ -165,5 +168,14 @@ public class RenderState {
 
     public List<Pipeline> getPipelines() {
         return pipelines;
+    }
+
+    public GLSync getGpuCommandSync() {
+        return gpuCommandSync;
+    }
+
+    public void setGpuCommandSync(GLSync gpuCommandSync) {
+        this.gpuCommandSync = gpuCommandSync;
+        glFlush();
     }
 }

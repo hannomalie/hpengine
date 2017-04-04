@@ -21,11 +21,11 @@ public abstract class FpsCountedTimeStepThread extends TimeStepThread {
             long ns = System.nanoTime() - lastFrame;
 
             float seconds = ns / 1000f / 1000f / 1000f;
-//            try {
-            update(seconds);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            try {
+                update(seconds);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
             lastFrame = System.nanoTime();
             waitIfNecessary(seconds);
             fpsCounter.update();

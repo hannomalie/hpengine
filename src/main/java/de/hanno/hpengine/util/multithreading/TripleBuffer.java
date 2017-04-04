@@ -4,7 +4,6 @@ import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
-import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -42,7 +41,7 @@ public class TripleBuffer<T extends RenderState> {
         swapLock.lock();
         stagingLock.lock();
 
-        if(!currentReadState.state.shouldNotSwap(currentStagingState.state, currentReadState.state)) {
+        if(!currentReadState.state.preventSwap(currentStagingState.state, currentReadState.state)) {
             temp = currentReadState;
             currentReadState = currentStagingState;
             currentStagingState = temp;
@@ -69,6 +68,7 @@ public class TripleBuffer<T extends RenderState> {
 
     public boolean update() {
         currentWriteState.queue.executeCommands();
+        preparePipelines();
         swapStaging();
         return true;
     }
@@ -95,6 +95,11 @@ public class TripleBuffer<T extends RenderState> {
             LOGGER.fine("Stage " + (currentStagingState == instanceA ? 0 : (currentStagingState == instanceB ? 1 : 2)));
             LOGGER.fine("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)));
         }
+    }
+    public void printState() {
+        System.out.println("Read  " + (currentReadState == instanceA ? 0 : (currentReadState == instanceB ? 1 : 2)) + " with " + currentReadState.state.getGpuCommandSync());
+        System.out.println("Stage " + (currentStagingState == instanceA ? 0 : (currentStagingState == instanceB ? 1 : 2)) + " with " + currentStagingState.state.getGpuCommandSync());
+        System.out.println("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)) + " with " + currentWriteState.state.getGpuCommandSync());
     }
 
     public int registerPipeline(Supplier<Pipeline> supplier) {

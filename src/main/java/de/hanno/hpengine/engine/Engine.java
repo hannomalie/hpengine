@@ -15,6 +15,7 @@ import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -40,6 +41,7 @@ import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.vector.Vector3f;
 
 import java.awt.*;
@@ -54,6 +56,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+
+import static org.lwjgl.opengl.GL11.glFinish;
+import static org.lwjgl.opengl.GL11.glFlush;
+import static org.lwjgl.opengl.GL32.*;
 
 public class Engine {
 
@@ -219,6 +225,9 @@ public class Engine {
     }
 
     private void updateRenderState() {
+        final GLSync gpuCommandSync = renderState.getCurrentWriteState().getGpuCommandSync();
+        waitForGpuSync(gpuCommandSync);
+
         DirectionalLight directionalLight = scene.getDirectionalLight();
         boolean anyPointLightHasMoved = false;
         boolean entityMovedThisCycle = false;
@@ -263,7 +272,17 @@ public class Engine {
         addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
 
         renderState.update();
-        renderState.preparePipelines();
+    }
+
+    private static void waitForGpuSync(GLSync gpuCommandSync) {
+        if(gpuCommandSync != null) {
+            while(true) {
+                int signaled = GraphicsContext.getInstance().calculate(() -> glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0));
+                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
+                    break;
+                }
+            }
+        }
     }
 
     Callable drawCallable = new Callable() {
@@ -284,6 +303,11 @@ public class Engine {
             Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
             scene.endFrame();
 
+            GLSync readStateSync = renderState.getCurrentReadState().getGpuCommandSync();
+            if(readStateSync != null) {
+                glDeleteSync(readStateSync);
+            }
+            renderState.getCurrentReadState().setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
             renderState.stopRead();
             return null;
         }

@@ -284,7 +284,7 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
        any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
 
-       return vec4(0);
+//       return vec4(0);
     }
 
     int level = int(loD);
@@ -292,7 +292,7 @@ vec4 voxelFetch(vec3 positionWorld, float loD) {
     float positionScaleFactor = pow(2, level);
 
     vec3 samplePositionNormalized = vec3(positionGridScaled)/vec3(gridSize)+vec3(0.5);
-    return textureLod(grid, samplePositionNormalized, level);
+    return textureLod(grid, samplePositionNormalized, loD);
 }
 
 float ComputeScattering(float lightDotView)
@@ -357,7 +357,7 @@ vec3 scatter(vec3 worldPos, vec3 startPosition) {
 
 			const bool useVoxelConeTracing = false;
 			if(useVoxelConeTracing) {
-			    int mipLevel = 5;
+			    int mipLevel = 2;
 				vec4 voxel = voxelFetch(currentPosition, mipLevel);
 				accumFogShadow += voxel.rgb;
 			}

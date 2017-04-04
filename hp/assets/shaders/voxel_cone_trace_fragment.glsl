@@ -149,6 +149,7 @@ void main(void) {
     float maxExtent = gridSizeHalf * sceneScale;
     const bool useVoxelConeTracing = true;
     vec3 vct = vec3(0);
+    float NdotL = clamp(dot(normalWorld, V), 0, 1);
 
 	const float boost = 1.;
     const bool debugVoxels = false;
@@ -160,8 +161,9 @@ void main(void) {
 
         const int SAMPLE_COUNT = 4;
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, sceneScale, positionWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
-        vct += boost*(specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 2*sceneScale, positionWorld+normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+
+        vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
 
         const bool useTransparency = false;
         if(useTransparency) {
