@@ -6,7 +6,8 @@ import org.junit.Test;
 public class EngineTest {
     @Test
     public void testSimpleInit() throws Exception {
-        Engine.init();
+        ApplicationFrame frame = new ApplicationFrame();
+        Engine.init(frame.getRenderCanvas());
         Assert.assertTrue(Engine.getInstance().isInitialized());
     }
 

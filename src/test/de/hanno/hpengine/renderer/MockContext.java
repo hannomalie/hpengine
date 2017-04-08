@@ -13,12 +13,37 @@ import java.util.concurrent.CompletableFuture;
 public class MockContext implements GraphicsContext {
 
     @Override
+    public boolean isAttachedTo(Canvas canvas) {
+        return false;
+    }
+
+    @Override
+    public int getCanvasWidth() {
+        return 0;
+    }
+
+    @Override
+    public int getCanvasHeight() {
+        return 0;
+    }
+
+    @Override
+    public void setCanvasWidth(int width) {
+
+    }
+
+    @Override
+    public void setCanvasHeight(int height) {
+
+    }
+
+    @Override
     public boolean isError() {
         return false;
     }
 
     @Override
-    public void init() {
+    public void init(Canvas canvas) {
 
     }
 
@@ -28,17 +53,19 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void attach(Canvas canvas) throws LWJGLException {
+    public boolean attach(Canvas canvas) {
 
+        return false;
     }
 
     @Override
-    public void detach() throws LWJGLException {
+    public boolean detach() {
 
+        return false;
     }
 
     @Override
-    public void attachOrDetach(Canvas canvas) throws LWJGLException {
+    public void attachOrDetach(Canvas canvas) {
 
     }
 

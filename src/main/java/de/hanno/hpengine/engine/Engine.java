@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine;
 
 import com.alee.laf.WebLookAndFeel;
+import com.alee.utils.SwingUtils;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.camera.MovableCamera;
@@ -15,7 +16,6 @@ import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.GraphicsContext;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
@@ -34,6 +34,7 @@ import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
+import de.hanno.hpengine.util.gui.SwingWorkerWithProgress;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -44,6 +45,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.vector.Vector3f;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -57,18 +59,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import static org.lwjgl.opengl.GL11.glFinish;
-import static org.lwjgl.opengl.GL11.glFlush;
 import static org.lwjgl.opengl.GL32.*;
 
 public class Engine {
 
     private static volatile Engine instance = null;
-    private RenderStateRecorder recorder;
+    public static ApplicationFrame frame;
+    private static volatile Runnable setTitleRunnable;
 
+    private RenderStateRecorder recorder;
     private UpdateThread updateThread;
     private RenderThread renderThread;
-
     private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
     private volatile TripleBuffer<RenderState> renderState;
 
@@ -115,16 +116,29 @@ public class Engine {
         }
 
         try {
-            EventQueue.invokeAndWait(() -> WebLookAndFeel.install());
+            SwingUtils.invokeAndWait(() -> WebLookAndFeel.install());
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
 
-        init();
+
+        frame = new ApplicationFrame();
+        setTitleRunnable = frame.getSetTitleRunnable();
+
+        new TimeStepThread("DisplayTitleUpdate", 1.0f) {
+            @Override
+            public void update(float seconds) {
+                SwingUtilities.invokeLater(Engine.setTitleRunnable);
+            }
+        }.start();
+
+        init(frame.getRenderCanvas());
         if (debug) {
-            new DebugFrame();
+            DebugFrame debugFrame = new DebugFrame();
+            debugFrame.attachGame();
+            frame.setVisible(false);
         }
         if (sceneName != null) {
             Renderer.getInstance();
@@ -141,23 +155,26 @@ public class Engine {
         }
     }
 
-    public static void init() {
+    public static void init(Canvas canvas) {
         if (instance != null) {
             return;
         }
         instance = new Engine();
-        instance.initialize();
+        instance.initialize(canvas);
     }
 
     private Engine() {
     }
 
-    private void initialize() {
+    public void setSetTitleRunnable(Runnable setTitleRunnable) {
+        Engine.setTitleRunnable = setTitleRunnable;
+    }
+
+    private void initialize(Canvas canvas) {
         recorder = new SimpleRenderStateRecorder();
         getEventBus().register(this);
         initWorkDir();
-        new ApplicationFrame();
-        initOpenGLContext();
+        GraphicsContext.initGpuContext(canvas);
 
         EntityFactory.create();
         ProgramFactory.init();
@@ -357,10 +374,6 @@ public class Engine {
                 currentWriteState.add(info);
             }
         }
-    }
-
-    private void initOpenGLContext() {
-        GraphicsContext.getInstance();
     }
 
     public Scene getScene() {

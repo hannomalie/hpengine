@@ -5,6 +5,8 @@ import de.hanno.hpengine.renderer.Renderer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.awt.*;
+
 public class TestWithEngine {
 
 	public static Renderer renderer;
@@ -17,7 +19,7 @@ public class TestWithEngine {
 	@BeforeClass
 	public static void init() {
         // TODO: Make this work headless
-        Engine.init();
+        Engine.init(new Canvas());
         engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}

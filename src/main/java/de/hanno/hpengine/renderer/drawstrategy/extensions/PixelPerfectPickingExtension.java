@@ -2,7 +2,6 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
-import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
@@ -35,8 +34,8 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             GraphicsContext.getInstance().readBuffer(4);
 
             floatBuffer.rewind();
-            Vector2f ratio = new Vector2f(Float.valueOf(Config.getInstance().getWidth()) / Float.valueOf(ApplicationFrame.WINDOW_WIDTH),
-                    Float.valueOf(Config.getInstance().getHeight()) / Float.valueOf(ApplicationFrame.WINDOW_HEIGHT));
+            Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) GraphicsContext.getInstance().getCanvasWidth(),
+                    (float) Config.getInstance().getHeight() / (float) GraphicsContext.getInstance().getCanvasHeight());
             int adjustedX = (int) (Mouse.getX() * ratio.x);
             int adjustedY = (int) (Mouse.getY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);

@@ -31,6 +31,10 @@ public final class OpenGLContext implements GraphicsContext {
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
+
+    private int canvasWidth = Config.getInstance().getWidth();
+    private int canvasHeight = Config.getInstance().getHeight();
+
     private TimeStepThread openGLThread;
     private boolean attached;
 
@@ -40,6 +44,31 @@ public final class OpenGLContext implements GraphicsContext {
     private int maxTextureUnits;
 
     protected OpenGLContext() {
+    }
+
+    @Override
+    public boolean isAttachedTo(Canvas canvas) {
+        return Display.getParent() != null && Display.getParent().equals(canvas);
+    }
+
+    @Override
+    public int getCanvasWidth() {
+        return canvasWidth;
+    }
+
+    @Override
+    public int getCanvasHeight() {
+        return canvasHeight;
+    }
+
+    @Override
+    public void setCanvasWidth(int width) {
+        canvasWidth = width;
+    }
+
+    @Override
+    public void setCanvasHeight(int height) {
+        canvasHeight = height;
     }
 
     @Override
@@ -111,17 +140,28 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public void attach(Canvas canvas) throws LWJGLException {
-        Display.setParent(canvas);
-        attached = true;
+    public boolean attach(Canvas canvas) {
+        try {
+            Display.setParent(canvas);
+            attached = true;
+        } catch (LWJGLException e) {
+            attached = false;
+            e.printStackTrace();
+        }
+        return attached;
     }
     @Override
-    public void detach() throws LWJGLException {
-        Display.setParent(null);
-        attached = false;
+    public boolean detach() {
+        try {
+            Display.setParent(null);
+            attached = false;
+        } catch (LWJGLException e) {
+            e.printStackTrace();
+        }
+        return !attached;
     }
     @Override
-    public void attachOrDetach(Canvas canvas) throws LWJGLException {
+    public void attachOrDetach(Canvas canvas) {
         if(attached) {
             detach();
         } else {
@@ -418,6 +458,7 @@ public final class OpenGLContext implements GraphicsContext {
         LOGGER.info(GLTimerQuery.getInstance().getResult().toString());
     }
 
+
     @Override
     public void destroy() {
         openGLThread.stopRequested = true;
@@ -430,7 +471,8 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
 
-    public void init() {
+    public void init(Canvas canvas) {
+        attach(canvas);
         this.openGLThread = new TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
 
             @Override

@@ -1,6 +1,5 @@
 package de.hanno.hpengine.renderer.rendertarget;
 
-import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -21,11 +20,11 @@ public class RenderTarget {
     private static final RenderTarget frontBuffer = new RenderTarget() {
         @Override
         public int getWidth() {
-            return ApplicationFrame.WINDOW_WIDTH;
+            return GraphicsContext.getInstance().getCanvasWidth();
         }
         @Override
         public int getHeight() {
-            return ApplicationFrame.WINDOW_HEIGHT;
+            return GraphicsContext.getInstance().getCanvasHeight();
         }
         @Override
         public void use(boolean clear) {

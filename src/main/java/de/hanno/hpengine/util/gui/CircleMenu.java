@@ -9,9 +9,9 @@ import com.alee.laf.text.WebTextField;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.IntTextDocument;
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.ClickEvent;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Synchronized;
 import org.lwjgl.input.Mouse;
@@ -70,7 +70,7 @@ public class CircleMenu {
             System.out.println("Set true");
 
             SwingUtils.invokeLater(() -> {
-                webMenu.showMenu(Display.getParent(), Mouse.getX(), ApplicationFrame.WINDOW_HEIGHT-Mouse.getY());
+                webMenu.showMenu(Display.getParent(), Mouse.getX(), GraphicsContext.getInstance().getCanvasHeight() -Mouse.getY());
                 System.out.println("Menu shown");
                 if(!isBusy.compareAndSet(true, false)) {
                     throw new IllegalStateException("Illegal State with isBusy!");

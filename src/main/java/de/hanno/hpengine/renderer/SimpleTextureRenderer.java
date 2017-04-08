@@ -1,13 +1,9 @@
 package de.hanno.hpengine.renderer;
 
-import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.renderer.state.RenderState;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.renderer.constants.GlCap;
 import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
@@ -15,6 +11,7 @@ import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
@@ -23,6 +20,8 @@ import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.util.vector.Vector3f;
 
 import javax.vecmath.Vector2f;
 import java.util.ArrayList;
@@ -150,7 +149,7 @@ public class SimpleTextureRenderer implements Renderer {
 		program.use();
 
         GraphicsContext.getInstance().bindFrameBuffer(0);
-        GraphicsContext.getInstance().viewPort(0,0, ApplicationFrame.WINDOW_WIDTH, ApplicationFrame.WINDOW_HEIGHT);
+        GraphicsContext.getInstance().viewPort(0,0, GraphicsContext.getInstance().getCanvasWidth(), GraphicsContext.getInstance().getCanvasHeight());
         GraphicsContext.getInstance().disable(GlCap.DEPTH_TEST);
 
         GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);

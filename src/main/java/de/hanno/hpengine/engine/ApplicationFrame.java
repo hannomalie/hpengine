@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.config.Config;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
+import de.hanno.hpengine.renderer.GraphicsContext;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,9 +12,16 @@ import static de.hanno.hpengine.renderer.Renderer.getInstance;
 
 public class ApplicationFrame extends JFrame {
 
-    public static int WINDOW_WIDTH = Config.getInstance().getWidth();
-    public static int WINDOW_HEIGHT = Config.getInstance().getHeight();
-    Canvas canvas;
+    private Canvas canvas;
+
+    private Runnable setTitleRunnable = () -> {
+        try {
+            ApplicationFrame.this.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                    getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
+        } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
+            ApplicationFrame.this.setTitle("HPEngine Renderer initializing...");
+        }
+    };
 
     public ApplicationFrame() throws HeadlessException {
         super("hpengine");
@@ -47,34 +53,42 @@ public class ApplicationFrame extends JFrame {
         getContentPane().add(canvas, BorderLayout.CENTER);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
-        try {
-            Display.setParent(canvas);
-        } catch (LWJGLException e) {
-            e.printStackTrace();
-        }
-        ApplicationFrame frame = this;
         addComponentListener(new ComponentAdapter() {
+            int retryCounter = 0;
             public void componentResized(ComponentEvent evt) {
-                WINDOW_WIDTH = frame.getWidth();
-                WINDOW_HEIGHT = frame.getHeight();
+                try {
+                    GraphicsContext.getInstance().setCanvasWidth(ApplicationFrame.this.getWidth());
+                    GraphicsContext.getInstance().setCanvasHeight(ApplicationFrame.this.getHeight());
+                    retryCounter = 0;
+                } catch (IllegalStateException e) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e1) {
+                        e1.printStackTrace();
+                    }
+                    if(retryCounter < 5) {
+                        componentResized(evt);
+                        retryCounter++;
+                    }
+                }
+
             }
         });
+    }
 
-        new TimeStepThread("DisplayTitleUpdate", 1.0f) {
+    public Canvas getRenderCanvas() {
+        return canvas;
+    }
 
-            @Override
-            public void update(float seconds) {
-                SwingUtilities.invokeLater(() -> {
-                    try {
-                        frame.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                                getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
-                    } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/}
-                    catch (IllegalStateException | NullPointerException e) {
-                        frame.setTitle("HPEngine Renderer initializing...");
-                    }
+    public void attachGame() {
+        GraphicsContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().attach(canvas);
+            Engine.getInstance().setSetTitleRunnable(ApplicationFrame.this.getSetTitleRunnable());
+            setVisible(true);
+        });
+    }
 
-                });
-            }
-        }.start();
+    public Runnable getSetTitleRunnable() {
+        return setTitleRunnable;
     }
 }

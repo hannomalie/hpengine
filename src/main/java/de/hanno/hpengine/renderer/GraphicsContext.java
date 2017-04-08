@@ -22,27 +22,35 @@ public interface GraphicsContext {
         GPUContextHelper.instance = context;
     }
 
+    boolean isAttachedTo(Canvas canvas);
+
+    int getCanvasWidth();
+
+    int getCanvasHeight();
+
+    void setCanvasWidth(int width);
+
+    void setCanvasHeight(int height);
+
     class GPUContextHelper {
         static volatile GraphicsContext instance;
     }
 
     static GraphicsContext getInstance() {
-        if(GPUContextHelper.instance == null) {
-            initGpuContext();
-        } else if(!GPUContextHelper.instance.isInitialized()) {
+        if(GPUContextHelper.instance == null || !GPUContextHelper.instance.isInitialized()) {
             throw new IllegalStateException("GraphicsContext context not initialized. Init an GraphicsContext first.");
         }
         return GPUContextHelper.instance;
     }
 
-    static void initGpuContext() {
+    static void initGpuContext(Canvas canvas) {
         Class<? extends GraphicsContext> gpuContextClass = Config.getInstance().getGpuContextClass();
         synchronized(gpuContextClass) {
             if(GPUContextHelper.instance == null) {
                 try {
                     LOGGER.info("GraphicsContext is being initialized");
                     GraphicsContext context = gpuContextClass.newInstance();
-                    context.init();
+                    context.init(canvas);
                     GraphicsContext.setInstance(context);
                     LOGGER.info("GraphicsContext is initialized");
                 } catch (IllegalAccessException | InstantiationException e) {
@@ -71,15 +79,15 @@ public interface GraphicsContext {
 
     boolean isError();
 
-    void init();
+    void init(Canvas canvas);
 
     void update(float seconds);
 
-    void attach(Canvas canvas) throws LWJGLException;
+    boolean attach(Canvas canvas);
 
-    void detach() throws LWJGLException;
+    boolean detach();
 
-    void attachOrDetach(Canvas canvas) throws LWJGLException;
+    void attachOrDetach(Canvas canvas);
 
     void enable(GlCap cap);
 
@@ -158,4 +166,5 @@ public interface GraphicsContext {
     void benchmark(Runnable runnable);
 
     void destroy();
+
 }

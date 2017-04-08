@@ -80,8 +80,7 @@ import javax.swing.text.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -95,6 +94,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import static de.hanno.hpengine.renderer.Renderer.getInstance;
 
 
 public class DebugFrame {
@@ -145,8 +146,29 @@ public class DebugFrame {
     private final JTextPane infoLeft = new JTextPane();
     private final JTextPane infoRight = new JTextPane();
     WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
-    private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
-	
+	private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
+	private Canvas canvas = new Canvas();
+	private JPanel gamePanel = new JPanel() {{
+        setLayout(new BorderLayout(0, 0));
+        removeAll();
+        add(canvas,BorderLayout.CENTER);
+        addComponentListener(new ComponentListener(){
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if(GraphicsContext.getInstance().isAttachedTo(canvas)) {addComponentListener(new ComponentAdapter() {
+                    public void componentResized(ComponentEvent evt) {
+                        GraphicsContext.getInstance().setCanvasWidth(canvas.getWidth());
+                        GraphicsContext.getInstance().setCanvasHeight(canvas.getHeight());
+                    }
+                });
+                }
+            }
+            @Override public void componentMoved(ComponentEvent e) {}
+            @Override public void componentShown(ComponentEvent e) {}
+            @Override public void componentHidden(ComponentEvent e) {}
+        });
+    }};
+
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
@@ -206,6 +228,15 @@ public class DebugFrame {
     private WebFrame addEntityFrame;
 	private PerformanceMonitor performanceMonitor;
 	private WebProgressBar progressBar = new WebProgressBar();
+	private JFrame frame = mainFrame;
+    private Runnable setTitleRunnable = () -> {
+        try {
+            frame.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+                    getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
+        } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
+            frame.setTitle("HPEngine Renderer initializing...");
+        }
+    };
 
     public DebugFrame() {
 
@@ -255,7 +286,8 @@ public class DebugFrame {
         tabbedPane.addTab("Console", consolePane);
         tabbedPane.addTab("Scripts", scriptsPane);
         tabbedPane.addTab("Output", outputPane);
-        tabbedPane.addTab("Info", infoPane);
+		tabbedPane.addTab("Info", infoPane);
+		tabbedPane.addTab("Game", gamePanel);
     }
 
     private WebMenuBar getWebMenuBar() {
@@ -515,11 +547,20 @@ public class DebugFrame {
         });
         WebMenuItem toggleFPS = new WebMenuItem("Toggle FPS");
         toggleFPS.addActionListener(e -> {
-			if(performanceMonitor == null) {
-				// TODO: Remove this somehow
-				initPerformanceChart();
-			}
+            if(performanceMonitor == null) {
+                // TODO: Remove this somehow
+                initPerformanceChart();
+            }
             performanceMonitor.toggleVisibility();
+        });
+        WebMenuItem toggleAttach = new WebMenuItem("Attach/Detach");
+        toggleAttach.addActionListener(e -> {
+            if(GraphicsContext.getInstance().isAttachedTo(canvas)) {
+                Engine.frame.attachGame();
+            } else {
+                attachGame();
+                Engine.frame.setVisible(false);
+            }
         });
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
         loadMaterial.addActionListener(e -> {
@@ -646,6 +687,7 @@ public class DebugFrame {
         menuBar.add(resetProfiling);
         menuBar.add(refreshAll);
         menuBar.add(toggleFPS);
+        menuBar.add(toggleAttach);
         menuBar.add(sceneViewFilterField);
         menuBar.add(progressBar);
         progressBar.setIndeterminate(false);
@@ -1269,5 +1311,16 @@ public class DebugFrame {
 
     public static String getCurrentFilter() {
         return sceneViewFilterField.getText();
+    }
+
+	public void attachGame() {
+        GraphicsContext.getInstance().execute(() -> {
+            GraphicsContext.getInstance().attach(canvas);
+            Engine.getInstance().setSetTitleRunnable(getSetTitleRunnable());
+        });
+	}
+
+    public Runnable getSetTitleRunnable() {
+        return setTitleRunnable;
     }
 }

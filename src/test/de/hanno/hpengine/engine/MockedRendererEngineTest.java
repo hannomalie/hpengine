@@ -13,6 +13,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 
+import java.awt.*;
+
 public class MockedRendererEngineTest {
 
     @Ignore
@@ -21,7 +23,7 @@ public class MockedRendererEngineTest {
         // TODO: Make running this test possible
         Config.getInstance().setRendererClass(MockRenderer.class);
         Config.getInstance().setGpuContextClass(MockContext.class);
-        Engine.init();
+        Engine.init(new Canvas());
     }
 
     public static class MockRenderer implements Renderer {
