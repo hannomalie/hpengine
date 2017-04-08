@@ -34,7 +34,6 @@ import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
-import de.hanno.hpengine.util.gui.SwingWorkerWithProgress;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -285,7 +284,7 @@ public class Engine {
         }
 
         Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
-        renderState.getCurrentWriteState().init(scene.getVertexBuffer(), scene.getIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
+        renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
         addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
 
         renderState.update();
@@ -363,11 +362,7 @@ public class Engine {
                 boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
                 mesh.getMaterial().setTexturesUsed();
-                PerMeshInfo info = currentWriteState.entitiesState.cash.get(mesh);
-                if(info == null) {
-                    info = new PerMeshInfo();
-                    currentWriteState.entitiesState.cash.put(mesh, info);
-                }
+                PerMeshInfo info = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new PerMeshInfo());
                 Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
                 int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
                 info.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), entity.getLastMovedInCycle());
@@ -390,8 +385,7 @@ public class Engine {
         }, true);
         restoreWorldCamera();
         renderState.addCommand(renderState1 -> {
-            renderState1.setIndexBuffer(scene.getIndexBuffer());
-            renderState1.setVertexBuffer(scene.getVertexBuffer());
+            renderState1.setVertexIndexBuffer(scene.getVertexIndexBuffer());
         });
         sceneIsInitiallyDrawn = false;
     }

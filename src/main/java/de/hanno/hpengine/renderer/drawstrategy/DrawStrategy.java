@@ -22,6 +22,7 @@ public interface DrawStrategy {
             return 0;
         }
         Program currentProgram = program;
+        currentProgram.use();
         currentProgram.setUniform("entityIndex", perMeshInfo.getEntityBufferIndex());
         currentProgram.setUniform("indirect", false);
 

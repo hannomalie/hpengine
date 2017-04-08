@@ -10,6 +10,7 @@ import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.opengl.GLSync;
@@ -44,7 +45,7 @@ public class RenderState {
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.entitiesState.vertexBuffer, source.entitiesState.indexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
+        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
         this.entitiesState.perMeshInfos.addAll(source.entitiesState.perMeshInfos);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
 //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
@@ -56,9 +57,8 @@ public class RenderState {
     public RenderState() {
     }
 
-    public RenderState init(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor) {
-        this.entitiesState.vertexBuffer = vertexBuffer;
-        this.entitiesState.indexBuffer = indexBuffer;
+    public RenderState init(VertexIndexBuffer vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor) {
+        this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
         this.camera.init(camera);
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
         this.directionalLightState.directionalLightViewMatrixAsBuffer.rewind();
@@ -87,19 +87,19 @@ public class RenderState {
     }
 
     public IndexBuffer getIndexBuffer() {
-        return entitiesState.indexBuffer;
+        return entitiesState.vertexIndexBuffer.getIndexBuffer();
     }
 
     public VertexBuffer getVertexBuffer() {
-        return entitiesState.vertexBuffer;
+        return entitiesState.vertexIndexBuffer.getVertexBuffer();
     }
 
     public void setVertexBuffer(VertexBuffer vertexBuffer) {
-        this.entitiesState.vertexBuffer = vertexBuffer;
+        this.entitiesState.vertexIndexBuffer.setVertexBuffer(vertexBuffer);
     }
 
     public void setIndexBuffer(IndexBuffer indexBuffer) {
-        this.entitiesState.indexBuffer = indexBuffer;
+        this.entitiesState.vertexIndexBuffer.setIndexBuffer(indexBuffer);
     }
 
     public void bufferEntites(List<Entity> entities) {
@@ -177,5 +177,9 @@ public class RenderState {
     public void setGpuCommandSync(GLSync gpuCommandSync) {
         this.gpuCommandSync = gpuCommandSync;
         glFlush();
+    }
+
+    public void setVertexIndexBuffer(VertexIndexBuffer vertexIndexBuffer) {
+        this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
     }
 }

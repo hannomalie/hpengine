@@ -1,9 +1,9 @@
 package de.hanno.hpengine.renderer.environmentsampler;
 
-import de.hanno.hpengine.camera.Camera;
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.Entity;
@@ -11,16 +11,8 @@ import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.Transformable;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.MaterialChangedEvent;
-import de.hanno.hpengine.container.EntitiesContainer;
-import de.hanno.hpengine.renderer.GraphicsContext;
-import de.hanno.hpengine.renderer.state.RenderState;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 import de.hanno.hpengine.renderer.DeferredRenderer;
+import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
@@ -29,6 +21,7 @@ import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.*;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
@@ -37,6 +30,12 @@ import de.hanno.hpengine.texture.CubeMapArray;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
+import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 import java.nio.FloatBuffer;
 import java.util.HashSet;
@@ -330,13 +329,8 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
-        for (Entity entity : entities) {
-            if(entity.getComponents().containsKey("ModelComponent")) {
-                ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
-                PerMeshInfo perMeshInfo =
-                        new PerMeshInfo(firstpassDefaultProgram, Engine.getInstance().getScene().getEntityBufferIndex(entity), entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, entity.getInstanceCount(), true, entity.getUpdate(), entity.getMinMaxWorld()[0], entity.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), entity.getLastMovedInCycle());
-                DrawStrategy.draw(extract, perMeshInfo);
-            }
+        for (PerMeshInfo entity : extract.perEntityInfos()) {
+			DrawStrategy.draw(extract, entity);
         }
 		GPUProfiler.end();
 		GraphicsContext.getInstance().enable(CULL_FACE);

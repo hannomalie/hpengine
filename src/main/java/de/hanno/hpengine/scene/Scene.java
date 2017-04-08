@@ -6,44 +6,34 @@ import de.hanno.hpengine.container.SimpleContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.IndexBuffer;
-import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.LightChangedEvent;
 import de.hanno.hpengine.event.MaterialAddedEvent;
 import de.hanno.hpengine.event.SceneInitEvent;
 import de.hanno.hpengine.renderer.GraphicsContext;
-import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
-import org.nustaq.serialization.FSTConfiguration;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.light.AreaLight;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.light.TubeLight;
+import org.apache.commons.io.FilenameUtils;
+import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
+import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static de.hanno.hpengine.component.ModelComponent.DEFAULTCHANNELS;
 
 public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-
-	public volatile VertexBuffer vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(10000), DEFAULTCHANNELS);
-	public volatile IndexBuffer indexBuffer = new IndexBuffer(BufferUtils.createIntBuffer(10000));
-	public volatile AtomicInteger currentBaseVertex = new AtomicInteger();
-	public volatile AtomicInteger currentIndexOffset = new AtomicInteger();
+	private final VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(10000, 10000);
 
 	String name = "";
 	List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -344,20 +334,8 @@ public class Scene implements LifeCycle, Serializable {
 	public void setUpdateCache(boolean updateCache) {
 		this.updateCache = updateCache;
 	}
-	public AtomicInteger getCurrentBaseVertex() {
-		return currentBaseVertex;
-	}
 
-	public AtomicInteger getCurrentIndexOffset() {
-		return currentIndexOffset;
+	public VertexIndexBuffer getVertexIndexBuffer() {
+		return vertexIndexBuffer;
 	}
-
-	public VertexBuffer getVertexBuffer() {
-		return vertexBuffer;
-	}
-
-	public IndexBuffer getIndexBuffer() {
-		return indexBuffer;
-	}
-
 }

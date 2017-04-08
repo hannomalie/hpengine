@@ -222,7 +222,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         if(indexBuffer != null) {
             // TODO: use lod
             indexBuffer.bind();
-//            GL32.glDrawElementsInstancedBaseVertex(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex);
             GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex, 0);
 
         } else {

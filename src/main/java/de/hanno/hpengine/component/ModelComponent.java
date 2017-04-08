@@ -1,9 +1,10 @@
 package de.hanno.hpengine.component;
 
-import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.scene.Scene;
+import de.hanno.hpengine.scene.VertexIndexBuffer;
+import de.hanno.hpengine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -26,8 +27,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public boolean instanced = false;
 
-    private int indexOffset;
-    private int baseVertex;
     public float[] floatArray;
     private List<int[]> indices = new ArrayList<>();
     private int[] indicesCounts;
@@ -55,6 +54,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             DataChannels.POSITION3);
     public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
             DataChannels.POSITION3);
+    private VertexIndexOffsets vertexIndexOffsets;
 
     public List<int[]> getLodLevels() {
         return Collections.unmodifiableList(lodLevels);
@@ -104,36 +104,41 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public void registerInScene(Scene scene) {
-        baseVertex = scene.getCurrentBaseVertex().get();
-        indexOffset = scene.getCurrentIndexOffset().get();
-        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+        VertexIndexBuffer vertexIndexBuffer = scene.getVertexIndexBuffer();
+        putToBuffer(vertexIndexBuffer);
+    }
 
+    public void putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
+
+        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+        int vertexElementsCount = floatArray.length / totalElementsPerVertex;
+        int indicesCount = getIndices().length;
+        vertexIndexOffsets = vertexIndexBuffer.allocate(vertexElementsCount, indicesCount);
 
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];
-        int currentBaseVertex = baseVertex;
-        int currentIndexOffset = indexOffset;
+
+        int currentIndexOffset = vertexIndexOffsets.indexOffset;
+        int currentVertexOffset = vertexIndexOffsets.vertexOffset;
+
         for(int i = 0; i < indicesCounts.length; i++) {
             Mesh mesh = model.getMeshes().get(i);
             indicesCounts[i] = currentIndexOffset;
-            baseVertices[i] = currentBaseVertex;
-            currentBaseVertex += mesh.getVertexBufferValuesArray().length/totalElementsPerVertex;
+            baseVertices[i] = currentVertexOffset;
             currentIndexOffset += mesh.getIndexBufferValuesArray().length;
+            currentVertexOffset += mesh.getVertexBufferValuesArray().length/totalElementsPerVertex;
         }
 
         this.getModel().putToValueArrays();
         this.createFloatArray();
 
         GraphicsContext.getInstance().execute(() -> {
-            scene.getVertexBuffer().putValues(baseVertex*totalElementsPerVertex, floatArray);
-            scene.getIndexBuffer().appendIndices(indexOffset, getIndices());
-            LOGGER.fine("Current IndexOffset: " + indexOffset);
-            LOGGER.fine("Current BaseVertex: " + baseVertex);
-            scene.getVertexBuffer().upload();
+            vertexIndexBuffer.getVertexBuffer().putValues(vertexIndexOffsets.vertexOffset*totalElementsPerVertex, floatArray);
+            vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
+            LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);
+            LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
+            vertexIndexBuffer.getVertexBuffer().upload();
         });
-        scene.getCurrentBaseVertex().getAndSet(baseVertex + floatArray.length/ totalElementsPerVertex);
-        scene.getCurrentIndexOffset().getAndSet(indexOffset + getIndices().length);
-
     }
 
     public void setLodLevels(List<int[]> lodLevels) {
@@ -225,16 +230,15 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return indicesCounts[0];
 
     }
+
+    // TODO: Remove this
     public int getIndexOffset() {
-        return indexOffset;
+        return vertexIndexOffsets.indexOffset;
     }
 
-    public void setBaseVertex(int baseVertex) {
-        this.baseVertex = baseVertex;
-    }
-
+    // TODO: Remove this
     public int getBaseVertex() {
-        return baseVertex;
+        return vertexIndexOffsets.vertexOffset;
     }
 
     public Vector3f[] getMinMax(Matrix4f modelMatrix) {

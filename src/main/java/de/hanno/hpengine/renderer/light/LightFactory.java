@@ -366,24 +366,20 @@ public class LightFactory {
 			AreaLight light = areaLights.get(i);
 			Camera camera = light;
 
-			List<Entity> visibles = octree.getEntities();//getVisible(de.hanno.hpengine.camera);
-
 			areaShadowPassProgram.use();
 			areaShadowPassProgram.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
 			areaShadowPassProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
 //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
-			for (Entity e : visibles) {
-				e.getComponentOption(ModelComponent.class).ifPresent(modelComponent -> {
-					areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-					modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
-					areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-					areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+			for (PerMeshInfo e : renderState.perEntityInfos()) {
+//				TODO: Use model component index here
+//				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+//				modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
+//				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
+//				areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerMeshInfo pei = new PerMeshInfo(areaShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e), e.isVisible(), e.isSelected(), Config.getInstance().getInstance().getInstance().getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), e.getLastMovedInCycle());
-                    DrawStrategy.draw(renderState, pei);
-				});
+				DrawStrategy.draw(renderState, e, areaShadowPassProgram, e.isVisible());
 			}
 		}
 		GPUProfiler.end();
