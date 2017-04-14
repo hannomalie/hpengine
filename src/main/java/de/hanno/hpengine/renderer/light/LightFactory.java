@@ -379,7 +379,7 @@ public class LightFactory {
 //				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 //				areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-				DrawStrategy.draw(renderState, e, areaShadowPassProgram, e.isVisible());
+				DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
 			}
 		}
 		GPUProfiler.end();
@@ -435,7 +435,7 @@ public class LightFactory {
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (PerMeshInfo e : visibles) {
-                DrawStrategy.draw(renderState, e, pointCubeShadowPassProgram, !e.isVisible());
+                DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
 		}

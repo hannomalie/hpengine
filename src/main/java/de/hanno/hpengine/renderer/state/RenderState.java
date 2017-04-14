@@ -86,6 +86,10 @@ public class RenderState {
         return entitiesState.perMeshInfos;
     }
 
+    public VertexIndexBuffer getVertexIndexBuffer() {
+        return entitiesState.vertexIndexBuffer;
+    }
+
     public IndexBuffer getIndexBuffer() {
         return entitiesState.vertexIndexBuffer.getIndexBuffer();
     }

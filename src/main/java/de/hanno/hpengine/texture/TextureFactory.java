@@ -607,7 +607,7 @@ public class TextureFactory {
 		GL11.glDeleteTextures(id);
     }
 
-    //TODO: Add de.hanno.hpengine.texture filters as params
+    //TODO: Add texture filters as params
     public int getCubeMap(int width, int height, int format) {
         return getTexture(width, height, format, TEXTURE_CUBE_MAP);
     }

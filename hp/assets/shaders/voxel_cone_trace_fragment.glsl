@@ -163,7 +163,7 @@ void main(void) {
         voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
 		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 2*sceneScale, positionWorld+normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
-        vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + color*voxelDiffuse.rgb);
+        vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + diffuseColor*voxelDiffuse.rgb);
 
         const bool useTransparency = false;
         if(useTransparency) {

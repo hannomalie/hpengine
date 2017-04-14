@@ -192,16 +192,20 @@ void main(void) {
 
 	int materialIndex = int(textureLod(visibilityMap, st, 0).b);
 	Material material = materials[materialIndex];
-	if(int(material.materialtype) == 1) {
+	int materialType = int(material.materialtype);
+	if(materialType == 1) {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse,
 									1, V, positionView, normalView,
 									roughness, 0, diffuseColor, specularColor);
 		finalColor += diffuseColor * lightDiffuse * clamp(dot(-normalView, lightDirectionView), 0, 1);
+	    finalColor *= visibility;
+	} else if(materialType == 2) {
+	    finalColor = color;
 	} else {
 		finalColor = cookTorrance(lightDirectionView, lightDiffuse, 1.0f, V, positionView, normalView, roughness, metallic, diffuseColor, specularColor);
+    	finalColor *= visibility;
 	}
-	
-	finalColor *= visibility;
+
 
 	out_DiffuseSpecular.rgb = 4 * finalColor;
 	

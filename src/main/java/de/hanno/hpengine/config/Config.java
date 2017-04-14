@@ -129,7 +129,7 @@ public final class Config {
 	@Adjustable(group = "Effects")
 	private volatile float ambientocclusionRadius = 0.0250f;
 	@Adjustable(group = "Effects")
-	private volatile float exposure = 40f;
+	private volatile float exposure = 5f;
 	@Toggable(group = "Effects")
 	private volatile boolean useBloom = false;
 	@Toggable(group = "Effects")

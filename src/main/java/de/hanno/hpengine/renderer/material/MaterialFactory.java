@@ -1,19 +1,14 @@
 package de.hanno.hpengine.renderer.material;
 
-import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.event.MaterialAddedEvent;
-import de.hanno.hpengine.event.MaterialChangedEvent;
-import net.engio.mbassy.listener.Handler;
-import org.apache.commons.io.FilenameUtils;
-import de.hanno.hpengine.renderer.OpenGLContext;
 import de.hanno.hpengine.renderer.material.Material.MAP;
-import de.hanno.hpengine.shader.OpenGLBuffer;
-import de.hanno.hpengine.shader.PersistentMappedBuffer;
 import de.hanno.hpengine.texture.TextureFactory;
-import de.hanno.hpengine.util.Util;
+import org.apache.commons.io.FilenameUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -26,8 +21,9 @@ public class MaterialFactory {
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
     private static MaterialFactory instance;
+	private final Material skyboxMaterial;
 
-    public static MaterialFactory getInstance() {
+	public static MaterialFactory getInstance() {
         if(instance == null) {
             throw new IllegalStateException("Call Engine.init() before using it");
         }
@@ -45,6 +41,7 @@ public class MaterialFactory {
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
 		defaultMaterial = getMaterialWithoutRead(defaultTemp);
+		skyboxMaterial = getMaterial(new MaterialInfo().setName("skybox").setMaterialType(Material.MaterialType.UNLIT));
 
 		Engine.getEventBus().register(this);
 	}
@@ -228,4 +225,7 @@ public class MaterialFactory {
 		return new ArrayList<>(MATERIALS.values()).indexOf(material);
 	}
 
+	public Material getSkyboxMaterial() {
+		return skyboxMaterial;
+	}
 }

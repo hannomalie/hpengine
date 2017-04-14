@@ -79,6 +79,10 @@ public final class MaterialInfo implements Serializable {
         this.diffuse.set(diffuse);
         return this;
     }
+    public MaterialInfo setMaterialType(Material.MaterialType type) {
+        this.materialType = type;
+        return this;
+    }
 
     @Override
     public boolean equals(Object o) {

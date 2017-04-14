@@ -4,7 +4,6 @@ const float kernel[9] = { 1.0/16.0, 2.0/16.0, 1.0/16.0,
 				2.0/16.0, 4.0/16.0, 2.0/16.0,
 				1.0/16.0, 2.0/16.0, 1.0/16.0 };
 
-
 vec3 hemisphereSample_uniform(float u, float v, vec3 N) {
     const float PI = 3.1415926536;
      float phi = u * 2.0 * PI;
@@ -420,7 +419,7 @@ vec4 voxelFetch(sampler3D grid, int gridSize, float sceneScale, vec3 positionWor
     if(any(greaterThan(positionGridScaled, vec3(gridSizeHalf))) ||
        any(lessThan(positionGridScaled, -vec3(gridSizeHalf)))) {
 
-//       return vec4(0);
+       return vec4(0);
     }
 
     int level = int(loD);

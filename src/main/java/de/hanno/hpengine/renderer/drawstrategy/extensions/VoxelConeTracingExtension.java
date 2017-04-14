@@ -254,7 +254,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                         continue;
                     }
-                    int currentVerticesCount = DrawStrategy.draw(renderState, entity, voxelizer, false);
+                    int currentVerticesCount = DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), entity, voxelizer, false);
 
 //                TODO: Count this somehow?
 //                firstPassResult.verticesDrawn += currentVerticesCount;

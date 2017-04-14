@@ -108,7 +108,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         putToBuffer(vertexIndexBuffer);
     }
 
-    public void putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         int vertexElementsCount = floatArray.length / totalElementsPerVertex;
@@ -139,6 +139,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
             LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
             vertexIndexBuffer.getVertexBuffer().upload();
         });
+
+        return vertexIndexOffsets;
     }
 
     public void setLodLevels(List<int[]> lodLevels) {

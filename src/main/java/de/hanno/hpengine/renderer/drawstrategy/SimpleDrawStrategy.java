@@ -1,11 +1,12 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
 import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
-import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.Renderer;
@@ -15,10 +16,13 @@ import de.hanno.hpengine.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.renderer.light.AreaLight;
 import de.hanno.hpengine.renderer.light.LightFactory;
 import de.hanno.hpengine.renderer.light.TubeLight;
+import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.AABB;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
+import de.hanno.hpengine.scene.VertexIndexBuffer;
+import de.hanno.hpengine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
@@ -28,10 +32,12 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.hanno.hpengine.engine.model.Entity.Update.DYNAMIC;
 import static de.hanno.hpengine.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.renderer.constants.BlendMode.Factor.ONE;
 import static de.hanno.hpengine.renderer.constants.CullMode.BACK;
@@ -42,6 +48,8 @@ import static de.hanno.hpengine.renderer.constants.GlTextureTarget.*;
 public class SimpleDrawStrategy extends BaseDrawStrategy {
     public static volatile boolean USE_COMPUTESHADER_FOR_REFLECTIONS = false;
     public static volatile int IMPORTANCE_SAMPLE_COUNT = 8;
+    private final Entity skyBoxEntity;
+    private final VertexIndexBuffer skyboxVertexIndexBuffer;
 
     private Program depthPrePassProgram;
     private Program secondPassDirectionalProgram;
@@ -55,6 +63,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private Program highZProgram;
     private Program reflectionProgram;
     private Program linesProgram;
+    private Program skyBoxProgram;
     private Program probeFirstpassProgram;
     private ComputeShaderProgram secondPassPointComputeProgram;
     private ComputeShaderProgram tiledProbeLightingProgram;
@@ -64,6 +73,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private int pipelineIndex;
+
+    private final PerMeshInfo skyBoxPerMeshInfo;
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -83,12 +94,20 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         highZProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
         reflectionProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
         linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+        skyBoxProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "skybox.glsl");
         probeFirstpassProgram = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
         depthPrePassProgram = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "depth_prepass_fragment.glsl");
         tiledDirectLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_direct_lighting_compute.glsl");
         tiledProbeLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
         graphicsContext = GraphicsContext.getInstance();
+
+
+        Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
+        skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
+        skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
+        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(skyboxVertexIndexBuffer);
+        skyBoxPerMeshInfo = new PerMeshInfo(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndexBufferValuesArray().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, 0);
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 
@@ -135,18 +154,21 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public FirstPassResult drawFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
         Camera camera = renderState.camera;
+        FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
+        FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+
+        graphicsContext.depthMask(true);
+        Renderer.getInstance().getGBuffer().use(true);
+
+        renderSkyBox(renderState, camera, viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
         GPUProfiler.start("Set GPU state");
         graphicsContext.enable(CULL_FACE);
         graphicsContext.depthMask(true);
-        Renderer.getInstance().getGBuffer().use(true);
         graphicsContext.enable(DEPTH_TEST);
         graphicsContext.depthFunc(LESS);
         graphicsContext.disable(GlCap.BLEND);
         GPUProfiler.end();
-
-        FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
-        FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 
         GPUProfiler.start("Draw entities");
 
@@ -208,6 +230,24 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
 
         return firstPassResult;
+    }
+
+    public void renderSkyBox(RenderState renderState, Camera camera, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+        graphicsContext.disable(CULL_FACE);
+        graphicsContext.depthMask(false);
+        graphicsContext.disable(GlCap.BLEND);
+        skyBoxPerMeshInfo.getProgram().use();
+        skyBoxEntity.setScale(1000);
+        skyBoxEntity.setPosition(camera.getPosition());
+        skyBoxProgram.use();
+        skyBoxProgram.setUniform("eyeVec", camera.getViewDirection());
+        skyBoxProgram.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
+        skyBoxProgram.setUniform("eyePos_world", camera.getWorldPosition());
+        skyBoxProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().getSkyboxMaterial()));
+        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getModelMatrixAsBuffer());
+        skyBoxProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+        skyBoxProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+        DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxPerMeshInfo, skyBoxProgram, false);
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
