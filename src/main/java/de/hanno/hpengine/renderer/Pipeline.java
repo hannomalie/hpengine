@@ -72,7 +72,6 @@ public class Pipeline {
     int entitiesDrawn = 0;
     IntArrayList offsets = new IntArrayList();
     public void prepare(RenderState renderState) {
-        GPUProfiler.start("Preparing indirect pipeline");
         verticesCount = 0;
         entitiesDrawn = 0;
         commands.clear();
@@ -93,7 +92,6 @@ public class Pipeline {
 
         entityOffsetBuffer.put(0, offsets.toArray());
         commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
-        GPUProfiler.end();
     }
 
     public OpenGLBuffer getEntityOffsetBuffer() {

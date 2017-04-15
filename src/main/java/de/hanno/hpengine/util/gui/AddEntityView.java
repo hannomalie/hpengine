@@ -89,22 +89,6 @@ public class AddEntityView extends WebPanel {
 		panels.add(saveButton);
 	}
 
-	private void showSuccess(File chosenFile) {
-		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
-		notificationPopup.setIcon(NotificationIcon.plus);
-		notificationPopup.setDisplayTime( 2000 );
-		notificationPopup.setContent(new WebLabel("Loading successful: " + chosenFile.getAbsolutePath()));
-		NotificationManager.showNotification(notificationPopup);
-	}
-
-	private void showError(File chosenFile) {
-		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
-		notificationPopup.setIcon(NotificationIcon.error);
-		notificationPopup.setDisplayTime( 2000 );
-		notificationPopup.setContent(new WebLabel("Not able to load " + chosenFile.getAbsolutePath()));
-		NotificationManager.showNotification(notificationPopup);
-	}
-
 	private void addAttributesPanel(List<Component> panels) {
 			
 			WebComponentPanel webComponentPanel = new WebComponentPanel ( true );

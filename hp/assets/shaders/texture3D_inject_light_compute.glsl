@@ -17,7 +17,13 @@ uniform vec3 lightDirection;
 uniform vec3 lightColor;
 
 uniform int bounces = 1;
+//include(globals_structs.glsl)
 //include(globals.glsl)
+
+uniform int pointLightCount;
+layout(std430, binding=2) buffer _lights {
+	PointLight pointLights[100];
+};
 
 vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 {
@@ -62,6 +68,12 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	return vec3(p_max,p_max,p_max);
 }
 
+float calculateAttenuation(float dist, float lightRadius) {
+    float distDivRadius = (dist / lightRadius);
+    float atten_factor = clamp(1.0f - distDivRadius, 0.0, 1.0);
+    atten_factor = pow(atten_factor, 2);
+    return atten_factor;
+}
 void main(void) {
     int gridSizeHalf = gridSize/2;
 	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
@@ -99,7 +111,17 @@ void main(void) {
 	vec3 lightDirectionTemp = lightDirection;
     float NdotL = max(0.0, clamp(dot(g_normal, normalize(lightDirectionTemp)), 0.0, 1.0));
 
-    vec3 finalVoxelColor = voxelColorAmbient+(NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
+    vec3 finalVoxelColor = voxelColorAmbient+(10*NdotL*vec4(lightColor,1)*visibility*vec4(voxelColor,1)).rgb;
+
+    for(int i = 0; i < pointLightCount; i++) {
+        PointLight pointLight = pointLights[i];
+        vec3 lightPosition = vec3(pointLight.positionX, pointLight.positionY, pointLight.positionZ);
+        vec3 lightDiffuse = vec3(pointLight.colorR, pointLight.colorG, pointLight.colorB);
+        vec3 lightDirection = normalize(vec4(lightPosition - positionWorld, 0)).xyz;
+        float attenuation = calculateAttenuation(length(lightPosition - positionWorld.xyz), float(pointLight.radius));
+
+        finalVoxelColor += 40*attenuation*clamp(dot(lightDirection, g_normal), 0, 1) * lightDiffuse * voxelColor*0.1;
+    }
 
 	imageStore(voxelGrid, storePos, vec4(finalVoxelColor, opacity));
 }

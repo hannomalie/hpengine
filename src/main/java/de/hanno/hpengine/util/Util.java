@@ -495,7 +495,6 @@ public class Util {
 		resultViewMatrices[4] = camera.getViewMatrix();
 		resultProjectionMatrices[4] = projectionMatrix;
 			camera.setOrientation(new Quaternion().setIdentity());
-//			de.hanno.hpengine.camera.rotateWorld(new Vector4f(0,1,0, 180));
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.update(0);
 		resultViewMatrices[5] = camera.getViewMatrix();

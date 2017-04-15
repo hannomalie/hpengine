@@ -493,9 +493,6 @@ vec4 voxelTraceCone(sampler3D grid, int gridSize, float sceneScale, float minVox
 
 vec4 specConeTrace(sampler3D grid, int gridSize, float sceneScale, vec3 o, vec3 dir, float coneRatio, float maxDist)
 {
-//    float sceneScale = 2;
-//     float inverseSceneScale = 1f/sceneScale;
-//     o = vec3(inverseSceneScale) * o;
     float voxDim = 256;
 	vec3 samplePos = o;
 	vec4 accum = vec4(0.0);
@@ -572,7 +569,7 @@ vec4 traceVoxelsDiffuse(int SAMPLE_COUNT, sampler3D grid, int gridSize, float sc
     vec3 tangent = cross(normalWorld, normalWorld == vec3(0,1,0) ? vec3(1,0,0) : vec3(0,1,0));
     vec3 bitangent = cross(normalWorld, tangent);
     float minVoxelDiameter = sceneScale;
-    float coneRatio = 6;
+    float coneRatio = 2.;
 //https://github.com/domme/VoxelConeTracing/blob/master/bin/assets/shader/finalRenderFrag.shader
   voxelDiffuse += voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld), coneRatio, 150);
   voxelDiffuse += 0.707 * voxelTraceCone(grid, gridSize, sceneScale, minVoxelDiameter, positionWorld, normalize(normalWorld + tangent), coneRatio, 150);

@@ -18,6 +18,7 @@ import de.hanno.hpengine.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.renderer.material.MaterialMap;
 import de.hanno.hpengine.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
@@ -58,7 +59,8 @@ public class LightFactory {
 	public static int MAX_POINTLIGHT_SHADOWMAPS = 5;
 	public static int AREALIGHT_SHADOWMAP_RESOLUTION = 512;
     private static LightFactory instance;
-    public static LightFactory getInstance() {
+
+	public static LightFactory getInstance() {
         if(instance == null) {
             throw new IllegalStateException("Call Engine.init() before using it");
         }
@@ -391,7 +393,7 @@ public class LightFactory {
         if(scene == null) { return; }
 
         boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
-        if(needToRedraw) { return; }
+        if(!needToRedraw) { return; }
 
 		GPUProfiler.start("PointLight shadowmaps");
 		GraphicsContext.getInstance().depthMask(true);
@@ -405,7 +407,6 @@ public class LightFactory {
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
 			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
-			List<PerMeshInfo> visibles = new ArrayList<>(renderState.perEntityInfos());
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
@@ -434,7 +435,7 @@ public class LightFactory {
 //			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
-			for (PerMeshInfo e : visibles) {
+			for (PerMeshInfo e : renderState.perEntityInfos()) {
                 DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
@@ -527,9 +528,9 @@ public class LightFactory {
 	private void bufferLights() {
 		List<PointLight> pointLights = Engine.getInstance().getScene().getPointLights();
 		GraphicsContext.getInstance().execute(() -> {
-			lightBuffer.putValues(0, pointLights.size());
+//			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
-				lightBuffer.put(1, Util.toArray(pointLights, PointLight.class));
+				lightBuffer.put(0, Util.toArray(pointLights, PointLight.class));
 			}
 		});
 //		Util.printFloatBuffer(lightBuffer.getValues());

@@ -103,7 +103,6 @@ public class DebugFrame {
     private final CircleMenu circleMenu = null;
     private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
-	private WebFrame probeViewFrame = new WebFrame("Probe");
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
 	
     JTable materialTable = new MaterialTable() {
@@ -298,13 +297,13 @@ public class DebugFrame {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
 	        	String initialSelectionValue = Engine.getInstance().getScene().getName() != "" ? Engine.getInstance().getScene().getName() : "default";
-				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save de.hanno.hpengine.scene as", "Save de.hanno.hpengine.scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
+				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
 	        	if(selection != null) {
 	        		boolean success = Engine.getInstance().getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 	                notificationPopup.setIcon(NotificationIcon.clock);
 	                notificationPopup.setDisplayTime( 2000 );
-	                notificationPopup.setContent(new WebLabel(success + ": Saved de.hanno.hpengine.scene as " + selection));
+	                notificationPopup.setContent(new WebLabel(success + ": Saved scene as " + selection));
 	                NotificationManager.showNotification(notificationPopup);
 	        	}
 	        });

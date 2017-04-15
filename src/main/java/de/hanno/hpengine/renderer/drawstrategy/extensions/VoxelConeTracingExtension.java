@@ -3,28 +3,30 @@ package de.hanno.hpengine.renderer.drawstrategy.extensions;
 import com.carrotsearch.hppc.ObjectLongHashMap;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Pipeline;
+import de.hanno.hpengine.renderer.Renderer;
+import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
+import de.hanno.hpengine.renderer.light.LightFactory;
+import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.shader.ComputeShaderProgram;
+import de.hanno.hpengine.shader.Program;
+import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.state.RenderState;
-import de.hanno.hpengine.renderer.Renderer;
-import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
-import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
-import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
-import de.hanno.hpengine.shader.ComputeShaderProgram;
-import de.hanno.hpengine.shader.Program;
-import de.hanno.hpengine.shader.ProgramFactory;
-import de.hanno.hpengine.texture.TextureFactory;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import java.nio.FloatBuffer;
 
@@ -121,14 +123,20 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private long entityMovedLastInCycle;
     private long directionalLightMovedLastInCycle;
+    private long pointLightMovedLastInCycle;
 
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
         GPUProfiler.start("VCT first pass");
         boolean entityMoved = renderState.entitiesState.entityMovedInCycle > entityMovedLastInCycle;
         boolean directionalLightMoved = renderState.directionalLightHasMovedInCycle > directionalLightMovedLastInCycle;
+        boolean pointlightMoved = renderState.pointlightMovedInCycle > pointLightMovedLastInCycle;
         if(entityMoved) {
             entityMovedLastInCycle = renderState.getCycle();
+        }
+        if(pointlightMoved) {
+            pointLightMovedLastInCycle = renderState.getCycle();
+            lightInjectedCounter = 0;
         }
         if(directionalLightMoved) {
             directionalLightMovedLastInCycle = renderState.getCycle();
@@ -161,6 +169,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
             if(lightInjectedFramesAgo == 0)
             {
                 injectLightComputeProgram.use();
+
+                injectLightComputeProgram.setUniform("pointLightCount", Engine.getInstance().getScene().getPointLights().size());
+                injectLightComputeProgram.bindShaderStorageBuffer(2, LightFactory.getInstance().getLightBuffer());
                 injectLightComputeProgram.setUniform("bounces", bounces);
                 injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));

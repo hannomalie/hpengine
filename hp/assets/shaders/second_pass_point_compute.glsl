@@ -26,8 +26,9 @@ uniform int maxPointLightShadowmaps = 2;
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
+
+uniform int pointLightCount;
 layout(std430, binding=2) buffer _lights {
-	double pointLightCount;
 	PointLight pointLights[100];
 };
 

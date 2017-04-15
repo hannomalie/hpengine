@@ -241,8 +241,6 @@ public class Engine {
     }
 
     private void updateRenderState() {
-        final GLSync gpuCommandSync = renderState.getCurrentWriteState().getGpuCommandSync();
-        waitForGpuSync(gpuCommandSync);
 
         DirectionalLight directionalLight = scene.getDirectionalLight();
         boolean anyPointLightHasMoved = false;
@@ -287,6 +285,8 @@ public class Engine {
         renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
         addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
 
+        final GLSync gpuCommandSync = renderState.getCurrentWriteState().getGpuCommandSync();
+        waitForGpuSync(gpuCommandSync);
         renderState.update();
     }
 

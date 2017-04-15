@@ -160,8 +160,8 @@ void main(void) {
         vec4 voxelDiffuse = vec4(0);
 
         const int SAMPLE_COUNT = 4;
-        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld);
-		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 2*sceneScale, positionWorld+normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
+        voxelDiffuse = traceVoxelsDiffuse(SAMPLE_COUNT, grid, gridSize, sceneScale, normalWorld, positionWorld+normalWorld);
+		vec4 voxelSpecular = voxelTraceCone(grid, gridSize, sceneScale, 2*sceneScale, positionWorld+sceneScale*normalWorld, normalize(reflect(-V, normalWorld)), 0.1*roughness, 370); // 0.05
 
         vct += boost*(NdotL*specularColor.rgb*voxelSpecular.rgb + diffuseColor*voxelDiffuse.rgb);
 

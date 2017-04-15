@@ -383,6 +383,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
+        secondPassPointComputeProgram.setUniform("pointLightCount", Engine.getInstance().getScene().getPointLights().size());
         secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
         secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
