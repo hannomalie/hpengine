@@ -27,6 +27,7 @@ import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.Octree;
+import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.TestSceneUtil;
 import de.hanno.hpengine.event.*;
@@ -146,18 +147,18 @@ public class DebugFrame {
     private final JTextPane infoRight = new JTextPane();
     WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
 	private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
-	private Canvas canvas = new Canvas();
+	private CanvasWrapper canvasWrapper = new CanvasWrapper(new Canvas(), () -> {});
 	private JPanel gamePanel = new JPanel() {{
         setLayout(new BorderLayout(0, 0));
         removeAll();
-        add(canvas,BorderLayout.CENTER);
+        add(canvasWrapper.getCanvas(), BorderLayout.CENTER);
         addComponentListener(new ComponentListener(){
             @Override
             public void componentResized(ComponentEvent e) {
-                if(GraphicsContext.getInstance().isAttachedTo(canvas)) {addComponentListener(new ComponentAdapter() {
+                if(GraphicsContext.getInstance().isAttachedTo(canvasWrapper)) {addComponentListener(new ComponentAdapter() {
                     public void componentResized(ComponentEvent evt) {
-                        GraphicsContext.getInstance().setCanvasWidth(canvas.getWidth());
-                        GraphicsContext.getInstance().setCanvasHeight(canvas.getHeight());
+                        GraphicsContext.getInstance().setCanvasWidth(canvasWrapper.getCanvas().getWidth());
+                        GraphicsContext.getInstance().setCanvasHeight(canvasWrapper.getCanvas().getHeight());
                     }
                 });
                 }
@@ -554,7 +555,7 @@ public class DebugFrame {
         });
         WebMenuItem toggleAttach = new WebMenuItem("Attach/Detach");
         toggleAttach.addActionListener(e -> {
-            if(GraphicsContext.getInstance().isAttachedTo(canvas)) {
+            if(GraphicsContext.getInstance().isAttachedTo(canvasWrapper)) {
                 Engine.frame.attachGame();
             } else {
                 attachGame();
@@ -1314,7 +1315,7 @@ public class DebugFrame {
 
 	public void attachGame() {
         GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().attach(canvas);
+            GraphicsContext.getInstance().attach(canvasWrapper);
             Engine.getInstance().setSetTitleRunnable(getSetTitleRunnable());
         });
 	}

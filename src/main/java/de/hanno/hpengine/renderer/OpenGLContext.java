@@ -1,6 +1,8 @@
 package de.hanno.hpengine.renderer;
 
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.CanvasWrapper;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.renderer.constants.*;
@@ -11,7 +13,6 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.opengl.*;
 import org.lwjgl.opengl.DisplayMode;
 
-import java.awt.*;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +48,7 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public boolean isAttachedTo(Canvas canvas) {
+    public boolean isAttachedTo(CanvasWrapper canvas) {
         return Display.getParent() != null && Display.getParent().equals(canvas);
     }
 
@@ -140,9 +141,10 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public boolean attach(Canvas canvas) {
+    public boolean attach(CanvasWrapper canvasWrapper) {
         try {
-            Display.setParent(canvas);
+            Display.setParent(canvasWrapper.getCanvas());
+            Engine.getInstance().setSetTitleRunnable(canvasWrapper.getSetTitleRunnable());
             attached = true;
         } catch (LWJGLException e) {
             attached = false;
@@ -154,6 +156,7 @@ public final class OpenGLContext implements GraphicsContext {
     public boolean detach() {
         try {
             Display.setParent(null);
+            Engine.getInstance().setSetTitleRunnable(() -> {});
             attached = false;
         } catch (LWJGLException e) {
             e.printStackTrace();
@@ -161,11 +164,11 @@ public final class OpenGLContext implements GraphicsContext {
         return !attached;
     }
     @Override
-    public void attachOrDetach(Canvas canvas) {
+    public void attachOrDetach(CanvasWrapper canvasWrapper) {
         if(attached) {
             detach();
         } else {
-            attach(canvas);
+            attach(canvasWrapper);
         }
     }
 
@@ -471,8 +474,8 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
 
-    public void init(Canvas canvas) {
-        attach(canvas);
+    public void init(CanvasWrapper canvasWrapper) {
+        attach(canvasWrapper);
         this.openGLThread = new TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
 
             @Override

@@ -23,7 +23,7 @@ public class MockedRendererEngineTest {
         // TODO: Make running this test possible
         Config.getInstance().setRendererClass(MockRenderer.class);
         Config.getInstance().setGpuContextClass(MockContext.class);
-        Engine.init(new Canvas());
+        Engine.init(new CanvasWrapper(new Canvas(), () -> {}));
     }
 
     public static class MockRenderer implements Renderer {

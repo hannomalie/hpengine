@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.awt.*;
+
 public class EngineTest {
     @Test
     public void testSimpleInit() throws Exception {

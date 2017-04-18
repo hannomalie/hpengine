@@ -1,11 +1,10 @@
 package de.hanno.hpengine.renderer;
 
+import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.renderer.constants.*;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
-import org.lwjgl.LWJGLException;
 
-import java.awt.*;
 import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 public class MockContext implements GraphicsContext {
 
     @Override
-    public boolean isAttachedTo(Canvas canvas) {
+    public boolean isAttachedTo(CanvasWrapper canvas) {
         return false;
     }
 
@@ -43,7 +42,7 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void init(Canvas canvas) {
+    public void init(CanvasWrapper canvasWrapper) {
 
     }
 
@@ -53,7 +52,7 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public boolean attach(Canvas canvas) {
+    public boolean attach(CanvasWrapper canvas) {
 
         return false;
     }
@@ -65,7 +64,7 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void attachOrDetach(Canvas canvas) {
+    public void attachOrDetach(CanvasWrapper canvasWrapper) {
 
     }
 

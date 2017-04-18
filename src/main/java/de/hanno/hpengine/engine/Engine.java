@@ -45,7 +45,6 @@ import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.vector.Vector3f;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -154,12 +153,12 @@ public class Engine {
         }
     }
 
-    public static void init(Canvas canvas) {
+    public static void init(CanvasWrapper canvasWrapper) {
         if (instance != null) {
             return;
         }
         instance = new Engine();
-        instance.initialize(canvas);
+        instance.initialize(canvasWrapper);
     }
 
     private Engine() {
@@ -169,11 +168,11 @@ public class Engine {
         Engine.setTitleRunnable = setTitleRunnable;
     }
 
-    private void initialize(Canvas canvas) {
+    private void initialize(CanvasWrapper canvasWrapper) {
         recorder = new SimpleRenderStateRecorder();
         getEventBus().register(this);
         initWorkDir();
-        GraphicsContext.initGpuContext(canvas);
+        GraphicsContext.initGpuContext(canvasWrapper);
 
         EntityFactory.create();
         ProgramFactory.init();

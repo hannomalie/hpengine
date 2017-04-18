@@ -1,5 +1,6 @@
 package de.hanno.hpengine.test;
 
+import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.Renderer;
 import org.junit.BeforeClass;
@@ -17,7 +18,7 @@ public class TestWithRenderer {
 	
 	@BeforeClass
 	public static void init() {
-		Engine.init(new Canvas());
+		Engine.init(new CanvasWrapper(new Canvas(), () -> {}));
 		engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}

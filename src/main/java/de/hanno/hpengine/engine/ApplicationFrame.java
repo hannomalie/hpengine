@@ -12,7 +12,7 @@ import static de.hanno.hpengine.renderer.Renderer.getInstance;
 
 public class ApplicationFrame extends JFrame {
 
-    private Canvas canvas;
+    private CanvasWrapper canvasWrapper;
 
     private Runnable setTitleRunnable = () -> {
         try {
@@ -28,7 +28,7 @@ public class ApplicationFrame extends JFrame {
         setVisible(false);
         setSize(new Dimension(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
         JLayeredPane layeredPane = new JLayeredPane();
-        canvas = new Canvas() {
+        Canvas canvas = new Canvas() {
             @Override
             public void addNotify() {
                 super.addNotify();
@@ -41,7 +41,8 @@ public class ApplicationFrame extends JFrame {
         };
         canvas.setPreferredSize(new Dimension(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
         canvas.setIgnoreRepaint(true);
-        layeredPane.add(canvas, 0);
+        canvasWrapper = new CanvasWrapper(canvas, setTitleRunnable);
+        layeredPane.add(canvasWrapper.getCanvas(), 0);
 //        JPanel overlayPanel = new JPanel();
 //        overlayPanel.setOpaque(true);
 //        overlayPanel.add(new JButton("asdasdasd"));
@@ -50,7 +51,7 @@ public class ApplicationFrame extends JFrame {
         setLayout(new BorderLayout());
 //        getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
 //        getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
-        getContentPane().add(canvas, BorderLayout.CENTER);
+        getContentPane().add(canvasWrapper.getCanvas(), BorderLayout.CENTER);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         addComponentListener(new ComponentAdapter() {
@@ -76,13 +77,13 @@ public class ApplicationFrame extends JFrame {
         });
     }
 
-    public Canvas getRenderCanvas() {
-        return canvas;
+    public CanvasWrapper getRenderCanvas() {
+        return canvasWrapper;
     }
 
     public void attachGame() {
         GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().attach(canvas);
+            GraphicsContext.getInstance().attach(canvasWrapper);
             Engine.getInstance().setSetTitleRunnable(ApplicationFrame.this.getSetTitleRunnable());
             setVisible(true);
         });
