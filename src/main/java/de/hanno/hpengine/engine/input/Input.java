@@ -178,11 +178,6 @@ public class Input {
                     PICKING_CLICK = 1;
                     STRG_PRESSED_LAST_FRAME = true;
                 }
-//                else if (Input.isMouseClicked(1) && !STRG_PRESSED_LAST_FRAME) {
-//                    getScene().getEntities().parallelStream().forEach(e -> {
-//                        e.setSelected(false);
-//                    });
-//                }
             } else {
                 STRG_PRESSED_LAST_FRAME = false;
             }

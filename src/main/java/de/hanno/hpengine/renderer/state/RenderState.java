@@ -8,6 +8,8 @@ import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Pipeline;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
+import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.scene.VertexIndexBuffer;
@@ -24,11 +26,11 @@ import java.util.List;
 import static org.lwjgl.opengl.GL11.glFlush;
 
 public class RenderState {
+    public final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
 
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
     public final EntitiesState entitiesState = new EntitiesState();
 
-    public DrawResult latestDrawResult;
     public Camera camera = new Camera();
     public long pointlightMovedInCycle;
     public long directionalLightHasMovedInCycle;
@@ -45,7 +47,7 @@ public class RenderState {
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.latestDrawResult, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
+        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
         this.entitiesState.perMeshInfos.addAll(source.entitiesState.perMeshInfos);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
 //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
@@ -57,7 +59,7 @@ public class RenderState {
     public RenderState() {
     }
 
-    public RenderState init(VertexIndexBuffer vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, DrawResult latestDrawResult, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor) {
+    public RenderState init(VertexIndexBuffer vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor) {
         this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
         this.camera.init(camera);
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
@@ -77,7 +79,7 @@ public class RenderState {
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
         this.entitiesState.perMeshInfos.clear();
-        this.latestDrawResult = latestDrawResult;
+        this.latestDrawResult.set(latestDrawResult);
         this.cycle = cycle;
         return this;
     }

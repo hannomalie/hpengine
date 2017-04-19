@@ -18,8 +18,6 @@ import de.hanno.hpengine.physic.PhysicsFactory;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.renderer.drawstrategy.FirstPassResult;
-import de.hanno.hpengine.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.PointLight;
@@ -53,7 +51,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -68,14 +65,13 @@ public class Engine {
     private RenderStateRecorder recorder;
     private UpdateThread updateThread;
     private RenderThread renderThread;
-    private final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
     private volatile TripleBuffer<RenderState> renderState;
 
     private volatile long entityMovedInCycle;
     private volatile long directionalLightMovedInCycle;
     private volatile boolean sceneIsInitiallyDrawn;
-    private volatile AtomicLong cycle = new AtomicLong();
-    private long pointLightMovedInCycle;
+    private volatile long pointLightMovedInCycle;
+    private volatile AtomicLong drawCycle = new AtomicLong();
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -236,7 +232,6 @@ public class Engine {
         if(!Config.getInstance().isMultithreadedRendering()) {
             actuallyDraw();
         }
-        sceneIsInitiallyDrawn = true;
     }
 
     private void updateRenderState() {
@@ -257,8 +252,8 @@ public class Engine {
             Entity entity = scene.getEntities().get(i);
             if(!entity.hasMoved()) { continue; }
             if(getScene() != null) { getScene().calculateMinMax(); }
-            entityMovedInCycle = cycle.get();
-            entity.setHasMovedInCycle(cycle.get());
+            entityMovedInCycle = drawCycle.get();
+            entity.setHasMovedInCycle(drawCycle.get());
             entity.setHasMoved(false);
             entityMovedThisCycle = true;
         }
@@ -267,12 +262,12 @@ public class Engine {
             entityAdded = false;
         }
         if(directionalLight.hasMoved()) {
-            directionalLightMovedInCycle = cycle.get();
+            directionalLightMovedInCycle = drawCycle.get();
             directionalLight.setHasMoved(false);
         }
 
         if(anyPointLightHasMoved) {
-            pointLightMovedInCycle = cycle.get();
+            pointLightMovedInCycle = drawCycle.get();
         }
         if(entityMovedThisCycle) {
             renderState.addCommand((renderStateX1) -> {
@@ -281,8 +276,8 @@ public class Engine {
         }
 
         Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
-        renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], latestDrawResult, cycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
-        addPerEntityInfos(this.camera, renderState.getCurrentWriteState());
+        renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), entityMovedInCycle, directionalLightMovedInCycle, pointLightMovedInCycle, sceneIsInitiallyDrawn, scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), directionalLight.getScatterFactor(), directionalLight.getDirection(), directionalLight.getColor());
+        addPerMeshInfos(this.camera, renderState.getCurrentWriteState());
 
         final GLSync gpuCommandSync = renderState.getCurrentWriteState().getGpuCommandSync();
         waitForGpuSync(gpuCommandSync);
@@ -303,42 +298,41 @@ public class Engine {
     Callable drawCallable = new Callable() {
         @Override
         public Object call() throws Exception {
-            cycle.getAndIncrement();
+            drawCycle.getAndIncrement();
             renderState.startRead();
             recorder.add(renderState.getCurrentReadState());
 
             Input.update();
 
             Renderer.getInstance().startFrame();
+            DrawResult latestDrawResult = renderState.getCurrentReadState().latestDrawResult;
             latestDrawResult.reset();
             Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
             latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
-            latestDrawResult.setFinished();
             Renderer.getInstance().endFrame();
             Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
-            scene.endFrame();
 
-            GLSync readStateSync = renderState.getCurrentReadState().getGpuCommandSync();
-            if(readStateSync != null) {
-                glDeleteSync(readStateSync);
-            }
-            renderState.getCurrentReadState().setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+            createNewGPUFence(Engine.this.renderState.getCurrentReadState());
             renderState.stopRead();
+            sceneIsInitiallyDrawn = true;
             return null;
         }
     };
-    protected void actuallyDraw() {
-        try {
-            GraphicsContext.getInstance().execute(drawCallable).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+
+    public void createNewGPUFence(RenderState currentReadState) {
+        GLSync readStateSync = currentReadState.getGpuCommandSync();
+        if(readStateSync != null) {
+            glDeleteSync(readStateSync);
         }
+        renderState.getCurrentReadState().setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+    }
+
+    protected void actuallyDraw() {
+        GraphicsContext.getInstance().execute(drawCallable).join();
     }
 
     private Vector3f tempDistVector = new Vector3f();
-    public void addPerEntityInfos(Camera camera, RenderState currentWriteState) {
+    public void addPerMeshInfos(Camera camera, RenderState currentWriteState) {
         Vector3f cameraWorldPosition = camera.getWorldPosition();
 
         Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
@@ -346,7 +340,6 @@ public class Engine {
         List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
 
         for (ModelComponent modelComponent : modelComponents) {
-
             Entity entity = modelComponent.getEntity();
             Vector3f centerWorld = entity.getCenterWorld();
             Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
@@ -426,7 +419,7 @@ public class Engine {
     @Handler
     public void handle(EntityAddedEvent e) {
         entityAdded = true;
-        directionalLightMovedInCycle = cycle.get(); // TODO: This is not correct, but forces vct light injeciton and directional shadow map redraw, fix this, mate
+        directionalLightMovedInCycle = drawCycle.get(); // TODO: This is not correct, but forces vct light injeciton and directional shadow map redraw, fix this, mate
         scene.setUpdateCache(true);
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
@@ -439,7 +432,7 @@ public class Engine {
         renderState.addCommand((renderStateX -> {
             renderStateX.bufferEntites(scene.getEntities());
         }));
-        directionalLightMovedInCycle = cycle.get(); // TODO: This is not correct, but forces vct light injeciton and directional shadow map redraw, fix this, mate
+        directionalLightMovedInCycle = drawCycle.get(); // TODO: This is not correct, but forces vct light injeciton and directional shadow map redraw, fix this, mate
     }
 
     @Subscribe

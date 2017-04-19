@@ -5,6 +5,7 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.input.Input;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 
 import static de.hanno.hpengine.engine.Transform.WORLD_UP;
@@ -30,6 +31,9 @@ public class MovableCamera extends Camera {
                              float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.getInstance().getCameraSpeed();
                              if (Input.isMouseClicked(0)) {
                                  getEntity().rotate(WORLD_UP, -Input.getDX() * rotationAmount);
+//                                 getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);
+//                                 getEntity().rotate(Transform.WORLD_UP, -Input.getDX() * rotationAmount);
+//                                 getEntity().rotate(getUpDirection(), -Input.getDX() * rotationAmount);
                              }
                              if (Input.isMouseClicked(1)) {
                                  getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);

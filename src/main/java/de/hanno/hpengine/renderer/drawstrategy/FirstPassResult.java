@@ -9,6 +9,7 @@ public final class FirstPassResult {
     public int linesDrawn;
     public boolean directionalLightShadowMapWasRendered;
     private Map<String, Object> properties = new HashMap<>();
+    private boolean notYetUploadedVertexBufferDrawn;
 
     public FirstPassResult() {
     }
@@ -18,6 +19,7 @@ public final class FirstPassResult {
         this.entitiesDrawn = entityCount;
         this.linesDrawn = linesDrawn;
         this.directionalLightShadowMapWasRendered = directionalLightShadowMapWasRendered;
+        this.notYetUploadedVertexBufferDrawn = notYetUploadedVertexBufferDrawn;
     }
 
     public void reset() {
@@ -34,5 +36,9 @@ public final class FirstPassResult {
 
     public Map<String, Object> getProperties() {
         return properties;
+    }
+
+    public void set(FirstPassResult firstPassResult) {
+        init(firstPassResult.verticesDrawn, firstPassResult.entitiesDrawn, firstPassResult.linesDrawn, firstPassResult.directionalLightShadowMapWasRendered, firstPassResult.notYetUploadedVertexBufferDrawn);
     }
 }

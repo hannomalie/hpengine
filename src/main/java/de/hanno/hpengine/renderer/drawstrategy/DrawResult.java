@@ -5,7 +5,6 @@ import java.util.Map;
 public class DrawResult {
     private final FirstPassResult firstPassResult;
     private final SecondPassResult secondPassResult;
-    private volatile boolean finished;
     public volatile String GPUProfilingResult = "";
 
     public DrawResult(FirstPassResult firstPassResult, SecondPassResult secondPassResult) {
@@ -42,14 +41,10 @@ public class DrawResult {
     public void reset() {
         firstPassResult.reset();
         secondPassResult.reset();
-        finished = false;
     }
 
-    public void setFinished() {
-        finished = true;
-    }
-
-    public boolean isFinished() {
-        return finished;
+    public void set(DrawResult latestDrawResult) {
+        this.firstPassResult.set(latestDrawResult.firstPassResult);
+        this.secondPassResult.set(latestDrawResult.secondPassResult);
     }
 }

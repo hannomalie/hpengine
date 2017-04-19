@@ -238,8 +238,6 @@ public class Scene implements LifeCycle, Serializable {
 		initialized = true;
 	}
 
-    public void endFrame() {
-	}
 	public EntitiesContainer getEntitiesContainer() {
 		return entityContainer;
 	}

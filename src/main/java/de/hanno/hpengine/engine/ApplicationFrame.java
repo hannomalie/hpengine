@@ -52,7 +52,7 @@ public class ApplicationFrame extends JFrame {
 //        getContentPane().add(new JButton("adasd"), BorderLayout.PAGE_START);
 //        getContentPane().add(new JButton("xxx"), BorderLayout.PAGE_END);
         getContentPane().add(canvasWrapper.getCanvas(), BorderLayout.CENTER);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
         addComponentListener(new ComponentAdapter() {
             int retryCounter = 0;

@@ -4,4 +4,8 @@ public class SecondPassResult {
     public void reset() {
 
     }
+
+    public void set(SecondPassResult secondPassResult) {
+
+    }
 }
