@@ -1297,14 +1297,12 @@ public class DebugFrame {
         if(GPUProfiler.PROFILING_ENABLED) {
             SwingUtils.invokeLater(() -> {
 				DrawResult drawResult1 = event.getDrawResult();
-				if(drawResult1.isFinished()) {
-					String drawResult = drawResult1.toString();
-					if(GPUProfiler.DUMP_AVERAGES) {
-						drawResult += new String(GPUProfiler.getAveragesString());
-					}
-					infoLeft.setText(drawResult);
-					infoRight.setText(event.getLatestGPUProfilingResult());
+				String drawResult = drawResult1.toString();
+				if(GPUProfiler.DUMP_AVERAGES) {
+					drawResult += new String(GPUProfiler.getAveragesString());
 				}
+				infoLeft.setText(drawResult);
+				infoRight.setText(event.getLatestGPUProfilingResult());
             });
         }
     }

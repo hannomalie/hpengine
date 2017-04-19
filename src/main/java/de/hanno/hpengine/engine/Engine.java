@@ -35,7 +35,6 @@ import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.opengl.Display;
@@ -71,6 +70,7 @@ public class Engine {
     private volatile long directionalLightMovedInCycle;
     private volatile boolean sceneIsInitiallyDrawn;
     private volatile long pointLightMovedInCycle;
+
     private volatile AtomicLong drawCycle = new AtomicLong();
 
     public static Engine getInstance() {
@@ -91,8 +91,6 @@ public class Engine {
     private static final Logger LOGGER = Logger.getLogger(Engine.class.getName());
     private volatile boolean initialized;
 
-    private OpenGLStopWatch glWatch;
-
     public static void main(String[] args) {
 
         String sceneName = null;
@@ -111,12 +109,9 @@ public class Engine {
 
         try {
             SwingUtils.invokeAndWait(() -> WebLookAndFeel.install());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (InterruptedException | InvocationTargetException e) {
             e.printStackTrace();
         }
-
 
         frame = new ApplicationFrame();
         setTitleRunnable = frame.getSetTitleRunnable();
@@ -178,7 +173,6 @@ public class Engine {
 //        Renderer.init(SimpleTextureRenderer.class);
 //        MaterialFactory.getInstance().initDefaultMaterials();
 
-        glWatch = new OpenGLStopWatch();
         scriptManager = ScriptManager.getInstance();
         physicsFactory = new PhysicsFactory();
         ScriptManager.getInstance().defineGlobals();
@@ -235,7 +229,6 @@ public class Engine {
     }
 
     private void updateRenderState() {
-
         DirectionalLight directionalLight = scene.getDirectionalLight();
         boolean anyPointLightHasMoved = false;
         boolean entityMovedThisCycle = false;
@@ -295,7 +288,7 @@ public class Engine {
         }
     }
 
-    Callable drawCallable = new Callable() {
+    private Callable drawCallable = new Callable() {
         @Override
         public Object call() throws Exception {
             drawCycle.getAndIncrement();
@@ -312,19 +305,19 @@ public class Engine {
             Renderer.getInstance().endFrame();
             Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
 
-            createNewGPUFence(Engine.this.renderState.getCurrentReadState());
+            createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
             renderState.stopRead();
             sceneIsInitiallyDrawn = true;
             return null;
         }
     };
 
-    public void createNewGPUFence(RenderState currentReadState) {
+    public void createNewGPUFenceForReadState(RenderState currentReadState) {
         GLSync readStateSync = currentReadState.getGpuCommandSync();
         if(readStateSync != null) {
             glDeleteSync(readStateSync);
         }
-        renderState.getCurrentReadState().setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+        currentReadState.setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
     }
 
     protected void actuallyDraw() {

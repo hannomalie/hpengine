@@ -222,7 +222,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public boolean isInFrustum(Camera camera) {
-		return isInFrustum(camera, getCenterWorld(), getMinMaxWorldVec3()[0], getMinMaxWorldVec3()[1]);
+		return isInFrustum(camera, getCenterWorld(), getMinMaxWorld()[0], getMinMaxWorld()[1]);
 	}
 
 	public static boolean isInFrustum(Camera camera, Vector3f centerWorld, Vector3f minWorld, Vector3f maxWorld) {
@@ -295,11 +295,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     }
 
 
-	public Vector3f[] getMinMaxWorldVec3() {
-        getMinMaxWorld();
-        return minMax;
-	}
-
 	public boolean isSelected() {
 		return selected;
 	}
@@ -352,29 +347,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	@Override
 	public int hashCode() {
 		return getName().hashCode();
-	}
-
-	public void destroy() {
-
-//		// Select the VAO
-//		GL30.glBindVertexArray(vaoId);
-//		
-//		// Disable the VBO index from the VAO attributes list
-//		GL20.glDisableVertexAttribArray(0);
-//		GL20.glDisableVertexAttribArray(1);
-//		
-//		// Delete the vertex VBO
-//		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-//		GL15.glDeleteBuffers(vboId);
-//		
-//		// Delete the index VBO
-//		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-//		GL15.glDeleteBuffers(vboiId);
-//		
-//		// Delete the VAO
-//		GL30.glBindVertexArray(0);
-//		GL30.glDeleteVertexArrays(vaoId);
-//		
 	}
 
 	@Override

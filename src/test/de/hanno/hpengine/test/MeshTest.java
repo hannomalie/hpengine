@@ -77,12 +77,12 @@ public class MeshTest extends TestWithEngine {
 		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorld[0]);
 		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorld[1]);
 
-		Vector3f[] minMaxWorldVec3 = entity.getMinMaxWorldVec3();
+		Vector3f[] minMaxWorldVec3 = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3[0]);
 		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorldVec3[1]);
 
 		entity.moveInWorld(new Vector3f(0, 5, 0));
-		minMaxWorldVec3 = entity.getMinMaxWorldVec3();
+		minMaxWorldVec3 = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-1f, 3f, -2f), minMaxWorldVec3[0]);
 		Assert.assertEquals(new Vector3f(3f, 7f, 2f), minMaxWorldVec3[1]);
 	}
