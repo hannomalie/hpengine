@@ -4,9 +4,11 @@ import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.renderer.constants.*;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.glu.GLU;
 
 import java.awt.*;
@@ -31,6 +33,10 @@ public interface GraphicsContext {
     void setCanvasWidth(int width);
 
     void setCanvasHeight(int height);
+
+    void waitForGpuSync(GLSync gpuCommandSync);
+
+    void createNewGPUFenceForReadState(RenderState currentReadState);
 
     class GPUContextHelper {
         static volatile GraphicsContext instance;

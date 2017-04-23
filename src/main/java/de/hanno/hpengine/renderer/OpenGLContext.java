@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.renderer.constants.*;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.LWJGLException;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 
 import static de.hanno.hpengine.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.renderer.constants.GlCap.DEPTH_TEST;
+import static org.lwjgl.opengl.GL32.*;
 
 public final class OpenGLContext implements GraphicsContext {
     private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
@@ -49,7 +51,7 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public boolean isAttachedTo(CanvasWrapper canvas) {
-        return Display.getParent() != null && Display.getParent().equals(canvas);
+        return Display.getParent() != null && Display.getParent().equals(canvas.getCanvas());
     }
 
     @Override
@@ -70,6 +72,27 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public void setCanvasHeight(int height) {
         canvasHeight = height;
+    }
+
+    @Override
+    public void waitForGpuSync(GLSync gpuCommandSync) {
+        if(gpuCommandSync != null) {
+            while(true) {
+                int signaled = GraphicsContext.getInstance().calculate(() -> glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0));
+                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
+                    break;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void createNewGPUFenceForReadState(RenderState currentReadState) {
+        GLSync readStateSync = currentReadState.getGpuCommandSync();
+        if(readStateSync != null) {
+            glDeleteSync(readStateSync);
+        }
+        currentReadState.setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
     }
 
     @Override

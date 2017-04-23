@@ -1,21 +1,25 @@
 package de.hanno.hpengine.scene;
 
+import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.container.SimpleContainer;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.event.EntityAddedEvent;
-import de.hanno.hpengine.event.LightChangedEvent;
-import de.hanno.hpengine.event.MaterialAddedEvent;
-import de.hanno.hpengine.event.SceneInitEvent;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.light.AreaLight;
 import de.hanno.hpengine.renderer.light.DirectionalLight;
 import de.hanno.hpengine.renderer.light.PointLight;
 import de.hanno.hpengine.renderer.light.TubeLight;
+import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.shader.Program;
+import de.hanno.hpengine.shader.ProgramFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
@@ -28,6 +32,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static de.hanno.hpengine.engine.Engine.getEventBus;
 
 public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -47,6 +53,14 @@ public class Scene implements LifeCycle, Serializable {
 	private DirectionalLight directionalLight = new DirectionalLight();
 	private volatile boolean updateCache = true;
 
+	private transient volatile long entityMovedInCycle;
+	private transient volatile long entityAddedInCycle;
+	private transient volatile long directionalLightMovedInCycle;
+	private transient volatile long pointLightMovedInCycle;
+	private transient volatile boolean sceneIsInitiallyDrawn;
+	private long currentCycle;
+	private boolean initiallyDrawn;
+
 	public Scene() {
         this("new-scene-" + System.currentTimeMillis());
 	}
@@ -57,7 +71,7 @@ public class Scene implements LifeCycle, Serializable {
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-		Engine.getEventBus().register(this);
+		getEventBus().register(this);
 		EnvironmentProbeFactory.getInstance().clearProbes();
 //        entityContainer = new Octree(new Vector3f(), 600, 5);
         entityContainer = new SimpleContainer();
@@ -78,7 +92,7 @@ public class Scene implements LifeCycle, Serializable {
 		}
 		initLights();
 		initialized = true;
-		Engine.getEventBus().post(new SceneInitEvent());
+		getEventBus().post(new SceneInitEvent());
 	}
 	private void initLights() {
 		for(PointLight pointLight : pointLights) {
@@ -202,8 +216,9 @@ public class Scene implements LifeCycle, Serializable {
 		entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
         calculateMinMax(entities);
 		updateCache = true;
-		Engine.getEventBus().post(new MaterialAddedEvent());
-		Engine.getEventBus().post(new EntityAddedEvent());
+		entityAddedInCycle = currentCycle;
+		getEventBus().post(new MaterialAddedEvent());
+		getEventBus().post(new EntityAddedEvent());
 	}
 	public void add(Entity entity) {
 		entityContainer.insert(entity.getAllChildrenAndSelf());
@@ -211,9 +226,10 @@ public class Scene implements LifeCycle, Serializable {
 			c.registerInScene(Scene.this);
 		});
         calculateMinMax(entities);
+		entityAddedInCycle = currentCycle;
 		updateCache = true;
-		Engine.getEventBus().post(new MaterialAddedEvent());
-		Engine.getEventBus().post(new EntityAddedEvent());
+		getEventBus().post(new MaterialAddedEvent());
+		getEventBus().post(new EntityAddedEvent());
 	}
 	public void update(float seconds) {
 		cacheEntityIndices();
@@ -230,12 +246,27 @@ public class Scene implements LifeCycle, Serializable {
 			entities.get(i).update(seconds);
 		}
 		directionalLight.update(seconds);
-	}
 
-	private void initializationWrapped (Supplier<Void> supplier) {
-		initialized = false;
-		supplier.get();
-		initialized = true;
+		for(int i = 0; i < getPointLights().size(); i++) {
+			PointLight pointLight = getPointLights().get(i);
+			if(!pointLight.hasMoved()) { continue; }
+			pointLightMovedInCycle = currentCycle;
+			getEventBus().post(new PointLightMovedEvent());
+			pointLight.setHasMoved(false);
+		}
+
+		for(int i = 0; i < getEntities().size(); i++) {
+			Entity entity = getEntities().get(i);
+			if(!entity.hasMoved()) { continue; }
+			calculateMinMax();
+			entity.setHasMoved(false);
+			entityMovedInCycle = currentCycle;
+		}
+
+		if(directionalLight.hasMoved()) {
+			directionalLightMovedInCycle = currentCycle;
+			directionalLight.setHasMoved(false);
+		}
 	}
 
 	public EntitiesContainer getEntitiesContainer() {
@@ -282,7 +313,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	public void addPointLight(PointLight pointLight) {
 		pointLights.add(pointLight);
-		Engine.getEventBus().post(new LightChangedEvent());
+		getEventBus().post(new LightChangedEvent());
 	}
 
 	public void addTubeLight(TubeLight tubeLight) {
@@ -329,11 +360,71 @@ public class Scene implements LifeCycle, Serializable {
 		}
 	}
 
+	private Vector3f tempDistVector = new Vector3f();
+	public void addPerMeshInfos(Camera camera, RenderState currentWriteState) {
+		Vector3f cameraWorldPosition = camera.getWorldPosition();
+
+		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+
+		List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
+
+		for (ModelComponent modelComponent : modelComponents) {
+			Entity entity = modelComponent.getEntity();
+			Vector3f centerWorld = entity.getCenterWorld();
+			Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
+			float distanceToCamera = tempDistVector.length();
+			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
+
+			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
+
+			for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
+				Mesh mesh = modelComponent.getMeshes().get(i);
+				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter().x, mesh.getCenter().y, mesh.getCenter().z, mesh.getBoundingSphereRadius());
+				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
+
+				mesh.getMaterial().setTexturesUsed();
+				PerMeshInfo info = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new PerMeshInfo());
+				Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
+				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
+				info.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
+				currentWriteState.add(info);
+			}
+		}
+	}
+
 	public void setUpdateCache(boolean updateCache) {
 		this.updateCache = updateCache;
 	}
 
 	public VertexIndexBuffer getVertexIndexBuffer() {
 		return vertexIndexBuffer;
+	}
+
+	public long entityMovedInCycle() {
+		return entityMovedInCycle;
+	}
+
+	public void setCurrentCycle(long currentCycle) {
+		this.currentCycle = currentCycle;
+	}
+
+	public long directionalLightMovedInCycle() {
+		return directionalLightMovedInCycle;
+	}
+
+	public long pointLightMovedInCycle() {
+		return pointLightMovedInCycle;
+	}
+
+	public boolean isInitiallyDrawn() {
+		return initiallyDrawn;
+	}
+
+	public void setInitiallyDrawn(boolean initiallyDrawn) {
+		this.initiallyDrawn = initiallyDrawn;
+	}
+
+	public long getEntityAddedInCycle() {
+		return entityAddedInCycle;
 	}
 }

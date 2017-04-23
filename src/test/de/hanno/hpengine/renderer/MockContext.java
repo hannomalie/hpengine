@@ -3,7 +3,9 @@ package de.hanno.hpengine.renderer;
 import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.TimeStepThread;
 import de.hanno.hpengine.renderer.constants.*;
+import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
+import org.lwjgl.opengl.GLSync;
 
 import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
@@ -33,6 +35,16 @@ public class MockContext implements GraphicsContext {
 
     @Override
     public void setCanvasHeight(int height) {
+
+    }
+
+    @Override
+    public void waitForGpuSync(GLSync gpuCommandSync) {
+
+    }
+
+    @Override
+    public void createNewGPUFenceForReadState(RenderState currentReadState) {
 
     }
 

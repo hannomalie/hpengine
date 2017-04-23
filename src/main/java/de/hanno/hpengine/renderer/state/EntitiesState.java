@@ -14,6 +14,7 @@ import java.util.Map;
 public class EntitiesState {
     public final Map<Mesh, PerMeshInfo> cash = new HashMap<>();
     public long entityMovedInCycle;
+    public long entityAddedInCycle;
     public List<PerMeshInfo> perMeshInfos = new ArrayList<>();
     public VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(100, 90);
     public OpenGLBuffer entitiesBuffer = new PersistentMappedBuffer(16000);

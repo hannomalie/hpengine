@@ -22,14 +22,14 @@ public class PerMeshInfo {
     private Vector3f maxWorldVec3;
     private long lastMovedInCycle;
 
-    public PerMeshInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
-        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex, lastMovedInCycle);
+    public PerMeshInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex) {
+        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex);
     }
 
     public PerMeshInfo() {
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex, long lastMovedInCycle) {
+    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -44,7 +44,6 @@ public class PerMeshInfo {
         this.maxWorldVec3 = maxWorldVec3;
         this.centerWorld = centerWorld;
         this.drawElementsIndirectCommand.init(indexCount, instanceCount, indexOffset, baseVertex, 0, entityBaseIndex);
-        this.lastMovedInCycle = lastMovedInCycle;
     }
 
     public Program getProgram() {
@@ -131,7 +130,4 @@ public class PerMeshInfo {
         return maxWorldVec3;
     }
 
-    public long getLastMovedInCycle() {
-        return lastMovedInCycle;
-    }
 }

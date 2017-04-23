@@ -28,19 +28,10 @@ import java.util.stream.Collectors;
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
-	private long hasMovedInCycle;
 
 	public List<Transform> getInstances() {
         return instances;
     }
-
-	public void setHasMovedInCycle(long hasMovedInCycle) {
-		this.hasMovedInCycle = hasMovedInCycle;
-	}
-
-	public long getLastMovedInCycle() {
-		return hasMovedInCycle;
-	}
 
 	public enum Update {
 		STATIC,
@@ -371,10 +362,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
             }
         }
         return false;
-	}
-
-	public boolean hasMovedSinceCycle(long cycle) {
-		return getLastMovedInCycle() > cycle;
 	}
 
 	public Update getUpdate() {

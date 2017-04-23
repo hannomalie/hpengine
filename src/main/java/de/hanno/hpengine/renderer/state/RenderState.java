@@ -47,7 +47,7 @@ public class RenderState {
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor);
+        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
         this.entitiesState.perMeshInfos.addAll(source.entitiesState.perMeshInfos);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
 //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
@@ -59,7 +59,7 @@ public class RenderState {
     public RenderState() {
     }
 
-    public RenderState init(VertexIndexBuffer vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor) {
+    public void init(VertexIndexBuffer vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
         this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
         this.camera.init(camera);
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
@@ -73,6 +73,7 @@ public class RenderState {
         this.directionalLightState.directionalLightScatterFactor = directionalLightScatterFactor;
 
         this.entitiesState.entityMovedInCycle = entityMovedInCycle;
+        this.entitiesState.entityAddedInCycle = entityAddedInCycle;
         this.directionalLightHasMovedInCycle = directionalLightHasMovedInCycle;
         this.pointlightMovedInCycle = pointLightMovedInCycle;
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
@@ -81,7 +82,6 @@ public class RenderState {
         this.entitiesState.perMeshInfos.clear();
         this.latestDrawResult.set(latestDrawResult);
         this.cycle = cycle;
-        return this;
     }
 
     public List<PerMeshInfo> perEntityInfos() {

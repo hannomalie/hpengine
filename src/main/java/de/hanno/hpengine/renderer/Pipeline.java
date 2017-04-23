@@ -68,9 +68,9 @@ public class Pipeline {
         GPUProfiler.end();
     }
 
-    int verticesCount = 0;
-    int entitiesDrawn = 0;
-    IntArrayList offsets = new IntArrayList();
+    private int verticesCount = 0;
+    private int entitiesDrawn = 0;
+    private IntArrayList offsets = new IntArrayList();
     public void prepare(RenderState renderState) {
         verticesCount = 0;
         entitiesDrawn = 0;
