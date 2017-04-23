@@ -3,9 +3,9 @@ Vector4f = Java.type('org.lwjgl.util.vector.Vector4f');
 Quaternion = Java.type('org.lwjgl.util.vector.Quaternion');
 Transform = Java.type('de.hanno.hpengine.engine.Transform');
 Engine = Java.type('de.hanno.hpengine.engine.Engine');
-Renderer = Java.type('de.hanno.hpengine.renderer.Renderer');
 GraphicsContext = Java.type('de.hanno.hpengine.renderer.GraphicsContext');
 EntityFactory = Java.type('de.hanno.hpengine.engine.model.EntityFactory');
+JavaScriptComponent = Java.type('de.hanno.hpengine.component.JavaScriptComponent');
 
 
 //print(world.getRenderer().getLightFactory().getDirectionalLight().getCamera().getPosition())
@@ -38,4 +38,19 @@ GraphicsContext.getInstance().execute(new java.lang.Runnable() {
 		Engine.getInstance().getScene().getEntities().get(0).addInstances(instances);
 	}
 });
+var script = new JavaScriptComponent("function update(seconds) {"+
+    "for(var instance = 0; instance < entity.getInstances().size(); instance++) {"+
+    "entity.getInstances().get(instance).move(new Vector3f(0.001*instance*scriptComponent.get('flip'),0,0.001*instance*scriptComponent.get('flip')));"+
+    "}"+
+    "entity.move(new Vector3f(0,0,0.1*scriptComponent.get('flip')));"+
+    "var counter = scriptComponent.get('counter');"+
+    "scriptComponent.put('counter', counter+1);"+
+    "if(scriptComponent.get('counter') >= 149) {"+
+        "scriptComponent.put('flip', scriptComponent.get('flip')*-1);"+
+        "scriptComponent.put('counter', 0);"+
+    "}"+
+"}")
+script.put("flip", 1);
+script.put("counter", 0);
+Engine.getInstance().getScene().getEntities().get(0).addComponent(script);
 

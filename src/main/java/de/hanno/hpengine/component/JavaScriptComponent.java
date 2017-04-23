@@ -3,10 +3,13 @@ package de.hanno.hpengine.component;
 import de.hanno.hpengine.util.script.ScriptManager;
 
 import javax.script.ScriptContext;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JavaScriptComponent extends BaseComponent implements ScriptComponent {
     String script = "";
     private ScriptContext context;
+    private Map map = new HashMap();
 
     public JavaScriptComponent(String script) {
         super();
@@ -53,5 +56,15 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     @Override
     public void reload() {
         init();
+    }
+
+    @Override
+    public Object get(Object key) {
+        return map.get(key);
+    }
+
+    @Override
+    public Object put(Object key, Object value) {
+        return map.put(key, value);
     }
 }

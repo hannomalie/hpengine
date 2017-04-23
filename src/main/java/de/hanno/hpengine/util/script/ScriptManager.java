@@ -91,6 +91,7 @@ public class ScriptManager {
 
 			scriptEngine.setContext(javaScriptComponent.getContext());
 			javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("entity", javaScriptComponent.getEntity());
+			javaScriptComponent.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("scriptComponent", javaScriptComponent);
 			((Invocable) scriptEngine).invokeFunction("init", scriptEngine);
 
 		} catch (ScriptException e) {

@@ -3,11 +3,15 @@ package de.hanno.hpengine.component;
 import de.hanno.compiler.InMemoryJavaCompiler;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class JavaComponent extends BaseComponent implements ScriptComponent {
 
     static final InMemoryJavaCompiler compiler = new InMemoryJavaCompiler();
     String sourceCode = "";
 
+    private Map map = new HashMap<>();
     private Class<?> compiledClass;
     private boolean isLifeCycle;
     private Object instance;
@@ -50,6 +54,16 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
     @Override
     public void reload() {
         initWrappingComponent();
+    }
+
+    @Override
+    public Object get(Object key) {
+        return map.get(key);
+    }
+
+    @Override
+    public Object put(Object key, Object value) {
+        return map.put(key, value);
     }
 
     private void initWrappingComponent() {
