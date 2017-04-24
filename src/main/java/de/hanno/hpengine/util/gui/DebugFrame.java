@@ -569,7 +569,7 @@ public class DebugFrame {
     		});
     		if(chosenFile != null) {
 				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-					MaterialFactory.getInstance().get(chosenFile.getName());
+					MaterialFactory.getInstance().getMaterial(chosenFile.getName());
 					return new Result(true);
 				});
 				Result result = null;

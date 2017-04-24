@@ -49,9 +49,7 @@ public final class Config {
             }
             try {
                 BeanUtils.populate(instance, propertiesMap);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
+            } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }
         }
@@ -148,6 +146,8 @@ public final class Config {
 	private volatile boolean vsync = false;
 	@Toggable(group = "Performance")
 	private volatile boolean lockUpdaterate = true;
+
+	private boolean loadDefaultMaterials = false;
 
     private ModelLod.ModelLodStrategy modelLodStrategy = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
@@ -545,4 +545,16 @@ public final class Config {
 	public boolean isDrawBoundingBoxes() {
 		return drawBoundingBoxes;
 	}
+
+    public void setDrawBoundingBoxes(boolean drawBoundingBoxes) {
+        this.drawBoundingBoxes = drawBoundingBoxes;
+    }
+
+    public boolean isLoadDefaultMaterials() {
+        return loadDefaultMaterials;
+    }
+
+    public void setLoadDefaultMaterials(boolean loadDefaultMaterials) {
+        this.loadDefaultMaterials = loadDefaultMaterials;
+    }
 }

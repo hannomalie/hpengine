@@ -80,7 +80,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
             return materialCache.get();
         }
-        Material material = MaterialFactory.getInstance().get(materialName);
+        Material material = MaterialFactory.getInstance().getMaterial(materialName);
         materialCache = new WeakReference<>(material);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
@@ -90,7 +90,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
     public void setMaterial(String materialName) {
         this.materialName = materialName;
-        model.setMaterial(MaterialFactory.getInstance().get(materialName));
+        model.setMaterial(MaterialFactory.getInstance().getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
             child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialName));
         }

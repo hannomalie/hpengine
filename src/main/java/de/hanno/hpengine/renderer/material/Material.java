@@ -85,6 +85,7 @@ public class Material implements Serializable, Bufferable {
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
 			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, TextureFactory.getInstance().getCubeMap());
 		}
+		initialized = true;
 	}
 
 	protected Material() { }

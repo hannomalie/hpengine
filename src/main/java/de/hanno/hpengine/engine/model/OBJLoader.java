@@ -129,7 +129,7 @@ public class OBJLoader {
                 MaterialFactory.getInstance().putAll(parseMaterialLib(line, f));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
-                currentMaterial = MaterialFactory.getInstance().get(materialName);
+                currentMaterial = MaterialFactory.getInstance().getMaterial(materialName);
                 if (currentMaterial == null) {
                     LOGGER.log(Level.INFO, "No material found!!!");
                     currentMaterial = MaterialFactory.getInstance().getDefaultMaterial();

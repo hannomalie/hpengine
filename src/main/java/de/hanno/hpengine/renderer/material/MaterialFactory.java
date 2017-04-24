@@ -1,6 +1,9 @@
 package de.hanno.hpengine.renderer.material;
 
+import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.event.MaterialAddedEvent;
+import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.renderer.material.Material.MAP;
 import de.hanno.hpengine.texture.TextureFactory;
 import org.apache.commons.io.FilenameUtils;
@@ -40,9 +43,12 @@ public class MaterialFactory {
 	private MaterialFactory() {
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.setX(1.0f);
-		defaultMaterial = getMaterialWithoutRead(defaultTemp);
+        defaultMaterial = getMaterial(defaultTemp, false);
 		skyboxMaterial = getMaterial(new MaterialInfo().setName("skybox").setMaterialType(Material.MaterialType.UNLIT));
 
+		if(Config.getInstance().isLoadDefaultMaterials()) {
+		    initDefaultMaterials();
+        }
 		Engine.getEventBus().register(this);
 	}
 
@@ -81,47 +87,33 @@ public class MaterialFactory {
         }});
 	}
 
-	public Material getMaterial(MaterialInfo materialInfo) {
- 		Material material = MATERIALS.get(materialInfo.name);
-		if(material != null) {
-			return material;
-		}
+    public Material getMaterial(MaterialInfo materialInfo) {
+	    return getMaterial(materialInfo, true);
+    }
 
-		if(materialInfo.name == null || materialInfo.name == "") {
-			materialInfo.name = "Material_" + count++;
-		}
-		
-		material = read(getDirectory() + materialInfo.name);
+	public Material getMaterial(MaterialInfo materialInfo, boolean readFromHdd) {
+        if(materialInfo.name == null || materialInfo.name == "") {
+            materialInfo.name = "Material_" + count++;
+        }
+ 		return MATERIALS.computeIfAbsent(materialInfo.name, (materialInfoName) -> {
+ 		    if(readFromHdd) {
+                Material readMaterial = read(getDirectory() + materialInfo.name);
+                if(readMaterial != null) {
+                    return readMaterial;
+                }
+            }
+            Material newMaterial = new Material();
+            newMaterial.setMaterialInfo(new MaterialInfo(materialInfo));
+            newMaterial.init();
 
-		if(material != null) {
-			return material;
-		}
-		
-		material = new Material();
-		material.setMaterialInfo(new MaterialInfo(materialInfo));
-		initMaterial(material);
-		write(material, materialInfo.name);
-		return material;
+            write(newMaterial, materialInfo.name);
+
+            EventBus.getInstance().post(new MaterialAddedEvent());
+            return newMaterial;
+		});
 	}
 
-	public Material getMaterialWithoutRead(MaterialInfo materialInfo) {
-		Material material = MATERIALS.get(materialInfo.name);
-		if(material != null) {
-			return material;
-		}
-
-		if(materialInfo.name == null || materialInfo.name == "") {
-			materialInfo.name = "Material_" + count++;
-		}
-		
-		material = new Material();
-		material.setMaterialInfo(materialInfo);
-		initMaterial(material);
-		write(material, materialInfo.name);
-		return material;
-	}
-
-	public Material getMaterial(HashMap<MAP, String> hashMap) {
+    public Material getMaterial(HashMap<MAP, String> hashMap) {
 		return getMaterial("Material_" + MATERIALS.size(), hashMap);
 	}
 
@@ -137,40 +129,36 @@ public class MaterialFactory {
 		}
 		MaterialInfo info = new MaterialInfo(textures);
 		info.name = name;
-		Material material = getMaterial(info);
-		return material;
+        return getMaterial(info);
 	}
 
-	private void initMaterial(Material material) {
-		material.init();
-        addMaterial(material);
-        material.initialized = true;
-	}
+    public Material getMaterial(String materialName) {
+        return MATERIALS.computeIfAbsent(materialName, (materialInfoName) -> {
+            Material material = read(materialName);
 
-    private void addMaterial(String key, Material material) {
+            if(material == null) {
+                material = getDefaultMaterial();
+                Logger.getGlobal().info(() -> "Failed to get material " + materialName);
+            }
+            EventBus.getInstance().post(new MaterialAddedEvent());
+            return material;
+        });
+    }
+
+	private void addMaterial(String key, Material material) {
+	    if(MATERIALS.containsKey(key)) {
+            Logger.getGlobal().info(() -> "Material already defined: " + key);
+            return;
+        }
         MATERIALS.put(key, material);
     }
     private void addMaterial(Material material) {
         addMaterial(material.getName(), material);
     }
 
-    public Material get(String materialName) {
-		Material material = MATERIALS.get(materialName);
-		if(material == null) {
-			material = read(materialName);
-
-			if(material == null) {
-				material = getDefaultMaterial();
-				Logger.getGlobal().info("Failed to get material " + materialName);
-			}
-            addMaterial(material);
-        }
-		return material;
-	}
-
     public void putAll(Map<String, MaterialInfo> materialLib) {
 		for (String key : materialLib.keySet()) {
-			addMaterial(key, getMaterial(materialLib.get(key)));
+			getMaterial(materialLib.get(key));
 		}
 	}
 
@@ -180,24 +168,24 @@ public class MaterialFactory {
 
     public Material read(String resourceName) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
-		FileInputStream fis = null;
-		ObjectInputStream in = null;
-		try {
-			LOGGER.info(String.valueOf(new File(Material.getDirectory() + fileName + ".hpmaterial").exists()));
-			fis = new FileInputStream(getDirectory() + fileName + ".hpmaterial");
-			in = new ObjectInputStream(fis);
-			Material material = (Material) in.readObject();
-			in.close();
-			handleEvolution(material.getMaterialInfo());
-            Material materialWithoutRead = getMaterialWithoutRead(material.getMaterialInfo());
-            return materialWithoutRead;
-//			return material;
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-//			e.printStackTrace();
-			Logger.getGlobal().info("Material read (" + fileName + ") caused an exception, probably not very important");
-		}
+        String materialFileName = getDirectory() + fileName + ".hpmaterial";
+        File materialFile = new File(materialFileName);
+        if(materialFile.exists() && materialFile.isFile()) {
+
+            try {
+                FileInputStream fis = new FileInputStream(materialFileName);
+                ObjectInputStream in = new ObjectInputStream(fis);
+                Material material = (Material) in.readObject();
+                in.close();
+                handleEvolution(material.getMaterialInfo());
+                material.init();
+                return material;
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                Logger.getGlobal().info("Material read (" + fileName + ") caused an exception, probably not very important");
+            }
+        }
 		return null;
 	}
 

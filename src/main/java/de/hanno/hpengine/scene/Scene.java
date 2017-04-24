@@ -39,27 +39,26 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private final VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(10000, 10000);
+	private final VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(10, 10);
 
-	String name = "";
-	List<ProbeData> probes = new CopyOnWriteArrayList<>();
+	private String name = "";
+	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
 
 	private transient EntitiesContainer entityContainer = new SimpleContainer();
-	transient boolean initialized = false;
+	private transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
 	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
 	private List<AreaLight> areaLights = new CopyOnWriteArrayList<>();
 	private DirectionalLight directionalLight = new DirectionalLight();
-	private volatile boolean updateCache = true;
 
+	private transient volatile boolean updateCache = true;
 	private transient volatile long entityMovedInCycle;
 	private transient volatile long entityAddedInCycle;
 	private transient volatile long directionalLightMovedInCycle;
 	private transient volatile long pointLightMovedInCycle;
-	private transient volatile boolean sceneIsInitiallyDrawn;
-	private long currentCycle;
-	private boolean initiallyDrawn;
+	private transient volatile long currentCycle;
+	private transient volatile boolean initiallyDrawn;
 
 	public Scene() {
         this("new-scene-" + System.currentTimeMillis());
@@ -73,10 +72,9 @@ public class Scene implements LifeCycle, Serializable {
 		LifeCycle.super.init();
 		getEventBus().register(this);
 		EnvironmentProbeFactory.getInstance().clearProbes();
-//        entityContainer = new Octree(new Vector3f(), 600, 5);
         entityContainer = new SimpleContainer();
 		entityContainer.init();
-        entities.forEach(entity -> entity.init());
+        entities.forEach(Entity::init);
         entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
 		addAll(entities);
 		for (ProbeData data : probes) {
@@ -170,11 +168,11 @@ public class Scene implements LifeCycle, Serializable {
 		return null;
 	}
 
-    static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-    static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
-    Vector4f min = new Vector4f();
-    Vector4f max = new Vector4f();
-    Vector4f[] minMax = new Vector4f[]{min, max};
+    private static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+    private static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
+    private Vector4f min = new Vector4f();
+    private Vector4f max = new Vector4f();
+    private Vector4f[] minMax = new Vector4f[]{min, max};
 
     public Vector4f[] getMinMax() {
         return minMax;

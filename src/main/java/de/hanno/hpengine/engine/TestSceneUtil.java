@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine;
 
 import de.hanno.hpengine.component.PhysicsComponent;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.Model;
@@ -45,7 +44,8 @@ public class TestSceneUtil {
                                 .setMetallic((float) j / entityCount)
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
                                 .setAmbient(1);
-                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo.setName("Default_" + i + "_" + j));
+                        materialInfo.setName("Default_" + i + "_" + j);
+                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo);
                         mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
                         mat.setMetallic((float)j/entityCount);
                         mat.setRoughness((float)k/entityCount);
