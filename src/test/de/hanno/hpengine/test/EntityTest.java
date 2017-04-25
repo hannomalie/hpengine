@@ -1,5 +1,6 @@
 package de.hanno.hpengine.test;
 
+import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
@@ -9,7 +10,6 @@ import org.lwjgl.util.vector.Vector3f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
-import java.util.List;
 
 public class EntityTest extends TestWithEngine {
 
@@ -75,8 +75,8 @@ public class EntityTest extends TestWithEngine {
 
         Entity secondEntity = EntityFactory.getInstance().getEntity("second", model);
         engine.getScene().add(secondEntity);
-        Assert.assertEquals(0, Engine.getInstance().getScene().getEntityBufferIndex(parentEntity));
-        Assert.assertEquals(4, Engine.getInstance().getScene().getEntityBufferIndex(secondEntity));
+        Assert.assertEquals(0, Engine.getInstance().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class)));
+        Assert.assertEquals(4, Engine.getInstance().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class)));
 
         {
             double[] parentValues = parentEntity.get();

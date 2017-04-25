@@ -1,6 +1,8 @@
 package de.hanno.hpengine.scene;
 
+import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.component.Component;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
@@ -27,9 +29,7 @@ import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -211,7 +211,10 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	public void addAll(List<Entity> entities) {
 		entityContainer.insert(entities);
-		entities.forEach(e -> e.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
+		entities.forEach(e -> e.getComponents().values().forEach(c -> {
+            c.registerInScene(Scene.this);
+            Scene.this.register(c);
+        }));
         calculateMinMax(entities);
 		updateCache = true;
 		entityAddedInCycle = currentCycle;
@@ -219,16 +222,41 @@ public class Scene implements LifeCycle, Serializable {
 		getEventBus().post(new EntityAddedEvent());
 	}
 	public void add(Entity entity) {
-		entityContainer.insert(entity.getAllChildrenAndSelf());
-		entity.getComponents().values().forEach(c -> {
-			c.registerInScene(Scene.this);
-		});
-        calculateMinMax(entities);
-		entityAddedInCycle = currentCycle;
-		updateCache = true;
-		getEventBus().post(new MaterialAddedEvent());
-		getEventBus().post(new EntityAddedEvent());
+        addAll(new ArrayList() {{add(entity);}});
 	}
+
+	List<ModelComponent> registeredModelComponents = new ArrayList();
+    //TODO: Handle deregistration, or prohibit it
+	private void register(Component c) {
+		if(c instanceof ModelComponent) {
+			registeredModelComponents.add(((ModelComponent)c));
+		}
+	}
+
+	public int getEntityBufferIndex(ModelComponent modelComponent) {
+		cacheEntityIndices();
+		return entityIndices.get(getModelComponents().indexOf(modelComponent));
+	}
+
+
+	public List<ModelComponent> getModelComponents() {
+		return registeredModelComponents;
+	}
+	private IntArrayList entityIndices = new IntArrayList();
+	private void cacheEntityIndices() {
+		if(updateCache)
+		{
+			updateCache = false;
+			entityIndices.clear();
+			int index = 0;
+			for(Entity current : entityContainer.getEntities()) {
+				if(!current.hasComponent(ModelComponent.class)) { continue; }
+				entityIndices.add(index);
+				index += current.getInstanceCount() * current.getComponent(ModelComponent.class).getMeshes().size();
+			}
+		}
+	}
+
 	public void update(float seconds) {
 		cacheEntityIndices();
 		Iterator<PointLight> pointLightsIterator = pointLights.iterator();
@@ -322,46 +350,6 @@ public class Scene implements LifeCycle, Serializable {
 		tubeLights.add(tubeLight);
 	}
 
-
-	private volatile List<Integer> cachedEntityIndices = new ArrayList();
-    public int getEntityBufferIndex(Entity entity) {
-    	cacheEntityIndices();
-        Integer index = entitiesWithModelComponent.get(entity);
-        if(index == null) { return -1; }
-		Integer fromCache = cachedEntityIndices.get(index);
-        return fromCache == null ? -1 : fromCache;
-    }
-
-
-    public Map<Entity, Integer> getEntitiesWithModelComponent() {
-        return entitiesWithModelComponent;
-    }
-    public List<ModelComponent> getModelComponents() {
-        return modelComponents;
-    }
-
-    private final Map<Entity, Integer> entitiesWithModelComponent = new ConcurrentHashMap<>();
-    private final List<ModelComponent> modelComponents = new CopyOnWriteArrayList<>();
-	private void cacheEntityIndices() {
-		if(updateCache)
-		{
-			updateCache = false;
-			entitiesWithModelComponent.clear();
-            modelComponents.clear();
-            cachedEntityIndices.clear();
-			int index = 0;
-			int i = 0;
-			for(Entity current : entityContainer.getEntities()) {
-				if(!current.hasComponent(ModelComponent.class)) { continue; }
-                entitiesWithModelComponent.put(current, i);
-                modelComponents.add(current.getComponent(ModelComponent.class, "ModelComponent"));
-				cachedEntityIndices.add(i, index);
-				index += current.getInstanceCount() * current.getComponent(ModelComponent.class).getMeshes().size();
-				i++;
-			}
-		}
-	}
-
 	private Vector3f tempDistVector = new Vector3f();
 	public void addPerMeshInfos(Camera camera, RenderState currentWriteState) {
 		Vector3f cameraWorldPosition = camera.getWorldPosition();
@@ -377,7 +365,7 @@ public class Scene implements LifeCycle, Serializable {
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity);
+			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class));
 
 			for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
 				Mesh mesh = modelComponent.getMeshes().get(i);
