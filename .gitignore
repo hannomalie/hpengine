@@ -1,13 +1,17 @@
 /bin
-/build
 /libs/lwjgl-2.9.2/javadoc
-/.gradle
+.gradle
+/build
+/buildSrc/build
+/subprojects/*/build
+*/docs/*.html
+
 *.hptexture
 *.hpcubemap
 *.hpmaterial
 *.hpentity
 *.hpscene
-/target/
+*/target/*
 
 /.idea
 *.iml
@@ -17,3 +21,4 @@ nbactions.xml
 .classpath
 .project
 .settings/*
+*.orig
