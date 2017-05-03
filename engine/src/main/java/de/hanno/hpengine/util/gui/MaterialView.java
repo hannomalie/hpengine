@@ -44,7 +44,7 @@ public class MaterialView extends WebPanel {
 	public MaterialView(Material material) {
 		setUndecorated(true);
 		this.setSize(600, 600);
-		setMargin(20);
+		setMargin(5);
 		
 		init(material);
 	}

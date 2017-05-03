@@ -143,8 +143,9 @@ class Editor : WebFrame(), HostComponent {
 
     private fun addLeftPanelTabs() {
         val accordion = WebAccordion(WebAccordionStyle.accordionStyle)
-        accordion.setMultiplySelectionAllowed(false)
+        accordion.isMultiplySelectionAllowed = false
         accordion.addPane(null, "Entity", EntityView())
+        accordion.addPane(null, "Material", MaterialView())
 
         leftPanel.add(accordion)
     }
