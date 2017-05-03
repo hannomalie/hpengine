@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.event.EntityAddedEvent;
 import de.hanno.hpengine.event.UpdateChangedEvent;
+import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.shader.Bufferable;
 import de.hanno.hpengine.util.Util;
@@ -29,7 +30,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
-	public List<Transform> getInstances() {
+	public List<Instance> getInstances() {
         return instances;
     }
 
@@ -42,7 +43,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	private Transform transform = new Transform();
 
-    private List<Transform> instances = new CopyOnWriteArrayList<>();
+    private List<Instance> instances = new CopyOnWriteArrayList<>();
 
 	protected boolean initialized = false;
 
@@ -396,19 +397,21 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         int index = 0;
         int meshIndex = 0;
         for(Mesh mesh : getComponent(ModelComponent.class).getMeshes()) {
+			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
 				Matrix4f mm = getModelMatrix();
-				index = getValues(doubles, index, mm, mesh, meshIndex);
+				index = getValues(doubles, index, mm, meshIndex, materialIndex);
 			}
 
-			for(Transform instanceTransform : instances) {
-				Matrix4f instanceMatrix = instanceTransform.getTransformation();
-				index = getValues(doubles, index, instanceMatrix, mesh, meshIndex);
+			for(Instance instance : instances) {
+				Matrix4f instanceMatrix = instance.getTransformation();
+                int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
+				index = getValues(doubles, index, instanceMatrix, meshIndex, instanceMaterialIndex);
 			}
 			if(hasParent()) {
-				for(Transform instanceTransform : getParent().getInstances()) {
-					Matrix4f instanceMatrix = instanceTransform.getTransformation();
-					index = getValues(doubles, index, instanceMatrix, mesh, meshIndex);
+				for(Instance instance : getParent().getInstances()) {
+					Matrix4f instanceMatrix = instance.getTransformation();
+                    index = getValues(doubles, index, instanceMatrix, meshIndex, materialIndex);
 				}
 			}
 			meshIndex++;
@@ -416,7 +419,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         return doubles;
     }
 
-    private int getValues(double[] doubles, int index, Matrix4f mm, Mesh mesh, int meshIndex) {
+    private int getValues(double[] doubles, int index, Matrix4f mm, int meshIndex, double materialIndex) {
         doubles[index++] = mm.m00;
         doubles[index++] = mm.m01;
         doubles[index++] = mm.m02;
@@ -434,13 +437,11 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         doubles[index++] = mm.m32;
         doubles[index++] = mm.m33;
         doubles[index++] = isSelected() ? 1d : 0d;
-        double materialIndex = getComponents().containsKey("ModelComponent") ?
-                MaterialFactory.getInstance().indexOf(mesh.getMaterial()) : 0;
         doubles[index++] = materialIndex;
         doubles[index++] = getUpdate().equals(Update.STATIC) ? 1 : 0;
-		int entitiyIndex = Engine.getInstance().getScene().getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
-		doubles[index++] = entitiyIndex + meshIndex;
-		doubles[index++] = entitiyIndex;
+		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class)); //getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
+		doubles[index++] = entityIndex + meshIndex;
+		doubles[index++] = entityIndex;
 		doubles[index++] = meshIndex;
 		doubles[index++] = -1;
 		doubles[index++] = -1;
@@ -460,16 +461,42 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		if(getParent() != null) {
 			instance.setParent(getParent().getTransform());
 		}
-		instances.add(instance);
+		instances.add(new Instance(instance, getComponent(ModelComponent.class).getMaterial()));
 		Engine.getEventBus().post(new EntityAddedEvent());
 	}
-	public void addInstances(List<Transform> instances) {
-		if(getParent() != null) {
-			for(Transform instance : instances) {
-				instance.setParent(getParent().getTransform());
-			}
+    public void addInstanceTransforms(List<Transform> instances) {
+        if(getParent() != null) {
+            for(Transform instance : instances) {
+                instance.setParent(getParent().getTransform());
+            }
+        }
+        this.instances.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class).getMaterial())).collect(Collectors.toList()));
+        Engine.getEventBus().post(new EntityAddedEvent());
+    }
+    public void addInstances(List<Instance> instances) {
+        if(getParent() != null) {
+            for(Transform instance : instances) {
+                instance.setParent(getParent().getTransform());
+            }
+        }
+        this.instances.addAll(instances);
+        Engine.getEventBus().post(new EntityAddedEvent());
+    }
+
+	public static class Instance extends Transform {
+		private Material material;
+
+		public Instance(Transform transform, Material material) {
+			setTransform(transform);
+			this.material = material;
 		}
-		this.instances.addAll(instances);
-		Engine.getEventBus().post(new EntityAddedEvent());
-	}
+
+        public Material getMaterial() {
+            return material;
+        }
+
+        public void setMaterial(Material material) {
+            this.material = material;
+        }
+    }
 }

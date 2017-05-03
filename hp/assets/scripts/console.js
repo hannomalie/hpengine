@@ -2,9 +2,11 @@ Vector3f = Java.type('org.lwjgl.util.vector.Vector3f');
 Vector4f = Java.type('org.lwjgl.util.vector.Vector4f');
 Quaternion = Java.type('org.lwjgl.util.vector.Quaternion');
 Transform = Java.type('de.hanno.hpengine.engine.Transform');
+Instance = Java.type('de.hanno.hpengine.engine.model.Entity.Instance');
 Engine = Java.type('de.hanno.hpengine.engine.Engine');
 GraphicsContext = Java.type('de.hanno.hpengine.renderer.GraphicsContext');
 EntityFactory = Java.type('de.hanno.hpengine.engine.model.EntityFactory');
+MaterialFactory = Java.type('de.hanno.hpengine.renderer.material.MaterialFactory');
 JavaScriptComponent = Java.type('de.hanno.hpengine.component.JavaScriptComponent');
 
 
@@ -27,7 +29,8 @@ for(var x = -count; x < count; x++) {
 			var trafo = new Transform();
 			var randomFloat = random.nextFloat() - 0.5;
 			trafo.setPosition(Vector3f.add(Engine.getInstance().getScene().getEntities().get(0).getPosition(), new Vector3f(randomFloat*15*x,randomFloat*15*y,randomFloat*15*z), null));
-            	instances.add(trafo);
+			var instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%11));
+            	instances.add(instance);
 		}
 	}
 }
