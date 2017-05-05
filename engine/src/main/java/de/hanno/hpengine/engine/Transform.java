@@ -44,9 +44,7 @@ public class Transform implements Serializable, Transformable {
 	transient Matrix4f transformation = new Matrix4f();
 
 	transient protected FloatBuffer modelMatrixBuffer;
-    private FloatBuffer modelMatrixReadOnlyBuffer;
 	transient protected FloatBuffer viewMatrixBuffer;
-    private FloatBuffer viewMatrixReadOnlyBuffer;
 
 	private transient Vector3f tempVec3;
 
@@ -176,17 +174,26 @@ public class Transform implements Serializable, Transformable {
 		setDirty(true);
 		this.orientation.set(orientation);
 	}
+	private final Vector3f temp_viewVec = new Vector3f();
+	private final Vector4f temp_viewVec4 = new Vector4f();
 	public Vector3f getViewDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), VIEW_V4, null);
-		return (Vector3f) new Vector3f(temp.x, temp.y, temp.z).normalise();
+		Vector4f temp = Matrix4f.transform(getTransformation(), VIEW_V4, temp_viewVec4);
+		temp_viewVec.set(temp.x, temp.y, temp.z);
+		return (Vector3f) temp_viewVec.normalise();
 	}
+	private final Vector3f temp_rightVec = new Vector3f();
+	private final Vector4f temp_rightVec4 = new Vector4f();
 	public Vector3f getRightDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), RIGHT_V4, null);
-		return (Vector3f) new Vector3f(temp.x, temp.y, temp.z).normalise();
+		Vector4f temp = Matrix4f.transform(getTransformation(), RIGHT_V4, temp_rightVec4);
+		temp_rightVec.set(temp.x, temp.y, temp.z);
+		return (Vector3f) temp_rightVec.normalise();
 	}
+	private final Vector3f temp_upVec = new Vector3f();
+	private final Vector4f temp_upVec4 = new Vector4f();
 	public Vector3f getUpDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), UP_V4, null);
-		return (Vector3f) new Vector3f(temp.x, temp.y, temp.z).normalise();
+		Vector4f temp = Matrix4f.transform(getTransformation(), UP_V4, temp_upVec4);
+		temp_upVec.set(temp.x, temp.y, temp.z);
+		return (Vector3f) temp_upVec.normalise();
 	}
 	public void rotate(Vector3f axis, float angleInDegrees) {
 		rotate(new Vector4f(axis.x, axis.y, axis.z, angleInDegrees));
@@ -266,11 +273,12 @@ public class Transform implements Serializable, Transformable {
 	}
 
 	private Matrix4f tempTranslationRotationMatrix = new Matrix4f();
-	private Matrix4f calculateTranslationRotation() {
+	private final Vector3f unitVector = new Vector3f(1, 1, 1);
+	private final Matrix4f calculateTranslationRotation() {
 		tempTranslationRotationMatrix.setIdentity();
 		Matrix4f.translate(position, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
 		Matrix4f.mul(tempTranslationRotationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTranslationRotationMatrix); // TODO: SWITCH THESE LINES....
-		tempTranslationRotationMatrix.scale(new Vector3f(1,1,1));
+		tempTranslationRotationMatrix.scale(unitVector);
 
 		if(parent != null) {
 			parentMatrix = parent.getTranslationRotation();
@@ -377,26 +385,24 @@ public class Transform implements Serializable, Transformable {
 			modelMatrixBuffer.rewind();
 			transformation.store(modelMatrixBuffer);
 			modelMatrixBuffer.rewind();
-            modelMatrixReadOnlyBuffer = modelMatrixBuffer.asReadOnlyBuffer();
 		}
 
 		synchronized(viewMatrixBuffer) {
 			viewMatrixBuffer.rewind();
 			viewMatrix.store(viewMatrixBuffer);
 			viewMatrixBuffer.rewind();
-            viewMatrixReadOnlyBuffer = viewMatrixBuffer.asReadOnlyBuffer();
 		}
 	}
 
 	public FloatBuffer getTransformationBuffer() {
 		recalculateIfDirty();
-		return modelMatrixReadOnlyBuffer;
+		return modelMatrixBuffer;
 	}
 	public FloatBuffer getTranslationRotationBuffer(boolean recalculateBefore) {
 		if(recalculateBefore) {
 			recalculateIfDirty();
 		}
-		return viewMatrixReadOnlyBuffer;
+		return viewMatrixBuffer;
 	}
 
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {

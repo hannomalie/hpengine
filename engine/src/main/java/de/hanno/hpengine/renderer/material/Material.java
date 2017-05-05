@@ -91,7 +91,6 @@ public class Material implements Serializable, Bufferable {
 
 	private Program logAndFallBackIfNull(Program firstPassProgram, String definesString) {
 		if(firstPassProgram == null) {
-//			System.err.println("File not found for material " + materialInfo.name);
 			firstPassProgram = ProgramFactory.getInstance().getProgram(definesString);
 		}
 		return firstPassProgram;
@@ -283,8 +282,7 @@ public class Material implements Serializable, Bufferable {
 		}
 		
 		Material m = (Material) other;
-		MaterialInfo mi = m.getMaterialInfo();
-		return materialInfo.equals(((Material) other).getMaterialInfo());
+		return materialInfo.name.equals(m.getName());
 	}
 
 	public void setEnvironmentMapType(ENVIRONMENTMAPTYPE type) {

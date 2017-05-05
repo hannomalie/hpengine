@@ -13,7 +13,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.renderer.material.Material.getDirectory;
@@ -36,7 +35,7 @@ public class MaterialFactory {
         instance = new MaterialFactory();
     }
 
-	public Map<String, Material> MATERIALS = new ConcurrentHashMap<>();
+	public ListWithSyncedAdder<Material> MATERIALS = new ListWithSyncedAdder();
 
 	private Material defaultMaterial;
 
@@ -95,7 +94,7 @@ public class MaterialFactory {
         if(materialInfo.name == null || materialInfo.name == "") {
             materialInfo.name = "Material_" + count++;
         }
- 		return MATERIALS.computeIfAbsent(materialInfo.name, (materialInfoName) -> {
+ 		return MATERIALS.addIfAbsent(() -> {
  		    if(readFromHdd) {
                 Material readMaterial = read(getDirectory() + materialInfo.name);
                 if(readMaterial != null) {
@@ -133,7 +132,7 @@ public class MaterialFactory {
 	}
 
     public Material getMaterial(String materialName) {
-        return MATERIALS.computeIfAbsent(materialName, (materialInfoName) -> {
+        return MATERIALS.addIfAbsent(() -> {
             Material material = read(materialName);
 
             if(material == null) {
@@ -146,11 +145,11 @@ public class MaterialFactory {
     }
 
 	private void addMaterial(String key, Material material) {
-	    if(MATERIALS.containsKey(key)) {
-            Logger.getGlobal().info(() -> "Material already defined: " + key);
+	    if(MATERIALS.contains(material)) {
+            Logger.getGlobal().warning(() -> "Material already defined: " + key);
             return;
         }
-        MATERIALS.put(key, material);
+        MATERIALS.add(material);
     }
     private void addMaterial(Material material) {
         addMaterial(material.getName(), material);
@@ -193,24 +192,16 @@ public class MaterialFactory {
     	
     }
 
-	public Map<String, Material> getMaterials() {
+	public ListWithSyncedAdder<Material> getMaterials() {
 		return MATERIALS;
 	}
 
 	public List<Material> getMaterialsAsList() {
-		List<Material> sortedList = new ArrayList<Material>(MATERIALS.values());
-		sortedList.sort(new Comparator<Material>() {
-			@Override
-			public int compare(Material o1, Material o2) {
-				return o1.getName().compareTo(o2.getName());
-			}
-		});
-		
-		return sortedList;
+		return getMaterials();
 	}
 
 	public int indexOf(Material material) {
-		return new ArrayList<>(MATERIALS.values()).indexOf(material);
+		return MATERIALS.indexOf(material);
 	}
 
 	public Material getSkyboxMaterial() {

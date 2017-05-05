@@ -114,7 +114,7 @@ public class RenderState {
 
     public void bufferMaterial(Material material) {
         GraphicsContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials().values());
+            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials());
 
             int offset = material.getElementsPerObject() * materials.indexOf(material);
             entitiesState.materialBuffer.put(offset, material);
@@ -123,7 +123,7 @@ public class RenderState {
 
     public void bufferMaterials() {
         GraphicsContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(MaterialFactory.getInstance().getMaterials().values());
+            ArrayList<Material> materials = new ArrayList<Material>(MaterialFactory.getInstance().getMaterials());
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });
     }

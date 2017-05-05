@@ -5,6 +5,7 @@ import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 
 import javax.swing.table.AbstractTableModel;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 public class MaterialTableModel extends AbstractTableModel {
@@ -29,9 +30,9 @@ public class MaterialTableModel extends AbstractTableModel {
     }
 
     private Material getMaterial(int row) {
-        return MaterialFactory.getInstance().MATERIALS.values()
+        return MaterialFactory.getInstance().MATERIALS
                 .stream()
-                .sorted((one, two) -> one.getName().compareTo(two.getName()))
+                .sorted(Comparator.comparing(Material::getName))
                 .collect(Collectors.toList())
                 .get(row);
     }

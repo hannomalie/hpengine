@@ -29,7 +29,7 @@ for(var x = -count; x < count; x++) {
 			var trafo = new Transform();
 			var randomFloat = random.nextFloat() - 0.5;
 			trafo.setPosition(Vector3f.add(Engine.getInstance().getScene().getEntities().get(0).getPosition(), new Vector3f(randomFloat*15*x,randomFloat*15*y,randomFloat*15*z), null));
-			var instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%11));
+			var instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10));
             	instances.add(instance);
 		}
 	}

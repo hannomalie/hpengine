@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
+import com.carrotsearch.hppc.DoubleArrayList;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.Component;
 import de.hanno.hpengine.component.ModelComponent;
@@ -23,7 +24,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
@@ -35,8 +39,17 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     }
 
 	public enum Update {
-		STATIC,
-		DYNAMIC
+		STATIC(1),
+		DYNAMIC(0);
+
+		private final double d;
+		Update(double d) {
+			this.d = d;
+		}
+
+		public double getAsDouble() {
+			return d;
+		}
 	}
 
 	private Update update = Update.DYNAMIC;
@@ -173,8 +186,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void update(float seconds) {
-
-
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
@@ -389,10 +400,14 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     }
 
 
+    private double[] doubles = null;
     @Override
     public double[] get() {
 
-        double[] doubles = new double[getElementsPerObject()];
+		int elementsPerObject = getElementsPerObject();
+    	if(doubles == null || doubles.length < elementsPerObject) {
+    		doubles = new double[elementsPerObject];
+		}
 
         int index = 0;
         int meshIndex = 0;
@@ -403,11 +418,23 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 				index = getValues(doubles, index, mm, meshIndex, materialIndex);
 			}
 
-			for(Instance instance : instances) {
-				Matrix4f instanceMatrix = instance.getTransformation();
-                int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-				index = getValues(doubles, index, instanceMatrix, meshIndex, instanceMaterialIndex);
-			}
+			List<Future<Matrix4f>> instanceMatrices = new ArrayList<>();
+            for(int i = 0; i < instances.size(); i++) {
+                Instance instance = instances.get(i);
+                instanceMatrices.add(CompletableFuture.supplyAsync(instance::getTransformation));
+            }
+
+            for(int i = 0; i < instances.size(); i++) {
+                Instance instance = instances.get(i);
+                Matrix4f instanceMatrix = null;
+                try {
+                    instanceMatrix = instanceMatrices.get(i).get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+				int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
+                index = getValues(doubles, index, instanceMatrix, meshIndex, instanceMaterialIndex);
+            }
 			if(hasParent()) {
 				for(Instance instance : getParent().getInstances()) {
 					Matrix4f instanceMatrix = instance.getTransformation();
@@ -419,34 +446,34 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
         return doubles;
     }
 
-    private int getValues(double[] doubles, int index, Matrix4f mm, int meshIndex, double materialIndex) {
-        doubles[index++] = mm.m00;
-        doubles[index++] = mm.m01;
-        doubles[index++] = mm.m02;
-        doubles[index++] = mm.m03;
-        doubles[index++] = mm.m10;
-        doubles[index++] = mm.m11;
-        doubles[index++] = mm.m12;
-        doubles[index++] = mm.m13;
-        doubles[index++] = mm.m20;
-        doubles[index++] = mm.m21;
-        doubles[index++] = mm.m22;
-        doubles[index++] = mm.m23;
-        doubles[index++] = mm.m30;
-        doubles[index++] = mm.m31;
-        doubles[index++] = mm.m32;
-        doubles[index++] = mm.m33;
-        doubles[index++] = isSelected() ? 1d : 0d;
-        doubles[index++] = materialIndex;
-        doubles[index++] = getUpdate().equals(Update.STATIC) ? 1 : 0;
+	private int getValues(double[] doubles, int index, Matrix4f mm, int meshIndex, double materialIndex) {
+		doubles[index++] = mm.m00;
+		doubles[index++] = mm.m01;
+		doubles[index++] = mm.m02;
+		doubles[index++] = mm.m03;
+		doubles[index++] = mm.m10;
+		doubles[index++] = mm.m11;
+		doubles[index++] = mm.m12;
+		doubles[index++] = mm.m13;
+		doubles[index++] = mm.m20;
+		doubles[index++] = mm.m21;
+		doubles[index++] = mm.m22;
+		doubles[index++] = mm.m23;
+		doubles[index++] = mm.m30;
+		doubles[index++] = mm.m31;
+		doubles[index++] = mm.m32;
+		doubles[index++] = mm.m33;
+		doubles[index++] = isSelected() ? 1d : 0d;
+		doubles[index++] = materialIndex;
+		doubles[index++] = getUpdate().getAsDouble();
 		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class)); //getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
 		doubles[index++] = entityIndex + meshIndex;
 		doubles[index++] = entityIndex;
 		doubles[index++] = meshIndex;
 		doubles[index++] = -1;
 		doubles[index++] = -1;
-        return index;
-    }
+		return index;
+	}
 
     public int getInstanceCount() {
         int instancesCount = instances.size() + 1;
