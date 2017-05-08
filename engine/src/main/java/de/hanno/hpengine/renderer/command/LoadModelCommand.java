@@ -1,14 +1,12 @@
 package de.hanno.hpengine.renderer.command;
 
-import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.model.Mesh.CompiledFace;
-import org.lwjgl.util.vector.Vector3f;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.renderer.command.LoadModelCommand.EntityListResult;
 
-import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

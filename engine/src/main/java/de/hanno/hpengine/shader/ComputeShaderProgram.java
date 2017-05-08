@@ -1,6 +1,7 @@
 package de.hanno.hpengine.shader;
 
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
@@ -20,23 +21,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import static de.hanno.hpengine.shader.Shader.ShaderSource;
 import static de.hanno.hpengine.shader.Shader.getDirectory;
 
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
 	
-	private ShaderSource computeShaderSource;
+	private CodeSource computeShaderSource;
     private ComputeShader computeShader;
 
 	private ReloadOnFileChangeListener<ComputeShaderProgram> reloadOnFileChangeListener;
 	private FileAlterationObserver observerShader;
 
-    public ComputeShaderProgram(ShaderSource computeShaderSource) {
+    public ComputeShaderProgram(CodeSource computeShaderSource) {
         this(computeShaderSource, Collections.EMPTY_LIST);
     }
-	public ComputeShaderProgram(ShaderSource computeShaderSource, List<Define> defines) {
+	public ComputeShaderProgram(CodeSource computeShaderSource, List<Define> defines) {
 		this.computeShaderSource = computeShaderSource;
         this.defines = defines;
 

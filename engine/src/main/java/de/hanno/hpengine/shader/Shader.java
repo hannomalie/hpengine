@@ -2,8 +2,8 @@ package de.hanno.hpengine.shader;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
@@ -28,14 +28,14 @@ public interface Shader extends Reloadable {
     }
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, String mapDefinesString) throws Exception {
-        return loadShader(type, new ShaderSource(file), mapDefinesString);
+        return loadShader(type, new CodeSource(file), mapDefinesString);
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, ShaderSource shaderSource) {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource) {
         return loadShader(type, shaderSource, "");
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, ShaderSource shaderSource, String mapDefinesString) {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource, String mapDefinesString) {
 
         if (shaderSource == null) {
             LOGGER.severe("Shadersource null, returning null de.hanno.hpengine.shader");
@@ -104,8 +104,8 @@ public interface Shader extends Reloadable {
         return shader;
     }
 
-    void setShaderSource(ShaderSource shaderSource);
-    ShaderSource getShaderSource();
+    void setShaderSource(CodeSource shaderSource);
+    CodeSource getShaderSource();
 
     static TypedTuple<String, Integer> replaceIncludes(String shaderFileAsText, int currentNewLineCount) throws IOException {
 
@@ -160,17 +160,17 @@ public interface Shader extends Reloadable {
     }
 
     final class ShaderSourceFactory {
-        public static ShaderSource getShaderSource(String shaderSource) {
+        public static CodeSource getShaderSource(String shaderSource) {
             if("".equals(shaderSource)) {
                 return null;
             }
-            return new ShaderSource(shaderSource);
+            return new CodeSource(shaderSource);
         }
 
-        public static ShaderSource getShaderSource(File file) {
+        public static CodeSource getShaderSource(File file) {
             if(file.exists()) {
                 try {
-                    return new ShaderSource(file);
+                    return new CodeSource(file);
                 } catch (IOException e) {
                     e.printStackTrace();
                     return null;
@@ -181,76 +181,10 @@ public interface Shader extends Reloadable {
         }
     }
 
-    final class ShaderSource implements Reloadable {
-        private String source;
-        private final String fileName;
-        private final File file;
-        private String resultingShaderSource;
-
-        private ShaderSource(String shaderSource) {
-            this.source = shaderSource;
-            this.fileName = "No corresponding file";
-            file = null;
-        }
-
-        private ShaderSource(File file) throws IOException {
-            this.file = file;
-            this.source = FileUtils.readFileToString(file);
-            this.fileName = FilenameUtils.getBaseName(file.getName());
-        }
-
-        public String getSource() {
-            return source;
-        }
-
-        public String getFilename() {
-            return fileName;
-        }
-
-        public void setResultingShaderSource(String resultingShaderSource) {
-            this.resultingShaderSource = resultingShaderSource;
-        }
-
-        public String getResultingShaderSource() {
-            return resultingShaderSource;
-        }
-
-        @Override
-        public String getName() {
-            return fileName;
-        }
-
-        @Override
-        public void load() {
-            try {
-                source = FileUtils.readFileToString(file);
-            } catch (IOException e) {
-                System.err.println("Cannot reload de.hanno.hpengine.shader file, old one is kept (" + getFilename() + ")");
-            }
-        }
-
-        @Override
-        public void unload() {
-
-        }
-
-        @Override
-        public void reload() {
-            if(isFileBased()) {
-               Reloadable.super.reload();
-            }
-        }
-
-        private boolean isFileBased() {
-            return file != null;
-        }
-
-    }
-
     class ShaderLoadException extends RuntimeException {
-        private final ShaderSource shaderSource;
+        private final CodeSource shaderSource;
 
-        public ShaderLoadException(ShaderSource shaderSource) {
+        public ShaderLoadException(CodeSource shaderSource) {
             this.shaderSource = shaderSource;
         }
 

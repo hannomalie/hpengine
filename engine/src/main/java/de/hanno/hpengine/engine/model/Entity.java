@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model;
 
-import com.carrotsearch.hppc.DoubleArrayList;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.Component;
 import de.hanno.hpengine.component.ModelComponent;

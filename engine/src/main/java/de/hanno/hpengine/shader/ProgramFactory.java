@@ -2,6 +2,7 @@ package de.hanno.hpengine.shader;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
 import de.hanno.hpengine.shader.define.Define;
 
@@ -15,8 +16,8 @@ import static de.hanno.hpengine.shader.Shader.*;
 
 public class ProgramFactory {
 
-	public static ShaderSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
-    public static ShaderSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
+	public static CodeSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
+    public static CodeSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
     public static Program FIRSTPASS_DEFAULT_PROGRAM;
 
     static {
@@ -47,12 +48,12 @@ public class ProgramFactory {
     }
 
     public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) throws Exception {
-        ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + vertexShaderFilename));
-        ShaderSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + fragmentShaderFileName));
+        CodeSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + vertexShaderFilename));
+        CodeSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + fragmentShaderFileName));
 
         return getProgram(vertexShaderSource, fragmentShaderSource);
     }
-    public Program getProgram(ShaderSource vertexShaderSource, ShaderSource fragmentShaderSource) throws IOException {
+    public Program getProgram(CodeSource vertexShaderSource, CodeSource fragmentShaderSource) throws IOException {
 
         Program program = new Program(vertexShaderSource, null, fragmentShaderSource, true, "");
 
@@ -85,9 +86,9 @@ public class ProgramFactory {
 	}
 	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, boolean needsTextures) {
 		return GraphicsContext.getInstance().calculate(() -> {
-            ShaderSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
-            ShaderSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
-            ShaderSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));
+            CodeSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
+            CodeSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
+            CodeSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));
 
             Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, needsTextures, "");
             LOADED_PROGRAMS.add(program);

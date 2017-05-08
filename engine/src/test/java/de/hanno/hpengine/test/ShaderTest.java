@@ -1,5 +1,6 @@
 package de.hanno.hpengine.test;
 
+import de.hanno.hpengine.util.ressources.CodeSource;
 import org.junit.Assert;
 import org.junit.Test;
 import de.hanno.hpengine.shader.*;
@@ -13,7 +14,7 @@ public class ShaderTest extends TestWithRenderer {
     @Test
     public void loadsCorrectShaderTypes() throws IOException {
 
-        ShaderSource shaderSource = ShaderSourceFactory.getShaderSource("void main() {}");
+        CodeSource shaderSource = ShaderSourceFactory.getShaderSource("void main() {}");
 
         {
             VertexShader vertexShader = VertexShader.load(shaderSource);

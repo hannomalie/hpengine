@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.util.ressources.CodeSource;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.util.glu.GLU;
 import de.hanno.hpengine.util.ressources.FileMonitor;
@@ -32,9 +33,9 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	private Map<String, Object> localDefines = new HashMap<>();
 	
-	private ShaderSource geometryShaderSource;
-	private ShaderSource vertexShaderSource;
-	private ShaderSource fragmentShaderSource;
+	private CodeSource geometryShaderSource;
+	private CodeSource vertexShaderSource;
+	private CodeSource fragmentShaderSource;
 
     private VertexShader vertexShader;
     private GeometryShader geometryShader;
@@ -46,8 +47,8 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	private FileAlterationObserver observerFragmentShader;
 
-	protected Program(ShaderSource vertexShaderSource, ShaderSource geometryShaderSource, ShaderSource fragmentShaderSource,
-                      boolean needsTextures, String fragmentDefines) {
+	protected Program(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource,
+					  boolean needsTextures, String fragmentDefines) {
 		this.needsTextures = needsTextures;
 		this.fragmentDefines = fragmentDefines;
 		

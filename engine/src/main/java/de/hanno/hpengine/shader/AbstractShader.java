@@ -1,8 +1,10 @@
 package de.hanno.hpengine.shader;
 
+import de.hanno.hpengine.util.ressources.CodeSource;
+
 public abstract class AbstractShader implements Shader {
     private int id = -1;
-    private ShaderSource shaderSource;
+    private CodeSource shaderSource;
 
     @Override
     public void setId(int id) {
@@ -15,11 +17,11 @@ public abstract class AbstractShader implements Shader {
     }
 
     @Override
-    public void setShaderSource(ShaderSource shaderSource) {
+    public void setShaderSource(CodeSource shaderSource) {
         this.shaderSource = shaderSource;
     }
     @Override
-    public ShaderSource getShaderSource() {
+    public CodeSource getShaderSource() {
         return shaderSource;
     }
 
