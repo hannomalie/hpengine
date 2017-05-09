@@ -4,6 +4,11 @@ import de.hanno.compiler.RuntimeJavaCompiler;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
+import de.hanno.hpengine.util.ressources.FileMonitor;
+import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
+import de.hanno.hpengine.util.ressources.Reloadable;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +17,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JavaComponent extends BaseComponent implements ScriptComponent {
+public class JavaComponent extends BaseComponent implements ScriptComponent, Reloadable {
 
     public static final String WORKING_DIR = Engine.WORKDIR_NAME + "/java";
     static {
@@ -28,6 +33,9 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
 
     static final RuntimeJavaCompiler compiler = new RuntimeJavaCompiler(WORKING_DIR);
     private final CodeSource javaCodeSource;
+    private FileAlterationObserver observerJavaFile;
+    private ReloadOnFileChangeListener<JavaComponent> reloadOnFileChangeListener;
+
 
     private Map map = new HashMap<>();
     private Class<?> compiledClass;
@@ -51,7 +59,10 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
     @Override
     public void init() {
         if(!isInitialized()) {
+            observerJavaFile = new FileAlterationObserver(JavaComponent.getDirectory());
+            addFileListeners();
             initWrappingComponent();
+            super.init();
         }
         if(isLifeCycle) {
             ((LifeCycle) instance).init();
@@ -71,7 +82,12 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
 
     @Override
     public void reload() {
-        initWrappingComponent();
+        Reloadable.super.reload();
+    }
+
+    @Override
+    public String getName() {
+        return this.toString();
     }
 
     @Override
@@ -85,7 +101,6 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
     }
 
     private void initWrappingComponent() {
-        super.init();
         try {
             compiledClass = compiler.compile(javaCodeSource.getSource());
             instance = compiledClass.getConstructors()[0].newInstance();
@@ -102,6 +117,28 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
         }
     }
 
+    private void addFileListeners() {
+
+        clearListeners();
+
+        reloadOnFileChangeListener = new ReloadOnFileChangeListener(this) {
+            @Override
+            public boolean shouldReload(File changedFile) {
+                String fileName = FilenameUtils.getBaseName(changedFile.getAbsolutePath());
+                return javaCodeSource.isFileBased() && javaCodeSource.getFilename().startsWith(fileName);
+            }
+        };
+
+        observerJavaFile.addListener(reloadOnFileChangeListener);
+        FileMonitor.getInstance().add(observerJavaFile);
+    }
+
+    private void clearListeners() {
+        if(observerJavaFile != null) {
+            observerJavaFile.removeListener(reloadOnFileChangeListener);
+        }
+    }
+
     public Class<?> getCompiledClass() {
         return compiledClass;
     }
@@ -110,4 +147,20 @@ public class JavaComponent extends BaseComponent implements ScriptComponent {
         return instance;
     }
 
+    private static String getDirectory() {
+        return Engine.WORKDIR_NAME + "/assets/scripts/";
+    }
+
+    @Override
+    public void load() {
+        initialized = false;
+        javaCodeSource.load();
+        initWrappingComponent();
+        initialized = true;
+    }
+
+    @Override
+    public void unload() {
+
+    }
 }

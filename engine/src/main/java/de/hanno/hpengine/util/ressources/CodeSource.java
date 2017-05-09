@@ -66,7 +66,7 @@ public final class CodeSource implements Reloadable {
         }
     }
 
-    private boolean isFileBased() {
+    public boolean isFileBased() {
         return file != null;
     }
 

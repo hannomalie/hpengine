@@ -29,7 +29,7 @@ class MaterialView : WebPanel() {
 
     @Handler
     fun handle(e : EntitySelectedEvent) {
-        val modelComponent = e.entity.getComponent(ModelComponent::class.java)
+        val modelComponent = e.entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY)
         init(modelComponent.material)
     }
 

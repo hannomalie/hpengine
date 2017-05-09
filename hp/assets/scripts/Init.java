@@ -27,7 +27,7 @@ public class Init implements LifeCycle {
 
                 List<Instance> instances = new java.util.ArrayList<Instance>();
                 Random random = new java.util.Random();
-                int count = 20;
+                int count = 10;
                 for(int x = -count; x < count; x++) {
                     for(int y = -count; y < count; y++) {
                         for(int z = -count; z < count; z++) {
