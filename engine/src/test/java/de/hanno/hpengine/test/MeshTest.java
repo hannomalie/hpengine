@@ -7,10 +7,8 @@ import jme3tools.optimize.LodGenerator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
 import java.io.File;
-import java.util.List;
 
 public class MeshTest extends TestWithEngine {
 
@@ -27,7 +25,7 @@ public class MeshTest extends TestWithEngine {
         Assert.assertArrayEquals(expectedIndexBufferValues, planeMesh.getIndexBufferValuesArray());
 
         Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
-        ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
+        ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 
         LodGenerator lodGenerator = new LodGenerator(modelComponent);
         lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.3f);
@@ -45,7 +43,7 @@ public class MeshTest extends TestWithEngine {
         Assert.assertEquals(12, planeMesh.getIndexBufferValuesArray().length);
 
         Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
-        ModelComponent modelComponent = entity.getComponent(ModelComponent.class);
+        ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 
         Assert.assertEquals(2, modelComponent.getLodLevels().size());
         Assert.assertEquals(6, modelComponent.getLodLevels().get(1).length);

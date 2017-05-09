@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class ModelComponent extends BaseComponent implements Serializable {
+    public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
     public static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
@@ -92,7 +93,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         this.materialName = materialName;
         model.setMaterial(MaterialFactory.getInstance().getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
-            child.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(materialName));
+            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialName));
         }
     }
 

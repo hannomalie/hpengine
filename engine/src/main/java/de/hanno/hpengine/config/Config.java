@@ -58,7 +58,7 @@ public final class Config {
     }
 
 	private Class<? extends GraphicsContext> gpuContextClass = OpenGLContext.class;
-    private final boolean useFileReloading = true;
+    private boolean useFileReloading = true;
 	private int width = 1280;
 	private int height = 720;
 	private Vector3f ambientLight = new Vector3f(0.1f, 0.1f, 0.11f);
@@ -162,6 +162,9 @@ public final class Config {
 
 	public boolean isUseFileReloading() {
 		return useFileReloading;
+	}
+	public void setUseFileReloading(boolean useFileReloading) {
+		this.useFileReloading = useFileReloading;
 	}
 
 	public int getWidth() {

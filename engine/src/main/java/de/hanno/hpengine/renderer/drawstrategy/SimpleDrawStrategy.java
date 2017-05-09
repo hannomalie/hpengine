@@ -106,7 +106,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
-        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class).putToBuffer(skyboxVertexIndexBuffer);
+        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);
         skyBoxPerMeshInfo = new PerMeshInfo(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndexBufferValuesArray().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset);
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();

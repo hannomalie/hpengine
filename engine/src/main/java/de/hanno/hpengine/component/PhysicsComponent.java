@@ -15,6 +15,7 @@ import javax.vecmath.Matrix4f;
 import java.util.concurrent.ExecutionException;
 
 public class PhysicsComponent extends BaseComponent {
+    public static final String COMPONENT_KEY = PhysicsComponent.class.getSimpleName();
     private transient Transform initialTransform;
 
     RigidBodyConstructionInfo rigidBodyConstructionInfo;

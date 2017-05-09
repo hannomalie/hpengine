@@ -113,17 +113,21 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		getComponents().remove(key);
 	}
 
-	public <T extends Component> T getComponent(Class<T> type) {
-		Component component = getComponents().get(type.getSimpleName());
-		return type.cast(component);
-	}
+//	public <T extends Component> T getComponent(Class<T> type) {
+//		Component component = getComponents().get(type.getSimpleName());
+//		return type.cast(component);
+//	}
 	public <T extends Component> T getComponent(Class<T> type, String key) {
 		Component component = getComponents().get(key);
 		return type.cast(component);
 	}
 
-	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
-		Component component = getComponents().get(type.getSimpleName());
+//	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
+//		Component component = getComponents().get(type.getSimpleName());
+//		return Optional.ofNullable(type.cast(component));
+//	}
+	public <T extends Component> Optional<T> getComponentOption(Class<T> type, String key) {
+		Component component = getComponents().get(key);
 		return Optional.ofNullable(type.cast(component));
 	}
 
@@ -395,7 +399,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
     @Override
     public int getElementsPerObject() {
-        return getInstanceCount() * (hasComponent(ModelComponent.class) ? getComponent(ModelComponent.class).getMeshes().size() : 0) * (20+4);
+        return getInstanceCount() * (hasComponent(ModelComponent.class) ? getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() : 0) * (20+4);
     }
 
 
@@ -410,27 +414,16 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
         int index = 0;
         int meshIndex = 0;
-        for(Mesh mesh : getComponent(ModelComponent.class).getMeshes()) {
+        for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
 				Matrix4f mm = getModelMatrix();
 				index = getValues(doubles, index, mm, meshIndex, materialIndex);
 			}
 
-			List<Future<Matrix4f>> instanceMatrices = new ArrayList<>();
             for(int i = 0; i < instances.size(); i++) {
                 Instance instance = instances.get(i);
-                instanceMatrices.add(CompletableFuture.supplyAsync(instance::getTransformation));
-            }
-
-            for(int i = 0; i < instances.size(); i++) {
-                Instance instance = instances.get(i);
-                Matrix4f instanceMatrix = null;
-                try {
-                    instanceMatrix = instanceMatrices.get(i).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
+                Matrix4f instanceMatrix = instance.getTransformation();
 				int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
                 index = getValues(doubles, index, instanceMatrix, meshIndex, instanceMaterialIndex);
             }
@@ -465,7 +458,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		doubles[index++] = isSelected() ? 1d : 0d;
 		doubles[index++] = materialIndex;
 		doubles[index++] = getUpdate().getAsDouble();
-		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class)); //getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
+		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)); //getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
 		doubles[index++] = entityIndex + meshIndex;
 		doubles[index++] = entityIndex;
 		doubles[index++] = meshIndex;
@@ -487,7 +480,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		if(getParent() != null) {
 			instance.setParent(getParent().getTransform());
 		}
-		instances.add(new Instance(instance, getComponent(ModelComponent.class).getMaterial()));
+		instances.add(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial()));
 		Engine.getEventBus().post(new EntityAddedEvent());
 	}
     public void addInstanceTransforms(List<Transform> instances) {
@@ -496,7 +489,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
                 instance.setParent(getParent().getTransform());
             }
         }
-        this.instances.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class).getMaterial())).collect(Collectors.toList()));
+        this.instances.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial())).collect(Collectors.toList()));
         Engine.getEventBus().post(new EntityAddedEvent());
     }
     public void addInstances(List<Instance> instances) {

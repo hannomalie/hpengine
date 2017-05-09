@@ -27,11 +27,11 @@ import de.hanno.hpengine.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.renderer.command.Result;
 import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
-import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.gui.input.LimitedWebFormattedTextField;
 import de.hanno.hpengine.util.gui.input.TransformablePanel;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
+import org.lwjgl.util.vector.Vector3f;
 
 import javax.swing.*;
 import java.awt.*;
@@ -75,31 +75,31 @@ public class EntityView extends WebPanel {
 
     private void addPhysicsPanel(final Entity entity, WebTabbedPane tabbedPane) {
         WebComponentPanel physicsPanel = new WebComponentPanel();
-        if(entity.getComponentOption(PhysicsComponent.class).isPresent()) {
+        if(entity.getComponentOption(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).isPresent()) {
             WebButton removePhysicsComponent = new WebButton("Remove PhysicsComponent");
             removePhysicsComponent.addActionListener(e -> {
-                if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-                    entity.removeComponent(entity.getComponent(PhysicsComponent.class));
+                if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
+                    entity.removeComponent(entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY));
                 }
             });
             physicsPanel.addElement(removePhysicsComponent);
-            if(entity.getComponent(PhysicsComponent.class).isInitialized()) {
+            if(entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).isInitialized()) {
                 javax.vecmath.Vector3f tempVec3 = new javax.vecmath.Vector3f(0,0,0);
-                physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class).getRigidBody().getLinearVelocity(tempVec3))) {
+                physicsPanel.addElement(new WebFormattedVec3Field("Linear Velocity", Util.fromBullet(entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).getRigidBody().getLinearVelocity(tempVec3))) {
                     @Override
                     public void onValueChange(Vector3f value) {
-                        entity.getComponent(PhysicsComponent.class).getRigidBody().setLinearVelocity(Util.toBullet(value));
+                        entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).getRigidBody().setLinearVelocity(Util.toBullet(value));
                     }
                 });
                 physicsPanel.addElement(new LimitedWebFormattedTextField("Mass", 0, 10000) {
                     @Override
                     public void onChange(float currentValue) {
-                        entity.getComponent(PhysicsComponent.class).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
+                        entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).getRigidBody().setMassProps(currentValue, new javax.vecmath.Vector3f(0,0,0));
                     }
                 });
                 WebButton resetTransformButton = new WebButton("Reset Transform");
                 resetTransformButton.addActionListener(e -> {
-                    entity.getComponent(PhysicsComponent.class).reset();
+                    entity.getComponent(PhysicsComponent.class, PhysicsComponent.COMPONENT_KEY).reset();
                 });
                 physicsPanel.addElement(resetTransformButton);
             }
@@ -107,14 +107,14 @@ public class EntityView extends WebPanel {
             WebButton addBallPhysicsComponentButton = new WebButton("Add Ball PhysicsComponent");
             addBallPhysicsComponentButton.addActionListener(e -> {
                 float radius = 10;
-                if(entity.getComponentOption(ModelComponent.class) != null) {
-                    radius = entity.getComponent(ModelComponent.class).getBoundingSphereRadius();
+                if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY) != null) {
+                    radius = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getBoundingSphereRadius();
                 }
                 PhysicsComponent physicsComponent = Engine.getInstance().getPhysicsFactory().addBallPhysicsComponent(entity, radius, 0.0f);
             });
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
-            if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+            if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
                 WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
                     PhysicsComponent physicsComponent = Engine.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
@@ -152,7 +152,7 @@ public class EntityView extends WebPanel {
 	    if(!entity.hasComponent(ModelComponent.class)) { return; }
 
         List<Component> meshPanels = new ArrayList<>();
-        for(Mesh mesh : entity.getComponent(ModelComponent.class).getMeshes()) {
+        for(Mesh mesh : entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
             WebComponentPanel materialSelectionPanel = new WebComponentPanel();
             materialSelectionPanel.setElementMargin(4);
             WebLabel meshName = new WebLabel(mesh.getName());
@@ -239,20 +239,20 @@ public class EntityView extends WebPanel {
         webComponentPanel.addElement(removeEntityButton);
 
         Material material = MaterialFactory.getInstance().getDefaultMaterial();
-        if(entity.getComponentOption(ModelComponent.class).isPresent()) {
-            material = entity.getComponent(ModelComponent.class).getMaterial();
+        if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
+            material = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial();
         }
 
         addMaterialSelect(webComponentPanel, e -> {
             WebComboBox cb = (WebComboBox) e.getSource();
             Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
-            entity.getComponentOption(ModelComponent.class).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
+            entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
             Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         }, material);
 
-        if(entity.getComponentOption(ModelComponent.class).isPresent()) {
+        if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
             webComponentPanel.addElement(new WebCheckBox("Instanced") {{
-                this.addActionListener(e -> {entity.getComponent(ModelComponent.class).instanced = !entity.getComponent(ModelComponent.class).instanced;});
+                this.addActionListener(e -> {entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).instanced = !entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).instanced;});
             }});
         }
 

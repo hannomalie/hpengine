@@ -220,8 +220,9 @@ public class Transform implements Serializable, Transformable {
 		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-amount.z), combined);
 		moveInWorld(combined);
 	}
+	private final Vector3f temp_moveInWorld = new Vector3f();
 	public void moveInWorld(Vector3f amount) {
-		setPosition(Vector3f.add(getPosition(), amount, null));
+		setPosition(Vector3f.add(getPosition(), amount, temp_moveInWorld));
 		setDirty(true);
 	}
 
@@ -255,35 +256,29 @@ public class Transform implements Serializable, Transformable {
 		return transformation;
 	}
 
-	private Matrix4f tempTransformationMatrix = new Matrix4f();
-	private Matrix4f tempOrientationMatrix = new Matrix4f();
-	private Matrix4f calculateTransformation() {
+	private final Matrix4f tempTransformationMatrix = new Matrix4f();
+	private final Matrix4f tempOrientationMatrix = new Matrix4f();
+	private final Matrix4f calculateTransformation() {
 		tempTransformationMatrix.setIdentity();
 		Matrix4f.translate(position, tempTransformationMatrix, tempTransformationMatrix);
 		Matrix4f.mul(tempTransformationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTransformationMatrix);
 		tempTransformationMatrix.scale(scale);
 		if(parent != null) {
 			parentMatrix = parent.getTransformation();
-		}
-		if(parentMatrix != null) {
 			Matrix4f.mul(parentMatrix, tempTransformationMatrix, tempTransformationMatrix);
 		}
 
 		return tempTransformationMatrix;
 	}
 
-	private Matrix4f tempTranslationRotationMatrix = new Matrix4f();
-	private final Vector3f unitVector = new Vector3f(1, 1, 1);
+	private final Matrix4f tempTranslationRotationMatrix = new Matrix4f();
 	private final Matrix4f calculateTranslationRotation() {
 		tempTranslationRotationMatrix.setIdentity();
 		Matrix4f.translate(position, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
 		Matrix4f.mul(tempTranslationRotationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTranslationRotationMatrix); // TODO: SWITCH THESE LINES....
-		tempTranslationRotationMatrix.scale(unitVector);
 
 		if(parent != null) {
 			parentMatrix = parent.getTranslationRotation();
-		}
-		if(parentMatrix != null) {
 			Matrix4f.mul(parentMatrix, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
 		}
 
@@ -292,22 +287,8 @@ public class Transform implements Serializable, Transformable {
 
 	private Matrix4f tempViewMatrix = new Matrix4f();
 	private Matrix4f calculateViewMatrix() {
-//		Matrix4f temp = new Matrix4f();
-//		temp.setIdentity();
-//		Matrix4f.translate(position, temp, temp);
-//		Matrix4f.mul(temp, Util.toMatrix(orientation), temp);
-//		if(parent != null) {
-//			parentMatrix = parent.getTranslationRotation();
-//		}
-//		if(parentMatrix == null) {
-//			parentMatrix = new Matrix4f();
-//			Matrix4f.setIdentity(parentMatrix);
-//		}
-//		temp = Matrix4f.mul(parentMatrix, temp, null);
-
 		tempViewMatrix.load(translationRotation).invert();
 		return tempViewMatrix;
-//		return temp;
 	}
 
 	private void recalculateIfDirty() {
@@ -323,8 +304,8 @@ public class Transform implements Serializable, Transformable {
 			if(children == null) {
 				children = new ArrayList<>();
 			}
-			for (Transform child : children) {
-				child.recalculate();
+			for (int i = 0; i < children.size(); i++) {
+				children.get(i).recalculate();
 			}
 		bufferMatrixes();
 		hasMoved = true;

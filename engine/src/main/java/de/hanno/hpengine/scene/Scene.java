@@ -253,7 +253,7 @@ public class Scene implements LifeCycle, Serializable {
 			for(Entity current : entityContainer.getEntities()) {
 				if(!current.hasComponent(ModelComponent.class)) { continue; }
 				entityIndices.add(index);
-				index += current.getInstanceCount() * current.getComponent(ModelComponent.class).getMeshes().size();
+				index += current.getInstanceCount() * current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size();
 			}
 		}
 	}
@@ -366,7 +366,7 @@ public class Scene implements LifeCycle, Serializable {
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class));
+			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
 
 			for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
 				Mesh mesh = modelComponent.getMeshes().get(i);
