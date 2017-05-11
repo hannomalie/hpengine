@@ -92,7 +92,6 @@
                 <executions>
                     <execution>
                         <id>copy-resources</id>
-                        <!-- here the phase you need -->
                         <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -115,8 +114,8 @@
                                     </includes>
                                 </resource>
                                 <resource>
-                                    <targetPath>${basedir}/../target/hp</targetPath>
-                                    <directory>hp</directory>
+                                    <targetPath>${basedir}/target/hp</targetPath>
+                                    <directory>../hp</directory>
                                     <includes>
                                         <include>**/*.*</include>
                                     </includes>

@@ -9,7 +9,6 @@ public class SimpleMoveComponent implements LifeCycle {
     private int counter = 0;
     private Vector3f temp = new Vector3f();
 
-    @Override
     public void update(float seconds) {
         entity.move(new Vector3f(0,0,0.11f));
         for(int i = 0; i < entity.getInstances().size(); i++) {
