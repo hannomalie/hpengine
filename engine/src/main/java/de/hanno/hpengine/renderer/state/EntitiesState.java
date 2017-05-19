@@ -1,7 +1,9 @@
 package de.hanno.hpengine.renderer.state;
 
 import de.hanno.hpengine.engine.PerMeshInfo;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.shader.OpenGLBuffer;
 import de.hanno.hpengine.shader.PersistentMappedBuffer;
@@ -17,8 +19,8 @@ public class EntitiesState {
     public long entityAddedInCycle;
     public List<PerMeshInfo> perMeshInfos = new ArrayList<>();
     public VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(100, 90);
-    public OpenGLBuffer entitiesBuffer = new PersistentMappedBuffer(16000);
-    public OpenGLBuffer materialBuffer = new PersistentMappedBuffer(20000);
+    public OpenGLBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(16000);
+    public OpenGLBuffer<Material> materialBuffer = new PersistentMappedBuffer(20000);
 
     public EntitiesState() {
     }

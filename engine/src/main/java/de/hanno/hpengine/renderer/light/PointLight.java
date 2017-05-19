@@ -1,6 +1,7 @@
 package de.hanno.hpengine.renderer.light;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.engine.model.Entity;
@@ -89,24 +90,17 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	}
 
 	@Override
-	public int getElementsPerObject() {
-		return 8;
-	}
-	@Override
-	public double[] get() {
-		double[] doubles = new double[8];
-		int index = 0;
-		Vector3f worldPosition = getPosition();
-		doubles[index++] = worldPosition.x;
-		doubles[index++] = worldPosition.y;
-		doubles[index++] = worldPosition.z;
-		doubles[index++] = getRadius();
-		Vector4f color = getColor();
-		doubles[index++] = color.x;
-		doubles[index++] = color.y;
-		doubles[index++] = color.z;
-		doubles[index++] = -1;
+	public void putToBuffer(ByteBuffer buffer) {
 
-		return doubles;
+		Vector3f worldPosition = getPosition();
+		buffer.putDouble(worldPosition.x);
+		buffer.putDouble(worldPosition.y);
+		buffer.putDouble(worldPosition.z);
+		buffer.putDouble(getRadius());
+		Vector4f color = getColor();
+		buffer.putDouble(color.x);
+		buffer.putDouble(color.y);
+		buffer.putDouble(color.z);
+		buffer.putDouble(-1);
 	}
 }

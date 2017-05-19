@@ -1,6 +1,9 @@
 package de.hanno.hpengine.shader;
 
+import java.nio.ByteBuffer;
+
 public interface Bufferable {
-    default int getElementsPerObject() { return get().length; }
-    double[] get();
+    void putToBuffer(ByteBuffer buffer);
+
+    int getBytesPerObject();
 }

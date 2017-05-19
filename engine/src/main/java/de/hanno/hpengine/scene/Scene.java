@@ -377,6 +377,7 @@ public class Scene implements LifeCycle, Serializable {
 				PerMeshInfo info = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new PerMeshInfo());
 				Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
+
 				info.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
 				currentWriteState.add(info);
 			}

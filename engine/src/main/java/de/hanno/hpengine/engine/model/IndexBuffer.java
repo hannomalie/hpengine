@@ -4,15 +4,12 @@ import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.shader.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.shader.Bufferable;
 
-import java.nio.Buffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.nio.*;
 
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
+public class IndexBuffer extends AbstractPersistentMappedBuffer {
 
     public IndexBuffer() {
         this(GL_ELEMENT_ARRAY_BUFFER);
@@ -29,38 +26,12 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
     }
 
     @Override
-    public FloatBuffer getValuesAsFloats() {
+    public void putValues(ByteBuffer values) {
         throw new IllegalStateException("Not implemented");
     }
 
     @Override
-    public IntBuffer getValues() {
-        buffer.rewind();
-        return buffer;
-    }
-
-    @Override
-    public Buffer getValues(int offset, int length) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(FloatBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(DoubleBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(int offset, FloatBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(int offset, DoubleBuffer values) {
+    public void putValues(int offset, ByteBuffer values) {
         throw new IllegalStateException("Not implemented");
     }
 
@@ -73,9 +44,10 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
         put(0, values);
     }
     public void put(int offset, int[] values) {
-        setCapacityInBytes((offset + values.length)* getPrimitiveSizeInBytes());
-        buffer.position(offset);
-        buffer.put(values);
+        setCapacityInBytes((offset + values.length)* Integer.BYTES);
+        IntBuffer intBuffer = buffer.asIntBuffer();
+        intBuffer.position(offset);
+        intBuffer.put(values);
         buffer.rewind();
     }
 
@@ -90,7 +62,6 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
             put(nonOffsetIndices);
         } else {
             for(int i = 0; i < nonOffsetIndices.length; i++) {
-//                put(offset+i, nonOffsetIndices[i] + offset);
                 put(offset+i, nonOffsetIndices[i]);
             }
         }
@@ -98,11 +69,6 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
 
     @Override
     public void putValues(int offset, float... values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(int offset, double... values) {
         throw new IllegalStateException("Not implemented");
     }
 
@@ -117,31 +83,26 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer<IntBuffer>{
     }
 
     @Override
-    protected IntBuffer mapBuffer(int capacityInBytes, int flags) {
-        IntBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asIntBuffer();
+    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
             buffer.rewind();
-            newBuffer.put(buffer);
-            newBuffer.rewind();
+            byteBuffer.put(buffer);
+            byteBuffer.rewind();
         }
-        return newBuffer;
-    }
-
-    @Override
-    public int getPrimitiveSizeInBytes() {
-        return 4;
+        return byteBuffer;
     }
 
     public void put(IntBuffer indices) {
-        setCapacityInBytes(indices.capacity() * 4);
+        setCapacityInBytes(indices.capacity() * Integer.BYTES);
         buffer.rewind();
         indices.rewind();
-        buffer.put(indices);
+        buffer.asIntBuffer().put(indices);
     }
 
     public void put(int index, int value) {
-        setCapacityInBytes(getPrimitiveSizeInBytes()*index+getPrimitiveSizeInBytes());
+        setCapacityInBytes(Integer.BYTES*index+Integer.BYTES);
         buffer.rewind();
-        buffer.put(index, value);
+        buffer.asIntBuffer().put(index, value);
     }
 }

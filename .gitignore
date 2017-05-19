@@ -12,6 +12,7 @@
 *.hpentity
 *.hpscene
 */target/*
+target/
 /hp/java/*.*
 
 /.idea

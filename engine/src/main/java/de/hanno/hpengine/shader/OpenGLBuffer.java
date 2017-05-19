@@ -1,29 +1,18 @@
 package de.hanno.hpengine.shader;
 
-import java.nio.Buffer;
-import java.nio.DoubleBuffer;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-public interface OpenGLBuffer<BUFFERTYPE extends Buffer> {
+public interface OpenGLBuffer<T extends Bufferable> {
     void bind();
 
     void unbind();
 
-    FloatBuffer getValuesAsFloats();
+    ByteBuffer getBuffer();
 
-    BUFFERTYPE getValues();
+    void putValues(ByteBuffer values);
 
-    BUFFERTYPE getValues(int offset, int length);
-
-    BUFFERTYPE getBuffer();
-
-    void putValues(FloatBuffer values);
-
-    void putValues(DoubleBuffer values);
-
-    void putValues(int offset, FloatBuffer values);
-
-    void putValues(int offset, DoubleBuffer values);
+    void putValues(int offset, ByteBuffer values);
 
     int getId();
 
@@ -35,9 +24,7 @@ public interface OpenGLBuffer<BUFFERTYPE extends Buffer> {
 
     void putValues(int offset, float... values);
 
-    void putValues(int offset, double... values);
+    void put(T... bufferable);
 
-    <T extends Bufferable> void put(T... bufferable);
-
-    <T extends Bufferable> void put(int offset, T... bufferable);
+    void put(int offset, T... bufferable);
 }

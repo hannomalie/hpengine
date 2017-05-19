@@ -1,23 +1,23 @@
 struct Material {
-	double diffuseR;
-	double diffuseG;
-	double diffuseB;
-	double metallic;
+	float diffuseR;
+	float diffuseG;
+	float diffuseB;
+	float metallic;
 
-	double roughness;
-	double ambient;
-	double parallaxBias;
-	double parallaxScale;
+	float roughness;
+	float ambient;
+	float parallaxBias;
+	float parallaxScale;
 
-	double transparency;
-	double materialtype;
-	double hasDiffuseMap;
-	double hasNormalMap;
+	float transparency;
+	float materialtype;
+	int hasDiffuseMap;
+	int hasNormalMap;
 
-	double hasSpecularMap;
-	double hasHeightMap;
-	double hasOcclusionMap;
-	double hasRoughnessMap;
+	int hasSpecularMap;
+	int hasHeightMap;
+	int hasOcclusionMap;
+	int hasRoughnessMap;
 
     double handleDiffuse;
     double handleNormal;
@@ -26,8 +26,8 @@ struct Material {
 
     double handleOcclusion;
     double handleRoughness;
-    double placeHolder0;
-    double placeHolder1;
+    int placeHolder0;
+    int placeHolder1;
 };
 
 struct PointLight {
@@ -35,6 +35,7 @@ struct PointLight {
 	double positionY;
 	double positionZ;
 	double radius;
+
 	double colorR;
 	double colorG;
 	double colorB;
@@ -42,15 +43,15 @@ struct PointLight {
 };
 
 struct Entity {
-    dmat4 modelMatrix;
+    mat4 modelMatrix;
 
-    double isSelected;
-    double materialIndex;
-    double isStatic;
-    double entityIndex;
+    int isSelected;
+    int materialIndex;
+    int isStatic;
+    int entityIndex;
 
-    double entityIndexWithoutMeshIndex; //TODO: Rename this properly
-    double meshIndex;
-    double xxx;
-    double yyy;
+    int entityIndexWithoutMeshIndex; //TODO: Rename this properly
+    int meshIndex;
+    int xxx;
+    int yyy;
 };

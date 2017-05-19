@@ -166,10 +166,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
         lodLevels.add(indices.get(0));
         indices = lodLevels;
-//        indicesCounts = new int[indices.size()];
-//        for(int i = 0; i < indicesCounts.length; i++) {
-//            indicesCounts[i] = indices.get(0).length;
-//        }
     }
 
 
@@ -222,7 +218,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public String getIdentifier() {
-        return "ModelComponent";
+        return COMPONENT_KEY;
     }
 
     public Vector4f[] getMinMax() {

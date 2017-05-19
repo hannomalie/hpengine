@@ -57,94 +57,19 @@ public abstract class StorageBuffer implements OpenGLBuffer {
 
 
 
-    @Override
-    public FloatBuffer getValuesAsFloats() {
-        final DoubleBuffer[] result = new DoubleBuffer[1];
-        GraphicsContext.getInstance().execute(() -> {
-            bind();
-            buffer = GL15.glMapBuffer(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_READ_ONLY, null);
-            result[0] = buffer.asDoubleBuffer(); // TODO: As read-only?
-            GL15.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
-            unbind();
-        });
-        double[] dst = new double[result[0].capacity()];
-        result[0].get(dst);
 
-        FloatBuffer resultFloatBuffer = BufferUtils.createFloatBuffer(dst.length);
-        for(int i = 0; i < dst.length; i++) {
-            float asFloat = (float) dst[i];
-            resultFloatBuffer.put(asFloat);
-        }
-        result[0] = null;
-        resultFloatBuffer.rewind();
-        return resultFloatBuffer;
-    }
-
-    /**
-     * @return The FloatBuffer with all the values of this buffer object
-     */
     @Override
-    public DoubleBuffer getValues() {
-        final DoubleBuffer[] result = new DoubleBuffer[1];
-        GraphicsContext.getInstance().execute(() -> {
-            bind();
-            buffer = GL15.glMapBuffer(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_READ_ONLY, null);
-            result[0] = buffer.asDoubleBuffer(); // TODO: As read-only?
-            GL15.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
-            unbind();
-        });
-        return result[0];
-    }
-
-    /**
-     * @param offset is the index of the first included float value of the buffer
-     * @param length is the count of floats that are queried
-     * @return The FloatBuffer that contains the queries values
-     */
-    @Override
-    public DoubleBuffer getValues(int offset, int length) {
-        bind();
-        final DoubleBuffer[] result = new DoubleBuffer[1];
-        GraphicsContext.getInstance().execute(() -> {
-            result[0] = GL30.glMapBufferRange(GL43.GL_SHADER_STORAGE_BUFFER, offset * primitiveByteSize, length * primitiveByteSize/*bytes!*/, GL30.GL_MAP_READ_BIT, null).asDoubleBuffer();
-            GL15.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
-            unbind();
-        });
-        return result[0];
+    public ByteBuffer getBuffer() {
+        return buffer;
     }
 
     @Override
-    public Buffer getBuffer() {
-        return null;
-    }
-
-    @Override
-    public void putValues(FloatBuffer values) {
-        putValues(0, values);
-    }
-    @Override
-    public void putValues(DoubleBuffer values) {
+    public void putValues(ByteBuffer values) {
         putValues(0, values);
     }
 
-    /**
-     * @param offset is the index of the first float value that will be overridden
-     * @param values is the buffer with values that should be uploaded
-     * @throws IndexOutOfBoundsException
-     */
     @Override
-    public void putValues(int offset, FloatBuffer values) {
-        GraphicsContext.getInstance().execute(() -> {
-            bind();
-            if (offset * primitiveByteSize + values.capacity() * primitiveByteSize > size) {
-                throw new IndexOutOfBoundsException(String.format("Can't put values into de.hanno.hpengine.shader storage buffer %d (size: %d, offset %d, length %d)", id, size, offset * primitiveByteSize, values.capacity() * primitiveByteSize));
-            }
-            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, offset * primitiveByteSize, values);
-            unbind();
-        });
-    }
-    @Override
-    public void putValues(int offset, DoubleBuffer values) {
+    public void putValues(int offset, ByteBuffer values) {
         GraphicsContext.getInstance().execute(() -> {
             bind();
             if (offset * primitiveByteSize + values.capacity() * primitiveByteSize > size) {
@@ -181,21 +106,12 @@ public abstract class StorageBuffer implements OpenGLBuffer {
 
     @Override
     public void putValues(int offset, float... values) {
-        tempBuffer = BufferUtils.createDoubleBuffer(values.length);
+        ByteBuffer xxx = BufferUtils.createByteBuffer(values.length * Double.BYTES);
+        tempBuffer = xxx.asDoubleBuffer();
         for (int i = 0; i < values.length; i++) {
             tempBuffer.put(offset + i, values[i]);
         }
-        putValues(tempBuffer);
-        tempBuffer = null;
-    }
-
-    @Override
-    public void putValues(int offset, double... values) {
-        tempBuffer = BufferUtils.createDoubleBuffer(values.length);
-        for (int i = 0; i < values.length; i++) {
-            tempBuffer.put(offset + i, values[i]);
-        }
-        putValues(tempBuffer);
+        putValues(xxx);
         tempBuffer = null;
     }
 
@@ -203,16 +119,13 @@ public abstract class StorageBuffer implements OpenGLBuffer {
     public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
         GraphicsContext.getInstance().execute(() -> {
-            tempBuffer = BufferUtils.createDoubleBuffer(bufferable[0].getElementsPerObject() * bufferable.length);
+            ByteBuffer tempByteBuffer = BufferUtils.createByteBuffer(20 * 4 * bufferable.length); // TODO Estimate better
+            tempBuffer = tempByteBuffer.asDoubleBuffer();
             for (int i = 0; i < bufferable.length; i++) {
                 Bufferable currentBufferable = bufferable[i];
-                int currentOffset = i * currentBufferable.getElementsPerObject();
-                double[] currentBufferableArray = currentBufferable.get();
-                for (int z = 0; z < currentBufferableArray.length; z++) {
-                    tempBuffer.put(currentOffset + z, currentBufferableArray[z]);
-                }
+                currentBufferable.putToBuffer(tempByteBuffer);
             }
-            putValues(offset, tempBuffer);
+            putValues(offset, tempByteBuffer);
         });
     }
 }

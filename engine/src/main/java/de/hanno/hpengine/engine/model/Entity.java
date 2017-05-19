@@ -21,12 +21,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
@@ -396,75 +394,65 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		Engine.getEventBus().post(new UpdateChangedEvent(this));
 	}
 
-
-    @Override
-    public int getElementsPerObject() {
-        return getInstanceCount() * (hasComponent(ModelComponent.class) ? getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() : 0) * (20+4);
-    }
-
-
-    private double[] doubles = null;
-    @Override
-    public double[] get() {
-
-		int elementsPerObject = getElementsPerObject();
-    	if(doubles == null || doubles.length < elementsPerObject) {
-    		doubles = new double[elementsPerObject];
-		}
-
-        int index = 0;
-        int meshIndex = 0;
-        for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
+	@Override
+	public void putToBuffer(ByteBuffer buffer) {
+		int meshIndex = 0;
+		for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
 				Matrix4f mm = getModelMatrix();
-				index = getValues(doubles, index, mm, meshIndex, materialIndex);
+				putValues(buffer, mm, meshIndex, materialIndex);
 			}
 
-            for(int i = 0; i < instances.size(); i++) {
-                Instance instance = instances.get(i);
-                Matrix4f instanceMatrix = instance.getTransformation();
+			for(int i = 0; i < instances.size(); i++) {
+				Instance instance = instances.get(i);
+				Matrix4f instanceMatrix = instance.getTransformation();
 				int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-                index = getValues(doubles, index, instanceMatrix, meshIndex, instanceMaterialIndex);
-            }
+				putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex);
+			}
+
+			// TODO: This has to be the outer loop i think?
 			if(hasParent()) {
 				for(Instance instance : getParent().getInstances()) {
 					Matrix4f instanceMatrix = instance.getTransformation();
-                    index = getValues(doubles, index, instanceMatrix, meshIndex, materialIndex);
+					putValues(buffer, instanceMatrix, meshIndex, materialIndex);
 				}
 			}
 			meshIndex++;
 		}
-        return doubles;
-    }
+	}
 
-	private int getValues(double[] doubles, int index, Matrix4f mm, int meshIndex, double materialIndex) {
-		doubles[index++] = mm.m00;
-		doubles[index++] = mm.m01;
-		doubles[index++] = mm.m02;
-		doubles[index++] = mm.m03;
-		doubles[index++] = mm.m10;
-		doubles[index++] = mm.m11;
-		doubles[index++] = mm.m12;
-		doubles[index++] = mm.m13;
-		doubles[index++] = mm.m20;
-		doubles[index++] = mm.m21;
-		doubles[index++] = mm.m22;
-		doubles[index++] = mm.m23;
-		doubles[index++] = mm.m30;
-		doubles[index++] = mm.m31;
-		doubles[index++] = mm.m32;
-		doubles[index++] = mm.m33;
-		doubles[index++] = isSelected() ? 1d : 0d;
-		doubles[index++] = materialIndex;
-		doubles[index++] = getUpdate().getAsDouble();
-		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)); //getEntities().stream().filter(e -> e.hasComponent(ModelComponent.class)).collect(Collectors.toList()).indexOf(this);
-		doubles[index++] = entityIndex + meshIndex;
-		doubles[index++] = entityIndex;
-		doubles[index++] = meshIndex;
-		doubles[index++] = -1;
-		doubles[index++] = -1;
-		return index;
+	@Override
+	public int getBytesPerObject() {
+		return (16 * Float.BYTES + 8 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+	}
+
+	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex) {
+		buffer.putFloat(mm.m00);
+		buffer.putFloat(mm.m01);
+		buffer.putFloat(mm.m02);
+		buffer.putFloat(mm.m03);
+		buffer.putFloat(mm.m10);
+		buffer.putFloat(mm.m11);
+		buffer.putFloat(mm.m12);
+		buffer.putFloat(mm.m13);
+		buffer.putFloat(mm.m20);
+		buffer.putFloat(mm.m21);
+		buffer.putFloat(mm.m22);
+		buffer.putFloat(mm.m23);
+		buffer.putFloat(mm.m30);
+		buffer.putFloat(mm.m31);
+		buffer.putFloat(mm.m32);
+		buffer.putFloat(mm.m33);
+		buffer.putInt(isSelected() ? 1 : 0);
+		buffer.putInt(materialIndex);
+		buffer.putInt((int) getUpdate().getAsDouble());
+		int entityIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
+		buffer.putInt(entityIndex + meshIndex);
+		buffer.putInt(entityIndex);
+		buffer.putInt(meshIndex);
+		buffer.putInt(-1);
+		buffer.putInt(-1);
 	}
 
     public int getInstanceCount() {

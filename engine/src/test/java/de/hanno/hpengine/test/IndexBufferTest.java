@@ -6,7 +6,7 @@ import org.junit.Test;
 
 import java.nio.IntBuffer;
 
-public class IndexBufferTest extends TestWithOpenGLContext {
+public class IndexBufferTest extends TestWithEngine {
 
     @Test
     public void testBuffersCorrectly() {
@@ -15,7 +15,7 @@ public class IndexBufferTest extends TestWithOpenGLContext {
         IndexBuffer indexBuffer = new IndexBuffer();
         indexBuffer.put(indexArray);
 
-        IntBuffer bufferedIndices = indexBuffer.getValues();
+        IntBuffer bufferedIndices = indexBuffer.getBuffer().asIntBuffer();
         int[] actualArray = new int[bufferedIndices.capacity()];
         bufferedIndices.get(actualArray);
         for(int i = 0; i < indexArray.length; i++) {
@@ -23,7 +23,7 @@ public class IndexBufferTest extends TestWithOpenGLContext {
         }
 
         indexBuffer.put(indexArray.length, indexArray2);
-        bufferedIndices = indexBuffer.getValues();
+        bufferedIndices = indexBuffer.getBuffer().asIntBuffer();
         int[] actualArray2 = new int[bufferedIndices.capacity()];
         bufferedIndices.get(actualArray2);
         for(int i = 0; i < indexArray.length; i++) {
@@ -41,11 +41,11 @@ public class IndexBufferTest extends TestWithOpenGLContext {
     public void testAppendsCorrectly() {
         int[] indexArray = new int[]{99,98,97,96,95,94,93,92,91,90};
         int[] indexArray2 = new int[]{1,2,3,4,5};
-        int[] expectedAppended = new int[]{11,12,13,14,15};
+        int[] expectedAppended = new int[]{1,2,3,4,5};
         IndexBuffer indexBuffer = new IndexBuffer();
         indexBuffer.put(indexArray);
 
-        IntBuffer bufferedIndices = indexBuffer.getValues();
+        IntBuffer bufferedIndices = indexBuffer.getBuffer().asIntBuffer();
         int[] actualArray = new int[bufferedIndices.capacity()];
         bufferedIndices.get(actualArray);
         for(int i = 0; i < indexArray.length; i++) {
@@ -54,6 +54,7 @@ public class IndexBufferTest extends TestWithOpenGLContext {
 
         indexBuffer.appendIndices(indexArray.length, indexArray2);
         int[] actualArray2 = new int[bufferedIndices.capacity()];
+        bufferedIndices.rewind();
         bufferedIndices.get(actualArray2);
         for(int i = 0; i < indexArray.length; i++) {
             Assert.assertTrue("Element " + i + " not equal", indexArray[i] == actualArray2[i]);

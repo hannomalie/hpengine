@@ -112,14 +112,15 @@ public class RenderState {
         entitiesState.entitiesBuffer.put(Util.toArray(entities, Entity.class));
     }
 
-    public void bufferMaterial(Material material) {
-        GraphicsContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials());
-
-            int offset = material.getElementsPerObject() * materials.indexOf(material);
-            entitiesState.materialBuffer.put(offset, material);
-        });
-    }
+//    TODO: Reimplement this
+//    public void bufferMaterial(Material material) {
+//        GraphicsContext.getInstance().execute(() -> {
+//            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials());
+//
+//            int offset = material.getElementsPerObject() * materials.indexOf(material);
+//            entitiesState.materialBuffer.put(offset, material);
+//        });
+//    }
 
     public void bufferMaterials() {
         GraphicsContext.getInstance().execute(() -> {
@@ -157,7 +158,7 @@ public class RenderState {
     }
 
     public boolean preventSwap(RenderState currentStaging, RenderState currentRead) {
-        return currentStaging.cycle < currentRead.cycle;
+        return currentStaging.cycle <= currentRead.cycle;
     }
 
     public int addPipeline(Pipeline pipeline) {

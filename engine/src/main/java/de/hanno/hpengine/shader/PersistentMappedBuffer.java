@@ -3,12 +3,13 @@ package de.hanno.hpengine.shader;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
 
+import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<DoubleBuffer> {
+public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersistentMappedBuffer<T> {
 
     public PersistentMappedBuffer(int capacityInBytes) {
         this(capacityInBytes, GL43.GL_SHADER_STORAGE_BUFFER);
@@ -20,77 +21,29 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
     }
 
     @Override
-    protected DoubleBuffer mapBuffer(int capacityInBytes, int flags) {
-        DoubleBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * getPrimitiveSizeInBytes())).asDoubleBuffer();
+    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
-            newBuffer.put(buffer);
-            newBuffer.rewind();
+            byteBuffer.put(buffer);
+            byteBuffer.rewind();
         }
-        return newBuffer;
+        return byteBuffer;
     }
 
     @Override
-    public FloatBuffer getValuesAsFloats() {
-        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity());
-        for(int i = 0; i < buffer.capacity(); i++) {
-            result.put(i, (float) buffer.get(i));
-        }
-
-        result.rewind();
-        return result;
-    }
-
-    @Override
-    public int getPrimitiveSizeInBytes() {
-        return 8;
-    }
-
-    @Override
-    public DoubleBuffer getValues() {
-        return getValues(0, buffer.capacity());
-    }
-
-    @Override
-    public DoubleBuffer getValues(int offset, int length) {
-        DoubleBuffer result = BufferUtils.createDoubleBuffer(length);
-        for(int i = 0; i < length; i++) {
-            result.put(i, buffer.get(offset+i));
-        }
-
-        result.rewind();
-        return result;
-    }
-
-    @Override
-    public void putValues(FloatBuffer values) {
+    public void putValues(ByteBuffer values) {
         putValues(0, values);
     }
 
     @Override
-    public void putValues(DoubleBuffer values) {
-        putValues(0, values);
-    }
-
-    @Override
-    public void putValues(int offset, FloatBuffer values) {
-        if(values.capacity() * getPrimitiveSizeInBytes() > getSizeInBytes()) { setSizeInBytes(values.capacity() * getPrimitiveSizeInBytes());}
+    public void putValues(int byteOffset, ByteBuffer values) {
+        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity());}
         bind();
         values.rewind();
         buffer.rewind();
-        for(int i = offset; i < values.capacity(); i++) {
-            buffer.put(i, values.get(i));
-        }
-        buffer.rewind();
-    }
-
-    @Override
-    public void putValues(int offset, DoubleBuffer values) {
-        if(values == buffer) { return; }
-        if(values.capacity() > getSizeInBytes()) { setSizeInBytes((offset + values.capacity() )* getPrimitiveSizeInBytes());}
-        bind();
-        values.rewind();
-        buffer.position(offset);
+        buffer.position(byteOffset);
         buffer.put(values);
+        buffer.rewind();
     }
 
     @Override
@@ -106,36 +59,25 @@ public class PersistentMappedBuffer extends AbstractPersistentMappedBuffer<Doubl
         for(int i = 0; i < values.length; i++) {
             doubleValues[i] = values[i];
         }
-        buffer.put(doubleValues);
+        buffer.asDoubleBuffer().put(doubleValues);
     }
 
     @Override
-    public void putValues(int offset, double... values) {
-        bind();
-        buffer.position(offset);
-        buffer.put(values);
-    }
-
-    @Override
-    public void put(Bufferable... bufferable) {
+    public void put(T... bufferable) {
         put(0, bufferable);
     }
 
     @Override
-    public void put(int offset, Bufferable... bufferable) {
+    public void put(int offset, T... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacityInBytes(bufferable[0].getElementsPerObject() * getPrimitiveSizeInBytes() * bufferable.length);
+        setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);
 
         buffer.rewind();
         int currentOffset = 0;
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            setCapacityInBytes((offset+currentOffset + currentBufferable.getElementsPerObject()) * getPrimitiveSizeInBytes());
-            double[] currentBufferableArray = currentBufferable.get();
-            for (int z = 0; z < currentBufferableArray.length; z++) {
-                buffer.put(offset+currentOffset + z, currentBufferableArray[z]);
-            }
-            currentOffset += currentBufferable.getElementsPerObject();
+            setCapacityInBytes(offset+currentOffset + currentBufferable.getBytesPerObject());
+            currentBufferable.putToBuffer(buffer);
         }
     }
 

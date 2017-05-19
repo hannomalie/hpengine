@@ -5,23 +5,24 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL44;
 
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL30.GL_MAP_WRITE_BIT;
 
-public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer> implements OpenGLBuffer {
+public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> implements OpenGLBuffer<T> {
     protected int target = 0;
     private int id;
-    protected volatile BUFFER_TYPE buffer;
+    protected volatile ByteBuffer buffer;
     private boolean bound = false;
 
     public AbstractPersistentMappedBuffer(int target) {
         this.target = target;
     }
 
-    public BUFFER_TYPE map(int requestedCapacityInBytes) {
+    public ByteBuffer map(int requestedCapacityInBytes) {
         bind();
         if(requestedCapacityInBytes > buffer.capacity()){
             setCapacityInBytes(requestedCapacityInBytes);
@@ -36,7 +37,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         if(capacityInBytes <= 0) { capacityInBytes = 10; }
 
         if(buffer != null) {
-            boolean needsResize = buffer.capacity() * getPrimitiveSizeInBytes()  <= capacityInBytes;
+            boolean needsResize = buffer.capacity()  <= capacityInBytes;
             if(needsResize) {
                 GraphicsContext.getInstance().execute(() -> {
                     bind();
@@ -65,7 +66,7 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
         }
     }
 
-    abstract protected BUFFER_TYPE mapBuffer(int capacityInBytes, int flags);
+    abstract protected ByteBuffer mapBuffer(int capacityInBytes, int flags);
 
     @Override
     public void bind() {
@@ -108,11 +109,9 @@ public abstract class AbstractPersistentMappedBuffer<BUFFER_TYPE extends Buffer>
     }
 
     @Override
-    public BUFFER_TYPE getBuffer() {
+    public ByteBuffer getBuffer() {
         return buffer;
     }
-
-    public abstract int getPrimitiveSizeInBytes();
 
     public void dispose() {
         glDeleteBuffers(id);

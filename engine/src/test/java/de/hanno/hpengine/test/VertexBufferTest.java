@@ -16,7 +16,7 @@ import org.lwjgl.opengl.GL30;
 
 import java.util.EnumSet;
 
-public class VertexBufferTest extends TestWithOpenGLContext {
+public class VertexBufferTest extends TestWithEngine {
 
     @Test
     public void correctBuffering() {
@@ -40,8 +40,6 @@ public class VertexBufferTest extends TestWithOpenGLContext {
         };
 
         VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
-        Assert.assertTrue(GraphicsContext.getInstance().calculate(
-                () -> GL15.glGetBufferParameter(GL15.GL_ARRAY_BUFFER, GL15.GL_BUFFER_MAPPED) == 1));
         buffer.upload();
         float[] bufferedData = buffer.getVertexData();
         Assert.assertArrayEquals(vertexData, bufferedData, 0f);

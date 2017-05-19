@@ -9,10 +9,9 @@ import java.nio.*;
 
 import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand.sizeInBytes;
 import static de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand.getSizeInInts;
-import static org.lwjgl.opengl.GL30.glCheckFramebufferStatus;
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
+public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.DrawElementsIndirectCommand> {
 
     public CommandBuffer(int capacityInBytes) {
         super(GL40.GL_DRAW_INDIRECT_BUFFER);
@@ -20,58 +19,23 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
     }
 
     @Override
-    protected IntBuffer mapBuffer(int capacityInBytes, int flags) {
-        IntBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * getPrimitiveSizeInBytes())).asIntBuffer();
+    protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes * Integer.BYTES));
 
         if(buffer != null) {
-            newBuffer.put(buffer);
-            newBuffer.rewind();
+            byteBuffer.put(buffer);
+            byteBuffer.rewind();
         }
-        return newBuffer;
+        return byteBuffer;
     }
 
     @Override
-    public int getPrimitiveSizeInBytes() {
-        return 4;
-    }
-
-    @Override
-    public FloatBuffer getValuesAsFloats() {
-        FloatBuffer result = BufferUtils.createFloatBuffer(buffer.capacity() / getPrimitiveSizeInBytes());
-        for(int i = 0; i < buffer.capacity() / getPrimitiveSizeInBytes(); i++) {
-            result.put(i, (float) buffer.get(i));
-        }
-        result.rewind();
-        return result;
-    }
-
-    @Override
-    public Buffer getValues() {
+    public void putValues(ByteBuffer values) {
         throw new IllegalStateException("Not implemented");
     }
 
     @Override
-    public Buffer getValues(int offset, int length) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(FloatBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(DoubleBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(int offset, FloatBuffer values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void putValues(int offset, DoubleBuffer values) {
+    public void putValues(int offset, ByteBuffer values) {
         throw new IllegalStateException("Not implemented");
     }
 
@@ -86,15 +50,8 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
     }
 
     @Override
-    public void putValues(int offset, double... values) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
-    public void put(int offset, Bufferable[] bufferable) {
+    public void put(int offset, DrawElementsIndirectCommand[] bufferable) {
         if(bufferable.length == 0) { return; }
-
-        if(!bufferable[0].getClass().equals(DrawElementsIndirectCommand.class)) { throw new IllegalArgumentException("Use only commands!"); }
 
         setCapacityInBytes((offset + bufferable.length) * sizeInBytes());
 
@@ -105,13 +62,13 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
             int currentOffset = i * getSizeInInts();
             int[] currentBufferablesValues = command.getAsInts();
             for (int z = 0; z < currentBufferablesValues.length; z++) {
-                buffer.put(offset+currentOffset + z, currentBufferablesValues[z]);
+                buffer.asIntBuffer().put(offset+currentOffset + z, currentBufferablesValues[z]);
             }
         }
     }
 
     @Override
-    public void put(Bufferable[] bufferable) {
+    public void put(DrawElementsIndirectCommand[] bufferable) {
         put(0, bufferable);
     }
 
@@ -146,10 +103,6 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
             asInts[4] = baseInstance;
         }
 
-        @Override
-        public double[] get() {
-            throw new IllegalStateException("Not implemented");
-        }
         public int[] getAsInts() {
             return asInts;
         }
@@ -159,6 +112,18 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<IntBuffer> {
         }
         public static int getSizeInInts() {
             return 5;
+        }
+
+        @Override
+        public void putToBuffer(ByteBuffer buffer) {
+            for(int current : getAsInts()) {
+                buffer.putInt(current);
+            }
+        }
+
+        @Override
+        public int getBytesPerObject() {
+            return 6;
         }
     }
 }

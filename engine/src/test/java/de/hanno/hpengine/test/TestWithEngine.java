@@ -1,5 +1,6 @@
 package de.hanno.hpengine.test;
 
+import de.hanno.hpengine.engine.ApplicationFrame;
 import de.hanno.hpengine.engine.CanvasWrapper;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.renderer.Renderer;
@@ -20,7 +21,8 @@ public class TestWithEngine {
 	@BeforeClass
 	public static void init() {
         // TODO: Make this work headless
-        Engine.init(new CanvasWrapper(new Canvas(), () -> {}));
+		ApplicationFrame frame = new ApplicationFrame();
+		Engine.init(frame.getRenderCanvas());
         engine = Engine.getInstance();
         renderer = Renderer.getInstance();
 	}

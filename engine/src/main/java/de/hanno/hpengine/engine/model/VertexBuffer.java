@@ -7,15 +7,16 @@ import org.lwjgl.opengl.*;
 import de.hanno.hpengine.shader.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.shader.Bufferable;
 
-import java.nio.DoubleBuffer;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.EnumSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
+public class VertexBuffer extends AbstractPersistentMappedBuffer {
 
     static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
 
@@ -66,7 +67,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         });
-        setCapacityInBytes(values.length * getPrimitiveSizeInBytes());
+        setCapacityInBytes(values.length * Float.BYTES);
         this.verticesCount = calculateVerticesCount(buffer, channels);
         setMaxLod(1);
         this.triangleCount = verticesCount / 3;
@@ -80,25 +81,25 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 	private FloatBuffer buffer(float[] vertices, EnumSet<DataChannels> channels) {
 
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-		int totalBytesPerVertex = totalElementsPerVertex * getPrimitiveSizeInBytes();
+		int totalBytesPerVertex = totalElementsPerVertex * Float.BYTES;
         int verticesCount = calculateVerticesCount(vertices, channels);
 
 		for (int i = 0; i < verticesCount; i++) {
 			int currentOffset = 0;
 			for (DataChannels channel : channels) {
 				for(int a = 0; a < channel.getSize(); a++) {
-					buffer.put(vertices[(i*totalElementsPerVertex) + currentOffset + a]);
+					buffer.putFloat(vertices[(i*totalElementsPerVertex) + currentOffset + a]);
 				}
 				currentOffset += channel.getSize();
 			}
 		}
 
 		buffer.rewind();
-		return buffer;
+		return buffer.asFloatBuffer();
 	}
 	
 	public int getVerticesCount() {
-		verticesCount = calculateVerticesCount(channels);
+//		verticesCount = calculateVerticesCount(channels);
         triangleCount = verticesCount / 3;
 		return verticesCount;
 	}
@@ -107,7 +108,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
 		validate(totalElementsPerVertex);
 		
-		int verticesCount = buffer.capacity() / totalElementsPerVertex;
+		int verticesCount = buffer.capacity() / Float.BYTES / totalElementsPerVertex;
         triangleCount = verticesCount / 3;
 		return verticesCount;
 	}
@@ -118,13 +119,13 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         int verticesCount = vertices.length / totalElementsPerVertex;
         return verticesCount;
     }
-    public static int calculateVerticesCount(FloatBuffer floatBuffer, EnumSet<DataChannels> channels) {
+    public static int calculateVerticesCount(ByteBuffer floatBuffer, EnumSet<DataChannels> channels) {
         if(floatBuffer == null) {
             return 0;
         }
         floatBuffer.rewind();
-        float[] floatArray = new float[floatBuffer.capacity()];
-        floatBuffer.get(floatArray);
+        float[] floatArray = new float[floatBuffer.asFloatBuffer().capacity()];
+        floatBuffer.asFloatBuffer().get(floatArray);
         return calculateVerticesCount(floatArray, channels);
     }
 
@@ -153,14 +154,14 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
         });
     }
 
-    protected FloatBuffer mapBuffer(int capacityInBytes, int flags)  {
-        FloatBuffer newBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes)).asFloatBuffer();
+    protected ByteBuffer mapBuffer(int capacityInBytes, int flags)  {
+        ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
             buffer.rewind();
-            newBuffer.put(buffer);
-            newBuffer.rewind();
+            byteBuffer.put(buffer);
+            byteBuffer.rewind();
         }
-        return newBuffer;
+        return byteBuffer;
     }
 
     public void delete() {
@@ -180,14 +181,15 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 
     /**
      *
-     * @return triangleCount tha twas drawn
+     * @return triangleCount that twas drawn
      */
     private int drawActually(IndexBuffer indexBuffer) {
         LOGGER.finest("drawActually called");
         if(indexBuffer != null) {
             indexBuffer.bind();
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indexBuffer.getValues());
-            return indexBuffer.getValues().capacity()/3;
+            IntBuffer indices = indexBuffer.getBuffer().asIntBuffer();
+            GL11.glDrawElements(GL11.GL_TRIANGLES, indices);
+            return indices.capacity()/3;
         } else {
             GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, verticesCount);
             return verticesCount;
@@ -275,53 +277,12 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     @Override
-    public int getPrimitiveSizeInBytes() {
-        return 4;
-    }
-
-    @Override
-    public FloatBuffer getValuesAsFloats() {
-        return buffer;
-    }
-
-    @Override
-    public FloatBuffer getValues() {
-        return buffer;
-    }
-
-    @Override
-    public FloatBuffer getValues(int offset, int length) {
-        FloatBuffer result = BufferUtils.createFloatBuffer(length);
-        for(int i = 0; i < length; i++) {
-            result.put(i, buffer.get(offset+i));
-        }
-
-        result.rewind();
-        return result;
-    }
-
-    @Override
-    public void putValues(FloatBuffer values) {
-        putValues(0, values);
-    }
-
-    @Override
-    public void putValues(DoubleBuffer values) {
+    public void putValues(ByteBuffer values) {
         throw new NotImplementedException();
     }
 
     @Override
-    public void putValues(int offset, FloatBuffer values) {
-        if(values == buffer) { return; }
-        if(values.capacity() > getSizeInBytes()) { setSizeInBytes(values.capacity() * getPrimitiveSizeInBytes());}
-//        bind();
-        values.rewind();
-        buffer.position(offset);
-        buffer.put(values);
-    }
-
-    @Override
-    public void putValues(int offset, DoubleBuffer values) {
+    public void putValues(int offset, ByteBuffer values) {
         throw new NotImplementedException();
     }
 
@@ -333,9 +294,10 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     @Override
     public void putValues(int offset, float... values) {
 //        bind();
-        setCapacityInBytes((offset + values.length)* getPrimitiveSizeInBytes());
-        buffer.position(offset);
-        buffer.put(values);
+        setCapacityInBytes((offset + values.length) * Float.BYTES);
+        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        floatBuffer.position(offset);
+        floatBuffer.put(values);
         buffer.rewind();
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
@@ -344,23 +306,14 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
     }
 
     @Override
-    public void putValues(int offset, double... values) {
-        throw new NotImplementedException();
-    }
-
-    @Override
     public void put(int offset, Bufferable... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacityInBytes(bufferable[0].getElementsPerObject() * getPrimitiveSizeInBytes() * bufferable.length);
+        setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);
 
         buffer.rewind();
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            int currentOffset = i * currentBufferable.getElementsPerObject();
-            double[] currentBufferableArray = currentBufferable.get();
-            for (int z = 0; z < currentBufferableArray.length; z++) {
-                buffer.put(offset+currentOffset + z, (float) currentBufferableArray[z]);
-            }
+            currentBufferable.putToBuffer(buffer);
         }
     }
 
@@ -412,7 +365,7 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		float[] result = new float[totalElementsPerVertex * verticesCount];
 		
 		buffer.rewind();
-		buffer.get(result);
+		buffer.asFloatBuffer().get(result);
 		return result;
 	}
 	
@@ -433,12 +386,15 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer<FloatBuffer> {
 		int resultIndex = 0;
 		
 		int elementsPerChannel = forChannel.getSize();
-		for (int i = stride; i < buffer.capacity(); i += stride + elementsPerChannel + elementCountAfterPositions) {
+        FloatBuffer floatBuffer = buffer.asFloatBuffer();
+        int vertexCounter = 0;
+		for (int i = stride; i < floatBuffer.capacity() && vertexCounter < verticesCount; i += stride + elementsPerChannel + elementCountAfterPositions) {
 			for (int x = 0; x < forChannel.getSize(); x++) {
-				
-				result[resultIndex] = buffer.get(i+x);
+
+                result[resultIndex] = floatBuffer.get(i+x);
 				resultIndex++;
 			}
+            vertexCounter++;
 		}
 		
 		return result;

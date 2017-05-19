@@ -16,14 +16,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.DoubleSummaryStatistics;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 public class Material implements Serializable, Bufferable {
-
-    public enum MaterialType {
+	public enum MaterialType {
 		DEFAULT,
 		FOLIAGE,
 		UNLIT
@@ -295,40 +296,35 @@ public class Material implements Serializable, Bufferable {
 
 
 	@Override
-	public int getElementsPerObject() {
-		return 4*6;
+	public void putToBuffer(ByteBuffer buffer) {
+		buffer.putFloat(materialInfo.diffuse.x);
+		buffer.putFloat(materialInfo.diffuse.y);
+		buffer.putFloat(materialInfo.diffuse.z);
+		buffer.putFloat(materialInfo.metallic);
+		buffer.putFloat(materialInfo.roughness);
+		buffer.putFloat(materialInfo.ambient);
+		buffer.putFloat(materialInfo.parallaxBias);
+		buffer.putFloat(materialInfo.parallaxScale);
+		buffer.putFloat(materialInfo.transparency);
+		buffer.putFloat(materialInfo.materialType.ordinal());
+		buffer.putInt(hasDiffuseMap() ? 1 : 0);
+		buffer.putInt(hasNormalMap() ? 1 : 0);
+		buffer.putInt(hasSpecularMap() ? 1 : 0);
+		buffer.putInt(hasHeightMap() ? 1 : 0);
+		buffer.putInt(hasOcclusionMap() ? 1 : 0);
+		buffer.putInt(hasRoughnessMap() ? 1 : 0);
+		buffer.putDouble(hasDiffuseMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.DIFFUSE).getHandle()) : 0);
+		buffer.putDouble(hasNormalMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.NORMAL).getHandle()) : 0);
+		buffer.putDouble(hasSpecularMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.SPECULAR).getHandle()) : 0);
+		buffer.putDouble(hasHeightMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.HEIGHT).getHandle()) : 0);
+		buffer.putDouble(hasOcclusionMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.OCCLUSION).getHandle()) : 0);
+		buffer.putDouble(hasRoughnessMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.ROUGHNESS).getHandle()) : 0);
+		buffer.putInt(0);
+		buffer.putInt(0);
 	}
 
 	@Override
-	public double[] get() {
-		double[] doubles = new double[getElementsPerObject()];
-		int index = 0;
-		doubles[index++] = materialInfo.diffuse.x;
-		doubles[index++] = materialInfo.diffuse.y;
-		doubles[index++] = materialInfo.diffuse.z;
-		doubles[index++] = materialInfo.metallic;
-		doubles[index++] = materialInfo.roughness;
-		doubles[index++] = materialInfo.ambient;
-		doubles[index++] = materialInfo.parallaxBias;
-		doubles[index++] = materialInfo.parallaxScale;
-		doubles[index++] = materialInfo.transparency;
-		doubles[index++] = materialInfo.materialType.ordinal();
-		doubles[index++] = hasDiffuseMap() ? 1 : 0;
-		doubles[index++] = hasNormalMap() ? 1 : 0;
-        doubles[index++] = hasSpecularMap() ? 1 : 0;
-        doubles[index++] = hasHeightMap() ? 1 : 0;
-        doubles[index++] = hasOcclusionMap() ? 1 : 0;
-        doubles[index++] = hasRoughnessMap() ? 1 : 0;
-        doubles[index++] = hasDiffuseMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.DIFFUSE).getHandle()) : 0;
-        doubles[index++] = hasNormalMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.NORMAL).getHandle()) : 0;
-        doubles[index++] = hasSpecularMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.SPECULAR).getHandle()) : 0;
-        doubles[index++] = hasHeightMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.HEIGHT).getHandle()) : 0;
-        doubles[index++] = hasOcclusionMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.OCCLUSION).getHandle()) : 0;
-        doubles[index++] = hasRoughnessMap() ? Double.longBitsToDouble(materialInfo.maps.getTextures().get(MAP.ROUGHNESS).getHandle()) : 0;
-        doubles[index++] = 0;
-        doubles[index++] = 0;
-
-        return doubles;
+	public int getBytesPerObject() {
+		return 24 * Double.BYTES;
 	}
-
 }
