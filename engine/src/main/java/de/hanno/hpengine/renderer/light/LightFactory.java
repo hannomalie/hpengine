@@ -527,7 +527,7 @@ public class LightFactory {
 		GraphicsContext.getInstance().execute(() -> {
 //			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {
-				lightBuffer.put(0, Util.toArray(pointLights, PointLight.class));
+				lightBuffer.put(Util.toArray(pointLights, PointLight.class));
 			}
 		});
 //		Util.printFloatBuffer(lightBuffer.getValues());

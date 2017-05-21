@@ -317,11 +317,6 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer {
         }
     }
 
-    @Override
-    public void put(Bufferable... bufferable) {
-        put(0, bufferable);
-    }
-
     public void drawAgain(IndexBuffer indexBuffer) {
         if(!uploaded) { return; }
         drawActually(indexBuffer);

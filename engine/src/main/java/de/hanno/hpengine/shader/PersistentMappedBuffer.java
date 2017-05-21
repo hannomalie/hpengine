@@ -63,11 +63,6 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
     }
 
     @Override
-    public void put(T... bufferable) {
-        put(0, bufferable);
-    }
-
-    @Override
     public void put(int offset, T... bufferable) {
         if(bufferable.length == 0) { return; }
         setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);

@@ -67,11 +67,6 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.
         }
     }
 
-    @Override
-    public void put(DrawElementsIndirectCommand[] bufferable) {
-        put(0, bufferable);
-    }
-
     public final static class DrawElementsIndirectCommand implements Bufferable {
         public int count;
         public int primCount;

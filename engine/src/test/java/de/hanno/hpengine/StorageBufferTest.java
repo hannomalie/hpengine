@@ -10,7 +10,6 @@ import de.hanno.hpengine.shader.PersistentMappedBuffer;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.util.DoubleSummaryStatistics;
 
 import static org.lwjgl.opengl.ARBBufferStorage.glBufferStorage;
 import static org.lwjgl.opengl.GL15.glGenBuffers;
@@ -111,5 +110,59 @@ public class StorageBufferTest extends TestWithEngine {
 //		for (int i = 0; i < 4*bufferable.getElementsPerObject(); i++) {
 //			Assert.assertTrue(dst[i] == array[i%14]);
 //		}
+	}
+
+	@Test
+	public void testBufferRetrieval() {
+		class CustomBufferable implements Bufferable {
+			private double x,y,z;
+
+			public CustomBufferable(float x, float y, float z) {
+				this.x = x;
+				this.y = y;
+				this.z = z;
+			}
+
+			@Override
+			public void putToBuffer(ByteBuffer buffer) {
+				buffer.putDouble(x);
+				buffer.putDouble(y);
+				buffer.putDouble(z);
+			}
+
+			@Override
+			public void getFromBuffer(ByteBuffer buffer) {
+				x = buffer.getDouble();
+				y = buffer.getDouble();
+				z = buffer.getDouble();
+			}
+
+			@Override
+			public int getBytesPerObject() {
+				return 3 * Double.BYTES;
+			}
+		}
+
+        CustomBufferable customBufferable0 = new CustomBufferable(0, 0, 1);
+        CustomBufferable customBufferable1 = new CustomBufferable(0, 1, 0);
+        CustomBufferable customBufferable2 = new CustomBufferable(1, 0, 0);
+
+        PersistentMappedBuffer<CustomBufferable> buffer = new PersistentMappedBuffer<>(3 * customBufferable0.getBytesPerObject());
+        buffer.put(customBufferable0, customBufferable1, customBufferable2);
+        CustomBufferable fromBuffer = new CustomBufferable(-1, -1, -1);
+        buffer.get(0, fromBuffer);
+        Assert.assertEquals(0, fromBuffer.x, Double.MIN_VALUE);
+        Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);
+        Assert.assertEquals(1, fromBuffer.z, Double.MIN_VALUE);
+        buffer.get(2, fromBuffer);
+        Assert.assertEquals(1, fromBuffer.x, Double.MIN_VALUE);
+        Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);
+        Assert.assertEquals(0, fromBuffer.z, Double.MIN_VALUE);
+
+        buffer.putAtIndex(3, customBufferable0);
+        fromBuffer.getFromIndex(3, buffer.getBuffer());
+        Assert.assertEquals(0, fromBuffer.x, Double.MIN_VALUE);
+        Assert.assertEquals(0, fromBuffer.y, Double.MIN_VALUE);
+        Assert.assertEquals(1, fromBuffer.z, Double.MIN_VALUE);
 	}
 }

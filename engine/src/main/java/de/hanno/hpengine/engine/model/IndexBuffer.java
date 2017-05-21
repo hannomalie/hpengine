@@ -78,11 +78,6 @@ public class IndexBuffer extends AbstractPersistentMappedBuffer {
     }
 
     @Override
-    public void put(Bufferable[] bufferable) {
-        throw new IllegalStateException("Not implemented");
-    }
-
-    @Override
     protected ByteBuffer mapBuffer(int capacityInBytes, int flags) {
         ByteBuffer byteBuffer = glMapBufferRange(target, 0, capacityInBytes, flags, BufferUtils.createByteBuffer(capacityInBytes));
         if(buffer != null) {
