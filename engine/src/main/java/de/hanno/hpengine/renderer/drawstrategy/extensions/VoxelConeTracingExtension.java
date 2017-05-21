@@ -19,6 +19,7 @@ import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.shader.Shader;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -28,6 +29,7 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
+import java.io.File;
 import java.nio.FloatBuffer;
 
 import static de.hanno.hpengine.renderer.constants.GlCap.*;
@@ -90,7 +92,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         initViewYBuffer();
         initViewZBuffer();
 
-        voxelizer = ProgramFactory.getInstance().getProgram("voxelize_vertex.glsl", "voxelize_geometry.glsl", "voxelize_fragment.glsl", true);
+        voxelizer = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_fragment.glsl")));
         texture3DMipMapAlphaBlendComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
         texture3DMipMapComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_mipmap_compute.glsl");
         clearDynamicVoxelsComputeProgram = ProgramFactory.getInstance().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");

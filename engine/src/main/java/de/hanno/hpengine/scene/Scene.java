@@ -7,6 +7,7 @@ import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
 import de.hanno.hpengine.container.SimpleContainer;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
@@ -208,7 +209,7 @@ public class Scene implements LifeCycle, Serializable {
     }
 
 	public static String getDirectory() {
-		return Engine.WORKDIR_NAME + "/assets/scenes/";
+		return DirectoryManager.WORKDIR_NAME + "/assets/scenes/";
 	}
 	public void addAll(List<Entity> entities) {
 		entityContainer.insert(entities);

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.test;
 
 import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.*;
 import jme3tools.optimize.LodGenerator;
 import org.junit.Assert;
@@ -14,7 +14,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        Model plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/plane.obj"));
+        Model plane = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(4, planeMesh.getFaces().size());
 
@@ -35,7 +35,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        Model plane = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        Model plane = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(6, planeMesh.getFaces().size());
 
@@ -55,7 +55,7 @@ public class MeshTest extends TestWithEngine {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        Model sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity entity = EntityFactory.getInstance().getEntity("sphere", sphere);
 		
 		entity.setPosition(new Vector3f(0, 0, 0));

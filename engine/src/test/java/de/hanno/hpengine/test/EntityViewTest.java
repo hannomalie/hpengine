@@ -1,5 +1,6 @@
 package de.hanno.hpengine.test;
 
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.*;
 import org.junit.Test;
@@ -7,13 +8,12 @@ import de.hanno.hpengine.util.gui.EntityView;
 
 import javax.swing.*;
 import java.io.File;
-import java.util.List;
 
 public class EntityViewTest extends TestWithEngine {
 
     @Test
     public void testEntityViewGui() throws Exception {
-        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        Model model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
 
         JFrame frame = new JFrame();

@@ -2,6 +2,7 @@ package de.hanno.hpengine.texture;
 
 import ddsutil.DDSUtil;
 import ddsutil.ImageRescaler;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.event.TexturesChangedEvent;
 import de.hanno.hpengine.renderer.GraphicsContext;
@@ -454,7 +455,7 @@ public class Texture implements Serializable, Reloadable {
 	}
 	
 	public static String getDirectory() {
-		return Engine.WORKDIR_NAME + "/assets/textures/";
+		return DirectoryManager.WORKDIR_NAME + "/assets/textures/";
 	}
 	
 	public String getPath() {

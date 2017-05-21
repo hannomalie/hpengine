@@ -6,12 +6,10 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.camera.MovableCamera;
 import de.hanno.hpengine.component.JavaComponent;
-import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.event.*;
 import de.hanno.hpengine.event.bus.EventBus;
 import de.hanno.hpengine.physic.PhysicsFactory;
@@ -19,15 +17,12 @@ import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.Renderer;
 import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.renderer.fps.FPSCounter;
-import de.hanno.hpengine.renderer.material.Material;
 import de.hanno.hpengine.renderer.material.MaterialFactory;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.renderer.state.RenderStateRecorder;
 import de.hanno.hpengine.renderer.state.SimpleRenderStateRecorder;
 import de.hanno.hpengine.scene.Scene;
-import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
-import de.hanno.hpengine.texture.Texture;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
@@ -36,28 +31,24 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.vector.Vector3f;
 
 import javax.swing.*;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
-import static org.lwjgl.opengl.GL32.*;
+import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
 
 public class Engine {
 
     private static volatile Engine instance = null;
     public static ApplicationFrame frame;
     private static volatile Runnable setTitleRunnable;
+    private static DirectoryManager directoryManager;
 
     private RenderStateRecorder recorder;
     private UpdateThread updateThread;
@@ -73,8 +64,6 @@ public class Engine {
         return instance;
     }
 
-    public static final String WORKDIR_NAME = "hp";
-    public static final String ASSETDIR_NAME = "hp/assets";
     private ScriptManager scriptManager;
     private PhysicsFactory physicsFactory;
     private Scene scene;
@@ -87,10 +76,13 @@ public class Engine {
     public static void main(String[] args) {
 
         String sceneName = null;
+        String gameDir = GAMEDIR_NAME;
         boolean debug = true;
         for (String string : args) {
             if ("debug=false".equals(string)) {
                 debug = false;
+            } else if (string.startsWith("gameDir=")) {
+                gameDir = string.replace("gameDir=", "");
             } else if ("fullhd".equals(string)) {
                 Config.getInstance().setWidth(1920);
                 Config.getInstance().setHeight(1080);
@@ -99,7 +91,7 @@ public class Engine {
                 break;
             }
         }
-
+        directoryManager = new DirectoryManager(gameDir);
         try {
             SwingUtils.invokeAndWait(() -> WebLookAndFeel.install());
         } catch (InterruptedException | InvocationTargetException e) {
@@ -109,7 +101,7 @@ public class Engine {
         frame = new ApplicationFrame();
         setTitleRunnable = frame.getSetTitleRunnable();
 
-        init(frame.getRenderCanvas());
+        init(frame.getRenderCanvas(), gameDir);
         if (debug) {
             DebugFrame debugFrame = new DebugFrame();
             debugFrame.attachGame();
@@ -122,7 +114,7 @@ public class Engine {
         }
 
         try {
-            JavaComponent initScript = new JavaComponent(new String(Files.readAllBytes(FileSystems.getDefault().getPath(Engine.WORKDIR_NAME + "/assets/scripts/Init.java"))));
+            JavaComponent initScript = new JavaComponent(new String(Files.readAllBytes(directoryManager.getGameInitScript().toPath())));
             initScript.init();
             System.out.println("initScript = " + initScript.isInitialized());
         } catch (IOException e) {
@@ -131,11 +123,14 @@ public class Engine {
     }
 
     public static void init(CanvasWrapper canvasWrapper) {
+        init(canvasWrapper, GAMEDIR_NAME);
+    }
+    public static void init(CanvasWrapper canvasWrapper, String gameDirName) {
         if (instance != null) {
             return;
         }
         instance = new Engine();
-        instance.initialize(canvasWrapper);
+        instance.initialize(canvasWrapper, gameDirName);
     }
 
     private Engine() {
@@ -145,7 +140,7 @@ public class Engine {
         Engine.setTitleRunnable = setTitleRunnable;
     }
 
-    private void initialize(CanvasWrapper canvasWrapper) {
+    private void initialize(CanvasWrapper canvasWrapper, String gamedirName) {
 
         new TimeStepThread("DisplayTitleUpdate", 1.0f) {
             @Override
@@ -156,7 +151,8 @@ public class Engine {
 
         recorder = new SimpleRenderStateRecorder();
         getEventBus().register(this);
-        initWorkDir();
+        directoryManager = new DirectoryManager(gamedirName);
+        directoryManager.initWorkDir();
         GraphicsContext.initGpuContext(canvasWrapper);
 
         EntityFactory.create();
@@ -181,27 +177,6 @@ public class Engine {
         instance.startSimulation();
         initialized = true;
         getEventBus().post(new EngineInitializedEvent());
-    }
-
-    private void initWorkDir() {
-        ArrayList<File> dirs = new ArrayList<>();
-        dirs.add(new File(WORKDIR_NAME));
-        dirs.add(new File(ASSETDIR_NAME));
-        dirs.add(new File(Texture.getDirectory()));
-        dirs.add(new File(Material.getDirectory()));
-        dirs.add(new File(Entity.getDirectory()));
-        dirs.add(new File(Scene.getDirectory()));
-
-        for (File file : dirs) {
-            createIfAbsent(file);
-        }
-    }
-
-    private boolean createIfAbsent(File folder) {
-        if (!folder.exists()) {
-            return folder.mkdir();
-        }
-        return true;
     }
 
     public void startSimulation() {
@@ -389,6 +364,10 @@ public class Engine {
         LOGGER.info("Finalize renderer");
         destroyOpenGL();
         System.exit(0);
+    }
+
+    public DirectoryManager getDirectoryManager() {
+        return directoryManager;
     }
 
 }

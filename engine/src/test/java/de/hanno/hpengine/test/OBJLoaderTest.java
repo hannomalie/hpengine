@@ -1,8 +1,7 @@
 package de.hanno.hpengine.test;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.Face;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.renderer.material.Material;
@@ -17,7 +16,6 @@ import de.hanno.hpengine.util.stopwatch.StopWatch;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
 public class OBJLoaderTest extends TestWithEngine {
 
@@ -63,7 +61,7 @@ public class OBJLoaderTest extends TestWithEngine {
 
     @Test
     public void loadsMaterial() throws Exception {
-        Model sibenik = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        Model sibenik = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
         Material material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
@@ -75,14 +73,14 @@ public class OBJLoaderTest extends TestWithEngine {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-		Model sponza = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
+		Model sponza = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}
 
 	@Test
 	public void loadCornellBoxTest() throws Exception {
-		Model cornellBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+		Model cornellBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
 		Assert.assertEquals(9, cornellBox.getMeshes().size());
 	}
 

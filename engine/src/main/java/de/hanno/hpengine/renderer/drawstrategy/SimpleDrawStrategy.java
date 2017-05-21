@@ -4,6 +4,7 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.*;
@@ -26,6 +27,7 @@ import de.hanno.hpengine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import de.hanno.hpengine.shader.ComputeShaderProgram;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.shader.Shader;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.opengl.*;
@@ -79,16 +81,16 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public SimpleDrawStrategy() throws Exception {
         super();
         ProgramFactory programFactory = ProgramFactory.getInstance();
-        secondPassPointProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_point_fragment.glsl", false);
-        secondPassTubeProgram = programFactory.getProgram("second_pass_point_vertex.glsl", "second_pass_tube_fragment.glsl", false);
-        secondPassAreaProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_area_fragment.glsl", false);
-        secondPassDirectionalProgram = programFactory.getProgram("second_pass_directional_vertex.glsl", "second_pass_directional_fragment.glsl", false);
-        instantRadiosityProgram = programFactory.getProgram("second_pass_area_vertex.glsl", "second_pass_instant_radiosity_fragment.glsl", false);
+        secondPassPointProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")));
+        secondPassTubeProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")));
+        secondPassAreaProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")));
+        secondPassDirectionalProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")));
+        instantRadiosityProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")));
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
-        combineProgram = programFactory.getProgram("combine_pass_vertex.glsl", "combine_pass_fragment.glsl", false);
-        postProcessProgram = programFactory.getProgram("passthrough_vertex.glsl", "postprocess_fragment.glsl", false);
+        combineProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")));
+        postProcessProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")));
 
         aoScatteringProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "scattering_ao_fragment.glsl");
         highZProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
@@ -103,7 +105,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext = GraphicsContext.getInstance();
 
 
-        Model skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
+        Model skyBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);

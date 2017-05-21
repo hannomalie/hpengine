@@ -4,6 +4,7 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.Component;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.component.PhysicsComponent;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
@@ -336,7 +337,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public static String getDirectory() {
-		return Engine.WORKDIR_NAME + "/assets/entities/";
+		return DirectoryManager.WORKDIR_NAME + "/assets/entities/";
 	}
 	public boolean equals(Object other) {
 		if (!(other instanceof Entity)) {

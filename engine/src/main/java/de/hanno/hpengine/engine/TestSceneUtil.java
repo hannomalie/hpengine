@@ -32,7 +32,7 @@ public class TestSceneUtil {
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            Model sphere = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+            Model sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {

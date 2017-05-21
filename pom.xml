@@ -12,6 +12,7 @@
     <modules>
         <module>editor</module>
         <module>engine</module>
+        <module>simplegame</module>
     </modules>
 
 </project>

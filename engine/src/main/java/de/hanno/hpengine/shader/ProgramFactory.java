@@ -81,15 +81,11 @@ public class ProgramFactory {
         });
 	}
 
-	public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName, boolean needsTextures) {
-		return getProgram(vertexShaderFilename, null, fragmentShaderFileName, needsTextures);
+	public Program getProgram(boolean needsTextures, CodeSource vertexShaderSource, CodeSource fragmentShaderSource) {
+		return getProgram(needsTextures, vertexShaderSource, null, fragmentShaderSource);
 	}
-	public Program getProgram(String vertexShaderFilename, String geometryShaderFileName, String fragmentShaderFileName, boolean needsTextures) {
+	public Program getProgram(boolean needsTextures, CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource) {
 		return GraphicsContext.getInstance().calculate(() -> {
-            CodeSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + vertexShaderFilename));
-            CodeSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + fragmentShaderFileName));
-            CodeSource geometryShaderSource = ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + geometryShaderFileName));
-
             Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, needsTextures, "");
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);

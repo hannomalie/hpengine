@@ -1,7 +1,7 @@
 package de.hanno.hpengine.component;
 
 import de.hanno.compiler.RuntimeJavaCompiler;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class JavaComponent extends BaseComponent implements ScriptComponent, Reloadable {
 
-    public static final String WORKING_DIR = Engine.WORKDIR_NAME + "/java";
+    public static final String WORKING_DIR = DirectoryManager.WORKDIR_NAME + "/java";
     static {
         File workingDir = new File(WORKING_DIR);
         try {
@@ -148,7 +148,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     private static String getDirectory() {
-        return Engine.WORKDIR_NAME + "/assets/scripts/";
+        return DirectoryManager.ASSETDIR_NAME + "/scripts/";
     }
 
     @Override

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.renderer.material;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.texture.Texture;
@@ -18,7 +18,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.DoubleSummaryStatistics;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -253,7 +252,7 @@ public class Material implements Serializable, Bufferable {
 	}
 
 	public static String getDirectory() {
-		return Engine.WORKDIR_NAME + "/assets/materials/";
+		return DirectoryManager.WORKDIR_NAME + "/assets/materials/";
 	}
 
 	public MaterialInfo getMaterialInfo() {

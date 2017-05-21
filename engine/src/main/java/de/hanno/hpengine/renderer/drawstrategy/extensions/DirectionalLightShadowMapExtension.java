@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.renderer.state.RenderState;
+import de.hanno.hpengine.shader.Shader;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import de.hanno.hpengine.renderer.drawstrategy.DrawStrategy;
@@ -16,6 +17,7 @@ import de.hanno.hpengine.shader.ProgramFactory;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
+import java.io.File;
 import java.util.List;
 
 import static de.hanno.hpengine.renderer.constants.GlCap.CULL_FACE;
@@ -30,7 +32,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public DirectionalLightShadowMapExtension() {
 
-        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_ssbo_vertex.glsl", "shadowmap_fragment.glsl", true);
+        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")));
 
         renderTarget = new RenderTargetBuilder()
                 .setWidth(SHADOWMAP_RESOLUTION)

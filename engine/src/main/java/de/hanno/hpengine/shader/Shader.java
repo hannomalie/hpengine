@@ -1,6 +1,6 @@
 package de.hanno.hpengine.shader;
 
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.renderer.GraphicsContext;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
@@ -86,7 +86,6 @@ public interface Shader extends Reloadable {
         GraphicsContext.getInstance().execute(() -> {
             if (GL20.glGetShader(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
-//			System.err.println("Dynamic code takes " + newlineCount + " lines");
                 String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000);
                 shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, finalNewlineCount);
                 System.err.println(shaderInfoLog);
@@ -138,7 +137,7 @@ public interface Shader extends Reloadable {
 	}
 
     static String getDirectory() {
-		return Engine.WORKDIR_NAME + "/assets/shaders/";
+		return DirectoryManager.WORKDIR_NAME + "/assets/shaders/";
 	}
 
     void setId(int shaderID);

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.test;
 
 import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
@@ -15,7 +16,7 @@ public class EntityTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws Exception {
-        Entity entity = EntityFactory.getInstance().getEntity("default", new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj")));
+        Entity entity = EntityFactory.getInstance().getEntity("default", new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
 
 		String filename = "default.hpentity";
 
@@ -27,7 +28,7 @@ public class EntityTest extends TestWithEngine {
 	}
     @Test
     public void loadParented() throws Exception {
-        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
+        Model model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
         Entity entity = EntityFactory.getInstance().getEntity("xxx", model);
         engine.getScene().add(entity);
 
@@ -46,7 +47,7 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        Model model = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        Model model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
         parentEntity.setSelected(true);
         parentEntity.setPosition(new Vector3f(2,2,2));

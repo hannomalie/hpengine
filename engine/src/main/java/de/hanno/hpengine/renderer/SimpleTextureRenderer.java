@@ -16,6 +16,7 @@ import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.shader.Shader;
 import de.hanno.hpengine.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
@@ -25,6 +26,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
 import javax.vecmath.Vector2f;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.logging.Logger;
@@ -106,7 +108,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", false);
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
 
 	}
 

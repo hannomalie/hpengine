@@ -1,3 +1,5 @@
+package scripts;
+
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import org.lwjgl.util.vector.Vector3f;
 import de.hanno.hpengine.engine.model.Entity;

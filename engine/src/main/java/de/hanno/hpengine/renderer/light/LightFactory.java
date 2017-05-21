@@ -5,6 +5,7 @@ import de.hanno.hpengine.camera.Camera;
 import de.hanno.hpengine.component.ModelComponent;
 import de.hanno.hpengine.config.Config;
 import de.hanno.hpengine.container.EntitiesContainer;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerMeshInfo;
 import de.hanno.hpengine.engine.model.Entity;
@@ -24,10 +25,7 @@ import de.hanno.hpengine.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.renderer.state.RenderState;
 import de.hanno.hpengine.scene.Scene;
-import de.hanno.hpengine.shader.OpenGLBuffer;
-import de.hanno.hpengine.shader.PersistentMappedBuffer;
-import de.hanno.hpengine.shader.Program;
-import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.shader.*;
 import de.hanno.hpengine.texture.CubeMapArray;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
@@ -105,11 +103,11 @@ public class LightFactory {
 	public LightFactory() {
 		sphereMesh = null;
 		try {
-			sphereMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+			sphereMesh = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
 			sphereMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            cubeMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/cube.obj"));
+            cubeMesh = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cube.obj"));
             cubeMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            planeMesh = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/planeRotated.obj"));
+            planeMesh = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/planeRotated.obj"));
             planeMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -127,7 +125,7 @@ public class LightFactory {
 
 		if(Config.getInstance().isUseDpsm()) {
 // TODO: Use wrapper
-			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_vertex.glsl", "pointlight_shadow_fragment.glsl", true);
+			this.pointShadowPassProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_fragment.glsl")));
 
 			pointLightDepthMapsArrayFront = GL11.glGenTextures();
 			GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D_ARRAY, pointLightDepthMapsArrayFront);
@@ -145,7 +143,7 @@ public class LightFactory {
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
 			GL11.glTexParameteri(GL30.GL_TEXTURE_2D_ARRAY, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 		} else {
-			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram("pointlight_shadow_cubemap_vertex.glsl", "pointlight_shadow_cubemap_geometry.glsl", "pointlight_shadow_cube_fragment.glsl", true);
+			this.pointCubeShadowPassProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "pointlight_shadow_cube_fragment.glsl")));
 
 			CubeMapArray cubeMapArray = new CubeMapArray(MAX_POINTLIGHT_SHADOWMAPS, GL11.GL_LINEAR, GL30.GL_RGBA16F, AREALIGHT_SHADOWMAP_RESOLUTION);
 			pointLightDepthMapsArrayCube = cubeMapArray.getTextureID();
@@ -153,7 +151,7 @@ public class LightFactory {
 					AREALIGHT_SHADOWMAP_RESOLUTION, AREALIGHT_SHADOWMAP_RESOLUTION, MAX_POINTLIGHT_SHADOWMAPS, cubeMapArray);
 		}
 
-		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "shadowmap_fragment.glsl", true);
+		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")));
 		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPARATELY

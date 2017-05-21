@@ -1,7 +1,7 @@
 package de.hanno.hpengine.renderer.drawstrategy;
 
 import de.hanno.hpengine.config.Config;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.renderer.DeferredRenderer;
 import de.hanno.hpengine.renderer.PixelBufferObject;
@@ -97,7 +97,7 @@ public class GBuffer {
 	public void init() {
 		probeBox = null;
 		try {
-			probeBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/probebox.obj"));
+			probeBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/probebox.obj"));
 			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);

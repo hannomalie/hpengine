@@ -1,6 +1,7 @@
 package de.hanno.hpengine.renderer;
 
 import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
@@ -25,6 +26,7 @@ import de.hanno.hpengine.scene.EnvironmentProbe;
 import de.hanno.hpengine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.shader.Program;
 import de.hanno.hpengine.shader.ProgramFactory;
+import de.hanno.hpengine.shader.Shader;
 import de.hanno.hpengine.util.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
@@ -46,13 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 import static org.lwjgl.opengl.GL11.glFinish;
-import static org.lwjgl.opengl.GL11.glFlush;
 
 public class DeferredRenderer implements Renderer {
 	private static boolean IGNORE_GL_ERRORS = false;
@@ -136,7 +136,7 @@ public class DeferredRenderer implements Renderer {
 
             sphereMesh = null;
             try {
-                sphereMesh = objLoader.loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sphere.obj"));
+                sphereMesh = objLoader.loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
                 sphereMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -190,12 +190,11 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "simpletexture_fragment.glsl", false);
-		blurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_fragment.glsl", false);
-		bilateralBlurProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "blur_bilateral_fragment.glsl", false);
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
+		blurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")));
+		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")));
 		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
 
-//		DeferredRenderer.exitOnGLError("setupShaders");
 	}
 
 	public void update(float seconds) {
