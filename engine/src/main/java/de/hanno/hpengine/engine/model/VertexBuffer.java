@@ -1,11 +1,11 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.shader.AbstractPersistentMappedBuffer;
-import de.hanno.hpengine.shader.Bufferable;
+import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;

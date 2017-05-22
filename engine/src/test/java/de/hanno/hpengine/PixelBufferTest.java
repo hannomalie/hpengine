@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.renderer.PixelBufferObject;
-import de.hanno.hpengine.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;

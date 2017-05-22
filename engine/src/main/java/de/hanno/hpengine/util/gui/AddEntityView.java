@@ -11,8 +11,8 @@ import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.text.WebFormattedTextField;
 import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.renderer.command.LoadModelCommand.EntityListResult;
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;

@@ -1,10 +1,10 @@
 package de.hanno.hpengine.engine.model;
 
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.event.SceneInitEvent;
-import de.hanno.hpengine.event.bus.EventBus;
-import de.hanno.hpengine.renderer.GraphicsContext;
-import de.hanno.hpengine.renderer.drawstrategy.extensions.DrawLightMapExtension;
+import de.hanno.hpengine.engine.event.SceneInitEvent;
+import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLightMapExtension;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;

@@ -47,7 +47,7 @@
  */
 package jme3tools.optimize;
 
-import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.Mesh;
 import org.lwjgl.util.vector.Vector3f;
 

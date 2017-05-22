@@ -570,7 +570,7 @@ ProbeSample importanceSampleProjectedCubeMap(int index, vec3 positionWorld, vec3
 		fresnel *= temp;
 		float F = fresnel + F0;
 		
-		// Incident light = SampleColor * NoL
+		// Incident lights = SampleColor * NoL
 		// Microfacet specular = D*G*F / (4*NoL*NoV)
 		// pdf = D * NoH / (4 * VoH)
 	    float pdf = importanceSampleResult[1].z;

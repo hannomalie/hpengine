@@ -1,15 +1,15 @@
 package de.hanno.hpengine.util.script;
 
-import de.hanno.hpengine.component.JavaScriptComponent;
+import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.OBJLoader;
-import de.hanno.hpengine.renderer.Renderer;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 import javax.script.*;
 import java.util.logging.Logger;

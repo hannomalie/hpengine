@@ -15,9 +15,9 @@ import com.alee.laf.button.WebButton;
 import com.alee.laf.label.WebLabel;
 import com.alee.laf.panel.WebPanel;
 import com.alee.laf.text.WebFormattedTextField;
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.light.DirectionalLight;
+import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
 
@@ -191,7 +191,7 @@ public class MainLightView extends WebPanel {
     private void addNamePanel(WebComponentPanel webComponentPanel) {
         WebLabel labelName = new WebLabel("Name");
         WebFormattedTextField nameField = new WebFormattedTextField();
-        nameField.setValue("Directional light");
+        nameField.setValue("Directional lights");
         GroupPanel groupPanel = new GroupPanel(4, labelName, nameField);
         webComponentPanel.addElement(groupPanel);
     }

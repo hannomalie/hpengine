@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
-import de.hanno.hpengine.texture.Texture;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Arrays;
@@ -27,13 +27,13 @@ public class TextureTableModel extends AbstractTableModel {
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
-            de.hanno.hpengine.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
             return String.format("Texture %d x %d", texture.getWidth(), texture.getHeight());
         } else if(col == 2) {
-            de.hanno.hpengine.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
             return texture.getUploadState();
         } else if(col == 3) {
-            de.hanno.hpengine.texture.Texture texture = getTexture(row);
+            de.hanno.hpengine.engine.model.texture.Texture texture = getTexture(row);
             return Math.max(0, System.currentTimeMillis() - texture.getLastUsedTimeStamp());
         }
         return "";

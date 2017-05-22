@@ -1,8 +1,8 @@
 package de.hanno.hpengine.util.gui.structure;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.light.PointLight;
-import de.hanno.hpengine.scene.Scene;
+import de.hanno.hpengine.engine.graphics.light.PointLight;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Util;
 
 import javax.swing.table.AbstractTableModel;

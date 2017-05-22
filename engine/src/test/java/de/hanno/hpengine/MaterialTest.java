@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import de.hanno.hpengine.util.stopwatch.StopWatch;

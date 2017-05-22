@@ -1,8 +1,8 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.CanvasWrapper;
+import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import org.junit.BeforeClass;
 
 import java.awt.*;

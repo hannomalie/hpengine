@@ -3,8 +3,8 @@ package de.hanno.hpengine.editor
 import com.alee.laf.label.WebLabel
 import com.alee.laf.panel.WebPanel
 import de.hanno.hpengine.engine.model.Entity
-import de.hanno.hpengine.event.EntitySelectedEvent
-import de.hanno.hpengine.event.bus.EventBus
+import de.hanno.hpengine.engine.event.EntitySelectedEvent
+import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.util.gui.input.TransformablePanel
 import net.engio.mbassy.listener.Handler
 

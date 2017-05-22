@@ -1,6 +1,6 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.*;
 import jme3tools.optimize.LodGenerator;

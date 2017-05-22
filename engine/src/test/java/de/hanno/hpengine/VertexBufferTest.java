@@ -1,10 +1,10 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;

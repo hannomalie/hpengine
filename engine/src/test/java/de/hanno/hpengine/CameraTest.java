@@ -1,12 +1,12 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.camera.Frustum;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.camera.Frustum;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.scene.AABB;
+import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.util.Util;
 
 public class CameraTest extends TestWithRenderer {

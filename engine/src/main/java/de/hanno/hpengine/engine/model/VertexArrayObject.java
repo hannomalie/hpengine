@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.lwjgl.opengl.*;
 
 import java.util.*;

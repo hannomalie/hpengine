@@ -11,8 +11,8 @@ import javax.swing.event.ChangeListener;
 
 import de.hanno.hpengine.engine.Engine;
 
-import de.hanno.hpengine.event.PointLightMovedEvent;
-import de.hanno.hpengine.renderer.light.PointLight;
+import de.hanno.hpengine.engine.event.PointLightMovedEvent;
+import de.hanno.hpengine.engine.graphics.light.PointLight;
 import org.lwjgl.util.vector.Vector4f;
 
 import com.alee.laf.colorchooser.WebColorChooserPanel;

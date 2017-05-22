@@ -2,8 +2,8 @@ package de.hanno.hpengine.engine.model;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL40;
-import de.hanno.hpengine.shader.AbstractPersistentMappedBuffer;
-import de.hanno.hpengine.shader.Bufferable;
+import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 
 import java.nio.*;
 

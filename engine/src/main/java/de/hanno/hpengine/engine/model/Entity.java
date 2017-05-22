@@ -1,18 +1,18 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.component.Component;
-import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.component.PhysicsComponent;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.component.Component;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.event.EntityAddedEvent;
-import de.hanno.hpengine.event.UpdateChangedEvent;
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.shader.Bufferable;
+import de.hanno.hpengine.engine.event.EntityAddedEvent;
+import de.hanno.hpengine.engine.event.UpdateChangedEvent;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Matrix4f;

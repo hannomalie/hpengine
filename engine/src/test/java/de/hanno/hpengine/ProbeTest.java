@@ -5,10 +5,9 @@ import de.hanno.hpengine.engine.model.Entity;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.scene.EnvironmentProbe;
-import de.hanno.hpengine.scene.EnvironmentProbe.Update;
-import de.hanno.hpengine.scene.EnvironmentProbeFactory;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
+import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 
 public class ProbeTest extends TestWithRenderer {
 	

@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.scene.Scene;
+import de.hanno.hpengine.engine.scene.Scene;
 
 public class SceneTest extends TestWithEngine {
 	private static final String SCENENAME = "__testscene";

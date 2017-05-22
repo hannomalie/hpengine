@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.engine.camera.Camera;
 import com.bulletphysics.linearmath.Transform;
 import org.lwjgl.Sys;
 import org.lwjgl.util.vector.Matrix4f;

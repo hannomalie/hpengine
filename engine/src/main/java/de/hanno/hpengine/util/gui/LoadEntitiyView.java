@@ -10,7 +10,7 @@ import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;

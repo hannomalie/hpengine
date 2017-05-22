@@ -1,8 +1,8 @@
 package de.hanno.hpengine.util.gui.structure;
 
 
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Comparator;

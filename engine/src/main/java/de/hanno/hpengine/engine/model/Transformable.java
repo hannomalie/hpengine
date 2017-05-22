@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.camera.Camera;
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Transform;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Quaternion;

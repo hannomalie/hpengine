@@ -1,8 +1,8 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.renderer.light.AreaLight;
-import de.hanno.hpengine.renderer.light.LightFactory;
-import de.hanno.hpengine.renderer.light.TubeLight;
+import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.LightFactory;
+import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;

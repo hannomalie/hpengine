@@ -8,10 +8,10 @@ import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.LightFactory;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.renderer.light.AreaLight;
-import de.hanno.hpengine.renderer.light.LightFactory;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -75,11 +75,11 @@ public class AreaLightView extends EntityView {
 				if(result.equals(Boolean.TRUE)) {
 					showNotification(NotificationIcon.plus, "Light removed");
 				} else {
-					showNotification(NotificationIcon.error, "Not able to remove light");
+					showNotification(NotificationIcon.error, "Not able to remove lights");
 				}
 			} catch (Exception e1) {
 				e1.printStackTrace();
-				showNotification(NotificationIcon.error, "Not able to remove light");
+				showNotification(NotificationIcon.error, "Not able to remove lights");
 			}
 		});
 		

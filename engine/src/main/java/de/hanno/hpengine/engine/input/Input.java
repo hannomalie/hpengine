@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.input;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.event.ClickEvent;
+import de.hanno.hpengine.engine.event.ClickEvent;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;

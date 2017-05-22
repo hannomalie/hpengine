@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util.gui;
 
-import de.hanno.hpengine.renderer.command.Result;
+import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 
 import javax.swing.*;
 import java.util.concurrent.ExecutionException;

@@ -4,9 +4,9 @@ import ddsutil.DDSUtil;
 import jogl.DDSImage;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.texture.CubeMap;
-import de.hanno.hpengine.texture.Texture;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.CubeMap;
+import de.hanno.hpengine.engine.model.texture.Texture;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 
 import javax.swing.*;
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
-import static de.hanno.hpengine.texture.Texture.UploadState.*;
+import static de.hanno.hpengine.engine.model.texture.Texture.UploadState.*;
 
 public class TextureTest extends TestWithEngine {
 

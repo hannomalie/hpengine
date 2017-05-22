@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.shader.Bufferable;
-import de.hanno.hpengine.shader.PersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;

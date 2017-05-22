@@ -1,9 +1,8 @@
 package de.hanno.hpengine.engine;
 
+import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.awt.*;
 
 public class EngineTest {
     @Test

@@ -2,9 +2,9 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.component.ModelComponent;
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.util.vector.Matrix4f;

@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity.Update;
-import de.hanno.hpengine.renderer.material.Material;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.util.vector.Vector3f;
 

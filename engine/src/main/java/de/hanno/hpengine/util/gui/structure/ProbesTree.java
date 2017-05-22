@@ -2,8 +2,8 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.scene.EnvironmentProbe;
-import de.hanno.hpengine.scene.EnvironmentProbeFactory;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.util.gui.SetVisibilityCheckStateListener;
 import de.hanno.hpengine.util.gui.SetSelectedListener;
 

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.query;
 
-import de.hanno.hpengine.component.ModelComponent;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import junit.framework.Assert;

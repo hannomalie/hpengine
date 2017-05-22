@@ -1,13 +1,10 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.ApplicationFrame;
-import de.hanno.hpengine.engine.CanvasWrapper;
+import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.awt.*;
 
 public class TestWithEngine {
 

@@ -14,7 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
-import de.hanno.hpengine.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import org.jfree.chart.ChartFactory;

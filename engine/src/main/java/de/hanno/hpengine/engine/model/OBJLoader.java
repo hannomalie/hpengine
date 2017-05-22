@@ -1,12 +1,12 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.log.ConsoleLogger;
-import de.hanno.hpengine.renderer.material.Material;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.renderer.material.MaterialInfo;
+import de.hanno.hpengine.engine.model.material.MaterialInfo;
 
 import java.io.*;
 import java.util.*;

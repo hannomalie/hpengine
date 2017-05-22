@@ -56,7 +56,7 @@ public class Util {
 		"org.fife.ui.autocomplete.allowDecoratedAutoCompleteWindows";
 
 	/**
-	 * Used for the color of hyperlinks when a LookAndFeel uses light text
+	 * Used for the color of hyperlinks when a LookAndFeel uses lights text
 	 * against a dark background.
 	 */
 	private static final Color LIGHT_HYPERLINK_FG = new Color(0xd8ffff);
@@ -185,7 +185,7 @@ public class Util {
 	/**
 	 * Returns the color to use for hyperlink-style components.  This method
 	 * will return <code>Color.blue</code> unless it appears that the current
-	 * LookAndFeel uses light text on a dark background, in which case a
+	 * LookAndFeel uses lights text on a dark background, in which case a
 	 * brighter alternative is returned.
 	 *
 	 * @return The color to use for hyperlinks.
@@ -262,12 +262,12 @@ public class Util {
 
 
 	/**
-	 * Returns whether the specified color is "light" to use as a foreground.
+	 * Returns whether the specified color is "lights" to use as a foreground.
 	 * Colors that return <code>true</code> indicate that the current Look and
-	 * Feel probably uses light text colors on a dark background.
+	 * Feel probably uses lights text colors on a dark background.
 	 *
 	 * @param fg The foreground color.
-	 * @return Whether it is a "light" foreground color.
+	 * @return Whether it is a "lights" foreground color.
 	 */
 	public static final boolean isLightForeground(Color fg) {
 		return fg.getRed()>0xa0 && fg.getGreen()>0xa0 && fg.getBlue()>0xa0;

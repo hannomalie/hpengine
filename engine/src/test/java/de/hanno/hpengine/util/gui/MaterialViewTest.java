@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util.gui;
 
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 

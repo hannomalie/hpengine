@@ -3,9 +3,9 @@ package de.hanno.hpengine;
 import org.junit.Assert;
 import org.junit.Test;
 import org.lwjgl.BufferUtils;
-import de.hanno.hpengine.shader.Bufferable;
-import de.hanno.hpengine.shader.OpenGLBuffer;
-import de.hanno.hpengine.shader.PersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -24,7 +24,7 @@ public class StorageBufferTest extends TestWithEngine {
 		for (int i = 0; i < 16; i++) {
 			data.put(i, i);
 		}
-        OpenGLBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(0);
         buffer.putValues(byteBuffer);
 
         DoubleBuffer result = buffer.getBuffer().asDoubleBuffer();
@@ -45,7 +45,7 @@ public class StorageBufferTest extends TestWithEngine {
 			data.put(i, i);
 		}
 
-        OpenGLBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(0);
         buffer.putValues(byteBuffer);
 
 		buffer.putValues(byteBuffer);
@@ -67,7 +67,7 @@ public class StorageBufferTest extends TestWithEngine {
 			data.put(i, i);
 		}
 
-        OpenGLBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(0);
 
 		buffer.putValues(4*Double.BYTES, byteBuffer);
 
@@ -98,7 +98,7 @@ public class StorageBufferTest extends TestWithEngine {
 		};
 
 
-        OpenGLBuffer buffer = new PersistentMappedBuffer(0);
+        GPUBuffer buffer = new PersistentMappedBuffer(0);
 		buffer.put(bufferable, bufferable, bufferable, bufferable);
 
 

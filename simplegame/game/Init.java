@@ -1,12 +1,12 @@
-import de.hanno.hpengine.component.JavaComponent;
+import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Entity.Instance;
-import de.hanno.hpengine.renderer.command.LoadModelCommand;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.lwjgl.util.vector.Vector3f;
 

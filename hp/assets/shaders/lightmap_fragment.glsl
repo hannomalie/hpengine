@@ -49,7 +49,7 @@ vec3 getVisibility(float dist, vec4 ShadowCoordPostW)
 	vec2 momentsUnblurred = moments;
 
 
-	// Surface is fully lit. as the current fragment is before the light occluder
+	// Surface is fully lit. as the current fragment is before the lights occluder
 	if (dist - 0.001f <= moments.x) {
 		return vec3(1.0,1.0,1.0);
 	}

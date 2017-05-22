@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.ressources;
 
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.config.Config;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 

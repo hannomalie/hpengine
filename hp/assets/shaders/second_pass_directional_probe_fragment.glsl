@@ -243,7 +243,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 	//moments += blur(shadowMap, ShadowCoordPostW.xy, 0.00125).rg;
 	//moments /= 3;
 	
-	// Surface is fully lit. as the current fragment is before the light occluder
+	// Surface is fully lit. as the current fragment is before the lights occluder
 	if (dist <= moments.x) {
 		//return vec3(1.0,1.0,1.0);
 	}
@@ -255,7 +255,7 @@ vec3 chebyshevUpperBound(float dist, vec4 ShadowCoordPostW)
 
 	float d = dist - moments.x;
 	//float p_max = (variance / (variance + d*d));
-	// thanks, for light bleeding reduction, FOOGYWOO! http://dontnormalize.me/ 
+	// thanks, for lights bleeding reduction, FOOGYWOO! http://dontnormalize.me/
 	float p_max = smoothstep(0.20, 1.0, variance / (variance + d*d));
 	
 	//p_max = linstep(0.2, 1.0, p_max);

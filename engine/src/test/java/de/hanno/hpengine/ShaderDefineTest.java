@@ -1,9 +1,9 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.config.Config;
 import junit.framework.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.shader.ShaderDefine;
+import de.hanno.hpengine.engine.graphics.shader.ShaderDefine;
 
 public class ShaderDefineTest {
 

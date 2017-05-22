@@ -3,29 +3,34 @@ package de.hanno.hpengine.engine;
 import com.alee.laf.WebLookAndFeel;
 import com.alee.utils.SwingUtils;
 import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.camera.MovableCamera;
-import de.hanno.hpengine.component.JavaComponent;
-import de.hanno.hpengine.config.Config;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.camera.MovableCamera;
+import de.hanno.hpengine.engine.component.JavaComponent;
+import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
+import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.event.*;
-import de.hanno.hpengine.event.bus.EventBus;
-import de.hanno.hpengine.physic.PhysicsFactory;
-import de.hanno.hpengine.renderer.GraphicsContext;
-import de.hanno.hpengine.renderer.Renderer;
-import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.renderer.fps.FPSCounter;
-import de.hanno.hpengine.renderer.material.MaterialFactory;
-import de.hanno.hpengine.renderer.state.RenderState;
-import de.hanno.hpengine.renderer.state.RenderStateRecorder;
-import de.hanno.hpengine.renderer.state.SimpleRenderStateRecorder;
-import de.hanno.hpengine.scene.Scene;
-import de.hanno.hpengine.shader.ProgramFactory;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.threads.RenderThread;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
+import de.hanno.hpengine.engine.threads.UpdateThread;
+import de.hanno.hpengine.engine.event.*;
+import de.hanno.hpengine.engine.event.bus.EventBus;
+import de.hanno.hpengine.engine.physics.PhysicsFactory;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.util.fps.FPSCounter;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder;
+import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder;
+import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.DebugFrame;
-import de.hanno.hpengine.util.multithreading.TripleBuffer;
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
@@ -187,7 +192,7 @@ public class Engine {
         renderThread.start();
     }
 
-    void update(float seconds) {
+    public void update(float seconds) {
         activeCamera.update(seconds);
         scene.setCurrentCycle(drawCycle.get());
         scene.update(seconds);
@@ -238,7 +243,7 @@ public class Engine {
         }
     };
 
-    protected void actuallyDraw() {
+    public void actuallyDraw() {
         GraphicsContext.getInstance().execute(drawCallable).join();
     }
 

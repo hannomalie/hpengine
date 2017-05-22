@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.renderer.GraphicsContext;
-import de.hanno.hpengine.renderer.OpenGLThread;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.OpenGLThread;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.LWJGLException;

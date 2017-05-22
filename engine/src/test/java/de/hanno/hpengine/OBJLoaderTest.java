@@ -4,13 +4,13 @@ import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.Face;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
-import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.engine.model.material.Material;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import de.hanno.hpengine.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 
@@ -55,7 +55,7 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-        de.hanno.hpengine.texture.Texture texture = TextureFactory.getInstance().getTexture("C://default.png");
+        de.hanno.hpengine.engine.model.texture.Texture texture = TextureFactory.getInstance().getTexture("C://default.png");
 		Assert.assertEquals(1, texture.getHeight());
 	}
 

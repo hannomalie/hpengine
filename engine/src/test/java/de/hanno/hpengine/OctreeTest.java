@@ -1,15 +1,15 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.camera.Camera;
-import de.hanno.hpengine.container.Octree;
-import de.hanno.hpengine.container.Octree.Node;
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.container.Octree;
+import de.hanno.hpengine.engine.container.Octree.Node;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import de.hanno.hpengine.scene.AABB;
+import de.hanno.hpengine.engine.scene.AABB;
 
 import java.util.ArrayList;
 import java.util.List;

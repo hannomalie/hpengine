@@ -3,11 +3,11 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.shader.*;
+import de.hanno.hpengine.engine.graphics.shader.*;
 
 import java.io.IOException;
 
-import static de.hanno.hpengine.shader.Shader.*;
+import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 
 public class ShaderTest extends TestWithRenderer {
 

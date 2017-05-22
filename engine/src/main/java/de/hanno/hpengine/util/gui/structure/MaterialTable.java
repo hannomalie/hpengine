@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.laf.rootpane.WebFrame;
 import com.alee.laf.scroll.WebScrollPane;
-import de.hanno.hpengine.renderer.material.Material;
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.util.gui.MaterialView;
 
 import javax.swing.*;

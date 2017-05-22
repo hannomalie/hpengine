@@ -1,14 +1,15 @@
 package de.hanno.hpengine.engine;
 
-import de.hanno.hpengine.config.Config;
-import de.hanno.hpengine.renderer.MockContext;
-import de.hanno.hpengine.renderer.Renderer;
-import de.hanno.hpengine.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.renderer.drawstrategy.GBuffer;
-import de.hanno.hpengine.renderer.fps.FPSCounter;
-import de.hanno.hpengine.renderer.state.RenderState;
-import de.hanno.hpengine.scene.EnvironmentProbe;
-import de.hanno.hpengine.shader.Program;
+import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
+import de.hanno.hpengine.engine.graphics.renderer.MockContext;
+import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.util.fps.FPSCounter;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.engine.graphics.shader.Program;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.lwjgl.util.vector.Vector3f;

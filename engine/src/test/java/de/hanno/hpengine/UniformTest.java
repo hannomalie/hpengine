@@ -1,11 +1,11 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.Shader;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.shader.Program;
-import de.hanno.hpengine.shader.ProgramFactory;
-import de.hanno.hpengine.shader.Uniform;
+import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
+import de.hanno.hpengine.engine.graphics.shader.Uniform;
 
 import java.io.File;
 
