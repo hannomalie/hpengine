@@ -37,7 +37,8 @@ public class TripleBuffer<T extends RenderState> {
         this.instanceC = currentStagingState;
     }
 
-    protected void swap() {
+    protected boolean swap() {
+        boolean swapped = false;
         swapLock.lock();
         stagingLock.lock();
 
@@ -45,10 +46,12 @@ public class TripleBuffer<T extends RenderState> {
             temp = currentReadState;
             currentReadState = currentStagingState;
             currentStagingState = temp;
+            swapped = true;
         }
 
         stagingLock.unlock();
         swapLock.unlock();
+        return swapped;
     }
     protected void swapStaging() {
         stagingLock.lock();
@@ -85,8 +88,8 @@ public class TripleBuffer<T extends RenderState> {
         logState();
     }
 
-    public void stopRead() {
-        swap();
+    public boolean stopRead() {
+        return swap();
     }
 
     public void logState() {

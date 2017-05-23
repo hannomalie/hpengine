@@ -61,6 +61,7 @@ public class Engine {
     private volatile TripleBuffer<RenderState> renderState;
 
     private volatile AtomicLong drawCycle = new AtomicLong();
+    private long cpuGpuSyncTimeNs;
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -203,7 +204,7 @@ public class Engine {
     }
 
     private void updateRenderState() {
-        if(scene.entityMovedInCycle() == drawCycle.get()) {
+        if (scene.entityMovedInCycle() == drawCycle.get()) {
             renderState.addCommand((renderStateX1) -> {
                 renderStateX1.bufferEntites(scene.getEntities());
             });
@@ -213,31 +214,33 @@ public class Engine {
         renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
         scene.addPerMeshInfos(this.activeCamera, renderState.getCurrentWriteState());
 
-        GraphicsContext.getInstance().waitForGpuSync(renderState.getCurrentWriteState().getGpuCommandSync());
+        long waitedNS = GraphicsContext.getInstance().waitForGpuSync(renderState.getCurrentWriteState().getGpuCommandSync());
+        setCpuGpuSyncTimeNs(waitedNS);
         renderState.update();
     }
 
     private Callable drawCallable = new Callable() {
+        boolean lastTimeSwapped = true;
         @Override
         public Object call() throws Exception {
-            drawCycle.getAndIncrement();
             renderState.startRead();
 
-            recorder.add(renderState.getCurrentReadState());
+            if(lastTimeSwapped) {
+                drawCycle.getAndIncrement();
+                Input.update();
+                Renderer.getInstance().startFrame();
+                recorder.add(renderState.getCurrentReadState());
+                DrawResult latestDrawResult = renderState.getCurrentReadState().latestDrawResult;
+                latestDrawResult.reset();
+                Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
+                latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
+                Renderer.getInstance().endFrame();
 
-            Input.update();
+                Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
 
-            Renderer.getInstance().startFrame();
-            DrawResult latestDrawResult = renderState.getCurrentReadState().latestDrawResult;
-            latestDrawResult.reset();
-            Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
-            latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
-            Renderer.getInstance().endFrame();
-
-            Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
-
-            GraphicsContext.getInstance().createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
-            renderState.stopRead();
+                GraphicsContext.getInstance().createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
+            }
+            lastTimeSwapped = renderState.stopRead();
             scene.setInitiallyDrawn(true);
             return null;
         }
@@ -375,4 +378,15 @@ public class Engine {
         return directoryManager;
     }
 
+    public UpdateThread getUpdateThread() {
+        return updateThread;
+    }
+
+    public void setCpuGpuSyncTimeNs(long cpuGpuSyncTimeNs) {
+        this.cpuGpuSyncTimeNs = (this.cpuGpuSyncTimeNs + cpuGpuSyncTimeNs)/2;
+    }
+
+    public long getCpuGpuSyncTimeNs() {
+        return cpuGpuSyncTimeNs;
+    }
 }

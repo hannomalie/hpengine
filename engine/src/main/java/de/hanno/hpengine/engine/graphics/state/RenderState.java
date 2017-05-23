@@ -158,7 +158,7 @@ public class RenderState {
     }
 
     public boolean preventSwap(RenderState currentStaging, RenderState currentRead) {
-        return currentStaging.cycle <= currentRead.cycle;
+        return currentStaging.cycle < currentRead.cycle;
     }
 
     public int addPipeline(Pipeline pipeline) {

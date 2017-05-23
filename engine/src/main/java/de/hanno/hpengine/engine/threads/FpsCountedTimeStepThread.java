@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.threads;
 
 import de.hanno.hpengine.util.fps.FPSCounter;
 
+import java.util.concurrent.TimeUnit;
+
 public abstract class FpsCountedTimeStepThread extends TimeStepThread {
     private FPSCounter fpsCounter = new FPSCounter();
 
@@ -20,7 +22,7 @@ public abstract class FpsCountedTimeStepThread extends TimeStepThread {
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;
 
-            float seconds = ns / 1000f / 1000f / 1000f;
+            float seconds = (float) (ns / 1000000000.0);
             try {
                 update(seconds);
             } catch (Throwable e) {

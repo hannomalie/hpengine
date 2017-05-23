@@ -70,4 +70,7 @@ public final class CodeSource implements Reloadable {
         return file != null;
     }
 
+    public File getFile() {
+        return file;
+    }
 }

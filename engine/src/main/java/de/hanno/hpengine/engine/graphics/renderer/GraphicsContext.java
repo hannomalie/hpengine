@@ -33,7 +33,7 @@ public interface GraphicsContext {
 
     void setCanvasHeight(int height);
 
-    void waitForGpuSync(GLSync gpuCommandSync);
+    long waitForGpuSync(GLSync gpuCommandSync);
 
     void createNewGPUFenceForReadState(RenderState currentReadState);
 

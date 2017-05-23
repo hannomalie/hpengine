@@ -59,7 +59,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     @Override
     public void init() {
         if(!isInitialized()) {
-            observerJavaFile = new FileAlterationObserver(JavaComponent.getDirectory());
+            observerJavaFile = new FileAlterationObserver(javaCodeSource.isFileBased() ? javaCodeSource.getFile().getParent() : JavaComponent.getDirectory());
             addFileListeners();
             initWrappingComponent();
             super.init();
@@ -148,7 +148,7 @@ public class JavaComponent extends BaseComponent implements ScriptComponent, Rel
     }
 
     private static String getDirectory() {
-        return DirectoryManager.ASSETDIR_NAME + "/scripts/";
+        return DirectoryManager.GAMEDIR_NAME + "/scripts/";
     }
 
     @Override

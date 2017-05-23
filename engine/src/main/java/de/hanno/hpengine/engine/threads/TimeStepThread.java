@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.threads;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -42,41 +43,29 @@ public abstract class TimeStepThread extends Thread {
         while(!stopRequested) {
             long ns = System.nanoTime() - lastFrame;
 
-            float seconds = ns / 1000 / 1000;//TimeUnit.NANOSECONDS.convert(ns, TimeUnit.SECONDS);
+            float seconds = TimeUnit.NANOSECONDS.toSeconds(ns);
             update(seconds);
-            lastFrame = System.nanoTime();
             waitIfNecessary(seconds);
+            lastFrame = System.nanoTime();
         }
         cleanup();
     }
 
     protected void waitIfNecessary(float actualS) {
-        try {
-            Thread.sleep(0);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         float secondsLeft = (getMinimumCycleTimeInSeconds() - actualS);
         if(secondsLeft <= 0) { return; }
 
-        boolean moreThanThreeMsToWait = secondsLeft >= 0.003;
-        if(moreThanThreeMsToWait) {
+        while(secondsLeft >= 0) {
             try {
                 long timeBeforeSleep = System.nanoTime();
-                Thread.sleep(0, 500);
+                Thread.sleep(0, 100000);
                 long sleptNanoSeconds = System.nanoTime() - timeBeforeSleep;
-                long sleptMs = sleptNanoSeconds / 1000 / 1000;
-                secondsLeft -= sleptMs/1000f;
+                double sleptSeconds = sleptNanoSeconds / 1000000000.0;
+                secondsLeft -= sleptSeconds;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-        }
-
-        long nanoSecondsLeft = (long) (secondsLeft * 1000 * 1000 * 1000);
-        long startTime = System.nanoTime();
-        long targetTime = (startTime + nanoSecondsLeft);
-        while(System.nanoTime() < targetTime) {
         }
     }
 

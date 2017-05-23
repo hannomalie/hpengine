@@ -39,8 +39,9 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void waitForGpuSync(GLSync gpuCommandSync) {
+    public long waitForGpuSync(GLSync gpuCommandSync) {
 
+        return 0;
     }
 
     @Override

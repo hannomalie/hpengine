@@ -9,14 +9,19 @@ import java.awt.event.ActionListener;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
+import com.carrotsearch.hppc.FloatArrayList;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
+import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.StackedAreaChart;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -30,6 +35,7 @@ import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.renderer.xy.XYAreaRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
@@ -50,6 +56,8 @@ public class PerformanceMonitor {
 	private TimeSeries thirtyFPS;
 	private TimeSeries sixtyFPS;
 	private TimeSeries actualMS;
+	private TimeSeries actualCycleMS;
+	private TimeSeries actualSyncTimeMS;
 
 	private DefaultCategoryDataset breakdownDataset;
 
@@ -71,8 +79,12 @@ public class PerformanceMonitor {
 			this.thirtyFPS.setMaximumItemAge(maxAge);
 			this.sixtyFPS = new TimeSeries("60 FPS", Millisecond.class);
 			this.sixtyFPS.setMaximumItemAge(maxAge);
-			this.actualMS = new TimeSeries("Current FPS", Millisecond.class);
+			this.actualMS = new TimeSeries("Render FPS", Millisecond.class);
 			this.actualMS.setMaximumItemAge(maxAge);
+			this.actualCycleMS = new TimeSeries("Update FPS", Millisecond.class);
+			this.actualCycleMS.setMaximumItemAge(maxAge);
+			this.actualSyncTimeMS = new TimeSeries("Gpu Sync", Millisecond.class);
+			this.actualSyncTimeMS.setMaximumItemAge(maxAge);
 			ChartPanel chartPanel = addFPSChart(myRenderer);
 			rows++;
 			
@@ -93,19 +105,23 @@ public class PerformanceMonitor {
 
 	private ChartPanel addFPSChart(Renderer myRenderer) {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
+		dataset.addSeries(this.actualMS);
+		dataset.addSeries(this.actualCycleMS);
 		dataset.addSeries(this.thirtyFPS);
 		dataset.addSeries(this.sixtyFPS);
-		dataset.addSeries(this.actualMS);
+		dataset.addSeries(this.actualSyncTimeMS);
 		DateAxis domain = new DateAxis("Time");
 		NumberAxis range = new NumberAxis("fps");
 		domain.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 12));
 		range.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 12));
 		domain.setLabelFont(new Font("SansSerif", Font.PLAIN, 14));
 		range.setLabelFont(new Font("SansSerif", Font.PLAIN, 14));
-		XYItemRenderer renderer = new XYLineAndShapeRenderer(true, false);
-		renderer.setSeriesPaint(0, Color.red);
-		renderer.setSeriesPaint(1, Color.green);
-		renderer.setSeriesPaint(2, Color.blue);
+		XYItemRenderer renderer = new XYAreaRenderer();
+		renderer.setSeriesPaint(0, Color.orange);
+		renderer.setSeriesPaint(1, Color.WHITE);
+		renderer.setSeriesPaint(2, Color.red);
+		renderer.setSeriesPaint(3, Color.DARK_GRAY.brighter().brighter());
+		renderer.setSeriesPaint(4, Color.green);
 		renderer.setStroke(new BasicStroke(3f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
 		XYPlot plot = new XYPlot(dataset, domain, range, renderer);
 		plot.setBackgroundPaint(Color.lightGray);
@@ -139,8 +155,6 @@ public class PerformanceMonitor {
         categoryplot.setAxisOffset(new RectangleInsets(5D, 5D, 5D, 5D));
         ValueAxis valueaxis = categoryplot.getRangeAxis();
         DecimalFormat decimalformat = new DecimalFormat("##,#");
-//        decimalformat.setNegativePrefix("(");
-//        decimalformat.setNegativeSuffix(")");
         TickUnits tickunits = new TickUnits();
         tickunits.add(new NumberTickUnit(5D, decimalformat));
         tickunits.add(new NumberTickUnit(10D, decimalformat));
@@ -157,8 +171,6 @@ public class PerformanceMonitor {
         barrenderer.setDrawBarOutline(false);
         barrenderer.setBase(5D);
         DecimalFormat decimalformat1 = new DecimalFormat("$##,#");
-//        decimalformat1.setNegativePrefix("(");
-//        decimalformat1.setNegativeSuffix(")");
         barrenderer.setBaseItemLabelGenerator(new StandardCategoryItemLabelGenerator("{1}", decimalformat1));
         barrenderer.setBaseItemLabelsVisible(true);
         ChartPanel waterfallChartPanel = new ChartPanel(jfreechart);
@@ -177,6 +189,11 @@ public class PerformanceMonitor {
 	private void actualFPS(double y) {
 		this.actualMS.addOrUpdate(new Millisecond(), y);
 	}
+	private void actualCPS(double y) {
+		this.actualCycleMS.addOrUpdate(new Millisecond(), y);
+	}private void actualSyncTime(double y) {
+		this.actualSyncTimeMS.addOrUpdate(new Millisecond(), y);
+	}
 
 	class DataGenerator extends Timer implements ActionListener {
 		private Renderer renderer;
@@ -189,9 +206,14 @@ public class PerformanceMonitor {
 
 		public void actionPerformed(ActionEvent event) {
 			long actualFpsMSValue = (long) renderer.getCurrentFPS();
+			long actualCpsMSValue = (long) Engine.getInstance().getUpdateThread().getFpsCounter().getFPS();
+			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(Engine.getInstance().getCpuGpuSyncTimeNs());
+			double actualSyncTimeFps = syncTimeMS == 0 ? 0 : 1000d/syncTimeMS;
 			thirtyFPS(30);
 			sixtyFPS(60);
 			actualFPS(actualFpsMSValue);
+			actualCPS(actualCpsMSValue);
+			actualSyncTime(actualSyncTimeFps);
 		}
 	}
 	

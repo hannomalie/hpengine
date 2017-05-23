@@ -141,8 +141,8 @@ public final class Config {
 	@Toggable(group = "Performance")
 	private boolean indirectDrawing = true;
 	@Toggable(group = "Performance")
-	private volatile boolean lockFps = true;
-	private volatile boolean vsync = false;
+	private volatile boolean lockFps = false;
+	private volatile boolean vsync = true;
 	@Toggable(group = "Performance")
 	private volatile boolean lockUpdaterate = true;
 

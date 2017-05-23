@@ -33,7 +33,7 @@ public class ReloadOnFileChangeListener<T extends Reloadable> extends OnFileChan
 	}
 	public static void createAndAddToMonitor(File directory, Reloadable loadable) {
 		FileAlterationObserver observer = new FileAlterationObserver(directory);
-		observer.addListener(new ReloadOnFileChangeListener<Reloadable>(loadable));
+		observer.addListener(new ReloadOnFileChangeListener<>(loadable));
 		FileMonitor.getInstance().add(observer);
 	}
 }
