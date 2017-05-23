@@ -291,7 +291,7 @@ public class Transform implements Serializable, Transformable {
 		return tempViewMatrix;
 	}
 
-	private void recalculateIfDirty() {
+	public void recalculateIfDirty() {
 		if(isDirty() || translationRotation == null || transformation == null) {
 			recalculate();
 		}

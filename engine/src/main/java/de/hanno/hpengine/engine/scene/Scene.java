@@ -270,6 +270,7 @@ public class Scene implements LifeCycle, Serializable {
 			areaLights.get(i).update(seconds);
 		}
 		List<Entity> entities = entityContainer.getEntities();
+
 		for(int i = 0; i < entities.size(); i++) {
 		    try {
                 entities.get(i).update(seconds);

@@ -13,7 +13,7 @@
 *.hpscene
 */target/*
 target/
-/hp/java/*.*
+/hp/java
 
 /.idea
 *.iml

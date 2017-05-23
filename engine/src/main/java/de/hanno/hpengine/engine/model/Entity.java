@@ -188,6 +188,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void update(float seconds) {
+		getTransform().recalculateIfDirty();
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
