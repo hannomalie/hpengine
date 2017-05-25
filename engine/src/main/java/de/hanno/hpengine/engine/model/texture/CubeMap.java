@@ -64,8 +64,7 @@ public class CubeMap extends Texture implements Serializable {
 	private void load(int cubemapFace, ByteBuffer buffer) {
         GL11.glTexImage2D(cubemapFace,
                 0, 
-                //EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 
-                EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, 
+				EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,
 				(getWidth()/4),
 				(getHeight()/3),
                 0, 

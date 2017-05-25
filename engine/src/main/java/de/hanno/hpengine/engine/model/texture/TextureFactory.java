@@ -89,7 +89,7 @@ public class TextureFactory {
         lensFlareTexture = instance.getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
         DeferredRenderer.exitOnGLError("After load lensFlareTexture");
         try {
-            cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
+            cubeMap = instance.getCubeMap("hp/assets/textures/skybox6.jpg");
             DeferredRenderer.exitOnGLError("After load cubemap");
             GraphicsContext.getInstance().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
@@ -454,7 +454,7 @@ public class TextureFactory {
     	
     	switch (index) {
 		case 0: // GL_TEXTURE_CUBE_MAP_POSITIVE_X
-			result[0] = new Vector2f(imageWidth/2, imageHeight/3);
+			result[0] = new Vector2f(imageWidth/2, imageHeight/3+2);
 			result[1] = new Vector2f(3*imageWidth/4, 2*imageHeight/3);
 			break;
 
@@ -469,8 +469,8 @@ public class TextureFactory {
 			break;
 
 		case 3: // GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
-			result[0] = new Vector2f(imageWidth/4, 2*imageHeight/3);
-			result[1] = new Vector2f(imageWidth/2, imageHeight);
+			result[0] = new Vector2f(imageWidth/2-1, imageHeight);
+			result[1] = new Vector2f(imageWidth/4, 2*imageHeight/3+1);
 			break;
 
 		case 4: // GL_TEXTURE_CUBE_MAP_POSITIVE_Z
