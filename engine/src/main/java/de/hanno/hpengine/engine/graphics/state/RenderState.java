@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -48,7 +48,7 @@ public class RenderState {
      */
     public RenderState(RenderState source) {
         init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
-        this.entitiesState.perMeshInfos.addAll(source.entitiesState.perMeshInfos);
+        this.entitiesState.renderBatches.addAll(source.entitiesState.renderBatches);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
 //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
 //        this.entitiesState.materialBuffer.putValues(source.entitiesState.materialBuffer.getValuesAsFloats());
@@ -79,13 +79,13 @@ public class RenderState {
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
-        this.entitiesState.perMeshInfos.clear();
+        this.entitiesState.renderBatches.clear();
         this.latestDrawResult.set(latestDrawResult);
         this.cycle = cycle;
     }
 
-    public List<PerMeshInfo> perEntityInfos() {
-        return entitiesState.perMeshInfos;
+    public List<RenderBatch> perEntityInfos() {
+        return entitiesState.renderBatches;
     }
 
     public VertexIndexBuffer getVertexIndexBuffer() {
@@ -137,8 +137,8 @@ public class RenderState {
         return entitiesState.materialBuffer;
     }
 
-    public void add(PerMeshInfo info) {
-        entitiesState.perMeshInfos.add(info);
+    public void add(RenderBatch batch) {
+        entitiesState.renderBatches.add(batch);
     }
 
     public long getCycle() {

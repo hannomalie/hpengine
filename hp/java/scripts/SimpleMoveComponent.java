@@ -11,11 +11,9 @@ import java.util.Random;
 
 public class SimpleMoveComponent implements LifeCycle {
     public Entity entity;
-    private float flip = 1;
-    private int counter = 0;
     private Vector3f temp = new Vector3f();
 
-    int randomCount = 16000;
+    private int randomCount = 16000;
     private IntFloatMap randoms = new IntFloatHashMap();
     private int[] counters = new int[randomCount];
     private int[] flips = new int[randomCount];

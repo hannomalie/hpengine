@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.light.*;
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
@@ -288,7 +289,7 @@ public class EnvironmentSampler extends Camera {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
-		for (PerMeshInfo e : renderState.perEntityInfos()) {
+		for (RenderBatch e : renderState.perEntityInfos()) {
 			if (!Entity.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
 				continue;
 			}
@@ -327,7 +328,7 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
-        for (PerMeshInfo entity : extract.perEntityInfos()) {
+        for (RenderBatch entity : extract.perEntityInfos()) {
 			DrawStrategy.draw(extract, entity);
         }
 		GPUProfiler.end();

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -12,10 +12,10 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 
 public interface DrawStrategy {
 
-    static int draw(RenderState renderState, PerMeshInfo perMeshInfo) {
-        return draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), perMeshInfo, perMeshInfo.getProgram(), !perMeshInfo.isVisible() || !perMeshInfo.isVisibleForCamera());
+    static int draw(RenderState renderState, RenderBatch renderBatch) {
+        return draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
     }
-    static int draw(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, PerMeshInfo perMeshInfo, Program program, boolean invisible) {
+    static int draw(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible) {
         if(invisible) {
             return 0;
         }
@@ -24,7 +24,7 @@ public interface DrawStrategy {
             return 0;
         }
         Program currentProgram = program;
-        currentProgram.setUniform("entityIndex", perMeshInfo.getEntityBufferIndex());
+        currentProgram.setUniform("entityIndex", renderBatch.getEntityBufferIndex());
         currentProgram.setUniform("indirect", false);
 
 
@@ -34,10 +34,10 @@ public interface DrawStrategy {
         }
 
         if (Config.getInstance().isDrawLines()) {
-            return vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, perMeshInfo.getIndexCount(), perMeshInfo.getInstanceCount(), perMeshInfo.getIndexOffset(), perMeshInfo.getBaseVertex());
+            return vertexBuffer.drawLinesInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
         } else {
             return vertexBuffer
-                .drawInstancedBaseVertex(indexBuffer, perMeshInfo.getIndexCount(), perMeshInfo.getInstanceCount(), perMeshInfo.getIndexOffset(), perMeshInfo.getBaseVertex());
+                .drawInstancedBaseVertex(indexBuffer, renderBatch.getIndexCount(), renderBatch.getInstanceCount(), renderBatch.getIndexOffset(), renderBatch.getBaseVertex());
         }
     }
 

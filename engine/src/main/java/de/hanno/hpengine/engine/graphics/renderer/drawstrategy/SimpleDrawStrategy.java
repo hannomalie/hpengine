@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -76,7 +76,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
     private int pipelineIndex;
 
-    private final PerMeshInfo skyBoxPerMeshInfo;
+    private final RenderBatch skyBoxRenderBatch;
 
     public SimpleDrawStrategy() throws Exception {
         super();
@@ -109,7 +109,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);
-        skyBoxPerMeshInfo = new PerMeshInfo(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndexBufferValuesArray().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset);
+        skyBoxRenderBatch = new RenderBatch(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndexBufferValuesArray().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset);
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 
@@ -201,7 +201,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             if(Config.getInstance().isIndirectDrawing()) {
                 pipeline.draw(renderState, firstpassDefaultProgram, firstPassResult);
             } else {
-                for(PerMeshInfo info : renderState.perEntityInfos()) {
+                for(RenderBatch info : renderState.perEntityInfos()) {
                     if (!info.isVisibleForCamera()) {
                         continue;
                     }
@@ -238,7 +238,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.disable(CULL_FACE);
         graphicsContext.depthMask(false);
         graphicsContext.disable(GlCap.BLEND);
-        skyBoxPerMeshInfo.getProgram().use();
+        skyBoxRenderBatch.getProgram().use();
         skyBoxEntity.setScale(1000);
         skyBoxEntity.setPosition(camera.getPosition());
         skyBoxProgram.use();
@@ -249,7 +249,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getModelMatrixAsBuffer());
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-        DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxPerMeshInfo, skyBoxProgram, false);
+        DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, skyBoxProgram, false);
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {

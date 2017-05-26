@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -354,7 +354,7 @@ public class Scene implements LifeCycle, Serializable {
 	}
 
 	private Vector3f tempDistVector = new Vector3f();
-	public void addPerMeshInfos(Camera camera, RenderState currentWriteState) {
+	public void addRenderBatches(Camera camera, RenderState currentWriteState) {
 		Vector3f cameraWorldPosition = camera.getWorldPosition();
 
 		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
@@ -376,12 +376,12 @@ public class Scene implements LifeCycle, Serializable {
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();
-				PerMeshInfo info = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new PerMeshInfo());
+				RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new RenderBatch());
 				Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				info.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
-				currentWriteState.add(info);
+				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
+				currentWriteState.add(batch);
 			}
 		}
 	}

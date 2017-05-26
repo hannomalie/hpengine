@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
@@ -78,7 +77,7 @@ public class Pipeline {
         renderState.getIndexBuffer().bind();
         offsets.clear();
         for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
-            PerMeshInfo info = renderState.perEntityInfos().get(i);
+            RenderBatch info = renderState.perEntityInfos().get(i);
             if(Config.getInstance().isUseFrustumCulling() && useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }

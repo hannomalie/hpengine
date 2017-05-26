@@ -1,10 +1,13 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.model.Entity;
 import org.lwjgl.util.vector.Vector3f;
 
-public class PerMeshInfo {
+import java.util.ArrayList;
+
+public class RenderBatch {
     private Program program;
     private boolean isVisible;
     private boolean isSelected;
@@ -19,13 +22,12 @@ public class PerMeshInfo {
     private Vector3f centerWorld;
     private Vector3f minWorldVec3;
     private Vector3f maxWorldVec3;
-    private long lastMovedInCycle;
 
-    public PerMeshInfo(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex) {
+    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex) {
         init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex);
     }
 
-    public PerMeshInfo() {
+    public RenderBatch() {
     }
 
     public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex) {
@@ -127,6 +129,10 @@ public class PerMeshInfo {
 
     public Vector3f getMaxWorldVec3() {
         return maxWorldVec3;
+    }
+
+    public static class RenderBatches extends ArrayList<RenderBatch> {
+
     }
 
 }

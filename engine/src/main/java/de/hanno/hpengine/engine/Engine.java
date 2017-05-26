@@ -212,7 +212,7 @@ public class Engine {
 
         Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
         renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
-        scene.addPerMeshInfos(this.activeCamera, renderState.getCurrentWriteState());
+        scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
 
         long waitedNS = GraphicsContext.getInstance().waitForGpuSync(renderState.getCurrentWriteState().getGpuCommandSync());
         setCpuGpuSyncTimeNs(waitedNS);

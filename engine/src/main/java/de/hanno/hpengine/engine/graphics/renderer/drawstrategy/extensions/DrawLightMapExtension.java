@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
@@ -194,7 +194,7 @@ public class DrawLightMapExtension implements RenderExtension {
                 pipeline.draw(renderState, lightMapProgram, firstPassResult);
             }
         } else {
-            for (PerMeshInfo info : renderState.perEntityInfos()) {
+            for (RenderBatch info : renderState.perEntityInfos()) {
                 GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
                 int currentVerticesCount = DrawStrategy.draw(renderState, info);
                 firstPassResult.verticesDrawn += currentVerticesCount;

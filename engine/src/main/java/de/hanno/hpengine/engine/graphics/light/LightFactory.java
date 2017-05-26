@@ -9,7 +9,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.PerMeshInfo;
+import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.OBJLoader;
@@ -373,7 +373,7 @@ public class LightFactory {
 //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
-			for (PerMeshInfo e : renderState.perEntityInfos()) {
+			for (RenderBatch e : renderState.perEntityInfos()) {
 //				TODO: Use model component index here
 //				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
 //				modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
@@ -434,7 +434,7 @@ public class LightFactory {
 //			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
-			for (PerMeshInfo e : renderState.perEntityInfos()) {
+			for (RenderBatch e : renderState.perEntityInfos()) {
                 DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
@@ -468,8 +468,8 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerMeshInfo pei = new PerMeshInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                    DrawStrategy.draw(renderState, pei);
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    DrawStrategy.draw(renderState, batch);
 				});
 			}
 
@@ -483,8 +483,8 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    PerMeshInfo pei = new PerMeshInfo(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
-                    DrawStrategy.draw(renderState, pei);
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    DrawStrategy.draw(renderState, batch);
 				});
 			}
 		}
