@@ -5,17 +5,25 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.input.Input;
 import org.lwjgl.input.Keyboard;
+import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
+import org.lwjgl.util.vector.Vector4f;
 
 public class MovableCamera extends Camera {
 
-    protected float rotationDelta = 125f;
+    protected float rotationDelta = 10f;
     protected float scaleDelta = 0.1f;
     protected float posDelta = 100f;
 
     public MovableCamera() {
         addComponent(new InputControllerComponent() {
                          private static final long serialVersionUID = 1L;
+
+                        private float absolutePitch;
+                        private float absoluteYaw;
+
+                        private float pitchAccel = 0;
+                        private float yawAccel = 0;
 
                          @Override
                          public void update(float seconds) {
@@ -25,18 +33,24 @@ public class MovableCamera extends Camera {
                                  turbo = 3f;
                              }
 
-                             float rotationAmount = 1.1f * turbo * rotationDelta * seconds * Config.getInstance().getCameraSpeed();
+                             float rotationAmount = 100.1f * turbo * rotationDelta * Config.getInstance().getCameraSpeed();
                              if (Input.isMouseClicked(0)) {
-                                 getEntity().rotate(Transform.WORLD_UP, -Input.getDX() * rotationAmount);
-//                                 getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);
-//                                 getEntity().rotate(Transform.WORLD_UP, -Input.getDX() * rotationAmount);
-//                                 getEntity().rotate(getUpDirection(), -Input.getDX() * rotationAmount);
-                             }
-                             if (Input.isMouseClicked(1)) {
-                                 getEntity().rotate(Transform.WORLD_RIGHT, Input.getDY() * rotationAmount);
-                             }
-                             if (Input.isMouseClicked(2)) {
-                                 getEntity().rotate(Transform.WORLD_VIEW, Input.getDX() * rotationAmount);
+                                 double pitchAmount = Math.toRadians((Input.getDYSmooth() * rotationAmount) % 360);
+                                 pitchAccel = (float) Math.max(2 * Math.PI, pitchAccel + pitchAmount);
+                                 absolutePitch += pitchAmount;
+                                 pitchAccel = Math.max(0, pitchAccel * 0.9f);
+
+                                 double yawAmount = Math.toRadians((Input.getDXSmooth() * rotationAmount) % 360);
+                                 yawAccel = (float) Math.max(2 * Math.PI, yawAccel + yawAmount);
+                                 absoluteYaw += -yawAmount;
+                                 yawAccel = Math.max(0, yawAccel * 0.9f);
+
+
+                                 Quaternion pitchQuat = new Quaternion();
+                                 pitchQuat.setFromAxisAngle(new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, (float) Math.toRadians(absolutePitch)));
+                                 Quaternion yawQuat = new Quaternion();
+                                 yawQuat.setFromAxisAngle(new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, (float) Math.toRadians(absoluteYaw)));
+                                 getEntity().setOrientation(Quaternion.mul(yawQuat,pitchQuat,  null).normalise(null));
                              }
 
                              float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();

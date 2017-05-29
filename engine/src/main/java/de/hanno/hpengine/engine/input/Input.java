@@ -22,6 +22,12 @@ public class Input {
     private static int dx;
     private static int dy;
 
+    private static int dxLast;
+    private static int dyLast;
+
+    private static int dxBeforeLast;
+    private static int dyBeforeLast;
+
     //All these constants come from LWJGL's Keyboard class
     public static final int KEY_NONE = 0x00;
     public static final int KEY_ESCAPE = 0x01;
@@ -239,6 +245,10 @@ public class Input {
             }
         }
 
+        dxBeforeLast = dxLast;
+        dyBeforeLast = dyLast;
+        dxLast = dx;
+        dyLast = dy;
         dx = Mouse.getDX();
         dy = Mouse.getDY();
     }
@@ -275,5 +285,13 @@ public class Input {
 
     public static int getDY() {
         return dy;
+    }
+
+    public static int getDXSmooth() {
+        return (dx + dxLast + dxBeforeLast) / 3;
+    }
+
+    public static int getDYSmooth() {
+        return (dy + dyLast + dyBeforeLast) / 3;
     }
 }
