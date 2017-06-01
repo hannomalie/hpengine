@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -23,15 +24,17 @@ public class TripleBuffer<T extends RenderState> {
     private QueueStatePair<T> currentReadState;
     private QueueStatePair<T> currentWriteState;
     private QueueStatePair<T> currentStagingState;
-    private QueueStatePair<T> temp;
+    private QueueStatePair<T> tempA;
+    private QueueStatePair<T> tempB;
 
-    public TripleBuffer(T instanceA, T instanceB, T instanceC) {
+    @SuppressWarnings("unchecked")
+    public TripleBuffer(T instanceA, T instanceB, T instanceC, Consumer<T> ... singletonAction) {
         if(instanceA == null || instanceB == null || instanceC == null) {
             throw new IllegalArgumentException("Don't pass null to constructor!");
         }
-        currentReadState = new QueueStatePair<>(instanceA);
-        currentWriteState = new QueueStatePair<>(instanceB);
-        currentStagingState = new QueueStatePair<>(instanceC);
+        currentReadState = new QueueStatePair<>(instanceA, singletonAction);
+        currentWriteState = new QueueStatePair<>(instanceB, singletonAction);
+        currentStagingState = new QueueStatePair<>(instanceC, singletonAction);
         this.instanceA = currentReadState;
         this.instanceB = currentWriteState;
         this.instanceC = currentStagingState;
@@ -43,9 +46,9 @@ public class TripleBuffer<T extends RenderState> {
         stagingLock.lock();
 
         if(!currentReadState.state.preventSwap(currentStagingState.state, currentReadState.state)) {
-            temp = currentReadState;
+            tempA = currentReadState;
             currentReadState = currentStagingState;
-            currentStagingState = temp;
+            currentStagingState = tempA;
             swapped = true;
         }
 
@@ -56,9 +59,9 @@ public class TripleBuffer<T extends RenderState> {
     protected void swapStaging() {
         stagingLock.lock();
 
-        temp = currentStagingState;
+        tempB = currentStagingState;
         currentStagingState = currentWriteState;
-        currentWriteState = temp;
+        currentWriteState = tempB;
 
         stagingLock.unlock();
     }
@@ -70,6 +73,11 @@ public class TripleBuffer<T extends RenderState> {
     }
 
     public boolean update() {
+        for(int i = 0; i < currentWriteState.singletonActions.length; i++) {
+            if(currentWriteState.singletonActionsRequested[i].compareAndSet(true, false)) {
+                currentWriteState.singletonActions[i].accept(currentWriteState.state);
+            }
+        }
         currentWriteState.queue.executeCommands();
         preparePipelines();
         swapStaging();
@@ -85,7 +93,6 @@ public class TripleBuffer<T extends RenderState> {
 
     public void startRead() {
         swapLock.lock();
-        logState();
     }
 
     public boolean stopRead() {
@@ -127,17 +134,32 @@ public class TripleBuffer<T extends RenderState> {
         }
     }
 
+    public void requestSingletonAction(int i) {
+        instanceA.singletonActionsRequested[i].getAndSet(true);
+        instanceB.singletonActionsRequested[i].getAndSet(true);
+        instanceC.singletonActionsRequested[i].getAndSet(true);
+    }
+
     private static class QueueStatePair<T> {
         private final CommandQueue queue = new CommandQueue();
         private final T state;
 
-        public QueueStatePair(T state) {
+        private final Consumer<T>[] singletonActions;
+        private final AtomicBoolean[] singletonActionsRequested;
+
+        public QueueStatePair(T state, Consumer<T>[] singletonAction) {
             this.state = state;
+            this.singletonActions = singletonAction;
+            this.singletonActionsRequested = new AtomicBoolean[singletonAction.length];
+            for(int i = 0; i < singletonAction.length; i++) {
+                this.singletonActionsRequested[i] = new AtomicBoolean(false);
+            }
         }
 
         public void addCommand(Consumer<T> command) {
             queue.addCommand(() -> command.accept(state));
         }
+
     }
 
 }

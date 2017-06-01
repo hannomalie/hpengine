@@ -105,11 +105,11 @@ public class PerformanceMonitor {
 
 	private ChartPanel addFPSChart(Renderer myRenderer) {
 		TimeSeriesCollection dataset = new TimeSeriesCollection();
+		dataset.addSeries(this.actualSyncTimeMS);
 		dataset.addSeries(this.actualMS);
 		dataset.addSeries(this.actualCycleMS);
 		dataset.addSeries(this.thirtyFPS);
 		dataset.addSeries(this.sixtyFPS);
-		dataset.addSeries(this.actualSyncTimeMS);
 		DateAxis domain = new DateAxis("Time");
 		NumberAxis range = new NumberAxis("fps");
 		domain.setTickLabelFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -205,15 +205,15 @@ public class PerformanceMonitor {
 		}
 
 		public void actionPerformed(ActionEvent event) {
-			long actualFpsMSValue = (long) renderer.getCurrentFPS();
-			long actualCpsMSValue = (long) Engine.getInstance().getUpdateThread().getFpsCounter().getFPS();
+			long actualFpsValue = (long) renderer.getCurrentFPS();
+			long actualCpsValue = (long) Engine.getInstance().getUpdateThread().getFpsCounter().getFPS();
 			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(Engine.getInstance().getCpuGpuSyncTimeNs());
 			double actualSyncTimeFps = syncTimeMS == 0 ? 0 : 1000d/syncTimeMS;
 			thirtyFPS(30);
 			sixtyFPS(60);
-			actualFPS(actualFpsMSValue);
-			actualCPS(actualCpsMSValue);
-			actualSyncTime(actualSyncTimeFps);
+			actualFPS(actualFpsValue);
+			actualCPS(actualCpsValue);
+			actualSyncTime(actualSyncTimeFps - actualCpsValue);
 		}
 	}
 	

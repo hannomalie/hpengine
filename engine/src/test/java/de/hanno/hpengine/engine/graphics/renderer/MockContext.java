@@ -45,6 +45,11 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
+    public boolean isSignaled(GLSync gpuCommandSync) {
+        return false;
+    }
+
+    @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {
 
     }

@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.Engine;
 
 public class UpdateThread extends FpsCountedTimeStepThread {
 
-    private static final float MINIMUM_UPDATE_SECONDS = 0.001f;
+    private static final float MINIMUM_UPDATE_SECONDS = 0.0005f;
 
     public UpdateThread(String name, float minCycleTimeInS) {
         super(name, minCycleTimeInS);

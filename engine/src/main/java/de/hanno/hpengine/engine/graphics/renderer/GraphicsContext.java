@@ -35,6 +35,8 @@ public interface GraphicsContext {
 
     long waitForGpuSync(GLSync gpuCommandSync);
 
+    boolean isSignaled(GLSync gpuCommandSync);
+
     void createNewGPUFenceForReadState(RenderState currentReadState);
 
     class GPUContextHelper {

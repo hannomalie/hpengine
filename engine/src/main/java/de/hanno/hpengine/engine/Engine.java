@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -35,6 +36,7 @@ import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
+import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -44,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
@@ -173,7 +176,9 @@ public class Engine {
         physicsFactory = new PhysicsFactory();
         ScriptManager.getInstance().defineGlobals();
 
-        renderState = new TripleBuffer<>(new RenderState(), new RenderState(), new RenderState());
+        renderState = new TripleBuffer<>(new RenderState(), new RenderState(), new RenderState(), (renderState) -> {
+            renderState.bufferEntites(Engine.getInstance().getScene().getEntities());
+        });
         Renderer.getInstance().registerPipelines(renderState);
         camera.init();
         camera.setPosition(new Vector3f(0, 20, 0));
@@ -198,6 +203,7 @@ public class Engine {
         scene.setCurrentCycle(drawCycle.get());
         scene.update(seconds);
         updateRenderState();
+        drawCycle.getAndIncrement();
         if(!Config.getInstance().isMultithreadedRendering()) {
             actuallyDraw();
         }
@@ -205,18 +211,15 @@ public class Engine {
 
     private void updateRenderState() {
         if (scene.entityMovedInCycle() == drawCycle.get()) {
-            renderState.addCommand((renderStateX1) -> {
-                renderStateX1.bufferEntites(scene.getEntities());
-            });
+            renderState.requestSingletonAction(0);
         }
 
-        Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
-        renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
-        scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
-
-        long waitedNS = GraphicsContext.getInstance().waitForGpuSync(renderState.getCurrentWriteState().getGpuCommandSync());
-        setCpuGpuSyncTimeNs(waitedNS);
-        renderState.update();
+        if(GraphicsContext.getInstance().isSignaled(renderState.getCurrentWriteState().getGpuCommandSync())) {
+            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
+            renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
+            scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
+            renderState.update();
+        }
     }
 
     private Callable drawCallable = new Callable() {
@@ -226,22 +229,20 @@ public class Engine {
             renderState.startRead();
 
             if(lastTimeSwapped) {
-                drawCycle.getAndIncrement();
                 Input.update();
                 Renderer.getInstance().startFrame();
                 recorder.add(renderState.getCurrentReadState());
                 DrawResult latestDrawResult = renderState.getCurrentReadState().latestDrawResult;
                 latestDrawResult.reset();
                 Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
+                GraphicsContext.getInstance().createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
                 latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
                 Renderer.getInstance().endFrame();
+                scene.setInitiallyDrawn(true);
 
                 Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
-
-                GraphicsContext.getInstance().createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
             }
             lastTimeSwapped = renderState.stopRead();
-            scene.setInitiallyDrawn(true);
             return null;
         }
     };

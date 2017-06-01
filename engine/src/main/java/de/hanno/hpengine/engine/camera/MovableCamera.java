@@ -33,7 +33,7 @@ public class MovableCamera extends Camera {
                                  turbo = 3f;
                              }
 
-                             float rotationAmount = 100.1f * turbo * rotationDelta * Config.getInstance().getCameraSpeed();
+                             float rotationAmount = 100.1f * turbo * seconds * rotationDelta * Config.getInstance().getCameraSpeed();
                              if (Input.isMouseClicked(0)) {
                                  double pitchAmount = Math.toRadians((Input.getDYSmooth() * rotationAmount) % 360);
                                  pitchAccel = (float) Math.max(2 * Math.PI, pitchAccel + pitchAmount);

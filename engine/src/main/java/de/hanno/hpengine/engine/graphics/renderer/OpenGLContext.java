@@ -75,15 +75,24 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public long waitForGpuSync(GLSync gpuCommandSync) {
         long start = System.nanoTime();
-        if(gpuCommandSync != null) {
-            while(true) {
-                int signaled = GraphicsContext.getInstance().calculate(() -> glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0));
-                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
-                    break;
-                }
-            }
+        while(true) {
+            if (isSignaled(gpuCommandSync)) break;
         }
         return System.nanoTime() - start;
+    }
+
+    @Override
+    public boolean isSignaled(GLSync gpuCommandSync) {
+        return GraphicsContext.getInstance().calculate(() -> {
+            if(gpuCommandSync != null) {
+                int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+                if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        });
     }
 
     @Override
