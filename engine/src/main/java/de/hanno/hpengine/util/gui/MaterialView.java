@@ -25,7 +25,7 @@ import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.gui.input.*;
 import org.apache.commons.io.FileUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.awt.*;
 import java.io.File;

@@ -31,7 +31,7 @@ import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.gui.input.LimitedWebFormattedTextField;
 import de.hanno.hpengine.util.gui.input.TransformablePanel;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.swing.*;
 import java.awt.*;

@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import de.hanno.hpengine.engine.scene.AABB;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 public class Frustum implements Serializable {
     private static final long serialVersionUID = 1;
@@ -62,12 +62,12 @@ public class Frustum implements Serializable {
 
     public void calculate(Camera camera) {
         buf.rewind();
-        camera.getProjectionMatrix().store(buf);
+        camera.getProjectionMatrix().get(buf);
 		buf.rewind();
 		buf.get(proj);
 
 		buf.rewind();
-		camera.getViewMatrix().store(buf);
+		camera.getViewMatrix().get(buf);
 		buf.rewind();
 		buf.get(modl);
 

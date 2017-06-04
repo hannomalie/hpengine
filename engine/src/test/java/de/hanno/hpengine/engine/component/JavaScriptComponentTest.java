@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.test.TestWithEngine;
+import de.hanno.hpengine.TestWithEngine;
 import junit.framework.Assert;
 import org.junit.Test;
 

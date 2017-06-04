@@ -3,7 +3,7 @@ package de.hanno.hpengine.util.gui;
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector4f;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;

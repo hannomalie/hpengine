@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.util.fps.FPSCounter;
@@ -45,9 +45,9 @@ public interface Renderer extends LifeCycle {
         batchVector(vector, 0.1f);
     }
     default void batchVector(Vector3f vector, float charWidth) {
-        batchString(String.format("%.2f", vector.getX()), charWidth, charWidth*0.2f, 0, 2f*charWidth);
-        batchString(String.format("%.2f", vector.getY()), charWidth, charWidth*0.2f, 0, charWidth);
-        batchString(String.format("%.2f", vector.getZ()), charWidth, charWidth*0.2f, 0, 0.f);
+        batchString(String.format("%.2f", vector.x()), charWidth, charWidth*0.2f, 0, 2f*charWidth);
+        batchString(String.format("%.2f", vector.y()), charWidth, charWidth*0.2f, 0, charWidth);
+        batchString(String.format("%.2f", vector.z()), charWidth, charWidth*0.2f, 0, 0.f);
     }
     default void batchString(String text) {
         batchString(text, 0.1f);

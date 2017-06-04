@@ -25,9 +25,9 @@ import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
@@ -360,9 +360,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     Vector4f maxExtents = new Vector4f();
     public float getSceneScale(RenderState renderState) {
-        maxExtents.setX(Math.max(Math.abs(renderState.sceneMin.x), Math.abs(renderState.sceneMax.x)));
-        maxExtents.setY(Math.max(Math.abs(renderState.sceneMin.y), Math.abs(renderState.sceneMax.y)));
-        maxExtents.setZ(Math.max(Math.abs(renderState.sceneMin.z), Math.abs(renderState.sceneMax.z)));
+        maxExtents.x = (Math.max(Math.abs(renderState.sceneMin.x), Math.abs(renderState.sceneMax.x)));
+        maxExtents.y = (Math.max(Math.abs(renderState.sceneMin.y), Math.abs(renderState.sceneMax.y)));
+        maxExtents.z = (Math.max(Math.abs(renderState.sceneMin.z), Math.abs(renderState.sceneMax.z)));
         float max = Math.max(Math.max(maxExtents.x, maxExtents.y), maxExtents.z);
         float sceneScale = max / (float) gridSizeHalf;
         sceneScale = Math.max(sceneScale, 2.0f);
@@ -389,27 +389,27 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private void initViewZBuffer() {
         viewZTransform = new Transform();
         viewZTransform.rotate(new Vector3f(0,1,0), 180f);
-        viewZ = Matrix4f.mul(ortho, viewZTransform.getViewMatrix(), null);
+        viewZ = new Matrix4f(ortho).mul(viewZTransform.getViewMatrix());
         viewZBuffer.rewind();
-        viewZ.store(viewZBuffer);
+        viewZ.get(viewZBuffer);
         viewZBuffer.rewind();
     }
 
     private void initViewYBuffer() {
         viewYTransform = new Transform();
         viewYTransform.rotate(new Vector3f(1, 0, 0), 90f);
-        viewY = Matrix4f.mul(ortho, viewYTransform.getViewMatrix(), null);
+        viewY = new Matrix4f(ortho).mul(viewYTransform.getViewMatrix());
         viewYBuffer.rewind();
-        viewY.store(viewYBuffer);
+        viewY.get(viewYBuffer);
         viewYBuffer.rewind();
     }
 
     private void initViewXBuffer() {
         viewXTransform = new Transform();
         viewXTransform.rotate(new Vector3f(0,1,0), 90f);
-        viewX = Matrix4f.mul(ortho, viewXTransform.getViewMatrix(), null);
+        viewX = new Matrix4f(ortho).mul(viewXTransform.getViewMatrix());
         viewXBuffer.rewind();
-        viewX.store(viewXBuffer);
+        viewX.get(viewXBuffer);
         viewXBuffer.rewind();
     }
 

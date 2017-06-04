@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util.gui.input;
 
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import com.alee.extended.panel.GroupPanel;
 import com.alee.laf.label.WebLabel;

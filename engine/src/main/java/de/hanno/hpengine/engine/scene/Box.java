@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 import de.hanno.hpengine.engine.camera.Camera;
 
 import de.hanno.hpengine.engine.Transform;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Box {
 	private static Logger LOGGER = getLogger();
@@ -49,16 +49,16 @@ public class Box {
 		float halfZ = sizeZ/2;
 		Vector3f center = transform.getPosition();
 
-		Vector3f rightDist = (Vector3f) transform.getRightDirection().scale(halfX);
-		Vector3f upDist = (Vector3f) transform.getUpDirection().scale(halfY);
-		Vector3f viewDist = (Vector3f) transform.getViewDirection().scale(-halfZ);
+		Vector3f rightDist = transform.getRightDirection().mul(halfX);
+		Vector3f upDist = transform.getUpDirection().mul(halfY);
+		Vector3f viewDist = transform.getViewDirection().mul(-halfZ);
 
-		this.bottomLeftBackCorner = Vector3f.sub(center, rightDist, null);
-		this.bottomLeftBackCorner = Vector3f.sub(bottomLeftBackCorner, upDist, null);
-		this.bottomLeftBackCorner = Vector3f.sub(bottomLeftBackCorner, viewDist, null);
-		this.topRightForeCorner = Vector3f.add(center, rightDist, null);
-		this.topRightForeCorner = Vector3f.add(topRightForeCorner, upDist, null);
-		this.topRightForeCorner = Vector3f.add(topRightForeCorner, viewDist, null);
+		this.bottomLeftBackCorner = new Vector3f(center).sub(rightDist);
+		this.bottomLeftBackCorner = new Vector3f(bottomLeftBackCorner).sub(upDist);
+		this.bottomLeftBackCorner = new Vector3f(bottomLeftBackCorner).sub(viewDist);
+		this.topRightForeCorner = new Vector3f(center).add(rightDist);
+		this.topRightForeCorner = new Vector3f(topRightForeCorner).add(upDist);
+		this.topRightForeCorner = new Vector3f(topRightForeCorner).add(viewDist);
 	}
 	
 	public List<Vector3f> getPoints() {
@@ -161,8 +161,8 @@ public class Box {
 
 	public boolean isInFrustum(Camera camera) {
 		Vector3f centerWorld = new Vector3f();
-		Vector3f.add(topRightForeCorner, bottomLeftBackCorner, centerWorld);
-		centerWorld.scale(0.5f);
+		new Vector3f(topRightForeCorner).add(bottomLeftBackCorner, centerWorld);
+		centerWorld.mul(0.5f);
 		
 		//if (de.hanno.hpengine.camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
 		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, Math.max(sizeX, Math.max(sizeY, sizeZ))/2f)) {
@@ -190,7 +190,7 @@ public class Box {
 	private float smallestDistance(List<Vector3f> points, Vector3f pivot) {
 		float length = Float.MAX_VALUE;
 		for (Vector3f point : points) {
-			float tempLength = Vector3f.sub(point, pivot, null).length();
+			float tempLength = point.distance(pivot);
 			length = tempLength <= length? tempLength : length;
 		}
 		
@@ -199,7 +199,7 @@ public class Box {
 	private float largestDistance(List<Vector3f> points, Vector3f pivot) {
 		float length = Float.MAX_VALUE;
 		for (Vector3f point : points) {
-			float tempLength = Vector3f.sub(point, pivot, null).length();
+			float tempLength = point.distance(pivot);
 			length = tempLength >= length? tempLength : length;
 		}
 		

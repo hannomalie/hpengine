@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.material;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.Serializable;

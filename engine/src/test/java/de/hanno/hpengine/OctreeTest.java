@@ -7,8 +7,8 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import junit.framework.Assert;
 import org.junit.Test;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import de.hanno.hpengine.engine.scene.AABB;
 
 import java.util.ArrayList;
@@ -126,8 +126,7 @@ public class OctreeTest extends TestWithEngine {
 				centerWorld.z = (maxWorld.z + minWorld.z)/2;
 				
 				Vector3f distVector = new Vector3f();
-				Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-								new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+				new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z).sub(new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
 				if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
 					return true;
@@ -167,8 +166,7 @@ public class OctreeTest extends TestWithEngine {
 				centerWorld.z = (maxWorld.z + minWorld.z)/2;
 				
 				Vector3f distVector = new Vector3f();
-				Vector3f.sub(new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z),
-								new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
+				new Vector3f(maxWorld.x, maxWorld.y, maxWorld.z).sub(new Vector3f(minWorld.x, minWorld.y, minWorld.z), distVector);
 
 				if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, distVector.length()/2)) {
 					return true;

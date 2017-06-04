@@ -8,9 +8,9 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.Util;
 
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 
 public class TubeLight extends Entity {
@@ -63,13 +63,13 @@ public class TubeLight extends Entity {
 	}
 
 	Matrix4f tempOrientationMatrix = new Matrix4f();
-    private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
-		Matrix4f temp = new Matrix4f();
-		Matrix4f.translate(getPosition(), temp, temp);
-		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
-		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
-		return temp;
-	}
+//    private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
+//		Matrix4f temp = new Matrix4f();
+//		Matrix4f.translate(getPosition(), temp, temp);
+//		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
+//		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
+//		return temp;
+//	}
 	
 	public float getRadius() {
 		return getTransform().getScale().y/2;
@@ -111,16 +111,16 @@ public class TubeLight extends Entity {
 		return (getLength()/2) - getRadius();
 	}
 	public Vector3f getStart() {
-		return Vector3f.sub(getPosition(), (Vector3f) getRightDirection().scale(getOffset()), null);
+		return new Vector3f(getPosition()).sub(new Vector3f(getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getEnd() {
-		return Vector3f.add(getPosition(), (Vector3f) getRightDirection().scale(getOffset()), null);
+		return new Vector3f(getPosition()).add( new Vector3f(getRightDirection()).mul(getOffset()));
 	}
 	public Vector3f getOuterLeft() {
-		return Vector3f.sub(getPosition(), (Vector3f) getRightDirection().scale((getLength()/2)), null);
+		return new Vector3f(getPosition()).sub(new Vector3f(getRightDirection()).mul((getLength()/2)));
 	}
 	public Vector3f getOuterRight() {
-		return Vector3f.add(getPosition(), (Vector3f) getRightDirection().scale((getLength()/2)), null);
+		return new Vector3f(getPosition()).add(new Vector3f(getRightDirection()).mul((getLength()/2)));
 	}
 
 	public float getLength() {

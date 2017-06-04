@@ -14,7 +14,7 @@ import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.scene.Scene;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.util.ArrayList;

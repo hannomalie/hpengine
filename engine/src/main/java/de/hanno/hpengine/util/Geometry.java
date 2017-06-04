@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util;
 
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
 

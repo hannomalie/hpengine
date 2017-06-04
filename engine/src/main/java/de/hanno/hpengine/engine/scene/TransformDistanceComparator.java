@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.scene;
 import java.util.Comparator;
 
 import de.hanno.hpengine.engine.model.Transformable;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 public class TransformDistanceComparator<T extends Transformable> implements Comparator<T>{
 
@@ -19,9 +19,9 @@ public class TransformDistanceComparator<T extends Transformable> implements Com
 			return 0;
 		}
 
-		Vector3f distanceToFirst = Vector3f.sub(reference.getPosition(), o1.getPosition(), null);
-		Vector3f distanceToSecond = Vector3f.sub(reference.getPosition(), o2.getPosition(), null);
-		return Float.compare(distanceToFirst.lengthSquared(), distanceToSecond.lengthSquared());
+		float distanceToFirst = reference.getPosition().distanceSquared(o1.getPosition());
+		float distanceToSecond = reference.getPosition().distanceSquared(o2.getPosition());
+		return Float.compare(distanceToFirst, distanceToSecond);
 	}
 
 

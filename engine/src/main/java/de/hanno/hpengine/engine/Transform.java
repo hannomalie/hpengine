@@ -3,10 +3,10 @@ package de.hanno.hpengine.engine;
 import de.hanno.hpengine.engine.model.Transformable;
 import org.lwjgl.BufferUtils;
 import de.hanno.hpengine.util.Util;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -35,7 +35,7 @@ public class Transform implements Serializable, Transformable {
 	private List<Transform> children = new ArrayList<>();
 	private Vector3f position = new Vector3f();
 	private Vector3f scale = new Vector3f(1,1,1);
-	private Quaternion orientation = new Quaternion();
+	private Quaternionf orientation = new Quaternionf();
 
 	transient private boolean isDirty = true;
 	transient private boolean hasMoved = true;
@@ -49,7 +49,7 @@ public class Transform implements Serializable, Transformable {
 	private transient Vector3f tempVec3;
 
     public Transform() {
-		orientation.setIdentity();
+		orientation.identity();
 		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		modelMatrixBuffer.rewind();
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
@@ -60,7 +60,7 @@ public class Transform implements Serializable, Transformable {
     public Transform init(Transform other) {
         this.setPosition(other.getPosition());
         this.setOrientation(other.getOrientation());
-        this.setScale(other.getScale());
+        this.setScale(other.getmul());
         if(other.getParent() != null) {
 			this.setParent(other.getParent());
 		}
@@ -106,8 +106,8 @@ public class Transform implements Serializable, Transformable {
 		tempV3_0.z = in.z;
 		return tempV3_0;
 	}
-	Quaternion tempQuat = new Quaternion();
-	private Quaternion setAndReturnCopy(Quaternion in) {
+	Quaternionf tempQuat = new Quaternionf();
+	private Quaternionf setAndReturnCopy(Quaternionf in) {
 //		tempQuat.set(in.x, in.y, in.z, in.w);
 //		return tempQuat;
 		return tempQuat.set(in);
@@ -132,7 +132,7 @@ public class Transform implements Serializable, Transformable {
 	}
 	public Vector3f getWorldPosition() {
 		if(parent != null) {
-			Vector4f temp = Matrix4f.transform(parent.getTransformation(), new Vector4f(position.x, position.y, position.z, 1), null);
+			Vector4f temp = new Vector4f(position.x, position.y, position.z, 1).mul(new Matrix4f(parent.getTransformation()));
 			return setAndReturnCopyAsVec3(temp);
 		}
 		return getPosition();
@@ -142,58 +142,63 @@ public class Transform implements Serializable, Transformable {
 		this.position.set(position);
 		setDirty(true);
 	}
-	public Vector3f getScale() {
+	public Vector3f getmul() {
 		return setAndReturnCopy(scale);
 	}
-	public Vector3f getWorldScale() {
+	public Vector3f getWorldmul() {
 		if(parent != null) {
-			return Vector3f.cross(parent.getWorldScale(), scale, null);
+			return new Vector3f(parent.getWorldmul()).mul(scale);
 		}
-		return getScale();
+		return getmul();
 	}
-	public void setScale(Vector3f scale) {
-        if(this.scale.equals(scale)) { return; }
-		this.scale.set(scale);
+	public void setScale(Vector3f mul) {
+        if(this.scale.equals(mul)) { return; }
+		this.scale.set(mul);
 		setDirty(true);
 	}
-	public void setScale(float scale) {
-		setScale(new Vector3f(scale, scale, scale));
+	public void setScale(float mul) {
+		setScale(new Vector3f(mul, mul, mul));
 	}
-	public Quaternion getOrientation() {
+	public Vector3f getScale() {
+		return scale;
+	}
+
+	public Quaternionf getOrientation() {
 		return setAndReturnCopy(orientation);
 	}
-	public Quaternion getWorldOrientation() {
+	public Quaternionf getWorldOrientation() {
 		if(parent != null) {
-            Quaternion result = Quaternion.mul(parent.getWorldOrientation(), orientation, null);
+            Quaternionf result = new Quaternionf((parent.getWorldOrientation()).mul(orientation));
             return result;
 		}
 		return getOrientation();
 	}
-	public void setOrientation(Quaternion orientation) {
+	public void setOrientation(Quaternionf orientation) {
         if(Util.equals(this.orientation, orientation)) { return; }
 		setDirty(true);
 		this.orientation.set(orientation);
 	}
+
 	private final Vector3f temp_viewVec = new Vector3f();
 	private final Vector4f temp_viewVec4 = new Vector4f();
 	public Vector3f getViewDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), VIEW_V4, temp_viewVec4);
+		Vector4f temp = new Matrix4f(getTransformation()).transform(VIEW_V4, temp_viewVec4);
 		temp_viewVec.set(temp.x, temp.y, temp.z);
-		return (Vector3f) temp_viewVec.normalise();
+		return temp_viewVec.normalize();
 	}
 	private final Vector3f temp_rightVec = new Vector3f();
 	private final Vector4f temp_rightVec4 = new Vector4f();
 	public Vector3f getRightDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), RIGHT_V4, temp_rightVec4);
+		Vector4f temp = RIGHT_V4.mul(getTransformation(), temp_rightVec4);
 		temp_rightVec.set(temp.x, temp.y, temp.z);
-		return (Vector3f) temp_rightVec.normalise();
+		return temp_rightVec.normalize();
 	}
 	private final Vector3f temp_upVec = new Vector3f();
 	private final Vector4f temp_upVec4 = new Vector4f();
 	public Vector3f getUpDirection() {
-		Vector4f temp = Matrix4f.transform(getTransformation(), UP_V4, temp_upVec4);
+		Vector4f temp = UP_V4.mul(getTransformation(), temp_upVec4);
 		temp_upVec.set(temp.x, temp.y, temp.z);
-		return (Vector3f) temp_upVec.normalise();
+		return temp_upVec.normalize();
 	}
 	public void rotate(Vector3f axis, float angleInDegrees) {
 		rotate(new Vector4f(axis.x, axis.y, axis.z, angleInDegrees));
@@ -209,20 +214,21 @@ public class Transform implements Serializable, Transformable {
 	}
 	public void rotateWorld(Vector3f axis, float angleInDegrees) {
 		axis = localDirectionToWorld(axis);
-		Quaternion temp = new Quaternion();
-		temp.setFromAxisAngle(new Vector4f(axis.x, axis.y, axis.z, (float) Math.toRadians(angleInDegrees)));
-		setOrientation(Quaternion.mul(getOrientation(), temp, null));
+		Quaternionf temp = new Quaternionf();
+		temp.fromAxisAngleRad(axis.x, axis.y, axis.z, (float) Math.toRadians(angleInDegrees));
+		setOrientation(new Quaternionf(getOrientation()).mul(temp));
 		setDirty(true);
 	}
 	public void move(Vector3f amount) {
-		Vector3f combined = (Vector3f) getRightDirection().scale(amount.x);
-		Vector3f.add(combined, (Vector3f) getUpDirection().scale(amount.y), combined);
-		Vector3f.add(combined, (Vector3f) getViewDirection().scale(-amount.z), combined);
+		Vector3f combined = new Vector3f();
+		getRightDirection().mul(amount.x, combined);
+		combined.add(new Vector3f(getUpDirection()).mul(amount.y), combined);
+		combined.add(new Vector3f(getViewDirection()).mul(-amount.z), combined);
 		moveInWorld(combined);
 	}
 	private final Vector3f temp_moveInWorld = new Vector3f();
 	public void moveInWorld(Vector3f amount) {
-		setPosition(Vector3f.add(getPosition(), amount, temp_moveInWorld));
+		setPosition(new Vector3f(getPosition()).add(amount, temp_moveInWorld));
 		setDirty(true);
 	}
 
@@ -232,17 +238,15 @@ public class Transform implements Serializable, Transformable {
 
 	private Matrix4f tempOrientationLocalToWorldMatrix = new Matrix4f();
 	public Vector3f localDirectionToWorld(Vector3f localAxis) {
-		Vector4f temp = Matrix4f.transform((Matrix4f)Util.toMatrix(getOrientation(), tempOrientationLocalToWorldMatrix).invert(), new Vector4f(localAxis.x,localAxis.y,localAxis.z, 0), null);
-		return new Vector3f(temp.x, temp.y, temp.z);
+		return new Vector3f(localAxis).rotate(getOrientation()).negate();
 	}
 	private Matrix4f tempOrientationWorldToLocalMatrix = new Matrix4f();
 	public Vector3f worldDirectionToLocal(Vector3f worldAxis) {
-		Vector4f temp = Matrix4f.transform(Util.toMatrix(getOrientation(), tempOrientationWorldToLocalMatrix), new Vector4f(worldAxis.x,worldAxis.y,worldAxis.z, 0), null);
-		return new Vector3f(temp.x, temp.y, temp.z);
+		return new Vector3f(worldAxis).rotate(getOrientation());
 	}
 	
 	public Vector3f localToWorld(Vector4f homogenVector) {
-		Vector4f temp = Matrix4f.transform((Matrix4f) getTranslationRotation().invert(), homogenVector, null);
+		Vector4f temp = new Vector4f(homogenVector).mul(getTranslationRotation().invert());
 		return new Vector3f(temp.x, temp.y, temp.z);
 	}
 
@@ -259,13 +263,13 @@ public class Transform implements Serializable, Transformable {
 	private final Matrix4f tempTransformationMatrix = new Matrix4f();
 	private final Matrix4f tempOrientationMatrix = new Matrix4f();
 	private final Matrix4f calculateTransformation() {
-		tempTransformationMatrix.setIdentity();
-		Matrix4f.translate(position, tempTransformationMatrix, tempTransformationMatrix);
-		Matrix4f.mul(tempTransformationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTransformationMatrix);
-		tempTransformationMatrix.scale(scale);
+		tempTransformationMatrix.identity();
+        tempTransformationMatrix.setTranslation(position);
+		tempTransformationMatrix.rotate(orientation);
+		tempTransformationMatrix.scale(getScale());
 		if(parent != null) {
 			parentMatrix = parent.getTransformation();
-			Matrix4f.mul(parentMatrix, tempTransformationMatrix, tempTransformationMatrix);
+            tempTransformationMatrix.mul(parentMatrix);
 		}
 
 		return tempTransformationMatrix;
@@ -273,13 +277,13 @@ public class Transform implements Serializable, Transformable {
 
 	private final Matrix4f tempTranslationRotationMatrix = new Matrix4f();
 	private final Matrix4f calculateTranslationRotation() {
-		tempTranslationRotationMatrix.setIdentity();
-		Matrix4f.translate(position, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
-		Matrix4f.mul(tempTranslationRotationMatrix, Util.toMatrix(orientation, tempOrientationMatrix), tempTranslationRotationMatrix); // TODO: SWITCH THESE LINES....
+		tempTranslationRotationMatrix.identity();
+        tempTranslationRotationMatrix.setTranslation(position);
+		tempTranslationRotationMatrix.rotate(orientation);
 
 		if(parent != null) {
 			parentMatrix = parent.getTranslationRotation();
-			Matrix4f.mul(parentMatrix, tempTranslationRotationMatrix, tempTranslationRotationMatrix);
+            tempTranslationRotationMatrix.mul(parentMatrix);
 		}
 
 		return tempTranslationRotationMatrix;
@@ -287,7 +291,7 @@ public class Transform implements Serializable, Transformable {
 
 	private Matrix4f tempViewMatrix = new Matrix4f();
 	private Matrix4f calculateViewMatrix() {
-		tempViewMatrix.load(translationRotation).invert();
+		tempViewMatrix.set(translationRotation).invert();
 		return tempViewMatrix;
 	}
 
@@ -340,14 +344,14 @@ public class Transform implements Serializable, Transformable {
 	private boolean equals(Vector3f a, Vector3f b) {
 		return a.x == b.x && a.y == b.y && a.z == b.z;
 	}
-	private boolean equals(Quaternion a, Quaternion b) {
+	private boolean equals(Quaternionf a, Quaternionf b) {
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
 	Matrix4f tempView = new Matrix4f();
 	public Matrix4f getViewMatrix() {
 		recalculateIfDirty();
-		tempView.load(viewMatrix);
+		tempView.set(viewMatrix);
 		return tempView;
 	}
 
@@ -357,20 +361,20 @@ public class Transform implements Serializable, Transformable {
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		viewMatrixBuffer.rewind();
 		tempVec3 = new Vector3f();
-		tempQuat = new Quaternion();
+		tempQuat = new Quaternionf();
 		recalculate();
 	}
 
 	protected void bufferMatrixes() {
 		synchronized(modelMatrixBuffer) {
 			modelMatrixBuffer.rewind();
-			transformation.store(modelMatrixBuffer);
+			transformation.get(modelMatrixBuffer);
 			modelMatrixBuffer.rewind();
 		}
 
 		synchronized(viewMatrixBuffer) {
 			viewMatrixBuffer.rewind();
-			viewMatrix.store(viewMatrixBuffer);
+			viewMatrix.get(viewMatrixBuffer);
 			viewMatrixBuffer.rewind();
 		}
 	}
@@ -395,6 +399,6 @@ public class Transform implements Serializable, Transformable {
 	}
 
 	public void setOrientationFromAxisAngle(Vector4f orientationFromAxisAngle) {
-		orientation.setFromAxisAngle(orientationFromAxisAngle);
+		orientation.fromAxisAngleRad(orientationFromAxisAngle.x, orientationFromAxisAngle.y, orientationFromAxisAngle.z, orientationFromAxisAngle.w);
 	}
 }

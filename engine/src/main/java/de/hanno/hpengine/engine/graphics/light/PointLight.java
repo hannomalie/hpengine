@@ -11,9 +11,9 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.Util;
 
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 
 public class PointLight extends Entity implements Serializable, Bufferable
@@ -68,13 +68,13 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	}
 
 	private Matrix4f tempOrientationMatrix = new Matrix4f();
-	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
-		Matrix4f temp = new Matrix4f();
-		Matrix4f.translate(getPosition(), temp, temp);
-		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
-		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
-		return temp;
-	}
+//	private Matrix4f calculateCurrentModelMatrixWithLowerScale() {
+//		Matrix4f temp = new Matrix4f();
+//		Matrix4f.translate(getPosition(), temp, temp);
+//		Matrix4f.mul(Util.toMatrix(getOrientation(), tempOrientationMatrix), temp, temp);
+//		Matrix4f.scale(new Vector3f(0.2f, 0.2f, 0.2f), temp, temp);
+//		return temp;
+//	}
 	
 	public float getRadius() {
 		return getTransform().getScale().x;

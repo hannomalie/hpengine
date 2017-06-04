@@ -4,10 +4,10 @@ import de.hanno.hpengine.engine.Transform;
 import junit.framework.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.util.Random;
 
@@ -16,10 +16,10 @@ public class TransformTest {
 	public void initTest() {
 		Transform transform = new Transform();
 		Assert.assertEquals(new Vector3f(), transform.getPosition());
-		Assert.assertTrue(quaternionEqualsHelper(new Quaternion(), transform.getOrientation()));
+		Assert.assertTrue(quaternionEqualsHelper(new Quaternionf(), transform.getOrientation()));
 		Assert.assertEquals(new Vector3f(1,1,1), transform.getScale());
 
-		quaternionEqualsHelper(new Quaternion().setIdentity(), new Quaternion());
+		quaternionEqualsHelper(new Quaternionf().identity(), new Quaternionf());
 	}
 
 	@Test
@@ -59,7 +59,7 @@ public class TransformTest {
 		transformB.setOrientation(transformA.getOrientation());
 
 		transformA.move(new Vector3f(34,0,0));
-		transformB.moveInWorld((Vector3f) transformB.getRightDirection().scale(34));
+		transformB.moveInWorld(transformB.getRightDirection().mul(34));
 
 		assertEpsilonEqual(transformA.getPosition(), transformB.getPosition(), 0.01f);
 		assertEpsilonEqual(transformA.getOrientation(), transformB.getOrientation(), 0.01f);
@@ -196,7 +196,7 @@ public class TransformTest {
 		Transform camera = new Transform();
 		camera.moveInWorld(new Vector3f(0, 5, 0));
 
-		Vector4f vectorInViewSpace = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(0, 5, 0, 1), null);
+		Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.getViewMatrix());
 		assertEpsilonEqual(new Vector4f(0,0,0,1), vectorInViewSpace);
 	}
 	@Test
@@ -205,7 +205,7 @@ public class TransformTest {
 		camera.rotateWorld(new Vector4f(0, 1, 0, 90));
 		assertEpsilonEqual(new Vector3f(1, 0, 0), camera.getViewDirection());
 
-		Vector4f vectorInViewSpace = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(5, 0, 0, 1), null);
+		Vector4f vectorInViewSpace = new Vector4f(5, 0, 0, 1).mul(camera.getViewMatrix());
 		assertEpsilonEqual(new Vector4f(0,0,5,1), vectorInViewSpace);
 	}
 
@@ -229,7 +229,7 @@ public class TransformTest {
 		camera.moveInWorld(new Vector3f(-10, 0, 0));
 		assertEpsilonEqual(new Vector3f(-10, 5, 0), camera.getWorldPosition());
 
-		Vector4f vectorInViewSpace = Matrix4f.transform(camera.getViewMatrix(), new Vector4f(0, 5, 0, 1), null);
+		Vector4f vectorInViewSpace = new Vector4f(0, 5, 0, 1).mul(camera.getViewMatrix());
 	}
 
 
@@ -251,13 +251,13 @@ public class TransformTest {
 		Assert.assertEquals("w de.hanno.hpengine.component, expected: " + expected + ", actual: " + actual, expected.w, actual.w, delta);
 	}
 
-	private void assertEpsilonEqual(Quaternion expected, Quaternion actual, float delta) {
+	private void assertEpsilonEqual(Quaternionf expected, Quaternionf actual, float delta) {
 		Assert.assertEquals("x de.hanno.hpengine.component, expected: " + expected + ", actual: " + actual, actual.x, actual.x, delta);
 		Assert.assertEquals("y de.hanno.hpengine.component, expected: " + expected + ", actual: " + actual, actual.y, actual.y, delta);
 		Assert.assertEquals("z de.hanno.hpengine.component, expected: " + expected + ", actual: " + actual, actual.z, actual.z, delta);
 		Assert.assertEquals("w de.hanno.hpengine.component, expected: " + expected + ", actual: " + actual, actual.w, actual.w, delta);
 	}
-	private boolean quaternionEqualsHelper(Quaternion a, Quaternion b) {
+	private boolean quaternionEqualsHelper(Quaternionf a, Quaternionf b) {
 		return (a.x == b.x &&
 				a.y == b.y &&
 				a.z == b.z &&

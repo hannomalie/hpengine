@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
@@ -59,9 +59,9 @@ public class EnvironmentProbe extends Entity {
 		renderer.batchLine(points.get(2), points.get(4));
 		renderer.batchLine(points.get(3), points.get(5));
 
-		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(5, 0, 0), null));
-		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 5, 0), null));
-		renderer.batchLine(getSampler().getPosition(), Vector3f.add(getSampler().getPosition(), new Vector3f(0, 0, -5), null));
+		renderer.batchLine(getSampler().getPosition(), new Vector3f(getSampler().getPosition()).add(new Vector3f(5, 0, 0)));
+		renderer.batchLine(getSampler().getPosition(), new Vector3f(getSampler().getPosition()).add(new Vector3f(0, 5, 0)));
+		renderer.batchLine(getSampler().getPosition(), new Vector3f(getSampler().getPosition()).add(new Vector3f(0, 0, -5)));
 
 		float temp = (float)getIndex()/10;
 		program.setUniform("diffuseColor", new Vector3f(temp,1-temp,0));

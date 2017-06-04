@@ -65,7 +65,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.script.ScriptException;
 import javax.swing.*;
@@ -170,7 +170,7 @@ public class DebugFrame implements HostComponent {
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
-	"temp = Java.type('org.lwjgl.util.vector.Vector3f');" +
+	"temp = Java.type('org.joml.Vector3f');" +
 	"for each(var probe in renderer.getEnvironmentProbeFactory().getProbes()) {" +
 	"	probe.move(new temp(0,-10,0));" +
 	"}");

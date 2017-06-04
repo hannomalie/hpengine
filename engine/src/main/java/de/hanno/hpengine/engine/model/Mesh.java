@@ -7,10 +7,10 @@ import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.lang.NotImplementedException;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -139,9 +139,9 @@ public class Mesh implements Serializable {
 
                 Vector3f lightmapCoords = finalLightmapCoords.get(i)[j];
                 compiledLightmapCoords[j] = lightmapCoords;
-                values.add(lightmapCoords.getX());
-                values.add(lightmapCoords.getY());
-                values.add(lightmapCoords.getZ());
+                values.add(lightmapCoords.x());
+                values.add(lightmapCoords.y());
+                values.add(lightmapCoords.z());
 
                 if (ModelComponent.USE_PRECOMPUTED_TANGENTSPACE) {
                     throw new NotImplementedException("Implement former logic from ModelComponent here");
@@ -239,7 +239,7 @@ public class Mesh implements Serializable {
     private transient Vector3f center;
     public Vector3f getCenter() {
         if(center == null) {
-            center = Vector3f.add(min, (Vector3f) Vector3f.sub(max, min, null).scale(0.5f), null);
+            center = new Vector3f(min).add(new Vector3f(max).sub(min).mul(0.5f));
         }
         return new Vector3f(center);
     }
@@ -257,9 +257,9 @@ public class Mesh implements Serializable {
         {
             calculateMinMax(modelMatrix, min, max, compiledFaces);
             if(lastUsedModelMatrix == null) { lastUsedModelMatrix = new Matrix4f(); }
-            lastUsedModelMatrix.load(modelMatrix);
+            lastUsedModelMatrix.set(modelMatrix);
             boundSphereRadius = getBoundingSphereRadius(min, max);
-            center = Vector3f.add(min, (Vector3f) Vector3f.sub(max, min, null).scale(0.5f), null);
+            center = new Vector3f(min).add(new Vector3f(max).sub(min).mul(0.5f));
         }
 
         return new Vector3f[] {new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
@@ -278,7 +278,7 @@ public class Mesh implements Serializable {
                 Vector3f positionV3 = vertices[j].position;
                 Vector4f position = new Vector4f(positionV3.x, positionV3.y, positionV3.z, 1);
                 if(modelMatrix != null) {
-                    Matrix4f.transform(modelMatrix, position, position);
+                    position.mul(modelMatrix);
                 }
 
                 min.x = position.x < min.x ? position.x : min.x;
@@ -303,7 +303,7 @@ public class Mesh implements Serializable {
     }
 
     public static float getBoundingSphereRadius(Vector3f min, Vector3f max) {
-        return Vector3f.sub(max, min, null).scale(0.5f).length();
+        return new Vector3f(max).sub(min).mul(0.5f).length();
     }
     public static float getBoundingSphereRadius(Vector4f min, Vector4f max) {
         return getBoundingSphereRadius(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));

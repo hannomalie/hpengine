@@ -5,7 +5,7 @@ import com.carrotsearch.hppc.IntFloatMap;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Entity.Instance;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.util.Random;
 
@@ -34,7 +34,7 @@ public class SimpleMoveComponent implements LifeCycle {
         for(int i = 0; i < entity.getInstances().size(); i++) {
             Instance currentInstance = entity.getInstances().get(i);
             temp.set(randoms.get(i%randomCount)*flips[i%randomCount],0f,randoms.get(i%randomCount)*flips[i%randomCount]);
-            currentInstance.move((Vector3f) temp.scale(seconds));
+            currentInstance.move(temp.mul(seconds));
 
             if(counters[i%randomCount] >= 149) {
                 flips[i%randomCount] *= -1;

@@ -11,8 +11,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import org.lwjgl.util.vector.ReadableVector3f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.nio.FloatBuffer;
 
@@ -47,14 +46,14 @@ public class DrawLinesExtension implements RenderExtension {
                     batchAABBLines(mesh.getMinWorld(), mesh.getMaxWorld());
                 } else {
                     float boundingSphereRadius = Mesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(boundingSphereRadius, 0, 0), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(-boundingSphereRadius, 0, 0), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, 0, boundingSphereRadius), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, 0, -boundingSphereRadius), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, -boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(boundingSphereRadius, 0, 0), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, -boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(-boundingSphereRadius, 0, 0), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, -boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, 0, boundingSphereRadius), null));
-                    Renderer.getInstance().batchLine(Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, -boundingSphereRadius, 0), null), Vector3f.add(mesh.getCenterWorld(), new Vector3f(0, 0, -boundingSphereRadius), null));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, boundingSphereRadius)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, -boundingSphereRadius)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)));
+                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)));
                 }
             }
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
@@ -73,11 +72,17 @@ public class DrawLinesExtension implements RenderExtension {
 //                }
 //            }
 
-//            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
-//            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,-15,0));
-//            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,15,0));
-//            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
+            int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
+
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
+            linesDrawn += Renderer.getInstance().drawLines(linesProgram);
 //            firstPassResult.linesDrawn += linesDrawn;
 
 
@@ -86,67 +91,67 @@ public class DrawLinesExtension implements RenderExtension {
         }
     }
 
-    public static void batchAABBLines(ReadableVector3f minWorld, ReadableVector3f maxWorld) {
+    public static void batchAABBLines(Vector3f minWorld, Vector3f maxWorld) {
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
 
 
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), maxWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), maxWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(maxWorld.getX(), maxWorld.getY(), minWorld.getZ());
-            Vector3f max = new Vector3f(maxWorld.getX(), minWorld.getY(), minWorld.getZ());
+            Vector3f min = new Vector3f(maxWorld.x(), maxWorld.y(), minWorld.z());
+            Vector3f max = new Vector3f(maxWorld.x(), minWorld.y(), minWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
         {
-            Vector3f min = new Vector3f(minWorld.getX(), maxWorld.getY(), maxWorld.getZ());
-            Vector3f max = new Vector3f(minWorld.getX(), minWorld.getY(), maxWorld.getZ());
+            Vector3f min = new Vector3f(minWorld.x(), maxWorld.y(), maxWorld.z());
+            Vector3f max = new Vector3f(minWorld.x(), minWorld.y(), maxWorld.z());
             Renderer.getInstance().batchLine(min, max);
         }
     }

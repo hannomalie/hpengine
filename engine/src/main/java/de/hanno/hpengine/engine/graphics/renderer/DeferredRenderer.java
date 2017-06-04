@@ -36,7 +36,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
 import java.io.File;

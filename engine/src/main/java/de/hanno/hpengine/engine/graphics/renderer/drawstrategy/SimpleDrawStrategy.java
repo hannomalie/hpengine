@@ -31,8 +31,8 @@ import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
@@ -253,8 +253,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
-        Vector3f camPosition = camera.getPosition();
-        Vector3f.add(camPosition, (Vector3f) camera.getViewDirection().scale(-camera.getNear()), camPosition);
+        Vector3f camPosition = new Vector3f(camera.getPosition());
+        camPosition.add(camera.getViewDirection().mul(-camera.getNear()));
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 
         GPUProfiler.start("Directional light");

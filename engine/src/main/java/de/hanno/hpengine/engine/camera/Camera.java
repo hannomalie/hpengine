@@ -6,8 +6,8 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -26,9 +26,9 @@ public class Camera extends Entity {
 
 	protected Frustum frustum = new Frustum();
 
-	private float near = 0.1f;
+	private float near = 10.1f;
 	private float far = -5000f;
-	private float fov = 60f;
+	private float fov = 30f;
 	private float ratio = (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight();
 	private float width = 1600f;
 	private float height = 1600f;
@@ -37,7 +37,7 @@ public class Camera extends Entity {
 
 	public Camera() {
 		this.name = "Camera_" +  System.currentTimeMillis();
-        init(Util.createPerpective(60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
+        init(Util.createPerpective(30f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
@@ -75,7 +75,7 @@ public class Camera extends Entity {
         this.far = far;
         this.fov = fov;
         this.ratio = ratio;
-        this.projectionMatrix.load(projectionMatrix);
+        this.projectionMatrix.set(projectionMatrix);
 
         frustum.calculate(this);
         saveViewMatrixAsLastViewMatrix();
@@ -102,13 +102,13 @@ public class Camera extends Entity {
 	private void storeMatrices() {
 		synchronized (projectionMatrixBuffer) {
 			projectionMatrixBuffer.rewind();
-			projectionMatrix.store(projectionMatrixBuffer);
-			projectionMatrixBuffer.flip();
+			projectionMatrix.get(projectionMatrixBuffer);
+			projectionMatrixBuffer.rewind();
 		}
 		synchronized (viewProjectionMatrixBuffer) {
 			viewProjectionMatrixBuffer.rewind();
-			Matrix4f.mul(projectionMatrix, getViewMatrix(), null).store(viewProjectionMatrixBuffer);
-			viewProjectionMatrixBuffer.flip();
+			new Matrix4f(projectionMatrix).mul(getViewMatrix()).get(viewProjectionMatrixBuffer);
+			viewProjectionMatrixBuffer.rewind();
 		}
 	}
 	

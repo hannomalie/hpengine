@@ -15,8 +15,8 @@ import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -233,7 +233,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	public static boolean isInFrustum(Camera camera, Vector3f centerWorld, Vector3f minWorld, Vector3f maxWorld) {
 		Vector3f tempDistVector = new Vector3f();
-		Vector3f.sub(minWorld, maxWorld, tempDistVector);
+		new Vector3f(minWorld).sub(maxWorld, tempDistVector);
 
 //		if (de.hanno.hpengine.camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
 //			de.hanno.hpengine.camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
@@ -430,22 +430,22 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex) {
-		buffer.putFloat(mm.m00);
-		buffer.putFloat(mm.m01);
-		buffer.putFloat(mm.m02);
-		buffer.putFloat(mm.m03);
-		buffer.putFloat(mm.m10);
-		buffer.putFloat(mm.m11);
-		buffer.putFloat(mm.m12);
-		buffer.putFloat(mm.m13);
-		buffer.putFloat(mm.m20);
-		buffer.putFloat(mm.m21);
-		buffer.putFloat(mm.m22);
-		buffer.putFloat(mm.m23);
-		buffer.putFloat(mm.m30);
-		buffer.putFloat(mm.m31);
-		buffer.putFloat(mm.m32);
-		buffer.putFloat(mm.m33);
+		buffer.putFloat(mm.m00());
+		buffer.putFloat(mm.m01());
+		buffer.putFloat(mm.m02());
+		buffer.putFloat(mm.m03());
+		buffer.putFloat(mm.m10());
+		buffer.putFloat(mm.m11());
+		buffer.putFloat(mm.m12());
+		buffer.putFloat(mm.m13());
+		buffer.putFloat(mm.m20());
+		buffer.putFloat(mm.m21());
+		buffer.putFloat(mm.m22());
+		buffer.putFloat(mm.m23());
+		buffer.putFloat(mm.m30());
+		buffer.putFloat(mm.m31());
+		buffer.putFloat(mm.m32());
+		buffer.putFloat(mm.m33());
 		buffer.putInt(isSelected() ? 1 : 0);
 		buffer.putInt(materialIndex);
 		buffer.putInt((int) getUpdate().getAsDouble());

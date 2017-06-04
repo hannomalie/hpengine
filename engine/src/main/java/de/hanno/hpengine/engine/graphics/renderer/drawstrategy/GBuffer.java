@@ -17,8 +17,8 @@ import de.hanno.hpengine.util.Util;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,7 +82,7 @@ public class GBuffer {
 								.setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
 						.build();
-		new Matrix4f().store(identityMatrixBuffer);
+		new Matrix4f().get(identityMatrixBuffer);
 		identityMatrixBuffer.rewind();
 
 		fullScreenMipmapCount = Util.calculateMipMapCount(Math.max(Config.getInstance().getWidth(), Config.getInstance().getHeight()));

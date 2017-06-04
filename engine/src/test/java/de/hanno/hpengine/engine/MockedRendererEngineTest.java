@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.awt.*;
 

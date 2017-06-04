@@ -38,10 +38,10 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL42;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.io.IOException;
@@ -274,16 +274,16 @@ public class LightFactory {
 		return getAreaLight(new Vector3f(), new Vector3f(1, 1, 1), width, height, range);
 	}
 	public AreaLight getAreaLight(Vector3f position, Vector3f color, int width, int height, int range) {
-		return getAreaLight(position, new Quaternion(), color, width, height, range);
+		return getAreaLight(position, new Quaternionf(), color, width, height, range);
 	}
 	public AreaLight getAreaLight(Vector3f position, int width, int height, int range) {
-		return getAreaLight(position, new Quaternion(), new Vector3f(1, 1, 1), width, height, range);
+		return getAreaLight(position, new Quaternionf(), new Vector3f(1, 1, 1), width, height, range);
 	}
 
-	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, float width, float height, float range) {
+	public AreaLight getAreaLight(Vector3f position, Quaternionf orientation, Vector3f color, float width, float height, float range) {
 		return getAreaLight(position, orientation, color, (int) width, (int) height, (int) range);
 	}
-	public AreaLight getAreaLight(Vector3f position, Quaternion orientation, Vector3f color, int width, int height, int range) {
+	public AreaLight getAreaLight(Vector3f position, Quaternionf orientation, Vector3f color, int width, int height, int range) {
 		AreaLight areaLight = new AreaLight(position, planeMesh, color, new Vector3f(width, height, range));
 		areaLight.setOrientation(orientation);
 		return areaLight;
@@ -420,8 +420,8 @@ public class LightFactory {
                 viewMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16);
                 projectionMatrices[floatBufferIndex] = BufferUtils.createFloatBuffer(16);
 
-                viewProjectionMatrices.getLeft()[floatBufferIndex].store(viewMatrices[floatBufferIndex]);
-                viewProjectionMatrices.getRight()[floatBufferIndex].store(projectionMatrices[floatBufferIndex]);
+                viewProjectionMatrices.getLeft()[floatBufferIndex].get(viewMatrices[floatBufferIndex]);
+                viewProjectionMatrices.getRight()[floatBufferIndex].get(projectionMatrices[floatBufferIndex]);
 
                 viewMatrices[floatBufferIndex].rewind();
                 projectionMatrices[floatBufferIndex].rewind();

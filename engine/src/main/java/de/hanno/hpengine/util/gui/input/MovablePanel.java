@@ -3,7 +3,7 @@ package de.hanno.hpengine.util.gui.input;
 import java.awt.event.ActionEvent;
 
 import de.hanno.hpengine.engine.model.Transformable;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.slider.WebSlider;
@@ -28,24 +28,24 @@ public class MovablePanel<T extends Transformable> extends WebComponentPanel {
         this.addElement(new SliderInput("Position X", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				Vector3f axis = transformable.getRightDirection();
-				transformable.move((Vector3f) axis.scale(delta));
+				Vector3f axis = new Vector3f(transformable.getRightDirection());
+				transformable.move(axis.mul(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});
         this.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				Vector3f axis = transformable.getUpDirection();
-				transformable.move((Vector3f) axis.scale(delta));
+				Vector3f axis = new Vector3f(transformable.getUpDirection());
+				transformable.move(axis.mul(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});
         this.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				Vector3f axis = transformable.getViewDirection().negate(null);
-				transformable.move((Vector3f) axis.scale(delta));
+				Vector3f axis = new Vector3f(transformable.getViewDirection().negate(null));
+				transformable.move(axis.mul(delta));
 				positionField.setValue(transformable.getPosition());
 			}
 		});

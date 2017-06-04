@@ -5,9 +5,9 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.input.Input;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class MovableCamera extends Camera {
 
@@ -37,40 +37,40 @@ public class MovableCamera extends Camera {
                              if (Input.isMouseClicked(0)) {
                                  double pitchAmount = Math.toRadians((Input.getDYSmooth() * rotationAmount) % 360);
                                  pitchAccel = (float) Math.max(2 * Math.PI, pitchAccel + pitchAmount);
-                                 absolutePitch += pitchAmount;
+                                 absolutePitch += -pitchAmount;
                                  pitchAccel = Math.max(0, pitchAccel * 0.9f);
 
                                  double yawAmount = Math.toRadians((Input.getDXSmooth() * rotationAmount) % 360);
                                  yawAccel = (float) Math.max(2 * Math.PI, yawAccel + yawAmount);
-                                 absoluteYaw += -yawAmount;
+                                 absoluteYaw += yawAmount;
                                  yawAccel = Math.max(0, yawAccel * 0.9f);
 
 
-                                 Quaternion pitchQuat = new Quaternion();
-                                 pitchQuat.setFromAxisAngle(new Vector4f(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, (float) Math.toRadians(absolutePitch)));
-                                 Quaternion yawQuat = new Quaternion();
-                                 yawQuat.setFromAxisAngle(new Vector4f(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, (float) Math.toRadians(absoluteYaw)));
-                                 getEntity().setOrientation(Quaternion.mul(yawQuat,pitchQuat,  null).normalise(null));
+                                 Quaternionf pitchQuat = new Quaternionf();
+                                 pitchQuat.fromAxisAngleRad(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, (float) Math.toRadians(absolutePitch));
+                                 Quaternionf yawQuat = new Quaternionf();
+                                 yawQuat.fromAxisAngleRad(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, (float) Math.toRadians(absoluteYaw));
+                                 getEntity().setOrientation(new Quaternionf(yawQuat).mul(pitchQuat).normalize());
                              }
 
                              float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();
                              if (Input.isKeyPressed(Keyboard.KEY_W)) {
                                  getEntity().move(new Vector3f(0, 0, -moveAmount));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_A)) {
-                                 getEntity().move(new Vector3f(-moveAmount, 0, 0));
-                             }
                              if (Input.isKeyPressed(Keyboard.KEY_S)) {
                                  getEntity().move(new Vector3f(0, 0, moveAmount));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_D)) {
+                             if (Input.isKeyPressed(Keyboard.KEY_A)) {
                                  getEntity().move(new Vector3f(moveAmount, 0, 0));
                              }
+                             if (Input.isKeyPressed(Keyboard.KEY_D)) {
+                                 getEntity().move(new Vector3f(-moveAmount, 0, 0));
+                             }
                              if (Input.isKeyPressed(Keyboard.KEY_Q)) {
-                                 getEntity().move(new Vector3f(0, -moveAmount, 0));
+                                 getEntity().move(new Vector3f(0, moveAmount, 0));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_E)) {
-                                 getEntity().move(new Vector3f(0, moveAmount, 0));
+                                 getEntity().move(new Vector3f(0, -moveAmount, 0));
                              }
                          }
                      }

@@ -11,7 +11,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector4f;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;

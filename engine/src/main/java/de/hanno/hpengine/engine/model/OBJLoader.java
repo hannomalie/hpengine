@@ -4,8 +4,8 @@ import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 
 import java.io.*;

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui.input;
 
 import com.alee.laf.text.WebTextField;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

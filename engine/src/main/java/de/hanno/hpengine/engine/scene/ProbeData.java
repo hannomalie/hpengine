@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 public class ProbeData implements Serializable {
 	private static final long serialVersionUID = 1L;

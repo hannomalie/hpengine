@@ -4,7 +4,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import de.hanno.hpengine.test.TestWithEngine;
+import de.hanno.hpengine.TestWithEngine;
 
 import java.io.IOException;
 

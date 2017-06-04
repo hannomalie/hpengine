@@ -49,7 +49,7 @@ package jme3tools.optimize;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.Mesh;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -187,18 +187,18 @@ public class LodGenerator {
     private class Triangle {
 
         Vertex[] vertex = new Vertex[3];
-        Vector3f normal;
+        Vector3f normal = new Vector3f();
         boolean isRemoved;
         //indices of the vertices in the vertex buffer
         int[] vertexId = new int[3];
 
         void computeNormal() {
             // Cross-product 2 edges
-            Vector3f.sub(tmpV1.set(vertex[1].position), vertex[0].position, tmpV1);
-            Vector3f.sub(tmpV2.set(vertex[2].position), vertex[1].position, tmpV2);
+            tmpV1.set(vertex[1].position).sub(vertex[0].position, tmpV1);
+            tmpV2.set(vertex[2].position).sub(vertex[1].position, tmpV2);
 
-            normal = Vector3f.cross(tmpV1, tmpV2, null);
-            normal.normalise(normal);
+            tmpV1.cross(tmpV2, null);
+            normal.normalize();
         }
 
         boolean hasVertex(Vertex v) {
@@ -279,9 +279,7 @@ public class LodGenerator {
 
             for (Vector3f pos : vertices) {
                 Vertex v = new Vertex();
-                v.position.setX(pos.x);
-                v.position.setY(pos.y);
-                v.position.setZ(pos.z);
+                v.position.set(pos.x, pos.y, pos.z);
                 v.isSeam = false;
                 Vertex existingV = findSimilar(v);
                 if (existingV != null) {
@@ -414,16 +412,16 @@ public class LodGenerator {
                 pv2 = (triangle.vertex[2] == src) ? dest : triangle.vertex[2];
 
                 // Cross-product 2 edges
-                Vector3f.sub(tmpV1.set(pv1.position), pv0.position, tmpV1);
-                Vector3f.sub(tmpV2.set(pv2.position), pv1.position, tmpV2);
+                tmpV1.set(pv1.position).sub(pv0.position, tmpV1);
+                tmpV2.set(pv2.position).sub(pv1.position, tmpV2);
 
                 //computing the normal
-                Vector3f newNormal = Vector3f.cross(tmpV1, tmpV2, null);
-                newNormal.normalise(newNormal);
+                Vector3f newNormal = new Vector3f(tmpV1).cross(tmpV2);
+                newNormal.normalize();
 
                 // Dot old and new face normal
                 // If < 0 then more than 90 degree difference
-                if (Vector3f.dot(newNormal, triangle.normal) < 0.0f) {
+                if (newNormal.dot(triangle.normal) < 0.0f) {
                     // Don't do it!
                     return NEVER_COLLAPSE_COST;
                 }
@@ -452,20 +450,20 @@ public class LodGenerator {
                 // PMTriangle* triangle = findSideTriangle(src, dst);
 
                 cost = 0.0f;
-                Vector3f collapseEdge = Vector3f.sub(tmpV1.set(src.position), dest.position, null);
-                collapseEdge.normalise(collapseEdge);
+                Vector3f collapseEdge = new Vector3f(src.position).sub(dest.position);
+                collapseEdge.normalize();
 
                 for (Edge edge : src.edges) {
 
                     Vertex neighbor = edge.destination;
                     //reference check intended
                     if (neighbor != dest && edge.refCount == 1) {
-                        Vector3f otherBorderEdge = Vector3f.sub(tmpV2.set(src.position), neighbor.position, null);
-                        otherBorderEdge.normalise(otherBorderEdge);
+                        Vector3f otherBorderEdge = new Vector3f(src.position).sub(neighbor.position);
+                        otherBorderEdge.normalize();
                         // This time, the nearer the dot is to -1, the better, because that means
                         // the edges are opposite each other, therefore less kinkiness
                         // Scale into [0..1]
-                        float kinkiness = (Vector3f.dot(otherBorderEdge, collapseEdge) + 1.002f) * 0.5f;
+                        float kinkiness = (otherBorderEdge.dot(collapseEdge) + 1.002f) * 0.5f;
                         cost = Math.max(cost, kinkiness);
                     }
                 }
@@ -486,7 +484,7 @@ public class LodGenerator {
                     if (triangle2.hasVertex(dest)) {
 
                         // Dot product of face normal gives a good delta angle
-                        float dotprod = Vector3f.dot(triangle.normal, triangle2.normal);
+                        float dotprod = triangle.normal.dot(triangle2.normal);
                         // NB we do (1-..) to invert curvature where 1 is high curvature [0..1]
                         // Whilst dot product is high when angle difference is low
                         mincurv = Math.min(mincurv, (1.002f - dotprod) * 0.5f);
@@ -507,7 +505,7 @@ public class LodGenerator {
 
 //           assert (cost >= 0);
 
-        return cost * Vector3f.sub(src.position, dest.position, null).lengthSquared();
+        return cost * src.position.distanceSquared(dest.position);
     }
     int nbCollapsedTri = 0;
 

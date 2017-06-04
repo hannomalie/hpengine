@@ -8,8 +8,8 @@ import java.util.logging.Logger;
 import de.hanno.hpengine.engine.camera.Camera;
 
 import de.hanno.hpengine.log.ConsoleLogger;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class AABB implements Serializable {
 	private static Logger LOGGER = ConsoleLogger.getLogger();
@@ -37,7 +37,7 @@ public class AABB implements Serializable {
 	}
 	
 	public void move(Vector3f amount) {
-		Vector3f.add(center, amount, center);
+		center.add(amount);
 		calculateCorners();
 	}
 
@@ -163,8 +163,8 @@ public class AABB implements Serializable {
 
 	public boolean isInFrustum(Camera camera) {
 		Vector3f centerWorld = new Vector3f();
-		Vector3f.add(topRightForeCorner, bottomLeftBackCorner, centerWorld);
-		centerWorld.scale(0.5f);
+		topRightForeCorner.add(bottomLeftBackCorner, centerWorld);
+		centerWorld.mul(0.5f);
 		
 		//if (de.hanno.hpengine.camera.getFrustum().cubeInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, size/2)) {
 		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, Math.max(sizeX, Math.max(sizeY, sizeZ))/2f)) {
@@ -192,7 +192,7 @@ public class AABB implements Serializable {
 	private float smallestDistance(List<Vector3f> points, Vector3f pivot) {
 		float length = Float.MAX_VALUE;
 		for (Vector3f point : points) {
-			float tempLength = Vector3f.sub(point, pivot, null).length();
+			float tempLength = new Vector3f(point).sub(pivot).length();
 			length = tempLength <= length? tempLength : length;
 		}
 		
@@ -201,7 +201,7 @@ public class AABB implements Serializable {
 	private float largestDistance(List<Vector3f> points, Vector3f pivot) {
 		float length = Float.MAX_VALUE;
 		for (Vector3f point : points) {
-			float tempLength = Vector3f.sub(point, pivot, null).length();
+			float tempLength = new Vector3f(point).sub(pivot).length();
 			length = tempLength >= length? tempLength : length;
 		}
 		

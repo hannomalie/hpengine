@@ -24,8 +24,8 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
@@ -364,7 +364,7 @@ public class Scene implements LifeCycle, Serializable {
 		for (ModelComponent modelComponent : modelComponents) {
 			Entity entity = modelComponent.getEntity();
 			Vector3f centerWorld = entity.getCenterWorld();
-			Vector3f.sub(cameraWorldPosition, centerWorld, tempDistVector);
+			cameraWorldPosition.sub(centerWorld, tempDistVector);
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 

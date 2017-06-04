@@ -5,8 +5,8 @@ import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import junit.framework.Assert;
 import org.junit.Test;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class LightTest extends TestWithRenderer {
 

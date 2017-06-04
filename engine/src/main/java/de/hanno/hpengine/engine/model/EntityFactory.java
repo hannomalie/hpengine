@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.model;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity.Update;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.FileInputStream;
 import java.io.IOException;

@@ -7,9 +7,9 @@ import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.Util;
 

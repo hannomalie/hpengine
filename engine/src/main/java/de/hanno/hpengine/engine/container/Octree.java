@@ -12,9 +12,9 @@ import de.hanno.hpengine.engine.scene.AABB;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.Serializable;
 import java.nio.FloatBuffer;
@@ -36,8 +36,8 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	static {
 		matrix44Buffer = BufferUtils.createFloatBuffer(16);
 		matrix44Buffer.rewind();
-		modelMatrix.setIdentity();
-		modelMatrix.store(matrix44Buffer);
+		modelMatrix.identity();
+		modelMatrix.get(matrix44Buffer);
 		matrix44Buffer.rewind();
 	}
 	private Vector3f center = new Vector3f();

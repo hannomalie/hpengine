@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.event.ProbeAddedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
@@ -164,10 +164,10 @@ public class EnvironmentProbeFactory {
 					public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
 //						Vector3f center1 = o1.getCenter();
 //						Vector3f center2 = o2.getCenter();
-//						Vector4f center1InView = Matrix4f.transform(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
-//						Vector4f center2InView = Matrix4f.transform(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
+//						Vector4f center1InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center1.x, center1.y, center1.z, 1f), null);
+//						Vector4f center2InView = new Matrix4f().(de.hanno.hpengine.camera.getViewMatrix(), new Vector4f(center2.x, center2.y, center2.z, 1f), null);
 //						return Float.compare(-center1InView.z, -center2InView.z);
-						return Float.compare(Vector3f.sub(o1.getCenter(), camera.getPosition().negate(null), null).lengthSquared(), Vector3f.sub(o2.getCenter(), camera.getPosition().negate(null), null).lengthSquared());
+						return Float.compare(new Vector3f(o1.getCenter()).sub(camera.getPosition().negate()).lengthSquared(), new Vector3f(o2.getCenter()).sub(camera.getPosition().negate()).lengthSquared());
 					}
 				}).
 				collect(Collectors.toList());
@@ -195,8 +195,8 @@ public class EnvironmentProbeFactory {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
-			Vector3f clipStart = Vector3f.add(probe.getCenter(), (Vector3f) probe.getRightDirection().scale(probe.getCamera().getNear()), null);
-//			Vector3f clipEnd = Vector3f.add(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
+//			Vector3f clipStart = new Vector3f(probe.getCenter(), (Vector3f) probe.getRightDirection().mul(probe.getCamera().getNear()), null);
+//			Vector3f clipEnd = new Vector3f(probe.getCenter(), (Vector3f) probe.getCamera().getRightDirection().scale(probe.getCamera().getFar()), null);
 //			renderer.batchLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
@@ -230,7 +230,7 @@ public class EnvironmentProbeFactory {
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).length(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).length()));
+				return (Float.compare(entity.getCenter().distance(o1.getCenter()), entity.getCenter().distance(o2.getCenter())));
 			}
 		}).findFirst();
 		
@@ -268,7 +268,7 @@ public class EnvironmentProbeFactory {
 		}).sorted(new Comparator<EnvironmentProbe>() {
 			@Override
 			public int compare(EnvironmentProbe o1, EnvironmentProbe o2) {
-				return (Float.compare(Vector3f.sub(entity.getCenter(), o1.getCenter(), null).length(), Vector3f.sub(entity.getCenter(), o2.getCenter(), null).length()));
+				return (Float.compare(entity.getCenter().distance(o1.getCenter()), entity.getCenter().distance(o2.getCenter())));
 			}
 		}).collect(Collectors.toList());
 	}

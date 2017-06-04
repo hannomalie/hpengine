@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.model.Entity.Instance;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.ressources.CodeSource;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.util.List;
@@ -35,7 +35,7 @@ public class Init implements LifeCycle {
                         for(int z = -count; z < count; z++) {
                             Transform trafo = new Transform();
                             float randomFloat = random.nextFloat() - 0.5f;
-                            trafo.setPosition(Vector3f.add(current.getPosition(), new Vector3f(randomFloat*15*x,randomFloat*15*y,randomFloat*15*z), null));
+                            trafo.setPosition(new Vector3f(current.getPosition()).add(new Vector3f(randomFloat*15*x,randomFloat*15*y,randomFloat*15*z)));
                             instances.add(new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10)));
                         }
                     }

@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.lodstrategy;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 public class ModelLod {
     public enum ModelLodStrategy {
@@ -46,7 +46,7 @@ public class ModelLod {
             private Vector3f temp = new Vector3f();
             @Override
             public int getIndexBufferIndex(RenderState extract, ModelComponent modelComponent) {
-                Vector3f vectorFromTo = Vector3f.sub(extract.camera.getWorldPosition(), modelComponent.getEntity().getCenterWorld(), temp);
+                Vector3f vectorFromTo = extract.camera.getWorldPosition().sub(modelComponent.getEntity().getCenterWorld(), temp);
                 float distanceCenterCamera = vectorFromTo.length();
 
                 if(distanceCenterCamera < modelComponent.getBoundingSphereRadius()) {

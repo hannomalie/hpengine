@@ -23,7 +23,7 @@ import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 import de.hanno.hpengine.log.ConsoleLogger;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
 import java.io.File;

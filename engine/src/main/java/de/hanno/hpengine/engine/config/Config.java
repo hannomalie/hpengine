@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.lodstrategy.ModelLod;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.FileInputStream;

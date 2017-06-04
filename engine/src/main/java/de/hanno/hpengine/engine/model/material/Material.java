@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.apache.commons.io.FilenameUtils;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;

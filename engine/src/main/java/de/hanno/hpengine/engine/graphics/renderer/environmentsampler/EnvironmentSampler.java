@@ -30,10 +30,10 @@ import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
@@ -97,8 +97,7 @@ public class EnvironmentSampler extends Camera {
 		setRatio(1f);
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
 		setParent(probe);
-		Quaternion cubeMapCamInitialOrientation = new Quaternion();
-		Quaternion.setIdentity(cubeMapCamInitialOrientation);
+		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
 		setOrientation(cubeMapCamInitialOrientation);
 //		rotate(new Vector4f(0, 1, 0, 90));
 //		setPosition(position);
@@ -158,7 +157,7 @@ public class EnvironmentSampler extends Camera {
 
         EntitiesContainer octree = scene.getEntitiesContainer();
 		GPUProfiler.start("Cubemap render 6 sides");
-		Quaternion initialOrientation = getOrientation();
+		Quaternionf initialOrientation = getOrientation();
 		Vector3f initialPosition = getPosition();
 
 		DirectionalLight light = scene.getDirectionalLight();
@@ -179,9 +178,9 @@ public class EnvironmentSampler extends Camera {
 					sorted(new TransformDistanceComparator<Transformable>(this) {
 						public int compare(Transformable o1, Transformable o2) {
 							if(reference == null) { return 0; }
-							Vector3f distanceToFirst = Vector3f.sub(reference.getPosition(), o1.getPosition(), null);
-							Vector3f distanceToSecond = Vector3f.sub(reference.getPosition(), o2.getPosition(), null);
-							return Float.compare(distanceToFirst.lengthSquared(), distanceToSecond.lengthSquared());
+							float distanceToFirst = reference.getPosition().distanceSquared(o1.getPosition());
+							float distanceToSecond = reference.getPosition().distanceSquared(o2.getPosition());
+							return Float.compare(distanceToFirst, distanceToSecond);
 						}
 					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
@@ -338,7 +337,7 @@ public class EnvironmentSampler extends Camera {
 	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget();
 		Vector3f camPosition = getWorldPosition();//.negate(null);
-		Vector3f.add(camPosition, (Vector3f) getViewDirection().scale(getNear()), camPosition);
+		camPosition.add(getViewDirection().mul(getNear()));
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
 		GPUProfiler.start("Directional light");
@@ -586,7 +585,7 @@ public class EnvironmentSampler extends Camera {
 			}
 			
 			Vector3f distance = new Vector3f();
-			Vector3f.sub(light.getPosition(), camPosition, distance);
+			light.getPosition().sub(camPosition, distance);
 			float lightRadius = light.getRadius();
 			
 			// de.hanno.hpengine.camera is inside lights
@@ -717,21 +716,21 @@ public class EnvironmentSampler extends Camera {
 
 		switch (i) {
 		case 0:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0,1,0, -90));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 1:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0, 1, 0, 90));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 2:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
 			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
@@ -739,21 +738,21 @@ public class EnvironmentSampler extends Camera {
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 3:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 4:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
 			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
 		case 5:
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 //			de.hanno.hpengine.camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);

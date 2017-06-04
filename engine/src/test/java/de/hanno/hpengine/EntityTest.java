@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import org.junit.Assert;
 import org.junit.Test;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.nio.FloatBuffer;

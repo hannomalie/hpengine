@@ -1,6 +1,6 @@
 package de.hanno.hpengine.util.gui;
 
-import de.hanno.hpengine.test.TestWithEngine;
+import de.hanno.hpengine.TestWithEngine;
 
 import javax.swing.*;
 

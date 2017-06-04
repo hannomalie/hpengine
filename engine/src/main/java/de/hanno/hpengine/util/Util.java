@@ -3,10 +3,10 @@ package de.hanno.hpengine.util;
 import de.hanno.hpengine.engine.camera.Camera;
 import com.bulletphysics.linearmath.Transform;
 import org.lwjgl.Sys;
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
@@ -102,118 +102,121 @@ public class Util {
 	}
 
     public static Matrix4f createPerpective(float fov, float ratio, float near, float far) {
-        Matrix4f projectionMatrix = new Matrix4f();
-        float fieldOfView = fov;
-        float aspectRatio = ratio;
-        float near_plane = near;
-        float far_plane = far;
-
-        float y_scale = (float) (1f / Math.tan(Math.toRadians(fieldOfView / 2f)));
-        float x_scale = y_scale / aspectRatio;
-        float frustum_length = far_plane - near_plane;
-
-        projectionMatrix.m00 = x_scale;
-        projectionMatrix.m11 = y_scale;
-        projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
-        projectionMatrix.m23 = -1;
-        projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
-        projectionMatrix.m33 = 0;
+        Matrix4f projectionMatrix = new Matrix4f().perspective(fov, ratio, near, far);
+//        float fieldOfView = fov;
+//        float aspectRatio = ratio;
+//        float near_plane = near;
+//        float far_plane = far;
+//
+//        float y_scale = (float) (1f / Math.tan(Math.toRadians(fieldOfView / 2f)));
+//        float x_scale = y_scale / aspectRatio;
+//        float frustum_length = far_plane - near_plane;
+//
+//        projectionMatrix.m00 = x_scale;
+//        projectionMatrix.m11 = y_scale;
+//        projectionMatrix.m22 = -((far_plane + near_plane) / frustum_length);
+//        projectionMatrix.m23 = -1;
+//        projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
+//        projectionMatrix.m33 = 0;
 
         return projectionMatrix;
     }
     
     public static Matrix4f createOrthogonal(float left, float right, float top, float bottom, float near, float far) {
-    	Matrix4f projectionMatrix = new Matrix4f();
-        projectionMatrix.m00 = 2f / (right - left);
-        projectionMatrix.m11 = 2f / (top - bottom);
-        projectionMatrix.m22 = -1f / (far - near);
-        projectionMatrix.m33 = 1f;
-        
-        projectionMatrix.m30 = -((right + left) / (right - left));
-        projectionMatrix.m31 = -((top + bottom) / (top - bottom));
-        projectionMatrix.m32 = -((near) / (far - near));
+    	Matrix4f projectionMatrix = new Matrix4f().ortho(left, right, bottom, top, near, far);
+//        projectionMatrix.m00 = 2f / (right - left);
+//        projectionMatrix.m11 = 2f / (top - bottom);
+//        projectionMatrix.m22 = -1f / (far - near);
+//        projectionMatrix.m33 = 1f;
+//
+//        projectionMatrix.m30 = -((right + left) / (right - left));
+//        projectionMatrix.m31 = -((top + bottom) / (top - bottom));
+//        projectionMatrix.m32 = -((near) / (far - near));
         return projectionMatrix;
     }
 	
 	public static Matrix4f lookAt(Vector3f eye, Vector3f center, Vector3f up) {
-        Vector3f f = new Vector3f();
-        Vector3f.sub(center, eye, f);
-        f.normalise();
-
-        Vector3f u = new Vector3f();
-        up.normalise(u);
-        Vector3f s = new Vector3f();
-        Vector3f.cross(f, u, s);
-        s.normalise();
-        Vector3f.cross(s, f, u);
-
-        Matrix4f mat = new Matrix4f();
-
-        mat.m00 = s.x;
-        mat.m10 = s.y;
-        mat.m20 = s.z;
-        mat.m01 = u.x;
-        mat.m11 = u.y;
-        mat.m21 = u.z;
-        mat.m02 = -f.x;
-        mat.m12 = -f.y;
-        mat.m22 = -f.z;
-
-        Matrix4f temp = new Matrix4f();
-        Matrix4f.translate(new Vector3f(-eye.x, -eye.y, -eye.z), mat, temp);
-
-        return mat;
+		return new Matrix4f().lookAt(eye, center, up);
+//        Vector3f f = new Vector3f();
+//        Vector3f.sub(center, eye, f);
+//        f.normalize();
+//
+//        Vector3f u = new Vector3f();
+//        up.normalise(u);
+//        Vector3f s = new Vector3f();
+//        Vector3f.cross(f, u, s);
+//        s.normalize();
+//        Vector3f.cross(s, f, u);
+//
+//        Matrix4f mat = new Matrix4f();
+//
+//        mat.m00 = s.x;
+//        mat.m10 = s.y;
+//        mat.m20 = s.z;
+//        mat.m01 = u.x;
+//        mat.m11 = u.y;
+//        mat.m21 = u.z;
+//        mat.m02 = -f.x;
+//        mat.m12 = -f.y;
+//        mat.m22 = -f.z;
+//
+//        Matrix4f temp = new Matrix4f();
+//        Matrix4f.translate(new Vector3f(-eye.x, -eye.y, -eye.z), mat, temp);
+//
+//        return mat;
     }
 	
-	//http://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
-	public static Vector3f _mul(Vector3f a, Quaternion b) {
-		Vector3f temp = (Vector3f) Vector3f.cross(new Vector3f(b.x, b.y, b.z), a, null).scale(2f);
-		Vector3f result = Vector3f.add(a, (Vector3f) temp.scale(b.w), null);
-		result = Vector3f.add(result, Vector3f.cross(new Vector3f(b.x,  b.y,  b.z), temp, null), null);
-		return result;
-	}
-	public static Vector3f mul(Vector3f a, Quaternion b) {
-		Quaternion in = new Quaternion(a.x,a.y,a.z,0);
-		Quaternion temp = Quaternion.mul(b, in, null);
-		temp = Quaternion.mul(temp, conjugate(b), null);
-		return new Vector3f(temp.x, temp.y, temp.z);
+//	//http://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+//	public static Vector3f _mul(Vector3f a, Quaternionf b) {
+//		Vector3f temp = (Vector3f) Vector3f.cross(new Vector3f(b.x, b.y, b.z), a, null).scale(2f);
+//		Vector3f result = new Vector3f(a, (Vector3f) temp.scale(b.w), null);
+//		result = new Vector3f(result, Vector3f.cross(new Vector3f(b.x,  b.y,  b.z), temp, null), null);
+//		return result;
+//	}
+	public static Vector3f mul(Vector3f a, Quaternionf b) {
+		return new Vector3f(a).rotate(b);
+//		Quaternionf in = new Quaternionf(a.x,a.y,a.z,0);
+//		Quaternionf temp = new Quaternionf((b, in, null);
+//		temp = new Quaternionf((temp, conjugate(b), null);
+//		return new Vector3f(temp.x, temp.y, temp.z);
 	}
 	
-	public static Matrix4f toMatrix(Quaternion q, Matrix4f out) {
-		float qx = q.getX();
-        float qy = q.getY();
-        float qz = q.getZ();
-        float qw = q.getW();
-
-        // just pretend these are superscripts.
-        float qx2 = qx * qx;
-        float qy2 = qy * qy;
-        float qz2 = qz * qz;
-
-        out.m00 = 1 - 2 * qy2 - 2 * qz2;
-        out.m01 = 2 * qx * qy + 2 * qz * qw;
-        out.m02 = 2 * qx * qz - 2 * qy * qw;
-        out.m03 = 0;
-
-        out.m10 = 2 * qx * qy - 2 * qz * qw;
-        out.m11 = 1 - 2 * qx2 - 2 * qz2;
-        out.m12 = 2 * qy * qz + 2 * qx * qw;
-        out.m13 = 0;
-
-        out.m20 = 2 * qx * qz + 2 * qy * qw;
-        out.m21 = 2 * qy * qz - 2 * qx * qw;
-        out.m22 = 1 - 2 * qx2 - 2 * qy2;
-        out.m23 = 0;
-
-        out.m30 = 0;
-        out.m31 = 0;
-        out.m32 = 0;
-
-        return out;
+	public static Matrix4f toMatrix(Quaternionf q, Matrix4f out) {
+		return q.get(out);
+//		float qx = q.x();
+//        float qy = q.y();
+//        float qz = q.z();
+//        float qw = q.w();
+//
+//        // just pretend these are superscripts.
+//        float qx2 = qx * qx;
+//        float qy2 = qy * qy;
+//        float qz2 = qz * qz;
+//
+//        out.m00 = 1 - 2 * qy2 - 2 * qz2;
+//        out.m01 = 2 * qx * qy + 2 * qz * qw;
+//        out.m02 = 2 * qx * qz - 2 * qy * qw;
+//        out.m03 = 0;
+//
+//        out.m10 = 2 * qx * qy - 2 * qz * qw;
+//        out.m11 = 1 - 2 * qx2 - 2 * qz2;
+//        out.m12 = 2 * qy * qz + 2 * qx * qw;
+//        out.m13 = 0;
+//
+//        out.m20 = 2 * qx * qz + 2 * qy * qw;
+//        out.m21 = 2 * qy * qz - 2 * qx * qw;
+//        out.m22 = 1 - 2 * qx2 - 2 * qy2;
+//        out.m23 = 0;
+//
+//        out.m30 = 0;
+//        out.m31 = 0;
+//        out.m32 = 0;
+//
+//        return out;
     }
 
-//	public static Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
-//		Quaternion qInterpolated = new Quaternion();
+//	public static Quaternionf slerp(Quaternionf q1, Quaternionf q2, float t) {
+//		Quaternionf qInterpolated = new Quaternionf();
 //
 //		if (q1.equals(q2)) {
 //			return q1;
@@ -252,7 +255,7 @@ public class Util {
 //		return qInterpolated;
 //	}
 
-	public static Quaternion conjugate(Quaternion q) {
+	public static Quaternionf conjugate(Quaternionf q) {
 		q.x = -q.x;
 		q.y = -q.y;
 		q.z = -q.z;
@@ -295,44 +298,44 @@ public class Util {
 
 	public static javax.vecmath.Matrix4f toBullet(Matrix4f in) {
 		javax.vecmath.Matrix4f out = new javax.vecmath.Matrix4f();
-		out.m00 = in.m00;
-		out.m01 = in.m01;
-		out.m02 = in.m02;
-		out.m03 = in.m03;
-		out.m10 = in.m10;
-		out.m11 = in.m11;
-		out.m12 = in.m12;
-		out.m13 = in.m13;
-		out.m20 = in.m20;
-		out.m21 = in.m21;
-		out.m22 = in.m22;
-		out.m23 = in.m23;
-		out.m30 = in.m30;
-		out.m31 = in.m31;
-		out.m32 = in.m32;
-		out.m33 = in.m33;
+		out.m00 = in.m00();
+		out.m01 = in.m01();
+		out.m02 = in.m02();
+		out.m03 = in.m03();
+		out.m10 = in.m10();
+		out.m11 = in.m11();
+		out.m12 = in.m12();
+		out.m13 = in.m13();
+		out.m20 = in.m20();
+		out.m21 = in.m21();
+		out.m22 = in.m22();
+		out.m23 = in.m23();
+		out.m30 = in.m30();
+		out.m31 = in.m31();
+		out.m32 = in.m32();
+		out.m33 = in.m33();
 		
 		out.transpose();
 		return out;
 	}
 	public static Matrix4f fromBullet(javax.vecmath.Matrix4f in) {
 		Matrix4f out = new Matrix4f();
-		out.m00 = in.m00;
-		out.m01 = in.m01;
-		out.m02 = in.m02;
-		out.m03 = in.m03;
-		out.m10 = in.m10;
-		out.m11 = in.m11;
-		out.m12 = in.m12;
-		out.m13 = in.m13;
-		out.m20 = in.m20;
-		out.m21 = in.m21;
-		out.m22 = in.m22;
-		out.m23 = in.m23;
-		out.m30 = in.m30;
-		out.m31 = in.m31;
-		out.m32 = in.m32;
-		out.m33 = in.m33;
+		out.m00(in.m00);
+		out.m01(in.m01);
+		out.m02(in.m02);
+		out.m03(in.m03);
+		out.m10(in.m10);
+		out.m11(in.m11);
+		out.m12(in.m12);
+		out.m13(in.m13);
+		out.m20(in.m20);
+		out.m21(in.m21);
+		out.m22(in.m22);
+		out.m23(in.m23);
+		out.m30(in.m30);
+		out.m31(in.m31);
+		out.m32(in.m32);
+		out.m33(in.m33);
 		
 		return out;
 	}
@@ -348,8 +351,8 @@ public class Util {
 		return finalTransform;
 	}
 
-	private static Quaternion fromBullet(Quat4f rotation) {
-		return new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+	private static Quaternionf fromBullet(Quat4f rotation) {
+		return new Quaternionf(rotation.x, rotation.y, rotation.z, rotation.w);
 	}
 
 
@@ -462,39 +465,39 @@ public class Util {
 		Matrix4f[] resultViewMatrices = new Matrix4f[6];
 		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
 
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0, 1, 0, -90));
 			camera.update(0);
 		resultViewMatrices[0] = camera.getViewMatrix();
 		resultProjectionMatrices[0] = projectionMatrix;
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0, 1, 0, 90));
 			camera.update(0);
 		resultViewMatrices[1] = camera.getViewMatrix();
 		resultProjectionMatrices[1] = projectionMatrix;
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
 			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 			camera.update(0);
 		resultViewMatrices[2] = camera.getViewMatrix();
 		resultProjectionMatrices[2] = projectionMatrix;
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
             camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 			camera.update(0);
 		resultViewMatrices[3] = camera.getViewMatrix();
 		resultProjectionMatrices[3] = projectionMatrix;
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
 			camera.update(0);
 		resultViewMatrices[4] = camera.getViewMatrix();
 		resultProjectionMatrices[4] = projectionMatrix;
-			camera.setOrientation(new Quaternion().setIdentity());
+			camera.setOrientation(new Quaternionf().identity());
 			camera.rotateWorld(new Vector4f(0,0,1, 180));
 			camera.update(0);
 		resultViewMatrices[5] = camera.getViewMatrix();
@@ -503,26 +506,11 @@ public class Util {
 		return new TypedTuple<>(resultViewMatrices, resultProjectionMatrices);
 	}
 
-    public static boolean equals(Quaternion a, Quaternion b) {
+    public static boolean equals(Quaternionf a, Quaternionf b) {
         return a.x == b.x && a.y == b.y && a.x == b.x && a.w == b.w;
     }
 
 	public static boolean equals(Matrix4f a, Matrix4f b) {
-		return  a.m00 == b.m00 &&
-				a.m01 == b.m01 &&
-				a.m02 == b.m02 &&
-				a.m03 == b.m03 &&
-				a.m10 == b.m10 &&
-				a.m11 == b.m11 &&
-				a.m12 == b.m12 &&
-				a.m13 == b.m13 &&
-				a.m20 == b.m20 &&
-				a.m21 == b.m21 &&
-				a.m22 == b.m22 &&
-				a.m23 == b.m23 &&
-				a.m30 == b.m30 &&
-				a.m31 == b.m31 &&
-				a.m32 == b.m32 &&
-				a.m33 == b.m33;
+      	return a.equals(b);
 	}
 }

@@ -6,8 +6,8 @@ import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.DrawLightMapExtension;
 import net.engio.mbassy.listener.Handler;
-import org.lwjgl.util.vector.Vector2f;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,10 +48,10 @@ public class NewLightmapManager {
         List<Mesh.CompiledFace> sortedByLength = faces.stream().sorted((Mesh.CompiledFace faceOne, Mesh.CompiledFace faceTwo) -> {
             Vector2f aOne = new Vector2f(faceOne.vertices[0].initialLightmapCoords.x, faceOne.vertices[0].initialLightmapCoords.y);
             Vector2f cOne = new Vector2f(faceOne.vertices[2].initialLightmapCoords.x, faceOne.vertices[2].initialLightmapCoords.y);
-            float heightOne = Vector2f.sub(aOne, cOne, null).length();
+            float heightOne = aOne.distance(cOne);
             Vector2f aTwo = new Vector2f(faceTwo.vertices[0].initialLightmapCoords.x, faceTwo.vertices[0].initialLightmapCoords.y);
             Vector2f cTwo = new Vector2f(faceTwo.vertices[2].initialLightmapCoords.x, faceTwo.vertices[2].initialLightmapCoords.y);
-            float heightTwo = Vector2f.sub(aTwo, cTwo, null).length();
+            float heightTwo = aTwo.distance(cTwo);
             return Float.compare(heightTwo, heightOne);
         }).collect(Collectors.toList());
 
@@ -71,19 +71,19 @@ public class NewLightmapManager {
             Vector2f a = new Vector2f(currentFace.vertices[0].initialLightmapCoords.x, currentFace.vertices[0].initialLightmapCoords.y);
             Vector2f b = new Vector2f(currentFace.vertices[1].initialLightmapCoords.x, currentFace.vertices[1].initialLightmapCoords.y);
             Vector2f c = new Vector2f(currentFace.vertices[2].initialLightmapCoords.x, currentFace.vertices[2].initialLightmapCoords.y);
-            Vector2f widthVector = Vector2f.sub(a, b, null);
-            Vector2f heightVector = Vector2f.sub(a, c, null);
+            Vector2f widthVector = new Vector2f(a).sub(b);
+            Vector2f heightVector = new Vector2f(a).set(c);
             float width = widthVector.length();
             float height = heightVector.length();
             if(width < 1.0f) {
-                Vector2f.add(a, widthVector.normalise(null), b);
+                a.add(widthVector.normalize(), b);
             } else if(width > 4f) {
-                Vector2f.add(a, (Vector2f) widthVector.normalise(null).scale(10.0f), b);
+                a.add(widthVector.normalize().mul(10.0f), b);
             }
             if(height < 1.0f) {
-                Vector2f.add(a, heightVector.normalise(null), c);
+                a.add(heightVector.normalize(), c);
             } else if(width > 4f) {
-                Vector2f.add(a, (Vector2f) heightVector.normalise(null).scale(10.0f), c);
+                a.add(heightVector.normalize().mul(10.0f), c);
             }
 
 
@@ -142,13 +142,13 @@ public class NewLightmapManager {
                     for(int i = 0; i < copy.size(); i+=3) {
                         int[] xPoints = new int[3];
                         int[] yPoints = new int[3];
-                        xPoints[0] = (int) (copy.get(i).getX() * this.getWidth() / MAX_WIDTH);
-                        xPoints[1] = (int) (copy.get(i+1).getX() * this.getWidth() / MAX_WIDTH);
-                        xPoints[2] = (int) (copy.get(i+2).getX() * this.getWidth() / MAX_WIDTH);
+                        xPoints[0] = (int) (copy.get(i).x() * this.getWidth() / MAX_WIDTH);
+                        xPoints[1] = (int) (copy.get(i+1).x() * this.getWidth() / MAX_WIDTH);
+                        xPoints[2] = (int) (copy.get(i+2).x() * this.getWidth() / MAX_WIDTH);
 
-                        yPoints[0] = (int) (copy.get(i).getY() * this.getHeight() / MAX_HEIGHT);
-                        yPoints[1] = (int) (copy.get(i+1).getY() * this.getHeight() / MAX_HEIGHT);
-                        yPoints[2] = (int) (copy.get(i+2).getY() * this.getHeight() / MAX_HEIGHT);
+                        yPoints[0] = (int) (copy.get(i).y() * this.getHeight() / MAX_HEIGHT);
+                        yPoints[1] = (int) (copy.get(i+1).y() * this.getHeight() / MAX_HEIGHT);
+                        yPoints[2] = (int) (copy.get(i+2).y() * this.getHeight() / MAX_HEIGHT);
                         g.setColor(Color.BLUE);
                         Polygon poly = new Polygon(xPoints, yPoints, xPoints.length);
                         g.drawPolygon(poly);

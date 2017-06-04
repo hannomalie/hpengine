@@ -16,7 +16,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;

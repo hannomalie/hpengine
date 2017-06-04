@@ -41,7 +41,7 @@ public class MaterialFactory {
 
 	private MaterialFactory() {
 		MaterialInfo defaultTemp = new MaterialInfo();
-		defaultTemp.diffuse.setX(1.0f);
+		defaultTemp.diffuse.x = (1.0f);
         defaultMaterial = getMaterial(defaultTemp, false);
 		skyboxMaterial = getMaterial(new MaterialInfo().setName("skybox").setMaterialType(Material.MaterialType.UNLIT));
 

@@ -12,7 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.vector.Vector2f;
+import org.joml.Vector2f;
 
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;

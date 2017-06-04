@@ -5,7 +5,7 @@ import java.awt.Color;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import com.alee.laf.colorchooser.WebColorChooserPanel;
 import com.alee.laf.rootpane.WebFrame;

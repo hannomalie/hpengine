@@ -76,7 +76,7 @@ public class PhysicsFactory {
 		return addBallPhysicsComponent(entity, 10);
 	}
 	public PhysicsComponent addBoxPhysicsComponent(Entity owner, float mass) {
-		org.lwjgl.util.vector.Vector3f[] minMax = owner.getMinMaxWorld();
+		org.joml.Vector3f[] minMax = owner.getMinMaxWorld();
 		Vector3f halfExtends = new Vector3f(minMax[1].x - minMax[0].x, minMax[1].y - minMax[0].y, minMax[1].z - minMax[0].z);
 		halfExtends.scale(0.5f);
 		return addBoxPhysicsComponent(owner, halfExtends, mass);
@@ -128,8 +128,8 @@ public class PhysicsFactory {
 //        ByteBuffer indexBuffer = BufferUtils.createByteBuffer(indices.length * 4);
 //
 //        for (int i = 0; i < vertices.length; i+=3) {
-//            org.lwjgl.util.vector.Vector3f vec = new org.lwjgl.util.vector.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
-//            org.lwjgl.util.vector.Vector3f scaledVec = org.lwjgl.util.vector.Vector3f.cross(vec, owner.getScale(), null);
+//            org.joml.Vector3f vec = new org.joml.Vector3f(vertices[i], vertices[i+1], vertices[i+2]);
+//            org.joml.Vector3f scaledVec = org.joml.Vector3f.cross(vec, owner.getScale(), null);
 //
 //            vertexBuffer.putFloat(scaledVec.x);
 //            vertexBuffer.putFloat(scaledVec.y);
@@ -221,8 +221,8 @@ public class PhysicsFactory {
 			@Override
 			public void drawLine(Vector3f start, Vector3f end, Vector3f color) {
                 Renderer.getInstance().batchLine(
-						new org.lwjgl.util.vector.Vector3f(start.x, start.y, start.z),
-						new org.lwjgl.util.vector.Vector3f(end.x, end.y, end.z));
+						new org.joml.Vector3f(start.x, start.y, start.z),
+						new org.joml.Vector3f(end.x, end.y, end.z));
 			}
 
             @Override

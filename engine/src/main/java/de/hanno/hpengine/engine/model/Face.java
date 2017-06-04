@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 
-import org.lwjgl.util.vector.Vector3f;
+import org.joml.Vector3f;
 
 import java.io.Serializable;
 
@@ -67,10 +67,10 @@ public class Face implements Serializable {
     }
 
     public static Vector3f calculateFaceNormal(Vector3f a, Vector3f b, Vector3f c) {
-        Vector3f tmpV1 = Vector3f.sub(b, a, null);
-        Vector3f tmpV2 = Vector3f.sub(c, b, null);
+        Vector3f tmpV1 = new Vector3f(b).sub(a);
+        Vector3f tmpV2 = new Vector3f(c).sub(b);
 
-        return Vector3f.cross(tmpV1, tmpV2, null).normalise(null);
+        return new Vector3f(tmpV1).cross(tmpV2).normalize();
     }
 
     public int indexOf(int vertexIndex) {
