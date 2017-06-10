@@ -55,7 +55,7 @@ public class TestSceneUtil {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
                             Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
                             PointLight pointLight = LightFactory.getInstance().getPointLight(10);
-                            pointLight.setPosition(new Vector3f(i * 19, k * 15, -j * 19));
+                            pointLight.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);
 //							Vector3f scale = new Vector3f(0.5f, 0.5f, 0.5f);
 //							scale.scale(new Random().nextFloat()*14);

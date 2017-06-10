@@ -120,7 +120,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        EntitiesContainer octree = Engine.getInstance().getScene().getEntitiesContainer();
+        EntitiesContainer entitiesContainer = Engine.getInstance().getScene().getEntitiesContainer();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -131,9 +131,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Shadowmap pass");
         directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
-        LightFactory.getInstance().renderAreaLightShadowMaps(renderState, octree);
+        LightFactory.getInstance().renderAreaLightShadowMaps(renderState, entitiesContainer);
         if (Config.getInstance().isUseDpsm()) {
-            LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, octree);
+            LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, entitiesContainer);
         } else {
             LightFactory.getInstance().renderPointLightShadowMaps(renderState);
         }
@@ -239,14 +239,15 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.depthMask(false);
         graphicsContext.disable(GlCap.BLEND);
         skyBoxRenderBatch.getProgram().use();
-        skyBoxEntity.setScale(1000);
-        skyBoxEntity.setPosition(camera.getPosition());
+        skyBoxEntity.scale(1000);
+        skyBoxEntity.setTranslation(camera.getPosition());
         skyBoxProgram.use();
         skyBoxProgram.setUniform("eyeVec", camera.getViewDirection());
         skyBoxProgram.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
-        skyBoxProgram.setUniform("eyePos_world", camera.getWorldPosition());
+        Vector3f translation = new Vector3f();
+        skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation));
         skyBoxProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().getSkyboxMaterial()));
-        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getModelMatrixAsBuffer());
+        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
         skyBoxProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
         skyBoxProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
         DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, skyBoxProgram, false);
@@ -282,7 +283,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         secondPassDirectionalProgram.use();
-        secondPassDirectionalProgram.setUniform("eyePosition", camera.getWorldPosition());
+        Vector3f camTranslation = new Vector3f();
+        secondPassDirectionalProgram.setUniform("eyePosition", camera.getTranslation(camTranslation));
         secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
         secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
         secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
@@ -635,8 +637,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram.setUniform("AUTO_EXPOSURE_ENABLED", Config.getInstance().isAutoExposureEnabled());
         postProcessProgram.setUniform("usePostProcessing", Config.getInstance().isEnablePostprocessing());
         try {
-            postProcessProgram.setUniform("cameraRightDirection", renderState.camera.getTransform().getRightDirection());
-            postProcessProgram.setUniform("cameraViewDirection", renderState.camera.getTransform().getViewDirection());
+            postProcessProgram.setUniform("cameraRightDirection", renderState.camera.getRightDirection());
+            postProcessProgram.setUniform("cameraViewDirection", renderState.camera.getViewDirection());
         } catch (IllegalStateException e) {
             // Normalizing zero length vector
         }

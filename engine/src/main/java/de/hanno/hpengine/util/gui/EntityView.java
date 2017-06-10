@@ -131,7 +131,7 @@ public class EntityView extends WebPanel {
     private void addInstancesPanel(Entity entity, WebTabbedPane tabbedPane) {
         List<Component> instancesPanels = new ArrayList<>();
         for(Transform instanceTrafo : entity.getInstances()) {
-            instancesPanels.add(new TransformablePanel<>(instanceTrafo));
+            instancesPanels.add(new TransformablePanel(instanceTrafo));
         }
         WebComponentPanel buttonPanel = new WebComponentPanel();
         buttonPanel.setElementMargin(4);
@@ -200,7 +200,7 @@ public class EntityView extends WebPanel {
 
         addNamePanel(webComponentPanel);
 
-        webComponentPanel.addElement(new TransformablePanel<>(entity));
+        webComponentPanel.addElement(new TransformablePanel(entity));
 
         WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
         updateComboBox.addActionListener(e -> {
@@ -261,7 +261,7 @@ public class EntityView extends WebPanel {
             EntityView temp = this;
             childSelect.addActionListener(e ->{
                 int index = childSelect.getSelectedIndex();
-                Entity newEntity = entity.getChildren().get(index);
+                Entity newEntity = entity.getEntityChildren().get(index);
                 temp.init(newEntity);
             });
             childSelect.setName("Children");

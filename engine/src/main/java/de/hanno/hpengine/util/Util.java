@@ -2,11 +2,8 @@ package de.hanno.hpengine.util;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import com.bulletphysics.linearmath.Transform;
+import org.joml.*;
 import org.lwjgl.Sys;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
@@ -14,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.Math;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -346,7 +344,7 @@ public class Util {
 		Quat4f outRot = new Quat4f();
 
 		de.hanno.hpengine.engine.Transform finalTransform = new de.hanno.hpengine.engine.Transform();
-		finalTransform.setPosition(new Vector3f(in.origin.x,in.origin.y,in.origin.z));
+		finalTransform.setTranslation(new Vector3f(in.origin.x,in.origin.y,in.origin.z));
 		finalTransform.setOrientation(fromBullet(in.getRotation(outRot)));
 		return finalTransform;
 	}
@@ -459,46 +457,46 @@ public class Util {
 	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
 		Camera camera = new Camera();
 		camera.setProjectionMatrix(Util.createPerpective(90, 1, 0.1f, 250f));
-		camera.setPosition(position);
+		camera.translation(position);
 		Matrix4f projectionMatrix = camera.getProjectionMatrix();
 
 		Matrix4f[] resultViewMatrices = new Matrix4f[6];
 		Matrix4f[] resultProjectionMatrices = new Matrix4f[6];
 
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0, 1, 0, -90));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-90)));
 			camera.update(0);
 		resultViewMatrices[0] = camera.getViewMatrix();
 		resultProjectionMatrices[0] = projectionMatrix;
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0, 1, 0, 90));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(90)));
 			camera.update(0);
 		resultViewMatrices[1] = camera.getViewMatrix();
 		resultProjectionMatrices[1] = projectionMatrix;
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
-			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
 			camera.update(0);
 		resultViewMatrices[2] = camera.getViewMatrix();
 		resultProjectionMatrices[2] = projectionMatrix;
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
-            camera.rotateWorld(new Vector4f(0, 1, 0, 180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(-90)));
+            camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
 			camera.update(0);
 		resultViewMatrices[3] = camera.getViewMatrix();
 		resultProjectionMatrices[3] = projectionMatrix;
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-180)));
 			camera.update(0);
 		resultViewMatrices[4] = camera.getViewMatrix();
 		resultProjectionMatrices[4] = projectionMatrix;
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
 			camera.update(0);
 		resultViewMatrices[5] = camera.getViewMatrix();
 		resultProjectionMatrices[5] = projectionMatrix;

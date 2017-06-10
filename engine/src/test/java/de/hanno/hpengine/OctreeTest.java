@@ -82,12 +82,8 @@ public class OctreeTest extends TestWithEngine {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
-			@Override
 			public Transform getTransform() {
 				return null;
-			}
-			@Override
-			public void setTransform(Transform transform) {
 			}
 		};
 		
@@ -135,13 +131,6 @@ public class OctreeTest extends TestWithEngine {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
-			@Override
-			public Transform getTransform() {
-				return null;
-			}
-			@Override
-			public void setTransform(Transform transform) {
-			}
 		};
 		Entity entityTopRightFront = new Entity() {
 			
@@ -175,13 +164,6 @@ public class OctreeTest extends TestWithEngine {
 			}
 			@Override public boolean isSelected() { return false; }
 			@Override public void setSelected(boolean selected) { }
-			@Override
-			public Transform getTransform() {
-				return null;
-			}
-			@Override
-			public void setTransform(Transform transform) {
-			}
 		};
 		
 		Octree octree = new Octree(new Vector3f(), 10f, 1);
@@ -204,7 +186,7 @@ public class OctreeTest extends TestWithEngine {
 		Assert.assertTrue(entityBottomLeftBack.isInFrustum((Camera) camera));
 		Assert.assertFalse(entityTopRightFront.isInFrustum((Camera) camera));
 
-		camera.moveInWorld(new Vector3f(0, 0, -2));
+		camera.translateLocal(new Vector3f(0, 0, -2));
 		camera.update(1);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-2), camera.getPosition(), 0.001f);
 		Helpers.assertEpsilonEqual(new Vector3f(0,0,-1), camera.getViewDirection(), 0.001f);
@@ -263,13 +245,6 @@ public class OctreeTest extends TestWithEngine {
 				}
 				@Override public boolean isSelected() { return false; }
 				@Override public void setSelected(boolean selected) { }
-				@Override
-				public Transform getTransform() {
-					return null;
-				}
-				@Override
-				public void setTransform(Transform transform) {
-				}
 			};
 //			octree.insert(entity);
 			toAdd.add(entity);

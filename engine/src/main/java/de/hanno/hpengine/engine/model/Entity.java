@@ -28,7 +28,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-public class Entity implements Transformable, LifeCycle, Serializable, Bufferable {
+public class Entity extends Transform implements LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
@@ -52,8 +52,6 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	private Update update = Update.DYNAMIC;
 
-	private Transform transform = new Transform();
-
     private List<Instance> instances = new CopyOnWriteArrayList<>();
 
 	protected boolean initialized = false;
@@ -75,16 +73,15 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	protected Entity(Vector3f position, String name, Model model) {
-		transform.init();
 		addComponent(new ModelComponent(model));
 		this.name = name;
-		transform.setPosition(position);
+		setTranslation(position);
+		init();
 	}
 
 	@Override
 	public void init() {
 		LifeCycle.super.init();
-		transform.init();
 
 		for(Component component : components.values()) {
 			component.init();
@@ -160,7 +157,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return !children.isEmpty();
 	}
 
-	public List<Entity> getChildren() {
+	public List<Entity> getEntityChildren() {
 		return children;
 	}
 
@@ -171,8 +168,8 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	public void setParent(Entity parent) {
 		this.parent = parent;
 		parent.addChild(this);
-		getTransform().setParent(parent.getTransform());
-		getTransform().recalculate();
+		super.setParent(parent);
+		recalculate();
 	}
 
 	private Entity addChild(Entity child) {
@@ -188,13 +185,13 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	@Override
 	public void update(float seconds) {
-		getTransform().recalculateIfDirty();
+		recalculateIfDirty();
 		for (Component c : components.values()) {
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
 		for(int i = 0; i < getChildren().size(); i++) {
-			getChildren().get(i).update(seconds);
+			getEntityChildren().get(i).update(seconds);
 		}
 	}
 
@@ -202,22 +199,11 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		return components;
 	}
 
-	public FloatBuffer getModelMatrixAsBuffer() {
-		return transform.getTransformationBuffer();
-	}
-
 	public FloatBuffer getViewMatrixAsBuffer() {
 		return getViewMatrixAsBuffer(true);
 	}
 	public FloatBuffer getViewMatrixAsBuffer(boolean recalculateBefore) {
-		return transform.getTranslationRotationBuffer(recalculateBefore);
-	}
-
-	public void setTransform(Transform transform) {
-		this.transform = transform;
-	}
-	public Transform getTransform() {
-		return transform;
+		return getTranslationRotationBuffer(recalculateBefore);
 	}
 
 	public String getName() {
@@ -273,15 +259,13 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     private transient float boundingSphereRadius = -1;
     private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector3f[] getMinMaxWorld() {
-        if(!getTransform().isDirty() && minMax != null) {
-            if(lastUsedTransformationMatrix != null && Util.equals(getTransform().getTransformation(), lastUsedTransformationMatrix)) {
-                return minMax;
-            }
-        }
+		if(lastUsedTransformationMatrix != null && Util.equals(getTransformation(), lastUsedTransformationMatrix)) {
+			return minMax;
+		}
         centerWorld = null;
         if(hasComponent("ModelComponent")) {
 			ModelComponent modelComponent = getComponent(ModelComponent.class, "ModelComponent");
-			minMax = modelComponent.getMinMax(getModelMatrix());
+			minMax = modelComponent.getMinMax(this);
 		} else {
 			minMax = new Vector3f[2];
 			float amount = 5;
@@ -291,12 +275,12 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 			minMax[1] = vectorMax;
             boundingSphereRadius = Mesh.getBoundingSphereRadius(vectorMin, vectorMax);
 		}
-        lastUsedTransformationMatrix = new Matrix4f(getTransform().getTransformation());
+        lastUsedTransformationMatrix = new Matrix4f(getTransformation());
 
 		return minMax;
 	}
 
-    public float getBoundingSphereRadius() {
+	public float getBoundingSphereRadius() {
         return boundingSphereRadius;
     }
 
@@ -361,14 +345,14 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 	}
 
 	public void setHasMoved(boolean value) {
-        transform.setHasMoved(value);
+        super.setHasMoved(value);
         for(Transform inst : instances) {
             inst.setHasMoved(value);
         }
     }
 
 	public boolean hasMoved() {
-	    if(transform.isHasMoved()) { return true; }
+	    if(isHasMoved()) { return true; }
 	    if(getInstanceCount() <= 1) { return false; }
 
 	    for(int i = 0; i < instances.size(); i++) {
@@ -402,8 +386,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
-				Matrix4f mm = getModelMatrix();
-				putValues(buffer, mm, meshIndex, materialIndex);
+				putValues(buffer, this, meshIndex, materialIndex);
 			}
 
 			for(int i = 0; i < instances.size(); i++) {
@@ -468,7 +451,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 
 	public void addInstance(Transform instance) {
 		if(getParent() != null) {
-			instance.setParent(getParent().getTransform());
+			instance.setParent(getParent());
 		}
 		instances.add(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial()));
 		Engine.getEventBus().post(new EntityAddedEvent());
@@ -476,7 +459,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     public void addInstanceTransforms(List<Transform> instances) {
         if(getParent() != null) {
             for(Transform instance : instances) {
-                instance.setParent(getParent().getTransform());
+                instance.setParent(getParent());
             }
         }
         this.instances.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial())).collect(Collectors.toList()));
@@ -485,7 +468,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
     public void addInstances(List<Instance> instances) {
         if(getParent() != null) {
             for(Transform instance : instances) {
-                instance.setParent(getParent().getTransform());
+                instance.setParent(getParent());
             }
         }
         this.instances.addAll(instances);
@@ -496,7 +479,7 @@ public class Entity implements Transformable, LifeCycle, Serializable, Bufferabl
 		private Material material;
 
 		public Instance(Transform transform, Material material) {
-			setTransform(transform);
+			set(transform);
 			this.material = material;
 		}
 

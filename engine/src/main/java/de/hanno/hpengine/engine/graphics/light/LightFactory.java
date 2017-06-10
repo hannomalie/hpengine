@@ -463,12 +463,12 @@ public class LightFactory {
 
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
-					pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+                    pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
 					modelComponent.getMaterial().setTexturesActive(pointShadowPassProgram);
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(renderState, batch);
 				});
 			}
@@ -478,12 +478,12 @@ public class LightFactory {
 			GraphicsContext.getInstance().clearDepthAndColorBuffer();
 			for (Entity e : visibles) {
 				e.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(modelComponent -> {
-					pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
+                    pointShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getTransformationBuffer());
 					modelComponent.getMaterial().setTexturesActive(pointShadowPassProgram);
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getWorldPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
                     DrawStrategy.draw(renderState, batch);
 				});
 			}
@@ -499,8 +499,8 @@ public class LightFactory {
 	}
 
 	public Camera getCameraForAreaLight(AreaLight light) {
-		camera.setPosition(light.getPosition().negate(null));
-//		de.hanno.hpengine.camera.getOrientation().x = -lights.getOrientation().x;
+		camera.setTranslation(light.getPosition().negate(null));
+		//		de.hanno.hpengine.camera.getOrientation().x = -lights.getOrientation().x;
 //		de.hanno.hpengine.camera.getOrientation().y = -lights.getOrientation().y;
 //		de.hanno.hpengine.camera.getOrientation().z = -lights.getOrientation().z;
 //		de.hanno.hpengine.camera.getOrientation().w = -lights.getOrientation().w;

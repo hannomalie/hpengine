@@ -355,7 +355,7 @@ public class Scene implements LifeCycle, Serializable {
 
 	private Vector3f tempDistVector = new Vector3f();
 	public void addRenderBatches(Camera camera, RenderState currentWriteState) {
-		Vector3f cameraWorldPosition = camera.getWorldPosition();
+		Vector3f cameraWorldPosition = camera.getPosition();
 
 		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
@@ -377,7 +377,7 @@ public class Scene implements LifeCycle, Serializable {
 
 				mesh.getMaterial().setTexturesUsed();
 				RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new RenderBatch());
-				Vector3f[] meshMinMax = mesh.getMinMax(entity.getModelMatrix());
+				Vector3f[] meshMinMax = mesh.getMinMax(entity);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
 				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));

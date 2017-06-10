@@ -29,12 +29,12 @@ public class SimpleMoveComponent implements LifeCycle {
     }
 
     public void update(final float seconds) {
-        entity.move(new Vector3f(0,0,seconds));
+        entity.translateLocal(new Vector3f(0,0,seconds));
 
         for(int i = 0; i < entity.getInstances().size(); i++) {
             Instance currentInstance = entity.getInstances().get(i);
             temp.set(randoms.get(i%randomCount)*flips[i%randomCount],0f,randoms.get(i%randomCount)*flips[i%randomCount]);
-            currentInstance.move(temp.mul(seconds));
+            currentInstance.translate(temp.mul(seconds));
 
             if(counters[i%randomCount] >= 149) {
                 flips[i%randomCount] *= -1;

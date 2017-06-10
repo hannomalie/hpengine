@@ -70,39 +70,19 @@ public class EnvironmentProbe extends Entity {
 //		renderer.batchLine(box.getBottomLeftBackCorner(), sampler.getCamera().getPosition());
 	}
 
-	@Override
 	public void move(Vector3f amount) {
-		super.move(amount);
+		super.translate(amount);
 		resetAllProbes();
 		EnvironmentProbeFactory.getInstance().updateBuffers();
 		box.move(amount);
 	}
 	
-	@Override
-	public void moveInWorld(Vector3f amount) {
-		super.moveInWorld(amount);
-		resetAllProbes();
-		box.move(amount);
-		EnvironmentProbeFactory.getInstance().updateBuffers();
-	}
-	
-	@Override
-	public void setPosition(Vector3f position) {
-		super.setPosition(position);
-		resetAllProbes();
-		box.setCenter(position);
-		EnvironmentProbeFactory.getInstance().updateBuffers();
-	}
-
 	private void resetAllProbes() {
         EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}
 
-	@Override
-	public Vector3f getCenter() { return getPosition(); }
-	
 	@Override
 	public String getName() {
 		return name ;

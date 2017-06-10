@@ -3,6 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.Frustum;
 import junit.framework.Assert;
+import org.joml.AxisAngle4f;
 import org.junit.Test;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -18,7 +19,7 @@ public class CameraTest extends TestWithRenderer {
         Assert.assertEquals(new Vector3f(1,0,0), camera.getRightDirection());
         Assert.assertEquals(new Vector3f(0,0,-1), camera.getViewDirection());
 		
-		camera.rotate(new Vector3f(0,1,0), 90f);
+		camera.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(90f)));
 
 		float epsilon = 0.01f;
 		Assert.assertEquals(0, camera.getUpDirection().x, epsilon);
@@ -47,13 +48,13 @@ public class CameraTest extends TestWithRenderer {
 		Assert.assertFalse(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, -1));
 
-		camera.moveInWorld(new Vector3f(0,0,5));
+		camera.translateLocal(new Vector3f(0,0,5));
 		frustum.calculate(camera);
 		Helpers.assertEpsilonEqual(new Vector3f(0, 0, -1), camera.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 
-		camera.setPosition(new Vector3f());
-		camera.rotateWorld(new Vector3f(0, 1, 0), 180); // cam is now at pos 0,0,0, rotated 180 degrees, looking in +z
+		camera.setTranslation(new Vector3f());
+		camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180))); // cam is now at pos 0,0,0, rotated 180 degrees, looking in +z
 		Helpers.assertEpsilonEqual(new Vector3f(0, 0, 1), camera.getViewDirection(), 0.01f);
 		Assert.assertTrue(frustum.pointInFrustum(0, 0, 1));
 		Assert.assertTrue(frustum.sphereInFrustum(0, 0, 1, 1));

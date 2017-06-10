@@ -46,7 +46,8 @@ public class ModelLod {
             private Vector3f temp = new Vector3f();
             @Override
             public int getIndexBufferIndex(RenderState extract, ModelComponent modelComponent) {
-                Vector3f vectorFromTo = extract.camera.getWorldPosition().sub(modelComponent.getEntity().getCenterWorld(), temp);
+                Vector3f translation = new Vector3f();
+                Vector3f vectorFromTo = extract.camera.getTranslation(translation).sub(modelComponent.getEntity().getCenterWorld(), temp);
                 float distanceCenterCamera = vectorFromTo.length();
 
                 if(distanceCenterCamera < modelComponent.getBoundingSphereRadius()) {

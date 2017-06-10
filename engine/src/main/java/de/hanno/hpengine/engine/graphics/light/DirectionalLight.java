@@ -6,10 +6,10 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
+import org.joml.AxisAngle4f;
 import org.lwjgl.input.Keyboard;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.Util;
 
@@ -35,8 +35,8 @@ public class DirectionalLight extends Entity {
 		camera.setWidth(1500);
 		camera.setHeight(1500);
 		camera.setFar(-5000);
-		camera.setPosition(new Vector3f(12f, 300f, 2f));
-		camera.rotate(new Vector4f(1,0,0, 90));
+		camera.translation(new Vector3f(12f, 300f, 2f));
+		camera.rotate(new AxisAngle4f(1,0,0, (float) Math.toRadians(90)));
 
 //		try {
 //			Mesh model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
@@ -134,36 +134,36 @@ public class DirectionalLight extends Entity {
 				float rotateAmount = 100*seconds;
 
 				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * 45 / 40);
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().rotate(new AxisAngle4f(0, 0, 1, rotateAmount * 45 / 40));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
-					getEntity().rotate(new Vector3f(0, 0, 1), rotateAmount * -45 / 40);
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().rotate(new AxisAngle4f(0, 0, 1, rotateAmount * -45 / 40));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * 45 / 40);
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().rotate(new AxisAngle4f(1, 0, 0, rotateAmount * 45 / 40));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
-					getEntity().rotate(new Vector3f(1, 0, 0), rotateAmount * -45 / 40);
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().rotate(new AxisAngle4f(1, 0, 0, rotateAmount * -45 / 40));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
-					getEntity().move(new Vector3f(0, -moveAmount, 0));
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().translate(new Vector3f(0, -moveAmount, 0));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
-					getEntity().move(new Vector3f(0, moveAmount, 0));
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().translate(new Vector3f(0, moveAmount, 0));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
-					getEntity().move(new Vector3f(-moveAmount, 0, 0));
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().translate(new Vector3f(-moveAmount, 0, 0));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
-					getEntity().move(new Vector3f(moveAmount, 0, 0));
-					getEntity().getTransform().recalculate(); // TODO: Fix this
+					getEntity().translate(new Vector3f(moveAmount, 0, 0));
+					getEntity().recalculate(); // TODO: Fix this
 				}
 			}
 		});

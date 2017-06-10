@@ -92,7 +92,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public void setMaterial(String materialName) {
         this.materialName = materialName;
         model.setMaterial(MaterialFactory.getInstance().getMaterial(materialName));
-        for(Entity child : entity.getChildren()) {
+        for(Entity child : entity.getEntityChildren()) {
             child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialName));
         }
     }

@@ -31,7 +31,7 @@ public class PhysicsComponent extends BaseComponent {
 
     @Override
     public void init() {
-        initialTransform = Util.toBullet(owner.getTransform());
+        initialTransform = Util.toBullet(owner);
         actuallyCreatePhysicsObject();
 
         initialized = true;
@@ -68,11 +68,8 @@ public class PhysicsComponent extends BaseComponent {
 		Matrix4f temp = new Matrix4f();
 		out.getMatrix(temp);
 		de.hanno.hpengine.engine.Transform converted = Util.fromBullet(out);
-		owner.getTransform().setScale(owner.getScale());
-
-		owner.getTransform().setOrientation(converted.getOrientation());
-		owner.getTransform().setPosition(converted.getPosition());
-	}
+        owner.set(converted);
+    }
 
     public void reset() {
         if(isInitialized()) {

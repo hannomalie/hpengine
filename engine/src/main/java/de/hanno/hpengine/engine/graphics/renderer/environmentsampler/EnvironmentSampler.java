@@ -28,14 +28,12 @@ import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.*;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.io.File;
+import java.lang.Math;
 import java.nio.FloatBuffer;
 import java.util.HashSet;
 import java.util.List;
@@ -82,7 +80,7 @@ public class EnvironmentSampler extends Camera {
 		super(0.1f, 5000f, 90f, 1f);
         setWidth(width);
         setWidth(height);
-        setPosition(position);
+        translate(position);
 		init();
 		this.engine = engine;
         this.renderer = Renderer.getInstance();
@@ -98,7 +96,7 @@ public class EnvironmentSampler extends Camera {
 //		projectionMatrix = Util.createOrthogonal(position.x-width/2, position.x+width/2, position.y+height/2, position.y-height/2, near, far);
 		setParent(probe);
 		Quaternionf cubeMapCamInitialOrientation = new Quaternionf().identity();
-		setOrientation(cubeMapCamInitialOrientation);
+		rotate(cubeMapCamInitialOrientation);
 //		rotate(new Vector4f(0, 1, 0, 90));
 //		setPosition(position);
 
@@ -157,7 +155,7 @@ public class EnvironmentSampler extends Camera {
 
         EntitiesContainer octree = scene.getEntitiesContainer();
 		GPUProfiler.start("Cubemap render 6 sides");
-		Quaternionf initialOrientation = getOrientation();
+		Quaternionf initialOrientation = getRotation();
 		Vector3f initialPosition = getPosition();
 
 		DirectionalLight light = scene.getDirectionalLight();
@@ -173,16 +171,6 @@ public class EnvironmentSampler extends Camera {
 		boolean filteringRequired = false;
 		for(int i = 0; i < 6; i++) {
 			rotateForIndex(i, this);
-			List<Entity> visibles = octree.getVisible(this);
-			List<Entity> movedVisibles = visibles.stream().filter(e -> { return e.getUpdate() == Entity.Update.STATIC; }).
-					sorted(new TransformDistanceComparator<Transformable>(this) {
-						public int compare(Transformable o1, Transformable o2) {
-							if(reference == null) { return 0; }
-							float distanceToFirst = reference.getPosition().distanceSquared(o1.getPosition());
-							float distanceToSecond = reference.getPosition().distanceSquared(o2.getPosition());
-							return Float.compare(distanceToFirst, distanceToSecond);
-						}
-					}).collect(Collectors.toList());
 			boolean fullRerenderRequired = urgent || !drawnOnce;
 			boolean aPointLightHasMoved = !scene.getPointLights().stream().filter(e -> { return probe.getBox().containsOrIntersectsSphere(e.getPosition(), e.getRadius()); }).filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
 			boolean areaLightHasMoved = !scene.getAreaLights().stream().filter(e -> { return e.hasMoved(); }).collect(Collectors.toList()).isEmpty();
@@ -231,8 +219,8 @@ public class EnvironmentSampler extends Camera {
 		if (filteringRequired) {
 			generateCubeMapMipMaps();
 		}
-		setPosition(initialPosition);
-		setOrientation(initialOrientation);
+		translation(initialPosition);
+		rotation(initialOrientation);
 		GPUProfiler.end();
 	}
 
@@ -336,7 +324,7 @@ public class EnvironmentSampler extends Camera {
 
 	void drawSecondPass(int sideIndex, DirectionalLight directionalLight, List<PointLight> pointLights, List<TubeLight> tubeLights, List<AreaLight> areaLights) {
 		CubeMapArrayRenderTarget cubeMapArrayRenderTarget = EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget();
-		Vector3f camPosition = getWorldPosition();//.negate(null);
+		Vector3f camPosition = getPosition();//.negate(null);
 		camPosition.add(getViewDirection().mul(getNear()));
 		Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 		
@@ -356,7 +344,7 @@ public class EnvironmentSampler extends Camera {
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
-		secondPassDirectionalProgram.setUniform("eyePosition", getWorldPosition());
+		secondPassDirectionalProgram.setUniform("eyePosition", getPosition());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionRadius", Config.getInstance().getAmbientocclusionRadius());
 		secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
 		secondPassDirectionalProgram.setUniform("screenWidth", (float) EnvironmentProbeFactory.RESOLUTION);
@@ -716,44 +704,44 @@ public class EnvironmentSampler extends Camera {
 
 		switch (i) {
 		case 0:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0,1,0, -90));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(-90)));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 1:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0, 1, 0, 90));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(90)));
 //			probe.getCamera().setNear(0 + halfSizeX*deltaNear);
 			probe.getCamera().setFar((halfSizeX) * deltaFar);
 			break;
 		case 2:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(1, 0, 0, 90));
-			camera.rotateWorld(new Vector4f(0, 1, 0, 180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(180)));
 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 3:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(1, 0, 0, -90));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(-90)));
 //			probe.getCamera().setNear(0 + halfSizeY*deltaNear);
 			probe.getCamera().setFar((halfSizeY) * deltaFar);
 			break;
 		case 4:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
-			camera.rotateWorld(new Vector4f(0, 1, 0, -180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
+			camera.rotate(new AxisAngle4f(0, 1, 0, (float) Math.toRadians(-180)));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
 			probe.getCamera().setFar((halfSizeZ) * deltaFar);
 			break;
 		case 5:
-			camera.setOrientation(new Quaternionf().identity());
-			camera.rotateWorld(new Vector4f(0,0,1, 180));
+			camera.rotation(new Quaternionf().identity());
+			camera.rotate(new AxisAngle4f(0,0,1, (float) Math.toRadians(180)));
 //			de.hanno.hpengine.camera.rotateWorld(new Vector4f(0, 1, 0, 180));
 //			probe.getCamera().setNear(0 + halfSizeZ*deltaNear);
 			probe.getCamera().setFar((halfSizeZ) * deltaFar);

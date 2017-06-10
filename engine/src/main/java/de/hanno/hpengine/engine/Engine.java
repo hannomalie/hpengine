@@ -181,7 +181,7 @@ public class Engine {
         });
         Renderer.getInstance().registerPipelines(renderState);
         camera.init();
-        camera.setPosition(new Vector3f(0, 20, 0));
+        camera.setTranslation(new Vector3f(0, 20, 0));
         activeCamera = camera;
         scene = new Scene();
         scene.init();

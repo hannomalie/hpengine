@@ -89,7 +89,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
     public void insert(Entity entity) {
 
 		if(entity.hasChildren()) {
-			insert(entity.getChildren());
+			insert(entity.getEntityChildren());
 		}
 
 	   Node insertedInto = rootNode.insert(entity);
@@ -106,7 +106,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	public void insertWithoutOptimize(Entity entity) {
 
 		if(entity.hasChildren()) {
-			insert(entity.getChildren());
+			insert(entity.getEntityChildren());
 		}
 
 	   Node insertedInto = rootNode.insert(entity);

@@ -27,7 +27,7 @@ public class EntityFactory {
 
 	public Entity getEntity(Vector3f position, String name, Model model) {
 		Entity entity = new Entity(position, name, model);
-		entity.setPosition(position);
+		entity.setTranslation(position);
 		entity.setName(name);
 		entity.init();
 		return entity;

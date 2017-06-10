@@ -2,13 +2,13 @@ package de.hanno.hpengine.util.gui.input;
 
 import java.awt.event.ActionEvent;
 
-import de.hanno.hpengine.engine.model.Transformable;
+import de.hanno.hpengine.engine.Transform;
 import org.joml.Vector3f;
 
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.slider.WebSlider;
 
-public class MovablePanel<T extends Transformable> extends WebComponentPanel {
+public class MovablePanel<T extends Transform> extends WebComponentPanel {
 
 	private Vector3f startPosition;
 	
@@ -20,7 +20,7 @@ public class MovablePanel<T extends Transformable> extends WebComponentPanel {
 	    WebFormattedVec3Field positionField = new WebFormattedVec3Field("Position", transformable.getPosition()) {
 			@Override
 			public void onValueChange(Vector3f current) {
-				transformable.setPosition(current);
+				transformable.setTranslation(current);
 			}
 		};
 		this.addElement(positionField);
@@ -29,31 +29,31 @@ public class MovablePanel<T extends Transformable> extends WebComponentPanel {
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = new Vector3f(transformable.getRightDirection());
-				transformable.move(axis.mul(delta));
-				positionField.setValue(transformable.getPosition());
+                transformable.translateLocal(axis.mul(delta));
+                positionField.setValue(transformable.getPosition());
 			}
 		});
         this.addElement(new SliderInput("Position Y", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = new Vector3f(transformable.getUpDirection());
-				transformable.move(axis.mul(delta));
-				positionField.setValue(transformable.getPosition());
+                transformable.translateLocal(axis.mul(delta));
+                positionField.setValue(transformable.getPosition());
 			}
 		});
         this.addElement(new SliderInput("Position Z", WebSlider.HORIZONTAL, 0, 200, 100) {
 			@Override
 			public void onValueChange(int value, int delta) {
 				Vector3f axis = new Vector3f(transformable.getViewDirection().negate(null));
-				transformable.move(axis.mul(delta));
-				positionField.setValue(transformable.getPosition());
+                transformable.translateLocal(axis.mul(delta));
+                positionField.setValue(transformable.getPosition());
 			}
 		});
 
         this.addElement(new ButtonInput("Position", "Reset") {
 			@Override
 			public void onClick(ActionEvent e) {
-				transformable.setPosition(startPosition);
+				transformable.setTranslation(startPosition);
 				positionField.setValue(transformable.getPosition());
 			}
 		});

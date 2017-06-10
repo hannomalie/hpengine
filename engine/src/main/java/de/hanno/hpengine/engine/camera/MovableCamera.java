@@ -19,59 +19,73 @@ public class MovableCamera extends Camera {
         addComponent(new InputControllerComponent() {
                          private static final long serialVersionUID = 1L;
 
-                        private float absolutePitch;
-                        private float absoluteYaw;
+                        public Vector3f linearAcc = new Vector3f();
+                        public Vector3f linearVel = new Vector3f();
+
+                        /** Always rotation about the local XYZ axes of the camera! */
+                        public Vector3f angularAcc = new Vector3f();
+                        public Vector3f angularVel = new Vector3f();
+
+                        public Vector3f position = new Vector3f(0, 0, 10);
+                        public Quaternionf rotation = new Quaternionf();
 
                         private float pitchAccel = 0;
                         private float yawAccel = 0;
 
                          @Override
                          public void update(float seconds) {
+//                             linearVel.fma(seconds, linearAcc);
+//                             // update angular velocity based on angular acceleration
+//                             angularVel.fma(seconds, angularAcc);
+//                             // update the rotation based on the angular velocity
+//                             rotation.integrate(seconds, angularVel.x, angularVel.y, angularVel.z);
+//                             // update position based on linear velocity
+//                             position.fma(seconds, linearVel);
 
                              float turbo = 1f;
                              if (Input.isKeyPressed(Keyboard.KEY_LSHIFT)) {
                                  turbo = 3f;
                              }
 
-                             float rotationAmount = 100.1f * turbo * seconds * rotationDelta * Config.getInstance().getCameraSpeed();
+                             float rotationAmount = 10.1f * turbo * seconds * rotationDelta * Config.getInstance().getCameraSpeed();
                              if (Input.isMouseClicked(0)) {
                                  double pitchAmount = Math.toRadians((Input.getDYSmooth() * rotationAmount) % 360);
                                  pitchAccel = (float) Math.max(2 * Math.PI, pitchAccel + pitchAmount);
-                                 absolutePitch += -pitchAmount;
                                  pitchAccel = Math.max(0, pitchAccel * 0.9f);
 
                                  double yawAmount = Math.toRadians((Input.getDXSmooth() * rotationAmount) % 360);
                                  yawAccel = (float) Math.max(2 * Math.PI, yawAccel + yawAmount);
-                                 absoluteYaw += yawAmount;
                                  yawAccel = Math.max(0, yawAccel * 0.9f);
 
+                                 rotation.rotateY((float) yawAmount);
+                                 rotation.rotateX((float) -pitchAmount);
 
-                                 Quaternionf pitchQuat = new Quaternionf();
-                                 pitchQuat.fromAxisAngleRad(Transform.WORLD_RIGHT.x, Transform.WORLD_RIGHT.y, Transform.WORLD_RIGHT.z, (float) Math.toRadians(absolutePitch));
-                                 Quaternionf yawQuat = new Quaternionf();
-                                 yawQuat.fromAxisAngleRad(Transform.WORLD_UP.x, Transform.WORLD_UP.y, Transform.WORLD_UP.z, (float) Math.toRadians(absoluteYaw));
-                                 getEntity().setOrientation(new Quaternionf(yawQuat).mul(pitchQuat).normalize());
+                                 getEntity().rotateY((float) -yawAmount);
+                                 getEntity().rotateX((float) pitchAmount);
                              }
 
                              float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();
                              if (Input.isKeyPressed(Keyboard.KEY_W)) {
-                                 getEntity().move(new Vector3f(0, 0, -moveAmount));
+                                 getEntity().translate(new Vector3f(0, 0, -moveAmount));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_S)) {
-                                 getEntity().move(new Vector3f(0, 0, moveAmount));
+                                 getEntity().translate(new Vector3f(0, 0, moveAmount));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_A)) {
-                                 getEntity().move(new Vector3f(moveAmount, 0, 0));
+                                 getEntity().translate(new Vector3f(-moveAmount, 0, 0));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_D)) {
-                                 getEntity().move(new Vector3f(-moveAmount, 0, 0));
+                                 getEntity().translate(new Vector3f(moveAmount, 0, 0));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_Q)) {
-                                 getEntity().move(new Vector3f(0, moveAmount, 0));
+                                 getEntity().translate(new Vector3f(0, -moveAmount, 0));
                              }
                              if (Input.isKeyPressed(Keyboard.KEY_E)) {
-                                 getEntity().move(new Vector3f(0, -moveAmount, 0));
+                                 getEntity().translate(new Vector3f(0, moveAmount, 0));
                              }
+
+
+//                             getEntity().rotate(rotation).translate(-position.x, -position.y, -position.z);
                          }
                      }
         );

@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.util.Util;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -26,7 +25,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 	protected PointLight(Vector3f position, Model model, Vector4f colorIntensity, float range) {
 		super(position, generateName(), model);
 		setColor(colorIntensity);
-		setScale(range);
+		scale(range);
 		init();
 	}
 	
@@ -77,7 +76,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 //	}
 	
 	public float getRadius() {
-		return getTransform().getScale().x;
+        return this.getScale().x;
 	}
 	
 	@Override

@@ -23,6 +23,7 @@ import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import org.joml.AxisAngle4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import org.joml.Matrix4f;
@@ -338,7 +339,8 @@ public class VoxelConeTracingExtension implements RenderExtension {
         GraphicsContext.getInstance().bindTexture(14, TEXTURE_3D, normalGrid);
 
         voxelConeTraceProgram.use();
-        voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getWorldPosition());
+        Vector3f camTranslation = new Vector3f();
+        voxelConeTraceProgram.setUniform("eyePosition", renderState.camera.getTranslation(camTranslation));
         voxelConeTraceProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         voxelConeTraceProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         voxelConeTraceProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
@@ -388,7 +390,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private void initViewZBuffer() {
         viewZTransform = new Transform();
-        viewZTransform.rotate(new Vector3f(0,1,0), 180f);
+        viewZTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(180f)));
         viewZ = new Matrix4f(ortho).mul(viewZTransform.getViewMatrix());
         viewZBuffer.rewind();
         viewZ.get(viewZBuffer);
@@ -397,7 +399,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private void initViewYBuffer() {
         viewYTransform = new Transform();
-        viewYTransform.rotate(new Vector3f(1, 0, 0), 90f);
+        viewYTransform.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90f)));
         viewY = new Matrix4f(ortho).mul(viewYTransform.getViewMatrix());
         viewYBuffer.rewind();
         viewY.get(viewYBuffer);
@@ -406,7 +408,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
     private void initViewXBuffer() {
         viewXTransform = new Transform();
-        viewXTransform.rotate(new Vector3f(0,1,0), 90f);
+        viewXTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(90f)));
         viewX = new Matrix4f(ortho).mul(viewXTransform.getViewMatrix());
         viewXBuffer.rewind();
         viewX.get(viewXBuffer);

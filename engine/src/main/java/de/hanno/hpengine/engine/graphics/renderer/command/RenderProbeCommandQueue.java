@@ -1,13 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
-import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Transformable;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.TransformDistanceComparator;
+import org.joml.Vector3f;
+
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class RenderProbeCommandQueue {
 
@@ -60,14 +61,7 @@ public class RenderProbeCommandQueue {
 	}
 
 	public Optional<RenderProbeCommand> takeNearest(Entity camera) {
-		TransformDistanceComparator<Transformable> comparator = new TransformDistanceComparator<Transformable>(camera);
-		Optional<RenderProbeCommand> result = workQueue.stream().filter(command -> { return command.getProbe().getBox().contains(camera.getPosition().negate(null)); }).sorted(comparator).findFirst();
-		if(!result.isPresent()) {
-			result = workQueue.stream().sorted(comparator).findFirst();
-		}
-		if(result.isPresent()) {
-			workQueue.remove(result.get());
-		}
+		Optional<RenderProbeCommand> result = workQueue.stream().findFirst();
 		return result;
 	}
 

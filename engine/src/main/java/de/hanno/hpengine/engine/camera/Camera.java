@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.Util;
+import org.joml.Matrix4fc;
 import org.lwjgl.BufferUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -37,7 +38,7 @@ public class Camera extends Entity {
 
 	public Camera() {
 		this.name = "Camera_" +  System.currentTimeMillis();
-        init(Util.createPerpective(30f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
+        init(Util.createPerpective(45f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
@@ -57,17 +58,11 @@ public class Camera extends Entity {
 	}
 
     public void init(Camera camera) {
+		set(camera);
         init(camera.getProjectionMatrix(), camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio());
-        setPosition(camera.getPosition());
-        setOrientation(camera.getOrientation());
-        setScale(camera.getScale());
-        setPerspective(camera.isPerspective());
-        setWidth(camera.getWidth());
-        setHeight(camera.getHeight());
         if(camera.hasParent()) {
             setParent(camera.getParent());
         }
-        init();
     }
 
     public void init(Matrix4f projectionMatrix, float near, float far, float fov, float ratio) {
@@ -111,7 +106,11 @@ public class Camera extends Entity {
 			viewProjectionMatrixBuffer.rewind();
 		}
 	}
-	
+
+	public Matrix4f getViewMatrix() {
+		Matrix4f viewMatrix = new Matrix4f();
+		return this.invert(viewMatrix);
+	}
 
 	private void transform() {
 		frustum.calculate(this);

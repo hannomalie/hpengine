@@ -69,7 +69,7 @@ public class BulletTest {
 	@Test
 	public void transformConversionTest() {
 		Transform tempTransform = new Transform();
-		tempTransform.setPosition(new Vector3f(2,0,0));
+		tempTransform.setTranslation(new Vector3f(2,0,0));
 		Quaternionf orientation = new Quaternionf();
 		orientation.fromAxisAngleRad(0,1,0,90);
 		tempTransform.setOrientation(orientation);

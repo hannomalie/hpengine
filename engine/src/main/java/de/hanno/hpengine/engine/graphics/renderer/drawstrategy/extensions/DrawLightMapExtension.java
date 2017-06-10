@@ -237,7 +237,7 @@ public class DrawLightMapExtension implements RenderExtension {
         GraphicsContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
 
         lightmapEvaluationProgram.use();
-        lightmapEvaluationProgram.setUniform("eyePosition", renderState.camera.getWorldPosition());
+        lightmapEvaluationProgram.setUniform("eyePosition", renderState.camera.getPosition());
         lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
         lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());

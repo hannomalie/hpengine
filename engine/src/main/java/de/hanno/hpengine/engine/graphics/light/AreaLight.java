@@ -25,13 +25,13 @@ public class AreaLight extends Camera {
         projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);
-		setScale(scale);
+		scale(scale);
 		setNear(1f);
         setFar(5000f);
         setFov(180f);
         setRatio(1);
         Entity plane = EntityFactory.getInstance().getEntity(generateName() ,model);
-        plane.setPosition(new Vector3f(0, 0, -getNear()));
+        plane.translation(new Vector3f(0, 0, -getNear()));
         plane.setParent(this);
 		init();
 	}

@@ -37,7 +37,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(entity.getName().equals("xxx"));
         for(Mesh mesh : model.getMeshes()) {
             boolean containsEntity = false;
-            for (Entity child : entity.getChildren()) {
+            for (Entity child : entity.getEntityChildren()) {
                 if(child.getName().equals(mesh.getName())) { containsEntity = true; }
                 Assert.assertTrue(engine.getScene().getEntities().contains(child));
             }
@@ -50,7 +50,7 @@ public class EntityTest extends TestWithEngine {
         Model model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
         parentEntity.setSelected(true);
-        parentEntity.setPosition(new Vector3f(2,2,2));
+        parentEntity.setTranslation(new Vector3f(2,2,2));
         engine.getScene().add(parentEntity);
 
         Assert.assertTrue(engine.getScene().getEntities().contains(parentEntity));
@@ -58,7 +58,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
         Entity childEntity = EntityFactory.getInstance().getEntity("child", model);
-        childEntity.setPosition(new Vector3f(2,2,2));
+        childEntity.setTranslation(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
         engine.getScene().add(childEntity);
 
@@ -66,10 +66,10 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(parentEntity.hasChildren());
         Assert.assertTrue(childEntity.getName().equals("child"));
 
-        Assert.assertTrue(childEntity.getWorldPosition().equals(new Vector3f(4,4,4)));
+        Assert.assertTrue(childEntity.getPosition().equals(new Vector3f(4,4,4)));
 
         Transform instanceTransform = new Transform();
-        instanceTransform.setPosition(new Vector3f(15,15,15));
+        instanceTransform.setTranslation(new Vector3f(15,15,15));
         parentEntity.addInstance(instanceTransform);
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));

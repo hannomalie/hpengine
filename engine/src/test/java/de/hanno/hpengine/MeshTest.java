@@ -57,20 +57,20 @@ public class MeshTest extends TestWithEngine {
 
         Model sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
         Entity entity = EntityFactory.getInstance().getEntity("sphere", sphere);
-		
-		entity.setPosition(new Vector3f(0, 0, 0));
-		
-		Vector3f[] minMaxWorld = entity.getMinMaxWorld();
+
+        entity.setTranslation(new Vector3f(0, 0, 0));
+
+        Vector3f[] minMaxWorld = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-1f, -1f, -1f), minMaxWorld[0]);
 		Assert.assertEquals(new Vector3f(1f, 1f, 1f), minMaxWorld[1]);
-		
 
-		entity.setPosition(new Vector3f(1, 0, 0));
-		minMaxWorld = entity.getMinMaxWorld();
+
+        entity.setTranslation(new Vector3f(1, 0, 0));
+        minMaxWorld = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(0, -1f, -1f), minMaxWorld[0]);
 		Assert.assertEquals(new Vector3f(2f, 1f, 1f), minMaxWorld[1]);
 
-		entity.setScale(2);
+		entity.scale(2);
 		minMaxWorld = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorld[0]);
 		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorld[1]);
@@ -79,8 +79,8 @@ public class MeshTest extends TestWithEngine {
 		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3[0]);
 		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorldVec3[1]);
 
-		entity.moveInWorld(new Vector3f(0, 5, 0));
-		minMaxWorldVec3 = entity.getMinMaxWorld();
+        entity.translateLocal(new Vector3f(0, 5, 0));
+        minMaxWorldVec3 = entity.getMinMaxWorld();
 		Assert.assertEquals(new Vector3f(-1f, 3f, -2f), minMaxWorldVec3[0]);
 		Assert.assertEquals(new Vector3f(3f, 7f, 2f), minMaxWorldVec3[1]);
 	}
