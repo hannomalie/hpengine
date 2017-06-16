@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
 import java.io.FileOutputStream;
@@ -291,12 +292,12 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 	public void setSelected(boolean selected) {
 		this.selected = selected;
 	}
-	
+
 	@Override
 	public String toString() {
 		return name;
 	}
-	
+
 	public static boolean write(Entity entity, String resourceName) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileOutputStream fos = null;
@@ -328,9 +329,9 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		if (!(other instanceof Entity)) {
 			return false;
 		}
-		
+
 		Entity b = (Entity) other;
-		
+
 		return b.getName().equals(getName());
 	}
 

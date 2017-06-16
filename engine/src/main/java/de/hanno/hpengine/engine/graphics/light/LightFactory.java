@@ -154,7 +154,7 @@ public class LightFactory {
 		}
 
 		this.areaShadowPassProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")));
-		this.camera = new Camera(Util.createPerpective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
+		this.camera = new Camera(Util.createPerspective(90f, 1, 1f, 500f), 1f, 500f, 90f, 1);
 
 		// TODO: WRAP METHODS SEPARATELY
 		GraphicsContext.getInstance().execute(() -> {

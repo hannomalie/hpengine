@@ -99,9 +99,9 @@ public class Util {
 		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
 	}
 
-    public static Matrix4f createPerpective(float fov, float ratio, float near, float far) {
-        Matrix4f projectionMatrix = new Matrix4f().perspective(fov, ratio, near, far);
-//        float fieldOfView = fov;
+    public static Matrix4f createPerspective(float fovInDegrees, float ratio, float near, float far) {
+        Matrix4f projectionMatrix = new Matrix4f().setPerspective((float) Math.toRadians(fovInDegrees), ratio, near, far);
+//        float fieldOfView = fovInDegrees;
 //        float aspectRatio = ratio;
 //        float near_plane = near;
 //        float far_plane = far;
@@ -121,7 +121,7 @@ public class Util {
     }
     
     public static Matrix4f createOrthogonal(float left, float right, float top, float bottom, float near, float far) {
-    	Matrix4f projectionMatrix = new Matrix4f().ortho(left, right, bottom, top, near, far);
+    	Matrix4f projectionMatrix = new Matrix4f().setOrtho(left, right, bottom, top, near, far);
 //        projectionMatrix.m00 = 2f / (right - left);
 //        projectionMatrix.m11 = 2f / (top - bottom);
 //        projectionMatrix.m22 = -1f / (far - near);
@@ -456,7 +456,7 @@ public class Util {
 
 	public static TypedTuple<Matrix4f[],Matrix4f[]> getCubeViewProjectionMatricesForPosition(Vector3f position) {
 		Camera camera = new Camera();
-		camera.setProjectionMatrix(Util.createPerpective(90, 1, 0.1f, 250f));
+		camera.setProjectionMatrix(Util.createPerspective(90, 1, 0.1f, 250f));
 		camera.translation(position);
 		Matrix4f projectionMatrix = camera.getProjectionMatrix();
 

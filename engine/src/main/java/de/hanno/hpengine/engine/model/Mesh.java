@@ -236,13 +236,18 @@ public class Mesh implements Serializable {
         return boundSphereRadius;
     }
 
-    private transient Vector3f center;
+    private transient Vector3f center = new Vector3f();
     public Vector3f getCenter() {
-        if(center == null) {
-            center = new Vector3f(min).add(new Vector3f(max).sub(min).mul(0.5f));
-        }
-        return new Vector3f(center);
+        calculateCenter();
+        return center;
     }
+
+
+    Vector3f centerTemp = new Vector3f();
+    public void calculateCenter() {
+        center = centerTemp.set(min).add(new Vector3f(max).sub(min).mul(0.5f));
+    }
+
     public void setCenter(Vector3f center) {
         this.center = center;
     }
@@ -259,11 +264,13 @@ public class Mesh implements Serializable {
             if(lastUsedModelMatrix == null) { lastUsedModelMatrix = new Matrix4f(); }
             lastUsedModelMatrix.set(modelMatrix);
             boundSphereRadius = getBoundingSphereRadius(min, max);
-            center = new Vector3f(min).add(new Vector3f(max).sub(min).mul(0.5f));
+            calculateCenter();
         }
 
-        return new Vector3f[] {new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
+        return minMax;
     }
+
+    private Vector3f[] minMax = new Vector3f[] {min, max};
 
     public static void calculateMinMax(Matrix4f modelMatrix, Vector3f min, Vector3f max, List<CompiledFace> compiledFaces) {
         min.set(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
@@ -290,6 +297,7 @@ public class Mesh implements Serializable {
                 max.z = position.z > max.z ? position.z : max.z;
             }
         }
+
     }
 
     public static void calculateMinMax(Vector3f min, Vector3f max, Vector3f[] current) {

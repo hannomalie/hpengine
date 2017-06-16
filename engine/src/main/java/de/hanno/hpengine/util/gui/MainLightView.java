@@ -163,21 +163,21 @@ public class MainLightView extends WebPanel {
             @Override
             public void onValueChange(Vector3f current) {
                 DirectionalLight light = Engine.getInstance().getScene().getDirectionalLight();
-                light.getCamera().setWidth(current.x);
-                light.getCamera().setHeight(current.y);
-                light.getCamera().setFar(current.z);
+                light.setWidth(current.x);
+                light.setHeight(current.y);
+                light.setFar(current.z);
             }
         });
         webComponentPanel.addElement(new WebFormattedVec3Field("Camera Position", new Vector3f()) {
             @Override
             public void onValueChange(Vector3f current) {
-                Engine.getInstance().getScene().getDirectionalLight().getCamera().setTranslation(current);
+                Engine.getInstance().getScene().getDirectionalLight().setTranslation(current);
             }
         });
 
         webComponentPanel.addElement(new WebButton("Use Light Cam") {{
             addActionListener(e -> {
-                Engine.getInstance().setActiveCamera(Engine.getInstance().getScene().getDirectionalLight().getCamera());
+                Engine.getInstance().setActiveCamera(Engine.getInstance().getScene().getDirectionalLight());
             });
         }});
         webComponentPanel.addElement(new WebButton("Use World Cam") {{

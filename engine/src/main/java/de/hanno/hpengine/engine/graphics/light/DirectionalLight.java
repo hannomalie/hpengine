@@ -15,7 +15,7 @@ import de.hanno.hpengine.util.Util;
 
 import java.nio.FloatBuffer;
 
-public class DirectionalLight extends Entity {
+public class DirectionalLight extends Camera {
 
 	private boolean castsShadows = false;
 
@@ -23,20 +23,17 @@ public class DirectionalLight extends Entity {
 	private float scatterFactor = 1f;
 
 	transient private Entity box;
-	private Camera camera;
 
 	public DirectionalLight() {
+		super(Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f), 0.1f, 500f, 60, 16 / 9);
+		setPerspective(false);
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
-		Matrix4f projectionMatrix = Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f);
-		camera = new Camera(projectionMatrix, 0.1f, 500f, 60, 16 / 9);
-		camera.setParent(this);
-		camera.setPerspective(false);
-		camera.setWidth(1500);
-		camera.setHeight(1500);
-		camera.setFar(-5000);
-		camera.translation(new Vector3f(12f, 300f, 2f));
-		camera.rotate(new AxisAngle4f(1,0,0, (float) Math.toRadians(90)));
+		setWidth(1500);
+		setHeight(1500);
+		setFar(-5000);
+		translation(new Vector3f(12f, 300f, 2f));
+		rotate(new AxisAngle4f(1,0,0, (float) Math.toRadians(90)));
 
 //		try {
 //			Mesh model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
@@ -56,7 +53,6 @@ public class DirectionalLight extends Entity {
 		super.init();
 		initialized = false;
 
-        setHasMoved(true);
 		initialized = true;
 	}
 
@@ -77,14 +73,6 @@ public class DirectionalLight extends Entity {
 //		});
 //	}
 
-	public Camera getCamera() {
-		return camera;
-	}
-
-	public void setCamera(Camera camera) {
-		this.camera = camera;
-	}
-
 	@Override
 	public String getName() {
 		return "Directional lights";
@@ -98,7 +86,7 @@ public class DirectionalLight extends Entity {
 	}
 
 	public Vector3f getDirection () {
-		return camera.getViewDirection();
+		return getViewDirection();
 	}
 
 	@Override
@@ -120,10 +108,6 @@ public class DirectionalLight extends Entity {
 		this.scatterFactor = scatterFactor;
 	}
 
-	public FloatBuffer getViewProjectionMatrixAsBuffer() {
-		return camera.getViewProjectionMatrixAsBuffer();
-	}
-
 	public void addInputController() {
 		addComponent(new InputControllerComponent() {
 			private static final long serialVersionUID = 1L;
@@ -131,22 +115,23 @@ public class DirectionalLight extends Entity {
 			@Override public void update(float seconds) {
 
 				float moveAmount = 100* seconds;
-				float rotateAmount = 100*seconds;
+				float degreesPerSecond = 45;
+				float rotateAmount = (float) Math.toRadians(degreesPerSecond) * seconds;
 
 				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
-					getEntity().rotate(new AxisAngle4f(0, 0, 1, rotateAmount * 45 / 40));
+					getEntity().rotateAround(new Vector3f(0, 1, 0), rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
-					getEntity().rotate(new AxisAngle4f(0, 0, 1, rotateAmount * -45 / 40));
+					getEntity().rotateAround(new Vector3f(0, 1, 0), -rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
-					getEntity().rotate(new AxisAngle4f(1, 0, 0, rotateAmount * 45 / 40));
+					getEntity().rotateAround(new Vector3f(1, 0, 0), rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
-					getEntity().rotate(new AxisAngle4f(1, 0, 0, rotateAmount * -45 / 40));
+					getEntity().rotateAround(new Vector3f(1, 0, 0), -rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
 				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {

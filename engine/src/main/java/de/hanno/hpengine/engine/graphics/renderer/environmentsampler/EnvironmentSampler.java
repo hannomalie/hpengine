@@ -88,7 +88,7 @@ public class EnvironmentSampler extends Camera {
 		float far = 5000f;
 		float near = 0.1f;
 		float fov = 90f;
-		Matrix4f projectionMatrix = Util.createPerpective(fov, 1, near, far);
+		Matrix4f projectionMatrix = Util.createPerspective(fov, 1, near, far);
 		setFar(far);
 		setNear(near);
 		setFov(fov);
@@ -354,7 +354,7 @@ public class EnvironmentSampler extends Camera {
 		FloatBuffer projectionMatrix = getProjectionMatrixAsBuffer();
 		secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
 		secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", directionalLight.getViewProjectionMatrixAsBuffer());
-		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getCamera().getViewDirection());
+		secondPassDirectionalProgram.setUniform("lightDirection", directionalLight.getViewDirection());
 		secondPassDirectionalProgram.setUniform("lightDiffuse", directionalLight.getColor());
 		secondPassDirectionalProgram.setUniform("currentProbe", probe.getIndex());
 		secondPassDirectionalProgram.setUniform("activeProbeCount", EnvironmentProbeFactory.getInstance().getProbes().size());

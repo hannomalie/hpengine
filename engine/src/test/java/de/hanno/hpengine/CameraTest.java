@@ -37,7 +37,7 @@ public class CameraTest extends TestWithRenderer {
 	
 	@Test
 	public void inFrustum() {
-		Matrix4f projectionMatrix = Util.createPerpective(60, 16/9, 0.1f, 100f);
+		Matrix4f projectionMatrix = Util.createPerspective(60, 16/9, 0.1f, 100f);
 		Camera camera = new Camera(projectionMatrix, 0.1f, 100f, 60, 16/9);
 		Assert.assertEquals(new Vector3f(0,0,-1), ((Vector3f)(camera.getViewDirection())));
 		

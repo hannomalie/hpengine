@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.camera.Frustum;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.Model;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -22,7 +21,7 @@ public class AreaLight extends Camera {
 
 	protected AreaLight(Vector3f position, Model model, Vector3f color, Vector3f scale) {
 		super(position, generateName(), model);
-        projectionMatrix = Util.createPerpective(getFov(), getRatio(), getNear(), getFar());
+        projectionMatrix = Util.createPerspective(getFov(), getRatio(), getNear(), getFar());
         frustum = new Frustum(this);
 		setColor(color);
 		scale(scale);

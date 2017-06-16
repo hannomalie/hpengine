@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Transform extends Matrix4f implements Serializable {
+	private Matrix4f lastState = new Matrix4f();
 	private static final long serialVersionUID = 1L;
 
 	public static final Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
@@ -23,7 +24,6 @@ public class Transform extends Matrix4f implements Serializable {
 	private List<Transform> children = new ArrayList<>();
 
 	transient private boolean hasMoved = true;
-
 	transient protected FloatBuffer modelMatrixBuffer;
 	transient protected FloatBuffer viewMatrixBuffer;
 
@@ -82,7 +82,7 @@ public class Transform extends Matrix4f implements Serializable {
 
 	public Matrix4f getTransformation() {
 		recalculateIfDirty();
-		return this;
+		return parent != null ? new Matrix4f(this).mul(parent.getTransformation()) : this;
 	}
 
 	public void recalculateIfDirty() {
@@ -96,17 +96,21 @@ public class Transform extends Matrix4f implements Serializable {
 			children.get(i).recalculate();
 		}
 		bufferMatrixes();
-		hasMoved = true;
 	}
 
 	public boolean isHasMoved() {
 		if(parent != null && parent.isHasMoved()) { return true; }
+		if(hasMoved) {
+			lastState.set(this);
+		} else {
+			hasMoved = !lastState.equals(this);
+		}
 		return hasMoved;
 	}
 	public void setHasMoved(boolean hasMoved) {
 		this.hasMoved = hasMoved;
 	}
-	
+
 	@Override
 	public boolean equals(Object b) {
 		if(!(b instanceof Transform)) {
@@ -128,9 +132,10 @@ public class Transform extends Matrix4f implements Serializable {
 		return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
 	}
 
-	Matrix4f tempView = new Matrix4f();
+
+	Matrix4f viewMatrix = new Matrix4f();
 	public Matrix4f getViewMatrix() {
-		return new Matrix4f(this).invert();
+		return this.invert(viewMatrix);
 	}
 
 	public void init() {
@@ -176,8 +181,8 @@ public class Transform extends Matrix4f implements Serializable {
 		viewMatrixBuffer.rewind();
 	}
 
+	Vector3f position = new Vector3f();
     public Vector3f getPosition() {
-        Vector3f position = new Vector3f();
         return this.getTranslation(position);
     }
 
@@ -214,5 +219,9 @@ public class Transform extends Matrix4f implements Serializable {
 
 	public void rotate(Vector3f axis, int angleInDegrees) {
 		rotate((float) Math.toRadians(angleInDegrees), axis.x, axis.y, axis.z);
+	}
+
+	public void rotateAround(Vector3f axis, float angleInRad, Vector3f pivot) {
+		rotateAround(new Quaternionf().setAngleAxis(angleInRad, axis.x, axis.y, axis.z), pivot.x, pivot.y, pivot.z);
 	}
 }

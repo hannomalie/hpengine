@@ -215,7 +215,7 @@ public class Engine {
         }
 
         if(GraphicsContext.getInstance().isSignaled(renderState.getCurrentWriteState().getGpuCommandSync())) {
-            Camera directionalLightCamera = scene.getDirectionalLight().getCamera();
+            Camera directionalLightCamera = scene.getDirectionalLight();
             renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
             scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
             renderState.update();

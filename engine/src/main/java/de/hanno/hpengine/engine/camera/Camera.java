@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.Util;
-import org.joml.Matrix4fc;
 import org.lwjgl.BufferUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -38,12 +37,12 @@ public class Camera extends Entity {
 
 	public Camera() {
 		this.name = "Camera_" +  System.currentTimeMillis();
-        init(Util.createPerpective(45f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
+        init(Util.createPerspective(45f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight(), 0.1f, 5000f), 0.1f, 5000f, 60f, (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight());
 		//this(renderer, Util.createOrthogonal(-1f, 1f, -1f, 1f, -1f, 2f), Util.lookAt(new Vector3f(1,10,1), new Vector3f(0,0,0), new Vector3f(0, 1, 0)));
 	}
 	public Camera(float near, float far, float fov, float ratio) {
 		this.name = "Camera_" +  System.currentTimeMillis();
-        init(Util.createPerpective(fov, ratio, near, far), near, far, fov, ratio);
+        init(Util.createPerspective(fov, ratio, near, far), near, far, fov, ratio);
 	}
 
     public Camera(Camera camera) {
@@ -94,6 +93,7 @@ public class Camera extends Entity {
         }
 	}
 
+	private Matrix4f tempViewProjectionMatrix = new Matrix4f();
 	private void storeMatrices() {
 		synchronized (projectionMatrixBuffer) {
 			projectionMatrixBuffer.rewind();
@@ -102,14 +102,9 @@ public class Camera extends Entity {
 		}
 		synchronized (viewProjectionMatrixBuffer) {
 			viewProjectionMatrixBuffer.rewind();
-			new Matrix4f(projectionMatrix).mul(getViewMatrix()).get(viewProjectionMatrixBuffer);
+			tempViewProjectionMatrix.set(projectionMatrix).mul(getViewMatrix()).get(viewProjectionMatrixBuffer);
 			viewProjectionMatrixBuffer.rewind();
 		}
-	}
-
-	public Matrix4f getViewMatrix() {
-		Matrix4f viewMatrix = new Matrix4f();
-		return this.invert(viewMatrix);
 	}
 
 	private void transform() {
@@ -193,7 +188,7 @@ public class Camera extends Entity {
 
 	private void calculateProjectionMatrix() {
 		if(isPerspective) {
-			projectionMatrix = Util.createPerpective(fov, ratio, near, far);	
+			projectionMatrix = Util.createPerspective(fov, ratio, near, far);
 		} else {
 			projectionMatrix = Util.createOrthogonal(-width/2, width/2, height/2, -height/2, -far/2, far/2);
 		}

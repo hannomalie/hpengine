@@ -258,6 +258,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         camPosition.add(camera.getViewDirection().mul(-camera.getNear()));
         Vector4f camPositionV4 = new Vector4f(camPosition.x, camPosition.y, camPosition.z, 0);
 
+        FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
+        FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
+
         GPUProfiler.start("Directional light");
         graphicsContext.depthMask(false);
         graphicsContext.disable(DEPTH_TEST);
@@ -289,9 +292,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         secondPassDirectionalProgram.setUniform("ambientOcclusionTotalStrength", Config.getInstance().getAmbientocclusionTotalStrength());
         secondPassDirectionalProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
         secondPassDirectionalProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
-        FloatBuffer viewMatrix = camera.getViewMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);
-        FloatBuffer projectionMatrix = camera.getProjectionMatrixAsBuffer();
         secondPassDirectionalProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrix);
         secondPassDirectionalProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
         secondPassDirectionalProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
