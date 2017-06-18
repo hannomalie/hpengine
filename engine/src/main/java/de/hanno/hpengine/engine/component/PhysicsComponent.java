@@ -4,7 +4,7 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.MotionState;
-import com.bulletphysics.linearmath.Transform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 
 public class PhysicsComponent extends BaseComponent {
     public static final String COMPONENT_KEY = PhysicsComponent.class.getSimpleName();
-    private transient Transform initialTransform;
+    private transient com.bulletphysics.linearmath.Transform initialTransform;
 
     RigidBodyConstructionInfo rigidBodyConstructionInfo;
 	private Entity owner;
@@ -63,11 +63,11 @@ public class PhysicsComponent extends BaseComponent {
     }
 
     public void update(float seconds) {
-		Transform out = new Transform();
+		com.bulletphysics.linearmath.Transform out = new com.bulletphysics.linearmath.Transform();
 		rigidBody.getWorldTransform(out);
 		Matrix4f temp = new Matrix4f();
 		out.getMatrix(temp);
-		de.hanno.hpengine.engine.Transform converted = Util.fromBullet(out);
+		Transform converted = Util.fromBullet(out);
         owner.set(converted);
     }
 

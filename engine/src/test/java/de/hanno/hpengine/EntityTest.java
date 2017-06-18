@@ -1,9 +1,10 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(entity.getName().equals("xxx"));
         for(Mesh mesh : model.getMeshes()) {
             boolean containsEntity = false;
-            for (Entity child : entity.getEntityChildren()) {
+            for (Entity child : entity.getChildren()) {
                 if(child.getName().equals(mesh.getName())) { containsEntity = true; }
                 Assert.assertTrue(engine.getScene().getEntities().contains(child));
             }
@@ -68,7 +69,7 @@ public class EntityTest extends TestWithEngine {
 
         Assert.assertTrue(childEntity.getPosition().equals(new Vector3f(4,4,4)));
 
-        Transform instanceTransform = new Transform();
+        Transform instanceTransform = new SimpleTransform();
         instanceTransform.setTranslation(new Vector3f(15,15,15));
         parentEntity.addInstance(instanceTransform);
 

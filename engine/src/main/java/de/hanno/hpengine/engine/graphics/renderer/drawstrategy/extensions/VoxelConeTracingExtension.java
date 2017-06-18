@@ -1,12 +1,13 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import com.carrotsearch.hppc.ObjectLongHashMap;
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -389,7 +390,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     private void initViewZBuffer() {
-        viewZTransform = new Transform();
+        viewZTransform = new SimpleTransform();
         viewZTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(180f)));
         viewZ = new Matrix4f(ortho).mul(viewZTransform.getViewMatrix());
         viewZBuffer.rewind();
@@ -398,7 +399,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     private void initViewYBuffer() {
-        viewYTransform = new Transform();
+        viewYTransform = new SimpleTransform();
         viewYTransform.rotate(new AxisAngle4f(1, 0, 0, (float) Math.toRadians(90f)));
         viewY = new Matrix4f(ortho).mul(viewYTransform.getViewMatrix());
         viewYBuffer.rewind();
@@ -407,7 +408,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     }
 
     private void initViewXBuffer() {
-        viewXTransform = new Transform();
+        viewXTransform = new SimpleTransform();
         viewXTransform.rotate(new AxisAngle4f(0,1,0, (float) Math.toRadians(90f)));
         viewX = new Matrix4f(ortho).mul(viewXTransform.getViewMatrix());
         viewXBuffer.rewind();

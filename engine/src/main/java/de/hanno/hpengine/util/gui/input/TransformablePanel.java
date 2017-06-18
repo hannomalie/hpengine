@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.model.Transformable;
 import org.joml.*;
 
 import java.awt.event.ActionEvent;
+import java.lang.Math;
 
 public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
 
@@ -31,19 +32,19 @@ public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
         this.addElement(new SliderInput("Orientation X", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new AxisAngle4f(1, 0, 0, delta));
+				transformable.rotateX((float) Math.toRadians(delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Y", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new AxisAngle4f(0, 1, 0, delta));
+				transformable.rotateY((float) Math.toRadians(delta));
 			}
 		});
         this.addElement(new SliderInput("Orientation Z", WebSlider.HORIZONTAL, 0, 360, 0) {
 			@Override
 			public void onValueChange(int value, int delta) {
-				transformable.rotate(new AxisAngle4f(0, 0, 1, delta));
+				transformable.rotateZ((float) Math.toRadians(delta));
 			}
 		});
         

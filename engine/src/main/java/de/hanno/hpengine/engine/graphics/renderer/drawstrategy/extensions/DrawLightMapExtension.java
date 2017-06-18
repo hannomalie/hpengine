@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.Transform;
@@ -80,7 +81,7 @@ public class DrawLightMapExtension implements RenderExtension {
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(3));
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(4));
         });
-        identityMatrix44Buffer = new Transform().getTransformationBuffer();
+        identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
         lightMapProgram = ProgramFactory.getInstance().getProgram("lightmap_vertex.glsl", "lightmap_fragment.glsl");
         lightmapEvaluationProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl");
         lightmapPropagationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_propagation_compute.glsl");

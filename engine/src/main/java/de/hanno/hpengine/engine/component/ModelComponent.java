@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.scene.Scene;
@@ -92,7 +93,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public void setMaterial(String materialName) {
         this.materialName = materialName;
         model.setMaterial(MaterialFactory.getInstance().getMaterial(materialName));
-        for(Entity child : entity.getEntityChildren()) {
+        for(Entity child : entity.getChildren()) {
             child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialName));
         }
     }
@@ -240,8 +241,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return vertexIndexOffsets.vertexOffset;
     }
 
-    public Vector3f[] getMinMax(Matrix4f modelMatrix) {
-        return model.getMinMax(modelMatrix);
+    public Vector3f[] getMinMax(Transform transform) {
+        return model.getMinMax(transform);
     }
 
     public Model getModel() {

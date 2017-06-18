@@ -372,7 +372,7 @@ public class Scene implements LifeCycle, Serializable {
 
 			for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
 				Mesh mesh = modelComponent.getMeshes().get(i);
-				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter().x, mesh.getCenter().y, mesh.getCenter().z, mesh.getBoundingSphereRadius());
+				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter(entity).x, mesh.getCenter(entity).y, mesh.getCenter(entity).z, mesh.getBoundingSphereRadius());
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();
@@ -380,7 +380,7 @@ public class Scene implements LifeCycle, Serializable {
 				Vector3f[] meshMinMax = mesh.getMinMax(entity);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
+				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(entity), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
 				currentWriteState.add(batch);
 			}
 		}

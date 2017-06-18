@@ -1,9 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -23,7 +24,7 @@ public class DrawLinesExtension implements RenderExtension {
     private final FloatBuffer identityMatrix44Buffer;
 
     public DrawLinesExtension() throws Exception {
-        identityMatrix44Buffer = new Transform().getTransformationBuffer();
+        identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
         linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl");
     }
 

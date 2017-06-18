@@ -1,13 +1,13 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.*;
 
 import java.lang.Math;
 
 public interface Transformable {
-    de.hanno.hpengine.engine.Transform getTransform();
+    Transform getTransform();
     void setTransform(Transform transform);
     default Vector3f getPosition() { return getTransform().getPosition(); };
     default Quaternionf getOrientation() { return getTransform().getOrientation(); };

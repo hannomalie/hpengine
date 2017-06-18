@@ -13,10 +13,11 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
@@ -137,7 +138,7 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            entity.addInstance(new Transform());
+            entity.addInstance(new SimpleTransform());
             Engine.getEventBus().post(new EntityAddedEvent());
 //            TODO: Make this possible
 //            init(entity);
@@ -261,7 +262,7 @@ public class EntityView extends WebPanel {
             EntityView temp = this;
             childSelect.addActionListener(e ->{
                 int index = childSelect.getSelectedIndex();
-                Entity newEntity = entity.getEntityChildren().get(index);
+                Entity newEntity = entity.getChildren().get(index);
                 temp.init(newEntity);
             });
             childSelect.setName("Children");

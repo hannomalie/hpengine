@@ -1,6 +1,6 @@
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;

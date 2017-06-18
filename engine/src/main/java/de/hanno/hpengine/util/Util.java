@@ -1,7 +1,8 @@
 package de.hanno.hpengine.util;
 
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
-import com.bulletphysics.linearmath.Transform;
 import org.joml.*;
 import org.lwjgl.Sys;
 
@@ -289,9 +290,9 @@ public class Util {
     public static Vector3f fromBullet(javax.vecmath.Vector3f in) {
         return new Vector3f(in.x, in.y, in.z);
     }
-	public static Transform toBullet(de.hanno.hpengine.engine.Transform in) {
+	public static com.bulletphysics.linearmath.Transform toBullet(Transform in) {
 		Matrix4f out = in.getTransformation();
-		return new Transform(toBullet(out));
+		return new com.bulletphysics.linearmath.Transform(toBullet(out));
 	}
 
 	public static javax.vecmath.Matrix4f toBullet(Matrix4f in) {
@@ -338,12 +339,12 @@ public class Util {
 		return out;
 	}
 
-	public static de.hanno.hpengine.engine.Transform fromBullet(Transform in) {
+	public static Transform fromBullet(com.bulletphysics.linearmath.Transform in) {
 		javax.vecmath.Matrix4f out = new javax.vecmath.Matrix4f();
 		in.getMatrix(out);
 		Quat4f outRot = new Quat4f();
 
-		de.hanno.hpengine.engine.Transform finalTransform = new de.hanno.hpengine.engine.Transform();
+		Transform finalTransform = new SimpleTransform();
 		finalTransform.setTranslation(new Vector3f(in.origin.x,in.origin.y,in.origin.z));
 		finalTransform.setOrientation(fromBullet(in.getRotation(outRot)));
 		return finalTransform;

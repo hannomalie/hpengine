@@ -239,7 +239,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.depthMask(false);
         graphicsContext.disable(GlCap.BLEND);
         skyBoxRenderBatch.getProgram().use();
-        skyBoxEntity.scale(1000);
+        skyBoxEntity.identity().scale(10);
         skyBoxEntity.setTranslation(camera.getPosition());
         skyBoxProgram.use();
         skyBoxProgram.setUniform("eyeVec", camera.getViewDirection());

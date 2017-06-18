@@ -2,12 +2,10 @@ package de.hanno.hpengine.engine.camera;
 
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.input.Input;
 import org.lwjgl.input.Keyboard;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class MovableCamera extends Camera {
 

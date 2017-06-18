@@ -1,17 +1,20 @@
 package de.hanno.hpengine.engine;
 
-import org.joml.*;
+import de.hanno.hpengine.util.Parentable;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.lang.Math;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Transform extends Matrix4f implements Serializable {
+public class Transform<T extends Transform> extends Matrix4f implements Parentable<T>, Serializable {
 	private Matrix4f lastState = new Matrix4f();
 	private static final long serialVersionUID = 1L;
 
@@ -19,9 +22,8 @@ public class Transform extends Matrix4f implements Serializable {
 	public static final Vector3f WORLD_UP = new Vector3f(0,1,0);
 	public static final Vector3f WORLD_VIEW = new Vector3f(0,0,-1);
 
-	private Transform parent;
-	private Matrix4f parentMatrix = null;
-	private List<Transform> children = new ArrayList<>();
+	private T parent;
+	private List<T> children = new ArrayList<>();
 
 	transient private boolean hasMoved = true;
 	transient protected FloatBuffer modelMatrixBuffer;
@@ -36,20 +38,19 @@ public class Transform extends Matrix4f implements Serializable {
 		modelMatrixBuffer.rewind();
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		viewMatrixBuffer.rewind();
-		parentMatrix = new Matrix4f();
 	}
 
 	public Transform(Transform downFacing) {
 		this.set(downFacing);
 	}
 
-	public Transform init(Transform other) {
+	public Transform init(Transform<T> other) {
 		set(other);
         if(other.getParent() != null) {
 			this.setParent(other.getParent());
 		}
-        for(Transform currentChild : other.getChildren()) {
-            this.addChild(currentChild);
+        for(Parentable currentChild : other.getChildren()) {
+            this.addChild((T) currentChild);
         }
         return this;
     }
@@ -60,54 +61,54 @@ public class Transform extends Matrix4f implements Serializable {
 		setRotationXYZ(eulerAngles.x(), eulerAngles.y(), eulerAngles.z());
     }
 
-	public Transform getParent() {
+	public T getParent() {
 		return parent;
 	}
-	public void setParent(Transform parent) {
-		this.parent = parent;
-		parent.addChild(this);
+	public void setParent(T node) {
+    	if(hasParent() && getParent().nodeAlreadyParentedSomewhere(node)) { throw new IllegalStateException("Cannot parent myself"); }
+		this.parent = node;
 	}
-	public void addChild(Transform transform) {
-		if(children == null) {
-			children = new ArrayList<>();
+	protected boolean nodeAlreadyParentedSomewhere(T node) {
+    	if(hasParent()) {
+    		return getParent().nodeAlreadyParentedSomewhere(node);
+		} else if(node == this) {
+    		return true;
+		} else {
+    		return false;
 		}
-
-		children.add(transform);
 	}
 
-	public List<Transform> getChildren() {
-		return children;
+	public List<T> getChildren() {
+    	return children;
 	}
-
 
 	public Matrix4f getTransformation() {
 		recalculateIfDirty();
-		return parent != null ? new Matrix4f(this).mul(parent.getTransformation()) : this;
+		return parent != null ? new Matrix4f(parent.getTransformation()).mul(this) : this;
+	}
+	protected Matrix4f getTransformationWithoutRecalculation() {
+		return parent != null ? new Matrix4f(parent.getTransformationWithoutRecalculation()).mul(this) : this;
 	}
 
 	public void recalculateIfDirty() {
 		recalculate();
 	}
 	public void recalculate() {
-		if(children == null) {
-			children = new ArrayList<>();
-		}
-		for (int i = 0; i < children.size(); i++) {
-			children.get(i).recalculate();
+		for (int i = 0; i < getChildren().size(); i++) {
+			getChildren().get(i).recalculate();
 		}
 		bufferMatrixes();
 	}
 
 	public boolean isHasMoved() {
 		if(parent != null && parent.isHasMoved()) { return true; }
-		if(hasMoved) {
-			lastState.set(this);
-		} else {
-			hasMoved = !lastState.equals(this);
-		}
+		hasMoved = !lastState.equals(this);
 		return hasMoved;
 	}
 	public void setHasMoved(boolean hasMoved) {
+    	if(this.hasMoved) {
+			lastState.set(this);
+		}
 		this.hasMoved = hasMoved;
 	}
 
@@ -135,7 +136,7 @@ public class Transform extends Matrix4f implements Serializable {
 
 	Matrix4f viewMatrix = new Matrix4f();
 	public Matrix4f getViewMatrix() {
-		return this.invert(viewMatrix);
+		return this.getTransformationWithoutRecalculation().invert(viewMatrix);
 	}
 
 	public void init() {
@@ -151,7 +152,7 @@ public class Transform extends Matrix4f implements Serializable {
 	protected void bufferMatrixes() {
 		synchronized(modelMatrixBuffer) {
 			modelMatrixBuffer.rewind();
-			this.get(modelMatrixBuffer);
+			this.getTransformationWithoutRecalculation().get(modelMatrixBuffer);
 			modelMatrixBuffer.rewind();
 		}
 
@@ -183,7 +184,7 @@ public class Transform extends Matrix4f implements Serializable {
 
 	Vector3f position = new Vector3f();
     public Vector3f getPosition() {
-        return this.getTranslation(position);
+        return getTransformation().getTranslation(position);
     }
 
     public Vector3f getRightDirection() {
@@ -200,17 +201,17 @@ public class Transform extends Matrix4f implements Serializable {
 
     public Quaternionf getRotation() {
         Quaternionf rotation = new Quaternionf();
-        return getNormalizedRotation(rotation);
+        return getTransformation().getNormalizedRotation(rotation);
     }
 
     public Vector3f getScale() {
         Vector3f scale = new Vector3f();
-        return getScale(scale);
+        return getTransformation().getScale(scale);
     }
 
     public Vector3f getCenter() {
         Vector3f position = new Vector3f();
-        return getTranslation(position);
+        return getTransformation().getTranslation(position);
     }
 
 	public void rotate(Vector4f axisAngle) {

@@ -1,22 +1,22 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.util.Parentable;
 import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
 import org.joml.Vector3f;
 
 import java.io.FileOutputStream;
@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-public class Entity extends Transform implements LifeCycle, Serializable, Bufferable {
+public class Entity extends Transform<Entity> implements LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
@@ -59,9 +59,6 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 
 	protected String name = "Entity_" + System.currentTimeMillis();
 
-	private Entity parent = null;
-	private List<Entity> children = new ArrayList<>();
-
 	private boolean selected = false;
 	private boolean visible = true;
 	
@@ -87,7 +84,7 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		for(Component component : components.values()) {
 			component.init();
 		}
-		for(Entity child: children) {
+		for(Entity child: getChildren()) {
 			child.init();
 		}
 		initialized = true;
@@ -110,19 +107,11 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		getComponents().remove(key);
 	}
 
-//	public <T extends Component> T getComponent(Class<T> type) {
-//		Component component = getComponents().get(type.getSimpleName());
-//		return type.cast(component);
-//	}
 	public <T extends Component> T getComponent(Class<T> type, String key) {
 		Component component = getComponents().get(key);
 		return type.cast(component);
 	}
 
-//	public <T extends Component> Optional<T> getComponentOption(Class<T> type) {
-//		Component component = getComponents().get(type.getSimpleName());
-//		return Optional.ofNullable(type.cast(component));
-//	}
 	public <T extends Component> Optional<T> getComponentOption(Class<T> type, String key) {
 		Component component = getComponents().get(key);
 		return Optional.ofNullable(type.cast(component));
@@ -139,49 +128,17 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		List<Entity> allChildrenAndSelf = new ArrayList<>();
 		allChildrenAndSelf.add(this);
 		if(hasChildren()) {
-			for (Entity child: children) {
+			for (Entity child: getChildren()) {
 				allChildrenAndSelf.addAll(child.getAllChildrenAndSelf());
 			}
 		}
 		return allChildrenAndSelf;
 	}
 
-	public Entity getParent() {
-		return parent;
-	}
-
-	public boolean hasParent() {
-		return parent != null;
-	}
-
-	public boolean hasChildren() {
-		return !children.isEmpty();
-	}
-
-	public List<Entity> getEntityChildren() {
-		return children;
-	}
-
-	public void removeParent() {
-		parent.getChildren().remove(this);
-		parent = null;
-	}
-	public void setParent(Entity parent) {
-		this.parent = parent;
-		parent.addChild(this);
-		super.setParent(parent);
+	@Override
+	public void setParent(Entity node) {
+		super.setParent(node);
 		recalculate();
-	}
-
-	private Entity addChild(Entity child) {
-		if(!children.contains(child) && !(this.getParent() == null && this.getParent() == child)) {
-			children.add(child);
-		}
-		return child;
-	}
-
-	private void removeChild(Entity entity) {
-		children.remove(entity);
 	}
 
 	@Override
@@ -192,7 +149,7 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 			c.update(seconds);
 		}
 		for(int i = 0; i < getChildren().size(); i++) {
-			getEntityChildren().get(i).update(seconds);
+			getChildren().get(i).update(seconds);
 		}
 	}
 
@@ -345,6 +302,7 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		return initialized;
 	}
 
+	@Override
 	public void setHasMoved(boolean value) {
         super.setHasMoved(value);
         for(Transform inst : instances) {
@@ -374,7 +332,7 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 	public void setUpdate(Update update) {
 		this.update = update;
 		if (hasChildren()) {
-			for (Entity child : children) {
+			for (Entity child : getChildren()) {
 				child.setUpdate(update);
 			}
 		}
@@ -387,7 +345,7 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
 		for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
-				putValues(buffer, this, meshIndex, materialIndex);
+				putValues(buffer, getTransformation(), meshIndex, materialIndex);
 			}
 
 			for(int i = 0; i < instances.size(); i++) {
@@ -491,5 +449,15 @@ public class Entity extends Transform implements LifeCycle, Serializable, Buffer
         public void setMaterial(Material material) {
             this.material = material;
         }
-    }
+
+		@Override
+		public void setParent(Parentable parent) {
+			throw new IllegalStateException("No parenting for instances!");
+		}
+
+		@Override
+		public List getChildren() {
+			throw new IllegalStateException("No parenting for instances!");
+		}
+	}
 }

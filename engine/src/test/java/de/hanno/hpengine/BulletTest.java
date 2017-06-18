@@ -1,5 +1,6 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.SimpleTransform;
 import de.hanno.hpengine.engine.Transform;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -68,7 +69,7 @@ public class BulletTest {
 	
 	@Test
 	public void transformConversionTest() {
-		Transform tempTransform = new Transform();
+		Transform tempTransform = new SimpleTransform();
 		tempTransform.setTranslation(new Vector3f(2,0,0));
 		Quaternionf orientation = new Quaternionf();
 		orientation.fromAxisAngleRad(0,1,0,90);

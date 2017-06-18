@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
@@ -98,14 +99,14 @@ public class Model {
         return intList.toArray();
     }
 
-    public Vector3f[] getMinMax(Matrix4f modelMatrix) {
-        if(!(lastUsedModelMatrix == null && modelMatrix == null) || !Util.equals(lastUsedModelMatrix, modelMatrix))
+    public Vector3f[] getMinMax(Transform transform) {
+        if(!(lastUsedModelMatrix == null && transform == null) || !Util.equals(lastUsedModelMatrix, transform.getTransformation()))
 
-        lastUsedModelMatrix = modelMatrix;
+        lastUsedModelMatrix = transform.getTransformation();
 
         for(int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
-            Vector3f[] meshMinMax = mesh.getMinMax(modelMatrix);
+            Vector3f[] meshMinMax = mesh.getMinMax(transform);
             Mesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
         }
         return minMax;

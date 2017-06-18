@@ -1,9 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.event.StateChangedEvent;
@@ -184,7 +185,7 @@ public class DeferredRenderer implements Renderer {
 	}
 	
 	private void initIdentityMatrixBuffer() {
-		identityMatrix44Buffer = new Transform().getTransformationBuffer();
+		identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
 	}
 	
 	private void setupShaders() throws Exception {

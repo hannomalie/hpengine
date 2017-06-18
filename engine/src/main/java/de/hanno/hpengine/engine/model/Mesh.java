@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -237,11 +238,10 @@ public class Mesh implements Serializable {
     }
 
     private transient Vector3f center = new Vector3f();
-    public Vector3f getCenter() {
-        calculateCenter();
+    public Vector3f getCenter(Transform modelTransform) {
+        calculateMinMaxAndCenter(modelTransform.getTransformation());
         return center;
     }
-
 
     Vector3f centerTemp = new Vector3f();
     public void calculateCenter() {
@@ -256,7 +256,12 @@ public class Mesh implements Serializable {
         return indexBufferValuesArray;
     }
 
-    public Vector3f[] getMinMax(Matrix4f modelMatrix) {
+    public Vector3f[] getMinMax(Transform modelTransform) {
+        calculateMinMaxAndCenter(modelTransform.getTransformation());
+        return minMax;
+    }
+
+    private void calculateMinMaxAndCenter(Matrix4f modelMatrix) {
         boolean cacheInvalid = lastUsedModelMatrix == null || !Util.equals(lastUsedModelMatrix, modelMatrix);
         if(cacheInvalid)
         {
@@ -266,8 +271,6 @@ public class Mesh implements Serializable {
             boundSphereRadius = getBoundingSphereRadius(min, max);
             calculateCenter();
         }
-
-        return minMax;
     }
 
     private Vector3f[] minMax = new Vector3f[] {min, max};
