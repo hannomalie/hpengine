@@ -36,7 +36,7 @@ public abstract class StorageBuffer implements GPUBuffer {
         bind();
         GraphicsContext.getInstance().execute(() -> {
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, data, GL15.GL_DYNAMIC_COPY);
-            setSizeInBytes(GL15.glGetBufferParameter(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
+            setSizeInBytes(GL15.glGetBufferParameteri(GL43.GL_SHADER_STORAGE_BUFFER, GL15.GL_BUFFER_SIZE));
         });
     }
 

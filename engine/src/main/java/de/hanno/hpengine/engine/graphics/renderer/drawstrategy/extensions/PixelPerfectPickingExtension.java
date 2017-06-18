@@ -10,7 +10,6 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.joml.Vector2f;
 
@@ -36,8 +35,8 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             floatBuffer.rewind();
             Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) GraphicsContext.getInstance().getCanvasWidth(),
                     (float) Config.getInstance().getHeight() / (float) GraphicsContext.getInstance().getCanvasHeight());
-            int adjustedX = (int) (Mouse.getX() * ratio.x);
-            int adjustedY = (int) (Mouse.getY() * ratio.y);
+            int adjustedX = 0;//(int) (Mouse.getX() * ratio.x);
+            int adjustedY = 0;//(int) (Mouse.getY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
             Logger.getGlobal().info("Picked: " + adjustedX + " : " + adjustedY);
             try {

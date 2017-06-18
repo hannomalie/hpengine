@@ -36,7 +36,6 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -366,11 +365,11 @@ public class Engine implements HighFrequencyCommandProvider {
 
     private void destroyOpenGL() {
         GraphicsContext.getInstance().getDrawThread().stopRequested = true;
-        try {
-            Display.destroy();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Display.destroy();
+//        } catch (IllegalStateException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public void destroy() {

@@ -61,7 +61,7 @@ public class PixelBufferObject {
         GraphicsContext.getInstance().execute(() -> {
 			mapAndUnmap(0, 0, width, height, buffer);
             GraphicsContext.getInstance().bindTexture(target, textureId);
-			GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, 0);
+			GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, null);
 		});
 		unbind();
 	}

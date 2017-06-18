@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.util.Util;
-import org.lwjgl.opengl.GLSync;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -40,7 +39,7 @@ public class RenderState {
     public List<Pipeline> pipelines = new ArrayList<>();
 
     private long cycle = 0;
-    private volatile GLSync gpuCommandSync;
+    private volatile long gpuCommandSync;
 
     /**
      * Copy constructor
@@ -177,11 +176,11 @@ public class RenderState {
         return pipelines;
     }
 
-    public GLSync getGpuCommandSync() {
+    public long getGpuCommandSync() {
         return gpuCommandSync;
     }
 
-    public void setGpuCommandSync(GLSync gpuCommandSync) {
+    public void setGpuCommandSync(long gpuCommandSync) {
         this.gpuCommandSync = gpuCommandSync;
 //        glFlush();
     }

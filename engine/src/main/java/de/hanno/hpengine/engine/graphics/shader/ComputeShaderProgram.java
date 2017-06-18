@@ -64,7 +64,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		GL20.glValidateProgram(id);
 		printIfError("Validate program ");
 
-		if (GL20.glGetProgram(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
+		if (GL20.glGetProgrami(getId(), GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
 			System.err.println("Could not link de.hanno.hpengine.shader: " + computeShaderSource.getFilename());
 			System.err.println(GL20.glGetProgramInfoLog(id, 10000));
 		}

@@ -3,11 +3,23 @@ package de.hanno.hpengine.engine.input;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.ClickEvent;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import org.lwjgl.glfw.GLFWKeyCallback;
+
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Input {
+
+    private static final GLFWKeyCallback keyCallback;
+
+    static {
+        keyCallback = new GLFWKeyCallback() {
+            @Override
+            public void invoke(long window, int key, int scancode, int action, int mods) {
+                update();
+            }
+        };
+    }
     private static IntArrayList currentKeys = new IntArrayList();
     private static IntArrayList downKeys = new IntArrayList();
     private static IntArrayList upKeys = new IntArrayList();
@@ -179,7 +191,7 @@ public class Input {
             MOUSE_LEFT_PRESSED_LAST_FRAME = false;
         }
         {
-            if (PICKING_CLICK == 0 && Input.isKeyPressed(Keyboard.KEY_LCONTROL) && Display.isActive()) {
+            if (PICKING_CLICK == 0 && Input.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
                 if (Input.isMouseClicked(0) && !STRG_PRESSED_LAST_FRAME) {
                     PICKING_CLICK = 1;
                     STRG_PRESSED_LAST_FRAME = true;
@@ -249,13 +261,16 @@ public class Input {
         dyBeforeLast = dyLast;
         dxLast = dx;
         dyLast = dy;
-        dx = Mouse.getDX();
-        dy = Mouse.getDY();
+        double[] x = new double[1];
+        double[] y = new double[1];
+        glfwGetCursorPos(GraphicsContext.getInstance().getWindowHandle(), x, y);
+//        dx =
+//        dy = Mouse.getDY();
     }
 
 
     public static boolean isKeyDown(int keyCode) {
-        return Keyboard.isKeyDown(keyCode);
+        return downKeys.contains(keyCode);
     }
 
     public static boolean isKeyPressed(int keyCode) {
@@ -268,7 +283,7 @@ public class Input {
 
 
     public static boolean isMouseDown(int buttonCode) {
-        return Mouse.isButtonDown(buttonCode);
+        return false;//Mouse.isButtonDown(buttonCode);
     }
 
     public static boolean isMouseClicked(int buttonCode) {
@@ -293,5 +308,13 @@ public class Input {
 
     public static int getDYSmooth() {
         return (dy + dyLast + dyBeforeLast) / 3;
+    }
+
+    public static int getX() {
+        return 0;
+    }
+
+    public static int getY() {
+        return 0;
     }
 }

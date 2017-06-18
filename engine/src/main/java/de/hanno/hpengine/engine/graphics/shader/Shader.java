@@ -84,7 +84,7 @@ public interface Shader extends Reloadable {
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
         GraphicsContext.getInstance().execute(() -> {
-            if (GL20.glGetShader(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+            if (GL20.glGetShaderi(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
                 String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000);
                 shaderInfoLog = replaceLineNumbersWithDynamicLinesAdded(shaderInfoLog, finalNewlineCount);

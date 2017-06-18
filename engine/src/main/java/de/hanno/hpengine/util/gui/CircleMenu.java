@@ -12,10 +12,9 @@ import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.ClickEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.input.Input;
 import net.engio.mbassy.listener.Handler;
 import net.engio.mbassy.listener.Synchronized;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
 import java.awt.*;
@@ -70,7 +69,7 @@ public class CircleMenu {
             System.out.println("Set true");
 
             SwingUtils.invokeLater(() -> {
-                webMenu.showMenu(Display.getParent(), Mouse.getX(), GraphicsContext.getInstance().getCanvasHeight() -Mouse.getY());
+                webMenu.showMenu(Engine.frame, Input.getX(), GraphicsContext.getInstance().getCanvasHeight() -Input.getY());
                 System.out.println("Menu shown");
                 if(!isBusy.compareAndSet(true, false)) {
                     throw new IllegalStateException("Illegal State with isBusy!");

@@ -22,7 +22,6 @@ import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
 import de.hanno.hpengine.log.ConsoleLogger;
-import org.lwjgl.opengl.Display;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
@@ -30,6 +29,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.logging.Logger;
+
+import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 
 public class SimpleTextureRenderer implements Renderer {
 	private static Logger LOGGER = ConsoleLogger.getLogger();
@@ -123,7 +125,8 @@ public class SimpleTextureRenderer implements Renderer {
 		GPUProfiler.end();
 
         GPUProfiler.start("Waiting for driver");
-		Display.update();
+		glfwPollEvents();
+		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
         GPUProfiler.end();
 	}
 
@@ -164,8 +167,8 @@ public class SimpleTextureRenderer implements Renderer {
 		lastFrameTime = getTime();
         fpsCounter.update();
 //		OpenGLContext.getInstance().execute(() -> {
-			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
+//			Display.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+//                    fpsCounter.getFPS(), fpsCounter.getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
 //		});
 	}
 	private long getTime() {

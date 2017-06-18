@@ -32,7 +32,6 @@ import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
@@ -53,6 +52,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
+import static java.awt.SystemColor.window;
+import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
 
 public class DeferredRenderer implements Renderer {
@@ -253,10 +255,9 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Create new fence");
 		GraphicsContext.getInstance().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
-
-		GPUProfiler.start("Waiting for driver");
-		Display.update();
-		GPUProfiler.end();
+        GPUProfiler.start("Waiting for driver");
+		glfwPollEvents();
+		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
         GPUProfiler.end();
 	}
 
@@ -387,7 +388,6 @@ public class DeferredRenderer implements Renderer {
                 exception.printStackTrace(System.err);
                 System.err.println("ERROR - " + errorMessage + ": " + errorString);
 
-                if (Display.isCreated()) Display.destroy();
                 System.exit(-1);
             }
         });

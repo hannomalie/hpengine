@@ -1,19 +1,17 @@
 package de.hanno.hpengine.engine.graphics.light;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
-import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
+import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.event.DirectionalLightHasMovedEvent;
-import org.joml.AxisAngle4f;
-import org.lwjgl.input.Keyboard;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.util.Util;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 
-import java.nio.FloatBuffer;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class DirectionalLight extends Camera {
 
@@ -118,35 +116,35 @@ public class DirectionalLight extends Camera {
 				float degreesPerSecond = 45;
 				float rotateAmount = (float) Math.toRadians(degreesPerSecond) * seconds;
 
-				if (Input.isKeyPressed(Keyboard.KEY_UP)) {
+				if (Input.isKeyPressed(GLFW_KEY_UP)) {
 					getEntity().rotateAround(new Vector3f(0, 1, 0), rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_DOWN)) {
+				if (Input.isKeyPressed(GLFW_KEY_DOWN)) {
 					getEntity().rotateAround(new Vector3f(0, 1, 0), -rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_LEFT)) {
+				if (Input.isKeyPressed(GLFW_KEY_LEFT)) {
 					getEntity().rotateAround(new Vector3f(1, 0, 0), rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_RIGHT)) {
+				if (Input.isKeyPressed(GLFW_KEY_RIGHT)) {
 					getEntity().rotateAround(new Vector3f(1, 0, 0), -rotateAmount, new Vector3f());
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD8)) {
+				if (Input.isKeyPressed(GLFW_KEY_8)) {
 					getEntity().translate(new Vector3f(0, -moveAmount, 0));
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD2)) {
+				if (Input.isKeyPressed(GLFW_KEY_2)) {
 					getEntity().translate(new Vector3f(0, moveAmount, 0));
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD4)) {
+				if (Input.isKeyPressed(GLFW_KEY_4)) {
 					getEntity().translate(new Vector3f(-moveAmount, 0, 0));
 					getEntity().recalculate(); // TODO: Fix this
 				}
-				if (Input.isKeyPressed(Keyboard.KEY_NUMPAD6)) {
+				if (Input.isKeyPressed(GLFW_KEY_6)) {
 					getEntity().translate(new Vector3f(moveAmount, 0, 0));
 					getEntity().recalculate(); // TODO: Fix this
 				}

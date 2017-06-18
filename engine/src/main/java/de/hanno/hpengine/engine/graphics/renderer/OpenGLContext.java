@@ -12,9 +12,9 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.*;
-import org.lwjgl.opengl.DisplayMode;
+import org.lwjgl.util.Display;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
 
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL32.*;
 
 public final class OpenGLContext implements GraphicsContext {
@@ -47,13 +49,21 @@ public final class OpenGLContext implements GraphicsContext {
     public volatile boolean errorOccured = false;
     private int maxTextureUnits;
     private List<HighFrequencyCommandProvider> highFrequencyCommandProviders = new CopyOnWriteArrayList<>();
+    private GLFWErrorCallback errorCallback;
+    private long window;
 
     protected OpenGLContext() {
     }
 
     @Override
     public boolean isAttachedTo(CanvasWrapper canvas) {
-        return Display.getParent() != null && Display.getParent().equals(canvas.getCanvas());
+        return true;
+//        return Display.getParent() != null && Display.getParent().equals(canvas.getCanvas());
+    }
+
+    @Override
+    public long getWindowHandle() {
+        return window;
     }
 
     @Override
@@ -77,7 +87,7 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public long waitForGpuSync(GLSync gpuCommandSync) {
+    public long waitForGpuSync(long gpuCommandSync) {
         long start = System.nanoTime();
         while(true) {
             if (isSignaled(gpuCommandSync)) break;
@@ -86,9 +96,9 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public boolean isSignaled(GLSync gpuCommandSync) {
+    public boolean isSignaled(long gpuCommandSync) {
         return GraphicsContext.getInstance().calculate(() -> {
-            if(gpuCommandSync != null) {
+            if(gpuCommandSync > 0) {
                 int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
                 if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
                     return true;
@@ -101,8 +111,8 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {
-        GLSync readStateSync = currentReadState.getGpuCommandSync();
-        if(readStateSync != null) {
+        long readStateSync = currentReadState.getGpuCommandSync();
+        if(readStateSync > 0) {
             glDeleteSync(readStateSync);
         }
         currentReadState.setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
@@ -119,47 +129,24 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     private final void privateInit() throws LWJGLException {
-        PixelFormat pixelFormat = new PixelFormat();
-        ContextAttribs contextAttributes = new ContextAttribs(4, 5)
-				.withProfileCompatibility(true)
-                .withForwardCompatible(true)
-//                .withProfileCore(true)
-                .withDebug(true)
-                ;
-
-        LOGGER.info("OpenGLContext before setDisplayMode");
-        Display.setDisplayMode(new DisplayMode(Config.getInstance().getWidth(), Config.getInstance().getHeight()));
-        LOGGER.info("OpenGLContext after setDisplayMode");
-        Display.setTitle("HPEngine");
-        Display.create(pixelFormat, contextAttributes);
-        Display.setVSyncEnabled(Config.getInstance().isVsync());
-
-//        ContextCapabilities capabilities = GLContext.getCapabilities();
-//        System.out.println("######## Sparse texutre ext available:");
-//        System.out.println(capabilities.GL_ARB_sparse_texture);
-//        System.out.println(capabilities.GL_EXT_direct_state_access);
-//        System.out.println(GL11.glGetString(GL11.GL_EXTENSIONS));
-
-        try {
-            Keyboard.create();
-        } catch (LWJGLException e) {
-            e.printStackTrace();
+        glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
+        glfwInit();
+        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        window = glfwCreateWindow(Config.getInstance().getWidth(), Config.getInstance().getHeight(), "Pong - LWJGL3", 0, 0);
+        if(window == 0) {
+            throw new RuntimeException("Failed to create window");
         }
+
+        glfwSwapInterval(1);
+        glfwMakeContextCurrent(window);
+        GL.createCapabilities();
+        glfwShowWindow(window);
+
         this.depthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        Display.setResizable(false);
-        KHRDebugCallback.Handler handler = new KHRDebugCallback.Handler() {
-            @Override
-            public void handleMessage(int source, int type, int id, int severity, String message) {
-                if(severity == KHRDebug.GL_DEBUG_SEVERITY_HIGH) {
-                    Logger.getGlobal().severe(message);
-                    errorOccured = true;
-                    System.out.println("message = " + message);
-                    new RuntimeException().printStackTrace();
-                }
-            }
-        };
-        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
-        Keyboard.create();
+//        GL43.glDebugMessageCallback(new KHRDebugCallback(handler));
 
         enable(GlCap.DEPTH_TEST);
         enable(GlCap.CULL_FACE);
@@ -198,25 +185,25 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public boolean attach(CanvasWrapper canvasWrapper) {
-        try {
-            Display.setParent(canvasWrapper.getCanvas());
-            Engine.getInstance().setSetTitleRunnable(canvasWrapper.getSetTitleRunnable());
-            attached = true;
-        } catch (LWJGLException e) {
-            attached = false;
-            e.printStackTrace();
-        }
+//        try {
+//            Display.setParent(canvasWrapper.getCanvas());
+//            Engine.getInstance().setSetTitleRunnable(canvasWrapper.getSetTitleRunnable());
+//            attached = true;
+//        } catch (LWJGLException e) {
+//            attached = false;
+//            e.printStackTrace();
+//        }
         return attached;
     }
     @Override
     public boolean detach() {
-        try {
-            Display.setParent(null);
-            Engine.getInstance().setSetTitleRunnable(() -> {});
-            attached = false;
-        } catch (LWJGLException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Display.setParent(null);
+//            Engine.getInstance().setSetTitleRunnable(() -> {});
+//            attached = false;
+//        } catch (LWJGLException e) {
+//            e.printStackTrace();
+//        }
         return !attached;
     }
     @Override
@@ -284,19 +271,19 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public void bindTextures(IntBuffer textureIds) {
         GraphicsContext.getInstance().execute(() -> {
-            GL44.glBindTextures(0, textureIds.capacity(), textureIds);
+            GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int count, IntBuffer textureIds) {
         GraphicsContext.getInstance().execute(() -> {
-            GL44.glBindTextures(0, count, textureIds);
+            GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int firstUnit, int count, IntBuffer textureIds) {
         GraphicsContext.getInstance().execute(() -> {
-            GL44.glBindTextures(firstUnit, count, textureIds);
+            GL44.glBindTextures(firstUnit, textureIds);
         });
     }
 
@@ -388,23 +375,23 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public int getAvailableVRAM() {
-        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX));
+        return calculate(() -> GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX));
     }
     @Override
     public int getAvailableTotalVRAM() {
-        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX));
+        return calculate(() -> GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX));
     }
     @Override
     public int getDedicatedVRAM() {
-        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX));
+        return calculate(() -> GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX));
     }
     @Override
     public int getEvictedVRAM() {
-        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX));
+        return calculate(() -> GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTED_MEMORY_NVX));
     }
     @Override
     public int getEvictionCount() {
-        return calculate(() -> GL11.glGetInteger(NVXGpuMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX));
+        return calculate(() -> GL11.glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_EVICTION_COUNT_NVX));
     }
 
     @Override

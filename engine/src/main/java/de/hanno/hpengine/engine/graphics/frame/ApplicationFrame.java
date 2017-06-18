@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.frame;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,9 +11,12 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
 import static de.hanno.hpengine.engine.graphics.renderer.Renderer.getInstance;
+import static java.awt.SystemColor.window;
+import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 
 public class ApplicationFrame extends JFrame {
 
+    private final GLFWFramebufferSizeCallback framebufferSizeCallback = null;
     private CanvasWrapper canvasWrapper;
 
     private Runnable setTitleRunnable = () -> {
@@ -55,6 +59,15 @@ public class ApplicationFrame extends JFrame {
         getContentPane().add(canvasWrapper.getCanvas(), BorderLayout.CENTER);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
+//        glfwSetFramebufferSizeCallback(GraphicsContext.getInstance().getWindowHandle(), (framebufferSizeCallback = new GLFWFramebufferSizeCallback() {
+//            @Override
+//            public void invoke(long window, int width, int height) {
+//                try {
+//                    GraphicsContext.getInstance().setCanvasWidth(width);
+//                    GraphicsContext.getInstance().setCanvasHeight(height);
+//                } catch (Exception e) {}
+//            }
+//        }));
         addComponentListener(new ComponentAdapter() {
             int retryCounter = 0;
             public void componentResized(ComponentEvent evt) {

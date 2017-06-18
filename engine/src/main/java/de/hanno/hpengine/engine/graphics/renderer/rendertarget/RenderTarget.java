@@ -90,7 +90,7 @@ public class RenderTarget {
                 float[] borderColors = new float[]{0, 0, 0, 1};
                 borderColorBuffer.put(borderColors);
                 borderColorBuffer.rewind();
-                GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
+                GL11.glTexParameterfv(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
                 GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
                 scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0 + i);
                 renderedTextures[i] = renderedTextureTemp;
@@ -139,7 +139,7 @@ public class RenderTarget {
             float[] borderColors = new float[]{0, 0, 0, 1};
             borderColorBuffer.put(borderColors);
             borderColorBuffer.rewind();
-            GL11.glTexParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
+            GL11.glTexParameterfv(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_BORDER_COLOR, borderColorBuffer);
             GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0 + i, renderedTextureTemp, 0);
         }
         GL20.glDrawBuffers(scratchBuffer);

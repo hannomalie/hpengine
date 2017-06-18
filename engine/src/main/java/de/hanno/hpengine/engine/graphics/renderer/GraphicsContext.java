@@ -3,14 +3,12 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
-import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GLSync;
 import org.lwjgl.util.glu.GLU;
 
 import java.nio.IntBuffer;
@@ -27,6 +25,8 @@ public interface GraphicsContext {
 
     boolean isAttachedTo(CanvasWrapper canvas);
 
+    long getWindowHandle();
+
     int getCanvasWidth();
 
     int getCanvasHeight();
@@ -35,9 +35,9 @@ public interface GraphicsContext {
 
     void setCanvasHeight(int height);
 
-    long waitForGpuSync(GLSync gpuCommandSync);
+    long waitForGpuSync(long gpuCommandSync);
 
-    boolean isSignaled(GLSync gpuCommandSync);
+    boolean isSignaled(long gpuCommandSync);
 
     void createNewGPUFenceForReadState(RenderState currentReadState);
 
@@ -83,7 +83,6 @@ public interface GraphicsContext {
             String errorString = GLU.gluErrorString(errorValue);
             System.err.println("ERROR - " + errorMessage + ": " + errorString);
 
-            if (Display.isCreated()) Display.destroy();
             System.exit(-1);
         }
     }

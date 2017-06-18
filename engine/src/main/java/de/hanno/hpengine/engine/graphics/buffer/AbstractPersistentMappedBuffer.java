@@ -40,7 +40,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
             if(needsResize) {
                 GraphicsContext.getInstance().execute(() -> {
                     bind();
-                    if(GL15.glGetBufferParameter(target, GL15.GL_BUFFER_MAPPED) == 1) {
+                    if(GL15.glGetBufferParameteri(target, GL15.GL_BUFFER_MAPPED) == 1) {
                         glUnmapBuffer(target);
                     }
                     if(id > 0) {

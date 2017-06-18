@@ -38,18 +38,18 @@ public class Uniform {
 	}
 	public void setAsMatrix4(FloatBuffer values) {
 //		if(location == -1) { return; };
-		GL20.glUniformMatrix4(location, false, values);
+		GL20.glUniformMatrix4fv(location, false, values);
 	}
 
     public void set(LongBuffer values) {
-        ARBBindlessTexture.glUniformHandleuARB(location, values);
+        ARBBindlessTexture.glUniformHandleui64vARB(location, values);
     }
 
 	public void setVec3ArrayAsFloatBuffer(FloatBuffer values) {
-		GL20.glUniform3(location, values);
+		GL20.glUniform3fv(location, values);
 	}
 	public void setFloatArrayAsFloatBuffer(FloatBuffer values) {
-		GL20.glUniform1(location, values);
+		GL20.glUniform1fv(location, values);
 	}
 	
 	public Uniform setLocationIfAbsent() {

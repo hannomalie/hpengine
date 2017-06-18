@@ -3,9 +3,10 @@ package de.hanno.hpengine.engine.camera;
 import de.hanno.hpengine.engine.component.InputControllerComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.input.Input;
-import org.lwjgl.input.Keyboard;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import static org.lwjgl.glfw.GLFW.*;
 
 public class MovableCamera extends Camera {
 
@@ -41,7 +42,7 @@ public class MovableCamera extends Camera {
 //                             position.fma(seconds, linearVel);
 
                              float turbo = 1f;
-                             if (Input.isKeyPressed(Keyboard.KEY_LSHIFT)) {
+                             if (Input.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
                                  turbo = 3f;
                              }
 
@@ -63,22 +64,22 @@ public class MovableCamera extends Camera {
                              }
 
                              float moveAmount = turbo * posDelta * seconds * Config.getInstance().getCameraSpeed();
-                             if (Input.isKeyPressed(Keyboard.KEY_W)) {
+                             if (Input.isKeyPressed(GLFW_KEY_W)) {
                                  getEntity().translate(new Vector3f(0, 0, -moveAmount));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_S)) {
+                             if (Input.isKeyPressed(GLFW_KEY_S)) {
                                  getEntity().translate(new Vector3f(0, 0, moveAmount));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_A)) {
+                             if (Input.isKeyPressed(GLFW_KEY_A)) {
                                  getEntity().translate(new Vector3f(-moveAmount, 0, 0));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_D)) {
+                             if (Input.isKeyPressed(GLFW_KEY_D)) {
                                  getEntity().translate(new Vector3f(moveAmount, 0, 0));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_Q)) {
+                             if (Input.isKeyPressed(GLFW_KEY_Q)) {
                                  getEntity().translate(new Vector3f(0, -moveAmount, 0));
                              }
-                             if (Input.isKeyPressed(Keyboard.KEY_E)) {
+                             if (Input.isKeyPressed(GLFW_KEY_E)) {
                                  getEntity().translate(new Vector3f(0, moveAmount, 0));
                              }
 

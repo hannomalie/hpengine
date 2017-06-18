@@ -44,7 +44,6 @@ public class CubeRenderTarget extends RenderTarget {
 		int framebuffercheck = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
 		if (framebuffercheck != GL30.GL_FRAMEBUFFER_COMPLETE) {
 			System.err.println("CubeRenderTarget fucked up with " + framebuffercheck);
-			System.err.println(org.lwjgl.opengl.Util.translateGLErrorString(GL11.glGetError()));
 			System.exit(0);
 		}
 	}

@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.SimpleTransform;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.*;
-import org.lwjgl.Sys;
 
 import javax.imageio.ImageIO;
 import javax.vecmath.Quat4f;
@@ -94,10 +93,6 @@ public class Util {
 	
 	public static float degreesToRadians(float degrees) {
 		return degrees * (float)(PI / 180d);
-	}
-	
-	public static long getTime() {
-		return (Sys.getTime() * 1000) / Sys.getTimerResolution();
 	}
 
     public static Matrix4f createPerspective(float fovInDegrees, float ratio, float near, float far) {

@@ -2,12 +2,11 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
-import org.lwjgl.opengl.GLSync;
 
 import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
@@ -18,6 +17,11 @@ public class MockContext implements GraphicsContext {
     @Override
     public boolean isAttachedTo(CanvasWrapper canvas) {
         return false;
+    }
+
+    @Override
+    public long getWindowHandle() {
+        return 0;
     }
 
     @Override
@@ -41,15 +45,15 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public long waitForGpuSync(GLSync gpuCommandSync) {
-
+    public long waitForGpuSync(long gpuCommandSync) {
         return 0;
     }
 
     @Override
-    public boolean isSignaled(GLSync gpuCommandSync) {
+    public boolean isSignaled(long gpuCommandSync) {
         return false;
     }
+
 
     @Override
     public void createNewGPUFenceForReadState(RenderState currentReadState) {

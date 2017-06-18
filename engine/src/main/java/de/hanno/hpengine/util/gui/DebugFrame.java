@@ -66,7 +66,6 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.Display;
 
 import javax.script.ScriptException;
 import javax.swing.*;
@@ -96,6 +95,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static de.hanno.hpengine.engine.graphics.renderer.Renderer.getInstance;
+import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
 
 public class DebugFrame implements HostComponent {
@@ -924,7 +924,11 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleVSync.addActionListener(e -> {
 			Config.getInstance().setVsync(!Config.getInstance().isVsync());
-            GraphicsContext.getInstance().execute(() -> Display.setVSyncEnabled(Config.getInstance().isVsync()));
+			if(Config.getInstance().isVsync()) {
+				glfwSwapInterval(1);
+			} else {
+				glfwSwapInterval(0);
+			}
 		});
 		toggleAutoExposure.addActionListener(e -> {
 			Config.getInstance().setAutoExposureEnabled(!Config.getInstance().isAutoExposureEnabled());
@@ -1311,7 +1315,6 @@ public class DebugFrame implements HostComponent {
 	@Subscribe
     @Handler
 	public void handle(EntitySelectedEvent e) {
-		if(!Display.isActive()) { return; }
 		entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		entityViewFrame.getContentPane().removeAll();
 		entityViewFrame.pack();

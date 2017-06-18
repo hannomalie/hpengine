@@ -5,7 +5,6 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,7 +23,6 @@ public class TestWithOpenGLContext {
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
-        Display.setParent(canvas);
         GraphicsContext.initGpuContext(new CanvasWrapper(canvas, () ->{}));
         GraphicsContext.getInstance();
     }
