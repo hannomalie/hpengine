@@ -25,12 +25,15 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.SwingUtils;
 import com.alee.utils.swing.Customizer;
 import com.google.common.eventbus.Subscribe;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.util.TestSceneUtil;
 import de.hanno.hpengine.engine.event.*;
+import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
+import de.hanno.hpengine.engine.graphics.light.AreaLight;
+import de.hanno.hpengine.engine.graphics.light.LightFactory;
+import de.hanno.hpengine.engine.graphics.light.PointLight;
+import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
@@ -41,15 +44,13 @@ import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
-import de.hanno.hpengine.engine.graphics.light.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
-import de.hanno.hpengine.engine.graphics.light.PointLight;
-import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.scene.Scene;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.util.TestSceneUtil;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane;
 import de.hanno.hpengine.util.gui.container.ReloadableTabbedPane;
 import de.hanno.hpengine.util.gui.input.SliderInput;
@@ -64,8 +65,8 @@ import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.lwjgl.opengl.Display;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.Display;
 
 import javax.script.ScriptException;
 import javax.swing.*;
@@ -397,13 +398,16 @@ public class DebugFrame implements HostComponent {
                 new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-						CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-                            Engine engine = Engine.getInstance();
-							// TODO: Remove this f***
-                            EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
-                            Renderer.getInstance().addRenderProbeCommand(probe, true);
-                            return new Result<>(true);
-						});
+                        CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                            @Override
+                            public Result execute() throws Exception {
+                                Engine engine = Engine.getInstance();
+                                // TODO: Remove this f***
+                                EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
+                                Renderer.getInstance().addRenderProbeCommand(probe, true);
+                                return new Result(true);
+                            }
+                        });
 
 						return future.get(5, TimeUnit.MINUTES);
 					}
@@ -422,10 +426,13 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-					Engine.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
-					return new Result(true);
-				});
+                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    @Override
+                    public Result execute() throws Exception {
+                        Engine.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
+                        return new Result(true);
+                    }
+                });
 
         		Result result = null;
 				try {
@@ -448,10 +455,13 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result<Boolean>> future = GraphicsContext.getInstance().execute(() -> {
-					Engine.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
-					return new Result<>(true);
-				});
+                CompletableFuture<Result<Boolean>> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    @Override
+                    public Result<Boolean> execute() throws Exception {
+                        Engine.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
+                        return new Result(true);
+                    }
+                });
 
         		Result result = null;
 				try {
@@ -474,10 +484,13 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-					Engine.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
-					return new Result(true);
-				});
+                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    @Override
+                    public Result execute() throws Exception {
+                        Engine.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
+                        return new Result(true);
+                    }
+                });
 
         		Result result = null;
 				try {
@@ -520,10 +533,13 @@ public class DebugFrame implements HostComponent {
 
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-			CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-				GPUProfiler.reset();
-				return new Result(true);
-			});
+            CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                @Override
+                public Result execute() throws Exception {
+                    GPUProfiler.reset();
+                    return new Result(true);
+                }
+            });
 
     		Result result = null;
 			try {
@@ -566,10 +582,13 @@ public class DebugFrame implements HostComponent {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-				CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-					MaterialFactory.getInstance().getMaterial(chosenFile.getName());
-					return new Result(true);
-				});
+                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    @Override
+                    public Result execute() throws Exception {
+                        MaterialFactory.getInstance().getMaterial(chosenFile.getName());
+                        return new Result(true);
+                    }
+                });
 				Result result = null;
 				try {
 					result = future.get(5, TimeUnit.SECONDS);
@@ -594,9 +613,12 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
-						return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
-					});
+                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                        @Override
+                        public TextureResult execute() throws Exception {
+                            return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
+                        }
+                    });
 					TextureResult result = null;
 					try {
 						result = future.get(5, TimeUnit.MINUTES);
@@ -621,9 +643,12 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
-						return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
-					});
+                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                        @Override
+                        public TextureResult execute() throws Exception {
+                            return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
+                        }
+                    });
 					TextureResult result = null;
 					try {
 						result = future.get(5, TimeUnit.MINUTES);
@@ -650,9 +675,12 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-					CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(() -> {
-						return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());
-					});
+                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                        @Override
+                        public TextureResult execute() throws Exception {
+                            return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());
+                        }
+                    });
 
 					TextureResult result = null;
 					try {
@@ -775,10 +803,13 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
-				GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
-				return true;
-			});
+            CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                @Override
+                public Boolean execute() throws Exception {
+                    GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
+                    return true;
+                }
+            });
 			Boolean result = null;
 			try {
 				result = future.get(5, TimeUnit.MINUTES);

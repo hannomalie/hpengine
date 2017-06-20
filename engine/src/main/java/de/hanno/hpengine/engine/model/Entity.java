@@ -436,6 +436,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	public static class Instance extends Transform {
 		private Material material;
+		private List<Instance> children = new ArrayList<>();
 
 		public Instance(Transform transform, Material material) {
 			set(transform);
@@ -457,7 +458,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 		@Override
 		public List getChildren() {
-			throw new IllegalStateException("No parenting for instances!");
+			return children;
 		}
 	}
 }

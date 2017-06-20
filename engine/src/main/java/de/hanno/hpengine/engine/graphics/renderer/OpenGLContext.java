@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.Engine;
@@ -16,6 +17,7 @@ import org.lwjgl.opengl.DisplayMode;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
@@ -43,6 +45,7 @@ public final class OpenGLContext implements GraphicsContext {
     private volatile boolean initialized = false;
     public volatile boolean errorOccured = false;
     private int maxTextureUnits;
+    private List<HighFrequencyCommandProvider> highFrequencyCommandProviders = new CopyOnWriteArrayList<>();
 
     protected OpenGLContext() {
     }
@@ -102,6 +105,11 @@ public final class OpenGLContext implements GraphicsContext {
             glDeleteSync(readStateSync);
         }
         currentReadState.setGpuCommandSync(glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0));
+    }
+
+    @Override
+    public void registerHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider) {
+        this.highFrequencyCommandProviders.add(highFrequencyCommandProvider);
     }
 
     @Override
@@ -166,9 +174,24 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public void update(float seconds) {
         try {
+            executeHighFrequencyCommands();
             commandQueue.executeCommands();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void executeHighFrequencyCommands() {
+        for(int i = 0; i < highFrequencyCommandProviders.size(); i++) {
+            HighFrequencyCommandProvider provider = highFrequencyCommandProviders.get(i);
+            executeHighFrequencyCommand(provider);
+        }
+    }
+
+    private void executeHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider) {
+        if(highFrequencyCommandProvider != null && highFrequencyCommandProvider.getAtomicCounter().get() == 0) {
+            highFrequencyCommandProvider.getDrawCommand().run();
+            highFrequencyCommandProvider.getAtomicCounter().getAndIncrement();
         }
     }
 
@@ -412,7 +435,12 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable) {
         try {
-            return execute(callable).get();
+            return (RETURN_TYPE) execute(new FutureCallable() {
+                @Override
+                public RETURN_TYPE execute() throws Exception {
+                    return callable.call();
+                }
+            }).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -423,30 +451,17 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(Callable<RETURN_TYPE> callable) {
-
+    public <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(FutureCallable<RETURN_TYPE> command) {
         if(isOpenGLThread()) {
             try {
-                CompletableFuture<RETURN_TYPE> result = new CompletableFuture();
-                try {
-                    result.complete(callable.call());
-                } catch(Exception e) {
-                    result.completeExceptionally(e);
-                }
-                return result;
+                command.getFuture().complete(command.execute());
+                return command.getFuture();
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
             }
         } else {
-            CompletableFuture future = commandQueue.addCommand(new FutureCallable() {
-                                                                   @Override
-                                                                   public RETURN_TYPE execute() throws Exception {
-                                                                       return callable.call();
-                                                                   }
-                                                               }
-            );
-            return future;
+            return commandQueue.addCommand(command);
         }
     }
 

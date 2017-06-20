@@ -7,51 +7,48 @@ import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.camera.MovableCamera;
 import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
-import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.threads.RenderThread;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
-import de.hanno.hpengine.engine.threads.UpdateThread;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.event.bus.EventBus;
-import de.hanno.hpengine.engine.physics.PhysicsFactory;
+import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
+import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.util.commandqueue.FutureCallable;
-import de.hanno.hpengine.util.fps.FPSCounter;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.RenderStateRecorder;
 import de.hanno.hpengine.engine.graphics.state.SimpleRenderStateRecorder;
-import de.hanno.hpengine.engine.scene.Scene;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
-import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
+import de.hanno.hpengine.engine.input.Input;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.EntityFactory;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.physics.PhysicsFactory;
+import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.threads.RenderThread;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
+import de.hanno.hpengine.engine.threads.UpdateThread;
+import de.hanno.hpengine.util.fps.FPSCounter;
+import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.Display;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.Display;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
 
-public class Engine {
+public class Engine implements HighFrequencyCommandProvider {
 
     private static volatile Engine instance = null;
     public static ApplicationFrame frame;
@@ -65,6 +62,7 @@ public class Engine {
 
     private volatile AtomicLong drawCycle = new AtomicLong();
     private long cpuGpuSyncTimeNs;
+    private AtomicInteger drawCounter = new AtomicInteger(-1);
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -163,6 +161,7 @@ public class Engine {
         directoryManager = new DirectoryManager(gamedirName);
         directoryManager.initWorkDir();
         GraphicsContext.initGpuContext(canvasWrapper);
+        GraphicsContext.getInstance().registerHighFrequencyCommand(this);
 
         EntityFactory.create();
         ProgramFactory.init();
@@ -187,6 +186,7 @@ public class Engine {
         scene.init();
         instance.startSimulation();
         initialized = true;
+        drawCounter.set(0);
         getEventBus().post(new EngineInitializedEvent());
     }
 
@@ -199,14 +199,16 @@ public class Engine {
     }
 
     public void update(float seconds) {
-        activeCamera.update(seconds);
-        scene.setCurrentCycle(drawCycle.get());
-        scene.update(seconds);
-        updateRenderState();
-        drawCycle.getAndIncrement();
-        if(!Config.getInstance().isMultithreadedRendering()) {
-            actuallyDraw();
-        }
+        try {
+            activeCamera.update(seconds);
+            scene.setCurrentCycle(drawCycle.get());
+            scene.update(seconds);
+            updateRenderState();
+            drawCycle.getAndIncrement();
+            if(!Config.getInstance().isMultithreadedRendering()) {
+                actuallyDraw();
+            }
+        } catch (Exception e) {} // Yea, i know...
     }
 
     private void updateRenderState() {
@@ -222,10 +224,10 @@ public class Engine {
         }
     }
 
-    private Callable drawCallable = new Callable() {
+    private Runnable drawRunnable = new Runnable() {
         boolean lastTimeSwapped = true;
         @Override
-        public Object call() throws Exception {
+        public void run() {
             renderState.startRead();
 
             if(lastTimeSwapped) {
@@ -243,12 +245,13 @@ public class Engine {
                 Engine.getEventBus().post(new FrameFinishedEvent(latestDrawResult));
             }
             lastTimeSwapped = renderState.stopRead();
-            return null;
         }
     };
 
     public void actuallyDraw() {
-        GraphicsContext.getInstance().execute(drawCallable).join();
+        while(drawCounter.get() != 1) {
+        }
+        drawCounter.getAndDecrement();
     }
 
     public Scene getScene() {
@@ -389,5 +392,15 @@ public class Engine {
 
     public long getCpuGpuSyncTimeNs() {
         return cpuGpuSyncTimeNs;
+    }
+
+    @Override
+    public Runnable getDrawCommand() {
+        return drawRunnable;
+    }
+
+    @Override
+    public AtomicInteger getAtomicCounter() {
+        return drawCounter;
     }
 }

@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.LimitedWebFormattedTextField;
 import de.hanno.hpengine.util.gui.input.TransformablePanel;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
@@ -218,8 +219,11 @@ public class EntityView extends WebPanel {
 
         WebButton removeEntityButton = new WebButton("Remove Entity");
         removeEntityButton.addActionListener(e -> {
-            CompletableFuture<Result> future = GraphicsContext.getInstance().execute(() -> {
-                return new RemoveEntityCommand(entity).execute(engine);
+            CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                @Override
+                public Result execute() throws Exception {
+                    return new RemoveEntityCommand(entity).execute(engine);
+                }
             });
 
             Result result = null;

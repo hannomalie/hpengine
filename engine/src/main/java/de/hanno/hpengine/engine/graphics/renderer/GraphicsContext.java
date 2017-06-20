@@ -1,11 +1,13 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GLSync;
@@ -38,6 +40,8 @@ public interface GraphicsContext {
     boolean isSignaled(GLSync gpuCommandSync);
 
     void createNewGPUFenceForReadState(RenderState currentReadState);
+
+    void registerHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider);
 
     class GPUContextHelper {
         static volatile GraphicsContext instance;
@@ -158,7 +162,7 @@ public interface GraphicsContext {
 
     <RETURN_TYPE> RETURN_TYPE calculate(Callable<RETURN_TYPE> callable);
 
-    <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(Callable<RETURN_TYPE> callable);
+    <RETURN_TYPE> CompletableFuture<RETURN_TYPE> execute(FutureCallable<RETURN_TYPE> command);
 
     long blockUntilEmpty();
 

@@ -18,11 +18,13 @@ import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.command.GetMaterialCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand;
+import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.MaterialResult;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.*;
 import org.apache.commons.io.FileUtils;
 import org.joml.Vector3f;
@@ -62,10 +64,13 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-				CompletableFuture<InitMaterialCommand.MaterialResult> future = GraphicsContext.getInstance().execute(() -> {
-					return new GetMaterialCommand(newInfo).execute(Engine.getInstance());
-				});
-				InitMaterialCommand.MaterialResult result;
+                CompletableFuture<MaterialResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    @Override
+                    public MaterialResult execute() throws Exception {
+						return new GetMaterialCommand(newInfo).execute(Engine.getInstance());
+                    }
+                });
+				MaterialResult result;
 				try {
         			result = future.get(1, TimeUnit.MINUTES);
 					if(result.material != null) {
@@ -388,11 +393,14 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-		CompletableFuture<InitMaterialCommand.MaterialResult> future = GraphicsContext.getInstance().execute(() -> {
-			return new InitMaterialCommand(material).execute(Engine.getInstance());
-		});
+        CompletableFuture<MaterialResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            @Override
+            public MaterialResult execute() throws Exception {
+				return new InitMaterialCommand(material).execute(Engine.getInstance());
+            }
+        });
 
-		InitMaterialCommand.MaterialResult result;
+		MaterialResult result;
 		try {
 			result = future.get(1, TimeUnit.MINUTES);
 			if(result.isSuccessful()) {

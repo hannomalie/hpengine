@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import net.engio.mbassy.listener.Handler;
 import org.lwjgl.util.glu.GLU;
@@ -160,19 +161,21 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
-//			self.unload();
-            detachShader(vertexShader);
-            detachShader(fragmentShader);
-            if(geometryShader != null) {
-                detachShader(geometryShader);
-                geometryShader.reload();
-            }
-            fragmentShader.reload();
-            vertexShader.reload();
-			self.load();
-			return true;
-		});
+		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            @Override
+            public Boolean execute() throws Exception {
+				detachShader(vertexShader);
+				detachShader(fragmentShader);
+				if (geometryShader != null) {
+					detachShader(geometryShader);
+					geometryShader.reload();
+				}
+				fragmentShader.reload();
+				vertexShader.reload();
+				self.load();
+				return true;
+			}
+        });
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);
 			if (result.equals(Boolean.TRUE)) {

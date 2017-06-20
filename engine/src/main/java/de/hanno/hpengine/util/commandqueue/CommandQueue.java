@@ -22,7 +22,6 @@ public class CommandQueue {
         if(command != null) {
             try {
                 command.complete(command.execute());
-                LOGGER.finer(() -> String.valueOf(workQueue.size()));
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();

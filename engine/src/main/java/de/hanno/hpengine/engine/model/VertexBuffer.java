@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
@@ -147,10 +148,13 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer {
 
     public CompletableFuture<VertexBuffer> upload() {
         buffer.rewind();
-        return GraphicsContext.getInstance().execute(() -> {
-            bind();
-            setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-            return VertexBuffer.this;
+        return GraphicsContext.getInstance().execute(new FutureCallable() {
+            @Override
+            public VertexBuffer execute() throws Exception {
+                bind();
+                setVertexArrayObject(VertexArrayObject.getForChannels(channels));
+                return VertexBuffer.this;
+            }
         });
     }
 

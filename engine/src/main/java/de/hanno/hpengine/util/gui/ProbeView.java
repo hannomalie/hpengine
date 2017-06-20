@@ -16,6 +16,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
@@ -64,9 +65,12 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
-				return EnvironmentProbeFactory.getInstance().remove(probe);
-			});
+			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                @Override
+                public Boolean execute() throws Exception {
+                    return EnvironmentProbeFactory.getInstance().remove(probe);
+                }
+            });
     		
     		Boolean result = null;
     		try {

@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 
 import javax.swing.event.ChangeEvent;
@@ -64,9 +65,12 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(() -> {
-				return Engine.getInstance().getScene().getAreaLights().remove(light);
-			});
+			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                @Override
+                public Boolean execute() throws Exception {
+                    return Engine.getInstance().getScene().getAreaLights().remove(light);
+                }
+            });
 
 			Boolean result;
 			try {
