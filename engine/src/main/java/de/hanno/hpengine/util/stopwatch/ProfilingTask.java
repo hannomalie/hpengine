@@ -32,8 +32,8 @@ public class ProfilingTask {
 
 		this.parent = parent;
 		this.name = name;
-		this.startQuery = GPUProfiler.getQuery();
         this.startTimeCpu = System.nanoTime();
+		this.startQuery = GPUProfiler.getQuery();
 
 		if (parent != null) {
 			parent.addChild(this);
@@ -47,8 +47,8 @@ public class ProfilingTask {
 	}
 
 	public ProfilingTask end() {
-		this.endTimeCpu = System.nanoTime();
 		this.endQuery = GPUProfiler.getQuery();
+		this.endTimeCpu = System.nanoTime();
 		return parent;
 	}
 

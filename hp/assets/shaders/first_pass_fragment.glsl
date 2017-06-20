@@ -121,7 +121,7 @@ void main(void) {
 	vec4 dir = (inverse(projectionMatrix)) * vec4(position_clip_post_w.xy,1.0,1.0);
 	dir.w = 0.0;
 	V = (inverse(viewMatrix) * dir).xyz;
-	
+
 	vec2 positionTextureSpace = position_clip_post_w.xy * 0.5 + 0.5;
 
 	out_position = viewMatrix * position_world;
@@ -222,7 +222,7 @@ void main(void) {
 		out_color.rgb *= mix(vec3(1,1,1), vec3(1,1,1+waterEffect/8), waterEffect2);
 		out_color.w = waterEffect2;
   	}
-  	
+
 	if(isSelected)
 	{
 		out_color.rgb = vec3(1,0,0);

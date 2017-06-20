@@ -3,7 +3,7 @@
 uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 lastViewMatrix;
-//uniform mat4 modelMatrix;
+uniform mat4 viewProjectionMatrix;
 uniform mat4 lightMatrix;
 
 uniform int indirect = 1;
@@ -82,7 +82,7 @@ void main(void) {
 	vec4 positionModel = vec4(in_Position.xyz,1);
 	position_world = modelMatrix * positionModel;
 
-	mat4 mvp = (projectionMatrix * viewMatrix * modelMatrix);
+	mat4 mvp = (viewProjectionMatrix * modelMatrix);
 	position_clip = mvp * positionModel;
 
 	position_clip_last = (projectionMatrix * lastViewMatrix * position_world);

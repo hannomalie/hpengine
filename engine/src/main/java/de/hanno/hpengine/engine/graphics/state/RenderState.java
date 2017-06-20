@@ -183,7 +183,7 @@ public class RenderState {
 
     public void setGpuCommandSync(GLSync gpuCommandSync) {
         this.gpuCommandSync = gpuCommandSync;
-        glFlush();
+//        glFlush();
     }
 
     public void setVertexIndexBuffer(VertexIndexBuffer vertexIndexBuffer) {

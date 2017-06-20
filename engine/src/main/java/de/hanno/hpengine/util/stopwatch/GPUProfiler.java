@@ -76,9 +76,7 @@ public class GPUProfiler {
 			if(!startFrameCalledThisFrame || currentTask == null) { return; }
 
 			if (currentTask.getParent() != null) {
-//				tasks.clear();
-//				return;
-				//throw new IllegalStateException("Error ending frame. Not all tasks finished.");
+				throw new IllegalStateException("Error ending frame. Not all tasks finished.");
 			}
 			currentTask.end();
 

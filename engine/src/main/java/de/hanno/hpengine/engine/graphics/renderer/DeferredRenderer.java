@@ -210,7 +210,6 @@ public class DeferredRenderer implements Renderer {
 //			EnvironmentProbeFactory.getInstance().draw(true);
 //		}
         simpleDrawStrategy.draw(result, renderState);
-		GPUProfiler.end();
 		if (Config.getInstance().isDebugframeEnabled()) {
 //            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
 //            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
@@ -251,8 +250,13 @@ public class DeferredRenderer implements Renderer {
 //			counter++;
 //		}
 
-        GPUProfiler.start("Waiting for driver");
+		GPUProfiler.start("Create new fence");
+		GraphicsContext.getInstance().createNewGPUFenceForReadState(renderState);
+		GPUProfiler.end();
+
+		GPUProfiler.start("Waiting for driver");
 		Display.update();
+		GPUProfiler.end();
         GPUProfiler.end();
 	}
 

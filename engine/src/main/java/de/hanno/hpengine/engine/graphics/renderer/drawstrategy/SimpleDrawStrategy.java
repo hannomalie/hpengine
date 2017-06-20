@@ -129,17 +129,17 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         EnvironmentProbeFactory.getInstance().drawAlternating(renderState.camera);
         Renderer.getInstance().executeRenderProbeCommands(renderState);
 
-        GPUProfiler.start("Shadowmap pass");
-        directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
-        LightFactory.getInstance().renderAreaLightShadowMaps(renderState, entitiesContainer);
-        if (Config.getInstance().isUseDpsm()) {
-            LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, entitiesContainer);
-        } else {
-            LightFactory.getInstance().renderPointLightShadowMaps(renderState);
-        }
-        GPUProfiler.end();
-
         if (!Config.getInstance().isUseDirectTextureOutput()) {
+            GPUProfiler.start("Shadowmap pass");
+            directionalLightShadowMapExtension.renderFirstPass(result.getFirstPassResult(), renderState);
+            LightFactory.getInstance().renderAreaLightShadowMaps(renderState, entitiesContainer);
+            if (Config.getInstance().isUseDpsm()) {
+                LightFactory.getInstance().renderPointLightShadowMaps_dpsm(renderState, entitiesContainer);
+            } else {
+                LightFactory.getInstance().renderPointLightShadowMaps(renderState);
+            }
+            GPUProfiler.end();
+
             GPUProfiler.start("Second pass");
             drawSecondPass(result.getSecondPassResult(), renderState.camera, Engine.getInstance().getScene().getTubeLights(), Engine.getInstance().getScene().getAreaLights(), renderState);
             GPUProfiler.end();
@@ -158,6 +158,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Camera camera = renderState.camera;
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
         FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+        FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
 
         graphicsContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
@@ -187,6 +188,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
             firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+            firstpassDefaultProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
             firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
             firstpassDefaultProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
             firstpassDefaultProgram.setUniform("near", camera.getNear());
@@ -216,11 +218,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
         GPUProfiler.end();
 
-        GraphicsContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-        for(RenderExtension extension : renderExtensions) {
-            GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
-            extension.renderFirstPass(firstPassResult, renderState);
-            GPUProfiler.end();
+        if(!Config.getInstance().isUseDirectTextureOutput()) {
+            GraphicsContext.getInstance().bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+            for(RenderExtension extension : renderExtensions) {
+                GPUProfiler.start("RenderExtension " + extension.getClass().getSimpleName());
+                extension.renderFirstPass(firstPassResult, renderState);
+                GPUProfiler.end();
+            }
         }
 
         graphicsContext.enable(CULL_FACE);
@@ -310,12 +314,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         doPointLights(renderState, viewMatrix, projectionMatrix);
 
-        GPUProfiler.start("Extensions");
-        graphicsContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
-        for(RenderExtension extension : renderExtensions) {
-            extension.renderSecondPassFullScreen(renderState, secondPassResult);
+        if(!Config.getInstance().isUseDirectTextureOutput()) {
+            GPUProfiler.start("Extensions");
+            graphicsContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
+            for(RenderExtension extension : renderExtensions) {
+                extension.renderSecondPassFullScreen(renderState, secondPassResult);
+            }
+            GPUProfiler.end();
         }
-        GPUProfiler.end();
 
         GraphicsContext.getInstance().disable(BLEND);
         gBuffer.getLightAccumulationBuffer().unuse();

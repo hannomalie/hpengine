@@ -233,11 +233,12 @@ public class Engine implements HighFrequencyCommandProvider {
             if(lastTimeSwapped) {
                 Input.update();
                 Renderer.getInstance().startFrame();
+                GPUProfiler.start("Prepare state");
                 recorder.add(renderState.getCurrentReadState());
                 DrawResult latestDrawResult = renderState.getCurrentReadState().latestDrawResult;
                 latestDrawResult.reset();
+                GPUProfiler.end();
                 Renderer.getInstance().draw(latestDrawResult, renderState.getCurrentReadState());
-                GraphicsContext.getInstance().createNewGPUFenceForReadState(Engine.this.renderState.getCurrentReadState());
                 latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings();
                 Renderer.getInstance().endFrame();
                 scene.setInitiallyDrawn(true);
