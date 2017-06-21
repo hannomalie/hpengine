@@ -4,6 +4,8 @@ import de.hanno.hpengine.engine.input.Input;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_R;
+
 public class SimpleRenderStateRecorder implements RenderStateRecorder {
     private CopyOnWriteArrayList<RenderState> states = new CopyOnWriteArrayList();
 
@@ -12,7 +14,7 @@ public class SimpleRenderStateRecorder implements RenderStateRecorder {
 
     @Override
     public boolean add(RenderState state) {
-        if(Input.isKeyDown(Input.KEY_R)) {
+        if(Input.isKeyPressed(GLFW_KEY_R)) {
             keyRWasPressed = true;
             System.out.println("Pressed");
         } else if(keyRWasPressed) {

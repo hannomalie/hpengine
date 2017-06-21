@@ -135,13 +135,14 @@ public final class OpenGLContext implements GraphicsContext {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        window = glfwCreateWindow(Config.getInstance().getWidth(), Config.getInstance().getHeight(), "Pong - LWJGL3", 0, 0);
+        window = glfwCreateWindow(Config.getInstance().getWidth(), Config.getInstance().getHeight(), "HPEngine", 0, 0);
         if(window == 0) {
             throw new RuntimeException("Failed to create window");
         }
 
-        glfwSwapInterval(1);
         glfwMakeContextCurrent(window);
+        glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+        glfwSwapInterval(1);
         GL.createCapabilities();
         glfwShowWindow(window);
 

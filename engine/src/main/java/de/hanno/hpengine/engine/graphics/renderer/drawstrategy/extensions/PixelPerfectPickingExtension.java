@@ -35,8 +35,8 @@ public class PixelPerfectPickingExtension implements RenderExtension {
             floatBuffer.rewind();
             Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) GraphicsContext.getInstance().getCanvasWidth(),
                     (float) Config.getInstance().getHeight() / (float) GraphicsContext.getInstance().getCanvasHeight());
-            int adjustedX = 0;//(int) (Mouse.getX() * ratio.x);
-            int adjustedY = 0;//(int) (Mouse.getY() * ratio.y);
+            int adjustedX = (int) (Input.getMouseX() * ratio.x);
+            int adjustedY = (int) (Input.getMouseY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);
             Logger.getGlobal().info("Picked: " + adjustedX + " : " + adjustedY);
             try {

@@ -69,7 +69,7 @@ public class CircleMenu {
             System.out.println("Set true");
 
             SwingUtils.invokeLater(() -> {
-                webMenu.showMenu(Engine.frame, Input.getX(), GraphicsContext.getInstance().getCanvasHeight() -Input.getY());
+                webMenu.showMenu(Engine.frame, Input.getMouseX(), GraphicsContext.getInstance().getCanvasHeight() -Input.getMouseY());
                 System.out.println("Menu shown");
                 if(!isBusy.compareAndSet(true, false)) {
                     throw new IllegalStateException("Illegal State with isBusy!");

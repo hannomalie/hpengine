@@ -95,6 +95,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static de.hanno.hpengine.engine.graphics.renderer.Renderer.getInstance;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
 
@@ -230,10 +231,11 @@ public class DebugFrame implements HostComponent {
 	private JFrame frame = mainFrame;
     private Runnable setTitleRunnable = () -> {
         try {
-            frame.setTitle(String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-                    getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame()));
+			String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+					getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame());
+			glfwSetWindowTitle(GraphicsContext.getInstance().getWindowHandle(), titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
-            frame.setTitle("HPEngine Renderer initializing...");
+			glfwSetWindowTitle(GraphicsContext.getInstance().getWindowHandle(), "HPEngine Renderer initializing...");
         }
     };
 
@@ -924,11 +926,13 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleVSync.addActionListener(e -> {
 			Config.getInstance().setVsync(!Config.getInstance().isVsync());
-			if(Config.getInstance().isVsync()) {
-				glfwSwapInterval(1);
-			} else {
-				glfwSwapInterval(0);
-			}
+			GraphicsContext.getInstance().execute(() -> {
+				if(Config.getInstance().isVsync()) {
+					glfwSwapInterval(1);
+				} else {
+					glfwSwapInterval(0);
+				}
+			});
 		});
 		toggleAutoExposure.addActionListener(e -> {
 			Config.getInstance().setAutoExposureEnabled(!Config.getInstance().isAutoExposureEnabled());
