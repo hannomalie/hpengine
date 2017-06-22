@@ -1,6 +1,5 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,7 +22,7 @@ public class TestWithOpenGLContext {
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
-        GraphicsContext.initGpuContext(new CanvasWrapper(canvas, () ->{}));
+        GraphicsContext.initGpuContext();
         GraphicsContext.getInstance();
     }
 

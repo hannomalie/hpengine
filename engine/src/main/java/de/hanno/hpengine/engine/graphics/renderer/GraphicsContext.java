@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -22,8 +21,6 @@ public interface GraphicsContext {
     static void setInstance(GraphicsContext context) {
         GPUContextHelper.instance = context;
     }
-
-    boolean isAttachedTo(CanvasWrapper canvas);
 
     long getWindowHandle();
 
@@ -54,14 +51,14 @@ public interface GraphicsContext {
         return GPUContextHelper.instance;
     }
 
-    static void initGpuContext(CanvasWrapper canvasWrapper) {
+    static void initGpuContext() {
         Class<? extends GraphicsContext> gpuContextClass = Config.getInstance().getGpuContextClass();
         synchronized(gpuContextClass) {
             if(GPUContextHelper.instance == null) {
                 try {
                     LOGGER.info("GraphicsContext is being initialized");
                     GraphicsContext context = gpuContextClass.newInstance();
-                    context.init(canvasWrapper);
+                    context.init();
                     GraphicsContext.setInstance(context);
                     LOGGER.info("GraphicsContext is initialized");
                 } catch (IllegalAccessException | InstantiationException e) {
@@ -89,15 +86,9 @@ public interface GraphicsContext {
 
     boolean isError();
 
-    void init(CanvasWrapper canvasWrapper);
+    void init();
 
     void update(float seconds);
-
-    boolean attach(CanvasWrapper canvas);
-
-    boolean detach();
-
-    void attachOrDetach(CanvasWrapper canvasWrapper);
 
     void enable(GlCap cap);
 

@@ -9,8 +9,6 @@ import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.event.bus.EventBus;
-import de.hanno.hpengine.engine.graphics.frame.ApplicationFrame;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -27,7 +25,6 @@ import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.threads.RenderThread;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.threads.UpdateThread;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.gui.DebugFrame;
@@ -37,7 +34,6 @@ import de.hanno.hpengine.util.stopwatch.StopWatch;
 import net.engio.mbassy.listener.Handler;
 import org.joml.Vector3f;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -50,8 +46,6 @@ import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
 public class Engine implements HighFrequencyCommandProvider {
 
     private static volatile Engine instance = null;
-    public static ApplicationFrame frame;
-    private static volatile Runnable setTitleRunnable;
     private static DirectoryManager directoryManager;
 
     private RenderStateRecorder recorder;
@@ -104,14 +98,9 @@ public class Engine implements HighFrequencyCommandProvider {
             e.printStackTrace();
         }
 
-        frame = new ApplicationFrame();
-        setTitleRunnable = frame.getSetTitleRunnable();
-
-        init(frame.getRenderCanvas(), gameDir);
+        init(gameDir);
         if (debug) {
-            DebugFrame debugFrame = new DebugFrame();
-            debugFrame.attachGame();
-            frame.setVisible(false);
+            new DebugFrame();
         }
         if (sceneName != null) {
             Renderer.getInstance();
@@ -128,38 +117,26 @@ public class Engine implements HighFrequencyCommandProvider {
         }
     }
 
-    public static void init(CanvasWrapper canvasWrapper) {
-        init(canvasWrapper, GAMEDIR_NAME);
+    public static void init() {
+        init(GAMEDIR_NAME);
     }
-    public static void init(CanvasWrapper canvasWrapper, String gameDirName) {
+    public static void init(String gameDirName) {
         if (instance != null) {
             return;
         }
         instance = new Engine();
-        instance.initialize(canvasWrapper, gameDirName);
+        instance.initialize(gameDirName);
     }
 
     private Engine() {
     }
 
-    public void setSetTitleRunnable(Runnable setTitleRunnable) {
-        Engine.setTitleRunnable = setTitleRunnable;
-    }
-
-    private void initialize(CanvasWrapper canvasWrapper, String gamedirName) {
-
-        new TimeStepThread("DisplayTitleUpdate", 1.0f) {
-            @Override
-            public void update(float seconds) {
-                SwingUtilities.invokeLater(Engine.setTitleRunnable);
-            }
-        }.start();
-
+    private void initialize(String gamedirName) {
         recorder = new SimpleRenderStateRecorder();
         getEventBus().register(this);
         directoryManager = new DirectoryManager(gamedirName);
         directoryManager.initWorkDir();
-        GraphicsContext.initGpuContext(canvasWrapper);
+        GraphicsContext.initGpuContext();
         GraphicsContext.getInstance().registerHighFrequencyCommand(this);
 
         EntityFactory.create();

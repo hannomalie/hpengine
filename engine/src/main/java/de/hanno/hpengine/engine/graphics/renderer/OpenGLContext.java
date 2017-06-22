@@ -2,19 +2,16 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
-import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
-import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.opengl.*;
-import org.lwjgl.util.Display;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -42,7 +39,6 @@ public final class OpenGLContext implements GraphicsContext {
     private int canvasHeight = Config.getInstance().getHeight();
 
     private TimeStepThread openGLThread;
-    private boolean attached;
 
     private CommandQueue commandQueue = new CommandQueue();
     private volatile boolean initialized = false;
@@ -51,14 +47,9 @@ public final class OpenGLContext implements GraphicsContext {
     private List<HighFrequencyCommandProvider> highFrequencyCommandProviders = new CopyOnWriteArrayList<>();
     private GLFWErrorCallback errorCallback;
     private long window;
+    private GLFWFramebufferSizeCallback framebufferSizeCallback;
 
     protected OpenGLContext() {
-    }
-
-    @Override
-    public boolean isAttachedTo(CanvasWrapper canvas) {
-        return true;
-//        return Display.getParent() != null && Display.getParent().equals(canvas.getCanvas());
     }
 
     @Override
@@ -141,6 +132,18 @@ public final class OpenGLContext implements GraphicsContext {
         }
 
         glfwMakeContextCurrent(window);
+        framebufferSizeCallback = new GLFWFramebufferSizeCallback() {
+            @Override
+            public void invoke(long window, int width, int height) {
+                try {
+                    OpenGLContext.this.setCanvasWidth(width);
+                    OpenGLContext.this.setCanvasHeight(height);
+                } catch (Exception e) {
+                }
+            }
+        };
+        glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
         glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
         glfwSwapInterval(1);
         GL.createCapabilities();
@@ -181,38 +184,6 @@ public final class OpenGLContext implements GraphicsContext {
         if(highFrequencyCommandProvider != null && highFrequencyCommandProvider.getAtomicCounter().get() == 0) {
             highFrequencyCommandProvider.getDrawCommand().run();
             highFrequencyCommandProvider.getAtomicCounter().getAndIncrement();
-        }
-    }
-
-    @Override
-    public boolean attach(CanvasWrapper canvasWrapper) {
-//        try {
-//            Display.setParent(canvasWrapper.getCanvas());
-//            Engine.getInstance().setSetTitleRunnable(canvasWrapper.getSetTitleRunnable());
-//            attached = true;
-//        } catch (LWJGLException e) {
-//            attached = false;
-//            e.printStackTrace();
-//        }
-        return attached;
-    }
-    @Override
-    public boolean detach() {
-//        try {
-//            Display.setParent(null);
-//            Engine.getInstance().setSetTitleRunnable(() -> {});
-//            attached = false;
-//        } catch (LWJGLException e) {
-//            e.printStackTrace();
-//        }
-        return !attached;
-    }
-    @Override
-    public void attachOrDetach(CanvasWrapper canvasWrapper) {
-        if(attached) {
-            detach();
-        } else {
-            attach(canvasWrapper);
         }
     }
 
@@ -510,8 +481,7 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
 
-    public void init(CanvasWrapper canvasWrapper) {
-        attach(canvasWrapper);
+    public void init() {
         this.openGLThread = new TimeStepThread(OpenGLContext.OPENGL_THREAD_NAME, 0.0f) {
 
             @Override

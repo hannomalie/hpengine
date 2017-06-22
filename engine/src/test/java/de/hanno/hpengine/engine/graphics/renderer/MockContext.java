@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -13,11 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 public class MockContext implements GraphicsContext {
-
-    @Override
-    public boolean isAttachedTo(CanvasWrapper canvas) {
-        return false;
-    }
 
     @Override
     public long getWindowHandle() {
@@ -71,29 +65,12 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void init(CanvasWrapper canvasWrapper) {
+    public void init() {
 
     }
 
     @Override
     public void update(float seconds) {
-
-    }
-
-    @Override
-    public boolean attach(CanvasWrapper canvas) {
-
-        return false;
-    }
-
-    @Override
-    public boolean detach() {
-
-        return false;
-    }
-
-    @Override
-    public void attachOrDetach(CanvasWrapper canvasWrapper) {
 
     }
 

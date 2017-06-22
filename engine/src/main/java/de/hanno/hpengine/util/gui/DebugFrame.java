@@ -29,7 +29,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.event.*;
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
@@ -49,6 +48,7 @@ import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.TestSceneUtil;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.container.ReloadableScrollPane;
@@ -101,7 +101,6 @@ import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
 public class DebugFrame implements HostComponent {
 
-    private final CircleMenu circleMenu = null;
     private WebFrame mainFrame = new WebFrame("Main");
 	private WebFrame entityViewFrame = new WebFrame("Entity");
 	private final WebTabbedPane tabbedPane = new ReloadableTabbedPane();
@@ -147,28 +146,6 @@ public class DebugFrame implements HostComponent {
     private final JTextPane infoRight = new JTextPane();
     WebSplitPane infoSplitPane = new WebSplitPane(WebSplitPane.HORIZONTAL_SPLIT, infoLeft, infoRight);
 	private final ReloadableScrollPane infoPane = new ReloadableScrollPane(infoSplitPane);
-	private CanvasWrapper canvasWrapper = new CanvasWrapper(new Canvas(), () -> {});
-	private JPanel gamePanel = new JPanel() {{
-        setLayout(new BorderLayout(0, 0));
-        removeAll();
-        add(canvasWrapper.getCanvas(), BorderLayout.CENTER);
-        addComponentListener(new ComponentListener(){
-            @Override
-            public void componentResized(ComponentEvent e) {
-                if(GraphicsContext.getInstance().isAttachedTo(canvasWrapper)) {addComponentListener(new ComponentAdapter() {
-                    public void componentResized(ComponentEvent evt) {
-                        GraphicsContext.getInstance().setCanvasWidth(canvasWrapper.getCanvas().getWidth());
-                        GraphicsContext.getInstance().setCanvasHeight(canvasWrapper.getCanvas().getHeight());
-                    }
-                });
-                }
-            }
-            @Override public void componentMoved(ComponentEvent e) {}
-            @Override public void componentShown(ComponentEvent e) {}
-            @Override public void componentHidden(ComponentEvent e) {}
-        });
-    }};
-
 	private WebDocumentPane<ScriptDocumentData> scriptsPane = new WebDocumentPane<>();
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
@@ -233,9 +210,9 @@ public class DebugFrame implements HostComponent {
         try {
 			String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
 					getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame());
-			glfwSetWindowTitle(GraphicsContext.getInstance().getWindowHandle(), titleString);
+            frame.setTitle(titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
-			glfwSetWindowTitle(GraphicsContext.getInstance().getWindowHandle(), "HPEngine Renderer initializing...");
+            frame.setTitle("HPEngine Renderer initializing...");
         }
     };
 
@@ -261,7 +238,12 @@ public class DebugFrame implements HostComponent {
         infoSplitPane.setContinuousLayout(true);
 		Engine.getEventBus().register(this);
 
-//        circleMenu = new CircleMenu();
+        new TimeStepThread("DisplayTitleUpdate", 1.0f) {
+            @Override
+            public void update(float seconds) {
+                SwingUtilities.invokeLater(getSetTitleRunnable());
+            }
+        }.start();
 	}
 
     @Subscribe
@@ -288,7 +270,6 @@ public class DebugFrame implements HostComponent {
         tabbedPane.addTab("Scripts", scriptsPane);
         tabbedPane.addTab("Output", outputPane);
 		tabbedPane.addTab("Info", infoPane);
-		tabbedPane.addTab("Game", gamePanel);
     }
 
     private WebMenuBar getWebMenuBar() {
@@ -569,15 +550,6 @@ public class DebugFrame implements HostComponent {
             }
             performanceMonitor.toggleVisibility();
         });
-        WebMenuItem toggleAttach = new WebMenuItem("Attach/Detach");
-        toggleAttach.addActionListener(e -> {
-            if(GraphicsContext.getInstance().isAttachedTo(canvasWrapper)) {
-                Engine.frame.attachGame();
-            } else {
-                attachGame();
-                Engine.frame.setVisible(false);
-            }
-        });
         WebMenuItem loadMaterial = new WebMenuItem("Load Material");
         loadMaterial.addActionListener(e -> {
         	File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/materials/", choser -> {
@@ -715,7 +687,6 @@ public class DebugFrame implements HostComponent {
         menuBar.add(resetProfiling);
         menuBar.add(refreshAll);
         menuBar.add(toggleFPS);
-        menuBar.add(toggleAttach);
         menuBar.add(sceneViewFilterField);
         menuBar.add(progressBar);
         progressBar.setIndeterminate(false);
@@ -1346,13 +1317,6 @@ public class DebugFrame implements HostComponent {
     public static String getCurrentFilter() {
         return sceneViewFilterField.getText();
     }
-
-	public void attachGame() {
-        GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().attach(canvasWrapper);
-            Engine.getInstance().setSetTitleRunnable(getSetTitleRunnable());
-        });
-	}
 
     public Runnable getSetTitleRunnable() {
         return setTitleRunnable;
