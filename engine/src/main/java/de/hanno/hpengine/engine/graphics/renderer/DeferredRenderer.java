@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
@@ -35,7 +34,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
-import org.lwjgl.util.glu.GLU;
 import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;

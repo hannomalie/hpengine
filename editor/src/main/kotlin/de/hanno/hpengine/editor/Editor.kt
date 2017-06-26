@@ -13,7 +13,6 @@ import com.alee.laf.scroll.WebScrollPane
 import com.alee.laf.splitpane.WebSplitPane
 import com.alee.laf.tabbedpane.WebTabbedPane
 import de.hanno.hpengine.engine.config.Config
-import de.hanno.hpengine.engine.graphics.frame.CanvasWrapper
 import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent
 import de.hanno.hpengine.engine.event.bus.EventBus
@@ -46,7 +45,6 @@ class Editor : WebFrame(), HostComponent {
             title = "HPEngine Renderer initializing..."
         }
     }
-    val canvasWrapper = CanvasWrapper(Canvas(), setTitleRunnable)
     private val topPanel = WebTabbedPane()
     private val leftPanel = WebPanel()
     private val editorPanel = object : JPanel() {
@@ -55,36 +53,6 @@ class Editor : WebFrame(), HostComponent {
             EventBus.getInstance().register(this)
             layout = BorderLayout(0, 0)
             removeAll()
-            add(canvasWrapper.canvas, BorderLayout.CENTER)
-            addComponentListener(object : ComponentListener {
-                override fun componentResized(e: ComponentEvent) {
-                    onResize(canvasWrapper)
-                }
-
-                override fun componentMoved(e: ComponentEvent) {
-                }
-
-                override fun componentShown(e: ComponentEvent) {
-                }
-
-                override fun componentHidden(e: ComponentEvent) {
-                }
-            })
-        }
-    }
-
-    private fun onResize(canvasWrapper1: CanvasWrapper) {
-        if (GraphicsContext.getInstance().isAttachedTo(canvasWrapper1)) {
-            addComponentListener(object : ComponentAdapter() {
-                override fun componentResized(evt: ComponentEvent?) {
-                    try {
-                        GraphicsContext.getInstance().canvasWidth = canvasWrapper1.canvas.width
-                        GraphicsContext.getInstance().canvasHeight = canvasWrapper1.canvas.height
-                    } catch (e: IllegalStateException) {
-                        //TODO: Do logging
-                    }
-                }
-            })
         }
     }
 
@@ -204,5 +172,5 @@ class Editor : WebFrame(), HostComponent {
 
 fun main(args: Array<String>) {
     val editor = Editor()
-    Engine.init(editor.canvasWrapper)
+    Engine.init()
 }

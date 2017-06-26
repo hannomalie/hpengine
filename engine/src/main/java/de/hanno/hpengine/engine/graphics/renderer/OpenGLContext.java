@@ -11,7 +11,9 @@ import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
+import org.lwjgl.glfw.GLFWWindowCloseCallbackI;
 import org.lwjgl.opengl.*;
+import org.lwjgl.system.SharedLibrary;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -47,7 +49,9 @@ public final class OpenGLContext implements GraphicsContext {
     private List<HighFrequencyCommandProvider> highFrequencyCommandProviders = new CopyOnWriteArrayList<>();
     private GLFWErrorCallback errorCallback;
     private long window;
+    // Don't remove these strong references
     private GLFWFramebufferSizeCallback framebufferSizeCallback;
+    private GLFWWindowCloseCallbackI closeCallback = l -> System.exit(0);
 
     protected OpenGLContext() {
     }
@@ -143,6 +147,7 @@ public final class OpenGLContext implements GraphicsContext {
             }
         };
         glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+        glfwSetWindowCloseCallback(window, closeCallback);
 
         glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
         glfwSwapInterval(1);

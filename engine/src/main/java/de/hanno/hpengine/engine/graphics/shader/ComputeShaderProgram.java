@@ -9,7 +9,7 @@ import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
-import org.lwjgl.util.glu.GLU;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;

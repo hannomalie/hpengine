@@ -12,8 +12,12 @@
     <artifactId>engine</artifactId>
 
     <properties>
-        <lwjgl.version>3.1.2</lwjgl.version>
         <swt.version>4.6.1</swt.version>
+
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <lwjgl.version>3.1.2</lwjgl.version>
+
     </properties>
 
     <repositories>
@@ -25,6 +29,16 @@
             <id>my-bintray-repo</id>
             <name>my-bintray-repo</name>
             <url>https://dl.bintray.com/h-pernpeintner/maven-repo</url>
+        </repository>
+        <repository>
+            <id>snapshots-repo</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
     <build>
@@ -104,20 +118,6 @@
                             <outputDirectory>${basedir}/target</outputDirectory>
                             <resources>
                                 <resource>
-                                    <targetPath>${basedir}/target</targetPath>
-                                    <directory>libs/lwjgl-2.9.3/native/windows</directory>
-                                    <includes>
-                                        <include>**/*.dll</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <targetPath>${basedir}/target</targetPath>
-                                    <directory>libs/lwjgl-2.9.3/native/linux</directory>
-                                    <includes>
-                                        <include>**/*.so</include>
-                                    </includes>
-                                </resource>
-                                <resource>
                                     <targetPath>${basedir}/target/hp</targetPath>
                                     <directory>../hp</directory>
                                     <includes>
@@ -147,11 +147,6 @@
                         </goals>
                         <configuration>
                             <mainClass>de.hanno.hpengine.engine.Engine</mainClass>
-                            <arguments>
-                                <argument>-Djava.library.path="${basedir}/target"</argument>
-                            </arguments>
-                            <!--<executable>${basedir}/target/hpengine-jar-with-dependencies.jar</executable>
-                            -->
                         </configuration>
                     </execution>
                 </executions>
@@ -227,11 +222,10 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.lwjgl.lwjgl</groupId>
+            <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
             <version>${lwjgl.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
@@ -239,7 +233,17 @@
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
-            <artifactId>lwjgl-opengl</artifactId>
+            <artifactId>lwjgl-jawt</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-jemalloc</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-nanovg</artifactId>
             <version>${lwjgl.version}</version>
         </dependency>
         <dependency>
@@ -247,32 +251,47 @@
             <artifactId>lwjgl-opencl</artifactId>
             <version>${lwjgl.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.lwjgl</groupId>
-            <artifactId>lwjgl</artifactId>
-            <version>${lwjgl.version}</version>
-            <classifier>natives-${platform}</classifier>
-        </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-opengl</artifactId>
             <version>${lwjgl.version}</version>
-            <classifier>natives-${platform}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${lwjgl.natives}</classifier>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
             <version>${lwjgl.version}</version>
-            <classifier>natives-${platform}</classifier>
+            <classifier>${lwjgl.natives}</classifier>
+            <scope>runtime</scope>
         </dependency>
-
-
         <dependency>
-            <groupId>org.lwjgl.lwjgl</groupId>
-            <artifactId>lwjgl_util</artifactId>
-            <version>2.9.3</version>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-jemalloc</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${lwjgl.natives}</classifier>
+            <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-nanovg</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${lwjgl.natives}</classifier>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${lwjgl.natives}</classifier>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.joml</groupId>
             <artifactId>joml</artifactId>
@@ -379,108 +398,37 @@
 
     <profiles>
         <profile>
-            <id>windows</id>
+            <id>lwjgl-natives-linux</id>
             <activation>
                 <os>
-                    <family>Windows</family>
+                    <family>unix</family>
                 </os>
             </activation>
             <properties>
-                <platform>windows</platform>
+                <lwjgl.natives>natives-linux</lwjgl.natives>
             </properties>
         </profile>
         <profile>
-            <id>windows-x86</id>
+            <id>lwjgl-natives-macos</id>
             <activation>
                 <os>
-                    <family>Windows</family>
-                    <arch>x86</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.swt</groupId>
-                    <artifactId>org.eclipse.swt.win32.win32.x86</artifactId>
-                    <version>${swt.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>windows-amd64</id>
-            <activation>
-                <os>
-                    <family>Windows</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.swt</groupId>
-                    <artifactId>org.eclipse.swt.win32.win32.x86_64</artifactId>
-                    <version>${swt.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>linux</id>
-            <activation>
-                <os>
-                    <family>Linux</family>
+                    <family>mac</family>
                 </os>
             </activation>
             <properties>
-                <platform>linux</platform>
+                <lwjgl.natives>natives-macos</lwjgl.natives>
             </properties>
         </profile>
         <profile>
-            <id>linux-x86</id>
+            <id>lwjgl-natives-windows</id>
             <activation>
                 <os>
-                    <family>Linux</family>
-                    <arch>x86</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.swt</groupId>
-                    <artifactId>org.eclipse.swt.gtk.linux.x86</artifactId>
-                    <version>${swt.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>linux-amd64</id>
-            <activation>
-                <os>
-                    <family>Linux</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.swt</groupId>
-                    <artifactId>org.eclipse.swt.gtk.linux.x86_64</artifactId>
-                    <version>${swt.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>mac</id>
-            <activation>
-                <os>
-                    <family>Mac</family>
+                    <family>windows</family>
                 </os>
             </activation>
             <properties>
-                <platform>macos</platform>
+                <lwjgl.natives>natives-windows</lwjgl.natives>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.swt</groupId>
-                    <artifactId>org.eclipse.swt.cocoa.macosx.x86_64</artifactId>
-                    <version>${swt.version}</version>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

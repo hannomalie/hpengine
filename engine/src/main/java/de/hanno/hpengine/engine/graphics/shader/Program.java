@@ -15,7 +15,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import net.engio.mbassy.listener.Handler;
-import org.lwjgl.util.glu.GLU;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.util.ressources.FileMonitor;
 import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
 import de.hanno.hpengine.util.ressources.Reloadable;

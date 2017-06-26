@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 
 import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
