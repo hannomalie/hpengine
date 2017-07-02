@@ -144,9 +144,6 @@ public class Mesh implements Serializable {
                 values.add(lightmapCoords.y());
                 values.add(lightmapCoords.z());
 
-                if (ModelComponent.USE_PRECOMPUTED_TANGENTSPACE) {
-                    throw new NotImplementedException("Implement former logic from ModelComponent here");
-                }
             }
             compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, allLightMapCoords.get(i), compiledLightmapCoords));
         }
@@ -155,11 +152,7 @@ public class Mesh implements Serializable {
         for (CompiledFace currentFace : compiledFaces) {
             for (int i = 0; i < 3; i++) {
                 CompiledVertex currentVertex = currentFace.vertices[i];
-//                int indexOf = uniqueVertices.indexOf(currentVertex);
-//                if (indexOf >= 0)
                 {
-//                    indexBufferValues.add(indexOf);
-//                } else {
                     uniqueVertices.add(currentVertex);
                     positions.add(currentVertex.position);
                     texCoords.add(currentVertex.texCoords);

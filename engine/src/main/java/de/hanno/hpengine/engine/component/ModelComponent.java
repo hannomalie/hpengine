@@ -23,7 +23,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
-    public static final boolean USE_PRECOMPUTED_TANGENTSPACE = false;
 
     private Model model;
 
@@ -36,14 +35,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     protected String materialName = "";
 
-    public static EnumSet<DataChannels> DEFAULTCHANNELS = USE_PRECOMPUTED_TANGENTSPACE ? EnumSet.of(
-            DataChannels.POSITION3,
-            DataChannels.TEXCOORD,
-            DataChannels.NORMAL,
-            DataChannels.LIGHTMAP_TEXCOORD,
-            DataChannels.TANGENT,
-            DataChannels.BINORMAL
-            ) : EnumSet.of(
+    public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
             DataChannels.NORMAL,
