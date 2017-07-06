@@ -3,11 +3,10 @@ package de.hanno.hpengine.engine.component;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -29,7 +28,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public boolean instanced = false;
 
     public float[] floatArray;
-    private List<int[]> indices = new ArrayList<>();
+    protected List<int[]> indices = new ArrayList<>();
     private int[] indicesCounts;
     private int[] baseVertices;
 
@@ -49,14 +48,16 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
             DataChannels.POSITION3);
     private VertexIndexOffsets vertexIndexOffsets;
+    protected AnimatedModel animGameItem;
 
     public List<int[]> getLodLevels() {
         return Collections.unmodifiableList(lodLevels);
     }
 
-    private volatile List<int[]> lodLevels = new ArrayList<>();
+    protected volatile List<int[]> lodLevels = new ArrayList<>();
 
     public ModelComponent(Model model) {
+        super();
         this.model = model;
         createFloatArray();
     }

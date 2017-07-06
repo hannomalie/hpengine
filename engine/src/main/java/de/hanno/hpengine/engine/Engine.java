@@ -184,7 +184,9 @@ public class Engine implements HighFrequencyCommandProvider {
             if(!Config.getInstance().isMultithreadedRendering()) {
                 actuallyDraw();
             }
-        } catch (Exception e) {} // Yea, i know...
+        } catch (Exception e) {
+            e.printStackTrace();
+        } // Yea, i know...
     }
 
     private void updateRenderState() {

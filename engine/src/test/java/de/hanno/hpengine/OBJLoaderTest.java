@@ -3,6 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.Face;
 import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.model.material.Material;
 import org.junit.Assert;
@@ -61,7 +62,7 @@ public class OBJLoaderTest extends TestWithEngine {
 
     @Test
     public void loadsMaterial() throws Exception {
-        Model sibenik = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        StaticModel sibenik = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
         Material material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
@@ -80,7 +81,7 @@ public class OBJLoaderTest extends TestWithEngine {
 
 	@Test
 	public void loadCornellBoxTest() throws Exception {
-		Model cornellBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+		StaticModel cornellBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
 		Assert.assertEquals(9, cornellBox.getMeshes().size());
 	}
 

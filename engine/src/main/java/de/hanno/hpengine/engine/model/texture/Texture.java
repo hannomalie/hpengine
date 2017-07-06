@@ -120,15 +120,15 @@ public class Texture implements Serializable, Reloadable {
     /**
      * Create a new de.hanno.hpengine.texture
      */
-    public Texture(String path) {
+    Texture(String path) {
         this(path, false);
     }
 
-    public Texture(String path, boolean srgba) {
+    Texture(String path, boolean srgba) {
         this(path, TEXTURE_2D, srgba);
     }
 
-    public Texture(String path, GlTextureTarget target, boolean srgba) {
+    Texture(String path, GlTextureTarget target, boolean srgba) {
         this.target = target;
         this.path = path;
         this.srgba = srgba;

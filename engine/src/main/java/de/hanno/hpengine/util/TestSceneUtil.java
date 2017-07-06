@@ -6,7 +6,7 @@ import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -28,12 +28,12 @@ public class TestSceneUtil {
         GraphicsContext.exitOnGLError("loadTestScene");
 
         try {
-//            Mesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
+//            StaticMesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);
 //            Entity skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), skyBox);
 //            skyBoxEntity.setScale(100);
 //            entities.add(skyBoxEntity);
 
-            Model sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+            StaticModel sphere = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
 
             for (int i = 0; i < entityCount; i++) {
                 for (int j = 0; j < entityCount; j++) {
@@ -75,8 +75,8 @@ public class TestSceneUtil {
             }
 
 //			StopWatch.getInstance().start("Load Sponza");
-//			List<Mesh> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
-//			for (Mesh model : sponza) {
+//			List<StaticMesh> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
+//			for (StaticMesh model : sponza) {
 ////				model.setMaterial(mirror);
 ////				if(model.getMaterial().getName().contains("fabric")) {
 ////					model.setMaterial(mirror);
@@ -87,8 +87,8 @@ public class TestSceneUtil {
 //				entity.setScale(scale);
 //				entities.add(entity);
 //			}
-//			List<Mesh> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
-//			for (Mesh model : skyBox) {
+//			List<StaticMesh> skyBox = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj"));
+//			for (StaticMesh model : skyBox) {
 //				Entity entity = getEntityFactory().getEntity(new Vector3f(0,0,0), model.getName(), model, renderer.getMaterialFactory().get("mirror"));
 //				Vector3f scale = new Vector3f(3000, 3000f, 3000f);
 //				entity.setScale(scale);

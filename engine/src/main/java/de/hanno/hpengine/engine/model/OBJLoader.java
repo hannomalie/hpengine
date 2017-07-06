@@ -106,11 +106,11 @@ public class OBJLoader {
         return face;
     }
 
-    public Model loadTexturedModel(File f) throws Exception {
+    public StaticModel loadTexturedModel(File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
-        Model resultModel = new Model();
+        StaticModel resultModel = new StaticModel();
 
-        Mesh currentMesh = null;
+        StaticMesh currentMesh = null;
         Material currentMaterial = null;
 
         int usemtlCounter = 0;
@@ -165,9 +165,9 @@ public class OBJLoader {
         return resultModel;
     }
 
-    private Mesh newMeshHelper(ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
-                               ArrayList<Vector3f> normals, String line, String name) {
-        Mesh mesh = new Mesh(line, vertices, texCoords, normals);
+    private StaticMesh newMeshHelper(ArrayList<Vector3f> vertices, ArrayList<Vector2f> texCoords,
+                                     ArrayList<Vector3f> normals, String line, String name) {
+        StaticMesh mesh = new StaticMesh(line, vertices, texCoords, normals);
         mesh.setName(name);
         return mesh;
     }
@@ -267,7 +267,7 @@ public class OBJLoader {
         currentMaterialInfo.maps.put(map, TextureFactory.getInstance().getTexture(path + name, map == Material.MAP.DIFFUSE));
     }
 
-    private void parseName(String line, Mesh mesh) {
+    private void parseName(String line, StaticMesh mesh) {
         String name = line.replaceAll("o ", "");
         mesh.setName(name);
     }

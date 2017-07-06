@@ -50,7 +50,6 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
-import static java.awt.SystemColor.window;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
@@ -82,7 +81,7 @@ public class DeferredRenderer implements Renderer {
 
 	private OBJLoader objLoader;
 
-	private Model sphereMesh;
+	private StaticModel sphereMesh;
 
 	private FloatBuffer identityMatrix44Buffer;
 

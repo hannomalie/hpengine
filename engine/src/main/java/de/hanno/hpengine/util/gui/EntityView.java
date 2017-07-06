@@ -20,6 +20,7 @@ import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -117,7 +118,7 @@ public class EntityView extends WebPanel {
             physicsPanel.addElement(addBallPhysicsComponentButton);
 
             if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
-                WebButton addMeshPhysicsComponentButton = new WebButton("Add Mesh PhysicsComponent");
+                WebButton addMeshPhysicsComponentButton = new WebButton("Add StaticMesh PhysicsComponent");
                 addMeshPhysicsComponentButton.addActionListener(e -> {
                     PhysicsComponent physicsComponent = Engine.getInstance().getPhysicsFactory().addMeshPhysicsComponent(entity, 0.0f);
                     physicsComponent.init();

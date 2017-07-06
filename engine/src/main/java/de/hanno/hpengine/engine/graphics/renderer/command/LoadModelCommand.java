@@ -1,11 +1,11 @@
 package de.hanno.hpengine.engine.graphics.renderer.command;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
-import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.OBJLoader;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand.EntityListResult;
+import de.hanno.hpengine.engine.model.loader.md5.*;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -23,9 +23,23 @@ public class LoadModelCommand implements Command<EntityListResult> {
     public EntityListResult execute(Engine engine) {
         EntityListResult result = new EntityListResult();
         try {
-            Model model = new OBJLoader().loadTexturedModel(file);
             List<Entity> entities = new ArrayList<>();
-            entities.addAll(EntityFactory.getInstance().getEntity(name, model).getAllChildrenAndSelf());
+            ModelComponent modelComponent;
+            if(file.getAbsolutePath().endsWith("md5mesh")) {
+                MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
+                MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
+                modelComponent = new ModelComponent(MD5Loader.process(parsedModel, parsedAnimModel, new Vector4f()));
+            } else {
+                StaticModel model = new OBJLoader().loadTexturedModel(file);
+                modelComponent = new ModelComponent(model);
+            }
+            List<Entity> allChildrenAndSelf = EntityFactory.getInstance().getEntity(name).getAllChildrenAndSelf();
+            if(!allChildrenAndSelf.isEmpty()) {
+                allChildrenAndSelf.get(0).addComponent(modelComponent);
+                allChildrenAndSelf.get(0).init();
+            }
+
+            entities.addAll(allChildrenAndSelf);
 
             return new EntityListResult(entities);
 

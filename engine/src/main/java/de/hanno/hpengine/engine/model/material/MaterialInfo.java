@@ -62,7 +62,7 @@ public final class MaterialInfo implements Serializable {
 
     public void put(Material.MAP map, Texture texture) {
         maps.put(map, texture);
-        textureIdsCache.clear();
+        if (textureIdsCache != null) textureIdsCache.clear();
     }
 
     public MaterialInfo setRoughness(float roughness) {

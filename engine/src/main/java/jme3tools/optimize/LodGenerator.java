@@ -49,6 +49,7 @@ package jme3tools.optimize;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.StaticMesh;
 import org.joml.Vector3f;
 
 import java.util.*;
@@ -258,45 +259,45 @@ public class LodGenerator {
         List<Vertex> vertexLookup = new ArrayList<>();
         initialize();
 
-        gatherVertexData(modelComponent, vertexLookup);
-        gatherIndexData(vertexLookup);
-        indexCount = modelComponent.getIndices().length;
-        computeCosts();
+//        gatherVertexData(modelComponent, vertexLookup);
+//        gatherIndexData(vertexLookup);
+//        indexCount = modelComponent.getIndices().length;
+//        computeCosts();
 //        if(!checkCosts()) {
 //            throw new IllegalStateException("checkCosts is false");
 //        }
     }
 
-    private void gatherVertexData(ModelComponent modelComponent, List<Vertex> vertexLookup) {
-        for (Mesh mesh : modelComponent.getMeshes()) {
-            List<Mesh.CompiledFace> faces = mesh.getFaces();
-            List<Vector3f> vertices = new ArrayList(faces.size() * 3);
-            for (Mesh.CompiledFace currentFace : faces) {
-                for (int i = 0; i < 3; i++) {
-                    vertices.add(currentFace.vertices[i].position);
-                }
-            }
-
-            for (Vector3f pos : vertices) {
-                Vertex v = new Vertex();
-                v.position.set(pos.x, pos.y, pos.z);
-                v.isSeam = false;
-                Vertex existingV = findSimilar(v);
-                if (existingV != null) {
-                    //vertex position already exists
-                    existingV.isSeam = true;
-                    v.isSeam = true;
-                } else //TODO: Check this for my case...
-                {
-                    vertexList.add(v);
-                }
-                vertexLookup.add(v);
-            }
-            if (vertices.size() != vertexLookup.size()) {
-                throw new IllegalStateException("gatherVertexData failed");
-            }
-        }
-    }
+//    private void gatherVertexData(ModelComponent modelComponent, List<Vertex> vertexLookup) {
+//        for (Mesh mesh : modelComponent.getMeshes()) {
+//            List<StaticMesh.CompiledFace> faces = mesh.getFaces();
+//            List<Vector3f> vertices = new ArrayList(faces.size() * 3);
+//            for (StaticMesh.CompiledFace currentFace : faces) {
+//                for (int i = 0; i < 3; i++) {
+//                    vertices.add(currentFace.vertices[i].position);
+//                }
+//            }
+//
+//            for (Vector3f pos : vertices) {
+//                Vertex v = new Vertex();
+//                v.position.set(pos.x, pos.y, pos.z);
+//                v.isSeam = false;
+//                Vertex existingV = findSimilar(v);
+//                if (existingV != null) {
+//                    //vertex position already exists
+//                    existingV.isSeam = true;
+//                    v.isSeam = true;
+//                } else //TODO: Check this for my case...
+//                {
+//                    vertexList.add(v);
+//                }
+//                vertexLookup.add(v);
+//            }
+//            if (vertices.size() != vertexLookup.size()) {
+//                throw new IllegalStateException("gatherVertexData failed");
+//            }
+//        }
+//    }
 
     private Vertex findSimilar(Vertex v) {
         for (Vertex vertex : vertexList) {

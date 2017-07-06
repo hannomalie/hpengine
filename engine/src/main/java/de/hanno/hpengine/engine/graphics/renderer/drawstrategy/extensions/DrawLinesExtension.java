@@ -1,11 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -46,7 +45,7 @@ public class DrawLinesExtension implements RenderExtension {
                 if(Config.getInstance().isDrawBoundingBoxes()) {
                     batchAABBLines(mesh.getMinWorld(), mesh.getMaxWorld());
                 } else {
-                    float boundingSphereRadius = Mesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
+                    float boundingSphereRadius = StaticMesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
                     Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
                     Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
                     Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, boundingSphereRadius)));

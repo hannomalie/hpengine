@@ -66,11 +66,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	protected Entity() { }
 
-	protected Entity(String name, Model model) {
+	protected Entity(String name, StaticModel model) {
 		this(new Vector3f(0, 0, 0), name, model);
 	}
 
-	protected Entity(Vector3f position, String name, Model model) {
+	protected Entity(Vector3f position, String name, StaticModel model) {
 		addComponent(new ModelComponent(model));
 		this.name = name;
 		setTranslation(position);
@@ -231,7 +231,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			Vector3f vectorMax = new Vector3f(getPosition().x+amount, getPosition().y+amount, getPosition().z);
 			minMax[0] = vectorMin;
 			minMax[1] = vectorMax;
-            boundingSphereRadius = Mesh.getBoundingSphereRadius(vectorMin, vectorMax);
+            boundingSphereRadius = StaticMesh.getBoundingSphereRadius(vectorMin, vectorMax);
 		}
         lastUsedTransformationMatrix = new Matrix4f(getTransformation());
 

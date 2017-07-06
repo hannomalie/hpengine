@@ -31,86 +31,86 @@ public class NewLightmapManager {
 
     public void registerForLightmapCoordsUpdate(Mesh mesh) {
         this.models.add(new WeakReference(mesh));
-        updateLightmapCoords();
+//        updateLightmapCoords();
     }
 
-    public void updateLightmapCoords() {
-        List<Mesh.CompiledFace> faces = new ArrayList<>(1000);
-        for(WeakReference<Mesh> currentModelRef : models) {
-            Mesh currentMesh = currentModelRef.get();
-            if(currentMesh != null) {
-                faces.addAll(currentMesh.getFaces());
-            } else {
-                models.remove(currentModelRef);
-            }
-        }
+//    public void updateLightmapCoords() {
+//        List<StaticMesh.CompiledFace> faces = new ArrayList<>(1000);
+//        for(WeakReference<Mesh> currentModelRef : models) {
+//            Mesh currentMesh = currentModelRef.get();
+//            if(currentMesh != null) {
+//                faces.addAll(currentMesh.getFaces());
+//            } else {
+//                models.remove(currentModelRef);
+//            }
+//        }
+//
+//        List<StaticMesh.CompiledFace> sortedByLength = faces.stream().sorted((StaticMesh.CompiledFace faceOne, StaticMesh.CompiledFace faceTwo) -> {
+//            Vector2f aOne = new Vector2f(faceOne.vertices[0].initialLightmapCoords.x, faceOne.vertices[0].initialLightmapCoords.y);
+//            Vector2f cOne = new Vector2f(faceOne.vertices[2].initialLightmapCoords.x, faceOne.vertices[2].initialLightmapCoords.y);
+//            float heightOne = aOne.distance(cOne);
+//            Vector2f aTwo = new Vector2f(faceTwo.vertices[0].initialLightmapCoords.x, faceTwo.vertices[0].initialLightmapCoords.y);
+//            Vector2f cTwo = new Vector2f(faceTwo.vertices[2].initialLightmapCoords.x, faceTwo.vertices[2].initialLightmapCoords.y);
+//            float heightTwo = aTwo.distance(cTwo);
+//            return Float.compare(heightTwo, heightOne);
+//        }).collect(Collectors.toList());
+//
+//        if(sortedByLength.isEmpty()) {
+//            return;
+//        }
+//
+//        MAX_WIDTH = DrawLightMapExtension.WIDTH;
+//        MAX_HEIGHT = 1;
+//        int currentWidth = 0;
+//        int currentHeight = 0;
+//        List<Vector3f> copy = new ArrayList();
+//        float lastRowsMaxHeight = 0;
+//
+//        for(int i = 0; i < sortedByLength.size(); i++) {
+//            StaticMesh.CompiledFace currentFace = sortedByLength.get(i);
+//            Vector2f a = new Vector2f(currentFace.vertices[0].initialLightmapCoords.x, currentFace.vertices[0].initialLightmapCoords.y);
+//            Vector2f b = new Vector2f(currentFace.vertices[1].initialLightmapCoords.x, currentFace.vertices[1].initialLightmapCoords.y);
+//            Vector2f c = new Vector2f(currentFace.vertices[2].initialLightmapCoords.x, currentFace.vertices[2].initialLightmapCoords.y);
+//            Vector2f widthVector = new Vector2f(a).sub(b);
+//            Vector2f heightVector = new Vector2f(a).set(c);
+//            float width = widthVector.length();
+//            float height = heightVector.length();
+//            if(width < 1.0f) {
+//                a.add(widthVector.normalize(), b);
+//            } else if(width > 4f) {
+//                a.add(widthVector.normalize().mul(10.0f), b);
+//            }
+//            if(height < 1.0f) {
+//                a.add(heightVector.normalize(), c);
+//            } else if(width > 4f) {
+//                a.add(heightVector.normalize().mul(10.0f), c);
+//            }
+//
+//
+//            if(currentWidth + width < MAX_WIDTH) {
+//                lastRowsMaxHeight = Math.max(lastRowsMaxHeight, height);
+//            } else {
+//                currentWidth = 0;
+//                currentHeight = currentHeight + (int) (lastRowsMaxHeight + 1);
+//                lastRowsMaxHeight = height;
+//            }
+//            setTheNewValues(currentWidth, currentHeight, copy, currentFace, width, height);
+//            currentWidth += width + 1;
+//            MAX_HEIGHT = Math.max(MAX_HEIGHT, (int) (currentHeight+height+1));
+//        }
+//
+//        if(MAX_HEIGHT > DrawLightMapExtension.HEIGHT && MAX_HEIGHT <= 1024) {
+//            GraphicsContext.getInstance().execute(() -> {
+//                DrawLightMapExtension.WIDTH *= 2;
+//                DrawLightMapExtension.HEIGHT = DrawLightMapExtension.WIDTH;
+//               DrawLightMapExtension.staticLightmapTarget.resize(DrawLightMapExtension.WIDTH, DrawLightMapExtension.HEIGHT);
+//            }, true);
+//            updateLightmapCoords();
+//        }
+//        frame.init(copy).show();
+//    }
 
-        List<Mesh.CompiledFace> sortedByLength = faces.stream().sorted((Mesh.CompiledFace faceOne, Mesh.CompiledFace faceTwo) -> {
-            Vector2f aOne = new Vector2f(faceOne.vertices[0].initialLightmapCoords.x, faceOne.vertices[0].initialLightmapCoords.y);
-            Vector2f cOne = new Vector2f(faceOne.vertices[2].initialLightmapCoords.x, faceOne.vertices[2].initialLightmapCoords.y);
-            float heightOne = aOne.distance(cOne);
-            Vector2f aTwo = new Vector2f(faceTwo.vertices[0].initialLightmapCoords.x, faceTwo.vertices[0].initialLightmapCoords.y);
-            Vector2f cTwo = new Vector2f(faceTwo.vertices[2].initialLightmapCoords.x, faceTwo.vertices[2].initialLightmapCoords.y);
-            float heightTwo = aTwo.distance(cTwo);
-            return Float.compare(heightTwo, heightOne);
-        }).collect(Collectors.toList());
-
-        if(sortedByLength.isEmpty()) {
-            return;
-        }
-
-        MAX_WIDTH = DrawLightMapExtension.WIDTH;
-        MAX_HEIGHT = 1;
-        int currentWidth = 0;
-        int currentHeight = 0;
-        List<Vector3f> copy = new ArrayList();
-        float lastRowsMaxHeight = 0;
-
-        for(int i = 0; i < sortedByLength.size(); i++) {
-            Mesh.CompiledFace currentFace = sortedByLength.get(i);
-            Vector2f a = new Vector2f(currentFace.vertices[0].initialLightmapCoords.x, currentFace.vertices[0].initialLightmapCoords.y);
-            Vector2f b = new Vector2f(currentFace.vertices[1].initialLightmapCoords.x, currentFace.vertices[1].initialLightmapCoords.y);
-            Vector2f c = new Vector2f(currentFace.vertices[2].initialLightmapCoords.x, currentFace.vertices[2].initialLightmapCoords.y);
-            Vector2f widthVector = new Vector2f(a).sub(b);
-            Vector2f heightVector = new Vector2f(a).set(c);
-            float width = widthVector.length();
-            float height = heightVector.length();
-            if(width < 1.0f) {
-                a.add(widthVector.normalize(), b);
-            } else if(width > 4f) {
-                a.add(widthVector.normalize().mul(10.0f), b);
-            }
-            if(height < 1.0f) {
-                a.add(heightVector.normalize(), c);
-            } else if(width > 4f) {
-                a.add(heightVector.normalize().mul(10.0f), c);
-            }
-
-
-            if(currentWidth + width < MAX_WIDTH) {
-                lastRowsMaxHeight = Math.max(lastRowsMaxHeight, height);
-            } else {
-                currentWidth = 0;
-                currentHeight = currentHeight + (int) (lastRowsMaxHeight + 1);
-                lastRowsMaxHeight = height;
-            }
-            setTheNewValues(currentWidth, currentHeight, copy, currentFace, width, height);
-            currentWidth += width + 1;
-            MAX_HEIGHT = Math.max(MAX_HEIGHT, (int) (currentHeight+height+1));
-        }
-
-        if(MAX_HEIGHT > DrawLightMapExtension.HEIGHT && MAX_HEIGHT <= 1024) {
-            GraphicsContext.getInstance().execute(() -> {
-                DrawLightMapExtension.WIDTH *= 2;
-                DrawLightMapExtension.HEIGHT = DrawLightMapExtension.WIDTH;
-               DrawLightMapExtension.staticLightmapTarget.resize(DrawLightMapExtension.WIDTH, DrawLightMapExtension.HEIGHT);
-            }, true);
-            updateLightmapCoords();
-        }
-        frame.init(copy).show();
-    }
-
-    public void setTheNewValues(int currentWidth, int currentHeight, List<Vector3f> copy, Mesh.CompiledFace currentFace, float width, float height) {
+    public void setTheNewValues(int currentWidth, int currentHeight, List<Vector3f> copy, StaticMesh.CompiledFace currentFace, float width, float height) {
         currentFace.vertices[0].lightmapCoords.x = currentWidth;
         currentFace.vertices[0].lightmapCoords.y = currentHeight;
         currentFace.vertices[1].lightmapCoords.x = currentWidth+width;

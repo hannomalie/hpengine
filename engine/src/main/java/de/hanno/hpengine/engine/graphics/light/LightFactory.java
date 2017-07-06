@@ -11,7 +11,7 @@ import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.event.LightChangedEvent;
 import de.hanno.hpengine.engine.event.PointLightMovedEvent;
@@ -96,9 +96,9 @@ public class LightFactory {
 	private FloatBuffer areaLightUpDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 	private FloatBuffer areaLightRightDirections = BufferUtils.createFloatBuffer(areaLightsForwardMaxCount * 3);
 
-	private Model sphereMesh;
-    private Model cubeMesh;
-    private Model planeMesh;
+	private StaticModel sphereMesh;
+    private StaticModel cubeMesh;
+    private StaticModel planeMesh;
 
 	private volatile GPUBuffer lightBuffer;
 	

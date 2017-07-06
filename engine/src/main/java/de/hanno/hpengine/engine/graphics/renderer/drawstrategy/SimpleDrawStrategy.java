@@ -105,7 +105,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext = GraphicsContext.getInstance();
 
 
-        Model skyBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
+        StaticModel skyBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);

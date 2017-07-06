@@ -43,7 +43,7 @@ public class GBuffer {
 
 	private int fullScreenMipmapCount;
 
-	private Model probeBox;
+	private StaticModel probeBox;
 	private Entity probeBoxEntity;
 
 	private ByteBuffer vec4Buffer = BufferUtils.createByteBuffer(4*4).order(ByteOrder.nativeOrder());

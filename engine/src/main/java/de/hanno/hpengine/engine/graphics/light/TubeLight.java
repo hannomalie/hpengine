@@ -4,7 +4,7 @@ import java.util.List;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 
 import org.joml.Matrix4f;
@@ -17,13 +17,13 @@ public class TubeLight extends Entity {
 	public static float DEFAULT_RANGE = 1f;
 	private Vector3f color;
 
-	protected TubeLight(Vector3f position, Model model, Vector3f colorIntensity, float length, float radius, String materialName) {
+	protected TubeLight(Vector3f position, StaticModel model, Vector3f colorIntensity, float length, float radius, String materialName) {
 		super(position, generateName(), model);
 		setColor(colorIntensity);
 		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h
 		init();
 	}
-	public TubeLight(Vector3f position, Model model, Vector3f color, float length, float radius) {
+	public TubeLight(Vector3f position, StaticModel model, Vector3f color, float length, float radius) {
 		super(position, generateName(), model);
 		setColor(color);
 		scale(new Vector3f(length, 2*radius, 2*radius)); // box has half extends = 0.5, so scale has not to be half range but range...m�h

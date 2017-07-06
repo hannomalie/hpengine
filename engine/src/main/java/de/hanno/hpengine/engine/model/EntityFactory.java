@@ -21,11 +21,11 @@ public class EntityFactory {
 		return entity;
 	}
 
-	public Entity getEntity(String name, Model model) {
+	public Entity getEntity(String name, StaticModel model) {
 		return getEntity(new Vector3f(), name, model);
 	}
 
-	public Entity getEntity(Vector3f position, String name, Model model) {
+	public Entity getEntity(Vector3f position, String name, StaticModel model) {
 		Entity entity = new Entity(position, name, model);
 		entity.setTranslation(position);
 		entity.setName(name);
@@ -33,8 +33,10 @@ public class EntityFactory {
 		return entity;
 	}
 
-	public Entity getEntity(String childName) throws IOException, ClassNotFoundException {
-		Entity entity = read(childName);
+	public Entity getEntity(String name) throws IOException, ClassNotFoundException {
+//		Entity entity = read(name);
+		Entity entity = new Entity();
+		entity.setName(name);
 		return entity;
 	}
 
