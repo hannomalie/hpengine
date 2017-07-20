@@ -10,10 +10,16 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AnimatedModel extends GameItem implements Model {
+import static de.hanno.hpengine.engine.model.loader.md5.MD5Mesh.VALUES_PER_VERTEX;
+
+public class AnimatedModel implements Model {
+
+    private List<Mesh> meshes;
 
     private int currentFrame;
     
@@ -23,10 +29,10 @@ public class AnimatedModel extends GameItem implements Model {
     private Material material;
 
     public AnimatedModel(Mesh[] meshes, List<AnimatedFrame> frames, List<Matrix4f> invJointMatrices) {
-        super(meshes);
         this.frames = frames;
         this.invJointMatrices = invJointMatrices;
         currentFrame = 0;
+        this.meshes = Arrays.asList(meshes);
     }
 
     public List<AnimatedFrame> getFrames() {
@@ -69,6 +75,11 @@ public class AnimatedModel extends GameItem implements Model {
     }
 
     @Override
+    public List<Mesh> getMeshes() {
+        return meshes;
+    }
+
+    @Override
     public float getBoundingSphereRadius() {
         return 0;
     }
@@ -78,6 +89,7 @@ public class AnimatedModel extends GameItem implements Model {
         return 0;
     }
 
+    @Override
     public float[] getVertexBufferValuesArray() {
         FloatArrayList floatList = new FloatArrayList();
         for(Mesh mesh : getMeshes()) {
@@ -86,10 +98,18 @@ public class AnimatedModel extends GameItem implements Model {
         return floatList.toArray();
     }
 
+    @Override
     public int[] getIndexBufferValuesArray() {
         IntArrayList intList = new IntArrayList();
+        int currentIndexOffset = 0;
         for(Mesh mesh : getMeshes()) {
-            intList.add(mesh.getIndexBufferValuesArray());
+            int[] indexBufferValuesArray = Arrays.copyOf(mesh.getIndexBufferValuesArray(), mesh.getIndexBufferValuesArray().length);
+            for(int i = 0; i < indexBufferValuesArray.length; i++) {
+                indexBufferValuesArray[i] += currentIndexOffset;
+            }
+            int vertexCount = mesh.getVertexBufferValuesArray().length / VALUES_PER_VERTEX;
+            currentIndexOffset += vertexCount;
+            intList.add(indexBufferValuesArray);
         }
         return intList.toArray();
     }

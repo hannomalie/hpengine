@@ -21,6 +21,12 @@ public interface Renderer extends LifeCycle {
 
     void batchLine(Vector3f from, Vector3f to);
 
+    default void batchTriangle(Vector3f a, Vector3f b, Vector3f c) {
+        batchLine(a, b);
+        batchLine(b, c);
+        batchLine(c, a);
+    }
+
     int drawLines(Program firstPassProgram);
 
     default void addRenderProbeCommand(EnvironmentProbe probe) { addRenderProbeCommand(probe, false); }

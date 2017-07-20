@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.model;
 
-import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -37,4 +36,5 @@ public interface Mesh {
 
     IntArrayList getIndexBufferValues();
 
+    void setName(String name);
 }

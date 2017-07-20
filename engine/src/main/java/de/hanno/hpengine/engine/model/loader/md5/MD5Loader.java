@@ -11,11 +11,13 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class MD5Loader {
+
 
     /**
      * Constructs and AnimatedModel instace based on a MD5 StaticModel an MD5 Animation
@@ -122,6 +124,7 @@ public class MD5Loader {
         }
 
         Mesh mesh = createMesh(vertices, indices);
+        mesh.setName(md5Mesh.getName());
         return mesh;
     }
 
@@ -199,6 +202,11 @@ public class MD5Loader {
         List<Integer> jointIndices = new ArrayList<>();
         List<Float> weights = new ArrayList<>();
 
+        final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
+        final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
+        Vector4f min = new Vector4f(absoluteMaximum);
+        Vector4f max = new Vector4f(absoluteMinimum);
+
         for (AnimCompiledVertex vertex : vertices) {
             positions.add(vertex.position.x);
             positions.add(vertex.position.y);
@@ -221,8 +229,19 @@ public class MD5Loader {
                     weights.add(-1.0f);
                 }
             }
+
+            min.x = vertex.position.x < min.x ? vertex.position.x : min.x;
+            min.y = vertex.position.y < min.y ? vertex.position.y : min.y;
+            min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
+
+            max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
+            max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
+            max.z = vertex.position.z > max.z ? vertex.position.z : max.z;
+
         }
 
+        Vector4f[] minMax = new Vector4f[]{min, max};
+        Vector3f[] minMaxVec3 = new Vector3f[]{new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
         float[] positionsArr = Utils.listToArray(positions);
         float[] textCoordsArr = Utils.listToArray(textCoords);
         float[] normalsArr = Utils.listToArray(normals);
@@ -230,30 +249,45 @@ public class MD5Loader {
         int[] jointIndicesArr = Utils.listIntToArray(jointIndices);
         float[] weightsArr = Utils.listToArray(weights);
 
-        MD5Mesh result = new MD5Mesh(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr);
+        MD5Mesh result = new MD5Mesh(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr, vertices, minMax, minMaxVec3);
 
         return result;
     }
 
     private static void handleTexture(Mesh mesh, MD5Mesh md5Mesh, Vector4f defaultColour) throws Exception {
-        String texturePath = md5Mesh.getTexture();
+        String texturePath = md5Mesh.getDiffuseTexture();
         if (texturePath != null && texturePath.length() > 0) {
-            MaterialInfo materialInfo = new MaterialInfo();
-            materialInfo.put(Material.MAP.DIFFUSE, TextureFactory.getInstance().getTexture(texturePath));
+            try {
 
-            // Handle normal Maps;
-            int pos = texturePath.lastIndexOf(".");
-            if (pos > 0) {
-                String basePath = texturePath.substring(0, pos);
-                String extension = texturePath.substring(pos, texturePath.length());
-                String normalMapFileName = basePath + "_local" + extension;
-                if (Utils.existsResourceFile(normalMapFileName)) {
-                    Texture normalMap = TextureFactory.getInstance().getTexture(normalMapFileName);
-                    materialInfo.put(Material.MAP.NORMAL, normalMap);
+                MaterialInfo materialInfo = new MaterialInfo();
+                materialInfo.put(Material.MAP.DIFFUSE, TextureFactory.getInstance().getTexture(texturePath));
+
+                // Handle normal Maps;
+                int pos = texturePath.lastIndexOf(".");
+                if (pos > 0) {
+                    String basePath = texturePath.substring(0, pos);
+                    String extension = texturePath.substring(pos, texturePath.length());
+                    String normalMapFileName = basePath + "_local" + extension;
+                    if (new File(normalMapFileName).exists()) {
+                        Texture normalMap = TextureFactory.getInstance().getTexture(normalMapFileName);
+                        materialInfo.put(Material.MAP.NORMAL, normalMap);
+                    }
+                    String heightMapFileName = basePath + "_h" + extension;
+                    if (new File(heightMapFileName).exists()) {
+                        Texture heightMap = TextureFactory.getInstance().getTexture(heightMapFileName);
+                        materialInfo.put(Material.MAP.HEIGHT, heightMap);
+                    }
+                    String specularMapFile = basePath + "_s" + extension;
+                    if (new File(specularMapFile).exists()) {
+                        Texture specularMap = TextureFactory.getInstance().getTexture(specularMapFile);
+                        materialInfo.put(Material.MAP.HEIGHT, specularMap);
+                    }
                 }
+                Material material = MaterialFactory.getInstance().getMaterial(materialInfo);
+                mesh.setMaterial(material);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            Material material = MaterialFactory.getInstance().getMaterial(materialInfo);
-            mesh.setMaterial(material);
         } else {
             mesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
         }

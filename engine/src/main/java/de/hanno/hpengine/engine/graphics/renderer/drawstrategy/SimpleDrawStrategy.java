@@ -478,7 +478,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             // TODO: Add textures to arealights
 //			try {
 //				GL13.glActiveTexture(GL13.GL_TEXTURE0 + 8);
-//				Texture lightTexture = renderer.getTextureFactory().getTexture("brick.hptexture");
+//				Texture lightTexture = renderer.getTextureFactory().getDiffuseTexture("brick.hptexture");
 //				GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightTexture.getTextureID());
 //			} catch (IOException e) {
 //				e.printStackTrace();

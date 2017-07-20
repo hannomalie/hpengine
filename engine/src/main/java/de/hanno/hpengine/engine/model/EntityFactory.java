@@ -21,11 +21,11 @@ public class EntityFactory {
 		return entity;
 	}
 
-	public Entity getEntity(String name, StaticModel model) {
+	public Entity getEntity(String name, Model model) {
 		return getEntity(new Vector3f(), name, model);
 	}
 
-	public Entity getEntity(Vector3f position, String name, StaticModel model) {
+	public Entity getEntity(Vector3f position, String name, Model model) {
 		Entity entity = new Entity(position, name, model);
 		entity.setTranslation(position);
 		entity.setName(name);

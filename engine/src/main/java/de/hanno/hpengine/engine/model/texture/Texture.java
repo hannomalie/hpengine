@@ -605,27 +605,31 @@ public class Texture implements Serializable, Reloadable {
                     LOGGER.severe("Texture " + path + " cannot be read, default de.hanno.hpengine.texture data inserted instead...");
                 }
 
-                setWidth(bufferedImage.getWidth());
-                setHeight(bufferedImage.getHeight());
-                int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(getWidth(), getHeight());
-                mipmapCount = mipMapCountPlusOne - 1;
-                setMinFilter(minFilter);
-                setMagFilter(magFilter);
+                if(bufferedImage != null) {
+                    setWidth(bufferedImage.getWidth());
+                    setHeight(bufferedImage.getHeight());
+                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(getWidth(), getHeight());
+                    mipmapCount = mipMapCountPlusOne - 1;
+                    setMinFilter(minFilter);
+                    setMagFilter(magFilter);
 
-                if (bufferedImage.getColorModel().hasAlpha()) {
-                    srcPixelFormat = GL11.GL_RGBA;
+                    if (bufferedImage.getColorModel().hasAlpha()) {
+                        srcPixelFormat = GL11.GL_RGBA;
+                    } else {
+                        srcPixelFormat = GL11.GL_RGB;
+                    }
+
+                    setDstPixelFormat(dstPixelFormat);
+                    setSrcPixelFormat(srcPixelFormat);
+
+                    byte[] bytes = TextureFactory.getInstance().convertImageData(bufferedImage);
+                    setData(bytes);
+                    ByteBuffer textureBuffer = buffer();
+                    upload(textureBuffer, srgba);
+                    LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
                 } else {
-                    srcPixelFormat = GL11.GL_RGB;
+                    LOGGER.warning("BufferedImage couldn't be loaded!");
                 }
-
-                setDstPixelFormat(dstPixelFormat);
-                setSrcPixelFormat(srcPixelFormat);
-
-                byte[] bytes = TextureFactory.getInstance().convertImageData(bufferedImage);
-                setData(bytes);
-                ByteBuffer textureBuffer = buffer();
-                upload(textureBuffer, srgba);
-                LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
                 LOGGER.severe("Texture not found: " + path + ". Default de.hanno.hpengine.texture returned...");
@@ -637,7 +641,7 @@ public class Texture implements Serializable, Reloadable {
             future.get();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } catch (ExecutionException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

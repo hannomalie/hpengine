@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,7 +89,7 @@ public class MD5Model {
                 inBlock = true;
             } else if (inBlock && line.endsWith("}")) {
                 List<String> blockBody = lines.subList(blockStart + 1, i);
-                parseBlock(result, blockId, blockBody);
+                parseBlock(new File(meshModelFile).getParentFile(), result, blockId, blockBody);
                 inBlock = false;
             }
         }
@@ -96,14 +97,14 @@ public class MD5Model {
         return result;
     }
 
-    private static void parseBlock(MD5Model model, String blockId, List<String> blockBody) throws Exception {
+    private static void parseBlock(File modelFileBaseDir, MD5Model model, String blockId, List<String> blockBody) throws Exception {
         switch (blockId) {
             case "joints":
                 MD5JointInfo jointInfo = MD5JointInfo.parse(blockBody);
                 model.setJointInfo(jointInfo);
                 break;
             case "mesh":
-                MD5Mesh md5Mesh = MD5Mesh.parse(blockBody);
+                MD5Mesh md5Mesh = MD5Mesh.parse(modelFileBaseDir, blockBody);
                 model.getMeshes().add(md5Mesh);
                 break;
             default:

@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -9,6 +11,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -25,7 +28,8 @@ public class MD5Mesh implements Mesh {
 
     private static final Pattern PATTERN_WEIGHT = Pattern.compile("\\s*weight\\s*(\\d+)\\s*(\\d+)\\s*" +
             "(" + MD5Utils.FLOAT_REGEXP + ")\\s*" + MD5Utils.VECTOR3_REGEXP );
-    private static final int VALUES_PER_VERTEX = 11;
+    public static final int VALUES_PER_VERTEX = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
+    private List<AnimCompiledVertex> compiledVertices;
     private float[] positionsArr;
     private float[] textCoordsArr;
     private float[] normalsArr;
@@ -33,7 +37,7 @@ public class MD5Mesh implements Mesh {
     private int[] jointIndicesArr;
     private float[] weightsArr;
 
-    private String texture;
+    private String diffuseTexture;
 
     private List<MD5Vertex> vertices;
 
@@ -41,9 +45,9 @@ public class MD5Mesh implements Mesh {
 
     private List<MD5Weight> weights;
     private float[] vertexBufferValuesArray;
-    private int[] indicesArray;
     private IntArrayList indicesList = new IntArrayList();
     private Material material;
+    private String name;
 
     public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr) {
         this.positionsArr = positionsArr;
@@ -53,42 +57,55 @@ public class MD5Mesh implements Mesh {
         this.jointIndicesArr = jointIndicesArr;
         this.weightsArr = weightsArr;
 
-        vertexBufferValuesArray = new float[positionsArr.length * VALUES_PER_VERTEX];
-        indicesArray = new int[positionsArr.length * 3];
         int counter = 0;
-        for(int i = 0; i < positionsArr.length/3; i++) {
-            indicesArray[3*i] = 3*i;
-            indicesArray[3*i+1] = 3*i+1;
-            indicesArray[3*i+2] = 3*i+2;
 
-            vertexBufferValuesArray[counter++] = positionsArr[3*i];
-            vertexBufferValuesArray[counter++] = positionsArr[3*i+1];
-            vertexBufferValuesArray[counter++] = positionsArr[3*i+2];
+        int vertexCount = positionsArr.length / 3;
+        vertexBufferValuesArray = new float[vertexCount * VALUES_PER_VERTEX];
+        for(int i = 0; i < vertexCount; i+=1) {
+            int currentIndex = i;
 
-            vertexBufferValuesArray[counter++] = textCoordsArr[2*i];
-            vertexBufferValuesArray[counter++] = textCoordsArr[2*i+1];
+            int vec3BaseIndex = 3*currentIndex;
+            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex];
+            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex +1];
+            vertexBufferValuesArray[counter++] = positionsArr[vec3BaseIndex +2];
 
-            vertexBufferValuesArray[counter++] = normalsArr[3*i];
-            vertexBufferValuesArray[counter++] = normalsArr[3*i+1];
-            vertexBufferValuesArray[counter++] = normalsArr[3*i+2];
+            vertexBufferValuesArray[counter++] = textCoordsArr[2*currentIndex];
+            vertexBufferValuesArray[counter++] = textCoordsArr[2*currentIndex+1];
 
-            // dummy lightmap coords
+            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex];
+            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex +1];
+            vertexBufferValuesArray[counter++] = normalsArr[vec3BaseIndex +2];
+
             vertexBufferValuesArray[counter++] = 0;
             vertexBufferValuesArray[counter++] = 0;
             vertexBufferValuesArray[counter++] = 0;
+
         }
+        compiledVertices = null;
     }
 
     public MD5Mesh() {
         this.vertices = new ArrayList<>();
         this.triangles = new ArrayList<>();
         this.weights = new ArrayList<>();
+        compiledVertices = null;
+    }
+
+    public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr, List<AnimCompiledVertex> vertices, Vector4f[] minMax, Vector3f[] minMaxVec3) {
+        this(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr);
+        this.compiledVertices = vertices;
+        this.minMax = minMax;
+        this.minMaxVec3 = minMaxVec3;
+    }
+
+    public List<AnimCompiledVertex> getCompiledVertices() {
+        return compiledVertices;
     }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder("mesh [" + System.lineSeparator());
-        str.append("texture: ").append(texture).append(System.lineSeparator());
+        str.append("diffuseTexture: ").append(diffuseTexture).append(System.lineSeparator());
 
         str.append("vertices [").append(System.lineSeparator());
         for (MD5Vertex vertex : vertices) {
@@ -111,7 +128,7 @@ public class MD5Mesh implements Mesh {
         return str.toString();
     }
 
-    public static MD5Mesh parse(List<String> meshBlock) {
+    public static MD5Mesh parse(File modelFileBaseDir, List<String> meshBlock) {
         MD5Mesh mesh = new MD5Mesh();
         List<MD5Vertex> vertices = mesh.getVertices();
         List<MD5Triangle> triangles = mesh.getTriangles();
@@ -121,8 +138,9 @@ public class MD5Mesh implements Mesh {
             if (line.contains("shader")) {
                 Matcher textureMatcher = PATTERN_SHADER.matcher(line);
                 if (textureMatcher.matches()) {
-                    mesh.setTexture(textureMatcher.group(1));
-
+                    String textureFileName = textureMatcher.group(1);
+                    mesh.setDiffuseTexture(modelFileBaseDir.getAbsolutePath() + "/" + textureFileName);
+                    mesh.setName(textureFileName);
                 }
             } else if (line.contains("vert")) {
                 Matcher vertexMatcher = PATTERN_VERTEX.matcher(line);
@@ -142,8 +160,11 @@ public class MD5Mesh implements Mesh {
                     MD5Triangle triangle = new MD5Triangle();
                     triangle.setIndex(Integer.parseInt(triMatcher.group(1)));
                     triangle.setVertex0(Integer.parseInt(triMatcher.group(2)));
-                    triangle.setVertex1(Integer.parseInt(triMatcher.group(3)));
-                    triangle.setVertex2(Integer.parseInt(triMatcher.group(4)));
+                    triangle.setVertex1(Integer.parseInt(triMatcher.group(4)));
+                    triangle.setVertex2(Integer.parseInt(triMatcher.group(3)));
+//                    triangle.setVertex0(Integer.parseInt(triMatcher.group(2)));
+//                    triangle.setVertex1(Integer.parseInt(triMatcher.group(3)));
+//                    triangle.setVertex2(Integer.parseInt(triMatcher.group(4)));
                     triangles.add(triangle);
                 }
             } else if (line.contains("weight")) {
@@ -162,34 +183,18 @@ public class MD5Mesh implements Mesh {
             }
         }
 
-        mesh.vertexBufferValuesArray = new float[VALUES_PER_VERTEX * triangles.size() * 3];
-
-        int counter = 0;
-        for(int i = 0; i < triangles.size(); i++) {
-            MD5Triangle triangle = triangles.get(i);
-
-            counter = putVertex(mesh, counter, vertices.get(triangle.getVertex0()));
-            counter = putVertex(mesh, counter, vertices.get(triangle.getVertex1()));
-            counter = putVertex(mesh, counter, vertices.get(triangle.getVertex2()));
-        }
+        mesh.setTriangles(triangles);
+        mesh.setVertices(vertices);
+        mesh.setWeights(weights);
         return mesh;
     }
 
-    public static int putVertex(MD5Mesh mesh, int counter, MD5Vertex vertex) {
-        mesh.vertexBufferValuesArray[counter++] = vertex.getIndex();
-        mesh.vertexBufferValuesArray[counter++] = vertex.getTextCoords().x;
-        mesh.vertexBufferValuesArray[counter++] = vertex.getTextCoords().y;
-        mesh.vertexBufferValuesArray[counter++] = vertex.getStartWeight();
-        mesh.vertexBufferValuesArray[counter++] = vertex.getWeightCount();
-        return counter;
+    public String getDiffuseTexture() {
+        return diffuseTexture;
     }
 
-    public String getTexture() {
-        return texture;
-    }
-
-    public void setTexture(String texture) {
-        this.texture = texture;
+    public void setDiffuseTexture(String texture) {
+        this.diffuseTexture = texture;
     }
 
     public List<MD5Vertex> getVertices() {
@@ -223,7 +228,7 @@ public class MD5Mesh implements Mesh {
 
     @Override
     public int[] getIndexBufferValuesArray() {
-        return indicesArray;
+        return indicesArr;
     }
 
     @Override
@@ -275,7 +280,7 @@ public class MD5Mesh implements Mesh {
 
     @Override
     public String getName() {
-        return null;
+        return name;
     }
 
     @Override
@@ -287,6 +292,15 @@ public class MD5Mesh implements Mesh {
     public IntArrayList getIndexBufferValues() {
         indicesList.add(indicesArr, 0, indicesArr.length-1);
         return indicesList;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public float[] getPositionsArray() {
+        return positionsArr;
     }
 
     public static class MD5Vertex {
@@ -388,13 +402,13 @@ public class MD5Mesh implements Mesh {
     }
 
     public static class MD5Weight {
-        
+
         private int index;
-        
+
         private int jointIndex;
-        
+
         private float bias;
-        
+
         private Vector3f position;
 
         public int getIndex() {

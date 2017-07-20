@@ -70,7 +70,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		this(new Vector3f(0, 0, 0), name, model);
 	}
 
-	protected Entity(Vector3f position, String name, StaticModel model) {
+	protected Entity(Vector3f position, String name, Model model) {
 		addComponent(new ModelComponent(model));
 		this.name = name;
 		setTranslation(position);

@@ -16,6 +16,12 @@ public class LoadModelCommand implements Command<EntityListResult> {
     private final String name;
 
     public LoadModelCommand(File file, String name) {
+        if(file == null) {
+            throw new IllegalArgumentException("Passed file is null!");
+        }
+        if(!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException("Passed file is nonexistent or a directory: " + file.getPath());
+        }
         this.file = file;
         this.name = name;
     }

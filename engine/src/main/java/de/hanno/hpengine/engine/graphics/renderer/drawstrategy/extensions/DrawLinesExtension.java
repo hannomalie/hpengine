@@ -1,9 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -11,6 +14,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
+import de.hanno.hpengine.engine.model.loader.md5.AnimCompiledVertex;
+import de.hanno.hpengine.engine.model.loader.md5.MD5Mesh;
 import org.joml.Vector3f;
 
 import java.nio.FloatBuffer;
@@ -55,6 +60,39 @@ public class DrawLinesExtension implements RenderExtension {
                     Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)));
                     Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)));
                 }
+
+//                TODO: Remove this
+//                if(!Engine.getInstance().getScene().getModelComponents().isEmpty()) {
+//                    for (int meshIndex = 0; meshIndex < Engine.getInstance().getScene().getModelComponents().get(0).getModel().getMeshes().size(); meshIndex++) {
+//                        Mesh actualMesh = Engine.getInstance().getScene().getModelComponents().get(0).getModel().getMeshes().get(meshIndex);
+//                        if(actualMesh instanceof MD5Mesh) {
+//                            MD5Mesh casted = (MD5Mesh) actualMesh;
+//                            int[] indices = casted.getIndexBufferValuesArray();
+//                            for(int i = 0; i < indices.length -3; i+= 3) {
+//                                float[] vertexBufferValues = casted.getVertexBufferValuesArray();
+//                                int vertexIndex0 = indices[i];
+//                                int vertexIndex1 = indices[i + 2];
+//                                int vertexIndex2 = indices[i + 3];
+//                                Vector3f position0 = casted.getCompiledVertices().get(vertexIndex0).position;
+//                                Vector3f position1 = casted.getCompiledVertices().get(vertexIndex1).position;
+//                                Vector3f position2 = casted.getCompiledVertices().get(vertexIndex2).position;
+//
+//                                position0 = new Vector3f(vertexBufferValues[vertexIndex0 * 11],
+//                                        vertexBufferValues[vertexIndex0 * 11 + 1],
+//                                        vertexBufferValues[vertexIndex0 * 11 + 2]);
+//                                position1 = new Vector3f(vertexBufferValues[vertexIndex1 * 11],
+//                                        vertexBufferValues[vertexIndex1 * 11 + 1],
+//                                        vertexBufferValues[vertexIndex1 * 11 + 2]);
+//                                position2 = new Vector3f(vertexBufferValues[vertexIndex2 * 11],
+//                                        vertexBufferValues[vertexIndex2 * 11 + 1],
+//                                        vertexBufferValues[vertexIndex2 * 11 + 2]);
+//
+//
+//                                Renderer.getInstance().batchTriangle(position0, position1, position2);
+//                            }
+//                        }
+//                    }
+//                }
             }
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
 
