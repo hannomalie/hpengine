@@ -1,10 +1,13 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -14,6 +17,8 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import javax.xml.bind.util.ValidationEventCollector;
+import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
 public class VertexBufferTest extends TestWithEngine {
@@ -72,6 +77,58 @@ public class VertexBufferTest extends TestWithEngine {
 	
 	@Test
 	public void getValues() {
+        class Vertex implements Bufferable{
+            Vector3f position = new Vector3f();
+            Vector2f texCoord = new Vector2f();
+
+            public Vertex(Vector3f position, Vector2f texCoord) {
+                this.position = position;
+                this.texCoord = texCoord;
+            }
+
+            public Vertex() {
+            }
+
+            @Override
+            public void putToBuffer(ByteBuffer buffer) {
+                buffer.putFloat(position.x);
+                buffer.putFloat(position.y);
+                buffer.putFloat(position.z);
+                buffer.putFloat(texCoord.x);
+                buffer.putFloat(texCoord.y);
+            }
+
+            @Override
+            public int getBytesPerObject() {
+                return Float.BYTES * 5;
+            }
+            @Override
+            public void getFromBuffer(ByteBuffer buffer) {
+                position.x = buffer.getFloat();
+                position.y = buffer.getFloat();
+                position.z = buffer.getFloat();
+                texCoord.x = buffer.getFloat();
+                texCoord.y = buffer.getFloat();
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+
+                Vertex vertex = (Vertex) o;
+
+                if (!position.equals(vertex.position)) return false;
+                return texCoord.equals(vertex.texCoord);
+            }
+
+            @Override
+            public int hashCode() {
+                int result = position.hashCode();
+                result = 31 * result + texCoord.hashCode();
+                return result;
+            }
+        }
 		float[] vertexData = new float[] {
 		    -1.0f, -1.0f, 0.0f,   0f, 0f,
 		    1.0f, -1.0f, 0.0f,    0f, 0f,
@@ -81,9 +138,18 @@ public class VertexBufferTest extends TestWithEngine {
 		    1.0f,  1.0f, 0.0f,    1.0f,  1.0f
 		};
 		
-		VertexBuffer buffer = new VertexBuffer(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
+		VertexBuffer<Vertex> buffer = new VertexBuffer<>(vertexData, EnumSet.of(DataChannels.POSITION3, DataChannels.TEXCOORD));
 		float[] result = buffer.getValues(DataChannels.TEXCOORD);
 		Assert.assertArrayEquals(new float[]{0f, 0f, 0f, 0f, 0f, 1.0f, 0f, 0f, 1.0f, 0f, 1.0f, 1.0f}, result, 0f);
+
+		Vertex current = new Vertex();
+        buffer.get(0, current);
+        Assert.assertEquals(new Vertex(new Vector3f(-1, -1, 0), new Vector2f(0,0)), current);
+        buffer.get(1, current);
+        Assert.assertEquals(new Vertex(new Vector3f(1, -1, 0), new Vector2f(0,0)), current);
+        buffer.get(5, current);
+        Assert.assertEquals(new Vertex(new Vector3f(1, 1, 0), new Vector2f(1,1)), current);
+
 	}
 
     @Ignore

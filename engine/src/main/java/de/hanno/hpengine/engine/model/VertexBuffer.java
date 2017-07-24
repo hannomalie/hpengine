@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
@@ -17,7 +19,7 @@ import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
 
-public class VertexBuffer extends AbstractPersistentMappedBuffer {
+public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T> {
 
     static final Logger LOGGER = Logger.getLogger(VertexBuffer.class.getName());
 
@@ -44,11 +46,11 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer {
 	public EnumSet<DataChannels> channels;
 
     public VertexBuffer(float[] values, EnumSet<DataChannels> channels) {
-        super(GL15.GL_ARRAY_BUFFER);
+        super(64, GL15.GL_ARRAY_BUFFER);
         setInternals(values, channels);
 	}
 	public VertexBuffer(FloatBuffer buffer, EnumSet<DataChannels> channels) {
-        super(GL15.GL_ARRAY_BUFFER);
+        super(64, GL15.GL_ARRAY_BUFFER);
         setInternals(buffer, channels);
 	}
 
@@ -147,13 +149,14 @@ public class VertexBuffer extends AbstractPersistentMappedBuffer {
 	}
 
     public CompletableFuture<VertexBuffer> upload() {
+        VertexBuffer self = this;
         buffer.rewind();
         return GraphicsContext.getInstance().execute(new FutureCallable() {
             @Override
             public VertexBuffer execute() throws Exception {
                 bind();
                 setVertexArrayObject(VertexArrayObject.getForChannels(channels));
-                return VertexBuffer.this;
+                return self;
             }
         });
     }

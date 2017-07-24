@@ -186,7 +186,7 @@ public class Engine implements HighFrequencyCommandProvider {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } // Yea, i know...
+        }
     }
 
     private void updateRenderState() {

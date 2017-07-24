@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.Util;
 
 import static org.lwjgl.opengl.ARBImaging.GL_TABLE_TOO_LARGE;
 import static org.lwjgl.opengl.GL11.*;
@@ -18,7 +17,7 @@ public class GLU {
             case 100902:
                 return "Out of memory (glu)";
             default:
-                return Util.translateGLErrorString(error_code);
+                return de.hanno.hpengine.util.Util.translateGLErrorString(error_code);
         }
     }
 
