@@ -6,11 +6,13 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.scene.Vertex;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -141,5 +143,14 @@ public class AnimatedModel implements Model {
     @Override
     public Vector3f[] getMinMax(Transform transform) {
         return minMaxVec3;
+    }
+
+    @Override
+    public List<Vertex> getCompiledVertices() {
+        List<Vertex> vertexList = new ArrayList<>();
+        for(Mesh mesh : getMeshes()) {
+            vertexList.addAll(mesh.getCompiledVertices());
+        }
+        return vertexList;
     }
 }

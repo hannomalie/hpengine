@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
@@ -8,23 +9,23 @@ import org.lwjgl.BufferUtils;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class VertexIndexBuffer implements Serializable {
-    private volatile VertexBuffer vertexBuffer;
+public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
+    private volatile VertexBuffer<T> vertexBuffer;
     private volatile IndexBuffer indexBuffer;
     private volatile AtomicInteger currentBaseVertex = new AtomicInteger();
 
     private volatile AtomicInteger currentIndexOffset = new AtomicInteger();
 
     public VertexIndexBuffer(int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount) {
-        vertexBuffer = new VertexBuffer(BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), ModelComponent.DEFAULTCHANNELS);
+        vertexBuffer = new VertexBuffer<>(BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), ModelComponent.DEFAULTCHANNELS);
         indexBuffer  = new IndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount));
     }
 
-    public VertexBuffer getVertexBuffer() {
+    public VertexBuffer<T> getVertexBuffer() {
         return vertexBuffer;
     }
 
-    public void setVertexBuffer(VertexBuffer vertexBuffer) {
+    public void setVertexBuffer(VertexBuffer<T> vertexBuffer) {
         this.vertexBuffer = vertexBuffer;
     }
 

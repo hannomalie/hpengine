@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.model.loader.md5.AnimCompiledVertex;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.MD5Loader;
 import de.hanno.hpengine.engine.model.loader.md5.MD5Mesh;
+import de.hanno.hpengine.engine.scene.Vertex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,10 +32,10 @@ public class AnimatedModelTest extends TestWithEngine {
             float[] vertexBufferValues = mesh.getVertexBufferValuesArray();
 
             for(int vertexIndex = 0; vertexIndex < mesh.getCompiledVertices().size(); vertexIndex++) {
-                AnimCompiledVertex vertex = mesh.getCompiledVertices().get(vertexIndex);
-                Assert.assertEquals(vertex.position.x, vertexBufferValues[vertexIndex*11], 0.00001f);
-                Assert.assertEquals(vertex.position.y, vertexBufferValues[vertexIndex*11+1], 0.00001f);
-                Assert.assertEquals(vertex.position.z, vertexBufferValues[vertexIndex*11+2], 0.00001f);
+                Vertex vertex = mesh.getCompiledVertices().get(vertexIndex);
+                Assert.assertEquals(vertex.getPosition().x, vertexBufferValues[vertexIndex*11], 0.00001f);
+                Assert.assertEquals(vertex.getPosition().y, vertexBufferValues[vertexIndex*11+1], 0.00001f);
+                Assert.assertEquals(vertex.getPosition().z, vertexBufferValues[vertexIndex*11+2], 0.00001f);
 
             }
         }
@@ -44,17 +45,17 @@ public class AnimatedModelTest extends TestWithEngine {
         for(int i = 0; i < animatedModel.getMeshes().size(); i++) {
             MD5Mesh mesh = (MD5Mesh) (animatedModel.getMeshes().get(i));
             for(int vertexIndex = 0; vertexIndex < mesh.getCompiledVertices().size(); vertexIndex++) {
-                AnimCompiledVertex vertex = mesh.getCompiledVertices().get(vertexIndex);
+                Vertex vertex = mesh.getCompiledVertices().get(vertexIndex);
                 int adjustedVertexIndex = vertexCounter + vertexIndex;
                 int floatBufferStartVertex = 11 * adjustedVertexIndex;
-                Assert.assertEquals(vertex.position.x, vertexBufferValues[floatBufferStartVertex], 0.0001f);
-                Assert.assertEquals(vertex.position.y, vertexBufferValues[floatBufferStartVertex + 1], 0.0001f);
-                Assert.assertEquals(vertex.position.z, vertexBufferValues[floatBufferStartVertex + 2], 0.0001f);
-                Assert.assertEquals(vertex.textCoords.x, vertexBufferValues[floatBufferStartVertex + 3], 0.0001f);
-                Assert.assertEquals(vertex.textCoords.y, vertexBufferValues[floatBufferStartVertex + 4], 0.0001f);
-                Assert.assertEquals(vertex.normal.x, vertexBufferValues[floatBufferStartVertex + 5], 0.0001f);
-                Assert.assertEquals(vertex.normal.y, vertexBufferValues[floatBufferStartVertex + 6], 0.0001f);
-                Assert.assertEquals(vertex.normal.z, vertexBufferValues[floatBufferStartVertex + 7], 0.0001f);
+                Assert.assertEquals(vertex.getPosition().x, vertexBufferValues[floatBufferStartVertex], 0.0001f);
+                Assert.assertEquals(vertex.getPosition().y, vertexBufferValues[floatBufferStartVertex + 1], 0.0001f);
+                Assert.assertEquals(vertex.getPosition().z, vertexBufferValues[floatBufferStartVertex + 2], 0.0001f);
+                Assert.assertEquals(vertex.getTexCoord().x, vertexBufferValues[floatBufferStartVertex + 3], 0.0001f);
+                Assert.assertEquals(vertex.getTexCoord().y, vertexBufferValues[floatBufferStartVertex + 4], 0.0001f);
+                Assert.assertEquals(vertex.getNormal().x, vertexBufferValues[floatBufferStartVertex + 5], 0.0001f);
+                Assert.assertEquals(vertex.getNormal().y, vertexBufferValues[floatBufferStartVertex + 6], 0.0001f);
+                Assert.assertEquals(vertex.getNormal().z, vertexBufferValues[floatBufferStartVertex + 7], 0.0001f);
 
             }
             vertexCounter += mesh.getCompiledVertices().size();

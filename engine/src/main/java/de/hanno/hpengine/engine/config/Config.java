@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.graphics.renderer.lodstrategy.ModelLod;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
@@ -147,8 +146,6 @@ public final class Config {
 	private volatile boolean lockUpdaterate = true;
 
 	private boolean loadDefaultMaterials = false;
-
-    private ModelLod.ModelLodStrategy modelLodStrategy = ModelLod.ModelLodStrategy.CONSTANT_LEVEL;
 
 	Config() { super(); }
 
@@ -517,14 +514,6 @@ public final class Config {
 
 	public void setLockUpdaterate(boolean lockUpdaterate) {
 		this.lockUpdaterate = lockUpdaterate;
-	}
-
-	public ModelLod.ModelLodStrategy getModelLodStrategy() {
-		return modelLodStrategy;
-	}
-
-	public void setModelLodStrategy(ModelLod.ModelLodStrategy modelLodStrategy) {
-		this.modelLodStrategy = modelLodStrategy;
 	}
 
 	public void setGpuContextClass(Class<? extends GraphicsContext> gpuContextClass) {

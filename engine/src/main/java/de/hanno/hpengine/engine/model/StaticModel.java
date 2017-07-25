@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model;
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
@@ -11,10 +12,11 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class StaticModel implements Model {
-    private List<Mesh> meshes = new ArrayList();
+public class StaticModel<T extends Bufferable> implements Model<T> {
+    private List<Mesh<T>> meshes = new ArrayList();
 
     private ArrayList<Vector3f> vertices = new ArrayList<>();
     private ArrayList<Vector2f> texCoords = new ArrayList<>();
@@ -90,6 +92,13 @@ public class StaticModel implements Model {
         }
         return floatList.toArray();
     }
+    public List<T> getCompiledVertices() {
+        List<T> vertexList = new ArrayList<>();
+        for(Mesh mesh : meshes) {
+            vertexList.addAll((Collection<? extends T>) mesh.getCompiledVertices());
+        }
+        return vertexList;
+    }
 
     public int[] getIndexBufferValuesArray() {
         IntArrayList intList = new IntArrayList();
@@ -122,7 +131,7 @@ public class StaticModel implements Model {
         return new Vector4f[0];
     }
 
-    public List<Mesh> getMeshes() {
+    public List<Mesh<T>> getMeshes() {
         return meshes;
     }
 

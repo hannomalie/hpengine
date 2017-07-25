@@ -155,7 +155,8 @@ public class EntityView extends WebPanel {
 	    if(!entity.hasComponent(ModelComponent.class)) { return; }
 
         List<Component> meshPanels = new ArrayList<>();
-        for(Mesh mesh : entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
+        List<Mesh> meshes = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes();
+        for(Mesh mesh : meshes) {
             WebComponentPanel materialSelectionPanel = new WebComponentPanel();
             materialSelectionPanel.setElementMargin(4);
             WebLabel meshName = new WebLabel(mesh.getName());

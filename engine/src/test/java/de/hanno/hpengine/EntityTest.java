@@ -12,6 +12,7 @@ import org.joml.Vector3f;
 
 import java.io.File;
 import java.nio.FloatBuffer;
+import java.util.List;
 
 public class EntityTest extends TestWithEngine {
 
@@ -36,7 +37,8 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(engine.getScene().getEntities().contains(entity));
         Assert.assertTrue(entity.hasChildren());
         Assert.assertTrue(entity.getName().equals("xxx"));
-        for(Mesh mesh : model.getMeshes()) {
+        List<Mesh> meshes = model.getMeshes();
+        for(Mesh mesh : meshes) {
             boolean containsEntity = false;
             for (Entity child : entity.getChildren()) {
                 if(child.getName().equals(mesh.getName())) { containsEntity = true; }

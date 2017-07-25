@@ -342,7 +342,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	@Override
 	public void putToBuffer(ByteBuffer buffer) {
 		int meshIndex = 0;
-		for(Mesh mesh : getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes()) {
+		List<Mesh> meshes = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes();
+		for(Mesh mesh : meshes) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
 				putValues(buffer, getTransformation(), meshIndex, materialIndex);

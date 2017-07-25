@@ -2,16 +2,17 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.material.Material;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.List;
 
-public interface Model {
+public interface Model<T extends Bufferable> {
     void setMaterial(Material material);
 
-    List<Mesh> getMeshes();
+    List<Mesh<T>> getMeshes();
 
     float getBoundingSphereRadius();
 
@@ -28,4 +29,6 @@ public interface Model {
     void putToValueArrays();
 
     Vector3f[] getMinMax(Transform transform);
+
+    List<T> getCompiledVertices();
 }

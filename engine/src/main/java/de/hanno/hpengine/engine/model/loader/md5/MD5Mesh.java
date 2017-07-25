@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.scene.Vertex;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class MD5Mesh implements Mesh {
 
@@ -29,7 +31,7 @@ public class MD5Mesh implements Mesh {
     private static final Pattern PATTERN_WEIGHT = Pattern.compile("\\s*weight\\s*(\\d+)\\s*(\\d+)\\s*" +
             "(" + MD5Utils.FLOAT_REGEXP + ")\\s*" + MD5Utils.VECTOR3_REGEXP );
     public static final int VALUES_PER_VERTEX = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
-    private List<AnimCompiledVertex> compiledVertices;
+    private List<Vertex> compiledVertices;
     private float[] positionsArr;
     private float[] textCoordsArr;
     private float[] normalsArr;
@@ -93,12 +95,12 @@ public class MD5Mesh implements Mesh {
 
     public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr, List<AnimCompiledVertex> vertices, Vector4f[] minMax, Vector3f[] minMaxVec3) {
         this(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr);
-        this.compiledVertices = vertices;
+        this.compiledVertices = vertices.stream().map(in -> new Vertex(in.position, in.textCoords, in.normal, new Vector3f())).collect(Collectors.toList());
         this.minMax = minMax;
         this.minMaxVec3 = minMaxVec3;
     }
 
-    public List<AnimCompiledVertex> getCompiledVertices() {
+    public List<Vertex> getCompiledVertices() {
         return compiledVertices;
     }
 

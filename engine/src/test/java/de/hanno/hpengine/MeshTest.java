@@ -23,14 +23,6 @@ public class MeshTest extends TestWithEngine {
 
         int[] expectedIndexBufferValues = {0,1,2,3,0,2};
         Assert.assertArrayEquals(expectedIndexBufferValues, planeMesh.getIndexBufferValuesArray());
-
-        Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
-        ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-
-        LodGenerator lodGenerator = new LodGenerator(modelComponent);
-        lodGenerator.bakeLods(LodGenerator.TriangleReductionMethod.PROPORTIONAL, 0.3f);
-        Assert.assertEquals(1, modelComponent.getLodLevels().size());
-        Assert.assertEquals(6, modelComponent.getLodLevels().get(0).length);
     }
 
     @Test
@@ -41,14 +33,6 @@ public class MeshTest extends TestWithEngine {
 
         Assert.assertEquals(4, planeMesh.getFaces().size());
         Assert.assertEquals(12, planeMesh.getIndexBufferValuesArray().length);
-
-        Entity entity = EntityFactory.getInstance().getEntity("plane", plane);
-        ModelComponent modelComponent = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-
-        Assert.assertEquals(2, modelComponent.getLodLevels().size());
-        Assert.assertEquals(6, modelComponent.getLodLevels().get(1).length);
-        int[] expectedIndexBufferValues = {0,1,2,3,0,2};
-        Assert.assertArrayEquals(expectedIndexBufferValues, modelComponent.getLodLevels().get(1));
     }
 	
 

@@ -4,8 +4,10 @@ import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -38,6 +40,7 @@ public class StaticMesh implements Serializable, Mesh {
     private FloatArrayList vertexBufferValues = new FloatArrayList();
     private int[] indexBufferValuesArray;
     private final int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
+    private final List<Vertex> compiledVertices = new ArrayList<>();
 
     @Override
     public float[] getVertexBufferValuesArray() {
@@ -84,6 +87,7 @@ public class StaticMesh implements Serializable, Mesh {
             LOGGER.log(Level.INFO, "No material found!!!");
             material = MaterialFactory.getInstance().getDefaultMaterial();
         }
+        compiledVertices.clear();
 
         FloatArrayList values = new FloatArrayList(indexFaces.size() * valuesPerVertex);
         List<Vector3f[]> allLightMapCoords = new ArrayList<>(indexFaces.size());
@@ -143,6 +147,8 @@ public class StaticMesh implements Serializable, Mesh {
                 values.add(lightmapCoords.x());
                 values.add(lightmapCoords.y());
                 values.add(lightmapCoords.z());
+
+                compiledVertices.add(new Vertex(referencedVertex, referencedTexcoord, referencedNormal, lightmapCoords));
 
             }
             compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, allLightMapCoords.get(i), compiledLightmapCoords));
@@ -401,4 +407,8 @@ public class StaticMesh implements Serializable, Mesh {
         return getName().hashCode();
     }
 
+    @Override
+    public List<Vertex> getCompiledVertices() {
+        return compiledVertices;
+    }
 }

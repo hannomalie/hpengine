@@ -151,7 +151,7 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     public CompletableFuture<VertexBuffer> upload() {
         VertexBuffer self = this;
         buffer.rewind();
-        return GraphicsContext.getInstance().execute(new FutureCallable() {
+        return GraphicsContext.getInstance().execute(new FutureCallable<VertexBuffer>() {
             @Override
             public VertexBuffer execute() throws Exception {
                 bind();
@@ -299,21 +299,21 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     }
 
     @Override
-    public void putValues(int offset, float... values) {
+    public void putValues(int byteOffset, float... values) {
 //        bind();
-        setCapacityInBytes((offset + values.length) * Float.BYTES);
+        setCapacityInBytes((byteOffset + values.length) * Float.BYTES);
         FloatBuffer floatBuffer = buffer.asFloatBuffer();
-        floatBuffer.position(offset);
+        floatBuffer.position(byteOffset);
         floatBuffer.put(values);
         buffer.rewind();
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-        verticesCount = (offset+values.length)/totalElementsPerVertex;
+        verticesCount = (byteOffset+values.length)/totalElementsPerVertex;
         triangleCount = verticesCount/3;
     }
 
     @Override
-    public void put(int offset, Bufferable... bufferable) {
+    public void put(int offset, T... bufferable) {
         if(bufferable.length == 0) { return; }
         setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);
 

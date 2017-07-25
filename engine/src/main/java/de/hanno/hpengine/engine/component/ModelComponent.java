@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
@@ -15,20 +16,21 @@ import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class ModelComponent extends BaseComponent implements Serializable {
+public class ModelComponent<T extends Bufferable> extends BaseComponent implements Serializable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
 
-    private Model model;
+    private Model<T> model;
 
     public boolean instanced = false;
 
     public float[] floatArray;
-    protected List<int[]> indices = new ArrayList<>();
+    protected int[] indices;
     private int[] indicesCounts;
     private int[] baseVertices;
 
@@ -50,13 +52,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private VertexIndexOffsets vertexIndexOffsets;
     protected AnimatedModel animGameItem;
 
-    public List<int[]> getLodLevels() {
-        return Collections.unmodifiableList(lodLevels);
-    }
-
-    protected volatile List<int[]> lodLevels = new ArrayList<>();
-
-    public ModelComponent(Model model) {
+    public ModelComponent(Model<T> model) {
         super();
         this.model = model;
         createFloatArray();
@@ -103,7 +99,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         putToBuffer(vertexIndexBuffer);
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer<T> vertexIndexBuffer) {
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         int vertexElementsCount = floatArray.length / totalElementsPerVertex;
@@ -128,7 +124,11 @@ public class ModelComponent extends BaseComponent implements Serializable {
         this.createFloatArray();
 
         GraphicsContext.getInstance().execute(() -> {
-            vertexIndexBuffer.getVertexBuffer().putValues(vertexIndexOffsets.vertexOffset*totalElementsPerVertex, floatArray);
+            int byteOffset = vertexIndexOffsets.vertexOffset * totalElementsPerVertex;
+            vertexIndexBuffer.getVertexBuffer().putValues(byteOffset, floatArray);
+            List<T> compiledVertices = model.getCompiledVertices();
+            T[] verticesArray = (T[]) Array.newInstance(Bufferable.class, compiledVertices.size());
+            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices.toArray(verticesArray));
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);
             LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
@@ -138,16 +138,12 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return vertexIndexOffsets;
     }
 
-    public void setLodLevels(List<int[]> lodLevels) {
-        this.lodLevels = lodLevels;
-    }
-
     public float getBoundingSphereRadius() {
         return model.getBoundingSphereRadius();
     }
 
     public int[] getIndices() {
-        return indices.get(0);
+        return indices;
     }
 
     public int getTriangleCount() {
@@ -156,10 +152,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public void createFloatArray() {
         floatArray = model.getVertexBufferValuesArray();
-        indices.add(model.getIndexBufferValuesArray());
-
-        lodLevels.add(indices.get(0));
-        indices = lodLevels;
+        indices = model.getIndexBufferValuesArray();
     }
 
 
@@ -242,7 +235,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model;
     }
 
-    public List<Mesh> getMeshes() {
+    public List<Mesh<T>> getMeshes() {
         return model.getMeshes();
     }
 

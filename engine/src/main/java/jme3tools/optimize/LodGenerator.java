@@ -579,23 +579,6 @@ public class LodGenerator {
         }
     }
 
-    /**
-     * Computes the lods and bake them into the mesh<br>
-     *
-     * This method must be fed with the reduction method
-     * {@link TriangleReductionMethod} and a list of reduction values.<br> for
-     * each value a lod will be generated. <p> <strong>Important note :</strong>
-     * some meshes cannot be decimated, so the result of this method can varry
-     * depending of the given mesh. Also the reduction values are indicative and
-     * the produces mesh will not always meet the required reduction.
-     *
-     * @param reductionMethod the reduction method to use
-     * @param reductionValues the reduction value to use for each lod level.
-     */
-    public void bakeLods(TriangleReductionMethod reductionMethod, float... reductionValues) {
-        modelComponent.setLodLevels(computeLods(reductionMethod, reductionValues));
-    }
-
     private int[] makeLod() {
         int[] lodBuffer = new int[indexCount];
         int triangleIndex = 0;

@@ -42,7 +42,7 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private final VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(10, 10);
+	private final VertexIndexBuffer<Vertex> vertexIndexBuffer = new VertexIndexBuffer<>(10, 10);
 
 	private String name = "";
 	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -371,8 +371,9 @@ public class Scene implements LifeCycle, Serializable {
 
 			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
 
-			for(int i = 0; i < modelComponent.getMeshes().size(); i++) {
-				Mesh mesh = modelComponent.getMeshes().get(i);
+			List<Mesh> meshes = modelComponent.getMeshes();
+			for(int i = 0; i < meshes.size(); i++) {
+				Mesh mesh = meshes.get(i);
 				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter(entity).x, mesh.getCenter(entity).y, mesh.getCenter(entity).z, mesh.getBoundingSphereRadius());
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
