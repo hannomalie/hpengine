@@ -41,5 +41,5 @@ data class Vertex(val position: Vector3f, val texCoord: Vector2f, val normal: Ve
 
     }
 
-    override fun getBytesPerObject(): Int = 8 * 11
+    override fun getBytesPerObject(): Int = 4 * 11
 }

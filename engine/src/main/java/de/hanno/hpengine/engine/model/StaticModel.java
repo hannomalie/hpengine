@@ -100,7 +100,7 @@ public class StaticModel<T extends Bufferable> implements Model<T> {
         return vertexList;
     }
 
-    public int[] getIndexBufferValuesArray() {
+    public int[] getIndices() {
         IntArrayList intList = new IntArrayList();
         for(Mesh mesh : meshes) {
             intList.add(mesh.getIndexBufferValuesArray());

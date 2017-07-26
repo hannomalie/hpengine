@@ -1,6 +1,8 @@
 package de.hanno.hpengine.engine.graphics.buffer;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public interface GPUBuffer<T extends Bufferable> {
     void bind();
@@ -28,6 +30,12 @@ public interface GPUBuffer<T extends Bufferable> {
     }
 
     void put(int offset, T... bufferable);
+
+    default void put(int offset, List<T> bufferables) {
+        T[] verticesArray = (T[]) Array.newInstance(Bufferable.class, bufferables.size());
+        bufferables.toArray(verticesArray);
+        put(offset, verticesArray);
+    }
 
     /**
      * Retrieves the Bufferable at the given index i. This only works

@@ -20,7 +20,7 @@ public interface Model<T extends Bufferable> {
 
     float[] getVertexBufferValuesArray();
 
-    int[] getIndexBufferValuesArray();
+    int[] getIndices();
 
     Vector4f[] getMinMax();
 

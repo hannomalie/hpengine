@@ -299,29 +299,17 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     }
 
     @Override
-    public void putValues(int byteOffset, float... values) {
+    public void putValues(int floatOffset, float... values) {
 //        bind();
-        setCapacityInBytes((byteOffset + values.length) * Float.BYTES);
+        setCapacityInBytes((floatOffset + values.length) * Float.BYTES);
         FloatBuffer floatBuffer = buffer.asFloatBuffer();
-        floatBuffer.position(byteOffset);
+        floatBuffer.position(floatOffset);
         floatBuffer.put(values);
         buffer.rewind();
 
         int totalElementsPerVertex = DataChannels.totalElementsPerVertex(channels);
-        verticesCount = (byteOffset+values.length)/totalElementsPerVertex;
+        verticesCount = (floatOffset+values.length)/totalElementsPerVertex;
         triangleCount = verticesCount/3;
-    }
-
-    @Override
-    public void put(int offset, T... bufferable) {
-        if(bufferable.length == 0) { return; }
-        setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);
-
-        buffer.rewind();
-        for (int i = 0; i < bufferable.length; i++) {
-            Bufferable currentBufferable = bufferable[i];
-            currentBufferable.putToBuffer(buffer);
-        }
     }
 
     public void drawAgain(IndexBuffer indexBuffer) {

@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.buffer;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
 
+import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
@@ -63,14 +64,17 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
     @Override
     public void put(int offset, T... bufferable) {
         if(bufferable.length == 0) { return; }
-        setCapacityInBytes(bufferable[0].getBytesPerObject() * bufferable.length);
 
-        buffer.rewind();
+        int bytesPerObject = bufferable[0].getBytesPerObject();
+        setCapacityInBytes(bytesPerObject * bufferable.length);
+
+        buffer.position(bytesPerObject*offset);
         int currentOffset = 0;
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            setCapacityInBytes(offset+currentOffset + currentBufferable.getBytesPerObject());
+            setCapacityInBytes(bytesPerObject*(offset+currentOffset));
             currentBufferable.putToBuffer(buffer);
+            currentOffset ++;
         }
     }
 

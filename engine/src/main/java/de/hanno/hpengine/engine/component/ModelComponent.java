@@ -16,7 +16,6 @@ import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -29,8 +28,6 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
 
     public boolean instanced = false;
 
-    public float[] floatArray;
-    protected int[] indices;
     private int[] indicesCounts;
     private int[] baseVertices;
 
@@ -55,7 +52,8 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
     public ModelComponent(Model<T> model) {
         super();
         this.model = model;
-        createFloatArray();
+        indicesCounts = new int[model.getMeshes().size()];
+        baseVertices = new int[model.getMeshes().size()];
     }
 
     private transient Vector3f distance = new Vector3f();
@@ -101,13 +99,11 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
 
     public VertexIndexOffsets putToBuffer(VertexIndexBuffer<T> vertexIndexBuffer) {
 
-        int totalElementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
-        int vertexElementsCount = floatArray.length / totalElementsPerVertex;
-        int indicesCount = getIndices().length;
-        vertexIndexOffsets = vertexIndexBuffer.allocate(vertexElementsCount, indicesCount);
+        List<T> compiledVertices = model.getCompiledVertices();
 
-        indicesCounts = new int[model.getMeshes().size()];
-        baseVertices = new int[model.getMeshes().size()];
+        int elementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+        int indicesCount = getIndices().length;
+        vertexIndexOffsets = vertexIndexBuffer.allocate(compiledVertices.size(), indicesCount);
 
         int currentIndexOffset = vertexIndexOffsets.indexOffset;
         int currentVertexOffset = vertexIndexOffsets.vertexOffset;
@@ -117,19 +113,15 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
             indicesCounts[i] = currentIndexOffset;
             baseVertices[i] = currentVertexOffset;
             currentIndexOffset += mesh.getIndexBufferValuesArray().length;
-            currentVertexOffset += mesh.getVertexBufferValuesArray().length/totalElementsPerVertex;
+            currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
         this.getModel().putToValueArrays();
-        this.createFloatArray();
 
         GraphicsContext.getInstance().execute(() -> {
-            int byteOffset = vertexIndexOffsets.vertexOffset * totalElementsPerVertex;
-            vertexIndexBuffer.getVertexBuffer().putValues(byteOffset, floatArray);
-            List<T> compiledVertices = model.getCompiledVertices();
-            T[] verticesArray = (T[]) Array.newInstance(Bufferable.class, compiledVertices.size());
-            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices.toArray(verticesArray));
+            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
+
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);
             LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
             vertexIndexBuffer.getVertexBuffer().upload();
@@ -143,18 +135,12 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
     }
 
     public int[] getIndices() {
-        return indices;
+        return model.getIndices();
     }
 
     public int getTriangleCount() {
         return model.getTriangleCount();
     }
-
-    public void createFloatArray() {
-        floatArray = model.getVertexBufferValuesArray();
-        indices = model.getIndexBufferValuesArray();
-    }
-
 
 //    private Vector3f[] calculateTangentBitangent(Vector3f v1, Vector3f v2, Vector3f v3, Vector2f w1, Vector2f w2, Vector2f w3, Vector3f n1, Vector3f n2, Vector3f n3) {
 //        Vector3f tangent = new Vector3f();

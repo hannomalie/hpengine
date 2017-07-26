@@ -101,7 +101,7 @@ public class AnimatedModel implements Model {
     }
 
     @Override
-    public int[] getIndexBufferValuesArray() {
+    public int[] getIndices() {
         IntArrayList intList = new IntArrayList();
         int currentIndexOffset = 0;
         for(Mesh mesh : getMeshes()) {

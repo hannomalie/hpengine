@@ -13,7 +13,6 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
     private volatile VertexBuffer<T> vertexBuffer;
     private volatile IndexBuffer indexBuffer;
     private volatile AtomicInteger currentBaseVertex = new AtomicInteger();
-
     private volatile AtomicInteger currentIndexOffset = new AtomicInteger();
 
     public VertexIndexBuffer(int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount) {
@@ -53,14 +52,14 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
         this.currentIndexOffset = currentIndexOffset;
     }
 
-    public synchronized VertexIndexOffsets allocate(int vertexElementsCount, int indicesCount) {
-        VertexIndexOffsets vertexIndexOffsets = new VertexIndexOffsets(currentBaseVertex.get(), currentIndexOffset.get());
-        currentBaseVertex.getAndSet(vertexIndexOffsets.vertexOffset + vertexElementsCount);
+    public synchronized VertexIndexOffsets<T> allocate(int elementsCount, int indicesCount) {
+        VertexIndexOffsets<T> vertexIndexOffsets = new VertexIndexOffsets<>(currentBaseVertex.get(), currentIndexOffset.get());
+        currentBaseVertex.getAndSet(vertexIndexOffsets.vertexOffset + elementsCount);
         currentIndexOffset.getAndSet(vertexIndexOffsets.indexOffset + indicesCount);
         return vertexIndexOffsets;
     }
 
-    public static class VertexIndexOffsets {
+    public static class VertexIndexOffsets<T extends Bufferable> {
         public final int vertexOffset;
         public final int indexOffset;
 
