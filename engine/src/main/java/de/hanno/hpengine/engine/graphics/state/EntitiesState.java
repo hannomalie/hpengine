@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.state;
 
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
@@ -18,7 +19,7 @@ public class EntitiesState {
     public long entityMovedInCycle;
     public long entityAddedInCycle;
     public RenderBatches renderBatches = new RenderBatches();
-    public VertexIndexBuffer vertexIndexBuffer = new VertexIndexBuffer(100, 90);
+    public Map<Class<? extends Bufferable>, VertexIndexBuffer> vertexIndexBuffers = new HashMap<>();
     public GPUBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(8000);
     public GPUBuffer<Material> materialBuffer = new PersistentMappedBuffer(8000);
 

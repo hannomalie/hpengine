@@ -1,13 +1,14 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Transform;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -19,12 +20,12 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class ModelComponent<T extends Bufferable> extends BaseComponent implements Serializable {
+public class ModelComponent extends BaseComponent implements Serializable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
     private static final Logger LOGGER = Logger.getLogger(ModelComponent.class.getName());
     private static final long serialVersionUID = 1L;
 
-    private Model<T> model;
+    private Model model;
 
     public boolean instanced = false;
 
@@ -49,7 +50,7 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
     private VertexIndexOffsets vertexIndexOffsets;
     protected AnimatedModel animGameItem;
 
-    public ModelComponent(Model<T> model) {
+    public ModelComponent(Model model) {
         super();
         this.model = model;
         indicesCounts = new int[model.getMeshes().size()];
@@ -93,13 +94,13 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
 
     @Override
     public void registerInScene(Scene scene) {
-        VertexIndexBuffer vertexIndexBuffer = scene.getVertexIndexBuffer();
+        VertexIndexBuffer<Vertex> vertexIndexBuffer = scene.getVertexIndexBuffer(Vertex.class, (bufferableClass) -> new VertexIndexBuffer<Vertex>(10,10));
         putToBuffer(vertexIndexBuffer);
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer<T> vertexIndexBuffer) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
 
-        List<T> compiledVertices = model.getCompiledVertices();
+        List compiledVertices = model.getCompiledVertices();
 
         int elementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         int indicesCount = getIndices().length;
@@ -109,7 +110,7 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
         int currentVertexOffset = vertexIndexOffsets.vertexOffset;
 
         for(int i = 0; i < indicesCounts.length; i++) {
-            Mesh mesh = model.getMeshes().get(i);
+            Mesh mesh = (Mesh) model.getMeshes().get(i);
             indicesCounts[i] = currentIndexOffset;
             baseVertices[i] = currentVertexOffset;
             currentIndexOffset += mesh.getIndexBufferValuesArray().length;
@@ -221,7 +222,7 @@ public class ModelComponent<T extends Bufferable> extends BaseComponent implemen
         return model;
     }
 
-    public List<Mesh<T>> getMeshes() {
+    public List<Mesh> getMeshes() {
         return model.getMeshes();
     }
 

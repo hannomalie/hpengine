@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class StaticModel<T extends Bufferable> implements Model<T> {
-    private List<Mesh<T>> meshes = new ArrayList();
+    private List<Mesh> meshes = new ArrayList<>();
 
     private ArrayList<Vector3f> vertices = new ArrayList<>();
     private ArrayList<Vector2f> texCoords = new ArrayList<>();
@@ -131,7 +131,7 @@ public class StaticModel<T extends Bufferable> implements Model<T> {
         return new Vector4f[0];
     }
 
-    public List<Mesh<T>> getMeshes() {
+    public List<Mesh> getMeshes() {
         return meshes;
     }
 

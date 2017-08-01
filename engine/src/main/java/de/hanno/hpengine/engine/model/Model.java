@@ -12,7 +12,7 @@ import java.util.List;
 public interface Model<T extends Bufferable> {
     void setMaterial(Material material);
 
-    List<Mesh<T>> getMeshes();
+    List<Mesh> getMeshes();
 
     float getBoundingSphereRadius();
 

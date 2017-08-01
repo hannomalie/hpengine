@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.graphics.shader.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.TypedTuple;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -380,7 +381,7 @@ public class LightFactory {
 //				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 //				areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-				DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
+				DrawStrategy.draw(renderState.getVertexIndexBuffer(Vertex.class).getVertexBuffer(), renderState.getVertexIndexBuffer(Vertex.class).getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
 			}
 		}
 		GPUProfiler.end();
@@ -435,7 +436,7 @@ public class LightFactory {
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
 			for (RenderBatch e : renderState.perEntityInfos()) {
-                DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
+                DrawStrategy.draw(renderState.getVertexIndexBuffer(Vertex.class).getVertexBuffer(), renderState.getVertexIndexBuffer(Vertex.class).getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
 		}

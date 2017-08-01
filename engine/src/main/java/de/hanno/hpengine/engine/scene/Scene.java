@@ -9,15 +9,17 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.container.SimpleContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.model.DataChannelProvider;
+import de.hanno.hpengine.engine.model.DataChannelComponent;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -30,8 +32,11 @@ import org.joml.Vector4f;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
+import java.nio.Buffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -42,7 +47,7 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private final VertexIndexBuffer<Vertex> vertexIndexBuffer = new VertexIndexBuffer<>(10, 10);
+	private Map<Class<? extends Bufferable>, VertexIndexBuffer> vertexIndexBuffers = new ConcurrentHashMap<>();
 
 	private String name = "";
 	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -238,7 +243,9 @@ public class Scene implements LifeCycle, Serializable {
 
 	public int getEntityBufferIndex(ModelComponent modelComponent) {
 		cacheEntityIndices();
-		return entityIndices.get(getModelComponents().indexOf(modelComponent));
+		int index = getModelComponents().indexOf(modelComponent);
+		if(index < 0) { return index; }
+		return entityIndices.get(index);
 	}
 
 
@@ -392,10 +399,6 @@ public class Scene implements LifeCycle, Serializable {
 		this.updateCache = updateCache;
 	}
 
-	public VertexIndexBuffer getVertexIndexBuffer() {
-		return vertexIndexBuffer;
-	}
-
 	public long entityMovedInCycle() {
 		return entityMovedInCycle;
 	}
@@ -422,5 +425,21 @@ public class Scene implements LifeCycle, Serializable {
 
 	public long getEntityAddedInCycle() {
 		return entityAddedInCycle;
+	}
+
+	public <T extends Bufferable> VertexIndexBuffer<T> getVertexIndexBuffer(Class<T> bufferableClass, Function<? super Class<? extends Bufferable>, ? extends VertexIndexBuffer> vertexIndexBufferProvider) {
+		return vertexIndexBuffers.computeIfAbsent(bufferableClass, vertexIndexBufferProvider);
+	}
+
+	public VertexIndexBuffer getVertexIndexBuffer(Class<Vertex> vertexClass) {
+		VertexIndexBuffer result = vertexIndexBuffers.get(vertexClass);
+		if(result == null) {
+			throw new IllegalStateException("VertexIndexBuffer not found for class " + vertexClass.getName());
+		}
+		return result;
+	}
+
+	public Map<Class<? extends Bufferable>, VertexIndexBuffer> getVertexIndexBuffers() {
+		return vertexIndexBuffers;
 	}
 }

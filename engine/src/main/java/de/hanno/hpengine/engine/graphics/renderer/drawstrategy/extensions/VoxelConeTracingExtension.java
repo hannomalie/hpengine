@@ -22,6 +22,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.AxisAngle4f;
@@ -269,7 +270,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                     if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                         continue;
                     }
-                    int currentVerticesCount = DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), entity, voxelizer, false);
+                    int currentVerticesCount = DrawStrategy.draw(renderState.getVertexIndexBuffer(Vertex.class).getVertexBuffer(), renderState.getVertexIndexBuffer(Vertex.class).getIndexBuffer(), entity, voxelizer, false);
 
 //                TODO: Count this somehow?
 //                firstPassResult.verticesDrawn += currentVerticesCount;

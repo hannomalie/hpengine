@@ -11,6 +11,8 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
+import de.hanno.hpengine.engine.scene.Vertex;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
@@ -50,17 +52,21 @@ public class Pipeline {
         program.setUniform("entityCount", commands.size());
         program.setUniform("indirect", true);
         GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-        if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
-            GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
-            VertexBuffer.drawLinesInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
-        } else {
-            if(useBackfaceCulling) {
-                GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
+        for(VertexIndexBuffer vertexIndexBuffer : renderState.getVertexIndexBuffers().values()) {
+            IndexBuffer indexBuffer = vertexIndexBuffer.getIndexBuffer();
+            VertexBuffer vertexBuffer = vertexIndexBuffer.getVertexBuffer();
+            if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
+                GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
+                VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commands.size());
+            } else {
+                if(useBackfaceCulling) {
+                    GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
+                }
+                VertexBuffer.drawInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commands.size());
+                indexBuffer.unbind();
             }
-            VertexBuffer.drawInstancedIndirectBaseVertex(renderState.getVertexBuffer(), renderState.getIndexBuffer(), commandBuffer, commands.size());
         }
         GPUProfiler.end();
-        renderState.getIndexBuffer().unbind();
 
         firstPassResult.verticesDrawn += verticesCount;
         firstPassResult.entitiesDrawn += entitiesDrawn;
@@ -74,7 +80,6 @@ public class Pipeline {
         verticesCount = 0;
         entitiesDrawn = 0;
         commands.clear();
-        renderState.getIndexBuffer().bind();
         offsets.clear();
         for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
             RenderBatch info = renderState.perEntityInfos().get(i);

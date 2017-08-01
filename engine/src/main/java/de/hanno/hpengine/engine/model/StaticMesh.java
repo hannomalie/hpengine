@@ -148,7 +148,7 @@ public class StaticMesh implements Serializable, Mesh {
                 values.add(lightmapCoords.y());
                 values.add(lightmapCoords.z());
 
-                compiledVertices.add(new Vertex(referencedVertex, referencedTexcoord, referencedNormal, lightmapCoords));
+                compiledVertices.add(new Vertex("Vertex", referencedVertex, referencedTexcoord, referencedNormal, lightmapCoords));
 
             }
             compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, allLightMapCoords.get(i), compiledLightmapCoords));

@@ -24,6 +24,8 @@ import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.scene.Vertex;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.threads.RenderThread;
 import de.hanno.hpengine.engine.threads.UpdateThread;
 import de.hanno.hpengine.util.fps.FPSCounter;
@@ -196,7 +198,7 @@ public class Engine implements HighFrequencyCommandProvider {
 
         if(GraphicsContext.getInstance().isSignaled(renderState.getCurrentWriteState().getGpuCommandSync())) {
             Camera directionalLightCamera = scene.getDirectionalLight();
-            renderState.getCurrentWriteState().init(scene.getVertexIndexBuffer(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
+            renderState.getCurrentWriteState().init(scene.getVertexIndexBuffers(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
             scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
             renderState.update();
         }
@@ -247,7 +249,7 @@ public class Engine implements HighFrequencyCommandProvider {
         }, true);
         restoreWorldCamera();
         renderState.addCommand(renderState1 -> {
-            renderState1.setVertexIndexBuffer(scene.getVertexIndexBuffer());
+            renderState1.setVertexIndexBuffer(Vertex.class, scene.getVertexIndexBuffer(Vertex.class));
         });
     }
 

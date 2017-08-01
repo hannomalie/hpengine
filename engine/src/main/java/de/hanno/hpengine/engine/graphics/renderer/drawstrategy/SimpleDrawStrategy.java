@@ -178,30 +178,30 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Pipeline pipeline = renderState.get(pipelineIndex);
         if (Config.getInstance().isDrawScene()) {
             GPUProfiler.start("Set global uniforms first pass");
-            Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
-            firstpassDefaultProgram.use();
-            firstpassDefaultProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-            firstpassDefaultProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-            firstpassDefaultProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
-            firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
-            firstpassDefaultProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-            firstpassDefaultProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
-            firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-            firstpassDefaultProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
-            firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-            firstpassDefaultProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-            firstpassDefaultProgram.setUniform("near", camera.getNear());
-            firstpassDefaultProgram.setUniform("far", camera.getFar());
-            firstpassDefaultProgram.setUniform("time", (int) System.currentTimeMillis());
-            firstpassDefaultProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
-            firstpassDefaultProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
+            Program firstpassProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+            firstpassProgram.use();
+            firstpassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+            firstpassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
+            firstpassProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
+            firstpassProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+            firstpassProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
+            firstpassProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+            firstpassProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
+            firstpassProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+            firstpassProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
+            firstpassProgram.setUniform("eyePosition", camera.getPosition());
+            firstpassProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+            firstpassProgram.setUniform("near", camera.getNear());
+            firstpassProgram.setUniform("far", camera.getFar());
+            firstpassProgram.setUniform("time", (int) System.currentTimeMillis());
+            firstpassProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
+            firstpassProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
             GPUProfiler.end();
 
             GPUProfiler.start("Actual draw entities");
 
             if(Config.getInstance().isIndirectDrawing()) {
-                pipeline.draw(renderState, firstpassDefaultProgram, firstPassResult);
+                pipeline.draw(renderState, firstpassProgram, firstPassResult);
             } else {
                 for(RenderBatch info : renderState.perEntityInfos()) {
                     if (!info.isVisibleForCamera()) {

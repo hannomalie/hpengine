@@ -95,7 +95,7 @@ public class MD5Mesh implements Mesh {
 
     public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr, List<AnimCompiledVertex> vertices, Vector4f[] minMax, Vector3f[] minMaxVec3) {
         this(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr);
-        this.compiledVertices = vertices.stream().map(in -> new Vertex(in.position, in.textCoords, in.normal, new Vector3f())).collect(Collectors.toList());
+        this.compiledVertices = vertices.stream().map(in -> new Vertex("Vertex", in.position, in.textCoords, in.normal, new Vector3f())).collect(Collectors.toList());
         this.minMax = minMax;
         this.minMaxVec3 = minMaxVec3;
     }
