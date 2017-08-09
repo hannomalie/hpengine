@@ -31,4 +31,6 @@ public interface Model<T extends Bufferable> {
     Vector3f[] getMinMax(Transform transform);
 
     List<T> getCompiledVertices();
+
+    default boolean isStatic() {return true;}
 }

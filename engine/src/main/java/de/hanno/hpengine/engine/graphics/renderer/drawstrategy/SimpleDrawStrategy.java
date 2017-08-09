@@ -177,44 +177,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         Pipeline pipeline = renderState.get(pipelineIndex);
         if (Config.getInstance().isDrawScene()) {
-            GPUProfiler.start("Set global uniforms first pass");
             Program firstpassProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
-            firstpassProgram.use();
-            firstpassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-            firstpassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-            firstpassProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
-            firstpassProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
-            firstpassProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-            firstpassProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-            firstpassProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
-            firstpassProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-            firstpassProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
-            firstpassProgram.setUniform("eyePosition", camera.getPosition());
-            firstpassProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-            firstpassProgram.setUniform("near", camera.getNear());
-            firstpassProgram.setUniform("far", camera.getFar());
-            firstpassProgram.setUniform("time", (int) System.currentTimeMillis());
-            firstpassProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
-            firstpassProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
-            GPUProfiler.end();
-
-            GPUProfiler.start("Actual draw entities");
-
-            if(Config.getInstance().isIndirectDrawing()) {
-                pipeline.draw(renderState, firstpassProgram, firstPassResult);
-            } else {
-                for(RenderBatch info : renderState.perEntityInfos()) {
-                    if (!info.isVisibleForCamera()) {
-                        continue;
-                    }
-                    int currentVerticesCount = DrawStrategy.draw(renderState, info);
-                    firstPassResult.verticesDrawn += currentVerticesCount;
-                    if (currentVerticesCount > 0) {
-                        firstPassResult.entitiesDrawn++;
-                    }
-                }
-            }
-            GPUProfiler.end();
+            pipeline.beforeDraw(renderState, firstpassProgram, firstPassResult);
+            pipeline.draw(renderState, firstpassProgram, firstPassResult);
         }
         GPUProfiler.end();
 

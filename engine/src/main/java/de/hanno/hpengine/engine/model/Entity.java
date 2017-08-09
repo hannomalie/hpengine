@@ -392,11 +392,12 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(isSelected() ? 1 : 0);
 		buffer.putInt(materialIndex);
 		buffer.putInt((int) getUpdate().getAsDouble());
-		int entityBufferIndex = Engine.getInstance().getScene().getEntityBufferIndex(getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
+		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		int entityBufferIndex = Engine.getInstance().getScene().getEntityBufferIndex(modelComponent);
 		buffer.putInt(entityBufferIndex + meshIndex);
 		buffer.putInt(Engine.getInstance().getScene().getEntities().indexOf(this));
 		buffer.putInt(meshIndex);
-		buffer.putInt(-1);
+		buffer.putInt(modelComponent.getBaseVertex(meshIndex));
 		buffer.putInt(-1);
 	}
 

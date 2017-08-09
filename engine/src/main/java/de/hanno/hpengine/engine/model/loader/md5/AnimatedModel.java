@@ -153,4 +153,7 @@ public class AnimatedModel implements Model {
         }
         return vertexList;
     }
+
+    @Override
+    public boolean isStatic() {return false;}
 }

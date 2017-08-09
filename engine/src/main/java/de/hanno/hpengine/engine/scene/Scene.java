@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.system.CallbackI;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
@@ -47,7 +48,8 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private Map<Class<? extends Bufferable>, VertexIndexBuffer> vertexIndexBuffers = new ConcurrentHashMap<>();
+	private VertexIndexBuffer vertexIndexBufferStatic = new VertexIndexBuffer<Vertex>(10, 10);
+	private VertexIndexBuffer vertexIndexBufferAnimated = new VertexIndexBuffer<Vertex>(10, 10);
 
 	private String name = "";
 	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -427,19 +429,11 @@ public class Scene implements LifeCycle, Serializable {
 		return entityAddedInCycle;
 	}
 
-	public <T extends Bufferable> VertexIndexBuffer<T> getVertexIndexBuffer(Class<T> bufferableClass, Function<? super Class<? extends Bufferable>, ? extends VertexIndexBuffer> vertexIndexBufferProvider) {
-		return vertexIndexBuffers.computeIfAbsent(bufferableClass, vertexIndexBufferProvider);
+	public VertexIndexBuffer<Vertex> getVertexIndexBufferStatic() {
+		return vertexIndexBufferStatic;
 	}
 
-	public VertexIndexBuffer getVertexIndexBuffer(Class<Vertex> vertexClass) {
-		VertexIndexBuffer result = vertexIndexBuffers.get(vertexClass);
-		if(result == null) {
-			throw new IllegalStateException("VertexIndexBuffer not found for class " + vertexClass.getName());
-		}
-		return result;
-	}
-
-	public Map<Class<? extends Bufferable>, VertexIndexBuffer> getVertexIndexBuffers() {
-		return vertexIndexBuffers;
+	public VertexIndexBuffer<Vertex> getVertexIndexBufferAnimated() {
+		return vertexIndexBufferAnimated;
 	}
 }

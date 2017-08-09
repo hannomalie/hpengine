@@ -1,19 +1,18 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
+import de.hanno.hpengine.util.ressources.FileMonitor;
+import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
+import de.hanno.hpengine.util.ressources.Reloadable;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.monitor.FileAlterationObserver;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
-import de.hanno.hpengine.engine.graphics.renderer.GLU;
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
-import de.hanno.hpengine.util.ressources.FileMonitor;
-import de.hanno.hpengine.util.ressources.ReloadOnFileChangeListener;
-import de.hanno.hpengine.util.ressources.Reloadable;
 
 import java.io.File;
 import java.util.Collections;

@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.event.StateChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.command.Command;
@@ -12,10 +14,7 @@ import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueu
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
@@ -499,7 +498,39 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void registerPipelines(TripleBuffer<RenderState> renderstate) {
-		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline()));
+		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
+			@Override
+			public void beforeDraw(RenderState renderState, Program firstpassProgram, FirstPassResult firstPassResult) {
+				super.beforeDraw(renderState, firstpassProgram, firstPassResult);
+
+				Camera camera = renderState.camera;
+				FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
+				FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
+				FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
+
+				firstpassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+				firstpassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
+				firstpassProgram.bindShaderStorageBuffer(4, getEntityOffsetBuffer());
+				VertexIndexBuffer vertexIndexBuffer = renderState.getVertexIndexBuffer();
+				if(vertexIndexBuffer != null) {
+					firstpassProgram.bindShaderStorageBuffer(5, vertexIndexBuffer.getVertexBuffer());
+				}
+				firstpassProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+				firstpassProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
+				firstpassProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+				firstpassProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
+				firstpassProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+				firstpassProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
+				firstpassProgram.setUniform("eyePosition", camera.getPosition());
+				firstpassProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+				firstpassProgram.setUniform("near", camera.getNear());
+				firstpassProgram.setUniform("far", camera.getFar());
+				firstpassProgram.setUniform("time", (int) System.currentTimeMillis());
+				firstpassProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
+				firstpassProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
+
+			}
+		}));
 	}
 
 }

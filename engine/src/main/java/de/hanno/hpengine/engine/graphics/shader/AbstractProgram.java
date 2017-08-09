@@ -20,13 +20,15 @@ import org.joml.Vector3f;
 import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 
+import javax.swing.*;
+
 
 public abstract class AbstractProgram {
 
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
     protected List<Define> defines = new ArrayList<>();
 	protected final int id = GraphicsContext.getInstance().createProgramId();
-	
+
 	public AbstractProgram() { }
 	
 	public void use() {
@@ -146,4 +148,5 @@ public abstract class AbstractProgram {
     @Handler
 	public void handle(GlobalDefineChangedEvent e) {
 	}
+
 }

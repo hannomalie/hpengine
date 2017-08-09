@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
@@ -45,14 +46,21 @@ public class Pipeline {
         draw(renderState, program, firstPassResult);
     }
 
+
+    public void beforeDraw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
+        program.use();
+    }
+
     public void draw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
-        GPUProfiler.start("Draw with indirect pipeline");
-        program.setUniform("entityIndex", 0);
-        program.setUniform("entityBaseIndex", 0);
-        program.setUniform("entityCount", commands.size());
-        program.setUniform("indirect", true);
-        GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-        for(VertexIndexBuffer vertexIndexBuffer : renderState.getVertexIndexBuffers().values()) {
+        GPUProfiler.start("Actual draw entities");
+        if(Config.getInstance().isIndirectDrawing()) {
+            GPUProfiler.start("Draw with indirect pipeline");
+            program.setUniform("entityIndex", 0);
+            program.setUniform("entityBaseIndex", 0);
+            program.setUniform("entityCount", commands.size());
+            program.setUniform("indirect", true);
+            GPUProfiler.start("DrawInstancedIndirectBaseVertex");
+            VertexIndexBuffer vertexIndexBuffer = renderState.getVertexIndexBuffer();
             IndexBuffer indexBuffer = vertexIndexBuffer.getIndexBuffer();
             VertexBuffer vertexBuffer = vertexIndexBuffer.getVertexBuffer();
             if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
@@ -65,11 +73,23 @@ public class Pipeline {
                 VertexBuffer.drawInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commands.size());
                 indexBuffer.unbind();
             }
-        }
-        GPUProfiler.end();
+            GPUProfiler.end();
 
-        firstPassResult.verticesDrawn += verticesCount;
-        firstPassResult.entitiesDrawn += entitiesDrawn;
+            firstPassResult.verticesDrawn += verticesCount;
+            firstPassResult.entitiesDrawn += entitiesDrawn;
+            GPUProfiler.end();
+        } else {
+            for(RenderBatch info : renderState.perEntityInfos()) {
+                if (!info.isVisibleForCamera()) {
+                    continue;
+                }
+                int currentVerticesCount = DrawStrategy.draw(renderState, info);
+                firstPassResult.verticesDrawn += currentVerticesCount;
+                if (currentVerticesCount > 0) {
+                    firstPassResult.entitiesDrawn++;
+                }
+            }
+        }
         GPUProfiler.end();
     }
 

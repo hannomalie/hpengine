@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -94,17 +93,22 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public void registerInScene(Scene scene) {
-        VertexIndexBuffer<Vertex> vertexIndexBuffer = scene.getVertexIndexBuffer(Vertex.class, (bufferableClass) -> new VertexIndexBuffer<Vertex>(10,10));
+        VertexIndexBuffer<Vertex> vertexIndexBuffer;
+        if(model.isStatic()) {
+            vertexIndexBuffer = scene.getVertexIndexBufferStatic();
+        } else {
+            vertexIndexBuffer = scene.getVertexIndexBufferAnimated();
+        }
         putToBuffer(vertexIndexBuffer);
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer<Vertex> vertexIndexBufferStatic) {
 
         List compiledVertices = model.getCompiledVertices();
 
         int elementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         int indicesCount = getIndices().length;
-        vertexIndexOffsets = vertexIndexBuffer.allocate(compiledVertices.size(), indicesCount);
+        vertexIndexOffsets = vertexIndexBufferStatic.allocate(compiledVertices.size(), indicesCount);
 
         int currentIndexOffset = vertexIndexOffsets.indexOffset;
         int currentVertexOffset = vertexIndexOffsets.vertexOffset;
@@ -120,12 +124,12 @@ public class ModelComponent extends BaseComponent implements Serializable {
         this.getModel().putToValueArrays();
 
         GraphicsContext.getInstance().execute(() -> {
-            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
-            vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
+            vertexIndexBufferStatic.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
+            vertexIndexBufferStatic.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);
             LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
-            vertexIndexBuffer.getVertexBuffer().upload();
+            vertexIndexBufferStatic.getVertexBuffer().upload();
         });
 
         return vertexIndexOffsets;

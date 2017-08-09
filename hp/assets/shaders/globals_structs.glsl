@@ -52,6 +52,6 @@ struct Entity {
 
     int entityIndexWithoutMeshIndex; //TODO: Rename this properly
     int meshIndex;
-    int xxx;
+    int baseVertex;
     int yyy;
 };
