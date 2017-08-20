@@ -102,13 +102,13 @@ public class ModelComponent extends BaseComponent implements Serializable {
         putToBuffer(vertexIndexBuffer);
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer<Vertex> vertexIndexBufferStatic) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
 
         List compiledVertices = model.getCompiledVertices();
 
         int elementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
         int indicesCount = getIndices().length;
-        vertexIndexOffsets = vertexIndexBufferStatic.allocate(compiledVertices.size(), indicesCount);
+        vertexIndexOffsets = vertexIndexBuffer.allocate(compiledVertices.size(), indicesCount);
 
         int currentIndexOffset = vertexIndexOffsets.indexOffset;
         int currentVertexOffset = vertexIndexOffsets.vertexOffset;
@@ -121,15 +121,16 @@ public class ModelComponent extends BaseComponent implements Serializable {
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
-        this.getModel().putToValueArrays();
+//        TODO: Remove this
+//        this.getModel().putToValueArrays();
 
         GraphicsContext.getInstance().execute(() -> {
-            vertexIndexBufferStatic.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
-            vertexIndexBufferStatic.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
+            vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
+            vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 
             LOGGER.fine("Current IndexOffset: " + vertexIndexOffsets.indexOffset);
             LOGGER.fine("Current BaseVertex: " + vertexIndexOffsets.vertexOffset);
-            vertexIndexBufferStatic.getVertexBuffer().upload();
+            vertexIndexBuffer.getVertexBuffer().upload();
         });
 
         return vertexIndexOffsets;
@@ -240,5 +241,12 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public int getBaseVertex(int i) {
         return baseVertices[i];
+    }
+
+    public boolean isStatic() {
+        if(model == null) {
+            return true;
+        }
+        return model.isStatic();
     }
 }

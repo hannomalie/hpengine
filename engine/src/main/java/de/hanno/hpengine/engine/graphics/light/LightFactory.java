@@ -373,14 +373,14 @@ public class LightFactory {
 //			directionalShadowPassProgram.setUniform("near", de.hanno.hpengine.camera.getNear());
 //			directionalShadowPassProgram.setUniform("far", de.hanno.hpengine.camera.getFar());
 
-			for (RenderBatch e : renderState.perEntityInfos()) {
+			for (RenderBatch e : renderState.getRenderBatchesStatic()) {
 //				TODO: Use model component index here
 //				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
 //				modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
 //				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 //				areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-				DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
+				DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
 			}
 		}
 		GPUProfiler.end();
@@ -434,8 +434,8 @@ public class LightFactory {
 //			pointCubeShadowPassProgram.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
 
 			GPUProfiler.start("PointLight shadowmap entity rendering");
-			for (RenderBatch e : renderState.perEntityInfos()) {
-                DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
+			for (RenderBatch e : renderState.getRenderBatchesStatic()) {
+                DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, pointCubeShadowPassProgram, !e.isVisible());
 			}
 			GPUProfiler.end();
 		}
@@ -468,7 +468,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false);
                     DrawStrategy.draw(renderState, batch);
 				});
 			}
@@ -483,7 +483,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex());
+                    RenderBatch batch = new RenderBatch(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld()[0], e.getMinMaxWorld()[1], modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false);
                     DrawStrategy.draw(renderState, batch);
 				});
 			}

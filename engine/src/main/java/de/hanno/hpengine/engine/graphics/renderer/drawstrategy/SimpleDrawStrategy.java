@@ -109,7 +109,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
         skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
         VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);
-        skyBoxRenderBatch = new RenderBatch(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset);
+        skyBoxRenderBatch = new RenderBatch(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false);
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 

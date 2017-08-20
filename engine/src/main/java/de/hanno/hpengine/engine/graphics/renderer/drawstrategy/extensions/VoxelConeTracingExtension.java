@@ -150,7 +150,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.perEntityInfos().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
         if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
@@ -264,12 +264,12 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 firstPassResult.reset();
                 pipeline.prepareAndDraw(renderState, voxelizer, firstPassResult);
             } else {
-                for (RenderBatch entity : renderState.perEntityInfos()) {
+                for (RenderBatch entity : renderState.getRenderBatchesStatic()) {
                     boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
                     if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                         continue;
                     }
-                    int currentVerticesCount = DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), entity, voxelizer, false);
+                    int currentVerticesCount = DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), entity, voxelizer, false);
 
 //                TODO: Count this somehow?
 //                firstPassResult.verticesDrawn += currentVerticesCount;

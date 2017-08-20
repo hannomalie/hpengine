@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -23,9 +22,16 @@ import java.util.List;
 
 public class Pipeline {
 
-    protected final List<DrawElementsIndirectCommand> commands = new ArrayList();
-    protected final IndexBuffer entityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(100));
-    protected final CommandBuffer commandBuffer = new CommandBuffer(1600);
+//    TODO: Refactor me
+    protected final List<DrawElementsIndirectCommand> commandsStatic = new ArrayList();
+    protected final List<DrawElementsIndirectCommand> commandsAnimated = new ArrayList();
+    protected final IndexBuffer entityOffsetBufferStatic = new IndexBuffer(BufferUtils.createIntBuffer(100));
+    protected final IndexBuffer entityOffsetBufferAnimated = new IndexBuffer(BufferUtils.createIntBuffer(100));
+    protected final CommandBuffer commandBufferStatic = new CommandBuffer(1600);
+    protected final CommandBuffer commandBufferAnimated = new CommandBuffer(1600);
+    private IntArrayList offsetsStatic = new IntArrayList();
+    private IntArrayList offsetsAnimated = new IntArrayList();
+
     private final boolean useBackfaceCulling;
     private final boolean useLineDrawingIfActivated;
     private final boolean useFrustumCulling;
@@ -55,54 +61,83 @@ public class Pipeline {
         GPUProfiler.start("Actual draw entities");
         if(Config.getInstance().isIndirectDrawing()) {
             GPUProfiler.start("Draw with indirect pipeline");
+
             program.setUniform("entityIndex", 0);
             program.setUniform("entityBaseIndex", 0);
-            program.setUniform("entityCount", commands.size());
             program.setUniform("indirect", true);
             GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-            VertexIndexBuffer vertexIndexBuffer = renderState.getVertexIndexBuffer();
-            IndexBuffer indexBuffer = vertexIndexBuffer.getIndexBuffer();
-            VertexBuffer vertexBuffer = vertexIndexBuffer.getVertexBuffer();
-            if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
-                GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
-                VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commands.size());
-            } else {
-                if(useBackfaceCulling) {
-                    GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
-                }
-                VertexBuffer.drawInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commands.size());
-                indexBuffer.unbind();
-            }
+            program.setUniform("entityCount", commandsStatic.size());
+            drawIndirectStatic(renderState, program);
+            program.setUniform("entityCount", commandsAnimated.size());
+            drawIndirectAnimated(renderState, program);
             GPUProfiler.end();
 
             firstPassResult.verticesDrawn += verticesCount;
             firstPassResult.entitiesDrawn += entitiesDrawn;
             GPUProfiler.end();
         } else {
-            for(RenderBatch info : renderState.perEntityInfos()) {
-                if (!info.isVisibleForCamera()) {
-                    continue;
-                }
-                int currentVerticesCount = DrawStrategy.draw(renderState, info);
-                firstPassResult.verticesDrawn += currentVerticesCount;
-                if (currentVerticesCount > 0) {
-                    firstPassResult.entitiesDrawn++;
-                }
-            }
+            renderDirect(renderState, firstPassResult, renderState.getRenderBatchesStatic()); //TODO Animated
         }
         GPUProfiler.end();
     }
 
+    public void drawIndirectStatic(RenderState renderState, Program program) {
+        program.bindShaderStorageBuffer(4, getEntityOffsetBufferStatic());
+        program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferStatic().getVertexBuffer());
+        drawIndirect(renderState.getVertexIndexBufferStatic(), commandBufferStatic, commandsStatic.size());
+    }
+
+    public void drawIndirectAnimated(RenderState renderState, Program program) {
+        program.bindShaderStorageBuffer(4, getEntityOffsetBufferAnimated());
+        program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferAnimated().getVertexBuffer());
+        drawIndirect(renderState.getVertexIndexBufferAnimated(), commandBufferAnimated, commandsAnimated.size());
+    }
+
+    private void drawIndirect(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int commandCount) {
+        IndexBuffer indexBuffer = vertexIndexBuffer.getIndexBuffer();
+        VertexBuffer vertexBuffer = vertexIndexBuffer.getVertexBuffer();
+        if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
+            GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
+            VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commandCount);
+        } else {
+            if(useBackfaceCulling) {
+                GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
+            }
+            VertexBuffer.drawInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commandCount);
+            indexBuffer.unbind();
+        }
+    }
+
+    public void renderDirect(RenderState renderState, FirstPassResult firstPassResult, List<RenderBatch> renderBatches) {
+        for(RenderBatch info : renderBatches) {
+            if (!info.isVisibleForCamera()) {
+                continue;
+            }
+            int currentVerticesCount = DrawStrategy.draw(renderState, info);
+            firstPassResult.verticesDrawn += currentVerticesCount;
+            if (currentVerticesCount > 0) {
+                firstPassResult.entitiesDrawn++;
+            }
+        }
+    }
+
     private int verticesCount = 0;
     private int entitiesDrawn = 0;
-    private IntArrayList offsets = new IntArrayList();
     public void prepare(RenderState renderState) {
         verticesCount = 0;
         entitiesDrawn = 0;
-        commands.clear();
-        offsets.clear();
-        for(int i = 0; i < renderState.perEntityInfos().size(); i++) {
-            RenderBatch info = renderState.perEntityInfos().get(i);
+        commandsStatic.clear();
+        commandsAnimated.clear();
+        offsetsStatic.clear();
+        offsetsAnimated.clear();
+        addCommands(renderState.getRenderBatchesStatic(), commandsStatic, commandBufferStatic, entityOffsetBufferStatic, offsetsStatic);
+        addCommands(renderState.getRenderBatchesAnimated(), commandsAnimated, commandBufferAnimated, entityOffsetBufferAnimated, offsetsAnimated);
+
+    }
+
+    private void addCommands(List<RenderBatch> renderBatches, List<DrawElementsIndirectCommand> commands, CommandBuffer commandBuffer, IndexBuffer entityOffsetBuffer, IntArrayList offsets) {
+        for(int i = 0; i < renderBatches.size(); i++) {
+            RenderBatch info = renderBatches.get(i);
             if(Config.getInstance().isUseFrustumCulling() && useFrustumCulling && !info.isVisibleForCamera()) {
                 continue;
             }
@@ -118,7 +153,11 @@ public class Pipeline {
         commandBuffer.put(Util.toArray(commands, DrawElementsIndirectCommand.class));
     }
 
-    public GPUBuffer getEntityOffsetBuffer() {
-        return entityOffsetBuffer;
+    public GPUBuffer getEntityOffsetBufferStatic() {
+        return entityOffsetBufferStatic;
+    }
+
+    public IndexBuffer getEntityOffsetBufferAnimated() {
+        return entityOffsetBufferAnimated;
     }
 }

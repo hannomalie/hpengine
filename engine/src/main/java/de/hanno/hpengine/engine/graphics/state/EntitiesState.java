@@ -18,8 +18,10 @@ public class EntitiesState {
     public final Map<Mesh, RenderBatch> cash = new HashMap<>();
     public long entityMovedInCycle;
     public long entityAddedInCycle;
-    public RenderBatches renderBatches = new RenderBatches();
-    public VertexIndexBuffer<Vertex> vertexIndexBuffer = new VertexIndexBuffer<>(10,10);
+    public RenderBatches renderBatchesStatic = new RenderBatches();
+    public RenderBatches renderBatchesAnimated = new RenderBatches();
+    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic = new VertexIndexBuffer<>(10,10);
+    public VertexIndexBuffer<Vertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10);;
     public GPUBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(8000);
     public GPUBuffer<Material> materialBuffer = new PersistentMappedBuffer(8000);
 

@@ -9,15 +9,12 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.container.SimpleContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.DirectionalLight;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.DataChannelProvider;
-import de.hanno.hpengine.engine.model.DataChannelComponent;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.event.*;
@@ -29,14 +26,12 @@ import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.system.CallbackI;
 import org.nustaq.serialization.FSTConfiguration;
 
 import java.io.*;
-import java.nio.Buffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -235,25 +230,41 @@ public class Scene implements LifeCycle, Serializable {
         addAll(new ArrayList() {{add(entity);}});
 	}
 
-	List<ModelComponent> registeredModelComponents = new ArrayList();
+	List<ModelComponent> registeredModelComponentsStatic = new ArrayList();
+	List<ModelComponent> registeredModelComponentsAnimated = new ArrayList();
     //TODO: Handle deregistration, or prohibit it
 	private void register(Component c) {
 		if(c instanceof ModelComponent) {
-			registeredModelComponents.add(((ModelComponent)c));
+			ModelComponent modelComponent = (ModelComponent) c;
+			if(!modelComponent.isStatic()) {
+				registeredModelComponentsAnimated.add(modelComponent);
+			} else {
+				registeredModelComponentsStatic.add(modelComponent);
+			}
 		}
 	}
 
 	public int getEntityBufferIndex(ModelComponent modelComponent) {
 		cacheEntityIndices();
-		int index = getModelComponents().indexOf(modelComponent);
+		int index = -1;
+		if(modelComponent.isStatic()) {
+			index = getModelComponentsStatic().indexOf(modelComponent);
+		} else {
+			index = getModelComponentsAnimated().indexOf(modelComponent);
+		}
 		if(index < 0) { return index; }
 		return entityIndices.get(index);
 	}
 
 
-	public List<ModelComponent> getModelComponents() {
-		return registeredModelComponents;
+	public List<ModelComponent> getModelComponentsStatic() {
+		return registeredModelComponentsStatic;
 	}
+
+	public List<ModelComponent> getModelComponentsAnimated() {
+		return registeredModelComponentsAnimated;
+	}
+
 	private IntArrayList entityIndices = new IntArrayList();
 	private void cacheEntityIndices() {
 		if(updateCache)
@@ -369,8 +380,19 @@ public class Scene implements LifeCycle, Serializable {
 
 		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
-		List<ModelComponent> modelComponents = Engine.getInstance().getScene().getModelComponents();
+		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getScene().getModelComponentsStatic();
+		List<ModelComponent> modelComponentsAnimated = Engine.getInstance().getScene().getModelComponentsAnimated();
 
+		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, modelComponentsAnimated);
+
+	}
+
+	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponentsStatic, List<ModelComponent> modelComponentsAnimated) {
+		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, (batch) -> currentWriteState.addStatic(batch));
+		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsAnimated, (batch) -> currentWriteState.addAnimated(batch));
+	}
+
+	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponents, Consumer<RenderBatch> addToRenderStateRunnable) {
 		for (ModelComponent modelComponent : modelComponents) {
 			Entity entity = modelComponent.getEntity();
 			Vector3f centerWorld = entity.getCenterWorld();
@@ -391,8 +413,8 @@ public class Scene implements LifeCycle, Serializable {
 				Vector3f[] meshMinMax = mesh.getMinMax(entity);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(entity), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i));
-				currentWriteState.add(batch);
+				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(entity), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+				addToRenderStateRunnable.accept(batch);
 			}
 		}
 	}

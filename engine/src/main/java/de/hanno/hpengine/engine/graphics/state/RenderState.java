@@ -1,11 +1,8 @@
 package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.IndexBuffer;
-import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
@@ -23,7 +20,6 @@ import org.joml.Vector4f;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class RenderState {
     public final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
@@ -41,14 +37,16 @@ public class RenderState {
 
     private long cycle = 0;
     private volatile long gpuCommandSync;
+    private VertexIndexBuffer<Vertex> vertexIndexBufferAnimated;
 
     /**
      * Copy constructor
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.entitiesState.vertexIndexBuffer, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
-        this.entitiesState.renderBatches.addAll(source.entitiesState.renderBatches);
+        init(source.entitiesState.vertexIndexBufferStatic, source.vertexIndexBufferAnimated, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
+        this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic);
+        this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
 //        this.entitiesState.entitiesBuffer.putValues(source.entitiesState.entitiesBuffer.getValuesAsFloats());
 //        this.entitiesState.materialBuffer.putValues(source.entitiesState.materialBuffer.getValuesAsFloats());
@@ -59,8 +57,9 @@ public class RenderState {
     public RenderState() {
     }
 
-    public void init(VertexIndexBuffer<Vertex> vertexIndexBuffer, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
-        this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
+    public void init(VertexIndexBuffer<Vertex> vertexIndexBufferStatic, VertexIndexBuffer vertexIndexBufferAnimated, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
+        this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic;
+        this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated;
         this.camera.init(camera);
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
         this.directionalLightState.directionalLightViewMatrixAsBuffer.rewind();
@@ -79,25 +78,24 @@ public class RenderState {
         this.sceneInitiallyDrawn = sceneInitiallyDrawn;
         this.sceneMin = sceneMin;
         this.sceneMax = sceneMax;
-        this.entitiesState.renderBatches.clear();
+        this.entitiesState.renderBatchesStatic.clear();
+        this.entitiesState.renderBatchesAnimated.clear();
         this.latestDrawResult.set(latestDrawResult);
         this.cycle = cycle;
     }
 
-    public List<RenderBatch> perEntityInfos() {
-        return entitiesState.renderBatches;
+    public List<RenderBatch> getRenderBatchesStatic() {
+        return entitiesState.renderBatchesStatic;
+    }
+    public List<RenderBatch> getRenderBatchesAnimated() {
+        return entitiesState.renderBatchesAnimated;
     }
 
-    public VertexIndexBuffer getVertexIndexBuffer() {
-        return entitiesState.vertexIndexBuffer;
+    public VertexIndexBuffer getVertexIndexBufferStatic() {
+        return entitiesState.vertexIndexBufferStatic;
     }
-
-    public IndexBuffer getIndexBuffer() {
-        return entitiesState.vertexIndexBuffer.getIndexBuffer();
-    }
-
-    public VertexBuffer getVertexBuffer() {
-        return entitiesState.vertexIndexBuffer.getVertexBuffer();
+    public VertexIndexBuffer getVertexIndexBufferAnimated() {
+        return entitiesState.vertexIndexBufferAnimated;
     }
 
     public void bufferEntites(List<Entity> entities) {
@@ -129,8 +127,11 @@ public class RenderState {
         return entitiesState.materialBuffer;
     }
 
-    public void add(RenderBatch batch) {
-        entitiesState.renderBatches.add(batch);
+    public void addStatic(RenderBatch batch) {
+        entitiesState.renderBatchesStatic.add(batch);
+    }
+    public void addAnimated(RenderBatch batch) {
+        entitiesState.renderBatchesAnimated.add(batch);
     }
 
     public long getCycle() {
@@ -178,8 +179,11 @@ public class RenderState {
 //        glFlush();
     }
 
-    public void setVertexIndexBuffer(VertexIndexBuffer vertexIndexBuffer) {
-        this.entitiesState.vertexIndexBuffer = vertexIndexBuffer;
+    public void setVertexIndexBufferStatic(VertexIndexBuffer<Vertex> vertexIndexBuffer) {
+        this.entitiesState.vertexIndexBufferStatic = vertexIndexBuffer;
     }
 
+    public void setVertexIndexBufferAnimated(VertexIndexBuffer<Vertex> vertexIndexBufferAnimated) {
+        this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated;
+    }
 }

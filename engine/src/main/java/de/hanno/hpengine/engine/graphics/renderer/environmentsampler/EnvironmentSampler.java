@@ -276,7 +276,7 @@ public class EnvironmentSampler extends Camera {
 		bindShaderSpecificsPerCubeMapSide(viewMatrixAsBuffer, projectionMatrixAsBuffer);
 
 		GPUProfiler.start("Cubemapside draw entities");
-		for (RenderBatch e : renderState.perEntityInfos()) {
+		for (RenderBatch e : renderState.getRenderBatchesStatic()) {
 			if (!Entity.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
 				continue;
 			}
@@ -315,7 +315,7 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
-        for (RenderBatch entity : extract.perEntityInfos()) {
+        for (RenderBatch entity : extract.getRenderBatchesStatic()) {
 			DrawStrategy.draw(extract, entity);
         }
 		GPUProfiler.end();

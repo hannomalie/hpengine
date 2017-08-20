@@ -277,7 +277,7 @@ public class MD5Mesh implements Mesh {
 
     @Override
     public float getBoundingSphereRadius() {
-        return 0;
+        return StaticMesh.getBoundingSphereRadius(minMaxVec3[0], minMaxVec3[1]);
     }
 
     @Override
@@ -292,6 +292,7 @@ public class MD5Mesh implements Mesh {
 
     @Override
     public IntArrayList getIndexBufferValues() {
+        indicesList.clear();
         indicesList.add(indicesArr, 0, indicesArr.length-1);
         return indicesList;
     }

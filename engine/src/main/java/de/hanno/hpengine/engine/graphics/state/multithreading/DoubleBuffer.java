@@ -18,11 +18,11 @@ public class DoubleBuffer<T> {
         Represents an instance with two copies of an object, so that the object can
         be read and modified concurrently. The read copy of the object can be
         consumed always, but not while current read and write copies are switched.
-        Updates can be done via commands. Commands are recorded in two queues. When
-        the doublebuffer is updated, pending commands are executed and the current write
+        Updates can be done via commandsStatic. Commands are recorded in two queues. When
+        the doublebuffer is updated, pending commandsStatic are executed and the current write
         state is updated. Afterwards, a swap is performed in order to make the just
         updated copy the current read copy. This only happens when there have been
-        some commands to execute at all.
+        some commandsStatic to execute at all.
         Swaps are not performed, when a read is currently in progress. This can be signaled
         with explicitly calling startRead and stopRead.
      */

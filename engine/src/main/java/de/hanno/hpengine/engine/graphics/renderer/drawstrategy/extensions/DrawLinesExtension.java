@@ -1,12 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.model.DataChannels;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -14,11 +11,10 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.model.loader.md5.AnimCompiledVertex;
-import de.hanno.hpengine.engine.model.loader.md5.MD5Mesh;
 import org.joml.Vector3f;
 
 import java.nio.FloatBuffer;
+import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 
@@ -46,20 +42,58 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
 
-            for (RenderBatch mesh : renderState.perEntityInfos()) {
-                if(Config.getInstance().isDrawBoundingBoxes()) {
-                    batchAABBLines(mesh.getMinWorld(), mesh.getMaxWorld());
-                } else {
-                    float boundingSphereRadius = StaticMesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, boundingSphereRadius)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, -boundingSphereRadius)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)));
-                    Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)));
-                }
+            renderBatches(renderState.getRenderBatchesStatic());
+            renderBatches(renderState.getRenderBatchesAnimated());
+            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
+
+//            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
+//            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
+
+//            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
+//            int max = 500;
+//            for(int x = -max; x < max; x+=25) {
+//                for(int y = -max; y < max; y+=25) {
+//                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
+//                }
+//                for(int z = -max; z < max; z+=25) {
+//                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
+//                }
+//            }
+
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
+            int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
+
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
+            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
+            linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
+            linesDrawn += Renderer.getInstance().drawLines(linesProgram);
+//            firstPassResult.linesDrawn += linesDrawn;
+
+
+            Engine.getInstance().getPhysicsFactory().debugDrawWorld();
+            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
+        }
+    }
+
+    private void renderBatches(List<RenderBatch> batches) {
+        for (RenderBatch mesh : batches) {
+            if(Config.getInstance().isDrawBoundingBoxes()) {
+                batchAABBLines(mesh.getMinWorld(), mesh.getMaxWorld());
+            } else {
+                float boundingSphereRadius = StaticMesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, boundingSphereRadius)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, -boundingSphereRadius)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)));
+                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)));
+            }
 
 //                TODO: Remove this
 //                if(!Engine.getInstance().getScene().getModelComponents().isEmpty()) {
@@ -93,39 +127,6 @@ public class DrawLinesExtension implements RenderExtension {
 //                        }
 //                    }
 //                }
-            }
-            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
-
-//            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
-
-//            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
-//            int max = 500;
-//            for(int x = -max; x < max; x+=25) {
-//                for(int y = -max; y < max; y+=25) {
-//                    Renderer.getInstance().batchLine(new Vector3f(x,y,max), new Vector3f(x,y,-max));
-//                }
-//                for(int z = -max; z < max; z+=25) {
-//                    Renderer.getInstance().batchLine(new Vector3f(x,max,z), new Vector3f(x,-max,z));
-//                }
-//            }
-
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(15,0,0));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,15,0));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), new Vector3f(0,0,15));
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-            int linesDrawn = Renderer.getInstance().drawLines(linesProgram);
-
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getRightDirection().mul(15));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getUpDirection().mul(15));
-            Renderer.getInstance().batchLine(new Vector3f(0,0,0), renderState.camera.getViewDirection().mul(15));
-            linesProgram.setUniform("diffuseColor", new Vector3f(1,1,0));
-            linesDrawn += Renderer.getInstance().drawLines(linesProgram);
-//            firstPassResult.linesDrawn += linesDrawn;
-
-
-            Engine.getInstance().getPhysicsFactory().debugDrawWorld();
-            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }
 

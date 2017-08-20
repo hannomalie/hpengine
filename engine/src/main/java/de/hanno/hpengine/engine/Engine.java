@@ -196,7 +196,7 @@ public class Engine implements HighFrequencyCommandProvider {
 
         if(GraphicsContext.getInstance().isSignaled(renderState.getCurrentWriteState().getGpuCommandSync())) {
             Camera directionalLightCamera = scene.getDirectionalLight();
-            renderState.getCurrentWriteState().init(scene.getVertexIndexBufferStatic(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
+            renderState.getCurrentWriteState().init(scene.getVertexIndexBufferStatic(), scene.getVertexIndexBufferAnimated(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
             scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
             renderState.update();
         }
@@ -247,7 +247,8 @@ public class Engine implements HighFrequencyCommandProvider {
         }, true);
         restoreWorldCamera();
         renderState.addCommand(renderState1 -> {
-            renderState1.setVertexIndexBuffer(scene.getVertexIndexBufferStatic());
+            renderState1.setVertexIndexBufferStatic(scene.getVertexIndexBufferStatic());
+            renderState1.setVertexIndexBufferAnimated(scene.getVertexIndexBufferAnimated());
         });
     }
 

@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 import de.hanno.hpengine.engine.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -174,7 +173,7 @@ public class DrawLightMapExtension implements RenderExtension {
 
         lightMapProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         lightMapProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-        lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBuffer());
+        lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBufferStatic());
 
         lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
@@ -195,7 +194,7 @@ public class DrawLightMapExtension implements RenderExtension {
                 pipeline.draw(renderState, lightMapProgram, firstPassResult);
             }
         } else {
-            for (RenderBatch info : renderState.perEntityInfos()) {
+            for (RenderBatch info : renderState.getRenderBatchesStatic()) {
                 GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
                 int currentVerticesCount = DrawStrategy.draw(renderState, info);
                 firstPassResult.verticesDrawn += currentVerticesCount;

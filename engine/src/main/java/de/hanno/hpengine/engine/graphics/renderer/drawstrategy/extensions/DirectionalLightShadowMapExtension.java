@@ -66,7 +66,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         GraphicsContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
-        List<RenderBatch> visibles = renderState.perEntityInfos();
+        List<RenderBatch> visibles = renderState.getRenderBatchesStatic();
 
         renderTarget.use(true);
         directionalShadowPassProgram.use();
@@ -84,7 +84,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 //            }
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
 
-            DrawStrategy.draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
+            DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;

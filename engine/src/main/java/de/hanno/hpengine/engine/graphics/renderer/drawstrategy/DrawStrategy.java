@@ -13,7 +13,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 public interface DrawStrategy {
 
     static int draw(RenderState renderState, RenderBatch renderBatch) {
-        return draw(renderState.getVertexIndexBuffer().getVertexBuffer(), renderState.getVertexIndexBuffer().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
+        return draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), renderBatch, renderBatch.getProgram(), !renderBatch.isVisible() || !renderBatch.isVisibleForCamera());
     }
     static int draw(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, RenderBatch renderBatch, Program program, boolean invisible) {
         if(invisible) {

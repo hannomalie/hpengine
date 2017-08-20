@@ -510,11 +510,6 @@ public class DeferredRenderer implements Renderer {
 
 				firstpassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
 				firstpassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-				firstpassProgram.bindShaderStorageBuffer(4, getEntityOffsetBuffer());
-				VertexIndexBuffer vertexIndexBuffer = renderState.getVertexIndexBuffer();
-				if(vertexIndexBuffer != null) {
-					firstpassProgram.bindShaderStorageBuffer(5, vertexIndexBuffer.getVertexBuffer());
-				}
 				firstpassProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
 				firstpassProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
 				firstpassProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
