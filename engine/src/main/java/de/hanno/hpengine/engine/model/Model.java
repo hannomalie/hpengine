@@ -26,8 +26,6 @@ public interface Model<T extends Bufferable> {
 
     IntArrayList[] getMeshIndices();
 
-    void putToValueArrays();
-
     Vector3f[] getMinMax(Transform transform);
 
     List<T> getCompiledVertices();

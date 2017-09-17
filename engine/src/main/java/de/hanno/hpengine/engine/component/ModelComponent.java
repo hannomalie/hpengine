@@ -1,6 +1,9 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
+import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
@@ -18,6 +21,9 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 
 public class ModelComponent extends BaseComponent implements Serializable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
@@ -38,6 +44,13 @@ public class ModelComponent extends BaseComponent implements Serializable {
             DataChannels.TEXCOORD,
             DataChannels.NORMAL,
             DataChannels.LIGHTMAP_TEXCOORD);
+    public static EnumSet<DataChannels> DEFAULTANIMATEDCHANNELS = EnumSet.of(
+            DataChannels.POSITION3,
+            DataChannels.TEXCOORD,
+            DataChannels.NORMAL,
+            DataChannels.LIGHTMAP_TEXCOORD,
+            DataChannels.WEIGHTS,
+            DataChannels.JOINT_INDICES);
     public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.NORMAL
@@ -48,6 +61,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             DataChannels.POSITION3);
     private VertexIndexOffsets vertexIndexOffsets;
     protected AnimatedModel animGameItem;
+    private int jointsOffset = 0;
 
     public ModelComponent(Model model) {
         super();
@@ -96,17 +110,21 @@ public class ModelComponent extends BaseComponent implements Serializable {
         VertexIndexBuffer<Vertex> vertexIndexBuffer;
         if(model.isStatic()) {
             vertexIndexBuffer = scene.getVertexIndexBufferStatic();
+            putToBuffer(vertexIndexBuffer, DEFAULTCHANNELS);
         } else {
             vertexIndexBuffer = scene.getVertexIndexBufferAnimated();
+            putToBuffer(vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
+
+            jointsOffset = scene.getJoints().size(); // TODO: Proper allocation
+            scene.getJoints().addAll(((AnimatedModel) model).getFrames().stream().flatMap(frame -> Arrays.stream(frame.getJointMatrices())).collect(Collectors.toList()));
         }
-        putToBuffer(vertexIndexBuffer);
     }
 
-    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer) {
+    public VertexIndexOffsets putToBuffer(VertexIndexBuffer vertexIndexBuffer, EnumSet<DataChannels> channels) {
 
         List compiledVertices = model.getCompiledVertices();
 
-        int elementsPerVertex = DataChannels.totalElementsPerVertex(DEFAULTCHANNELS);
+        int elementsPerVertex = DataChannels.totalElementsPerVertex(channels);
         int indicesCount = getIndices().length;
         vertexIndexOffsets = vertexIndexBuffer.allocate(compiledVertices.size(), indicesCount);
 
@@ -120,9 +138,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
             currentIndexOffset += mesh.getIndexBufferValuesArray().length;
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
-
-//        TODO: Remove this
-//        this.getModel().putToValueArrays();
 
         GraphicsContext.getInstance().execute(() -> {
             vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
@@ -248,5 +263,28 @@ public class ModelComponent extends BaseComponent implements Serializable {
             return true;
         }
         return model.isStatic();
+    }
+
+    public int getBaseJointIndex() {
+        return jointsOffset;
+    }
+
+
+    @Override
+    public void update(float seconds) {
+        if(model instanceof AnimatedModel) {
+            AnimatedModel animatedModel = ((AnimatedModel) model);
+            if(Input.isKeyPressed(GLFW_KEY_SPACE)) {
+                animatedModel.nextFrame();
+            }
+        }
+    }
+
+    public int getAnimationFrame0() {
+        if(model instanceof AnimatedModel) {
+            AnimatedModel animatedModel = ((AnimatedModel) model);
+            return animatedModel.getFrames().indexOf(animatedModel.getCurrentFrame());
+        }
+        return 0;
     }
 }

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.scene;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -32,7 +33,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -43,8 +43,8 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private VertexIndexBuffer vertexIndexBufferStatic = new VertexIndexBuffer<Vertex>(10, 10);
-	private VertexIndexBuffer vertexIndexBufferAnimated = new VertexIndexBuffer<Vertex>(10, 10);
+	private VertexIndexBuffer vertexIndexBufferStatic = new VertexIndexBuffer<Vertex>(10, 10, ModelComponent.DEFAULTCHANNELS);
+	private VertexIndexBuffer vertexIndexBufferAnimated = new VertexIndexBuffer<AnimatedVertex>(10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS);
 
 	private String name = "";
 	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -52,6 +52,7 @@ public class Scene implements LifeCycle, Serializable {
 	private transient EntitiesContainer entityContainer = new SimpleContainer();
 	private transient boolean initialized = false;
 	private List<Entity> entities = new CopyOnWriteArrayList<>();
+	private List<BufferableMatrix4f> joints = new CopyOnWriteArrayList<>();
 	private List<PointLight> pointLights = new CopyOnWriteArrayList<>();
 	private List<TubeLight> tubeLights = new CopyOnWriteArrayList<>();
 	private List<AreaLight> areaLights = new CopyOnWriteArrayList<>();
@@ -230,39 +231,25 @@ public class Scene implements LifeCycle, Serializable {
         addAll(new ArrayList() {{add(entity);}});
 	}
 
-	List<ModelComponent> registeredModelComponentsStatic = new ArrayList();
-	List<ModelComponent> registeredModelComponentsAnimated = new ArrayList();
+	List<ModelComponent> registeredModelComponents = new ArrayList();
     //TODO: Handle deregistration, or prohibit it
 	private void register(Component c) {
 		if(c instanceof ModelComponent) {
 			ModelComponent modelComponent = (ModelComponent) c;
-			if(!modelComponent.isStatic()) {
-				registeredModelComponentsAnimated.add(modelComponent);
-			} else {
-				registeredModelComponentsStatic.add(modelComponent);
-			}
+			registeredModelComponents.add(modelComponent);
 		}
 	}
 
 	public int getEntityBufferIndex(ModelComponent modelComponent) {
 		cacheEntityIndices();
-		int index = -1;
-		if(modelComponent.isStatic()) {
-			index = getModelComponentsStatic().indexOf(modelComponent);
-		} else {
-			index = getModelComponentsAnimated().indexOf(modelComponent);
-		}
+		int index = getModelComponents().indexOf(modelComponent);
 		if(index < 0) { return index; }
 		return entityIndices.get(index);
 	}
 
 
-	public List<ModelComponent> getModelComponentsStatic() {
-		return registeredModelComponentsStatic;
-	}
-
-	public List<ModelComponent> getModelComponentsAnimated() {
-		return registeredModelComponentsAnimated;
+	public List<ModelComponent> getModelComponents() {
+		return registeredModelComponents;
 	}
 
 	private IntArrayList entityIndices = new IntArrayList();
@@ -380,16 +367,20 @@ public class Scene implements LifeCycle, Serializable {
 
 		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
-		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getScene().getModelComponentsStatic();
-		List<ModelComponent> modelComponentsAnimated = Engine.getInstance().getScene().getModelComponentsAnimated();
+		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getScene().getModelComponents();
 
-		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, modelComponentsAnimated);
+		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic);
 
 	}
 
-	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponentsStatic, List<ModelComponent> modelComponentsAnimated) {
-		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, (batch) -> currentWriteState.addStatic(batch));
-		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsAnimated, (batch) -> currentWriteState.addAnimated(batch));
+	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponentsStatic) {
+		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic, (batch) -> {
+			if(batch.isStatic()) {
+				currentWriteState.addStatic(batch);
+			} else {
+				currentWriteState.addAnimated(batch);
+			}
+		});
 	}
 
 	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponents, Consumer<RenderBatch> addToRenderStateRunnable) {
@@ -457,5 +448,9 @@ public class Scene implements LifeCycle, Serializable {
 
 	public VertexIndexBuffer<Vertex> getVertexIndexBufferAnimated() {
 		return vertexIndexBufferAnimated;
+	}
+
+	public List<BufferableMatrix4f> getJoints() {
+		return joints;
 	}
 }

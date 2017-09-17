@@ -46,35 +46,24 @@ public class Pipeline {
         this.useLineDrawingIfActivated = useLineDrawingIfActivated;
     }
 
-    public void prepareAndDraw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
+    public void prepareAndDraw(RenderState renderState, Program programStatic, Program programAnimated, FirstPassResult firstPassResult) {
         prepare(renderState);
-
-        draw(renderState, program, firstPassResult);
+        draw(renderState, programStatic, programAnimated, firstPassResult);
     }
 
 
-    public void beforeDraw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
-        program.use();
-    }
-
-    public void draw(RenderState renderState, Program program, FirstPassResult firstPassResult) {
+    public void draw(RenderState renderState, Program programStatic, Program programAnimated, FirstPassResult firstPassResult) {
         GPUProfiler.start("Actual draw entities");
         if(Config.getInstance().isIndirectDrawing()) {
             GPUProfiler.start("Draw with indirect pipeline");
-
-            program.setUniform("entityIndex", 0);
-            program.setUniform("entityBaseIndex", 0);
-            program.setUniform("indirect", true);
-            GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-            program.setUniform("entityCount", commandsStatic.size());
-            drawIndirectStatic(renderState, program);
-            program.setUniform("entityCount", commandsAnimated.size());
-            drawIndirectAnimated(renderState, program);
+            programStatic.use();
+            drawIndirectStatic(renderState, programStatic);
+            programAnimated.use();
+            drawIndirectAnimated(renderState, programAnimated);
             GPUProfiler.end();
 
             firstPassResult.verticesDrawn += verticesCount;
             firstPassResult.entitiesDrawn += entitiesDrawn;
-            GPUProfiler.end();
         } else {
             renderDirect(renderState, firstPassResult, renderState.getRenderBatchesStatic()); //TODO Animated
         }
@@ -82,14 +71,27 @@ public class Pipeline {
     }
 
     public void drawIndirectStatic(RenderState renderState, Program program) {
+//        program.use();
+        program.setUniform("entityIndex", 0);
+        program.setUniform("entityBaseIndex", 0);
+        program.setUniform("indirect", true);
+        program.setUniform("entityCount", commandsStatic.size());
         program.bindShaderStorageBuffer(4, getEntityOffsetBufferStatic());
         program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferStatic().getVertexBuffer());
+        program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
         drawIndirect(renderState.getVertexIndexBufferStatic(), commandBufferStatic, commandsStatic.size());
     }
 
     public void drawIndirectAnimated(RenderState renderState, Program program) {
+//        program.use();
+        program.setUniform("entityIndex", 0);
+        program.setUniform("entityBaseIndex", 0);
+        program.setUniform("indirect", true);
+        GPUProfiler.start("DrawInstancedIndirectBaseVertex");
+        program.setUniform("entityCount", commandsAnimated.size());
         program.bindShaderStorageBuffer(4, getEntityOffsetBufferAnimated());
         program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferAnimated().getVertexBuffer());
+        program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
         drawIndirect(renderState.getVertexIndexBufferAnimated(), commandBufferAnimated, commandsAnimated.size());
     }
 

@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -305,13 +306,30 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	@Override
 	public void setHasMoved(boolean value) {
         super.setHasMoved(value);
+		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		if(modelComponentOption.isPresent()) {
+			if(!modelComponentOption.get().isStatic()) {
+				AnimatedModel animatedModel = ((AnimatedModel) modelComponentOption.get().getModel());
+				animatedModel.setHasUpdated(value);
+			}
+		}
         for(Transform inst : instances) {
             inst.setHasMoved(value);
         }
     }
 
 	public boolean hasMoved() {
-	    if(isHasMoved()) { return true; }
+		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		if(modelComponentOption.isPresent()) {
+			if(!modelComponentOption.get().isStatic()) {
+				AnimatedModel animatedModel = ((AnimatedModel) modelComponentOption.get().getModel());
+				if(animatedModel.isHasUpdated()) {
+					return true;
+				}
+			}
+		}
+
+		if(isHasMoved()) { return true; }
 	    if(getInstanceCount() <= 1) { return false; }
 
 	    for(int i = 0; i < instances.size(); i++) {
@@ -369,7 +387,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	@Override
 	public int getBytesPerObject() {
-		return (16 * Float.BYTES + 8 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+		return (16 * Float.BYTES + 12 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
 	}
 
 	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex) {
@@ -389,16 +407,60 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putFloat(mm.m31());
 		buffer.putFloat(mm.m32());
 		buffer.putFloat(mm.m33());
+
 		buffer.putInt(isSelected() ? 1 : 0);
 		buffer.putInt(materialIndex);
 		buffer.putInt((int) getUpdate().getAsDouble());
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		int entityBufferIndex = Engine.getInstance().getScene().getEntityBufferIndex(modelComponent);
 		buffer.putInt(entityBufferIndex + meshIndex);
+
 		buffer.putInt(Engine.getInstance().getScene().getEntities().indexOf(this));
 		buffer.putInt(meshIndex);
 		buffer.putInt(modelComponent.getBaseVertex(meshIndex));
-		buffer.putInt(-1);
+		buffer.putInt(modelComponent.getBaseJointIndex());
+
+		buffer.putInt(modelComponent.getAnimationFrame0());
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+	}
+
+	@Override
+	public void getFromBuffer(ByteBuffer buffer) {
+		m00(buffer.getFloat());
+		m01(buffer.getFloat());
+		m02(buffer.getFloat());
+		m03(buffer.getFloat());
+		m10(buffer.getFloat());
+		m11(buffer.getFloat());
+		m12(buffer.getFloat());
+		m13(buffer.getFloat());
+		m20(buffer.getFloat());
+		m21(buffer.getFloat());
+		m22(buffer.getFloat());
+		m23(buffer.getFloat());
+		m30(buffer.getFloat());
+		m31(buffer.getFloat());
+		m32(buffer.getFloat());
+		m33(buffer.getFloat());
+
+		setSelected(buffer.getInt() == 1);
+		MaterialFactory.getInstance().getMaterialsAsList().get(buffer.getInt());
+		setUpdate(Update.values()[buffer.getInt()]);
+		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		int entityBufferIndex = Engine.getInstance().getScene().getEntityBufferIndex(modelComponent);
+		buffer.getInt();
+
+		System.out.println("Entity index " + buffer.getInt());
+		System.out.println("Mesh index " + buffer.getInt());
+		System.out.println("Base vertex " + buffer.getInt());
+		System.out.println("Base joint index " + buffer.getInt());
+
+		System.out.println("AnimationFrame0 " + buffer.getInt());
+		buffer.getInt();
+		buffer.getInt();
+		buffer.getInt();
 	}
 
     public int getInstanceCount() {

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.state;
 
+import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
@@ -37,14 +38,13 @@ public class RenderState {
 
     private long cycle = 0;
     private volatile long gpuCommandSync;
-    private VertexIndexBuffer<Vertex> vertexIndexBufferAnimated;
 
     /**
      * Copy constructor
      * @param source
      */
     public RenderState(RenderState source) {
-        init(source.entitiesState.vertexIndexBufferStatic, source.vertexIndexBufferAnimated, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
+        init(source.entitiesState.vertexIndexBufferStatic, source.entitiesState.vertexIndexBufferAnimated, source.entitiesState.joints, source.camera, source.entitiesState.entityMovedInCycle, source.directionalLightHasMovedInCycle, source.pointlightMovedInCycle, source.sceneInitiallyDrawn, source.sceneMin, source.sceneMax, source.getCycle(), source.directionalLightState.directionalLightViewMatrixAsBuffer, source.directionalLightState.directionalLightProjectionMatrixAsBuffer, source.directionalLightState.directionalLightViewProjectionMatrixAsBuffer, source.directionalLightState.directionalLightScatterFactor, source.directionalLightState.directionalLightDirection, source.directionalLightState.directionalLightColor, source.entitiesState.entityAddedInCycle);
         this.entitiesState.renderBatchesStatic.addAll(source.entitiesState.renderBatchesStatic);
         this.entitiesState.renderBatchesAnimated.addAll(source.entitiesState.renderBatchesAnimated);
 //        TODO: This could be problematic. Copies all buffer contents to the copy's buffers
@@ -57,9 +57,11 @@ public class RenderState {
     public RenderState() {
     }
 
-    public void init(VertexIndexBuffer<Vertex> vertexIndexBufferStatic, VertexIndexBuffer vertexIndexBufferAnimated, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
+    public void init(VertexIndexBuffer<Vertex> vertexIndexBufferStatic, VertexIndexBuffer vertexIndexBufferAnimated, List<BufferableMatrix4f> joints, Camera camera, long entityMovedInCycle, long directionalLightHasMovedInCycle, long pointLightMovedInCycle, boolean sceneInitiallyDrawn, Vector4f sceneMin, Vector4f sceneMax, long cycle, FloatBuffer directionalLightViewMatrixAsBuffer, FloatBuffer directionalLightProjectionMatrixAsBuffer, FloatBuffer directionalLightViewProjectionMatrixAsBuffer, float directionalLightScatterFactor, Vector3f directionalLightDirection, Vector3f directionalLightColor, long entityAddedInCycle) {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBufferStatic;
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated;
+        bufferJoints(joints);
+        this.entitiesState.joints = joints; // TODO: Fixme
         this.camera.init(camera);
         this.directionalLightState.directionalLightViewMatrixAsBuffer = directionalLightViewMatrixAsBuffer;
         this.directionalLightState.directionalLightViewMatrixAsBuffer.rewind();
@@ -98,8 +100,11 @@ public class RenderState {
         return entitiesState.vertexIndexBufferAnimated;
     }
 
-    public void bufferEntites(List<Entity> entities) {
+    public void bufferEntities(List<Entity> entities) {
         entitiesState.entitiesBuffer.put(Util.toArray(entities, Entity.class));
+    }
+    public void bufferJoints(List<BufferableMatrix4f> joints) {
+        entitiesState.jointsBuffer.put(Util.toArray(joints, BufferableMatrix4f.class));
     }
 
 //    TODO: Reimplement this

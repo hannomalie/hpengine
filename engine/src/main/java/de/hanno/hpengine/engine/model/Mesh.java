@@ -2,13 +2,14 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.Vertex;
 import org.joml.Vector3f;
 
 import java.util.List;
 
-public interface Mesh<Vertex> {
+public interface Mesh<T extends Bufferable> {
     int MAX_WEIGHTS = 4;
 
     float[] getVertexBufferValuesArray();
@@ -39,5 +40,5 @@ public interface Mesh<Vertex> {
 
     void setName(String name);
 
-    List<Vertex> getCompiledVertices();
+    List<T> getCompiledVertices();
 }

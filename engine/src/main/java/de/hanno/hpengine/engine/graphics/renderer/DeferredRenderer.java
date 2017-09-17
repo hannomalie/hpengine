@@ -14,7 +14,6 @@ import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueu
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
@@ -499,31 +498,41 @@ public class DeferredRenderer implements Renderer {
 	@Override
 	public void registerPipelines(TripleBuffer<RenderState> renderstate) {
 		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
-			@Override
-			public void beforeDraw(RenderState renderState, Program firstpassProgram, FirstPassResult firstPassResult) {
-				super.beforeDraw(renderState, firstpassProgram, firstPassResult);
 
+			@Override
+			public void drawIndirectStatic(RenderState renderState, Program program) {
+				beforeDraw(renderState, program);
+				super.drawIndirectStatic(renderState, program);
+			}
+
+			@Override
+			public void drawIndirectAnimated(RenderState renderState, Program program) {
+				beforeDraw(renderState, program);
+				super.drawIndirectAnimated(renderState, program);
+			}
+
+			private void beforeDraw(RenderState renderState, Program program) {
 				Camera camera = renderState.camera;
 				FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 				FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 				FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
 
-				firstpassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-				firstpassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-				firstpassProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
-				firstpassProgram.setUniform("rainEffect", Config.getInstance().getRainEffect());
-				firstpassProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-				firstpassProgram.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
-				firstpassProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-				firstpassProgram.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
-				firstpassProgram.setUniform("eyePosition", camera.getPosition());
-				firstpassProgram.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-				firstpassProgram.setUniform("near", camera.getNear());
-				firstpassProgram.setUniform("far", camera.getFar());
-				firstpassProgram.setUniform("time", (int) System.currentTimeMillis());
-				firstpassProgram.setUniform("useParallax", Config.getInstance().isUseParallax());
-				firstpassProgram.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
-
+				program.use();
+				program.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
+				program.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
+				program.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
+				program.setUniform("rainEffect", Config.getInstance().getRainEffect());
+				program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
+				program.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
+				program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
+				program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
+				program.setUniform("eyePosition", camera.getPosition());
+				program.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
+				program.setUniform("near", camera.getNear());
+				program.setUniform("far", camera.getFar());
+				program.setUniform("time", (int) System.currentTimeMillis());
+				program.setUniform("useParallax", Config.getInstance().isUseParallax());
+				program.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
 			}
 		}));
 	}

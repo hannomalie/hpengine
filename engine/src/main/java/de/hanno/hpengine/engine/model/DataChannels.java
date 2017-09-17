@@ -8,8 +8,9 @@ public enum DataChannels {
 	TEXCOORD("in_TextureCoord", 2, 2, POSITION3.siB() + COLOR.siB()),
 	NORMAL("in_Normal", 3, 3, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB()),
     LIGHTMAP_TEXCOORD("in_LightmapTextureCoord", 3, 4, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB()),
-	BINORMAL("in_Binormal", 3, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB()),
-	TANGENT("in_Tangent", 3, 6, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB() +  BINORMAL.siB());
+	WEIGHTS("in_Weights", 4, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB()),
+	JOINT_INDICES("in_JointIndices", 4, 6, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB() + WEIGHTS.siB());
+//TODO Use not only float byte size
 
 	private String binding;
 	private int size;
@@ -36,7 +37,7 @@ public enum DataChannels {
         for (DataChannels channel : channels) {
             sum += channel.getSize();
         }
-        return sum * 4;
+        return sum * Float.BYTES;
     }
 
     public int getSize() {
@@ -45,7 +46,7 @@ public enum DataChannels {
 	
 	// Size in Bytes per Attribute
 	public int siB() {
-		return 4 * size;
+		return Float.BYTES * size;
 	}
 
 	public int getLocation() {

@@ -53,5 +53,10 @@ struct Entity {
     int entityIndexWithoutMeshIndex; //TODO: Rename this properly
     int meshIndex;
     int baseVertex;
-    int yyy;
+    int baseJointIndex;
+
+    int animationFrame0;
+    int animationFrame1;
+    int animationFrame2;
+    int animationFrame3;
 };

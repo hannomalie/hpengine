@@ -30,8 +30,6 @@ in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
 in vec3 in_LightmapTextureCoord;
-in vec3 in_Tangent;
-in vec3 in_Binormal;
 
 out vec4 color;
 out vec2 texCoord;

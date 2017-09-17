@@ -107,8 +107,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         StaticModel skyBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/skybox.obj"));
         skyBoxEntity = EntityFactory.getInstance().getEntity(new Vector3f(), "skybox", skyBox);
-        skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10);
-        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer);
+        skyboxVertexIndexBuffer = new VertexIndexBuffer(10, 10, ModelComponent.DEFAULTCHANNELS);
+        VertexIndexOffsets vertexIndexOffsets = skyBoxEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).putToBuffer(skyboxVertexIndexBuffer, ModelComponent.DEFAULTCHANNELS);
         skyBoxRenderBatch = new RenderBatch(skyBoxProgram, 0, true, false, false, new Vector3f(0,0,0), true, 1, true, DYNAMIC, new Vector3f(0,0,0), new Vector3f(0,0,0), skyBox.getIndices().length, vertexIndexOffsets.indexOffset, vertexIndexOffsets.vertexOffset, false);
 
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
@@ -178,8 +178,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Pipeline pipeline = renderState.get(pipelineIndex);
         if (Config.getInstance().isDrawScene()) {
             Program firstpassProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
-            pipeline.beforeDraw(renderState, firstpassProgram, firstPassResult);
-            pipeline.draw(renderState, firstpassProgram, firstPassResult);
+            Program firstpassProgramAnimated = ProgramFactory.getInstance().getFirstpassAnimatedDefaultProgram();
+            pipeline.draw(renderState, firstpassProgram, firstpassProgramAnimated, firstPassResult);
         }
         GPUProfiler.end();
 

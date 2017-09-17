@@ -121,12 +121,6 @@ public class StaticModel<T extends Bufferable> implements Model<T> {
         return minMax;
     }
 
-    public void putToValueArrays() {
-        for(Mesh mesh : meshes) {
-            mesh.putToValueArrays();
-        }
-    }
-
     public Vector4f[] getMinMax() {
         return new Vector4f[0];
     }

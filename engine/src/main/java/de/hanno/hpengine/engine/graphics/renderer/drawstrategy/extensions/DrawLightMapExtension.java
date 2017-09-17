@@ -189,9 +189,9 @@ public class DrawLightMapExtension implements RenderExtension {
         GPUProfiler.start("Actual draw entities lightmap");
         if (Config.getInstance().isIndirectDrawing()) {
             if(true) {
-                pipeline.prepareAndDraw(renderState, lightMapProgram, firstPassResult);
+                pipeline.prepareAndDraw(renderState, lightMapProgram, lightMapProgram, firstPassResult);
             } else {
-                pipeline.draw(renderState, lightMapProgram, firstPassResult);
+                pipeline.draw(renderState, lightMapProgram, lightMapProgram, firstPassResult);
             }
         } else {
             for (RenderBatch info : renderState.getRenderBatchesStatic()) {

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
+import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -186,10 +187,10 @@ public class MD5Loader {
             // to transform it to model space
             if (joint.getParentIndex() > -1) {
                 Matrix4f parentMatrix = result.getLocalJointMatrices()[joint.getParentIndex()];
-                jointMat = new Matrix4f(parentMatrix).mul(jointMat);
+                jointMat = new BufferableMatrix4f(parentMatrix).mul(jointMat);
             }
 
-            result.setMatrix(i, jointMat, invJointMatrices.get(i));
+            result.setMatrix(i, new BufferableMatrix4f(jointMat), invJointMatrices.get(i));
         }
 
         return result;

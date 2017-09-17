@@ -1,12 +1,13 @@
 package de.hanno.hpengine.engine.scene;
 
-import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import org.lwjgl.BufferUtils;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
@@ -15,8 +16,8 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
     private volatile AtomicInteger currentBaseVertex = new AtomicInteger();
     private volatile AtomicInteger currentIndexOffset = new AtomicInteger();
 
-    public VertexIndexBuffer(int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount) {
-        vertexBuffer = new VertexBuffer<>(BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), ModelComponent.DEFAULTCHANNELS);
+    public VertexIndexBuffer(int vertexBufferSizeInFloatsCount, int indexBufferSizeInIntsCount, EnumSet<DataChannels> channels) {
+        vertexBuffer = new VertexBuffer<>(BufferUtils.createFloatBuffer(vertexBufferSizeInFloatsCount), channels);
         indexBuffer  = new IndexBuffer(BufferUtils.createIntBuffer(indexBufferSizeInIntsCount));
     }
 

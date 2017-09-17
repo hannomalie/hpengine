@@ -262,7 +262,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
             if(useIndirectDrawing && Config.getInstance().isIndirectDrawing()) {
                 firstPassResult.reset();
-                pipeline.prepareAndDraw(renderState, voxelizer, firstPassResult);
+                pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult);
             } else {
                 for (RenderBatch entity : renderState.getRenderBatchesStatic()) {
                     boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);

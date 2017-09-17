@@ -152,7 +152,7 @@ public class Engine implements HighFrequencyCommandProvider {
         ScriptManager.getInstance().defineGlobals();
 
         renderState = new TripleBuffer<>(new RenderState(), new RenderState(), new RenderState(), (renderState) -> {
-            renderState.bufferEntites(Engine.getInstance().getScene().getEntities());
+            renderState.bufferEntities(Engine.getInstance().getScene().getEntities());
         });
         Renderer.getInstance().registerPipelines(renderState);
         camera.init();
@@ -196,7 +196,7 @@ public class Engine implements HighFrequencyCommandProvider {
 
         if(GraphicsContext.getInstance().isSignaled(renderState.getCurrentWriteState().getGpuCommandSync())) {
             Camera directionalLightCamera = scene.getDirectionalLight();
-            renderState.getCurrentWriteState().init(scene.getVertexIndexBufferStatic(), scene.getVertexIndexBufferAnimated(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
+            renderState.getCurrentWriteState().init(scene.getVertexIndexBufferStatic(), scene.getVertexIndexBufferAnimated(), scene.getJoints(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
             scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
             renderState.update();
         }
@@ -289,7 +289,7 @@ public class Engine implements HighFrequencyCommandProvider {
     public void handle(EntityAddedEvent e) {
         scene.setUpdateCache(true);
         renderState.addCommand((renderStateX -> {
-            renderStateX.bufferEntites(scene.getEntities());
+            renderStateX.bufferEntities(scene.getEntities());
         }));
     }
 
@@ -297,7 +297,7 @@ public class Engine implements HighFrequencyCommandProvider {
     @Handler
     public void handle(SceneInitEvent e) {
         renderState.addCommand((renderStateX -> {
-            renderStateX.bufferEntites(scene.getEntities());
+            renderStateX.bufferEntities(scene.getEntities());
         }));
     }
 
@@ -308,7 +308,7 @@ public class Engine implements HighFrequencyCommandProvider {
             Entity entity = event.getEntity();
 //            buffer(entity);
             renderState.addCommand((renderStateX -> {
-                renderStateX.bufferEntites(scene.getEntities());
+                renderStateX.bufferEntities(scene.getEntities());
             }));
         }
     }

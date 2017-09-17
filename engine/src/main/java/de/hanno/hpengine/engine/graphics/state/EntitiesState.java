@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.graphics.state;
 
+import de.hanno.hpengine.engine.BufferableMatrix4f;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
@@ -10,6 +12,7 @@ import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static de.hanno.hpengine.engine.graphics.renderer.RenderBatch.RenderBatches;
@@ -20,10 +23,12 @@ public class EntitiesState {
     public long entityAddedInCycle;
     public RenderBatches renderBatchesStatic = new RenderBatches();
     public RenderBatches renderBatchesAnimated = new RenderBatches();
-    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic = new VertexIndexBuffer<>(10,10);
-    public VertexIndexBuffer<Vertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10);;
+    public VertexIndexBuffer<Vertex> vertexIndexBufferStatic = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTCHANNELS);
+    public VertexIndexBuffer<Vertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
     public GPUBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(8000);
+    public GPUBuffer<BufferableMatrix4f> jointsBuffer = new PersistentMappedBuffer(8000);
     public GPUBuffer<Material> materialBuffer = new PersistentMappedBuffer(8000);
+    public List<BufferableMatrix4f> joints;
 
     public EntitiesState() {
     }

@@ -23,6 +23,9 @@ layout(std430, binding=3) buffer _entities {
 layout(std430, binding=4) buffer _entityOffsets {
 	int entityOffsets[2000];
 };
+layout(std430, binding=6) buffer _joints {
+	mat4 joints[2000];
+};
 
 
 in vec3 in_Position;
@@ -30,8 +33,8 @@ in vec4 in_Color;
 in vec2 in_TextureCoord;
 in vec3 in_Normal;
 in vec3 in_LightmapTextureCoord;
-in vec3 in_Tangent;
-in vec3 in_Binormal;
+in vec4 in_Weights;
+in ivec4 in_JointIndices;
 
 out vec4 color;
 out vec2 texCoord;
@@ -79,11 +82,35 @@ void main(void) {
 
     mat4 modelMatrix = mat4(entity.modelMatrix);
 
+
+
 	vec4 positionModel = vec4(in_Position.xyz,1);
-	position_world = modelMatrix * positionModel;
+    vec4 initPos = vec4(0, 0, 0, 0);
+    int count = 0;
+    const int MAX_WEIGHTS = 4;
+    int frameIndex = entity.animationFrame0;//(int(time/24) % 120); // TODO use proper values here
+    int currentJoint = 150 * frameIndex;
+    for(int i = 0; i < MAX_WEIGHTS; i++)
+    {
+        float weight = in_Weights[i];
+        if(weight > 0) {
+            count++;
+            int jointIndex = entity.baseJointIndex + currentJoint + in_JointIndices[i];
+            vec4 tmpPos = joints[jointIndex] * vec4(positionModel.xyz, 1.0);
+            initPos += weight * tmpPos;
+        }
+    }
+    if (count == 0)
+    {
+        initPos = vec4(positionModel.xyz, 1.0);
+    }
+
+
+
+	position_world = modelMatrix * initPos;
 
 	mat4 mvp = (viewProjectionMatrix * modelMatrix);
-	position_clip = mvp * positionModel;
+	position_clip = mvp * initPos;
 
 	position_clip_last = (projectionMatrix * lastViewMatrix * position_world);
 	gl_Position = position_clip;

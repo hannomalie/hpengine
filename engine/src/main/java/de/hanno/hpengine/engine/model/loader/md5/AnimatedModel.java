@@ -6,12 +6,11 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.scene.Vertex;
+import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +20,7 @@ import static de.hanno.hpengine.engine.model.loader.md5.MD5Mesh.VALUES_PER_VERTE
 
 public class AnimatedModel implements Model {
 
-    private List<Mesh> meshes;
+    private List<Mesh<AnimatedVertex>> meshes;
 
     private int currentFrame;
     
@@ -29,6 +28,8 @@ public class AnimatedModel implements Model {
 
     private List<Matrix4f> invJointMatrices;
     private Material material;
+    private boolean hasUpdated = false;
+    private int lastFrame = 0;
 
     public AnimatedModel(Mesh[] meshes, List<AnimatedFrame> frames, List<Matrix4f> invJointMatrices) {
         this.frames = frames;
@@ -58,12 +59,13 @@ public class AnimatedModel implements Model {
     }
 
     public void nextFrame() {
-        int nextFrame = currentFrame + 1;    
+        int nextFrame = currentFrame + 1;
         if ( nextFrame > frames.size() - 1) {
             currentFrame = 0;
         } else {
             currentFrame = nextFrame;
         }
+        setHasUpdated(true);
     }    
 
     public List<Matrix4f> getInvJointMatrices() {
@@ -77,7 +79,7 @@ public class AnimatedModel implements Model {
     }
 
     @Override
-    public List<Mesh> getMeshes() {
+    public List<Mesh<AnimatedVertex>> getMeshes() {
         return meshes;
     }
 
@@ -129,11 +131,6 @@ public class AnimatedModel implements Model {
         return target;
     }
 
-    @Override
-    public void putToValueArrays() {
-
-    }
-
     private static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
     private static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
     private Vector4f min = new Vector4f(absoluteMinimum);
@@ -146,9 +143,9 @@ public class AnimatedModel implements Model {
     }
 
     @Override
-    public List<Vertex> getCompiledVertices() {
-        List<Vertex> vertexList = new ArrayList<>();
-        for(Mesh mesh : getMeshes()) {
+    public List<AnimatedVertex> getCompiledVertices() {
+        List<AnimatedVertex> vertexList = new ArrayList<>();
+        for(Mesh<AnimatedVertex> mesh : getMeshes()) {
             vertexList.addAll(mesh.getCompiledVertices());
         }
         return vertexList;
@@ -156,4 +153,15 @@ public class AnimatedModel implements Model {
 
     @Override
     public boolean isStatic() {return false;}
+
+    public boolean isHasUpdated() {
+        hasUpdated = !(lastFrame == currentFrame);
+        return hasUpdated;
+    }
+    public void setHasUpdated(boolean hasUpdated) {
+        if(this.hasUpdated) {
+            lastFrame = currentFrame;
+        }
+        this.hasUpdated = hasUpdated;
+    }
 }

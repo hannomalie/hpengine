@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
@@ -18,15 +17,15 @@ import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 public class ProgramFactory {
 
     public static CodeSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
-    public static CodeSource ANIMATED_FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
+    public static CodeSource FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE;
     public static CodeSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
 
     public static Program FIRSTPASS_DEFAULT_PROGRAM;
-    public static Program ANIMATED_FIRSTPASS_DEFAULT_PROGRAM;
+    public static Program FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
 
     static {
         try {
-            ANIMATED_FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
+            FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
             FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
             FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
         } catch (Exception e) {
@@ -98,6 +97,7 @@ public class ProgramFactory {
         });
 	}
 
+//	TODO: Fix this shit caching
     public Program getFirstpassDefaultProgram() {
         if(FIRSTPASS_DEFAULT_PROGRAM == null) {
             try {
@@ -108,6 +108,18 @@ public class ProgramFactory {
         }
 
         return FIRSTPASS_DEFAULT_PROGRAM;
+    }
+
+    public Program getFirstpassAnimatedDefaultProgram() {
+        if(FIRSTPASS_ANIMATED_DEFAULT_PROGRAM == null) {
+            try {
+                FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
     }
 
 	public void copyDefaultFragmentShaderToFile(String name) throws IOException {
