@@ -237,7 +237,8 @@ public class StaticMesh implements Serializable, Mesh {
     }
 
     private transient Vector3f center = new Vector3f();
-    public Vector3f getCenter(Transform transform) {
+    @Override
+    public Vector3f getCenter(Entity transform) {
         calculateMinMaxAndCenter(transform.getTransformation());
         return center;
     }

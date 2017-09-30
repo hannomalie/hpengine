@@ -504,10 +504,6 @@ public class Util {
         return a.x == b.x && a.y == b.y && a.x == b.x && a.w == b.w;
     }
 
-	public static boolean equals(Matrix4f a, Matrix4f b) {
-      	return a.equals(b);
-	}
-
 	public static String translateGLErrorString(int error_code) {
 		switch(error_code) {
 			case 0:
@@ -531,5 +527,9 @@ public class Util {
 			default:
 				return null;
 		}
+	}
+
+	public static boolean equals(Matrix4f a, Matrix4f b) {
+		return a.equals(b);
 	}
 }

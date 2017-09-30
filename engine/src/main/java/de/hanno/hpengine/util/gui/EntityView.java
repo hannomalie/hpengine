@@ -27,6 +27,7 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
@@ -39,10 +40,8 @@ import org.joml.Vector3f;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.*;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -140,7 +139,18 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            entity.addInstance(new SimpleTransform());
+            Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+            if(componentOption.isPresent()) {
+                Entity.Instance instance;
+                if(componentOption.get().isStatic()) {
+                    instance = new Entity.Instance(new SimpleTransform(), componentOption.get().getMaterial());
+                } else {
+                    instance = new Entity.Instance(new SimpleTransform(), componentOption.get().getMaterial(), componentOption.get().getAnimationController());
+                }
+                entity.addExistingInstance(instance);
+            } else {
+                entity.addInstance(new SimpleTransform());
+            }
             Engine.getEventBus().post(new EntityAddedEvent());
 //            TODO: Make this possible
 //            init(entity);

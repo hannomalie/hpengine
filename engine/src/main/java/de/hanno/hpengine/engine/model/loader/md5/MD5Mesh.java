@@ -4,12 +4,11 @@ import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
-import de.hanno.hpengine.engine.scene.Vertex;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -53,6 +52,7 @@ public class MD5Mesh implements Mesh {
     private IntArrayList indicesList = new IntArrayList();
     private Material material;
     private String name;
+    private AnimatedModel model;
 
     public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr) {
         this.positionsArr = positionsArr;
@@ -96,11 +96,9 @@ public class MD5Mesh implements Mesh {
         compiledVertices = null;
     }
 
-    public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr, List<AnimCompiledVertex> vertices, Vector4f[] minMax, Vector3f[] minMaxVec3) {
+    public MD5Mesh(float[] positionsArr, float[] textCoordsArr, float[] normalsArr, int[] indicesArr, int[] jointIndicesArr, float[] weightsArr, List<AnimCompiledVertex> vertices) {
         this(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr);
         this.compiledVertices = vertices.stream().map(in -> convert(in)).collect(Collectors.toList());
-        this.minMax = minMax;
-        this.minMaxVec3 = minMaxVec3;
     }
 
     private AnimatedVertex convert(AnimCompiledVertex in) {
@@ -281,26 +279,21 @@ public class MD5Mesh implements Mesh {
 
     }
 
-    private static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-    private static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
-    private Vector4f min = new Vector4f(absoluteMinimum);
-    private Vector4f max = new Vector4f(absoluteMaximum);
-    private Vector4f[] minMax = new Vector4f[]{min, max};
-    private Vector3f[] minMaxVec3 = new Vector3f[]{new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
     @Override
     public Vector3f[] getMinMax(Transform transform) {
-        return minMaxVec3;
+        return model.getMinMax(transform);
     }
 
-    private Vector3f center = new Vector3f();
     @Override
-    public Vector3f getCenter(Transform transform) {
-        return transform.getTranslation(center);
+    public Vector3f getCenter(Entity entity) {
+        ModelComponent component = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+        return entity.transformPosition(centerTemp.set(((AnimatedModel)component.getModel()).getCurrentBoundInfo(component.getAnimationController().getCurrentFrameIndex()).getCenter()));
     }
+    Vector3f centerTemp = new Vector3f();
 
     @Override
     public float getBoundingSphereRadius() {
-        return StaticMesh.getBoundingSphereRadius(minMaxVec3[0], minMaxVec3[1]);
+        return model.getBoundingSphereRadius();
     }
 
     @Override
@@ -327,6 +320,10 @@ public class MD5Mesh implements Mesh {
 
     public float[] getPositionsArray() {
         return positionsArr;
+    }
+
+    public void setModel(AnimatedModel model) {
+        this.model = model;
     }
 
     public static class MD5Vertex {

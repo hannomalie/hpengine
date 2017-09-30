@@ -101,7 +101,7 @@ public final class Config {
 	@Toggable(group = "Debug")
 	private volatile boolean drawLines = false;
 	@Toggable(group = "Debug")
-	private boolean drawBoundingBoxes = true;
+	private boolean drawBoundingVolumes = true;
 	@Toggable(group = "Debug")
 	private volatile boolean drawScene = true;
 	@Toggable(group = "Debug")
@@ -533,12 +533,12 @@ public final class Config {
 		this.rendererClass = rendererClass;
 	}
 
-	public boolean isDrawBoundingBoxes() {
-		return drawBoundingBoxes;
+	public boolean isDrawBoundingVolumes() {
+		return drawBoundingVolumes;
 	}
 
-    public void setDrawBoundingBoxes(boolean drawBoundingBoxes) {
-        this.drawBoundingBoxes = drawBoundingBoxes;
+    public void setDrawBoundingVolumes(boolean drawBoundingVolumes) {
+        this.drawBoundingVolumes = drawBoundingVolumes;
     }
 
     public boolean isLoadDefaultMaterials() {

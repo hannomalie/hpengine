@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.model;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -31,4 +32,6 @@ public interface Model<T extends Bufferable> {
     List<T> getCompiledVertices();
 
     default boolean isStatic() {return true;}
+
+    default float getBoundingSphereRadius(Mesh mesh, AnimationController controller) { return mesh.getBoundingSphereRadius(); }
 }

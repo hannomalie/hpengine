@@ -1,25 +1,30 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.Transform;
-import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
-import de.hanno.hpengine.engine.input.Input;
-import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.input.Input;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Mesh;
+import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedFrame;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
+import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
-import de.hanno.hpengine.engine.model.texture.Texture;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -31,6 +36,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Model model;
+    private AnimationController animationController;
 
     public boolean instanced = false;
 
@@ -60,17 +66,21 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public static EnumSet<DataChannels> POSITIONCHANNEL = EnumSet.of(
             DataChannels.POSITION3);
     private VertexIndexOffsets vertexIndexOffsets;
-    protected AnimatedModel animGameItem;
     private int jointsOffset = 0;
 
     public ModelComponent(Model model) {
         super();
         this.model = model;
+        if(!model.isStatic()) {
+            animationController = new AnimationController(((AnimatedModel) model).getFrames().size());
+        }
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];
     }
 
-    private transient Vector3f distance = new Vector3f();
+    public AnimatedFrame getCurrentFrame() {
+        return ((AnimatedModel) model).getFrames().get(animationController.getCurrentFrameIndex());
+    }
 
     private void setTexturesUsed() {
         for(Texture texture : getMaterial().getTextures()) {
@@ -273,18 +283,37 @@ public class ModelComponent extends BaseComponent implements Serializable {
     @Override
     public void update(float seconds) {
         if(model instanceof AnimatedModel) {
-            AnimatedModel animatedModel = ((AnimatedModel) model);
             if(Input.isKeyPressed(GLFW_KEY_SPACE)) {
-                animatedModel.nextFrame();
+                animationController.nextFrame();
             }
         }
     }
 
     public int getAnimationFrame0() {
         if(model instanceof AnimatedModel) {
-            AnimatedModel animatedModel = ((AnimatedModel) model);
-            return animatedModel.getFrames().indexOf(animatedModel.getCurrentFrame());
+            return animationController.getCurrentFrameIndex();
         }
         return 0;
+    }
+
+    public void setHasUpdated(boolean value) {
+        if(!isStatic()) {
+            animationController.setHasUpdated(value);
+        }
+    }
+
+    public boolean isHasUpdated() {
+        if(!isStatic()) {
+            return animationController.isHasUpdated();
+        }
+        return false;
+    }
+
+    public AnimationController getAnimationController() {
+        return animationController;
+    }
+
+    public float getBoundingSphereRadius(Mesh mesh) {
+        return model.getBoundingSphereRadius(mesh, animationController);
     }
 }

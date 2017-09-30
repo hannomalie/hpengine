@@ -80,53 +80,33 @@ public class DrawLinesExtension implements RenderExtension {
     }
 
     private void renderBatches(List<RenderBatch> batches) {
-        for (RenderBatch mesh : batches) {
-            if(Config.getInstance().isDrawBoundingBoxes()) {
-                batchAABBLines(mesh.getMinWorld(), mesh.getMaxWorld());
-            } else {
-                float boundingSphereRadius = StaticMesh.getBoundingSphereRadius(mesh.getMinWorld(), mesh.getMaxWorld());
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, boundingSphereRadius)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, 0, -boundingSphereRadius)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(boundingSphereRadius, 0, 0)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(-boundingSphereRadius, 0, 0)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, boundingSphereRadius, 0)));
-                Renderer.getInstance().batchLine(new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)), new Vector3f(mesh.getCenterWorld()).add(new Vector3f(0, -boundingSphereRadius, 0)));
-            }
+        for (RenderBatch batch : batches) {
+            if(Config.getInstance().isDrawBoundingVolumes()) {
+                if(batch.isStatic()) {
+                    batchAABBLines(batch.getMinWorld(), batch.getMaxWorld());
+                } else {
+                    float radius = batch.getBoundingSphereRadius();
+                    Renderer renderer = Renderer.getInstance();
+                    Vector3f center = batch.getCenterWorld();
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(radius, 0, 0)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(-radius, 0, 0)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(0, 0, radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, radius, 0)), new Vector3f(center).add(new Vector3f(0, 0, -radius)));
 
-//                TODO: Remove this
-//                if(!Engine.getInstance().getScene().getModelComponents().isEmpty()) {
-//                    for (int meshIndex = 0; meshIndex < Engine.getInstance().getScene().getModelComponents().get(0).getModel().getMeshes().size(); meshIndex++) {
-//                        Mesh actualMesh = Engine.getInstance().getScene().getModelComponents().get(0).getModel().getMeshes().get(meshIndex);
-//                        if(actualMesh instanceof MD5Mesh) {
-//                            MD5Mesh casted = (MD5Mesh) actualMesh;
-//                            int[] indices = casted.getIndexBufferValuesArray();
-//                            for(int i = 0; i < indices.length -3; i+= 3) {
-//                                float[] vertexBufferValues = casted.getVertexBufferValuesArray();
-//                                int vertexIndex0 = indices[i];
-//                                int vertexIndex1 = indices[i + 2];
-//                                int vertexIndex2 = indices[i + 3];
-//                                Vector3f position0 = casted.getCompiledVertices().get(vertexIndex0).position;
-//                                Vector3f position1 = casted.getCompiledVertices().get(vertexIndex1).position;
-//                                Vector3f position2 = casted.getCompiledVertices().get(vertexIndex2).position;
-//
-//                                position0 = new Vector3f(vertexBufferValues[vertexIndex0 * 11],
-//                                        vertexBufferValues[vertexIndex0 * 11 + 1],
-//                                        vertexBufferValues[vertexIndex0 * 11 + 2]);
-//                                position1 = new Vector3f(vertexBufferValues[vertexIndex1 * 11],
-//                                        vertexBufferValues[vertexIndex1 * 11 + 1],
-//                                        vertexBufferValues[vertexIndex1 * 11 + 2]);
-//                                position2 = new Vector3f(vertexBufferValues[vertexIndex2 * 11],
-//                                        vertexBufferValues[vertexIndex2 * 11 + 1],
-//                                        vertexBufferValues[vertexIndex2 * 11 + 2]);
-//
-//
-//                                Renderer.getInstance().batchTriangle(position0, position1, position2);
-//                            }
-//                        }
-//                    }
-//                }
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(-radius, 0, 0)), new Vector3f(center).add(new Vector3f(0, 0, -radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(-radius, 0, 0)), new Vector3f(center).add(new Vector3f(0, 0, radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(radius, 0, 0)), new Vector3f(center).add(new Vector3f(0, 0, radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(radius, 0, 0)), new Vector3f(center).add(new Vector3f(0, 0, -radius)));
+
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(radius, 0, 0)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(-radius, 0, 0)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(0, 0, radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(0, 0, -radius)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(0, radius, 0)));
+                    renderer.batchLine(new Vector3f(center).add(new Vector3f(0, -radius, 0)), new Vector3f(center).add(new Vector3f(0, -radius, 0)));
+                }
+
+            }
         }
     }
 

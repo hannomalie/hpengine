@@ -2,13 +2,11 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.model.AbstractModel;
 import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.ArrayList;
@@ -18,24 +16,21 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.model.loader.md5.MD5Mesh.VALUES_PER_VERTEX;
 
-public class AnimatedModel implements Model {
+public class AnimatedModel extends AbstractModel {
 
     private List<Mesh<AnimatedVertex>> meshes;
-
-    private int currentFrame;
-    
     private List<AnimatedFrame> frames;
-
+    private MD5BoundInfo boundInfo;
     private List<Matrix4f> invJointMatrices;
-    private Material material;
-    private boolean hasUpdated = false;
-    private int lastFrame = 0;
 
-    public AnimatedModel(Mesh[] meshes, List<AnimatedFrame> frames, List<Matrix4f> invJointMatrices) {
+    public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, List<Matrix4f> invJointMatrices) {
         this.frames = frames;
+        this.boundInfo = boundInfo;
         this.invJointMatrices = invJointMatrices;
-        currentFrame = 0;
         this.meshes = Arrays.asList(meshes);
+        for(MD5Mesh mesh : meshes) {
+            mesh.setModel(this);
+        }
     }
 
     public List<AnimatedFrame> getFrames() {
@@ -46,28 +41,6 @@ public class AnimatedModel implements Model {
         this.frames = frames;
     }
     
-    public AnimatedFrame getCurrentFrame() {
-        return this.frames.get(currentFrame);
-    }
-    
-    public AnimatedFrame getNextFrame() {
-        int nextFrame = currentFrame + 1;    
-        if ( nextFrame > frames.size() - 1) {
-            nextFrame = 0;
-        }
-        return this.frames.get(nextFrame);
-    }
-
-    public void nextFrame() {
-        int nextFrame = currentFrame + 1;
-        if ( nextFrame > frames.size() - 1) {
-            currentFrame = 0;
-        } else {
-            currentFrame = nextFrame;
-        }
-        setHasUpdated(true);
-    }    
-
     public List<Matrix4f> getInvJointMatrices() {
         return invJointMatrices;
     }
@@ -75,17 +48,14 @@ public class AnimatedModel implements Model {
 
     @Override
     public void setMaterial(Material material) {
-        this.material = material;
+        for (Mesh mesh : meshes) {
+            mesh.setMaterial(material);
+        }
     }
 
     @Override
     public List<Mesh<AnimatedVertex>> getMeshes() {
         return meshes;
-    }
-
-    @Override
-    public float getBoundingSphereRadius() {
-        return 0;
     }
 
     @Override
@@ -120,7 +90,7 @@ public class AnimatedModel implements Model {
 
     @Override
     public Vector4f[] getMinMax() {
-        return minMax;
+        return new Vector4f[0];
     }
 
     @Override
@@ -129,17 +99,6 @@ public class AnimatedModel implements Model {
         IntArrayList[] target = new IntArrayList[list.size()];
         list.toArray(target);
         return target;
-    }
-
-    private static final Vector4f absoluteMaximum = new Vector4f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-    private static final Vector4f absoluteMinimum = new Vector4f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
-    private Vector4f min = new Vector4f(absoluteMinimum);
-    private Vector4f max = new Vector4f(absoluteMaximum);
-    private Vector4f[] minMax = new Vector4f[]{min, max};
-    private Vector3f[] minMaxVec3 = new Vector3f[]{new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z)};
-    @Override
-    public Vector3f[] getMinMax(Transform transform) {
-        return minMaxVec3;
     }
 
     @Override
@@ -154,14 +113,12 @@ public class AnimatedModel implements Model {
     @Override
     public boolean isStatic() {return false;}
 
-    public boolean isHasUpdated() {
-        hasUpdated = !(lastFrame == currentFrame);
-        return hasUpdated;
+    @Override
+    public float getBoundingSphereRadius(Mesh mesh, AnimationController controller) {
+        return getCurrentBoundInfo(controller.getCurrentFrameIndex()).getBoundingSphereRadius();
     }
-    public void setHasUpdated(boolean hasUpdated) {
-        if(this.hasUpdated) {
-            lastFrame = currentFrame;
-        }
-        this.hasUpdated = hasUpdated;
+
+    public MD5BoundInfo.MD5Bound getCurrentBoundInfo(int frame) {
+        return boundInfo.getBounds().get(frame);
     }
 }

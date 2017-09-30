@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -307,12 +307,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public void setHasMoved(boolean value) {
         super.setHasMoved(value);
 		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-		if(modelComponentOption.isPresent()) {
-			if(!modelComponentOption.get().isStatic()) {
-				AnimatedModel animatedModel = ((AnimatedModel) modelComponentOption.get().getModel());
-				animatedModel.setHasUpdated(value);
-			}
-		}
+		modelComponentOption.ifPresent(modelComponent -> modelComponent.setHasUpdated(value));
         for(Transform inst : instances) {
             inst.setHasMoved(value);
         }
@@ -321,11 +316,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public boolean hasMoved() {
 		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		if(modelComponentOption.isPresent()) {
-			if(!modelComponentOption.get().isStatic()) {
-				AnimatedModel animatedModel = ((AnimatedModel) modelComponentOption.get().getModel());
-				if(animatedModel.isHasUpdated()) {
-					return true;
-				}
+			if(modelComponentOption.get().isHasUpdated()) {
+				return true;
 			}
 		}
 
@@ -360,25 +352,26 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	@Override
 	public void putToBuffer(ByteBuffer buffer) {
 		int meshIndex = 0;
-		List<Mesh> meshes = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes();
+		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		List<Mesh> meshes = modelComponent.getMeshes();
 		for(Mesh mesh : meshes) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
-				putValues(buffer, getTransformation(), meshIndex, materialIndex);
+				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0());
 			}
 
 			for(int i = 0; i < instances.size(); i++) {
 				Instance instance = instances.get(i);
 				Matrix4f instanceMatrix = instance.getTransformation();
 				int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-				putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex);
+				putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.animationController.getCurrentFrameIndex());
 			}
 
 			// TODO: This has to be the outer loop i think?
 			if(hasParent()) {
 				for(Instance instance : getParent().getInstances()) {
 					Matrix4f instanceMatrix = instance.getTransformation();
-					putValues(buffer, instanceMatrix, meshIndex, materialIndex);
+					putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.animationController.getCurrentFrameIndex());
 				}
 			}
 			meshIndex++;
@@ -390,7 +383,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return (16 * Float.BYTES + 12 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
 	}
 
-	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex) {
+	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0) {
 		buffer.putFloat(mm.m00());
 		buffer.putFloat(mm.m01());
 		buffer.putFloat(mm.m02());
@@ -420,7 +413,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(modelComponent.getBaseVertex(meshIndex));
 		buffer.putInt(modelComponent.getBaseJointIndex());
 
-		buffer.putInt(modelComponent.getAnimationFrame0());
+		buffer.putInt(animationFrame0);
 		buffer.putInt(0);
 		buffer.putInt(0);
 		buffer.putInt(0);
@@ -476,10 +469,15 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		if(getParent() != null) {
 			instance.setParent(getParent());
 		}
-		instances.add(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial()));
+		addExistingInstance(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial()));
+	}
+
+	public void addExistingInstance(Instance instance) {
+		instances.add(instance);
 		Engine.getEventBus().post(new EntityAddedEvent());
 	}
-    public void addInstanceTransforms(List<Transform> instances) {
+
+	public void addInstanceTransforms(List<Transform> instances) {
         if(getParent() != null) {
             for(Transform instance : instances) {
                 instance.setParent(getParent());
@@ -501,10 +499,17 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public static class Instance extends Transform {
 		private Material material;
 		private List<Instance> children = new ArrayList<>();
+		private AnimationController animationController;
 
-		public Instance(Transform transform, Material material) {
+
+		public Instance(Transform transform, Material material, AnimationController animationController) {
 			set(transform);
 			this.material = material;
+			this.animationController = animationController;
+		}
+
+		public Instance(Transform transform, Material material) {
+			this(transform, material, new AnimationController(0));
 		}
 
         public Material getMaterial() {

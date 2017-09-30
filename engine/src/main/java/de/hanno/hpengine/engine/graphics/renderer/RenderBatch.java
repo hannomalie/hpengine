@@ -23,15 +23,16 @@ public class RenderBatch {
     private Vector3f minWorldVec3;
     private Vector3f maxWorldVec3;
     private boolean animated;
+    private float boundingSphereRadius;
 
-    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, int indexCount, int indexOffset, int baseVertex, boolean animated) {
-        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, indexCount, indexOffset, baseVertex, this.animated);
+    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
+        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, boundingSphereRadius, indexCount, indexOffset, baseVertex, this.animated);
     }
 
     public RenderBatch() {
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, int indexCount, int indexOffset, int baseVertex, boolean animated) {
+    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -44,6 +45,7 @@ public class RenderBatch {
         this.maxWorld = maxWorld;
         this.minWorldVec3 = minWorldVec3;
         this.maxWorldVec3 = maxWorldVec3;
+        this.boundingSphereRadius = boundingSphereRadius;
         this.centerWorld = centerWorld;
         this.drawElementsIndirectCommand.init(indexCount, instanceCount, indexOffset, baseVertex, 0, entityBaseIndex);
         this.animated = animated;
@@ -135,6 +137,10 @@ public class RenderBatch {
 
     public boolean isStatic() {
         return !animated;
+    }
+
+    public float getBoundingSphereRadius() {
+        return boundingSphereRadius;
     }
 
     public static class RenderBatches extends ArrayList<RenderBatch> {

@@ -15,17 +15,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class StaticModel<T extends Bufferable> implements Model<T> {
-    private List<Mesh> meshes = new ArrayList<>();
+public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
 
     private ArrayList<Vector3f> vertices = new ArrayList<>();
     private ArrayList<Vector2f> texCoords = new ArrayList<>();
     private ArrayList<Vector3f> normals = new ArrayList<>();
-    private float boundingSphereRadius;
-    private int triangleCount;
-    private Vector3f[] minMax = { new Vector3f(), new Vector3f() };
-    private IntArrayList[] meshIndices;
-    private Matrix4f lastUsedModelMatrix;
 
     public StaticModel() {
 
@@ -67,66 +61,8 @@ public class StaticModel<T extends Bufferable> implements Model<T> {
         }
     }
 
-    public void setMaterial(Material material) {
-        for (Mesh mesh : meshes) {
-            mesh.setMaterial(material);
-        }
-    }
-
-    public float getBoundingSphereRadius() {
-        return boundingSphereRadius;
-    }
-
     public void setBoundingSphereRadius(float boundingSphereRadius) {
         this.boundingSphereRadius = boundingSphereRadius;
-    }
-
-    public int getTriangleCount() {
-        return triangleCount;
-    }
-
-    public float[] getVertexBufferValuesArray() {
-        FloatArrayList floatList = new FloatArrayList();
-        for(Mesh mesh : meshes) {
-            floatList.add(mesh.getVertexBufferValuesArray());
-        }
-        return floatList.toArray();
-    }
-    public List<T> getCompiledVertices() {
-        List<T> vertexList = new ArrayList<>();
-        for(Mesh mesh : meshes) {
-            vertexList.addAll((Collection<? extends T>) mesh.getCompiledVertices());
-        }
-        return vertexList;
-    }
-
-    public int[] getIndices() {
-        IntArrayList intList = new IntArrayList();
-        for(Mesh mesh : meshes) {
-            intList.add(mesh.getIndexBufferValuesArray());
-        }
-        return intList.toArray();
-    }
-
-    public Vector3f[] getMinMax(Transform transform) {
-        if(!(lastUsedModelMatrix == null && transform == null) || !Util.equals(lastUsedModelMatrix, transform.getTransformation()))
-
-        lastUsedModelMatrix = transform.getTransformation();
-
-        for(int i = 0; i < meshes.size(); i++) {
-            Mesh mesh = meshes.get(i);
-            Vector3f[] meshMinMax = mesh.getMinMax(transform);
-            StaticMesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
-        }
-        return minMax;
-    }
-
-    public Vector4f[] getMinMax() {
-        return new Vector4f[0];
-    }
-
-    public List<Mesh> getMeshes() {
-        return meshes;
     }
 
     public Mesh getMesh(int i) {
@@ -137,7 +73,4 @@ public class StaticModel<T extends Bufferable> implements Model<T> {
         meshes.add(mesh);
     }
 
-    public IntArrayList[] getMeshIndices() {
-        return meshIndices;
-    }
 }

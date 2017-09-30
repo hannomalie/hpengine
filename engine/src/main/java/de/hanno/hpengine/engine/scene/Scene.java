@@ -24,6 +24,8 @@ import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
+import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
+import de.hanno.hpengine.engine.model.loader.md5.MD5BoundInfo;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -387,7 +389,6 @@ public class Scene implements LifeCycle, Serializable {
 		for (ModelComponent modelComponent : modelComponents) {
 			Entity entity = modelComponent.getEntity();
 			Vector3f centerWorld = entity.getCenterWorld();
-			cameraWorldPosition.sub(centerWorld, tempDistVector);
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
@@ -396,15 +397,17 @@ public class Scene implements LifeCycle, Serializable {
 			List<Mesh> meshes = modelComponent.getMeshes();
 			for(int i = 0; i < meshes.size(); i++) {
 				Mesh mesh = meshes.get(i);
-				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(mesh.getCenter(entity).x, mesh.getCenter(entity).y, mesh.getCenter(entity).z, mesh.getBoundingSphereRadius());
+				Vector3f meshCenter = mesh.getCenter(entity);
+				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, mesh.getBoundingSphereRadius());
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();
 				RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new RenderBatch());
 				Vector3f[] meshMinMax = mesh.getMinMax(entity);
+				float boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], mesh.getCenter(entity), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
 				addToRenderStateRunnable.accept(batch);
 			}
 		}

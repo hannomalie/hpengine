@@ -33,17 +33,17 @@ public class MD5Loader {
         List<Matrix4f> invJointMatrices = calcInJointMatrices(md5Model);
         List<AnimatedFrame> animatedFrames = processAnimationFrames(md5Model, animModel, invJointMatrices);
 
-        List<Mesh> list = new ArrayList<>();
+        List<MD5Mesh> list = new ArrayList<>();
         for (MD5Mesh md5Mesh : md5Model.getMeshes()) {
-            Mesh mesh = generateMesh(md5Model, md5Mesh);
+            MD5Mesh mesh = generateMesh(md5Model, md5Mesh);
             handleTexture(mesh, md5Mesh, defaultColour);
             list.add(mesh);
         }
 
-        Mesh[] meshes = new Mesh[list.size()];
+        MD5Mesh[] meshes = new MD5Mesh[list.size()];
         meshes = list.toArray(meshes);
 
-        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, invJointMatrices);
+        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, animModel.getBoundInfo(), invJointMatrices);
         return result;
     }
 
@@ -65,7 +65,7 @@ public class MD5Loader {
         return result;
     }
 
-    private static Mesh generateMesh(MD5Model md5Model, MD5Mesh md5Mesh) {
+    private static MD5Mesh generateMesh(MD5Model md5Model, MD5Mesh md5Mesh) {
         List<AnimCompiledVertex> vertices = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
 
@@ -124,7 +124,7 @@ public class MD5Loader {
             v.normal.normalize();
         }
 
-        Mesh mesh = createMesh(vertices, indices);
+        MD5Mesh mesh = createMesh(vertices, indices);
         mesh.setName(md5Mesh.getName());
         return mesh;
     }
@@ -196,7 +196,7 @@ public class MD5Loader {
         return result;
     }
 
-    private static Mesh createMesh(List<AnimCompiledVertex> vertices, List<Integer> indices) {
+    private static MD5Mesh createMesh(List<AnimCompiledVertex> vertices, List<Integer> indices) {
         List<Float> positions = new ArrayList<>();
         List<Float> textCoords = new ArrayList<>();
         List<Float> normals = new ArrayList<>();
@@ -250,7 +250,7 @@ public class MD5Loader {
         int[] jointIndicesArr = Utils.listIntToArray(jointIndices);
         float[] weightsArr = Utils.listToArray(weights);
 
-        MD5Mesh result = new MD5Mesh(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr, vertices, minMax, minMaxVec3);
+        MD5Mesh result = new MD5Mesh(positionsArr, textCoordsArr, normalsArr, indicesArr, jointIndicesArr, weightsArr, vertices);
 
         return result;
     }

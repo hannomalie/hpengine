@@ -28,7 +28,7 @@ public interface Mesh<T extends Bufferable> {
 
     Vector3f[] getMinMax(Transform transform);
 
-    Vector3f getCenter(Transform transform);
+    Vector3f getCenter(Entity transform);
 
     float getBoundingSphereRadius();
 
