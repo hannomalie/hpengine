@@ -19,18 +19,25 @@ public abstract class FpsCountedTimeStepThread extends TimeStepThread {
     public void run() {
         setName(name);
 
-        while(!stopRequested) {
-            long ns = System.nanoTime() - lastFrame;
+        long currentTimeNs = System.nanoTime();
+        double dtS = 1 / 60.0;
 
-            float seconds = (float) (ns / 1000000000.0);
-            try {
-                update(seconds);
-            } catch (Throwable e) {
-                e.printStackTrace();
+        while(!stopRequested) {
+
+            long newTimeNs = System.nanoTime();
+            double frameTimeNs = (newTimeNs - currentTimeNs);
+
+            double frameTimeS = frameTimeNs / 1000000000.0d;
+            currentTimeNs = newTimeNs;
+
+            while(frameTimeS > 0.0)
+            {
+                double deltaTime = Math.min(frameTimeS, dtS);
+                update((float) deltaTime);
+                fpsCounter.update();
+                frameTimeS -= deltaTime;
             }
-            lastFrame = System.nanoTime();
-            waitIfNecessary(seconds);
-            fpsCounter.update();
+
         }
         cleanup();
     }

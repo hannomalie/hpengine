@@ -68,6 +68,8 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
         // TODO: Better instance culling
         List<RenderBatch> visibles = renderState.getRenderBatchesStatic();
 
+
+//         TODO: Shadowmap should use pipeline for animated object support
         renderTarget.use(true);
         directionalShadowPassProgram.use();
         directionalShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());

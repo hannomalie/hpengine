@@ -83,7 +83,7 @@ public class RenderState {
         this.entitiesState.renderBatchesStatic.clear();
         this.entitiesState.renderBatchesAnimated.clear();
         this.latestDrawResult.set(latestDrawResult);
-        this.cycle = cycle;
+//        this.cycle = cycle;
     }
 
     public List<RenderBatch> getRenderBatchesStatic() {
@@ -190,5 +190,9 @@ public class RenderState {
 
     public void setVertexIndexBufferAnimated(VertexIndexBuffer<Vertex> vertexIndexBufferAnimated) {
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated;
+    }
+
+    public void setCycle(long cycle) {
+        this.cycle = cycle;
     }
 }

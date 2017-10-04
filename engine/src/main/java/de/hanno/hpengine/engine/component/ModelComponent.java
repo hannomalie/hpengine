@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
 
 public class ModelComponent extends BaseComponent implements Serializable {
     public static final String COMPONENT_KEY = ModelComponent.class.getSimpleName();
@@ -72,7 +70,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
         super();
         this.model = model;
         if(!model.isStatic()) {
-            animationController = new AnimationController(((AnimatedModel) model).getFrames().size());
+            AnimatedModel animatedModel = (AnimatedModel) model;
+            animationController = new AnimationController(animatedModel.getFrames().size(), animatedModel.getHeader().getFrameRate());
         }
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];
@@ -283,9 +282,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
     @Override
     public void update(float seconds) {
         if(model instanceof AnimatedModel) {
-            if(Input.isKeyPressed(GLFW_KEY_SPACE)) {
-                animationController.nextFrame();
-            }
+            animationController.update(seconds);
         }
     }
 

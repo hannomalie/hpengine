@@ -21,11 +21,13 @@ public class AnimatedModel extends AbstractModel {
     private List<Mesh<AnimatedVertex>> meshes;
     private List<AnimatedFrame> frames;
     private MD5BoundInfo boundInfo;
+    private MD5AnimHeader header;
     private List<Matrix4f> invJointMatrices;
 
-    public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, List<Matrix4f> invJointMatrices) {
+    public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, MD5AnimHeader header, List<Matrix4f> invJointMatrices) {
         this.frames = frames;
         this.boundInfo = boundInfo;
+        this.header = header;
         this.invJointMatrices = invJointMatrices;
         this.meshes = Arrays.asList(meshes);
         for(MD5Mesh mesh : meshes) {
@@ -120,5 +122,9 @@ public class AnimatedModel extends AbstractModel {
 
     public MD5BoundInfo.MD5Bound getCurrentBoundInfo(int frame) {
         return boundInfo.getBounds().get(frame);
+    }
+
+    public MD5AnimHeader getHeader() {
+        return header;
     }
 }

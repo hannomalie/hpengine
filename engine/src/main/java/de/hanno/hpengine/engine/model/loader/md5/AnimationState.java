@@ -1,12 +1,18 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 public class AnimationState {
-    int maxFrames;
-    int currentFrame;
-    int lastFrame;
-    boolean hasUpdated = false;
+    private final float fps;
+    private final float spf;
+    private int maxFrames;
+    private int currentFrame;
+    private int lastFrame;
+    private boolean hasUpdated = false;
+    private float currentSeconds = 0;
 
-    public AnimationState() {
+    public AnimationState(int maxFrames, float fps) {
+        this.maxFrames = maxFrames;
+        this.fps = fps;
+        this.spf = 1f/fps;
     }
 
     public void nextFrame() {
@@ -33,5 +39,13 @@ public class AnimationState {
 
     public int getCurrentFrame() {
         return currentFrame;
+    }
+
+    public void update(float seconds) {
+        currentSeconds += seconds;
+        if(currentSeconds > spf) {
+            currentSeconds -= spf;
+            nextFrame();
+        }
     }
 }

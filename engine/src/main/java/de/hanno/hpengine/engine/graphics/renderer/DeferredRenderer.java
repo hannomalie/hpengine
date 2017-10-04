@@ -253,7 +253,8 @@ public class DeferredRenderer implements Renderer {
         GPUProfiler.start("Waiting for driver");
 		glfwPollEvents();
 		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
-        GPUProfiler.end();
+		GPUProfiler.end();
+		GPUProfiler.end();
 	}
 
 	@Override

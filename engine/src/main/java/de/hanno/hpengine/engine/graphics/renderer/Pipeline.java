@@ -93,6 +93,7 @@ public class Pipeline {
         program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferAnimated().getVertexBuffer());
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
         drawIndirect(renderState.getVertexIndexBufferAnimated(), commandBufferAnimated, commandsAnimated.size());
+        GPUProfiler.end();
     }
 
     private void drawIndirect(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int commandCount) {

@@ -68,13 +68,15 @@ public class PersistentMappedBuffer<T extends Bufferable> extends AbstractPersis
         int bytesPerObject = bufferable[0].getBytesPerObject();
         setCapacityInBytes(bytesPerObject * bufferable.length);
 
-        buffer.position(bytesPerObject*offset);
-        int currentOffset = 0;
+        int firstPosition = bytesPerObject * offset;
+        buffer.position(firstPosition);
+
+        int currentByteOffset = 0;
         for (int i = 0; i < bufferable.length; i++) {
             Bufferable currentBufferable = bufferable[i];
-            setCapacityInBytes(bytesPerObject*(offset+currentOffset));
+            currentByteOffset += currentBufferable.getBytesPerObject();
+            setCapacityInBytes(firstPosition + currentByteOffset);
             currentBufferable.putToBuffer(buffer);
-            currentOffset ++;
         }
     }
 

@@ -149,6 +149,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
+		for(Instance instance : instances) {
+			instance.update(seconds);
+		}
 		for(int i = 0; i < getChildren().size(); i++) {
 			getChildren().get(i).update(seconds);
 		}
@@ -496,7 +499,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         Engine.getEventBus().post(new EntityAddedEvent());
     }
 
-	public static class Instance extends Transform {
+	public static class Instance extends Transform implements LifeCycle {
 		private Material material;
 		private List<Instance> children = new ArrayList<>();
 		private AnimationController animationController;
@@ -509,7 +512,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		}
 
 		public Instance(Transform transform, Material material) {
-			this(transform, material, new AnimationController(0));
+			this(transform, material, new AnimationController(0, 0));
 		}
 
         public Material getMaterial() {
@@ -528,6 +531,16 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		@Override
 		public List getChildren() {
 			return children;
+		}
+
+		@Override
+		public boolean isInitialized() {
+			return true;
+		}
+
+		@Override
+		public void update(float seconds) {
+			animationController.update(seconds);
 		}
 	}
 }

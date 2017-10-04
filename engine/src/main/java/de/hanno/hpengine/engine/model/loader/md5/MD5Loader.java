@@ -43,7 +43,7 @@ public class MD5Loader {
         MD5Mesh[] meshes = new MD5Mesh[list.size()];
         meshes = list.toArray(meshes);
 
-        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, animModel.getBoundInfo(), invJointMatrices);
+        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, animModel.getBoundInfo(), animModel.getHeader(), invJointMatrices);
         return result;
     }
 

@@ -37,11 +37,13 @@ import org.joml.Vector3f;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class Engine implements HighFrequencyCommandProvider {
 
@@ -167,7 +169,7 @@ public class Engine implements HighFrequencyCommandProvider {
     }
 
     public void startSimulation() {
-        updateThread = new UpdateThread("Update", 0.008f);
+        updateThread = new UpdateThread("Update", MILLISECONDS.toSeconds(8));
         updateThread.start();
 
         renderThread = new RenderThread("Render");
@@ -199,6 +201,7 @@ public class Engine implements HighFrequencyCommandProvider {
             renderState.getCurrentWriteState().init(scene.getVertexIndexBufferStatic(), scene.getVertexIndexBufferAnimated(), scene.getJoints(), getActiveCamera(), scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn(), scene.getMinMax()[0], scene.getMinMax()[1], drawCycle.get(), directionalLightCamera.getViewMatrixAsBuffer(), directionalLightCamera.getProjectionMatrixAsBuffer(), directionalLightCamera.getViewProjectionMatrixAsBuffer(), scene.getDirectionalLight().getScatterFactor(), scene.getDirectionalLight().getDirection(), scene.getDirectionalLight().getColor(), scene.getEntityAddedInCycle());
             scene.addRenderBatches(this.activeCamera, renderState.getCurrentWriteState());
             renderState.update();
+            renderState.getCurrentWriteState().setCycle(drawCycle.get());
         }
     }
 
