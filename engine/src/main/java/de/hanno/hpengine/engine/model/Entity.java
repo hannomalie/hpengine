@@ -15,7 +15,6 @@ import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.util.Parentable;
-import de.hanno.hpengine.util.Util;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -34,9 +33,23 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
 
+	private List<Instance> instancesTemp = new ArrayList();
 	public List<Instance> getInstances() {
-        return instances;
+	    instancesTemp.clear();
+	    for(Cluster cluster : clusters) {
+	        instancesTemp.addAll(cluster);
+        }
+        return instancesTemp;
     }
+
+	public List<Cluster> getClusters() {
+		return clusters;
+	}
+
+	public void addCluster(Cluster cluster) {
+		clusters.add(cluster);
+		Engine.getEventBus().post(new EntityAddedEvent());
+	}
 
 	public enum Update {
 		STATIC(1),
@@ -54,7 +67,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	private Update update = Update.DYNAMIC;
 
-    private List<Instance> instances = new CopyOnWriteArrayList<>();
+    private List<Cluster> clusters = new CopyOnWriteArrayList<>();
 
 	protected boolean initialized = false;
 
@@ -65,13 +78,15 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	
 	public Map<String, Component> components = new HashMap<>();
 
-	protected Entity() { }
+	protected Entity() {
+	}
 
 	protected Entity(String name, StaticModel model) {
 		this(new Vector3f(0, 0, 0), name, model);
 	}
 
 	protected Entity(Vector3f position, String name, Model model) {
+	    this();
 		addComponent(new ModelComponent(model));
 		this.name = name;
 		setTranslation(position);
@@ -149,8 +164,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
-		for(Instance instance : instances) {
-			instance.update(seconds);
+		for(Cluster cluster : clusters) {
+			cluster.update(seconds);
 		}
 		for(int i = 0; i < getChildren().size(); i++) {
 			getChildren().get(i).update(seconds);
@@ -311,8 +326,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         super.setHasMoved(value);
 		Optional<ModelComponent> modelComponentOption = getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		modelComponentOption.ifPresent(modelComponent -> modelComponent.setHasUpdated(value));
-        for(Transform inst : instances) {
-            inst.setHasMoved(value);
+        for(Cluster cluster : clusters) {
+            cluster.setHasMoved(value);
         }
     }
 
@@ -327,8 +342,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		if(isHasMoved()) { return true; }
 	    if(getInstanceCount() <= 1) { return false; }
 
-	    for(int i = 0; i < instances.size(); i++) {
-	        if(instances.get(i).isHasMoved()) {
+	    for(int i = 0; i < clusters.size(); i++) {
+	        if(clusters.get(i).isHasMoved()) {
 	            return true;
             }
         }
@@ -363,12 +378,14 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0());
 			}
 
-			for(int i = 0; i < instances.size(); i++) {
-				Instance instance = instances.get(i);
-				Matrix4f instanceMatrix = instance.getTransformation();
-				int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-				putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.animationController.getCurrentFrameIndex());
-			}
+			for(Cluster cluster : clusters) {
+                for(int i = 0; i < cluster.size(); i++) {
+                    Instance instance = cluster.get(i);
+                    Matrix4f instanceMatrix = instance.getTransformation();
+                    int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.animationController.getCurrentFrameIndex());
+                }
+            }
 
 			// TODO: This has to be the outer loop i think?
 			if(hasParent()) {
@@ -460,7 +477,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
     public int getInstanceCount() {
-        int instancesCount = instances.size() + 1;
+        int instancesCount = 1;
+
+        for(int i = 0; i < clusters.size(); i++) {
+            instancesCount += clusters.get(i).size();
+        }
 
         if(hasParent()) {
             instancesCount *= getParent().getInstanceCount();
@@ -476,7 +497,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	public void addExistingInstance(Instance instance) {
-		instances.add(instance);
+		Cluster firstCluster = getOrCreateFirstCluster();
+		firstCluster.add(instance);
 		Engine.getEventBus().post(new EntityAddedEvent());
 	}
 
@@ -486,7 +508,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 instance.setParent(getParent());
             }
         }
-        this.instances.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial())).collect(Collectors.toList()));
+		Cluster firstCluster = getOrCreateFirstCluster();
+		firstCluster.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial())).collect(Collectors.toList()));
         Engine.getEventBus().post(new EntityAddedEvent());
     }
     public void addInstances(List<Instance> instances) {
@@ -495,9 +518,19 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 instance.setParent(getParent());
             }
         }
-        this.instances.addAll(instances);
+		Cluster firstCluster = getOrCreateFirstCluster();
+		firstCluster.addAll(instances);
         Engine.getEventBus().post(new EntityAddedEvent());
     }
+
+	private Cluster getOrCreateFirstCluster() {
+		Cluster firstCluster = this.clusters.get(0);
+		if(firstCluster == null) {
+            firstCluster = new Cluster();
+            clusters.add(firstCluster);
+        }
+		return firstCluster;
+	}
 
 	public static class Instance extends Transform implements LifeCycle {
 		private Material material;
@@ -543,4 +576,34 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			animationController.update(seconds);
 		}
 	}
+
+	public static class Cluster extends ArrayList<Instance> implements LifeCycle {
+
+        @Override
+        public boolean isInitialized() {
+            return true;
+        }
+
+        @Override
+        public void update(float seconds) {
+            for(int i = 0; i < size(); i++) {
+                get(i).update(seconds);
+            }
+        }
+
+        public void setHasMoved(boolean value) {
+            for(int i = 0; i < size(); i++) {
+                get(i).setHasMoved(value);
+            }
+        }
+
+        public boolean isHasMoved() {
+            for(int i = 0; i < size(); i++) {
+                if(get(i).isHasMoved()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 }

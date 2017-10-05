@@ -30,17 +30,22 @@ for(var x = -count; x < count; x++) {
 			var trafo = new Transform();
 			var randomFloat = random.nextFloat() - 0.5;
 			var randomFloat2 = random.nextFloat() - 0.5;
+			var randomFloat3 = random.nextFloat() - 0.5;
 			trafo.translateLocal(Engine.getInstance().getScene().getEntities().get(0).getPosition());
-			var translationDistanceX = 1500
-			var translationDistanceY = 1500
-			var translationDistanceZ = 0
-			trafo.translateLocal(new Vector3f(randomFloat*translationDistanceX*x,randomFloat2*translationDistanceY*y,randomFloat*translationDistanceZ*z));
-			trafo.rotateZ(randomFloat2*10.0);
+			var translationDistanceX = 150
+			var translationDistanceY = 0
+			var translationDistanceZ = 150
+			trafo.translateLocal(new Vector3f(randomFloat*translationDistanceX*x,randomFloat2*translationDistanceY*y,randomFloat3*translationDistanceZ*z));
+			trafo.rotateY(randomFloat2*10.0);
 			var modelComponent = Engine.getInstance().getScene().getEntities().get(0).getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 			var instance;
 			if(modelComponent != null) {
 			    var sourceController = modelComponent.getAnimationController();
-				instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10), sourceController.copy(sourceController.getMaxFrames(), sourceController.getFps() + 10*randomFloat));
+			    if(sourceController != null) {
+				    instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10), sourceController.copy(sourceController.getMaxFrames(), sourceController.getFps() + 10*randomFloat));
+			    } else {
+				    instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10));
+			    }
 			} else {
 				instance = new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10));
 			}

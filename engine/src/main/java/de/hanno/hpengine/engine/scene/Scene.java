@@ -402,13 +402,20 @@ public class Scene implements LifeCycle, Serializable {
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();
-				RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(mesh, k -> new RenderBatch());
 				Vector3f[] meshMinMax = mesh.getMinMax(entity);
 				float boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
-				addToRenderStateRunnable.accept(batch);
+
+				RenderBatch nonInstanceBatch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, -1), k -> new RenderBatch());
+				nonInstanceBatch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, 1, visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+				addToRenderStateRunnable.accept(nonInstanceBatch);
+
+				for(int clusterIndex = 0; clusterIndex < entity.getClusters().size(); clusterIndex++) {
+					RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, clusterIndex), k -> new RenderBatch());
+					batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getClusters().get(clusterIndex).size(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+					addToRenderStateRunnable.accept(batch);
+				}
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.scene.BatchKey;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 import static de.hanno.hpengine.engine.graphics.renderer.RenderBatch.RenderBatches;
 
 public class EntitiesState {
-    public final Map<Mesh, RenderBatch> cash = new HashMap<>();
+    public final Map<BatchKey, RenderBatch> cash = new HashMap<>();
     public long entityMovedInCycle;
     public long entityAddedInCycle;
     public RenderBatches renderBatchesStatic = new RenderBatches();
