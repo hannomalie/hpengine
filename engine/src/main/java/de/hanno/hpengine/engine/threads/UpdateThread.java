@@ -11,7 +11,11 @@ public class UpdateThread extends FpsCountedTimeStepThread {
 
     @Override
     public void update(float seconds) {
-        Engine.getInstance().update(seconds);
+        try {
+            Engine.getInstance().update(seconds);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity.Update;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 
@@ -17,7 +16,7 @@ public class EntityFactory {
 	}
 	public Entity getEntity() {
 		Entity entity = new Entity();
-		entity.init();
+		entity.initialize();
 		return entity;
 	}
 
@@ -29,7 +28,7 @@ public class EntityFactory {
 		Entity entity = new Entity(position, name, model);
 		entity.setTranslation(position);
 		entity.setName(name);
-		entity.init();
+		entity.initialize();
 		return entity;
 	}
 
@@ -48,7 +47,7 @@ public class EntityFactory {
 		in = new ObjectInputStream(fis);
 		Entity entity = (Entity) in.readObject();
 		handleEvolution(entity);
-		entity.init();
+		entity.initialize();
 		in.close();
 
 		return entity;

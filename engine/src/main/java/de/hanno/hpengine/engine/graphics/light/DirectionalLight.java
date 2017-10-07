@@ -47,8 +47,8 @@ public class DirectionalLight extends Camera {
 	}
 
 	@Override
-	public void init() {
-		super.init();
+	public void initialize() {
+		super.initialize();
 		initialized = false;
 
 		initialized = true;

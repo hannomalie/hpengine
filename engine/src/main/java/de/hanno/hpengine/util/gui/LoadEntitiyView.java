@@ -46,7 +46,7 @@ public class LoadEntitiyView extends WebPanel {
 				CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
                     @Override
                     public Boolean execute() throws Exception {
-						entity.init();
+						entity.initialize();
 						return true;
                     }
                 });

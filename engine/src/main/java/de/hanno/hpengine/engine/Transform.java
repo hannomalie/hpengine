@@ -44,7 +44,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		this.set(downFacing);
 	}
 
-	public Transform init(Transform<T> other) {
+	public Transform initialize(Transform<T> other) {
 		set(other);
         if(other.getParent() != null) {
 			this.setParent(other.getParent());
@@ -112,6 +112,14 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		this.hasMoved = hasMoved;
 	}
 
+	public FloatBuffer getViewMatrixAsBuffer() {
+		return getViewMatrixAsBuffer(true);
+	}
+
+	public FloatBuffer getViewMatrixAsBuffer(boolean recalculateBefore) {
+		return getTranslationRotationBuffer(recalculateBefore);
+	}
+
 	@Override
 	public boolean equals(Object b) {
 		if(!(b instanceof Transform)) {
@@ -139,7 +147,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		return this.getTransformationWithoutRecalculation().invert(viewMatrix);
 	}
 
-	public void init() {
+	public void initialize() {
 		modelMatrixBuffer = BufferUtils.createFloatBuffer(16);
 		modelMatrixBuffer.rewind();
 		viewMatrixBuffer = BufferUtils.createFloatBuffer(16);

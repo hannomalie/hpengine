@@ -11,10 +11,8 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.util.Parentable;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,7 +22,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -32,15 +29,29 @@ import java.util.stream.Collectors;
 public class Entity extends Transform<Entity> implements LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
+	private final Spatial spatial = new SimpleSpatial() {
+		@Override
+		protected Vector3f[] getMinMax() {
+			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
+				ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+				return modelComponent.getMinMax(Entity.this);
+			} else {
+				return super.getMinMax();
+			}
+		}
+	};
 
 	private List<Instance> instancesTemp = new ArrayList();
 	public List<Instance> getInstances() {
-	    instancesTemp.clear();
-	    for(Cluster cluster : clusters) {
-	        instancesTemp.addAll(cluster);
-        }
         return instancesTemp;
     }
+
+	private void recalculateInstances() {
+		instancesTemp.clear();
+		for(Cluster cluster : clusters) {
+            instancesTemp.addAll(cluster);
+        }
+	}
 
 	public List<Cluster> getClusters() {
 		return clusters;
@@ -48,21 +59,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	public void addCluster(Cluster cluster) {
 		clusters.add(cluster);
+		recalculateInstances();
 		Engine.getEventBus().post(new EntityAddedEvent());
-	}
-
-	public enum Update {
-		STATIC(1),
-		DYNAMIC(0);
-
-		private final double d;
-		Update(double d) {
-			this.d = d;
-		}
-
-		public double getAsDouble() {
-			return d;
-		}
 	}
 
 	private Update update = Update.DYNAMIC;
@@ -90,18 +88,18 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		addComponent(new ModelComponent(model));
 		this.name = name;
 		setTranslation(position);
-		init();
+		initialize();
 	}
 
 	@Override
-	public void init() {
+	public void initialize() {
 		LifeCycle.super.init();
 
 		for(Component component : components.values()) {
 			component.init();
 		}
 		for(Entity child: getChildren()) {
-			child.init();
+			child.initialize();
 		}
 		initialized = true;
 	}
@@ -176,13 +174,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return components;
 	}
 
-	public FloatBuffer getViewMatrixAsBuffer() {
-		return getViewMatrixAsBuffer(true);
-	}
-	public FloatBuffer getViewMatrixAsBuffer(boolean recalculateBefore) {
-		return getTranslationRotationBuffer(recalculateBefore);
-	}
-
 	public String getName() {
 		return name;
 	}
@@ -191,38 +182,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	public boolean isInFrustum(Camera camera) {
-		return isInFrustum(camera, getCenterWorld(), getMinMaxWorld()[0], getMinMaxWorld()[1]);
+		return Spatial.isInFrustum(camera, spatial.getCenterWorld(this), spatial.getMinMaxWorld(this)[0], spatial.getMinMaxWorld(this)[1]);
 	}
 
-	public static boolean isInFrustum(Camera camera, Vector3f centerWorld, Vector3f minWorld, Vector3f maxWorld) {
-		Vector3f tempDistVector = new Vector3f();
-		new Vector3f(minWorld).sub(maxWorld, tempDistVector);
-
-//		if (de.hanno.hpengine.camera.getFrustum().pointInFrustum(minWorld.x, minWorld.y, minWorld.z) ||
-//			de.hanno.hpengine.camera.getFrustum().pointInFrustum(maxWorld.x, maxWorld.y, maxWorld.z)) {
-//		if (de.hanno.hpengine.camera.getFrustum().cubeInFrustum(cubeCenterX, cubeCenterY, cubeCenterZ, size)) {
-//		if (de.hanno.hpengine.camera.getFrustum().pointInFrustum(minView.x, minView.y, minView.z)
-//				|| de.hanno.hpengine.camera.getFrustum().pointInFrustum(maxView.x, maxView.y, maxView.z)) {
-		if (camera.getFrustum().sphereInFrustum(centerWorld.x, centerWorld.y, centerWorld.z, tempDistVector.length()/2)) {
-			return true;
-		}
-		return false;
-	}
-
-	private transient Vector3f centerWorld = null;
 	public Vector3f getCenterWorld() {
-		if(centerWorld != null) {
-			return centerWorld;
-		}
-		Vector3f[] minMaxWorld = getMinMaxWorld();
-		Vector3f minWorld = minMaxWorld[0];
-		Vector3f maxWorld = minMaxWorld[1];
-
-		centerWorld = new Vector3f();
-		centerWorld.x = minWorld.x + (maxWorld.x - minWorld.x)/2;
-		centerWorld.y = minWorld.y + (maxWorld.y - minWorld.y)/2;
-		centerWorld.z = minWorld.z + (maxWorld.z - minWorld.z)/2;
-		return centerWorld;
+		return spatial.getCenterWorld(this);
 	}
 
 	public boolean isVisible() {
@@ -232,35 +196,13 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		this.visible = visible;
 	}
 
-    private transient Vector3f[] minMax;
-    private transient float boundingSphereRadius = -1;
-    private transient Matrix4f lastUsedTransformationMatrix;
 	public Vector3f[] getMinMaxWorld() {
-		if(lastUsedTransformationMatrix != null && Util.equals(getTransformation(), lastUsedTransformationMatrix)) {
-			return minMax;
-		}
-        centerWorld = null;
-        if(hasComponent("ModelComponent")) {
-			ModelComponent modelComponent = getComponent(ModelComponent.class, "ModelComponent");
-			minMax = modelComponent.getMinMax(this);
-		} else {
-			minMax = new Vector3f[2];
-			float amount = 5;
-			Vector3f vectorMin = new Vector3f(getPosition().x-amount, getPosition().y-amount, getPosition().z-amount);
-			Vector3f vectorMax = new Vector3f(getPosition().x+amount, getPosition().y+amount, getPosition().z);
-			minMax[0] = vectorMin;
-			minMax[1] = vectorMax;
-            boundingSphereRadius = StaticMesh.getBoundingSphereRadius(vectorMin, vectorMax);
-		}
-        lastUsedTransformationMatrix = new Matrix4f(getTransformation());
-
-		return minMax;
+		return spatial.getMinMaxWorld(this);
 	}
 
 	public float getBoundingSphereRadius() {
-        return boundingSphereRadius;
-    }
-
+		return spatial.getBoundingSphereRadius(this);
+	}
 
 	public boolean isSelected() {
 		return selected;
@@ -383,7 +325,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
                     int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.animationController.getCurrentFrameIndex());
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex());
                 }
             }
 
@@ -391,7 +333,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			if(hasParent()) {
 				for(Instance instance : getParent().getInstances()) {
 					Matrix4f instanceMatrix = instance.getTransformation();
-					putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.animationController.getCurrentFrameIndex());
+					putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex());
 				}
 			}
 			meshIndex++;
@@ -493,13 +435,14 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		if(getParent() != null) {
 			instance.setParent(getParent());
 		}
-		addExistingInstance(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial()));
+		addExistingInstance(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial()));
 	}
 
 	public void addExistingInstance(Instance instance) {
 		Cluster firstCluster = getOrCreateFirstCluster();
 		firstCluster.add(instance);
 		Engine.getEventBus().post(new EntityAddedEvent());
+		recalculateInstances();
 	}
 
 	public void addInstanceTransforms(List<Transform> instances) {
@@ -509,8 +452,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
             }
         }
 		Cluster firstCluster = getOrCreateFirstCluster();
-		firstCluster.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial())).collect(Collectors.toList()));
-        Engine.getEventBus().post(new EntityAddedEvent());
+		firstCluster.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList()));
+		recalculateInstances();
+		Engine.getEventBus().post(new EntityAddedEvent());
     }
     public void addInstances(List<Instance> instances) {
         if(getParent() != null) {
@@ -520,6 +464,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         }
 		Cluster firstCluster = getOrCreateFirstCluster();
 		firstCluster.addAll(instances);
+		recalculateInstances();
         Engine.getEventBus().post(new EntityAddedEvent());
     }
 
@@ -532,78 +477,4 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return firstCluster;
 	}
 
-	public static class Instance extends Transform implements LifeCycle {
-		private Material material;
-		private List<Instance> children = new ArrayList<>();
-		private AnimationController animationController;
-
-
-		public Instance(Transform transform, Material material, AnimationController animationController) {
-			set(transform);
-			this.material = material;
-			this.animationController = animationController;
-		}
-
-		public Instance(Transform transform, Material material) {
-			this(transform, material, new AnimationController(0, 0));
-		}
-
-        public Material getMaterial() {
-            return material;
-        }
-
-        public void setMaterial(Material material) {
-            this.material = material;
-        }
-
-		@Override
-		public void setParent(Parentable parent) {
-			throw new IllegalStateException("No parenting for instances!");
-		}
-
-		@Override
-		public List getChildren() {
-			return children;
-		}
-
-		@Override
-		public boolean isInitialized() {
-			return true;
-		}
-
-		@Override
-		public void update(float seconds) {
-			animationController.update(seconds);
-		}
-	}
-
-	public static class Cluster extends ArrayList<Instance> implements LifeCycle {
-
-        @Override
-        public boolean isInitialized() {
-            return true;
-        }
-
-        @Override
-        public void update(float seconds) {
-            for(int i = 0; i < size(); i++) {
-                get(i).update(seconds);
-            }
-        }
-
-        public void setHasMoved(boolean value) {
-            for(int i = 0; i < size(); i++) {
-                get(i).setHasMoved(value);
-            }
-        }
-
-        public boolean isHasMoved() {
-            for(int i = 0; i < size(); i++) {
-                if(get(i).isHasMoved()) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
 }

@@ -81,7 +81,7 @@ public class EnvironmentSampler extends Camera {
         setWidth(width);
         setWidth(height);
         translate(position);
-		init();
+		initialize();
 		this.engine = engine;
         this.renderer = Renderer.getInstance();
 		this.probe = probe;
@@ -277,7 +277,7 @@ public class EnvironmentSampler extends Camera {
 
 		GPUProfiler.start("Cubemapside draw entities");
 		for (RenderBatch e : renderState.getRenderBatchesStatic()) {
-			if (!Entity.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
+			if (!Spatial.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
 				continue;
 			}
 			DrawStrategy.draw(renderState, e);

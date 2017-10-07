@@ -37,7 +37,6 @@ import org.joml.Vector3f;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -157,7 +156,7 @@ public class Engine implements HighFrequencyCommandProvider {
             renderState.bufferEntities(Engine.getInstance().getScene().getEntities());
         });
         Renderer.getInstance().registerPipelines(renderState);
-        camera.init();
+        camera.initialize();
         camera.setTranslation(new Vector3f(0, 20, 0));
         activeCamera = camera;
         scene = new Scene();

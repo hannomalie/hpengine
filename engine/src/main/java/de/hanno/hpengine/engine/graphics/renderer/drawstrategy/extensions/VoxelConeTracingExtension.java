@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
@@ -21,6 +20,7 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.model.Update;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -150,7 +150,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         boolean clearVoxels = true;
         int bounces = 1;
 
-        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Entity.Update.DYNAMIC)));
+        boolean needsRevoxelization = useVoxelConeTracing && (!renderState.sceneInitiallyDrawn || Config.getInstance().isForceRevoxelization() || renderState.getRenderBatchesStatic().stream().anyMatch(info -> info.getUpdate().equals(Update.DYNAMIC)));
         if(entityMoved || needsRevoxelization) {
             lightInjectedCounter = 0;
         }
@@ -265,7 +265,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult);
             } else {
                 for (RenderBatch entity : renderState.getRenderBatchesStatic()) {
-                    boolean isStatic = entity.getUpdate().equals(Entity.Update.STATIC);
+                    boolean isStatic = entity.getUpdate().equals(Update.STATIC);
                     if (renderState.sceneInitiallyDrawn && !Config.getInstance().isForceRevoxelization() && isStatic) {
                         continue;
                     }

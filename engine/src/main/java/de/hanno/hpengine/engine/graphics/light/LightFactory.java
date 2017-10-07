@@ -194,7 +194,7 @@ public class LightFactory {
 		Material material = MaterialFactory.getInstance().getDefaultMaterial();
 		
 		PointLight light = new PointLight(position, sphereMesh, colorIntensity, range);
-		light.init();
+		light.initialize();
 		updatePointLightArrays();
 		return light;
 	}

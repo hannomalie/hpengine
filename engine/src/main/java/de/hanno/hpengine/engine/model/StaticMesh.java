@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
 
-public class StaticMesh implements Serializable, Mesh {
+public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     private static Logger LOGGER = getLogger();
 
 	private static final long serialVersionUID = 1L;
@@ -41,6 +41,7 @@ public class StaticMesh implements Serializable, Mesh {
     private int[] indexBufferValuesArray;
     private final int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
     private final List<Vertex> compiledVertices = new ArrayList<>();
+    private Vector3f[] minMax = {new Vector3f(), new Vector3f()};
 
     @Override
     public float[] getVertexBufferValuesArray() {
@@ -68,11 +69,6 @@ public class StaticMesh implements Serializable, Mesh {
 	public String getName() {
 		return name;
 	}
-
-    private transient Vector3f min = new Vector3f(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
-    private transient Vector3f max = new Vector3f(-Float.MAX_VALUE,-Float.MAX_VALUE,-Float.MAX_VALUE);
-    private transient Matrix4f lastUsedModelMatrix = null;
-    private float boundSphereRadius = -1;
 
     public StaticMesh(String name, List<Vector3f> positions, List<Vector2f> texCoords, List<Vector3f> normals) {
         this.name = name;
@@ -170,6 +166,7 @@ public class StaticMesh implements Serializable, Mesh {
         }
 
         putToValueArrays();
+        calculateMinMax(null, minMax[0], minMax[1], compiledFaces);
     }
 
     public void putToValueArrays() {
@@ -186,6 +183,19 @@ public class StaticMesh implements Serializable, Mesh {
         for (int indexIndex = 0; indexIndex < indexBufferValues.size(); indexIndex++) {
             indexBufferValuesArray[indexIndex] = indexBufferValues.get(indexIndex);
         }
+    }
+
+    @Override
+    public Vector3f[] getMinMax(Transform transform) {
+        if(!isClean(transform)) {
+            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+        }
+        return super.getMinMaxWorld(IDENTITY);
+    }
+
+    @Override
+    public Vector3f getCenter(Entity transform) {
+        return super.getCenterWorld(transform);
     }
 
     private Vector3f[] getLightMapCoords(Vector3f[] referencedVerticesAsVec3) {
@@ -232,49 +242,10 @@ public class StaticMesh implements Serializable, Mesh {
         return result;
     }
 
-    public float getBoundingSphereRadius() {
-        return boundSphereRadius;
-    }
-
-    private transient Vector3f center = new Vector3f();
-    @Override
-    public Vector3f getCenter(Entity transform) {
-        calculateMinMaxAndCenter(transform.getTransformation());
-        return center;
-    }
-
-    Vector3f centerTemp = new Vector3f();
-    public void calculateCenter() {
-        center = centerTemp.set(min).add(new Vector3f(max).sub(min).mul(0.5f));
-    }
-
-    public void setCenter(Vector3f center) {
-        this.center = center;
-    }
-
     @Override
     public int[] getIndexBufferValuesArray() {
         return indexBufferValuesArray;
     }
-
-    public Vector3f[] getMinMax(Transform modelTransform) {
-        calculateMinMaxAndCenter(modelTransform.getTransformation());
-        return minMax;
-    }
-
-    private void calculateMinMaxAndCenter(Matrix4f modelMatrix) {
-        boolean cacheInvalid = lastUsedModelMatrix == null || !Util.equals(lastUsedModelMatrix, modelMatrix);
-        if(cacheInvalid)
-        {
-            calculateMinMax(modelMatrix, min, max, compiledFaces);
-            if(lastUsedModelMatrix == null) { lastUsedModelMatrix = new Matrix4f(); }
-            lastUsedModelMatrix.set(modelMatrix);
-            boundSphereRadius = getBoundingSphereRadius(min, max);
-            calculateCenter();
-        }
-    }
-
-    private Vector3f[] minMax = new Vector3f[] {min, max};
 
     public static void calculateMinMax(Matrix4f modelMatrix, Vector3f min, Vector3f max, List<CompiledFace> compiledFaces) {
         min.set(Float.MAX_VALUE,Float.MAX_VALUE,Float.MAX_VALUE);
@@ -305,13 +276,25 @@ public class StaticMesh implements Serializable, Mesh {
     }
 
     public static void calculateMinMax(Vector3f min, Vector3f max, Vector3f[] current) {
-            min.x = current[0].x < min.x ? current[0].x : min.x;
-            min.y = current[0].y < min.y ? current[0].y : min.y;
-            min.z = current[0].z < min.z ? current[0].z : min.z;
+        min.x = current[0].x < min.x ? current[0].x : min.x;
+        min.y = current[0].y < min.y ? current[0].y : min.y;
+        min.z = current[0].z < min.z ? current[0].z : min.z;
 
-            max.x = current[1].x > max.x ? current[1].x : max.x;
-            max.y = current[1].y > max.y ? current[1].y : max.y;
-            max.z = current[1].z > max.z ? current[1].z : max.z;
+        max.x = current[1].x > max.x ? current[1].x : max.x;
+        max.y = current[1].y > max.y ? current[1].y : max.y;
+        max.z = current[1].z > max.z ? current[1].z : max.z;
+    }
+
+    public static void calculateMinMax(Matrix4f transform, Vector3f min, Vector3f max, Vector3f[] current) {
+        current[0] = transform.transformPosition(current[0]);
+        current[1] = transform.transformPosition(current[1]);
+        min.x = current[0].x < min.x ? current[0].x : min.x;
+        min.y = current[0].y < min.y ? current[0].y : min.y;
+        min.z = current[0].z < min.z ? current[0].z : min.z;
+
+        max.x = current[1].x > max.x ? current[1].x : max.x;
+        max.y = current[1].y > max.y ? current[1].y : max.y;
+        max.z = current[1].z > max.z ? current[1].z : max.z;
     }
 
     public static float getBoundingSphereRadius(Vector3f min, Vector3f max) {
@@ -328,6 +311,27 @@ public class StaticMesh implements Serializable, Mesh {
     @Override
     public int getTriangleCount() {
         return indexBufferValues.size()/3;
+    }
+
+    @Override
+    public Vector3f getCenterWorld(Transform transform) {
+        if(!isClean(transform)) {
+            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+        }
+        return super.getCenterWorld(transform);
+    }
+
+    @Override
+    public Vector3f[] getMinMaxWorld(Transform transform) {
+        return getMinMax(transform);
+    }
+
+    @Override
+    public float getBoundingSphereRadius(Transform transform) {
+        if(!isClean(transform)) {
+            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+        }
+        return super.getBoundingSphereRadius(transform);
     }
 
     public static class CompiledVertex {
@@ -411,5 +415,10 @@ public class StaticMesh implements Serializable, Mesh {
     @Override
     public List<Vertex> getCompiledVertices() {
         return compiledVertices;
+    }
+
+    @Override
+    public Vector3f[] getMinMax() {
+        return minMax;
     }
 }

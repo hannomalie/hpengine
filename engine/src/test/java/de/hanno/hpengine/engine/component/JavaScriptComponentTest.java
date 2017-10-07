@@ -19,7 +19,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
     public void localDefines() {
         JavaScriptComponent component = new JavaScriptComponent();
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
-        entity.init();
+        entity.initialize();
         component.setInt("myInt", 5);
 
         Assert.assertEquals(5, component.getContext().getAttribute("myInt"));
@@ -34,7 +34,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
         String script = "var myInt = myInt;";
         JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
-        entity.init();
+        entity.initialize();
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
     }
@@ -51,7 +51,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
                 "var update = function(seconds) { updateCalled = true; };";
         JavaScriptComponent component = new JavaScriptComponent(script);
         Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
-        entity.init();
+        entity.initialize();
 
         entity.update(0.1f);
 

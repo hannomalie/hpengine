@@ -6,18 +6,15 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.Model;
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedFrame;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
-import de.hanno.hpengine.engine.model.texture.Texture;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -75,16 +72,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         }
         indicesCounts = new int[model.getMeshes().size()];
         baseVertices = new int[model.getMeshes().size()];
-    }
-
-    public AnimatedFrame getCurrentFrame() {
-        return ((AnimatedModel) model).getFrames().get(animationController.getCurrentFrameIndex());
-    }
-
-    private void setTexturesUsed() {
-        for(Texture texture : getMaterial().getTextures()) {
-            texture.setUsedNow();
-        }
     }
 
     private transient WeakReference<Material> materialCache = null;
@@ -224,10 +211,6 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return COMPONENT_KEY;
     }
 
-    public Vector4f[] getMinMax() {
-        return model.getMinMax();
-    }
-
     public int getIndexCount() {
         return indicesCounts[0];
 
@@ -245,6 +228,9 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     public Vector3f[] getMinMax(Transform transform) {
         return model.getMinMax(transform);
+    }
+    public Vector3f[] getMinMax() {
+        return model.getMinMax();
     }
 
     public Model getModel() {

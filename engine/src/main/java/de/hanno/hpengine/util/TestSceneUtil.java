@@ -97,7 +97,7 @@ public class TestSceneUtil {
 //			StopWatch.getInstance().stopAndPrintMS();
 
             for(Entity entity : entities) {
-                entity.init();
+                entity.initialize();
             }
         } catch (Exception e) {
             e.printStackTrace();

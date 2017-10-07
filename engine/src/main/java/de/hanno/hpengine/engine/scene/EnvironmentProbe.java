@@ -33,9 +33,9 @@ public class EnvironmentProbe extends Entity {
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(engine, this, center, resolution, resolution, probeIndex);
-		sampler.init();
+		sampler.initialize();
 		this.setWeight(weight);
-		super.init();
+		super.initialize();
 	}
 
 	public void draw(RenderState extract) {

@@ -13,7 +13,7 @@ import java.util.List;
 public interface Model<T extends Bufferable> {
     void setMaterial(Material material);
 
-    List<Mesh> getMeshes();
+    List<Mesh<T>> getMeshes();
 
     float getBoundingSphereRadius();
 
@@ -23,7 +23,7 @@ public interface Model<T extends Bufferable> {
 
     int[] getIndices();
 
-    Vector4f[] getMinMax();
+    Vector3f[] getMinMax();
 
     IntArrayList[] getMeshIndices();
 

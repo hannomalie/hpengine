@@ -39,7 +39,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.model.Entity.Update.DYNAMIC;
+import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK;

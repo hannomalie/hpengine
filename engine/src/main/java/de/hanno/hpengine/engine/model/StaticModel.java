@@ -1,19 +1,12 @@
 package de.hanno.hpengine.engine.model;
 
-import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.util.Util;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
 
@@ -22,7 +15,7 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
     private ArrayList<Vector3f> normals = new ArrayList<>();
 
     public StaticModel() {
-
+        super(new ArrayList<>());
     }
 
     public void addVertex(Vector3f vertex) {
@@ -59,10 +52,7 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
             meshIndices[i].add(mesh.getIndexBufferValuesArray());
             triangleCount += mesh.getTriangleCount();
         }
-    }
-
-    public void setBoundingSphereRadius(float boundingSphereRadius) {
-        this.boundingSphereRadius = boundingSphereRadius;
+        super.init();
     }
 
     public Mesh getMesh(int i) {
@@ -73,4 +63,19 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
         meshes.add(mesh);
     }
 
+
+    @Override
+    public Vector3f getCenterWorld(Transform transform) {
+        return super.getCenterWorld(transform);
+    }
+
+    @Override
+    public Vector3f[] getMinMaxWorld(Transform transform) {
+        return super.getMinMaxWorld(transform);
+    }
+
+    @Override
+    public float getBoundingSphereRadius(Transform transform) {
+        return super.getBoundingSphereRadius(transform);
+    }
 }

@@ -24,8 +24,6 @@ import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
-import de.hanno.hpengine.engine.model.loader.md5.MD5BoundInfo;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -82,7 +80,7 @@ public class Scene implements LifeCycle, Serializable {
 		EnvironmentProbeFactory.getInstance().clearProbes();
         entityContainer = new SimpleContainer();
 		entityContainer.init();
-        entities.forEach(Entity::init);
+        entities.forEach(Entity::initialize);
         entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
 		addAll(entities);
 		for (ProbeData data : probes) {
@@ -102,14 +100,14 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	private void initLights() {
 		for(PointLight pointLight : pointLights) {
-			pointLight.init();
+			pointLight.initialize();
 		}
 		for(AreaLight areaLight : areaLights) {
-			areaLight.init();
+			areaLight.initialize();
 		}
 
 		directionalLight.addInputController();
-		directionalLight.init();
+		directionalLight.initialize();
 	}
 	
 	public void write() {
@@ -388,7 +386,6 @@ public class Scene implements LifeCycle, Serializable {
 	public void addBatches(Camera camera, RenderState currentWriteState, Vector3f cameraWorldPosition, Program firstpassDefaultProgram, List<ModelComponent> modelComponents, Consumer<RenderBatch> addToRenderStateRunnable) {
 		for (ModelComponent modelComponent : modelComponents) {
 			Entity entity = modelComponent.getEntity();
-			Vector3f centerWorld = entity.getCenterWorld();
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
@@ -398,12 +395,12 @@ public class Scene implements LifeCycle, Serializable {
 			for(int i = 0; i < meshes.size(); i++) {
 				Mesh mesh = meshes.get(i);
 				Vector3f meshCenter = mesh.getCenter(entity);
-				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, mesh.getBoundingSphereRadius());
+				float boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh);
+				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, boundingSphereRadius);
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();
 				Vector3f[] meshMinMax = mesh.getMinMax(entity);
-				float boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
 

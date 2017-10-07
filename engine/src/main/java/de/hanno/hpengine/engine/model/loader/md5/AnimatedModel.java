@@ -2,11 +2,13 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.model.AbstractModel;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.ArrayList;
@@ -16,20 +18,19 @@ import java.util.stream.Collectors;
 
 import static de.hanno.hpengine.engine.model.loader.md5.MD5Mesh.VALUES_PER_VERTEX;
 
-public class AnimatedModel extends AbstractModel {
+public class AnimatedModel extends AbstractModel<AnimatedVertex> {
 
-    private List<Mesh<AnimatedVertex>> meshes;
     private List<AnimatedFrame> frames;
     private MD5BoundInfo boundInfo;
     private MD5AnimHeader header;
     private List<Matrix4f> invJointMatrices;
 
     public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, MD5AnimHeader header, List<Matrix4f> invJointMatrices) {
+        super(Arrays.asList(meshes));
         this.frames = frames;
         this.boundInfo = boundInfo;
         this.header = header;
         this.invJointMatrices = invJointMatrices;
-        this.meshes = Arrays.asList(meshes);
         for(MD5Mesh mesh : meshes) {
             mesh.setModel(this);
         }
@@ -50,7 +51,7 @@ public class AnimatedModel extends AbstractModel {
 
     @Override
     public void setMaterial(Material material) {
-        for (Mesh mesh : meshes) {
+        for (Mesh<AnimatedVertex> mesh : meshes) {
             mesh.setMaterial(material);
         }
     }
@@ -91,11 +92,6 @@ public class AnimatedModel extends AbstractModel {
     }
 
     @Override
-    public Vector4f[] getMinMax() {
-        return new Vector4f[0];
-    }
-
-    @Override
     public IntArrayList[] getMeshIndices() {
         List<IntArrayList> list = getMeshes().stream().map(mesh -> mesh.getIndexBufferValues()).collect(Collectors.toList());
         IntArrayList[] target = new IntArrayList[list.size()];
@@ -126,5 +122,20 @@ public class AnimatedModel extends AbstractModel {
 
     public MD5AnimHeader getHeader() {
         return header;
+    }
+
+    @Override
+    public Vector3f getCenterWorld(Transform transform) {
+        return super.getCenterWorld(transform);
+    }
+
+    @Override
+    public Vector3f[] getMinMaxWorld(Transform transform) {
+        return super.getMinMaxWorld(transform);
+    }
+
+    @Override
+    public float getBoundingSphereRadius(Transform transform) {
+        return super.getBoundingSphereRadius(transform);
     }
 }

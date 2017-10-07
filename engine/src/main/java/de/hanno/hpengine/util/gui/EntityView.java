@@ -18,16 +18,14 @@ import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Mesh;
-import de.hanno.hpengine.engine.model.StaticMesh;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
-import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
+import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.Util;
@@ -141,11 +139,23 @@ public class EntityView extends WebPanel {
         addInstanceButton.addActionListener(e -> {
             Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
             if(componentOption.isPresent()) {
-                Entity.Instance instance;
+                Instance instance;
                 if(componentOption.get().isStatic()) {
-                    instance = new Entity.Instance(new SimpleTransform(), componentOption.get().getMaterial());
+                    instance = new Instance(new SimpleTransform(), componentOption.get().getMaterial(), new AnimationController(0,0), new SimpleSpatial() {
+                        @Override
+                        protected Vector3f[] getMinMax() {
+                            return componentOption.get().getMinMax();
+                        }
+                    });
                 } else {
-                    instance = new Entity.Instance(new SimpleTransform(), componentOption.get().getMaterial(), componentOption.get().getAnimationController());
+                    instance = new Instance(new SimpleTransform(), componentOption.get().getMaterial(), componentOption.get().getAnimationController(), new SimpleSpatial() {
+                        float radius = componentOption.get().getBoundingSphereRadius();
+                        public Vector3f[] minMax = { new Vector3f(-radius /2f,-radius /2f,-radius /2f), new Vector3f(radius /2f,radius /2f,radius /2f)};
+                        @Override
+                        protected Vector3f[] getMinMax() {
+                            return minMax;
+                        }
+                    });
                 }
                 entity.addExistingInstance(instance);
             } else {
@@ -216,9 +226,9 @@ public class EntityView extends WebPanel {
 
         webComponentPanel.addElement(new TransformablePanel(entity));
 
-        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Entity.Update.class).toArray(), entity.getUpdate());
+        WebComboBox updateComboBox = new WebComboBox(EnumSet.allOf(Update.class).toArray(), entity.getUpdate());
         updateComboBox.addActionListener(e -> {
-            entity.setUpdate((Entity.Update) updateComboBox.getSelectedItem());
+            entity.setUpdate((Update) updateComboBox.getSelectedItem());
             Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         });
         webComponentPanel.addElement(updateComboBox);

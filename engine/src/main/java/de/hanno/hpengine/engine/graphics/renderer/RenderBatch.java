@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.model.Update;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ public class RenderBatch {
     private Vector3f cameraWorldPosition;
     private boolean isInReachForTextureStreaming;
     private boolean visibleForCamera;
-    private Entity.Update update;
+    private Update update;
     private DrawElementsIndirectCommand drawElementsIndirectCommand = new DrawElementsIndirectCommand();
     private Vector3f centerWorld;
     private Vector3f minWorldVec3;
@@ -25,14 +25,14 @@ public class RenderBatch {
     private boolean animated;
     private float boundingSphereRadius;
 
-    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
+    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
         init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, boundingSphereRadius, indexCount, indexOffset, baseVertex, this.animated);
     }
 
     public RenderBatch() {
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Entity.Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
+    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -86,7 +86,7 @@ public class RenderBatch {
         return drawElementsIndirectCommand.primCount;
     }
 
-    public Entity.Update getUpdate() {
+    public Update getUpdate() {
         return update;
     }
 

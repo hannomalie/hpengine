@@ -530,6 +530,45 @@ public class Util {
 	}
 
 	public static boolean equals(Matrix4f a, Matrix4f b) {
-		return a.equals(b);
+		if (a == b)
+			return true;
+		if (b == null)
+			return false;
+		if (!(b instanceof Matrix4f))
+			return false;
+		Matrix4fc other = (Matrix4fc) b;
+		if (Float.floatToIntBits(a.m00()) != Float.floatToIntBits(other.m00()))
+			return false;
+		if (Float.floatToIntBits(a.m01()) != Float.floatToIntBits(other.m01()))
+			return false;
+		if (Float.floatToIntBits(a.m02()) != Float.floatToIntBits(other.m02()))
+			return false;
+		if (Float.floatToIntBits(a.m03()) != Float.floatToIntBits(other.m03()))
+			return false;
+		if (Float.floatToIntBits(a.m10()) != Float.floatToIntBits(other.m10()))
+			return false;
+		if (Float.floatToIntBits(a.m11()) != Float.floatToIntBits(other.m11()))
+			return false;
+		if (Float.floatToIntBits(a.m12()) != Float.floatToIntBits(other.m12()))
+			return false;
+		if (Float.floatToIntBits(a.m13()) != Float.floatToIntBits(other.m13()))
+			return false;
+		if (Float.floatToIntBits(a.m20()) != Float.floatToIntBits(other.m20()))
+			return false;
+		if (Float.floatToIntBits(a.m21()) != Float.floatToIntBits(other.m21()))
+			return false;
+		if (Float.floatToIntBits(a.m22()) != Float.floatToIntBits(other.m22()))
+			return false;
+		if (Float.floatToIntBits(a.m23()) != Float.floatToIntBits(other.m23()))
+			return false;
+		if (Float.floatToIntBits(a.m30()) != Float.floatToIntBits(other.m30()))
+			return false;
+		if (Float.floatToIntBits(a.m31()) != Float.floatToIntBits(other.m31()))
+			return false;
+		if (Float.floatToIntBits(a.m32()) != Float.floatToIntBits(other.m32()))
+			return false;
+		if (Float.floatToIntBits(a.m33()) != Float.floatToIntBits(other.m33()))
+			return false;
+		return true;
 	}
 }

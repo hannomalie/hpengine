@@ -4,14 +4,14 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.JavaComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Entity.Instance;
+import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.joml.Vector3f;
 
 import java.io.File;
-import java.util.List;
 import java.util.Random;
 
 public class Init implements LifeCycle {
@@ -28,7 +28,7 @@ public class Init implements LifeCycle {
                 current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
 
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
-                    Entity.Cluster cluster = new Entity.Cluster();
+                    Cluster cluster = new Cluster();
                     Random random = new Random();
                     int count = 5;
                     for(int x = -count; x < count; x++) {

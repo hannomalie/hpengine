@@ -14,23 +14,28 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class AbstractModel<T extends Bufferable> implements Model<T> {
-    protected List<Mesh> meshes = new ArrayList<>();
-    protected float boundingSphereRadius;
+public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial implements Model<T>, Spatial {
+    protected final List<Mesh<T>> meshes;
     protected int triangleCount;
     protected IntArrayList[] meshIndices;
-    private Vector3f[] minMax = { new Vector3f(), new Vector3f() };
-    private Matrix4f lastUsedModelMatrix;
-    private Vector3f center;
+    private Vector3f[] minMax = {new Vector3f(), new Vector3f()};
+
+    public AbstractModel(List<Mesh<T>> meshes) {
+        this.meshes = meshes;
+    }
+
+    protected void init() {
+        for (int i = 0; i < meshes.size(); i++) {
+            Mesh mesh = meshes.get(i);
+            Vector3f[] meshMinMax = mesh.getMinMax();
+            StaticMesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
+        }
+    }
 
     public void setMaterial(Material material) {
         for (Mesh mesh : meshes) {
             mesh.setMaterial(material);
         }
-    }
-
-    public float getBoundingSphereRadius() {
-        return boundingSphereRadius;
     }
 
     public int getTriangleCount() {
@@ -61,46 +66,22 @@ public abstract class AbstractModel<T extends Bufferable> implements Model<T> {
         return intList.toArray();
     }
 
-    public Vector3f[] getMinMax(Transform transform) {
-        updateMinMax(transform);
+    @Override
+    public Vector3f[] getMinMax() {
         return minMax;
     }
 
-    protected final void updateMinMax(Transform transform) {
-        if(!(lastUsedModelMatrix == null && transform == null) || !Util.equals(lastUsedModelMatrix, transform.getTransformation())) {
-            lastUsedModelMatrix = transform.getTransformation();
-            actuallyUpdateMinMax(transform);
-        }
+    @Override
+    public Vector3f[] getMinMax(Transform transform) {
+        return super.getMinMaxWorld(transform);
     }
 
-    private void actuallyUpdateMinMax(Transform transform) {
-        for (int i = 0; i < meshes.size(); i++) {
-            Mesh mesh = meshes.get(i);
-            Vector3f[] meshMinMax = mesh.getMinMax(transform);
-            StaticMesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
-        }
-
-        calculateCenter();
-    }
-
-    Vector3f centerTemp = new Vector3f();
-    private void calculateCenter() {
-        center = centerTemp.set(minMax[0]).add(new Vector3f(minMax[1]).sub(minMax[0]).mul(0.5f));
-    }
-
-    public Vector4f[] getMinMax() {
-        return new Vector4f[0];
-    }
-
-    public List<Mesh> getMeshes() {
+    public List<Mesh<T>> getMeshes() {
         return meshes;
-    }
-
-    public Vector3f getCenter() {
-        return center;
     }
 
     public IntArrayList[] getMeshIndices() {
         return meshIndices;
     }
+
 }

@@ -26,7 +26,7 @@ public class PointLight extends Entity implements Serializable, Bufferable
 		super(position, generateName(), model);
 		setColor(colorIntensity);
 		scale(range);
-		init();
+		initialize();
 	}
 	
 	private static String generateName() {

@@ -42,7 +42,7 @@ public class LoadModelCommand implements Command<EntityListResult> {
             List<Entity> allChildrenAndSelf = EntityFactory.getInstance().getEntity(name).getAllChildrenAndSelf();
             if(!allChildrenAndSelf.isEmpty()) {
                 allChildrenAndSelf.get(0).addComponent(modelComponent);
-                allChildrenAndSelf.get(0).init();
+                allChildrenAndSelf.get(0).initialize();
             }
 
             entities.addAll(allChildrenAndSelf);

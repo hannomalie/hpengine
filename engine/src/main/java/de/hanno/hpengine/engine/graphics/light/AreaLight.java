@@ -32,7 +32,7 @@ public class AreaLight extends Camera {
         Entity plane = EntityFactory.getInstance().getEntity(generateName() ,model);
         plane.translation(new Vector3f(0, 0, -getNear()));
         plane.setParent(this);
-		init();
+		initialize();
 	}
 	
 	public void setColor(Vector3f color) {
