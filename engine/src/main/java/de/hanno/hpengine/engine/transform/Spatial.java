@@ -1,6 +1,5 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.transform;
 
-import de.hanno.hpengine.engine.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.Vector3f;
 
@@ -24,5 +23,11 @@ public interface Spatial {
 
     Vector3f[] getMinMaxWorld(Transform transform);
 
+    Vector3f[] getMinMax();
+
     float getBoundingSphereRadius(Transform transform);
+
+    Vector3f getCenter();
+
+    float getBoundingSphereRadius();
 }

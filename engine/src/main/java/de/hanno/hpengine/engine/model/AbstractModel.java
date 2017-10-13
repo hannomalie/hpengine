@@ -2,13 +2,12 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.util.Util;
-import org.joml.Matrix4f;
+import de.hanno.hpengine.engine.transform.Spatial;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.Collection;

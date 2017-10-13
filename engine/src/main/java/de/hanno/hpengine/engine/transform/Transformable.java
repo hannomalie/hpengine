@@ -1,6 +1,6 @@
-package de.hanno.hpengine.engine.model;
+package de.hanno.hpengine.engine.transform;
 
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.*;
 

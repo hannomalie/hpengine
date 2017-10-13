@@ -13,8 +13,9 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
@@ -143,7 +144,7 @@ public class EntityView extends WebPanel {
                 if(componentOption.get().isStatic()) {
                     instance = new Instance(new SimpleTransform(), componentOption.get().getMaterial(), new AnimationController(0,0), new SimpleSpatial() {
                         @Override
-                        protected Vector3f[] getMinMax() {
+                        public Vector3f[] getMinMax() {
                             return componentOption.get().getMinMax();
                         }
                     });
@@ -152,7 +153,7 @@ public class EntityView extends WebPanel {
                         float radius = componentOption.get().getBoundingSphereRadius();
                         public Vector3f[] minMax = { new Vector3f(-radius /2f,-radius /2f,-radius /2f), new Vector3f(radius /2f,radius /2f,radius /2f)};
                         @Override
-                        protected Vector3f[] getMinMax() {
+                        public Vector3f[] getMinMax() {
                             return minMax;
                         }
                     });

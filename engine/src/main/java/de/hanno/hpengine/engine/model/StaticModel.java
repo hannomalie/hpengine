@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import org.joml.Vector2f;
 import org.joml.Vector3f;

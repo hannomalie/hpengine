@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -13,6 +14,7 @@ import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
+import de.hanno.hpengine.engine.transform.Spatial;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -29,12 +31,12 @@ import java.util.stream.Collectors;
 public class Entity extends Transform<Entity> implements LifeCycle, Serializable, Bufferable {
 	private static final long serialVersionUID = 1;
 	public static int count = 0;
-	private final Spatial spatial = new SimpleSpatial() {
+	private final SimpleSpatial spatial = new SimpleSpatial() {
 		@Override
-		protected Vector3f[] getMinMax() {
+		public Vector3f[] getMinMax() {
 			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
 				ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-				return modelComponent.getMinMax(Entity.this);
+				return modelComponent.getMinMax();
 			} else {
 				return super.getMinMax();
 			}
@@ -198,6 +200,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	public Vector3f[] getMinMaxWorld() {
 		return spatial.getMinMaxWorld(this);
+	}
+	public Vector3f[] getMinMax() {
+		return spatial.getMinMax();
 	}
 
 	public float getBoundingSphereRadius() {
@@ -431,11 +436,17 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         return instancesCount;
     }
 
-	public void addInstance(Transform instance) {
+	public void addInstance(Transform instanceTransform) {
 		if(getParent() != null) {
-			instance.setParent(getParent());
+			instanceTransform.setParent(getParent());
 		}
-		addExistingInstance(new Instance(instance, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial()));
+		Instance instance = new Instance(instanceTransform, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial() {
+			@Override
+			public Vector3f[] getMinMax() {
+				return spatial.getMinMax();
+			}
+		});
+		addExistingInstance(instance);
 	}
 
 	public void addExistingInstance(Instance instance) {

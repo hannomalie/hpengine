@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;

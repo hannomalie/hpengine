@@ -2,8 +2,6 @@ package de.hanno.hpengine.util.gui.input;
 
 import com.alee.extended.panel.WebComponentPanel;
 import com.alee.laf.slider.WebSlider;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Transformable;
 import org.joml.*;
 
 import java.awt.event.ActionEvent;

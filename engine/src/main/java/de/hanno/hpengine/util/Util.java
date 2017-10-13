@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util;
 
-import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.*;
 
@@ -530,13 +530,13 @@ public class Util {
 	}
 
 	public static boolean equals(Matrix4f a, Matrix4f b) {
-		if (a == b)
-			return true;
+      	if (a==null)
+			return false;
 		if (b == null)
 			return false;
-		if (!(b instanceof Matrix4f))
-			return false;
-		Matrix4fc other = (Matrix4fc) b;
+		if (a == b)
+			return true;
+		Matrix4fc other = b;
 		if (Float.floatToIntBits(a.m00()) != Float.floatToIntBits(other.m00()))
 			return false;
 		if (Float.floatToIntBits(a.m01()) != Float.floatToIntBits(other.m01()))

@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import com.carrotsearch.hppc.ObjectLongHashMap;
-import de.hanno.hpengine.engine.SimpleTransform;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;

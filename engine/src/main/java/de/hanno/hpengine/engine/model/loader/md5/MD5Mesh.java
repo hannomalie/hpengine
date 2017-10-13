@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
@@ -287,7 +287,7 @@ public class MD5Mesh implements Mesh {
     @Override
     public Vector3f getCenter(Entity entity) {
         ModelComponent component = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-        return entity.transformPosition(centerTemp.set(((AnimatedModel)component.getModel()).getCurrentBoundInfo(component.getAnimationController().getCurrentFrameIndex()).getCenter()));
+        return entity.transformPosition(centerTemp.set(((AnimatedModel)component.getModel()).getCurrentBoundInfo(component.getAnimationController().getCurrentFrameIndex()).getCenterWorld(entity)));
     }
     Vector3f centerTemp = new Vector3f();
 

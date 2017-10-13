@@ -1,7 +1,7 @@
 Vector3f = Java.type('org.joml.Vector3f');
 Vector4f = Java.type('org.joml.Vector4f');
 Quaternion = Java.type('org.joml.Quaternionf');
-Transform = Java.type('de.hanno.hpengine.engine.Transform');
+Transform = Java.type('de.hanno.hpengine.engine.transform.Transform');
 Instance = Java.type('de.hanno.hpengine.engine.model.Instance');
 Engine = Java.type('de.hanno.hpengine.engine.Engine');
 GraphicsContext = Java.type('de.hanno.hpengine.engine.graphics.renderer.GraphicsContext');

@@ -2,7 +2,7 @@ package de.hanno.hpengine.util.gui.input;
 
 import java.awt.event.ActionEvent;
 
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
 import com.alee.extended.panel.WebComponentPanel;

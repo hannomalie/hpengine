@@ -2,17 +2,17 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.Vertex;
-import de.hanno.hpengine.util.Util;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.system.MemoryStack;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -297,11 +297,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         max.z = current[1].z > max.z ? current[1].z : max.z;
     }
 
-    public static float getBoundingSphereRadius(Vector3f min, Vector3f max) {
-        return new Vector3f(max).sub(min).mul(0.5f).length();
+    public static float getBoundingSphereRadius(Vector3f target, Vector3f min, Vector3f max) {
+        return target.set(max).sub(min).mul(0.5f).length();
     }
-    public static float getBoundingSphereRadius(Vector4f min, Vector4f max) {
-        return getBoundingSphereRadius(new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
+    public static float getBoundingSphereRadius(Vector3f target, Vector4f min, Vector4f max) {
+        return getBoundingSphereRadius(target, new Vector3f(min.x, min.y, min.z), new Vector3f(max.x, max.y, max.z));
     }
 
     public List<Face> getIndexedFaces() {

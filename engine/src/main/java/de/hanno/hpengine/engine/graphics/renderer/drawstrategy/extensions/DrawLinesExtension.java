@@ -1,10 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.engine.SimpleTransform;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.model.StaticMesh;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -82,7 +81,8 @@ public class DrawLinesExtension implements RenderExtension {
     private void renderBatches(List<RenderBatch> batches) {
         for (RenderBatch batch : batches) {
             if(Config.getInstance().isDrawBoundingVolumes()) {
-                if(batch.isStatic()) {
+                boolean renderAABBs = true;
+                if(renderAABBs) {
                     batchAABBLines(batch.getMinWorld(), batch.getMaxWorld());
                 } else {
                     float radius = batch.getBoundingSphereRadius();

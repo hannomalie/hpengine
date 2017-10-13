@@ -2,14 +2,13 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.Transform;
+import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.model.AbstractModel;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,6 +113,11 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     @Override
     public float getBoundingSphereRadius(Mesh mesh, AnimationController controller) {
         return getCurrentBoundInfo(controller.getCurrentFrameIndex()).getBoundingSphereRadius();
+    }
+
+    @Override
+    public Vector3f[] getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
+        return getCurrentBoundInfo(animationController.getCurrentFrameIndex()).getMinMaxWorld(transform);
     }
 
     public MD5BoundInfo.MD5Bound getCurrentBoundInfo(int frame) {

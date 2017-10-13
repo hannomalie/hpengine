@@ -1,14 +1,19 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
-import de.hanno.hpengine.engine.model.StaticMesh;
+import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Float.parseFloat;
+
 public class MD5BoundInfo {
+
+    private static final Logger LOGGER = Logger.getLogger(MD5BoundInfo.class.getName());
 
     private List<MD5Bound> bounds;
 
@@ -43,74 +48,44 @@ public class MD5BoundInfo {
         return result;
     }
 
-    public static class MD5Bound {
+    public static class MD5Bound extends SimpleSpatial {
 
         private static final Pattern PATTERN_BOUND = Pattern.compile("\\s*" + MD5Utils.VECTOR3_REGEXP + "\\s*" + MD5Utils.VECTOR3_REGEXP + ".*");
 
-        private Vector3f minBound;
-
-        private Vector3f maxBound;
         private Vector3f[] minMax = new Vector3f[2];
-        Vector3f center = new Vector3f();
-        private float boundingSphereRadius;
 
-        public Vector3f getMinBound() {
-            return minBound;
+        public MD5Bound(Vector3f min, Vector3f max) {
+            this.minMax[0] = min;
+            this.minMax[1] = max;
         }
 
-        public void setMinBound(Vector3f minBound) {
-            this.minBound = minBound;
-        }
-
-        public Vector3f getMaxBound() {
-            return maxBound;
-        }
-
-        public void setMaxBound(Vector3f maxBound) {
-            this.maxBound = maxBound;
-            this.minMax[1] = maxBound;
-            this.minMax[0] = minBound;
-            calculateCenter();
-            this.boundingSphereRadius = StaticMesh.getBoundingSphereRadius(minMax[0], minMax[1]);
-        }
-
-        Vector3f centerTemp = new Vector3f();
-        private void calculateCenter() {
-            center = centerTemp.set(minMax[0]).add(new Vector3f(minMax[1]).sub(minMax[0]).mul(0.5f));
-        }
         @Override
         public String toString() {
-            return "[minBound: " + minBound + ", maxBound: " + maxBound + "]";
+            return "[minBound: " + minMax[0] + ", maxBound: " + minMax[1] + "]";
         }
 
         public static MD5Bound parseLine(String line) {
-            MD5Bound result = null;
             Matcher matcher = PATTERN_BOUND.matcher(line);
             if (matcher.matches()) {
-                result = new MD5Bound();
-                float x = Float.parseFloat(matcher.group(1));
-                float y = Float.parseFloat(matcher.group(2));
-                float z = Float.parseFloat(matcher.group(3));
-                result.setMinBound(new Vector3f(x, y, z));
+                float xMin = parseFloat(matcher.group(1));
+                float yMin = parseFloat(matcher.group(2));
+                float zMin = parseFloat(matcher.group(3));
 
-                x = Float.parseFloat(matcher.group(4));
-                y = Float.parseFloat(matcher.group(5));
-                z = Float.parseFloat(matcher.group(6));
-                result.setMaxBound(new Vector3f(x, y, z));
+                float xMax = parseFloat(matcher.group(4));
+                float yMax = parseFloat(matcher.group(5));
+                float zMax = parseFloat(matcher.group(6));
+
+                MD5Bound result = new MD5Bound(new Vector3f(xMin, yMin, zMin), new Vector3f(xMax, yMax, zMax));
+                return result;
             }
-            return result;
+            LOGGER.warning("Cannot parse bound: " + line);
+            return null;
         }
 
+        @Override
         public Vector3f[] getMinMax() {
             return minMax;
         }
 
-        public Vector3f getCenter() {
-            return center;
-        }
-
-        public float getBoundingSphereRadius() {
-            return boundingSphereRadius;
-        }
     }
 }

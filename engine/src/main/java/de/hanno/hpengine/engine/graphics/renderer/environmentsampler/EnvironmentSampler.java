@@ -26,6 +26,7 @@ import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.*;
+import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.*;
