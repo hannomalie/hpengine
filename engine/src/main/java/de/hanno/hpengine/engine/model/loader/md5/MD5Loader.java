@@ -43,7 +43,7 @@ public class MD5Loader {
         MD5Mesh[] meshes = new MD5Mesh[list.size()];
         meshes = list.toArray(meshes);
 
-        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, animModel.getBoundInfo(), animModel.getHeader(), invJointMatrices);
+        AnimatedModel result = new AnimatedModel(meshes, animatedFrames, animModel.getBoundInfo(), animModel.getHeader(), invJointMatrices, md5Model.isInvertTexCoordsY());
         return result;
     }
 
@@ -281,7 +281,7 @@ public class MD5Loader {
                     String specularMapFile = basePath + "_s" + extension;
                     if (new File(specularMapFile).exists()) {
                         Texture specularMap = TextureFactory.getInstance().getTexture(specularMapFile);
-                        materialInfo.put(Material.MAP.HEIGHT, specularMap);
+                        materialInfo.put(Material.MAP.SPECULAR, specularMap);
                     }
                 }
                 Material material = MaterialFactory.getInstance().getMaterial(materialInfo);

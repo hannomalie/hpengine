@@ -303,4 +303,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public Vector3f[] getMinMax(Transform transform, Mesh mesh) {
         return model.getMinMax(transform, mesh, animationController);
     }
+
+    public boolean isInvertTexCoordY() {
+        return model.isInvertTexCoordY();
+    }
 }

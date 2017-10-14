@@ -37,4 +37,6 @@ public interface Model<T extends Bufferable> {
     default Vector3f[] getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
         return mesh.getMinMax(transform);
     }
+
+    default boolean isInvertTexCoordY() { return true; }
 }

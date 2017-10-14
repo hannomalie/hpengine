@@ -11,6 +11,7 @@ public class MD5Model {
     private MD5ModelHeader header;
 
     private List<MD5Mesh> meshes;
+    private boolean invertTexCoordsY;
 
     public MD5Model() {
         meshes = new ArrayList<>();
@@ -112,4 +113,7 @@ public class MD5Model {
         }
     }
 
+    public boolean isInvertTexCoordsY() {
+        return header.isInvertTexCoordsY();
+    }
 }

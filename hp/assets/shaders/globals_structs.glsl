@@ -59,4 +59,9 @@ struct Entity {
     int animationFrame1;
     int animationFrame2;
     int animationFrame3;
+
+    int invertTexcoordY;
+    int a;
+    int b;
+    int c;
 };

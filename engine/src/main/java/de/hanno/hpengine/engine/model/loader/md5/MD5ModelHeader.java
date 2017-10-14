@@ -11,6 +11,7 @@ public class MD5ModelHeader {
     private int numJoints;
 
     private int numMeshes;
+    private boolean invertTexCoordsY;
 
     public String getVersion() {
         return version;
@@ -79,6 +80,8 @@ public class MD5ModelHeader {
                     case "numMeshes":
                         header.setNumMeshes(Integer.parseInt(paramValue));
                         break;
+                    case "invertTexCoordsY":
+                        header.setInvertTexCoordsY(Boolean.parseBoolean(paramValue));
                     case "joints":
                         finishHeader = true;
                         break;
@@ -86,6 +89,14 @@ public class MD5ModelHeader {
             }
         }
 
-        return header;        
-    }    
+        return header;
+    }
+
+    public void setInvertTexCoordsY(boolean invertTexCoordsY) {
+        this.invertTexCoordsY = invertTexCoordsY;
+    }
+
+    public boolean isInvertTexCoordsY() {
+        return invertTexCoordsY;
+    }
 }

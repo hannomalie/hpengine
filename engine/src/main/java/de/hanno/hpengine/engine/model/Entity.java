@@ -347,7 +347,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	@Override
 	public int getBytesPerObject() {
-		return (16 * Float.BYTES + 12 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+		return (16 * Float.BYTES + 16 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
 	}
 
 	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0) {
@@ -381,6 +381,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(modelComponent.getBaseJointIndex());
 
 		buffer.putInt(animationFrame0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+		buffer.putInt(0);
+
+		buffer.putInt(modelComponent.isInvertTexCoordY() ? 1 : 0);
 		buffer.putInt(0);
 		buffer.putInt(0);
 		buffer.putInt(0);
@@ -418,6 +423,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		System.out.println("Base joint index " + buffer.getInt());
 
 		System.out.println("AnimationFrame0 " + buffer.getInt());
+		buffer.getInt();
+		buffer.getInt();
+		buffer.getInt();
+
+		System.out.println("InvertTexCoordY " + buffer.getInt());
 		buffer.getInt();
 		buffer.getInt();
 		buffer.getInt();

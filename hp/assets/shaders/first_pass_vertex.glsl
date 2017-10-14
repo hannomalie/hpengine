@@ -97,7 +97,11 @@ void main(void) {
 	
 	color = in_Color;
 	texCoord = in_TextureCoord;
-	texCoord.y = 1 - in_TextureCoord.y;
+	if(entity.invertTexcoordY == 1) {
+	    texCoord.y = 1 - in_TextureCoord.y;
+	} else {
+	    texCoord.y = in_TextureCoord.y;
+	}
 
 	lightmapTextureCoord = in_LightmapTextureCoord;
 	

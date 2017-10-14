@@ -3,6 +3,7 @@ commandline "mesh models/monsters/hellknight/cycles/hellknight_mesh.mb -dest mod
 
 numJoints 110
 numMeshes 4
+invertTexCoordsY false
 
 joints {
 	"origin"	-1 ( 0 0 0 ) ( -0.7071067095 0 0 )		// 

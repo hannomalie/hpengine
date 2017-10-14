@@ -23,8 +23,9 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     private MD5BoundInfo boundInfo;
     private MD5AnimHeader header;
     private List<Matrix4f> invJointMatrices;
+    private boolean invertTexCoordy;
 
-    public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, MD5AnimHeader header, List<Matrix4f> invJointMatrices) {
+    public AnimatedModel(MD5Mesh[] meshes, List<AnimatedFrame> frames, MD5BoundInfo boundInfo, MD5AnimHeader header, List<Matrix4f> invJointMatrices, boolean invertTexCoordY) {
         super(Arrays.asList(meshes));
         this.frames = frames;
         this.boundInfo = boundInfo;
@@ -33,6 +34,7 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
         for(MD5Mesh mesh : meshes) {
             mesh.setModel(this);
         }
+        this.invertTexCoordy = invertTexCoordY;
     }
 
     public List<AnimatedFrame> getFrames() {
@@ -141,5 +143,10 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     @Override
     public float getBoundingSphereRadius(Transform transform) {
         return super.getBoundingSphereRadius(transform);
+    }
+
+    @Override
+    public boolean isInvertTexCoordY() {
+        return invertTexCoordy;
     }
 }
