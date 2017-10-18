@@ -255,4 +255,8 @@ public class RenderTarget {
     public void setTargetTextureArrayIndex(int textureArray, int textureIndex) {
         GL30.glFramebufferTextureLayer(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, textureArray, 0, textureIndex);
     }
+
+    public int[] getRenderedTextures() {
+        return renderedTextures;
+    }
 }

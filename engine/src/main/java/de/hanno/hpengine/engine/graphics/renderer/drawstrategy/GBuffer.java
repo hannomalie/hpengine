@@ -38,7 +38,11 @@ public class GBuffer {
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
 	private RenderTarget halfScreenBuffer;
-	
+
+	public RenderTarget getgBuffer() {
+		return gBuffer;
+	}
+
 	private FloatBuffer identityMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	private int fullScreenMipmapCount;
@@ -59,7 +63,10 @@ public class GBuffer {
     public GBuffer() {
 
         gBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.add(6, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+						.add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F)
+								.setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
+						.add(4, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
 						.build();
 		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
@@ -67,8 +74,8 @@ public class GBuffer {
 								.setTextureFilter(GL11.GL_LINEAR))
 						.setClearRGBA(0, 0, 0, 0)
 						.build();
-		laBuffer = new RenderTargetBuilder().setWidth((int) (Config.getInstance().getWidth()))
-						.setHeight((int) (Config.getInstance().getHeight()))
+		laBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth())
+						.setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
                                 .setInternalFormat(GL30.GL_RGBA16F)
                                 .setTextureFilter(GL11.GL_LINEAR))
@@ -190,4 +197,8 @@ public class GBuffer {
     public int getLightmapUVMap() {
         return gBuffer.getRenderedTexture(5);
     }
+
+	public RenderTarget getlaBuffer() {
+		return laBuffer;
+	}
 }

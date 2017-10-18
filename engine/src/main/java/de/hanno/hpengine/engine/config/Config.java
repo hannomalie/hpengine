@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
@@ -106,10 +107,11 @@ public final class Config {
 	private volatile boolean drawScene = true;
 	@Toggable(group = "Debug")
 	private volatile boolean useDirectTextureOutput = false;
+	private volatile int directTextureOutputTextureIndex = 0;
 	@Toggable(group = "Quality settings")
 	private volatile boolean continuousDrawProbes = false;
 	@Toggable(group = "Debug")
-	private volatile boolean debugframeEnabled = false;
+	private volatile boolean debugframeEnabled = true;
 	@Toggable(group = "Debug")
 	private volatile boolean drawlightsEnabled = false;
 	@Toggable(group = "Quality settings")
@@ -548,4 +550,12 @@ public final class Config {
     public void setLoadDefaultMaterials(boolean loadDefaultMaterials) {
         this.loadDefaultMaterials = loadDefaultMaterials;
     }
+
+	public void setDirectTextureOutputTextureIndex(int directTextureOutputTextureIndex) {
+		this.directTextureOutputTextureIndex = directTextureOutputTextureIndex;
+	}
+
+	public int getDirectTextureOutputTextureIndex() {
+		return directTextureOutputTextureIndex;
+	}
 }

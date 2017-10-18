@@ -62,12 +62,10 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
         GraphicsContext.getInstance().depthMask(true);
         GraphicsContext.getInstance().enable(DEPTH_TEST);
-//		OpenGLContext.getInstance().cullFace(BACK);
         GraphicsContext.getInstance().disable(CULL_FACE);
 
         // TODO: Better instance culling
         List<RenderBatch> visibles = renderState.getRenderBatchesStatic();
-
 
 //         TODO: Shadowmap should use pipeline for animated object support
         renderTarget.use(true);
@@ -79,19 +77,12 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
         for(int i = 0; i < visibles.size(); i++) {
             RenderBatch e = visibles.get(i);
-//            if (e.getMaterial().getMaterialType().equals(Material.MaterialType.FOLIAGE)) {
-//                OpenGLContext.getInstance().disable(CULL_FACE);
-//            } else {
-//                OpenGLContext.getInstance().enable(CULL_FACE);
-//            }
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
-
             DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
         }
         TextureFactory.getInstance().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
-//		OpenGLContext.getInstance().enable(CULL_FACE);
         renderedInCycle = renderState.getCycle();
 
     }
