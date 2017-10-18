@@ -29,6 +29,7 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.opengl.*;
 import org.joml.Vector3f;
@@ -62,7 +63,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private Program postProcessProgram;
     private Program instantRadiosityProgram;
     private Program aoScatteringProgram;
-    private Program highZProgram;
+    private ComputeShaderProgram highZProgram;
     private Program reflectionProgram;
     private Program linesProgram;
     private Program skyBoxProgram;
@@ -93,7 +94,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         postProcessProgram = programFactory.getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")));
 
         aoScatteringProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "scattering_ao_fragment.glsl");
-        highZProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "highZ_fragment.glsl");
+        highZProgram = ProgramFactory.getInstance().getComputeProgram("highZ_compute.glsl");
         reflectionProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
         linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
         skyBoxProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "skybox.glsl");
@@ -126,6 +127,25 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
 
+        GPUProfiler.start("HighZ map calculation");
+//        highZProgram.use();
+//        int finalWidth = Config.getInstance().getWidth()/2;
+//        int finalHeight = Config.getInstance().getHeight()/2;
+//        for(int mipmapTarget = 1; mipmapTarget < Util.calculateMipMapCount(Config.getInstance().getWidth(), Config.getInstance().getHeight()); mipmapTarget++ ) {
+//            int normalTexture = Renderer.getInstance().getGBuffer().getNormalMap();
+//            GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, normalTexture);
+//            GraphicsContext.getInstance().bindImageTexture(1, normalTexture, mipmapTarget, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+//            highZProgram.setUniform("width", finalWidth);
+//            highZProgram.setUniform("height", finalHeight);
+//            highZProgram.setUniform("mipmapSource", mipmapTarget-1);
+//            highZProgram.setUniform("mipmapTarget", mipmapTarget);
+//            highZProgram.dispatchCompute(finalWidth / 8, finalHeight / 8, 1);
+//            finalWidth /= 2;
+//            finalHeight /= 2;
+//        }
+        GPUProfiler.end();
+
+
         EnvironmentProbeFactory.getInstance().drawAlternating(renderState.camera);
         Renderer.getInstance().executeRenderProbeCommands(renderState);
 
@@ -149,7 +169,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         } else {
             GraphicsContext.getInstance().disable(DEPTH_TEST);
             RenderTarget.getFrontBuffer().use(true);
-            Renderer.getInstance().drawToQuad(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+            Renderer.getInstance().drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
         }
     }
 

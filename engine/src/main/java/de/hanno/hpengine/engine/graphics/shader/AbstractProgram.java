@@ -22,6 +22,8 @@ import de.hanno.hpengine.engine.graphics.shader.define.Define;
 
 import javax.swing.*;
 
+import static org.lwjgl.opengl.GL42.GL_ATOMIC_COUNTER_BUFFER;
+
 
 public abstract class AbstractProgram {
 
@@ -124,6 +126,9 @@ public abstract class AbstractProgram {
 
 	public void bindShaderStorageBuffer(int index, GPUBuffer block) {
 		GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, index, block.getId());
+	}
+	public void bindAtomicCounterBufferBuffer(int index, GPUBuffer block) {
+		GL30.glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, index, block.getId());
 	}
 
 	public int getShaderStorageBlockIndex(String name) {

@@ -1,13 +1,12 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
-import de.hanno.hpengine.engine.graphics.buffer.AbstractPersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 
 import java.nio.ByteBuffer;
@@ -263,6 +262,17 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         commandBuffer.bind();
         GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
     }
+
+    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, AtomicCounterBuffer drawCountBuffer, int maxDrawCount) {
+        drawCountBuffer.bindAsParameterBuffer();
+        vertexBuffer.bind();
+        // TODO: use lod
+        indexBuffer.bind();
+        commandBuffer.bind();
+        ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, 0, maxDrawCount, 0);
+        drawCountBuffer.unbind();
+    }
+
     public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         // TODO: use lod
