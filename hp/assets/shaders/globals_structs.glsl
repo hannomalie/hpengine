@@ -64,4 +64,16 @@ struct Entity {
     int a;
     int b;
     int c;
+
+    vec4 min;
+    vec4 max;
+};
+
+struct DrawCommand {
+    int  count;
+    int  instanceCount;
+    int  firstIndex;
+    int  baseVertex;
+    int  baseInstance;
+//    uint  baseIndex;
 };

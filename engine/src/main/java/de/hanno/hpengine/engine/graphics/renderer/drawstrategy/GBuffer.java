@@ -37,6 +37,7 @@ public class GBuffer {
 	private RenderTarget reflectionBuffer;
 	private RenderTarget laBuffer;
 	private RenderTarget finalBuffer;
+	private RenderTarget highZBuffer;
 	private RenderTarget halfScreenBuffer;
 
 	public RenderTarget getgBuffer() {
@@ -62,12 +63,13 @@ public class GBuffer {
 
     public GBuffer() {
 
-        gBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
-						.add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
-						.add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F)
-								.setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
-						.add(4, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
-						.build();
+		gBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
+				.add(6, new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F))
+				.build();
+		highZBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()/2).setHeight(Config.getInstance().getHeight()/2)
+				.add(new ColorAttachmentDefinition().setInternalFormat(GL30.GL_RGBA16F)
+						.setTextureFilter(GL11.GL_LINEAR_MIPMAP_LINEAR))
+				.build();
 		reflectionBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()).setHeight(Config.getInstance().getHeight())
 						.add(2, new ColorAttachmentDefinition()
 								.setInternalFormat(GL30.GL_RGBA16F)
@@ -200,5 +202,9 @@ public class GBuffer {
 
 	public RenderTarget getlaBuffer() {
 		return laBuffer;
+	}
+
+	public RenderTarget getHighZBuffer() {
+		return highZBuffer;
 	}
 }

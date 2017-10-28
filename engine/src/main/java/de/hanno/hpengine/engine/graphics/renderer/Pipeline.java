@@ -3,6 +3,8 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
+import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
@@ -15,26 +17,26 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class Pipeline {
+import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
+import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy.renderHighZMap;
+import static org.lwjgl.opengl.GL11.glFinish;
+import static org.lwjgl.opengl.GL42.GL_ALL_BARRIER_BITS;
+import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
-//    TODO: Refactor me
-    protected final List<DrawElementsIndirectCommand> commandsStatic = new ArrayList();
-    protected final List<DrawElementsIndirectCommand> commandsAnimated = new ArrayList();
-    protected final IndexBuffer entityOffsetBufferStatic = new IndexBuffer(BufferUtils.createIntBuffer(100));
-    protected final IndexBuffer entityOffsetBufferAnimated = new IndexBuffer(BufferUtils.createIntBuffer(100));
-    protected final CommandBuffer commandBufferStatic = new CommandBuffer(1600);
-    protected final CommandBuffer commandBufferAnimated = new CommandBuffer(1600);
-    private IntArrayList offsetsStatic = new IntArrayList();
-    private IntArrayList offsetsAnimated = new IntArrayList();
+public class Pipeline {
+    protected final CommandOrganization commandOrganizationStatic = new CommandOrganization();
+    protected final CommandOrganization commandOrganizationAnimated = new CommandOrganization();
 
     private final boolean useBackfaceCulling;
     private final boolean useLineDrawingIfActivated;
     private final boolean useFrustumCulling;
+    private final ComputeShaderProgram occlusionCullingPhase1;
+    private final ComputeShaderProgram occlusionCullingPhase2;
 
     public Pipeline() {
         this(true, true, true);
@@ -44,6 +46,8 @@ public class Pipeline {
         this.useFrustumCulling = useFrustumCulling;
         this.useBackfaceCulling = useBackFaceCulling;
         this.useLineDrawingIfActivated = useLineDrawingIfActivated;
+        this.occlusionCullingPhase1 = ProgramFactory.getInstance().getComputeProgram("occlusion_culling1_compute.glsl");
+        this.occlusionCullingPhase2 = ProgramFactory.getInstance().getComputeProgram("occlusion_culling2_compute.glsl");
     }
 
     public void prepareAndDraw(RenderState renderState, Program programStatic, Program programAnimated, FirstPassResult firstPassResult) {
@@ -56,10 +60,8 @@ public class Pipeline {
         GPUProfiler.start("Actual draw entities");
         if(Config.getInstance().isIndirectDrawing()) {
             GPUProfiler.start("Draw with indirect pipeline");
-            programStatic.use();
-            drawIndirectStatic(renderState, programStatic);
-            programAnimated.use();
-            drawIndirectAnimated(renderState, programAnimated);
+            drawIndirectStatic(renderState, programStatic, commandOrganizationStatic, renderState.getVertexIndexBufferStatic());
+            drawIndirectAnimated(renderState, programAnimated, commandOrganizationAnimated, renderState.getVertexIndexBufferAnimated());
             GPUProfiler.end();
 
             firstPassResult.verticesDrawn += verticesCount;
@@ -70,33 +72,66 @@ public class Pipeline {
         GPUProfiler.end();
     }
 
-    public void drawIndirectStatic(RenderState renderState, Program program) {
-//        program.use();
+    public void drawIndirectStatic(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
+        drawIndirect(renderState, program, commandOrganization, vertexIndexBuffer);
+    }
+
+    public void drawIndirectAnimated(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
+        drawIndirect(renderState, program, commandOrganization, vertexIndexBuffer);
+    }
+
+    protected void drawIndirect(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
+        if(commandOrganization.commands.isEmpty()) { return; }
+        commandOrganization.drawCountBufferAfterPhase1.put(0, 0);
+        commandOrganization.drawCountBufferAfterPhase2.put(0, 0);
+        cull(renderState, commandOrganization, occlusionCullingPhase1);
+        renderCulled(renderState, program, commandOrganization, vertexIndexBuffer);
+        renderHighZMap();
+        cull(renderState, commandOrganization, occlusionCullingPhase2);
+        renderCulled(renderState, program, commandOrganization, vertexIndexBuffer);
+//        renderHighZMap();
+
+//        glFinish();
+//        System.out.println("0: " + (commandOrganization.drawCountBuffer.getBuffer().asIntBuffer().get(0) &0xFF));
+//        System.out.println("1: " + (commandOrganization.drawCountBufferAfterPhase1.getBuffer().asIntBuffer().get(0)&0xFF));
+//        System.out.println("2: " + (commandOrganization.drawCountBufferAfterPhase2.getBuffer().asIntBuffer().get(0)&0xFF));
+    }
+
+    private void renderCulled(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
+        program.use();
         program.setUniform("entityIndex", 0);
         program.setUniform("entityBaseIndex", 0);
         program.setUniform("indirect", true);
-        program.setUniform("entityCount", commandsStatic.size());
-        program.bindShaderStorageBuffer(4, getEntityOffsetBufferStatic());
-        program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferStatic().getVertexBuffer());
+        program.setUniform("entityCount", commandOrganization.commands.size());
+        program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffer);
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
-        drawIndirect(renderState.getVertexIndexBufferStatic(), commandBufferStatic, commandsStatic.size());
+        drawIndirect(vertexIndexBuffer, commandOrganization.commandBufferCulled, commandOrganization.commands.size(), commandOrganization.drawCountBuffer);
     }
 
-    public void drawIndirectAnimated(RenderState renderState, Program program) {
-//        program.use();
-        program.setUniform("entityIndex", 0);
-        program.setUniform("entityBaseIndex", 0);
-        program.setUniform("indirect", true);
-        GPUProfiler.start("DrawInstancedIndirectBaseVertex");
-        program.setUniform("entityCount", commandsAnimated.size());
-        program.bindShaderStorageBuffer(4, getEntityOffsetBufferAnimated());
-        program.bindShaderStorageBuffer(5, renderState.getVertexIndexBufferAnimated().getVertexBuffer());
-        program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
-        drawIndirect(renderState.getVertexIndexBufferAnimated(), commandBufferAnimated, commandsAnimated.size());
-        GPUProfiler.end();
+    private void cull(RenderState renderState, CommandOrganization commandOrganization, ComputeShaderProgram occlusionCullingPhase) {
+        commandOrganization.drawCountBuffer.put(0, 0);
+        occlusionCullingPhase.use();
+        occlusionCullingPhase.bindShaderStorageBuffer(2, commandOrganization.drawCountBuffer);
+        occlusionCullingPhase.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer);
+        occlusionCullingPhase.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffer);
+        occlusionCullingPhase.bindShaderStorageBuffer(5, commandOrganization.commandBuffer);
+        occlusionCullingPhase.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
+        occlusionCullingPhase.bindShaderStorageBuffer(7, commandOrganization.commandBufferCulled);
+        occlusionCullingPhase.bindShaderStorageBuffer(8, commandOrganization.entityOffsetBufferCulled);
+        occlusionCullingPhase.bindShaderStorageBuffer(9, commandOrganization.drawCountBufferAfterPhase1);
+        occlusionCullingPhase.bindShaderStorageBuffer(10, commandOrganization.drawCountBufferAfterPhase2);
+        occlusionCullingPhase.setUniform("maxDrawCount", commandOrganization.commands.size());
+        occlusionCullingPhase.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
+        occlusionCullingPhase.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
+        occlusionCullingPhase.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture());
+        GraphicsContext.getInstance().bindImageTexture(1, Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture(), 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
+        occlusionCullingPhase.dispatchCompute((commandOrganization.commands.size()+7)/8,1,1);
+//        commandOrganization.drawCountBuffer.put(0, commandOrganization.commands.size());
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
     }
 
-    private void drawIndirect(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int commandCount) {
+    private void drawIndirect(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int commandCount, AtomicCounterBuffer drawCountBuffer) {
         IndexBuffer indexBuffer = vertexIndexBuffer.getIndexBuffer();
         VertexBuffer vertexBuffer = vertexIndexBuffer.getVertexBuffer();
         if(Config.getInstance().isDrawLines() && useLineDrawingIfActivated) {
@@ -106,7 +141,8 @@ public class Pipeline {
             if(useBackfaceCulling) {
                 GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
             }
-            VertexBuffer.drawInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commandCount);
+//            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount);
+            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, drawCountBuffer, commandCount);
             indexBuffer.unbind();
         }
     }
@@ -129,12 +165,12 @@ public class Pipeline {
     public void prepare(RenderState renderState) {
         verticesCount = 0;
         entitiesDrawn = 0;
-        commandsStatic.clear();
-        commandsAnimated.clear();
-        offsetsStatic.clear();
-        offsetsAnimated.clear();
-        addCommands(renderState.getRenderBatchesStatic(), commandsStatic, commandBufferStatic, entityOffsetBufferStatic, offsetsStatic);
-        addCommands(renderState.getRenderBatchesAnimated(), commandsAnimated, commandBufferAnimated, entityOffsetBufferAnimated, offsetsAnimated);
+        commandOrganizationStatic.commands.clear();
+        commandOrganizationAnimated.commands.clear();
+        commandOrganizationStatic.offsets.clear();
+        commandOrganizationAnimated.offsets.clear();
+        addCommands(renderState.getRenderBatchesStatic(), commandOrganizationStatic.commands, commandOrganizationStatic.commandBuffer, commandOrganizationStatic.entityOffsetBuffer, commandOrganizationStatic.offsets);
+        addCommands(renderState.getRenderBatchesAnimated(), commandOrganizationAnimated.commands, commandOrganizationAnimated.commandBuffer, commandOrganizationAnimated.entityOffsetBuffer, commandOrganizationAnimated.offsets);
 
     }
 
@@ -157,10 +193,11 @@ public class Pipeline {
     }
 
     public GPUBuffer getEntityOffsetBufferStatic() {
-        return entityOffsetBufferStatic;
+        return commandOrganizationStatic.entityOffsetBuffer;
     }
 
     public IndexBuffer getEntityOffsetBufferAnimated() {
-        return entityOffsetBufferAnimated;
+        return commandOrganizationAnimated.entityOffsetBuffer;
     }
+
 }

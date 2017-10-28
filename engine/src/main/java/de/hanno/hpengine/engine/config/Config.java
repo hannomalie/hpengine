@@ -111,7 +111,7 @@ public final class Config {
 	@Toggable(group = "Quality settings")
 	private volatile boolean continuousDrawProbes = false;
 	@Toggable(group = "Debug")
-	private volatile boolean debugframeEnabled = true;
+	private volatile boolean debugframeEnabled = false;
 	@Toggable(group = "Debug")
 	private volatile boolean drawlightsEnabled = false;
 	@Toggable(group = "Quality settings")

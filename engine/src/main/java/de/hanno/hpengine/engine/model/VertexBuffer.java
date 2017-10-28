@@ -255,7 +255,7 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         return indexCount/3;
     }
 
-    public static void drawInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
         // TODO: use lod
         indexBuffer.bind();

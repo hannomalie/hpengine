@@ -322,7 +322,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		for(Mesh mesh : meshes) {
 			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
 			{
-				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0());
+				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0(), modelComponent.getMinMax(this, mesh));
 			}
 
 			for(Cluster cluster : clusters) {
@@ -330,7 +330,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
                     int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
-                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex());
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), cluster.getMinMaxWorld());
                 }
             }
 
@@ -338,7 +338,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 			if(hasParent()) {
 				for(Instance instance : getParent().getInstances()) {
 					Matrix4f instanceMatrix = instance.getTransformation();
-					putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex());
+					putValues(buffer, instanceMatrix, meshIndex, materialIndex, instance.getAnimationController().getCurrentFrameIndex(), getMinMaxWorld());
 				}
 			}
 			meshIndex++;
@@ -347,10 +347,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	@Override
 	public int getBytesPerObject() {
-		return (16 * Float.BYTES + 16 * Integer.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+		return (16 * Float.BYTES + 16 * Integer.BYTES + 8 * Float.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
 	}
 
-	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0) {
+	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0, Vector3f[] minMaxWorld) {
 		buffer.putFloat(mm.m00());
 		buffer.putFloat(mm.m01());
 		buffer.putFloat(mm.m02());
@@ -389,6 +389,16 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(0);
 		buffer.putInt(0);
 		buffer.putInt(0);
+
+		buffer.putFloat(minMaxWorld[0].x);
+		buffer.putFloat(minMaxWorld[0].y);
+		buffer.putFloat(minMaxWorld[0].z);
+		buffer.putFloat(1);
+
+		buffer.putFloat(minMaxWorld[1].x);
+		buffer.putFloat(minMaxWorld[1].y);
+		buffer.putFloat(minMaxWorld[1].z);
+		buffer.putFloat(1);
 	}
 
 	@Override
@@ -431,6 +441,16 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.getInt();
 		buffer.getInt();
 		buffer.getInt();
+
+		System.out.println("minX " + buffer.getFloat());
+		buffer.getFloat();
+		buffer.getFloat();
+		buffer.getFloat();
+
+		System.out.println("maxX " + buffer.getFloat());
+		buffer.getFloat();
+		buffer.getFloat();
+		buffer.getFloat();
 	}
 
     public int getInstanceCount() {

@@ -165,7 +165,7 @@ void main(void) {
 
 	float depth = (position_clip.z / position_clip.w);
 
-	out_normal = vec4(PN_view, depth);
+	out_normal = vec4(PN_view, materialAmbient);
 	//out_normal = vec4(PN_world*0.5+0.5, depth);
 	//out_normal = vec4(encodeNormal(PN_view), environmentProbeIndex, depth);
 
@@ -210,7 +210,6 @@ void main(void) {
     }
 
   	out_motion = vec4(motionVec,depth,materialTransparency);
-  	out_normal.a = materialAmbient;
   	out_visibility = vec4(1,depth,outMaterialIndex, float(outEntity.entityIndexWithoutMeshIndex));
 
   	if(RAINEFFECT) {

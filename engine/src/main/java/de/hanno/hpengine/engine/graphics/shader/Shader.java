@@ -176,6 +176,7 @@ public interface Shader extends Reloadable {
                 }
             }
 
+            LOGGER.warning("File doesn't exist: " + file.getAbsolutePath());
             return null;
         }
     }

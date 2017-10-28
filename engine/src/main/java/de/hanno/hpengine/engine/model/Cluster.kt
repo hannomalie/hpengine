@@ -62,8 +62,8 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-        spatial.minMaxWorld[0].set(minMaxProperty[0])
-        spatial.minMaxWorld[1].set(minMaxProperty[1])
+        spatial.minMaxWorldProperty[0].set(minMaxProperty[0])
+        spatial.minMaxWorldProperty[1].set(minMaxProperty[1])
         spatial.calculateCenter(spatial.center, minMaxProperty)
         spatial.calculateBoundSphereRadius()
     }

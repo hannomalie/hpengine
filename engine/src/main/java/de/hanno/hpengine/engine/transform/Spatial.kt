@@ -13,7 +13,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     val centerWorld = Vector3f()
     protected val centerProperty = Vector3f()
     abstract protected val minMaxProperty : Array<Vector3f>
-    open val minMaxWorld = arrayOf(Vector3f(min),Vector3f(max))
+    open val minMaxWorldProperty = arrayOf(Vector3f(min),Vector3f(max))
 
     protected var boundingSphereRadiusProperty = -1f
     @Transient private var lastUsedTransformationMatrix: Matrix4f? = null
@@ -26,13 +26,14 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
     override fun getCenter() = centerProperty
 
+    override fun getMinMaxWorld(): Array<Vector3f> = minMaxWorldProperty
 
     protected fun isClean(transform: Transform<*>): Boolean {
         return /*transform == null || */(lastUsedTransformationMatrix != null && Util.equals(transform, lastUsedTransformationMatrix))
     }
 
     private fun calculateCenters() {
-        calculateCenter(centerWorld, minMaxWorld)
+        calculateCenter(centerWorld, minMaxWorldProperty)
         calculateCenter(center, minMax)
     }
 
@@ -46,12 +47,12 @@ abstract class AbstractSpatial : Serializable, Spatial {
         if (!isClean(transform)) {
             recalculate(transform)
         }
-        return minMaxWorld
+        return minMaxWorldProperty
     }
 
     protected fun recalculate(transform: Transform<*>) {
-        transform.transformPosition(minMax[0], minMaxWorld[0])
-        transform.transformPosition(minMax[1], minMaxWorld[1])
+        transform.transformPosition(minMax[0], minMaxWorldProperty[0])
+        transform.transformPosition(minMax[1], minMaxWorldProperty[1])
         calculateBoundSphereRadius()
         calculateCenters()
         setLastUsedTransformationMatrix(transform)
@@ -59,7 +60,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
 
     private val boundingSphereTemp = Vector3f()
     fun calculateBoundSphereRadius() {
-        boundingSphereRadiusProperty = StaticMesh.getBoundingSphereRadius(boundingSphereTemp, minMaxWorld[0], minMaxWorld[1])
+        boundingSphereRadiusProperty = StaticMesh.getBoundingSphereRadius(boundingSphereTemp, minMaxWorldProperty[0], minMaxWorldProperty[1])
     }
 
     override fun getBoundingSphereRadius(transform: Transform<*>): Float {

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
@@ -208,9 +209,9 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-//            drawToQuad(gBuffer.getLightAccumulationMapOneId(), QuadVertexBuffer.getDebugBuffer());
-//            drawToQuad(gBuffer.getColorReflectivenessMap(), QuadVertexBuffer.getDebugBuffer());
-			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
+//            drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
+            drawToQuad(gBuffer.getHighZBuffer().getRenderedTexture(), QuadVertexBuffer.getDebugBuffer());
+//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
 ////                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
@@ -297,7 +298,7 @@ public class DeferredRenderer implements Renderer {
 
 		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
 		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
-		// TODO: Reset de.hanno.hpengine.texture sizes after upscaling!!!
+		// TODO: Reset texture sizes after upscaling!!!
 		if(upscaleToFullscreen) {
             GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
 			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
@@ -501,15 +502,15 @@ public class DeferredRenderer implements Renderer {
 		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
 
 			@Override
-			public void drawIndirectStatic(RenderState renderState, Program program) {
+			public void drawIndirectStatic(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
 				beforeDraw(renderState, program);
-				super.drawIndirectStatic(renderState, program);
+				super.drawIndirectStatic(renderState, program, commandOrganization, vertexIndexBuffer);
 			}
 
 			@Override
-			public void drawIndirectAnimated(RenderState renderState, Program program) {
+			public void drawIndirectAnimated(RenderState renderState, Program program, CommandOrganization commandOrganizationAnimated, VertexIndexBuffer vertexIndexBufferAnimated) {
 				beforeDraw(renderState, program);
-				super.drawIndirectAnimated(renderState, program);
+				super.drawIndirectAnimated(renderState, program, commandOrganizationAnimated, vertexIndexBufferAnimated);
 			}
 
 			private void beforeDraw(RenderState renderState, Program program) {

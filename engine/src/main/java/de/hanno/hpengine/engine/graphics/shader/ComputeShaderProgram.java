@@ -51,6 +51,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 		clearUniforms();
 		try {
             computeShader = ComputeShader.load(computeShaderSource, Define.getStringForDefines(defines));
+            LOGGER.info("Loaded computeshader " + computeShaderSource.getFilename());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

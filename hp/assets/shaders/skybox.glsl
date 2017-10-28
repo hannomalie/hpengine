@@ -83,6 +83,6 @@ void main(void) {
     vec3 sampleVector = -normalize(pass_WorldPosition.xyz-eyePos_world.xyz);
     out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
     out_motion = vec4(0,0,depth,0);
-    out_visibility = vec4(1, depth, materialIndex, 0);
+    out_visibility = vec4(1, 1, materialIndex, 0);
     out_lightmap = vec4(0);
 }

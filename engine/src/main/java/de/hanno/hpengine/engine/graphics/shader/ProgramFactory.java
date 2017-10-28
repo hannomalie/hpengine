@@ -23,6 +23,8 @@ public class ProgramFactory {
     public static Program FIRSTPASS_DEFAULT_PROGRAM;
     public static Program FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
 
+    public static ComputeShaderProgram HIGHZ_PROGRAM;
+
     static {
         try {
             FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
@@ -37,6 +39,8 @@ public class ProgramFactory {
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
     private static ProgramFactory instance = null;
+
+
     public static ProgramFactory getInstance() {
         if(instance == null) {
             throw new IllegalStateException("Call ProgramFactory.init() before using it");
@@ -45,7 +49,7 @@ public class ProgramFactory {
     }
 
 	private ProgramFactory() {
-	}
+    }
 
     public static void init() {
         instance = new ProgramFactory();
@@ -141,5 +145,13 @@ public class ProgramFactory {
             System.exit(-1);
         }
         return null;
+    }
+
+//TODO: Refactor this fucking shit code
+    public ComputeShaderProgram getHighZProgram() {
+        if(HIGHZ_PROGRAM == null) {
+            HIGHZ_PROGRAM = ProgramFactory.getInstance().getComputeProgram("highZ_compute.glsl");
+        }
+        return HIGHZ_PROGRAM;
     }
 }

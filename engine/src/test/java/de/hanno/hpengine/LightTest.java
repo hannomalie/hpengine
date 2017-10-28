@@ -38,9 +38,9 @@ public class LightTest extends TestWithRenderer {
 
 		Assert.assertEquals(new Vector3f(100,100,200), areaLight.getScale());
 		
-//		Vector4f[] minMaxWorld = areaLight.getMinMaxWorld();
-//		Assert.assertEquals(new Vector4f(-250,-250,-200,0), minMaxWorld[0]);
-//		Assert.assertEquals(new Vector4f(250,250,200,0), minMaxWorld[1]);
+//		Vector4f[] minMaxWorldProperty = areaLight.getMinMaxWorldProperty();
+//		Assert.assertEquals(new Vector4f(-250,-250,-200,0), minMaxWorldProperty[0]);
+//		Assert.assertEquals(new Vector4f(250,250,200,0), minMaxWorldProperty[1]);
 	}
 
 }

@@ -30,4 +30,6 @@ public interface Spatial {
     Vector3f getCenter();
 
     float getBoundingSphereRadius();
+
+    Vector3f[] getMinMaxWorld();
 }
