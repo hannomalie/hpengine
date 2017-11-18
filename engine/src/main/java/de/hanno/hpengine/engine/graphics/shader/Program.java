@@ -77,7 +77,9 @@ public class Program extends AbstractProgram implements Reloadable {
 				}
 			}
 			try {
-                fragmentShader = loadShader(FragmentShader.class, fragmentShaderSource, fragmentDefines);
+				if(fragmentShaderSource != null) {
+					fragmentShader = loadShader(FragmentShader.class, fragmentShaderSource, fragmentDefines);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -91,7 +93,10 @@ public class Program extends AbstractProgram implements Reloadable {
 			}
 
             attachShader(vertexShader);
-            attachShader(fragmentShader);
+			if(printError("Attach shader")) {
+				throw new RuntimeException("Attach shader failed for " + vertexShader.getName());
+			}
+            if(fragmentShader != null) attachShader(fragmentShader);
             if(geometryShader != null) attachShader(geometryShader);
 			bindShaderAttributeChannels();
 
@@ -165,12 +170,14 @@ public class Program extends AbstractProgram implements Reloadable {
             @Override
             public Boolean execute() throws Exception {
 				detachShader(vertexShader);
-				detachShader(fragmentShader);
+				if(fragmentShader != null) {
+					detachShader(fragmentShader);
+					fragmentShader.reload();
+				}
 				if (geometryShader != null) {
 					detachShader(geometryShader);
 					geometryShader.reload();
 				}
-				fragmentShader.reload();
 				vertexShader.reload();
 				self.load();
 				return true;
@@ -190,7 +197,7 @@ public class Program extends AbstractProgram implements Reloadable {
 
 	@Override
 	public String getName() {
-		return new StringJoiner(", ").add(fragmentShaderSource.getFilename()).add(vertexShaderSource.getFilename())
+		return new StringJoiner(", ").add(fragmentShaderSource != null ? fragmentShaderSource.getFilename() : "").add(vertexShaderSource.getFilename())
 				.toString();
 	}
 

@@ -386,7 +386,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(0);
 
 		buffer.putInt(modelComponent.isInvertTexCoordY() ? 1 : 0);
-		buffer.putInt(0);
+		buffer.putInt(0); // reserved for visiblity
 		buffer.putInt(0);
 		buffer.putInt(0);
 
@@ -438,7 +438,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.getInt();
 
 		System.out.println("InvertTexCoordY " + buffer.getInt());
-		buffer.getInt();
+		setVisible(buffer.getInt() == 1);
 		buffer.getInt();
 		buffer.getInt();
 
@@ -510,7 +510,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
     }
 
 	private Cluster getOrCreateFirstCluster() {
-		Cluster firstCluster = this.clusters.get(0);
+		Cluster firstCluster = null;
+		if(!this.clusters.isEmpty()) {
+			firstCluster = this.clusters.get(0);
+		}
 		if(firstCluster == null) {
             firstCluster = new Cluster();
             clusters.add(firstCluster);

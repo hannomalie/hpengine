@@ -89,7 +89,7 @@ public class TextureFactory {
         lensFlareTexture = instance.getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
         DeferredRenderer.exitOnGLError("After load lensFlareTexture");
         try {
-            cubeMap = instance.getCubeMap("hp/assets/textures/skybox6.jpg");
+            cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
             DeferredRenderer.exitOnGLError("After load cubemap");
             GraphicsContext.getInstance().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());

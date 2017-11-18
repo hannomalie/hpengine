@@ -12,12 +12,12 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.system.MemoryStack;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,6 +27,8 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     private static Logger LOGGER = getLogger();
 
 	private static final long serialVersionUID = 1L;
+
+	private UUID uuid = UUID.randomUUID();
 
 	private List<Vector3f> positions = new ArrayList<>();
     private List<Vector2f> texCoords = new ArrayList<>();
@@ -334,6 +336,10 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         return super.getBoundingSphereRadius(transform);
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
     public static class CompiledVertex {
         public final Vector3f position;
         public final Vector2f texCoords;
@@ -404,12 +410,12 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
 
         StaticMesh b = (StaticMesh) other;
 
-        return b.getName().equals(getName());
+        return b.getUuid().equals(uuid);
     }
 
     @Override
     public int hashCode() {
-        return getName().hashCode();
+        return getUuid().hashCode();
     }
 
     @Override

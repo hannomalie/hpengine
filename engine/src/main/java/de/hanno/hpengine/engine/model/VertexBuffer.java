@@ -271,6 +271,7 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         commandBuffer.bind();
         ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, 0, maxDrawCount, 0);
         drawCountBuffer.unbind();
+        indexBuffer.unbind();
     }
 
     public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {

@@ -162,7 +162,8 @@ public class DebugFrame implements HostComponent {
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.getInstance().isUseParallax());
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.getInstance().isUseSteepParallax());
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.getInstance().isUseAmbientOcclusion());
-	private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.getInstance().isUseFrustumCulling());
+    private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.getInstance().isUseFrustumCulling());
+    private WebToggleButton toggleOcclusionCulling = new WebToggleButton("Occlusion Culling", Config.getInstance().isUseOcclusionCulling());
 	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.getInstance().isUseInstantRadiosity());
 	private WebToggleButton toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", Config.getInstance().isForceRevoxelization());
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.getInstance().isDrawLines());
@@ -188,6 +189,7 @@ public class DebugFrame implements HostComponent {
 	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.getInstance().isUseDirectTextureOutput());
     private WebComboBox directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
     private WebComboBox directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
+    private WebComboBox directTextureOutputTextureIndexBoxHighZBuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTextures()).mapToObj(integer -> "HighZBuffer " + integer).collect(Collectors.toList()).toArray());
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.getInstance().isDrawlightsEnabled());
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.getInstance().isVsync());
@@ -839,9 +841,12 @@ public class DebugFrame implements HostComponent {
 //			de.hanno.hpengine.engine.getEventBus().post(new GlobalDefineChangedEvent());
 		});
 
-		toggleFrustumCulling.addActionListener(e -> {
-			Config.getInstance().setUseFrustumCulling(!Config.getInstance().isUseFrustumCulling());
-		});
+        toggleFrustumCulling.addActionListener(e -> {
+            Config.getInstance().setUseFrustumCulling(!Config.getInstance().isUseFrustumCulling());
+        });
+        toggleOcclusionCulling.addActionListener(e -> {
+            Config.getInstance().setUseOcclusionCulling(!Config.getInstance().isUseOcclusionCulling());
+        });
 		toggleInstantRadiosity.addActionListener(e -> {
 			Config.getInstance().setUseInstantRadiosity(!Config.getInstance().isUseInstantRadiosity());
 		});
@@ -898,6 +903,11 @@ public class DebugFrame implements HostComponent {
         directTextureOutputTextureIndexBoxLABuffer.addActionListener(e -> {
             int selectedIndex = directTextureOutputTextureIndexBoxLABuffer.getSelectedIndex();
             RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getlaBuffer();
+            Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
+        });
+        directTextureOutputTextureIndexBoxHighZBuffer.addActionListener(e -> {
+            int selectedIndex = directTextureOutputTextureIndexBoxHighZBuffer.getSelectedIndex();
+            RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getHighZBuffer();
             Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
         });
 
@@ -972,9 +982,9 @@ public class DebugFrame implements HostComponent {
 	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
 	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexBoxGBuffer, directTextureOutputTextureIndexBoxLABuffer));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexBoxGBuffer, directTextureOutputTextureIndexBoxLABuffer, directTextureOutputTextureIndexBoxHighZBuffer));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
-		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
+		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleOcclusionCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.getInstance().getExposure()) {
 			@Override public void onValueChange(int value, int delta) {
 				Config.getInstance().setExposure(value);

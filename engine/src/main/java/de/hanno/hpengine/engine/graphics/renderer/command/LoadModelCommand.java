@@ -31,14 +31,8 @@ public class LoadModelCommand implements Command<EntityListResult> {
         try {
             List<Entity> entities = new ArrayList<>();
             ModelComponent modelComponent;
-            if(file.getAbsolutePath().endsWith("md5mesh")) {
-                MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
-                MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
-                modelComponent = new ModelComponent(MD5Loader.process(parsedModel, parsedAnimModel, new Vector4f()));
-            } else {
-                StaticModel model = new OBJLoader().loadTexturedModel(file);
-                modelComponent = new ModelComponent(model);
-            }
+            Model model = getModel();
+            modelComponent = new ModelComponent(model);
             List<Entity> allChildrenAndSelf = EntityFactory.getInstance().getEntity(name).getAllChildrenAndSelf();
             if(!allChildrenAndSelf.isEmpty()) {
                 allChildrenAndSelf.get(0).addComponent(modelComponent);
@@ -53,6 +47,18 @@ public class LoadModelCommand implements Command<EntityListResult> {
             e.printStackTrace();
             return result;
         }
+    }
+
+    protected Model getModel() throws Exception {
+        Model model;
+        if(file.getAbsolutePath().endsWith("md5mesh")) {
+            MD5Model parsedModel = MD5Model.parse(file.getAbsolutePath());
+            MD5AnimModel parsedAnimModel = MD5AnimModel.parse(file.getAbsolutePath().replace("md5mesh", "md5anim"));
+            model = MD5Loader.process(parsedModel, parsedAnimModel, new Vector4f());
+        } else {
+            model = new OBJLoader().loadTexturedModel(file);
+        }
+        return model;
     }
 
     public static class EntityListResult extends Result {

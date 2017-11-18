@@ -10,6 +10,7 @@ import org.joml.Vector3f
 import org.joml.Vector4f
 import org.joml.Vector4i
 import java.nio.ByteBuffer
+import java.util.ArrayList
 
 data class AnimatedVertex (override val name: String = "Vertex",
                   val position: Vector3f = Vector3f(),

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine;
 
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.scene.Scene;
@@ -18,7 +19,7 @@ public class DirectoryManager {
 
     public DirectoryManager(String gameDir) {
         this.gameDir = new File(gameDir);
-        gameInitScript = this.gameDir.toPath().resolve("Init.java").toFile();
+        gameInitScript = this.gameDir.toPath().resolve(Config.getInstance().getInitFileName()).toFile();
     }
 
     public void initWorkDir() {

@@ -212,8 +212,8 @@ public class PerformanceMonitor {
 			thirtyFPS(30);
 			sixtyFPS(60);
 			actualFPS(actualFpsValue);
-			actualCPS(actualCpsValue);
-			actualSyncTime(actualSyncTimeFps - actualCpsValue);
+			actualCPS(Math.min(actualCpsValue, 500));
+			actualSyncTime(actualSyncTimeFps);
 		}
 	}
 	

@@ -58,13 +58,13 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private Matrix4f viewZ;
     public FloatBuffer viewZBuffer = BufferUtils.createFloatBuffer(16);
 
-    static FloatBuffer zeroBuffer = BufferUtils.createFloatBuffer(4);
+    public static FloatBuffer ZERO_BUFFER = BufferUtils.createFloatBuffer(4);
     static {
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.put(0);
-        zeroBuffer.rewind();
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.put(0);
+        ZERO_BUFFER.rewind();
     }
 
     private final Program voxelizer;
@@ -210,9 +210,9 @@ public class VoxelConeTracingExtension implements RenderExtension {
         if(needsRevoxelization && clearVoxels) {
             GPUProfiler.start("Clear voxels");
             if(Config.getInstance().isForceRevoxelization() || !renderState.sceneInitiallyDrawn) {
-                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
-                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+                ARBClearTexture.glClearTexImage(currentVoxelTarget, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
+                ARBClearTexture.glClearTexImage(normalGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
+                ARBClearTexture.glClearTexImage(albedoGrid, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
             } else {
                 clearDynamicVoxelsComputeProgram.use();
                 int num_groups_xyz = Math.max(gridSize / 8, 1);
@@ -356,7 +356,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 //        if(entityOrDirectionalLightHasMoved)
 //        {
 //            if only second bounce, clear current target texture
-//            ARBClearTexture.glClearTexImage(currentVoxelSource, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, zeroBuffer);
+//            ARBClearTexture.glClearTexImage(currentVoxelSource, 0, gridTextureFormat, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
 //        }
         GPUProfiler.end();
     }
@@ -423,7 +423,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         orthoCam.setPerspective(false);
         orthoCam.setWidth(getGridSizeScaled());
         orthoCam.setHeight(getGridSizeScaled());
-        orthoCam.setFar(-5000);
+        orthoCam.setFar(-2000);
         orthoCam.update(0.000001f);
     }
 }

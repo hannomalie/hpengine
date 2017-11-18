@@ -34,8 +34,6 @@ public final class Config {
         }
 	}
 
-	private Class<? extends Renderer> rendererClass = DeferredRenderer.class;
-
 	public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
         Properties properties = new Properties();
         try {
@@ -57,6 +55,8 @@ public final class Config {
         }
     }
 
+	private Class<? extends Renderer> rendererClass = DeferredRenderer.class;
+	private String initFileName = "Init.java";
 	private Class<? extends GraphicsContext> gpuContextClass = OpenGLContext.class;
     private boolean useFileReloading = true;
 	private int width = 1280;
@@ -70,7 +70,9 @@ public final class Config {
 	@Toggable(group = "Quality settings")
 	private volatile boolean useAmbientOcclusion = true;
 	@Toggable(group = "Debug")
-	private volatile boolean useFrustumCulling = true;
+	private volatile boolean useFrustumCulling = false;
+	@Toggable(group = "Debug")
+	private volatile boolean useOcclusionCulling = true;
 	private volatile boolean useInstantRadiosity = false;
 	private volatile boolean forceRevoxelization = false;
 	@Toggable(group = "Quality settings")
@@ -220,6 +222,14 @@ public final class Config {
 
 	public void setUseFrustumCulling(boolean useFrustumCulling) {
 		this.useFrustumCulling = useFrustumCulling;
+	}
+
+	public boolean isUseOcclusionCulling() {
+		return useOcclusionCulling;
+	}
+
+	public void setUseOcclusionCulling(boolean useOcclusionCulling) {
+		this.useOcclusionCulling = useOcclusionCulling;
 	}
 
 	public boolean isUseInstantRadiosity() {
@@ -557,5 +567,13 @@ public final class Config {
 
 	public int getDirectTextureOutputTextureIndex() {
 		return directTextureOutputTextureIndex;
+	}
+
+	public String getInitFileName() {
+		return initFileName;
+	}
+
+	public void setInitFileName(String initFileName) {
+		this.initFileName = initFileName;
 	}
 }

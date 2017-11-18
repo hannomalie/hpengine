@@ -385,19 +385,23 @@ public class Util {
 		LOGGER.info(result);
 		return result;
     }
-    public static String printIntBuffer(IntBuffer buffer, int columns) {
+	public static String printIntBuffer(IntBuffer buffer, int columns) {
+		return printIntBuffer(buffer, columns, 1000);
+	}
+	public static String printIntBuffer(IntBuffer buffer, int columns, int rows) {
         buffer.rewind();
         StringBuilder builder = new StringBuilder();
         int columnCounter = 1;
-        while (buffer.hasRemaining()) {
+        int rowCounter = 0;
+        while (columns > 0 && buffer.hasRemaining() && rowCounter < rows) {
             builder.append(buffer.get());
             builder.append(" ");
-            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
+            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); rowCounter++; }
             columnCounter++;
         }
         buffer.rewind();
 		String result = builder.toString();
-		LOGGER.info(result);
+		System.out.println(result);
 		return result;
     }
 	

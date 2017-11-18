@@ -119,13 +119,13 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	
 	
 	@Override
-    public void insert(List<Entity> toDispatch){
+    public void insert(List<Entity> entities){
 
-        if(toDispatch == null) {
+        if(entities == null) {
             return;
         }
 
-		for (Entity Entity : toDispatch) {
+		for (Entity Entity : entities) {
 			insertWithoutOptimize(Entity);
 		}
 		long start = System.currentTimeMillis();
@@ -695,7 +695,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 	}
 
 	@Override
-    public boolean removeEntity(Entity entity) {
+    public boolean remove(Entity entity) {
 		entityNodeMappings.remove(entity);
 		return rootNode.remove(entity);
 	}

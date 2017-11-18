@@ -61,7 +61,7 @@ struct Entity {
     int animationFrame3;
 
     int invertTexcoordY;
-    int a;
+    int visible;
     int b;
     int c;
 

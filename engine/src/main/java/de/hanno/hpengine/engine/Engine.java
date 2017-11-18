@@ -26,6 +26,7 @@ import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.threads.RenderThread;
 import de.hanno.hpengine.engine.threads.UpdateThread;
+import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.script.ScriptManager;
@@ -57,6 +58,8 @@ public class Engine implements HighFrequencyCommandProvider {
     private volatile AtomicLong drawCycle = new AtomicLong();
     private long cpuGpuSyncTimeNs;
     private AtomicInteger drawCounter = new AtomicInteger(-1);
+
+    private CommandQueue commandQueue = new CommandQueue();
 
     public static Engine getInstance() {
         if (instance == null) {
@@ -177,6 +180,7 @@ public class Engine implements HighFrequencyCommandProvider {
 
     public void update(float seconds) {
         try {
+            commandQueue.executeCommands();
             activeCamera.update(seconds);
             scene.setCurrentCycle(drawCycle.get());
             scene.update(seconds);
@@ -384,5 +388,9 @@ public class Engine implements HighFrequencyCommandProvider {
     @Override
     public AtomicInteger getAtomicCounter() {
         return drawCounter;
+    }
+
+    public CommandQueue getCommandQueue() {
+        return commandQueue;
     }
 }

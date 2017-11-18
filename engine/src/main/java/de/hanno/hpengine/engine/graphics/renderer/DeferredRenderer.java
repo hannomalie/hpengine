@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
@@ -60,8 +59,6 @@ public class DeferredRenderer implements Renderer {
 
 	private volatile boolean initialized = false;
 
-	private Map<Command<? extends Result<?>>, SynchronousQueue<Result<? extends Object>>> commandQueueMap = new ConcurrentHashMap<>();
-	
 	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
 
 	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
@@ -189,7 +186,7 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")));
 		blurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")));
 		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")));
 		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
@@ -251,9 +248,13 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Create new fence");
 		GraphicsContext.getInstance().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
-        GPUProfiler.start("Waiting for driver");
+		GPUProfiler.start("Waiting for driver");
+		GPUProfiler.start("Poll events");
 		glfwPollEvents();
+		GPUProfiler.end();
+		GPUProfiler.start("Swap buffers");
 		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
+		GPUProfiler.end();
 		GPUProfiler.end();
 		GPUProfiler.end();
 	}
@@ -502,18 +503,20 @@ public class DeferredRenderer implements Renderer {
 		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
 
 			@Override
-			public void drawIndirectStatic(RenderState renderState, Program program, CommandOrganization commandOrganization, VertexIndexBuffer vertexIndexBuffer) {
-				beforeDraw(renderState, program);
-				super.drawIndirectStatic(renderState, program, commandOrganization, vertexIndexBuffer);
+			public void drawIndirectStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
+				super.drawIndirectStaticAndAnimated(drawDescriptionStatic, drawDescriptionAnimated);
 			}
 
 			@Override
-			public void drawIndirectAnimated(RenderState renderState, Program program, CommandOrganization commandOrganizationAnimated, VertexIndexBuffer vertexIndexBufferAnimated) {
+			public void beforeDrawStatic(RenderState renderState, Program program) {
 				beforeDraw(renderState, program);
-				super.drawIndirectAnimated(renderState, program, commandOrganizationAnimated, vertexIndexBufferAnimated);
+			}
+			@Override
+			public void beforeDrawAnimated(RenderState renderState, Program program) {
+				beforeDraw(renderState, program);
 			}
 
-			private void beforeDraw(RenderState renderState, Program program) {
+			protected void beforeDraw(RenderState renderState, Program program) {
 				Camera camera = renderState.camera;
 				FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 				FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();

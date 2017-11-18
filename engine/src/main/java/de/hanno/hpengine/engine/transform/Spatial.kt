@@ -71,7 +71,9 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
 
     fun setLastUsedTransformationMatrix(lastUsedTransformationMatrix: Matrix4f) {
-        this.lastUsedTransformationMatrix?.let { this.lastUsedTransformationMatrix = Matrix4f(lastUsedTransformationMatrix)  }
+        if(this.lastUsedTransformationMatrix == null) {
+            this.lastUsedTransformationMatrix = Matrix4f(lastUsedTransformationMatrix)
+        }
         this.lastUsedTransformationMatrix?.set(lastUsedTransformationMatrix)
     }
 

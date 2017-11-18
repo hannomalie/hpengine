@@ -14,7 +14,7 @@ public interface EntitiesContainer {
 
     void insert(Entity entity);
 
-    void insert(List<Entity> toDispatch);
+    void insert(List<Entity> entities);
 
     List<Entity> getVisible(Camera camera);
 
@@ -24,5 +24,5 @@ public interface EntitiesContainer {
 
     int getEntityCount();
 
-    boolean removeEntity(Entity entity);
+    boolean remove(Entity entity);
 }

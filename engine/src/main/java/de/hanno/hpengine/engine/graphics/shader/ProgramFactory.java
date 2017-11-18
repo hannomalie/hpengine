@@ -1,10 +1,12 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import org.lwjgl.Sys;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,25 +18,15 @@ import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 
 public class ProgramFactory {
 
-    public static CodeSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
-    public static CodeSource FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE;
-    public static CodeSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
+    public CodeSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
+    public CodeSource FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE;
+    public CodeSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
 
-    public static Program FIRSTPASS_DEFAULT_PROGRAM;
-    public static Program FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
+    public Program FIRSTPASS_DEFAULT_PROGRAM;
+    public Program FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
 
-    public static ComputeShaderProgram HIGHZ_PROGRAM;
-
-    static {
-        try {
-            FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
-            FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
-            FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
-        } catch (Exception e) {
-            System.err.println("Not able to load default vertex and fragment shader sources...");
-            System.exit(-1);
-        }
-    }
+    public ComputeShaderProgram HIGHZ_PROGRAM;
+    public Program APPEND_DRAWCOMMANDS_PROGRAM;
 
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
@@ -49,6 +41,22 @@ public class ProgramFactory {
     }
 
 	private ProgramFactory() {
+        try {
+            FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
+            FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
+            FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
+
+            FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
+            FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
+
+            APPEND_DRAWCOMMANDS_PROGRAM = getProgram("append_drawcommands_vertex.glsl", null);// "append_drawcommands_fragment.glsl");
+            HIGHZ_PROGRAM = getComputeProgram("highZ_compute.glsl");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Not able to load default vertex and fragment shader sources...");
+            System.exit(-1);
+        }
     }
 
     public static void init() {
@@ -101,40 +109,13 @@ public class ProgramFactory {
         });
 	}
 
-//	TODO: Fix this shit caching
     public Program getFirstpassDefaultProgram() {
-        if(FIRSTPASS_DEFAULT_PROGRAM == null) {
-            try {
-                FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
         return FIRSTPASS_DEFAULT_PROGRAM;
     }
 
     public Program getFirstpassAnimatedDefaultProgram() {
-        if(FIRSTPASS_ANIMATED_DEFAULT_PROGRAM == null) {
-            try {
-                FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
         return FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
     }
-
-	public void copyDefaultFragmentShaderToFile(String name) throws IOException {
-		name = name.endsWith(".glsl") ? name : name + ".glsl";
-		FileUtils.copyFile(new File(getDirectory() + FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE), new File(getDirectory() + name));
-	}
-	
-	public void copyDefaultVertexShaderToFile(String name) throws IOException {
-		name = name.endsWith(".glsl") ? name : name + ".glsl";
-		FileUtils.copyFile(new File(getDirectory() + FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE), new File(getDirectory() + name));
-	}
 
     public VertexShader getDefaultFirstpassVertexShader() {
         try {
@@ -147,11 +128,11 @@ public class ProgramFactory {
         return null;
     }
 
-//TODO: Refactor this fucking shit code
     public ComputeShaderProgram getHighZProgram() {
-        if(HIGHZ_PROGRAM == null) {
-            HIGHZ_PROGRAM = ProgramFactory.getInstance().getComputeProgram("highZ_compute.glsl");
-        }
         return HIGHZ_PROGRAM;
+    }
+
+    public Program getAppendDrawCommandProgram() {
+        return APPEND_DRAWCOMMANDS_PROGRAM;
     }
 }

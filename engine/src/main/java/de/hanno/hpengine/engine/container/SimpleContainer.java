@@ -18,7 +18,6 @@ public class SimpleContainer implements EntitiesContainer {
 
     @Override
     public void init() {
-        entities = new CopyOnWriteArraySet<>();
         initialized = true;
     }
 
@@ -34,14 +33,14 @@ public class SimpleContainer implements EntitiesContainer {
     }
 
     @Override
-    public void insert(List<Entity> toDispatch) {
-        entities.addAll(toDispatch);
-        result = Collections.unmodifiableList(new ArrayList<>(entities));
+    public void insert(List<Entity> entities) {
+        this.entities.addAll(entities);
+        result = Collections.unmodifiableList(new ArrayList<>(this.entities));
     }
 
     @Override
     public List<Entity> getVisible(Camera camera) {
-        return entities.stream().filter(e -> e.isInFrustum((Camera) camera)).collect(Collectors.toList());
+        return entities.stream().filter(e -> e.isInFrustum(camera)).collect(Collectors.toList());
     }
 
     @Override
@@ -60,7 +59,7 @@ public class SimpleContainer implements EntitiesContainer {
     }
 
     @Override
-    public boolean removeEntity(Entity entity) {
+    public boolean remove(Entity entity) {
         boolean remove = entities.remove(entity);
         result = Collections.unmodifiableList(result);
         return remove;

@@ -219,10 +219,10 @@ public class Scene implements LifeCycle, Serializable {
 	public void addAll(List<Entity> entities) {
 		entityContainer.insert(entities);
 		entities.forEach(e -> e.getComponents().values().forEach(c -> {
-            c.registerInScene(Scene.this);
-            Scene.this.register(c);
-        }));
-        calculateMinMax(entities);
+			c.registerInScene(Scene.this);
+			Scene.this.register(c);
+		}));
+		calculateMinMax(entities);
 		updateCache = true;
 		entityAddedInCycle = currentCycle;
 		getEventBus().post(new MaterialAddedEvent());
@@ -232,7 +232,7 @@ public class Scene implements LifeCycle, Serializable {
         addAll(new ArrayList() {{add(entity);}});
 	}
 
-	List<ModelComponent> registeredModelComponents = new ArrayList();
+	List<ModelComponent> registeredModelComponents = new CopyOnWriteArrayList<>();
     //TODO: Handle deregistration, or prohibit it
 	private void register(Component c) {
 		if(c instanceof ModelComponent) {
@@ -244,7 +244,7 @@ public class Scene implements LifeCycle, Serializable {
 	public int getEntityBufferIndex(ModelComponent modelComponent) {
 		cacheEntityIndices();
 		int index = getModelComponents().indexOf(modelComponent);
-		if(index < 0) { return index; }
+		if(index < 0 || index > entityIndices.size()) { return -1; }
 		return entityIndices.get(index);
 	}
 
@@ -328,7 +328,7 @@ public class Scene implements LifeCycle, Serializable {
 		this.initialized = initialized;
 	}
 	public boolean removeEntity(Entity entity) {
-		return entityContainer.removeEntity(entity);
+		return entityContainer.remove(entity);
 	}
 	public String getName() {
 		return name;
@@ -397,7 +397,7 @@ public class Scene implements LifeCycle, Serializable {
 				Mesh mesh = meshes.get(i);
 				Vector3f meshCenter = mesh.getCenter(entity);
 				float boundingSphereRadius = modelComponent.getBoundingSphereRadius(mesh);
-				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, boundingSphereRadius);
+				boolean meshIsInFrustum = camera.getFrustum().sphereInFrustum(meshCenter.x, meshCenter.y, meshCenter.z, boundingSphereRadius);//TODO: Fix this
 				boolean visibleForCamera = meshIsInFrustum || entity.getInstanceCount() > 1; // TODO: Better culling for instances
 
 				mesh.getMaterial().setTexturesUsed();

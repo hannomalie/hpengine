@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
@@ -40,6 +41,8 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer.HIGHZ_FORMAT;
+import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.ZERO_BUFFER;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
@@ -47,7 +50,11 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
+import static org.lwjgl.glfw.GLFW.GLFW_KEY_C;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.glFinish;
 import static org.lwjgl.opengl.GL42.GL_ALL_BARRIER_BITS;
+import static org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
 public class SimpleDrawStrategy extends BaseDrawStrategy {
@@ -127,8 +134,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         drawFirstPass(result.getFirstPassResult(), renderState);
         GPUProfiler.end();
 
-//        renderHighZMap();
-
         EnvironmentProbeFactory.getInstance().drawAlternating(renderState.camera);
         Renderer.getInstance().executeRenderProbeCommands(renderState);
 
@@ -178,7 +183,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             } else {
                 GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZTexture);
             }
-            GraphicsContext.getInstance().bindImageTexture(1, highZTexture, mipmapTarget, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
+            GraphicsContext.getInstance().bindImageTexture(1, highZTexture, mipmapTarget, false, 0, GL15.GL_READ_WRITE, HIGHZ_FORMAT);
             int num_groups_x = Math.max(1, (currentWidth + 7) / 8);
             int num_groups_y = Math.max(1, (currentHeight + 7) / 8);
             highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1);
@@ -186,7 +191,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             lastHeight = currentHeight;
             currentWidth /= 2;
             currentHeight /= 2;
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+//            glMemoryBarrier(GL_ALL_BARRIER_BITS);
         }
         GPUProfiler.end();
     }

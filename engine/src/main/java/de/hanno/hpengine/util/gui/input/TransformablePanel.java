@@ -89,7 +89,7 @@ public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
 		this.addElement(new WebFormattedVec3Field("Scale", transformable.getScale(scale)) {
 			@Override
 			public void onValueChange(Vector3f current) {
-				transformable.scale(current);
+				transformable.scaling(current);
 			}
 		});
         this.addElement(new WebFormattedVec3Field("View Direction", transformable.transformDirection(new Vector3f(0,0,-1))) {
