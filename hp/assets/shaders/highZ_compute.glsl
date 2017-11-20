@@ -12,18 +12,18 @@ uniform int mipmapTarget = 0;
 vec4 getMaxA(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
 	vec4 fineZ;
 	fineZ.x = (texelFetch(sampler, baseCoords, mipLevelToSampleFrom).a);
-	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(-1,0), mipLevelToSampleFrom).a);
-	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(-1,-1), mipLevelToSampleFrom).a);
-	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,-1), mipLevelToSampleFrom).a);
+	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(1,0), mipLevelToSampleFrom).a);
+	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(1,1), mipLevelToSampleFrom).a);
+	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,1), mipLevelToSampleFrom).a);
 
 	return fineZ;
 }
 vec4 getMaxG(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
 	vec4 fineZ;
 	fineZ.x = (texelFetch(sampler, baseCoords, mipLevelToSampleFrom).g);
-	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(-1,0), mipLevelToSampleFrom).g);
-	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(-1,-1), mipLevelToSampleFrom).g);
-	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,-1), mipLevelToSampleFrom).g);
+	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(1,0), mipLevelToSampleFrom).g);
+	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(1,1), mipLevelToSampleFrom).g);
+	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,1), mipLevelToSampleFrom).g);
 
 	return fineZ;
 }
@@ -31,7 +31,7 @@ vec4 getMaxG(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
 void main(){
 
 	ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 samplePos = 2*pixelPos+1; // TODO: Fix this
+	ivec2 samplePos = 2*pixelPos;//+1; // TODO: Fix this
 	int mipmapSource = mipmapTarget-1;
 
     vec4 total;
@@ -42,26 +42,54 @@ void main(){
     }
     float maximum = max(max(total.x, total.y), max(total.z, total.w));
 
+//    vec3 extra = vec3(0);
+//    bool samplingOddWidth = (lastWidth % 2 == 0);
+//    bool samplingOddHeight = (lastWidth % 2 == 0);
+//    if(mipmapTarget == 0) {
+//        if(samplingOddWidth && pixelPos.x == width) {
+//            if(samplingOddHeight && pixelPos.y == height) {
+//                extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).g;
+//            }
+//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(1, 0), mipmapSource).g;
+//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(1, -1), mipmapSource).g;
+//        } else if(samplingOddHeight && pixelPos.y == height) {
+//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(0, 1), mipmapSource).g;
+//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).g;
+//        }
+//    }
+//    else {
+//        if(samplingOddWidth && pixelPos.x == width) {
+//            if(samplingOddHeight && pixelPos.y == height) {
+//                extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).a;
+//            }
+//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(1, 0), mipmapSource).a;
+//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(1, -1), mipmapSource).a;
+//        } else if(samplingOddHeight && pixelPos.y == height) {
+//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(0, 1), mipmapSource).a;
+//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).a;
+//        }
+//    }
+//    maximum = max(max(maximum, extra.z), max(extra.x, extra.y));
 
 //Thank you!
 //http://rastergrid.com/blog/2010/10/hierarchical-z-map-based-occlusion-culling/
-//  vec3 extra;
-//  // if we are reducing an odd-width texture then fetch the edge texels
-//  if ( ( (lastWidth % 2) != 0 ) && ( pixelPos.x == lastWidth-3 ) ) {
-//    // if both edges are odd, fetch the top-left corner texel
-//    if ( ( (lastHeight % 2) != 0 ) && ( pixelPos.y == lastHeight-3 ) ) {
-//      extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).x;
-//      maximum = max( maximum, extra.z );
-//    }
-//    extra.x = texelFetch( sourceTexture, samplePos + ivec2( 1, 0), mipmapSource).x;
-//    extra.y = texelFetch( sourceTexture, samplePos + ivec2( 1,-1), mipmapSource).x;
-//    maximum = max( maximum, max( extra.x, extra.y ) );
-//  } else if ( ( (lastHeight % 2) != 0 ) && ( pixelPos.y == lastHeight-3 ) ) {
-//    // if we are reducing an odd-height texture then fetch the edge texels
-//    extra.x = texelFetch( sourceTexture, samplePos + ivec2( 0, 1), mipmapSource).x;
-//    extra.y = texelFetch( sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).x;
-//    maximum = max( maximum, max( extra.x, extra.y ) );
-//  }
+  vec3 extra;
+  // if we are reducing an odd-width texture then fetch the edge texels
+  if ( ( (lastWidth % 2) != 0 ) && ( pixelPos.x == lastWidth-3 ) ) {
+    // if both edges are odd, fetch the top-left corner texel
+    if ( ( (lastHeight % 2) != 0 ) && ( pixelPos.y == lastHeight-3 ) ) {
+      extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).x;
+      maximum = max( maximum, extra.z );
+    }
+    extra.x = texelFetch( sourceTexture, samplePos + ivec2( 1, 0), mipmapSource).x;
+    extra.y = texelFetch( sourceTexture, samplePos + ivec2( 1,-1), mipmapSource).x;
+    maximum = max( maximum, max( extra.x, extra.y ) );
+  } else if ( ( (lastHeight % 2) != 0 ) && ( pixelPos.y == lastHeight-3 ) ) {
+    // if we are reducing an odd-height texture then fetch the edge texels
+    extra.x = texelFetch( sourceTexture, samplePos + ivec2( 0, 1), mipmapSource).x;
+    extra.y = texelFetch( sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).x;
+    maximum = max( maximum, max( extra.x, extra.y ) );
+  }
 
 
 	imageStore(targetImage, pixelPos, vec4(imageLoad(targetImage, pixelPos).rg,maximum, maximum));

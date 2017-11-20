@@ -32,9 +32,9 @@ public class Init implements LifeCycle {
                 for(int y = -count; y < count; y++) {
                     for(int z = -count; z < count; z++) {
                         Transform trafo = new Transform();
-                        float randomFloatX = (random.nextFloat() - 0.5f)* 100*count;
-                        float randomFloatY = (random.nextFloat() - 0.5f)* 100*count;
-                        float randomFloatZ = (random.nextFloat() - 0.5f)* 100*count;
+                        float randomFloatX = (random.nextFloat() - 0.5f)* 300*count;
+                        float randomFloatY = (random.nextFloat() - 0.5f)* 300*count;
+                        float randomFloatZ = (random.nextFloat() - 0.5f)* 300*count;
                         trafo.scale(random.nextFloat()*10.0f);
                         trafo.setTranslation(new Vector3f(randomFloatX, randomFloatY, randomFloatZ));
                         LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/ferrari.obj"), "cube"+System.currentTimeMillis()).execute(Engine.getInstance());

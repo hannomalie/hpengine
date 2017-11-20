@@ -164,7 +164,8 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
             if(!c.isInitialized()) { continue; }
 			c.update(seconds);
 		}
-		for(Cluster cluster : clusters) {
+		for(int i = 0; i < clusters.size(); i++) {
+			Cluster cluster = clusters.get(i);
 			cluster.update(seconds);
 		}
 		for(int i = 0; i < getChildren().size(); i++) {
