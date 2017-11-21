@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import static org.lwjgl.opengl.GL30.glMapBufferRange;
+import static org.lwjgl.opengl.GL43.glMultiDrawElementsIndirect;
 
 public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T> {
 
@@ -228,7 +229,6 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         if(!uploaded) { return 0; }
         bind();
         if(indexBuffer != null) {
-            // TODO: use lod
             indexBuffer.bind();
             GL42.glDrawElementsInstancedBaseVertexBaseInstance(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 4*indexOffset, instanceCount, baseVertexIndex, 0);
 
@@ -255,18 +255,9 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         return indexCount/3;
     }
 
-    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
-        vertexBuffer.bind();
-        // TODO: use lod
-        indexBuffer.bind();
-        commandBuffer.bind();
-        GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
-    }
-
-    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, AtomicCounterBuffer drawCountBuffer, int maxDrawCount) {
+    public static void multiDrawElementsIndirectCount(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, AtomicCounterBuffer drawCountBuffer, int maxDrawCount) {
         drawCountBuffer.bindAsParameterBuffer();
         vertexBuffer.bind();
-        // TODO: use lod
         indexBuffer.bind();
         commandBuffer.bind();
         ARBIndirectParameters.glMultiDrawElementsIndirectCountARB(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, 0, maxDrawCount, 0);
@@ -274,14 +265,21 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
         indexBuffer.unbind();
     }
 
+    public static void multiDrawElementsIndirect(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
+        vertexBuffer.bind();
+        indexBuffer.bind();
+        commandBuffer.bind();
+        glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);
+        indexBuffer.unbind();
+    }
+
     public static void drawLinesInstancedIndirectBaseVertex(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, CommandBuffer commandBuffer, int primitiveCount) {
         vertexBuffer.bind();
-        // TODO: use lod
         indexBuffer.bind();
         commandBuffer.bind();
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
         GL11.glLineWidth(1f);
-        GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);//sizeInBytes());
+        glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, primitiveCount, 0);
         GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
     }
 

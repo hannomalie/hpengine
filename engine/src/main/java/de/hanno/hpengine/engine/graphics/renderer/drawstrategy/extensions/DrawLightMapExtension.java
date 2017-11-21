@@ -187,7 +187,7 @@ public class DrawLightMapExtension implements RenderExtension {
         lightMapProgram.setUniform("height", lightMapTarget.getHeight());
 
         GPUProfiler.start("Actual draw entities lightmap");
-        if (Config.getInstance().isIndirectDrawing()) {
+        if (Config.getInstance().isIndirectRendering()) {
             if(true) {
                 pipeline.prepareAndDraw(renderState, lightMapProgram, lightMapProgram, firstPassResult);
             } else {

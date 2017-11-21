@@ -260,7 +260,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
             GL11.glColorMask(false, false, false, false);
 
 
-            if(useIndirectDrawing && Config.getInstance().isIndirectDrawing()) {
+            if(useIndirectDrawing && Config.getInstance().isIndirectRendering()) {
                 firstPassResult.reset();
                 pipeline.prepareAndDraw(renderState, voxelizer, voxelizer, firstPassResult);
             } else {

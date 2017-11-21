@@ -26,7 +26,7 @@ public class Init implements LifeCycle {
 
         try {
             ArrayList<Entity> entities = new ArrayList<Entity>();
-            int count = 1;
+            int count = 3;
             Random random = new Random();
             for(int x = -count; x < count; x++) {
                 for(int y = -count; y < count; y++) {
@@ -37,7 +37,7 @@ public class Init implements LifeCycle {
                         float randomFloatZ = (random.nextFloat() - 0.5f)* 300*count;
                         trafo.scale(random.nextFloat()*10.0f);
                         trafo.setTranslation(new Vector3f(randomFloatX, randomFloatY, randomFloatZ));
-                        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/ferrari.obj"), "cube"+System.currentTimeMillis()).execute(Engine.getInstance());
+                        LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"), "cube"+System.currentTimeMillis()).execute(Engine.getInstance());
                         loaded.entities.get(0).set(trafo);
                         entities.add(loaded.entities.get(0));
                     }

@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
@@ -41,8 +40,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer.HIGHZ_FORMAT;
-import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.ZERO_BUFFER;
+import static de.hanno.hpengine.engine.graphics.renderer.Pipeline.HIGHZ_FORMAT;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
@@ -50,10 +48,6 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.CullMode.BACK
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.*;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlDepthFunc.LESS;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_C;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.glFinish;
-import static org.lwjgl.opengl.GL42.GL_ALL_BARRIER_BITS;
 import static org.lwjgl.opengl.GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 
@@ -161,25 +155,22 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         }
     }
 
-    public static void renderHighZMap() {
+    public static void renderHighZMap(int baseDepthTexture, int baseWidth, int baseHeight, int highZTexture, ComputeShaderProgram highZProgram) {
         GPUProfiler.start("HighZ map calculation");
-        ComputeShaderProgram highZProgram = ProgramFactory.getInstance().getHighZProgram();
         highZProgram.use();
-        int lastWidth = Config.getInstance().getWidth();
-        int lastHeight = Config.getInstance().getHeight();
-        int currentWidth = lastWidth/2;
+        int lastWidth = baseWidth;
+        int lastHeight = baseHeight;
+        int currentWidth = lastWidth /2;
         int currentHeight = lastHeight/2;
         int mipMapCount = Util.calculateMipMapCount(currentWidth, currentHeight);
-        int normalTexture = Renderer.getInstance().getGBuffer().getVisibilityMap();
         for(int mipmapTarget = 0; mipmapTarget < mipMapCount; mipmapTarget++ ) {
             highZProgram.setUniform("width", currentWidth);
             highZProgram.setUniform("height", currentHeight);
             highZProgram.setUniform("lastWidth", lastWidth);
             highZProgram.setUniform("lastHeight", lastHeight);
             highZProgram.setUniform("mipmapTarget", mipmapTarget);
-            int highZTexture = Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture();
             if(mipmapTarget == 0) {
-                GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, normalTexture);
+                GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, baseDepthTexture);
             } else {
                 GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZTexture);
             }

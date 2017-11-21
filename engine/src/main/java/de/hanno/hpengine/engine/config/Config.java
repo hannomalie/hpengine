@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.util.gui.Adjustable;
 import de.hanno.hpengine.util.gui.Toggable;
 import org.apache.commons.beanutils.BeanUtils;
@@ -142,7 +141,7 @@ public final class Config {
 	@Toggable(group = "Performance")
 	private boolean multithreadedRendering = true;
 	@Toggable(group = "Performance")
-	private boolean indirectDrawing = true;
+	private boolean indirectRendering = true;
 	@Toggable(group = "Performance")
 	private volatile boolean lockFps = false;
 	private volatile boolean vsync = true;
@@ -496,12 +495,12 @@ public final class Config {
 		this.multithreadedRendering = multithreadedRendering;
 	}
 
-	public boolean isIndirectDrawing() {
-		return indirectDrawing;
+	public boolean isIndirectRendering() {
+		return indirectRendering;
 	}
 
-	public void setIndirectDrawing(boolean indirectDrawing) {
-		this.indirectDrawing = indirectDrawing;
+	public void setIndirectRendering(boolean indirectRendering) {
+		this.indirectRendering = indirectRendering;
 	}
 
 	public boolean isLockFps() {

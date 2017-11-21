@@ -189,7 +189,6 @@ public class DebugFrame implements HostComponent {
 	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.getInstance().isUseDirectTextureOutput());
     private WebComboBox directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
     private WebComboBox directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
-    private WebComboBox directTextureOutputTextureIndexBoxHighZBuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTextures()).mapToObj(integer -> "HighZBuffer " + integer).collect(Collectors.toList()).toArray());
 	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.getInstance().isDrawlightsEnabled());
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.getInstance().isVsync());
@@ -905,11 +904,6 @@ public class DebugFrame implements HostComponent {
             RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getlaBuffer();
             Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
         });
-        directTextureOutputTextureIndexBoxHighZBuffer.addActionListener(e -> {
-            int selectedIndex = directTextureOutputTextureIndexBoxHighZBuffer.getSelectedIndex();
-            RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getHighZBuffer();
-            Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
-        });
 
 		toggleDebugFrame.addActionListener(e -> {
 			Config.getInstance().setDebugframeEnabled(!Config.getInstance().isDebugframeEnabled());
@@ -982,7 +976,7 @@ public class DebugFrame implements HostComponent {
 	    toggleProbeDrawCountThree.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountThree.getLabel()); });
 	    toggleProbeDrawCountFour.addActionListener(e -> { RenderProbeCommandQueue.MAX_PROBES_RENDERED_PER_DRAW_CALL = Integer.valueOf(toggleProbeDrawCountFour.getLabel()); });
 		mainButtonElements.add(new TitledPanel("Debug Drawing", toggleDrawLines, toggleDrawScene, toggleDrawOctree, toggleDrawLights, toggleDebugFrame));
-		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexBoxGBuffer, directTextureOutputTextureIndexBoxLABuffer, directTextureOutputTextureIndexBoxHighZBuffer));
+		mainButtonElements.add(new TitledPanel("Probes", forceProbeGBufferRedraw, toggleUseComputeShaderForReflections, toggleDrawProbes, probeDrawCountGroup, toggleDirectTextureOutput, directTextureOutputTextureIndexBoxGBuffer, directTextureOutputTextureIndexBoxLABuffer));
 		mainButtonElements.add(new TitledPanel("Profiling", toggleProfiler, toggleProfilerPrint, dumpAverages));
 		mainButtonElements.add(new TitledPanel("Qualitiy settings", sampleCountGroup, toggleUseGI, toggleUseSSR, toggleUseDeferredRenderingForProbes, toggleUseFirstBounceForProbeRendering, toggleUseSecondBounceForProbeRendering, toggleAmbientOcclusion, toggleFrustumCulling, toggleOcclusionCulling, toggleForceRevoxelization, toggleAutoExposure, toggleVSync,
 			new SliderInput("Exposure", WebSlider.HORIZONTAL, 1, 40, (int) Config.getInstance().getExposure()) {

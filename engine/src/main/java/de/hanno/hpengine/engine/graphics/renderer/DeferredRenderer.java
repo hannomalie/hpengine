@@ -9,9 +9,7 @@ import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.event.StateChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.command.Command;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
-import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.util.fps.FPSCounter;
@@ -41,10 +39,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.SynchronousQueue;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
@@ -206,8 +201,7 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-//            drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
-            drawToQuad(gBuffer.getHighZBuffer().getRenderedTexture(), QuadVertexBuffer.getDebugBuffer());
+            drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
@@ -503,8 +497,8 @@ public class DeferredRenderer implements Renderer {
 		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
 
 			@Override
-			public void drawIndirectStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
-				super.drawIndirectStaticAndAnimated(drawDescriptionStatic, drawDescriptionAnimated);
+			public void drawStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
+				super.drawStaticAndAnimated(drawDescriptionStatic, drawDescriptionAnimated);
 			}
 
 			@Override

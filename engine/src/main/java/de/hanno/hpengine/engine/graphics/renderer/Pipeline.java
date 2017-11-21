@@ -3,8 +3,10 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.IndexBuffer;
@@ -17,17 +19,14 @@ import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
 
 import java.util.List;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
-import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer.HIGHZ_FORMAT;
 import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy.renderHighZMap;
 import static de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.VoxelConeTracingExtension.ZERO_BUFFER;
 import static de.hanno.hpengine.engine.model.VertexBuffer.*;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_C;
 import static org.lwjgl.opengl.GL11.GL_RGBA;
 import static org.lwjgl.opengl.GL11.glFinish;
 import static org.lwjgl.opengl.GL42.*;
@@ -36,6 +35,9 @@ import static org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT;
 public class Pipeline {
     protected final CommandOrganization commandOrganizationStatic = new CommandOrganization();
     protected final CommandOrganization commandOrganizationAnimated = new CommandOrganization();
+
+    public static int HIGHZ_FORMAT = GL30.GL_RGBA32F;
+    private RenderTarget highZBuffer;
 
     private final boolean useBackfaceCulling;
     private final boolean useLineDrawingIfActivated;
@@ -58,6 +60,11 @@ public class Pipeline {
             System.exit(-1);
             e.printStackTrace();
         }
+
+        highZBuffer = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth()/2).setHeight(Config.getInstance().getHeight()/2)
+                .add(new ColorAttachmentDefinition().setInternalFormat(HIGHZ_FORMAT)
+                        .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
+                .build();
     }
 
     public void prepareAndDraw(RenderState renderState, Program programStatic, Program programAnimated, FirstPassResult firstPassResult) {
@@ -68,27 +75,18 @@ public class Pipeline {
 
     public void draw(RenderState renderState, Program programStatic, Program programAnimated, FirstPassResult firstPassResult) {
         GPUProfiler.start("Actual draw entities");
-        if(Config.getInstance().isIndirectDrawing()) {
+        drawStaticAndAnimated(new DrawDescription(renderState, programStatic, commandOrganizationStatic, renderState.getVertexIndexBufferStatic()),
+                              new DrawDescription(renderState, programAnimated, commandOrganizationAnimated, renderState.getVertexIndexBufferAnimated()));
 
-            GPUProfiler.start("Draw with indirect pipeline");
-            drawIndirectStaticAndAnimated(new DrawDescription(renderState, programStatic, commandOrganizationStatic, renderState.getVertexIndexBufferStatic()),
-                                          new DrawDescription(renderState, programAnimated, commandOrganizationAnimated, renderState.getVertexIndexBufferAnimated()));
-            GPUProfiler.end();
-
-            firstPassResult.verticesDrawn += verticesCount;
-            firstPassResult.entitiesDrawn += entitiesDrawn;
-        } else {
-            renderDirect(renderState, firstPassResult, renderState.getRenderBatchesStatic()); //TODO Animated
-        }
+        firstPassResult.verticesDrawn += verticesCount;
+        firstPassResult.entitiesDrawn += entitiesDrawn;
         GPUProfiler.end();
     }
 
-    protected void drawIndirectStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
+    protected void drawStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
         if(Config.getInstance().isUseOcclusionCulling()) {
 
-//            if(Input.isKeyPressed(GLFW_KEY_C)) {
-                ARBClearTexture.glClearTexImage(Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture(), 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
-//            }
+            ARBClearTexture.glClearTexImage(highZBuffer.getRenderedTexture(), 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER);
 
             CommandOrganization commandOrganizationStatic = drawDescriptionStatic.getCommandOrganization();
             CommandOrganization commandOrganizationAnimated = drawDescriptionAnimated.getCommandOrganization();
@@ -97,64 +95,19 @@ public class Pipeline {
             commandOrganizationAnimated.drawCountBufferAfterPhase1.put(0,0);
             commandOrganizationAnimated.drawCountBufferAfterPhase2.put(0,0);
 
-            if(Input.isKeyPressed(GLFW.GLFW_KEY_I)) {
-                glFinish();
-                Renderer.getInstance().getGBuffer().getHighZBuffer().saveBuffer("bla.png");
-            }
             GPUProfiler.start("Cull&Render Phase1");
             cullAndRender(drawDescriptionStatic.getRenderState(), drawDescriptionStatic.getProgram(), commandOrganizationStatic, drawDescriptionStatic.getVertexIndexBuffer(), occlusionCullingPhase1Vertex, true, commandOrganizationStatic.drawCountBufferStaticPhase1, commandOrganizationStatic.commandBufferCulledPhase1);
             cullAndRender(drawDescriptionAnimated.getRenderState(), drawDescriptionAnimated.getProgram(), commandOrganizationAnimated, drawDescriptionAnimated.getVertexIndexBuffer(), occlusionCullingPhase1Vertex, false, commandOrganizationAnimated.drawCountBufferAnimatedPhase1, commandOrganizationAnimated.commandBufferCulledPhase1);
-            renderHighZMap();
+            renderHighZMap(Renderer.getInstance().getGBuffer().getVisibilityMap(), Config.getInstance().getWidth(), Config.getInstance().getHeight(), highZBuffer.getRenderedTexture(), ProgramFactory.getInstance().getHighZProgram());
             GPUProfiler.end();
-
-            if(Input.isKeyPressed(GLFW.GLFW_KEY_O)) {
-                glFinish();
-                Renderer.getInstance().getGBuffer().getHighZBuffer().saveBuffer("bla.png");
-            }
 
             GPUProfiler.start("Cull&Render Phase2");
             cullAndRender(drawDescriptionStatic.getRenderState(), drawDescriptionStatic.getProgram(), commandOrganizationStatic, drawDescriptionStatic.getVertexIndexBuffer(), occlusionCullingPhase2Vertex, true, commandOrganizationStatic.drawCountBufferStaticPhase2, commandOrganizationStatic.commandBufferCulledPhase2);
             cullAndRender(drawDescriptionAnimated.getRenderState(), drawDescriptionAnimated.getProgram(), commandOrganizationAnimated, drawDescriptionAnimated.getVertexIndexBuffer(), occlusionCullingPhase2Vertex, false, commandOrganizationAnimated.drawCountBufferAnimatedPhase2, commandOrganizationAnimated.commandBufferCulledPhase2);
             GPUProfiler.end();
-            renderHighZMap();
+            renderHighZMap(Renderer.getInstance().getGBuffer().getVisibilityMap(), Config.getInstance().getWidth(), Config.getInstance().getHeight(), highZBuffer.getRenderedTexture(), ProgramFactory.getInstance().getHighZProgram());
 
-            final boolean debugOutput = false;
-            if(debugOutput) {
-                glFinish();
-                System.out.println("######################");
-                System.out.println("Static commands came in: " + commandOrganizationStatic.commands.size());
-                System.out.println("Animated commands came in: " + commandOrganizationAnimated.commands.size());
-                int drawCountBufferStaticPhase1 = Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase1.getBuffer().get(0));
-                int drawCountBufferStaticPhase2 = Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase2.getBuffer().get(0));
-                System.out.println("drawCountBufferStaticPhase1: " + drawCountBufferStaticPhase1);
-                System.out.println("drawCountBufferStaticPhase2: " + (Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase2.getBuffer().get(0))));
-                System.out.println("Static false positives: " + (Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferAfterPhase2.getBuffer().get(0))));
-                int drawCountBufferAnimatedPhase1 = Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAnimatedPhase1.getBuffer().get(0));
-                System.out.println("drawCountBufferAnimatedPhase1: " + drawCountBufferAnimatedPhase1);
-                System.out.println("drawCountBufferAnimatedPhase2: " + (Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAnimatedPhase2.getBuffer().get(0))));
-                System.out.println("Anim   false positives: " + (Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAfterPhase2.getBuffer().get(0))));
-                boolean printBuffers = false;
-                if(printBuffers) {
-                    System.out.println("Command buffer static:");
-                    Util.printIntBuffer(commandOrganizationStatic.commandBuffer.getBuffer().asIntBuffer(), 5, commandOrganizationStatic.commands.size());
-                    System.out.println("Command buffer culled static phase 1:");
-                    Util.printIntBuffer(commandOrganizationStatic.commandBufferCulledPhase1.getBuffer().asIntBuffer(), 5, drawCountBufferStaticPhase1);
-                    System.out.println("Command buffer culled static phase 2:");
-                    Util.printIntBuffer(commandOrganizationStatic.commandBufferCulledPhase2.getBuffer().asIntBuffer(), 5, drawCountBufferStaticPhase2);
-                    System.out.print("Static Offsets ");
-                    Util.printIntBuffer(commandOrganizationStatic.entityOffsetBuffer.getBuffer().asIntBuffer(), commandOrganizationStatic.commands.size(), 1);
-                    System.out.print("Static Offsets culled ");
-                    Util.printIntBuffer(commandOrganizationStatic.entityOffsetBufferCulled.getBuffer().asIntBuffer(), commandOrganizationStatic.commands.size(), 1);
-                    System.out.println("Command buffer animated:");
-                    Util.printIntBuffer(commandOrganizationAnimated.commandBuffer.getBuffer().asIntBuffer(), 5, commandOrganizationAnimated.commands.size());
-                    System.out.println("Command buffer culled animated:");
-                    Util.printIntBuffer(commandOrganizationAnimated.commandBufferCulledPhase1.getBuffer().asIntBuffer(), 5, drawCountBufferAnimatedPhase1);
-                    System.out.print("Animated Offsets ");
-                    Util.printIntBuffer(commandOrganizationAnimated.entityOffsetBuffer.getBuffer().asIntBuffer(), commandOrganizationAnimated.commands.size(), 1);
-                    System.out.print("Animated Offsets culled ");
-                    Util.printIntBuffer(commandOrganizationAnimated.entityOffsetBufferCulled.getBuffer().asIntBuffer(),  commandOrganizationAnimated.commands.size(), 1);
-                }
-            }
+            printDebugOutput(commandOrganizationStatic, commandOrganizationAnimated);
         } else {
             drawDescriptionStatic.getCommandOrganization().drawCountBufferStatic.put(0, commandOrganizationStatic.commands.size());
             render(drawDescriptionStatic.getRenderState(), drawDescriptionStatic.getProgram(), commandOrganizationStatic, drawDescriptionStatic.getVertexIndexBuffer(), true, commandOrganizationStatic.drawCountBufferStatic, commandOrganizationStatic.commandBuffer, commandOrganizationStatic.entityOffsetBuffer);
@@ -185,10 +138,10 @@ public class Pipeline {
         appendProgram.bindShaderStorageBuffer(7, targetCommandBuffer);
         appendProgram.bindShaderStorageBuffer(8, commandOrganization.entityOffsetBufferCulled);
         appendProgram.setUniform("maxDrawCommands", commandOrganization.commands.size());
-//        commandOrganization.commandBufferCulledPhase1.setSizeInBytes(commandOrganization.commandBuffer.getSizeInBytes());
+        commandOrganization.commandBufferCulledPhase1.setSizeInBytes(commandOrganization.commandBuffer.getSizeInBytes());
+        commandOrganization.commandBufferCulledPhase2.setSizeInBytes(commandOrganization.commandBuffer.getSizeInBytes());
         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, ((commandOrganization.commands.size() + 2) / 3 * 3), 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_COMMAND_BARRIER_BIT);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         GPUProfiler.end();
     }
 
@@ -205,7 +158,18 @@ public class Pipeline {
         program.setUniform("indirect", true);
         program.bindShaderStorageBuffer(4, offsetBuffer);
         program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer);
-        drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size(), drawCountBuffer);
+        if(Config.getInstance().isIndirectRendering()) {
+            drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size(), drawCountBuffer);
+        } else {
+            for(int i = 0; i < commandOrganization.commands.size(); i++) {
+                DrawElementsIndirectCommand command = commandOrganization.commands.get(i);
+                program.setUniform("entityIndex", commandOrganization.offsets.get(i));
+                program.setUniform("entityBaseIndex", 0);
+                program.setUniform("indirect", false);
+                vertexIndexBuffer.getVertexBuffer()
+                        .drawInstancedBaseVertex(vertexIndexBuffer.getIndexBuffer(), command.count, command.primCount, command.firstIndex, command.baseVertex);
+            }
+        }
         GPUProfiler.end();
     }
 
@@ -223,16 +187,10 @@ public class Pipeline {
         occlusionCullingPhase.setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.getViewProjectionMatrixAsBuffer());
         occlusionCullingPhase.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         occlusionCullingPhase.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture());
-        GraphicsContext.getInstance().bindImageTexture(1, Renderer.getInstance().getGBuffer().getHighZBuffer().getRenderedTexture(), 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT);
+        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZBuffer.getRenderedTexture());
+        GraphicsContext.getInstance().bindImageTexture(1, highZBuffer.getRenderedTexture(), 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT);
         GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, ((commandOrganization.commands.size() + 2) / 3 * 3), 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-//        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-//        glFinish();
-//        System.out.println("After Culling0: " + (Byte.toUnsignedInt(commandOrganization.drawCountBufferStaticPhase1.getBuffer().get(0))));
-//        System.out.println("After Culling1: " + (Byte.toUnsignedInt(commandOrganization.drawCountBufferAfterPhase1.getBuffer().get(0))));
-//        System.out.println("After Culling2: " + (Byte.toUnsignedInt(commandOrganization.drawCountBufferAfterPhase2.getBuffer().get(0))));
     }
 
     private void drawIndirect(VertexIndexBuffer vertexIndexBuffer, CommandBuffer commandBuffer, int commandCount, AtomicCounterBuffer drawCountBuffer) {
@@ -245,20 +203,10 @@ public class Pipeline {
             if(useBackfaceCulling) {
                 GraphicsContext.getInstance().enable(GlCap.CULL_FACE);
             }
-//            VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount);
-            multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, drawCountBuffer, commandCount);
-        }
-    }
-
-    public void renderDirect(RenderState renderState, FirstPassResult firstPassResult, List<RenderBatch> renderBatches) {
-        for(RenderBatch info : renderBatches) {
-            if (!info.isVisibleForCamera()) {
-                continue;
-            }
-            int currentVerticesCount = DrawStrategy.draw(renderState, info);
-            firstPassResult.verticesDrawn += currentVerticesCount;
-            if (currentVerticesCount > 0) {
-                firstPassResult.entitiesDrawn++;
+            if(Config.getInstance().isUseOcclusionCulling()) {
+                multiDrawElementsIndirectCount(vertexBuffer, indexBuffer, commandBuffer, drawCountBuffer, commandCount);
+            } else {
+                multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount);
             }
         }
     }
@@ -274,7 +222,6 @@ public class Pipeline {
         commandOrganizationAnimated.offsets.clear();
         addCommands(renderState.getRenderBatchesStatic(), commandOrganizationStatic.commands, commandOrganizationStatic.commandBuffer, commandOrganizationStatic.entityOffsetBuffer, commandOrganizationStatic.offsets);
         addCommands(renderState.getRenderBatchesAnimated(), commandOrganizationAnimated.commands, commandOrganizationAnimated.commandBuffer, commandOrganizationAnimated.entityOffsetBuffer, commandOrganizationAnimated.offsets);
-
     }
 
     private void addCommands(List<RenderBatch> renderBatches, List<DrawElementsIndirectCommand> commands, CommandBuffer commandBuffer, IndexBuffer entityOffsetBuffer, IntArrayList offsets) {
@@ -306,4 +253,43 @@ public class Pipeline {
     protected void beforeDrawStatic(RenderState renderState, Program program) {}
     protected void beforeDrawAnimated(RenderState renderState, Program program) {}
 
+    private void printDebugOutput(CommandOrganization commandOrganizationStatic, CommandOrganization commandOrganizationAnimated) {
+        final boolean debugOutput = false;
+        if(debugOutput) {
+            glFinish();
+            System.out.println("######################");
+            System.out.println("Static commands came in: " + commandOrganizationStatic.commands.size());
+            System.out.println("Animated commands came in: " + commandOrganizationAnimated.commands.size());
+            int drawCountBufferStaticPhase1 = Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase1.getBuffer().get(0));
+            int drawCountBufferStaticPhase2 = Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase2.getBuffer().get(0));
+            System.out.println("drawCountBufferStaticPhase1: " + drawCountBufferStaticPhase1);
+            System.out.println("drawCountBufferStaticPhase2: " + (Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferStaticPhase2.getBuffer().get(0))));
+            System.out.println("Static false positives: " + (Byte.toUnsignedInt(commandOrganizationStatic.drawCountBufferAfterPhase2.getBuffer().get(0))));
+            int drawCountBufferAnimatedPhase1 = Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAnimatedPhase1.getBuffer().get(0));
+            System.out.println("drawCountBufferAnimatedPhase1: " + drawCountBufferAnimatedPhase1);
+            System.out.println("drawCountBufferAnimatedPhase2: " + (Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAnimatedPhase2.getBuffer().get(0))));
+            System.out.println("Anim   false positives: " + (Byte.toUnsignedInt(commandOrganizationAnimated.drawCountBufferAfterPhase2.getBuffer().get(0))));
+            boolean printBuffers = false;
+            if(printBuffers) {
+                System.out.println("Command buffer static:");
+                Util.printIntBuffer(commandOrganizationStatic.commandBuffer.getBuffer().asIntBuffer(), 5, commandOrganizationStatic.commands.size());
+                System.out.println("Command buffer culled static phase 1:");
+                Util.printIntBuffer(commandOrganizationStatic.commandBufferCulledPhase1.getBuffer().asIntBuffer(), 5, drawCountBufferStaticPhase1);
+                System.out.println("Command buffer culled static phase 2:");
+                Util.printIntBuffer(commandOrganizationStatic.commandBufferCulledPhase2.getBuffer().asIntBuffer(), 5, drawCountBufferStaticPhase2);
+                System.out.print("Static Offsets ");
+                Util.printIntBuffer(commandOrganizationStatic.entityOffsetBuffer.getBuffer().asIntBuffer(), commandOrganizationStatic.commands.size(), 1);
+                System.out.print("Static Offsets culled ");
+                Util.printIntBuffer(commandOrganizationStatic.entityOffsetBufferCulled.getBuffer().asIntBuffer(), commandOrganizationStatic.commands.size(), 1);
+                System.out.println("Command buffer animated:");
+                Util.printIntBuffer(commandOrganizationAnimated.commandBuffer.getBuffer().asIntBuffer(), 5, commandOrganizationAnimated.commands.size());
+                System.out.println("Command buffer culled animated:");
+                Util.printIntBuffer(commandOrganizationAnimated.commandBufferCulledPhase1.getBuffer().asIntBuffer(), 5, drawCountBufferAnimatedPhase1);
+                System.out.print("Animated Offsets ");
+                Util.printIntBuffer(commandOrganizationAnimated.entityOffsetBuffer.getBuffer().asIntBuffer(), commandOrganizationAnimated.commands.size(), 1);
+                System.out.print("Animated Offsets culled ");
+                Util.printIntBuffer(commandOrganizationAnimated.entityOffsetBufferCulled.getBuffer().asIntBuffer(),  commandOrganizationAnimated.commands.size(), 1);
+            }
+        }
+    }
 }
