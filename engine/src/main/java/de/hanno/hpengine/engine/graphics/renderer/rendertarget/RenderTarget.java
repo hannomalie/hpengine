@@ -13,8 +13,13 @@ import java.nio.IntBuffer;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static org.lwjgl.opengl.GL11.GL_RGBA16;
+import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
+import static org.lwjgl.opengl.GL30.GL_R32F;
+import static org.lwjgl.opengl.GL30.GL_RGBA16F;
+import static org.lwjgl.opengl.GL30.GL_RGBA32F;
 
 public class RenderTarget {
 
@@ -78,7 +83,7 @@ public class RenderTarget {
                 int renderedTextureTemp = GL11.glGenTextures();
 
                 GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
-                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
+                GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, getComponentsForFormat(currentAttachment.internalFormat), GL11.GL_FLOAT, (FloatBuffer) null);
 
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, currentAttachment.textureFilter);
@@ -120,6 +125,16 @@ public class RenderTarget {
         });
 
         GraphicsContext.getInstance().clearColor(clearR, clearG, clearB, clearA);
+    }
+
+    private int getComponentsForFormat(int internalFormat) {
+        if(GL_RGBA8 == internalFormat || GL_RGBA16F == internalFormat || GL_RGBA32F == internalFormat) {
+            return GL11.GL_RGBA;
+        } else if(GL_R32F == internalFormat) {
+            return GL11.GL_RED;
+        } else {
+            throw new IllegalArgumentException("Component identifier missing for internalFormat " + internalFormat);
+        }
     }
 
     public void resizeTextures() {

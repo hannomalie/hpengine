@@ -1,6 +1,6 @@
 //include(globals_structs.glsl)
 layout(binding = 0) uniform sampler2D highZ;
-layout(binding = 1, rgba32f) uniform image2D targetImage;
+layout(binding = 1, r32f) uniform image2D targetImage;
 
 layout(std430, binding=3) buffer _entities {
 	Entity entities[2000];
@@ -55,10 +55,10 @@ void main(){
 //        float LOD = ceil( log2( max( ViewSizeX, ViewSizeY ) ) );
 
 	    vec4 occluded;
-	    occluded.r = (textureLod(highZ, vec2(boundingRect[0].xy), LOD).a);
-	    occluded.g = (textureLod(highZ, vec2(boundingRect[1].xy), LOD).a);
-	    occluded.b = (textureLod(highZ, vec2(boundingRect[0].x, boundingRect[1].y), LOD).a);
-	    occluded.a = (textureLod(highZ, vec2(boundingRect[1].x, boundingRect[0].y), LOD).a);
+	    occluded.r = (textureLod(highZ, vec2(boundingRect[0].xy), LOD).r);
+	    occluded.g = (textureLod(highZ, vec2(boundingRect[1].xy), LOD).r);
+	    occluded.b = (textureLod(highZ, vec2(boundingRect[0].x, boundingRect[1].y), LOD).r);
+	    occluded.a = (textureLod(highZ, vec2(boundingRect[1].x, boundingRect[0].y), LOD).r);
 
         float maxDepthSample = max(max(occluded.x, occluded.y), max(occluded.z, occluded.w));
         bool minOccluded = boundingRect[0].z > maxDepthSample;
@@ -68,7 +68,7 @@ void main(){
         vec4 color = allOccluded ? vec4(0,1,0,0) : vec4(1,0,0,0);
         ivec2 texCoordsMin = ivec2(vec2(1280/2, 720/2)*boundingRect[0].xy);
         ivec2 texCoordsMax = ivec2(vec2(1280/2, 720/2)*boundingRect[1].xy);
-//	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).a)));
+//	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
 //	    imageStore(targetImage, texCoordsMax, color);
 
         if(allOccluded)

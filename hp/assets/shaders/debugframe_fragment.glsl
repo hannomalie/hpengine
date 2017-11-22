@@ -14,11 +14,11 @@ float linearizeDepth(in float depth)
 
 void main()
 {
-	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 6);
-	float temp = 10*linearizeDepth(in_color.a);
+	vec4 in_color = textureLod(renderedTexture, pass_TextureCoord, 0);
+	float temp = 1*linearizeDepth(in_color.a);
 //    float finalTemp = temp;
 //	in_color = vec4(in_color.r+finalTemp,in_color.g+finalTemp,in_color.b+finalTemp,1);
-	in_color = vec4(temp,temp,temp,1);
+//	in_color = vec4(temp,temp,temp,1);
 
     out_color = vec4(in_color.rgb,1);
 }

@@ -1,5 +1,5 @@
 layout(binding = 0) uniform sampler2D sourceTexture;
-layout(binding = 1, rgba32f) uniform image2D targetImage;
+layout(binding = 1, r32f) uniform image2D targetImage;
 #define WORK_GROUP_SIZE 8
 layout(local_size_x = WORK_GROUP_SIZE, local_size_y = WORK_GROUP_SIZE) in;
 
@@ -9,12 +9,12 @@ uniform int lastWidth = 0;
 uniform int lastHeight = 0;
 uniform int mipmapTarget = 0;
 
-vec4 getMaxA(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
+vec4 getMaxR(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
 	vec4 fineZ;
-	fineZ.x = (texelFetch(sampler, baseCoords, mipLevelToSampleFrom).a);
-	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(1,0), mipLevelToSampleFrom).a);
-	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(1,1), mipLevelToSampleFrom).a);
-	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,1), mipLevelToSampleFrom).a);
+	fineZ.x = (texelFetch(sampler, baseCoords, mipLevelToSampleFrom).r);
+	fineZ.y = (texelFetch(sampler, baseCoords + ivec2(1,0), mipLevelToSampleFrom).r);
+	fineZ.z = (texelFetch(sampler, baseCoords + ivec2(1,1), mipLevelToSampleFrom).r);
+	fineZ.w = (texelFetch(sampler, baseCoords + ivec2(0,1), mipLevelToSampleFrom).r);
 
 	return fineZ;
 }
@@ -38,38 +38,9 @@ void main(){
     if(mipmapTarget == 0) {
         total = getMaxG(sourceTexture, samplePos, 0);
     } else {
-        total = getMaxA(sourceTexture, samplePos, mipmapSource);
+        total = getMaxR(sourceTexture, samplePos, mipmapSource);
     }
     float maximum = max(max(total.x, total.y), max(total.z, total.w));
-
-//    vec3 extra = vec3(0);
-//    bool samplingOddWidth = (lastWidth % 2 == 0);
-//    bool samplingOddHeight = (lastWidth % 2 == 0);
-//    if(mipmapTarget == 0) {
-//        if(samplingOddWidth && pixelPos.x == width) {
-//            if(samplingOddHeight && pixelPos.y == height) {
-//                extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).g;
-//            }
-//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(1, 0), mipmapSource).g;
-//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(1, -1), mipmapSource).g;
-//        } else if(samplingOddHeight && pixelPos.y == height) {
-//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(0, 1), mipmapSource).g;
-//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).g;
-//        }
-//    }
-//    else {
-//        if(samplingOddWidth && pixelPos.x == width) {
-//            if(samplingOddHeight && pixelPos.y == height) {
-//                extra.z = texelFetch(sourceTexture, samplePos + ivec2( 1, 1), mipmapSource).a;
-//            }
-//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(1, 0), mipmapSource).a;
-//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(1, -1), mipmapSource).a;
-//        } else if(samplingOddHeight && pixelPos.y == height) {
-//            extra.x = texelFetch(sourceTexture, samplePos + ivec2(0, 1), mipmapSource).a;
-//            extra.y = texelFetch(sourceTexture, samplePos + ivec2(-1, 1), mipmapSource).a;
-//        }
-//    }
-//    maximum = max(max(maximum, extra.z), max(extra.x, extra.y));
 
 //Thank you!
 //http://rastergrid.com/blog/2010/10/hierarchical-z-map-based-occlusion-culling/
@@ -92,6 +63,6 @@ void main(){
   }
 
 
-	imageStore(targetImage, pixelPos, vec4(imageLoad(targetImage, pixelPos).rg,maximum, maximum));
+	imageStore(targetImage, pixelPos, vec4(maximum));
 //	imageStore(targetImage, pixelPos, vec4(0,0,0,maximum));
 }

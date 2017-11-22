@@ -289,7 +289,7 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
     }
 
     companion object {
-        @JvmField var HIGHZ_FORMAT = GL30.GL_RGBA32F
+        @JvmField var HIGHZ_FORMAT = GL30.GL_R32F
     }
 
     private enum class CullingPhase {
