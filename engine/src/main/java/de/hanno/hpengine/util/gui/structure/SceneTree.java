@@ -2,9 +2,12 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
+import com.alee.utils.swing.StateProvider;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.util.Parentable;
 import de.hanno.hpengine.util.gui.SetVisibilityCheckStateListener;
 import de.hanno.hpengine.util.gui.DebugFrame;
 import de.hanno.hpengine.util.gui.SetSelectedListener;
@@ -13,10 +16,7 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -28,8 +28,8 @@ public class SceneTree extends WebCheckBoxTree {
 
     public SceneTree() {
         super(new DefaultMutableTreeNode("Scene"));
-        addOctreeSceneObjects();
         addCheckStateChangeListener(new SetVisibilityCheckStateListener());
+        addOctreeSceneObjects();
         Engine.getEventBus().register(this);
     }
 
@@ -66,6 +66,12 @@ public class SceneTree extends WebCheckBoxTree {
                 Component c = super.getTreeCellRendererComponent(tree, value, arg2, arg3, arg4, arg5, arg6);
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                Optional<Entity> entityOption = Engine.getInstance().getScene().getEntity(node.toString());
+                if(entityOption.isPresent()) {
+                    if(entityOption.get().isVisible()) {
+                        checkBox.setChecked();
+                    }
+                }
                 if (matchesFilter(node)) {
                     c.setForeground(Color.BLACK);
                     c.setVisible(false);
@@ -115,8 +121,7 @@ public class SceneTree extends WebCheckBoxTree {
             parent.add(current);
         }
 
-
-        for(Entity entity : rootEntities.stream().filter(e -> e.hasParent()).collect(Collectors.toList())) {
+        for(Entity entity : rootEntities.stream().filter(Parentable::hasParent).collect(Collectors.toList())) {
             DefaultMutableTreeNode current = new DefaultMutableTreeNode(entity);
             rootEntityMappings.get(entity.getParent()).add(current);
         }

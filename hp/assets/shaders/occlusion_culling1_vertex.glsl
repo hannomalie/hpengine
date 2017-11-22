@@ -21,9 +21,6 @@ layout(std430, binding=7) buffer _drawCommandsTarget {
 layout(std430, binding=8) buffer _offsetsTarget {
 	int offsetsTarget[1000];
 };
-layout(std430, binding=9) buffer _drawCountAfterPhase1 {
-	uint drawCountAfterPhase1;
-};
 
 uniform int maxDrawCommands = 0;
 uniform mat4 viewProjectionMatrix;
@@ -84,7 +81,6 @@ void main(){
         }
         else
         {
-            atomicAdd(drawCountAfterPhase1, 1);
             if(sourceCommand.instanceCount > 1){
                 entities[offset].visible = 1; // TODO: Question this
             } else {

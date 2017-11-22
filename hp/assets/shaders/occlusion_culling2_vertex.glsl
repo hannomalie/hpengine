@@ -25,9 +25,6 @@ layout(std430, binding=7) buffer _drawCommandsTarget {
 layout(std430, binding=8) buffer _offsetsTarget {
 	int offsetsTarget[1000];
 };
-layout(std430, binding=10) buffer _drawCountAfterPhase2 {
-	uint drawCountAfterPhase2;
-};
 
 uniform int maxDrawCommands = 0;
 uniform mat4 viewProjectionMatrix;
@@ -82,7 +79,6 @@ void main(){
             if(!allOccluded){
 //                imageStore(targetImage, ivec2(vec2(1280/2, 720/2)*boundingRect[0].xy), color);
 //                imageStore(targetImage, ivec2(vec2(1280/2, 720/2)*boundingRect[1].xy), color);
-                atomicAdd(drawCountAfterPhase2, 1);
                 if(sourceCommand.instanceCount > 1){
                     entities[offset].visible = 1;
                 } else {

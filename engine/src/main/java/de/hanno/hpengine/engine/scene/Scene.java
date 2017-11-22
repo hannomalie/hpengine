@@ -319,7 +319,7 @@ public class Scene implements LifeCycle, Serializable {
 	}
 	public Optional<Entity> getEntity(String name) {
 		List<Entity> candidates = getEntities().stream().filter(e -> e.getName().equals(name)).collect(Collectors.toList());
-		return candidates.size() > 0 ? Optional.of(candidates.get(0)) : Optional.of(null);
+		return candidates.size() > 0 ? Optional.of(candidates.get(0)) : Optional.ofNullable(null);
 	}
 	public boolean isInitialized() {
 		return initialized;

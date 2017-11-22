@@ -19,13 +19,8 @@ public class CommandOrganization {
     IntArrayList offsets = new IntArrayList(10000);
     AtomicCounterBuffer drawCountBufferStatic = new AtomicCounterBuffer(1);
 
-    AtomicCounterBuffer drawCountBufferStaticPhase1 = new AtomicCounterBuffer(1);
-    AtomicCounterBuffer drawCountBufferAnimatedPhase1 = new AtomicCounterBuffer(1);
-    AtomicCounterBuffer drawCountBufferStaticPhase2 = new AtomicCounterBuffer(1);
-    AtomicCounterBuffer drawCountBufferAnimatedPhase2 = new AtomicCounterBuffer(1);
-
-    AtomicCounterBuffer drawCountBufferAfterPhase1 = new AtomicCounterBuffer(1);
-    AtomicCounterBuffer drawCountBufferAfterPhase2 = new AtomicCounterBuffer(1);
+    AtomicCounterBuffer drawCountBufferPhase1 = new AtomicCounterBuffer(1);
+    AtomicCounterBuffer drawCountBufferPhase2 = new AtomicCounterBuffer(1);
 
     public CommandOrganization() {
     }

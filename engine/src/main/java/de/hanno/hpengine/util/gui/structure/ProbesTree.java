@@ -27,7 +27,7 @@ public class ProbesTree extends WebCheckBoxTree {
         model.reload();
         revalidate();
         repaint();
-        LOGGER.info("Reloaded de.hanno.hpengine.scene tree");
+        LOGGER.info("Reloaded scene tree");
     }
 
 

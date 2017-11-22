@@ -33,7 +33,7 @@ public final class Config {
         }
 	}
 
-	public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
+    public static void populateConfigurationWithProperties(Config instance, InputStream inputStream) {
         Properties properties = new Properties();
         try {
             properties.load(inputStream);
@@ -115,6 +115,8 @@ public final class Config {
 	private volatile boolean debugframeEnabled = false;
 	@Toggable(group = "Debug")
 	private volatile boolean drawlightsEnabled = false;
+    @Toggable(group = "Debug")
+    private volatile boolean printPipelineDebugOutput = false;
 	@Toggable(group = "Quality settings")
 	private volatile boolean drawProbes = true;
 	@Adjustable(group = "Debug")
@@ -391,9 +393,12 @@ public final class Config {
 		this.debugframeEnabled = debugframeEnabled;
 	}
 
-	public boolean isDrawlightsEnabled() {
-		return drawlightsEnabled;
-	}
+    public boolean isDrawlightsEnabled() {
+        return drawlightsEnabled;
+    }
+    public boolean isPrintPipelineDebugOutput() {
+        return printPipelineDebugOutput;
+    }
 
 	public void setDrawlightsEnabled(boolean drawlightsEnabled) {
 		this.drawlightsEnabled = drawlightsEnabled;
