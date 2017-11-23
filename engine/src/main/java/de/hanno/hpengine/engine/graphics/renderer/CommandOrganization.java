@@ -12,6 +12,9 @@ public class CommandOrganization {
     protected final List<CommandBuffer.DrawElementsIndirectCommand> commands = new ArrayList<>();
     protected final IndexBuffer entityOffsetBuffer = new IndexBuffer(BufferUtils.createIntBuffer(10000));
     protected final IndexBuffer entityOffsetBufferCulled = new IndexBuffer(BufferUtils.createIntBuffer(10000));
+
+    protected final IndexBuffer visibilityBuffer = new IndexBuffer(BufferUtils.createIntBuffer(10000));
+
     final int commandBufferCapacityInBytes = 10000*new CommandBuffer.DrawElementsIndirectCommand(0,0,0,0,0,0).getBytesPerObject();
     protected final CommandBuffer commandBuffer = new CommandBuffer(commandBufferCapacityInBytes);
     protected final CommandBuffer commandBufferCulledPhase1 = new CommandBuffer(commandBufferCapacityInBytes);

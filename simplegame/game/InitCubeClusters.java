@@ -1,4 +1,7 @@
+import de.hanno.hpengine.engine.component.ModelComponent;
+import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.DirectoryManager;
@@ -14,7 +17,10 @@ import de.hanno.hpengine.util.ressources.CodeSource;
 import org.joml.Vector3f;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class InitCubeClusters implements LifeCycle {
 
@@ -47,7 +53,10 @@ public class InitCubeClusters implements LifeCycle {
                                 Transform trafo = new Transform();
                                 float randomFloat = random.nextFloat() - 0.5f;
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
-                                cluster.add(new Instance(trafo, MaterialFactory.getInstance().getMaterialsAsList().get((x+y+z+3*count)%10), new AnimationController(0,0), new SimpleSpatial(){
+
+                                ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                                List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
+                                cluster.add(new Instance(trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {
                                         return current.getMinMax();

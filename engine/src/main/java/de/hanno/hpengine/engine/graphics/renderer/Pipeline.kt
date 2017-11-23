@@ -184,6 +184,7 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
             bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
             bindShaderStorageBuffer(7, targetCommandBuffer)
             bindShaderStorageBuffer(8, commandOrganization.entityOffsetBufferCulled)
+            bindShaderStorageBuffer(9, commandOrganization.visibilityBuffer)
             setUniform("maxDrawCommands", commandOrganization.commands.size)
             setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.viewProjectionMatrixAsBuffer)
             setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)

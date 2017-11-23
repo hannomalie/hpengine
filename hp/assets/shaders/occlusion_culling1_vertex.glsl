@@ -22,6 +22,10 @@ layout(std430, binding=8) buffer _offsetsTarget {
 	int offsetsTarget[1000];
 };
 
+layout(std430, binding=9) buffer _visibility {
+	int visibility[1000];
+};
+
 uniform int maxDrawCommands = 0;
 uniform mat4 viewProjectionMatrix;
 uniform mat4 viewMatrix;
@@ -71,21 +75,6 @@ void main(){
 //	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
 //	    imageStore(targetImage, texCoordsMax, color);
 
-        if(allOccluded)
-        {
-            if(sourceCommand.instanceCount > 1){
-                entities[offset].visible = 0; // TODO: Question this
-            } else {
-                entities[offset].visible = 0;
-            }
-        }
-        else
-        {
-            if(sourceCommand.instanceCount > 1){
-                entities[offset].visible = 1; // TODO: Question this
-            } else {
-                entities[offset].visible = 1;
-            }
-        }
+        visibility[indexBefore] = allOccluded ? 0 : 1;
 	}
 }

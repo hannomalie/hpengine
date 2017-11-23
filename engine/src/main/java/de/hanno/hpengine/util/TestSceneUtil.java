@@ -77,9 +77,9 @@ public class TestSceneUtil {
 //			StopWatch.getInstance().start("Load Sponza");
 //			List<StaticMesh> sponza = renderer.getOBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/sponza.obj"));
 //			for (StaticMesh model : sponza) {
-////				model.setMaterial(mirror);
-////				if(model.getMaterial().getName().contains("fabric")) {
-////					model.setMaterial(mirror);
+////				model.setMaterials(mirror);
+////				if(model.getMaterials().getName().contains("fabric")) {
+////					model.setMaterials(mirror);
 ////				}
 //				Entity entity = getEntityFactory().getEntity(new Vector3f(0,-21f,0), model);
 ////				physicsFactory.addMeshPhysicsComponent(entity, 0);

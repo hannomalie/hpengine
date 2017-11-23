@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
@@ -330,7 +331,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterial());
+                    int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterials().get(meshIndex));
                     putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), cluster.getMinMaxWorld());
                 }
             }
@@ -471,7 +472,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		if(getParent() != null) {
 			instanceTransform.setParent(getParent());
 		}
-		Instance instance = new Instance(instanceTransform, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial() {
+		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
+		Instance instance = new Instance(instanceTransform, materials, new AnimationController(0, 0), new SimpleSpatial() {
 			@Override
 			public Vector3f[] getMinMax() {
 				return spatial.getMinMax();
@@ -487,14 +490,17 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		recalculateInstances();
 	}
 
-	public void addInstanceTransforms(List<Transform> instances) {
+	public void addInstanceTransforms(List<Transform<? extends Transform<?>>> instances) {
         if(getParent() != null) {
             for(Transform instance : instances) {
                 instance.setParent(getParent());
             }
         }
 		Cluster firstCluster = getOrCreateFirstCluster();
-		firstCluster.addAll(instances.stream().map(trafo -> new Instance(trafo, getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial(), new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList()));
+		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
+		List<Instance> collect = instances.stream().map(trafo -> new Instance(trafo, materials, new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList());
+		firstCluster.addAll(collect);
 		recalculateInstances();
 		Engine.getEventBus().post(new EntityAddedEvent());
     }

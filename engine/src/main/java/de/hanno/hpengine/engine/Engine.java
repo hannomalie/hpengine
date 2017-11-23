@@ -334,7 +334,7 @@ public class Engine implements HighFrequencyCommandProvider {
         if(renderState == null) {return;}
         renderState.addCommand(((renderStateX) -> {
             if(event.getMaterial().isPresent()) {
-//                renderStateX.bufferMaterial(event.getMaterial().get());
+//                renderStateX.bufferMaterial(event.getMaterials().get());
                 renderStateX.bufferMaterials();
             } else {
                 renderStateX.bufferMaterials();

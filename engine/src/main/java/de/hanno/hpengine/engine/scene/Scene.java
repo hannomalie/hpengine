@@ -413,7 +413,7 @@ public class Scene implements LifeCycle, Serializable {
 					Cluster cluster = entity.getClusters().get(clusterIndex);
 					Vector3f[] clusterMinMax = cluster.getMinMax();
 					boolean clusterIsInFrustum = camera.getFrustum().sphereInFrustum(cluster.getCenter().x, cluster.getCenter().y, cluster.getCenter().z, cluster.getBoundingSphereRadius());
-					batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, cluster.size(), clusterIsInFrustum, entity.getUpdate(), clusterMinMax[0], clusterMinMax[1], clusterMinMax[0], clusterMinMax[1], cluster.getCenter(), cluster.getBoundingSphereRadius(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+					batch.init(firstpassDefaultProgram, meshBufferIndex+1, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, cluster.size(), clusterIsInFrustum, entity.getUpdate(), clusterMinMax[0], clusterMinMax[1], clusterMinMax[0], clusterMinMax[1], cluster.getCenter(), cluster.getBoundingSphereRadius(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
 					addToRenderStateRunnable.accept(batch);
 					meshBufferIndex += cluster.size();
 				}

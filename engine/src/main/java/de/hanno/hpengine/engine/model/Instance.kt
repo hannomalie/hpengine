@@ -11,7 +11,7 @@ import java.util.*
 
 open class Instance
     @JvmOverloads constructor(transform: Transform<out Transform<*>> = Transform(),
-                              var material: Material? = MaterialFactory.getInstance().defaultMaterial,
+                              var materials: List<Material> = listOf(),
                               val animationController: AnimationController = AnimationController(0, 0f),
                               open val spatial: Spatial = SimpleSpatial())
     : Transform<Transform<*>>(), LifeCycle, Spatial by spatial {

@@ -376,9 +376,9 @@ public class LightFactory {
 			for (RenderBatch e : renderState.getRenderBatchesStatic()) {
 //				TODO: Use model component index here
 //				areaShadowPassProgram.setUniformAsMatrix4("modelMatrix", e.getModelMatrixAsBuffer());
-//				modelComponent.getMaterial().setTexturesActive(areaShadowPassProgram);
-//				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
-//				areaShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
+//				modelComponent.getMaterials().setTexturesActive(areaShadowPassProgram);
+//				areaShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterials().hasDiffuseMap());
+//				areaShadowPassProgram.setUniform("color", modelComponent.getMaterials().getDiffuse());
 
 				DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, areaShadowPassProgram, e.isVisible());
 			}

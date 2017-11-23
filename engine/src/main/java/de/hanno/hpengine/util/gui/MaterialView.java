@@ -77,7 +77,7 @@ public class MaterialView extends WebPanel {
                         toSave = result.material;
 						showNotification(NotificationIcon.plus, "Material changed");
 					} else {
-						showNotification(NotificationIcon.error, "Not able to change material");
+						showNotification(NotificationIcon.error, "Not able to change materials");
 					}
         		} catch (Exception e1) {
         			e1.printStackTrace();
@@ -195,26 +195,26 @@ public class MaterialView extends WebPanel {
 			}
 		}));
 
-//        webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", material.getSpecular()) {
+//        webComponentPanel.addElement(new WebFormattedVec3Field("SpecularColor", materials.getSpecular()) {
 //			@Override
 //			public void onValueChange(Vector3f current) {
-//				material.setSpecular(current);
+//				materials.setSpecular(current);
 //			}
 //		});
 //        webComponentPanel.addElement(new ColorChooserButton("SpecularColor", new ColorChooserFrame() {
 //			@Override
 //			public void onColorChange(Vector3f color) {
-//				material.setSpecular(color);
+//				materials.setSpecular(color);
 //			}
 //		}));
 //        {
 //	        LimitedWebFormattedTextField specularExponentInput = new LimitedWebFormattedTextField(1, 10000) {
 //				@Override
 //				public void onChange(float currentValue) {
-//					material.setSpecularCoefficient(currentValue);
+//					materials.setSpecularCoefficient(currentValue);
 //				}
 //			};
-//			specularExponentInput.setValue(material.getSpecularCoefficient());
+//			specularExponentInput.setValue(materials.getSpecularCoefficient());
 //	        GroupPanel groupPanel = new GroupPanel ( 4, new WebLabel("Specular Power"), specularExponentInput );
 //	        TooltipManager.setTooltip ( groupPanel, "1 soft, 100 hard highlights", TooltipWay.up );
 //	        webComponentPanel.addElement(groupPanel);
@@ -409,11 +409,11 @@ public class MaterialView extends WebPanel {
 				init(result.material);
 				Engine.getEventBus().post(new MaterialChangedEvent(material));
 			} else {
-				showNotification(NotificationIcon.error, "Not able to change material");
+				showNotification(NotificationIcon.error, "Not able to change materials");
 			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
-			showNotification(NotificationIcon.error, "Not able to change material");
+			showNotification(NotificationIcon.error, "Not able to change materials");
 		}
 	}
 

@@ -15,7 +15,6 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
-import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
@@ -44,6 +43,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class EntityView extends WebPanel {
 
@@ -131,8 +131,33 @@ public class EntityView extends WebPanel {
 
     private void addInstancesPanel(Entity entity, WebTabbedPane tabbedPane) {
         List<Component> instancesPanels = new ArrayList<>();
-        for(Transform instanceTrafo : entity.getInstances()) {
-            instancesPanels.add(new TransformablePanel(instanceTrafo));
+        for(int instanceIndex = 0; instanceIndex < entity.getInstances().size(); instanceIndex++) {
+            Instance currentInstance = entity.getInstances().get(instanceIndex);
+
+            TransformablePanel transformablePanel = new TransformablePanel(currentInstance);
+            WebComponentPanel materialSelectionPanel = new WebComponentPanel();
+            materialSelectionPanel.setElementMargin(4);
+            WebLabel meshName = new WebLabel("Instance"+instanceIndex);
+            materialSelectionPanel.addElement(meshName);
+
+            Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+            List materials = new ArrayList();
+            if(componentOption.isPresent()) {
+                for(int i = 0; i < componentOption.get().getModel().getMeshes().size(); i++) {
+                    materials.add(((Mesh)(componentOption.get().getModel().getMeshes().get(i))).getMaterial());
+                    int finalI = i;
+                    addMaterialSelect(materialSelectionPanel, e -> {
+                        WebComboBox cb = (WebComboBox) e.getSource();
+                        Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+                        materials.remove(materials.get(finalI));
+                        materials.add(finalI, selectedMaterial);
+                        currentInstance.setMaterials(materials);
+                        Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
+                    }, currentInstance.getMaterials().get(finalI));
+                }
+            }
+
+            instancesPanels.add(new GroupPanel(transformablePanel, materialSelectionPanel));
         }
         WebComponentPanel buttonPanel = new WebComponentPanel();
         buttonPanel.setElementMargin(4);
@@ -141,15 +166,17 @@ public class EntityView extends WebPanel {
             Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
             if(componentOption.isPresent()) {
                 Instance instance;
+                List<Material> materials = componentOption.get().getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
                 if(componentOption.get().isStatic()) {
-                    instance = new Instance(new SimpleTransform(), componentOption.get().getMaterial(), new AnimationController(0,0), new SimpleSpatial() {
+
+                    instance = new Instance(new SimpleTransform(), materials, new AnimationController(0,0), new SimpleSpatial() {
                         @Override
                         public Vector3f[] getMinMax() {
                             return componentOption.get().getMinMax();
                         }
                     });
                 } else {
-                    instance = new Instance(new SimpleTransform(), componentOption.get().getMaterial(), componentOption.get().getAnimationController(), new SimpleSpatial() {
+                    instance = new Instance(new SimpleTransform(), materials, componentOption.get().getAnimationController(), new SimpleSpatial() {
                         float radius = componentOption.get().getBoundingSphereRadius();
                         public Vector3f[] minMax = { new Vector3f(-radius /2f,-radius /2f,-radius /2f), new Vector3f(radius /2f,radius /2f,radius /2f)};
                         @Override
@@ -333,7 +360,7 @@ public class EntityView extends WebPanel {
             webComponentPanel.addElement(materialSelect);
 
         } catch (NullPointerException e) {
-            Logger.getGlobal().info("No material selection added for " + entity.getClass() + " " +entity.getName());
+            Logger.getGlobal().info("No materials selection added for " + entity.getClass() + " " +entity.getName());
         }
     }
 

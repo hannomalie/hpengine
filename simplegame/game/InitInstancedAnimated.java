@@ -3,10 +3,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.Cluster;
-import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.Instance;
-import de.hanno.hpengine.engine.model.Model;
+import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -15,7 +12,10 @@ import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class InitInstancedAnimated implements LifeCycle {
 
@@ -48,8 +48,10 @@ public class InitInstancedAnimated implements LifeCycle {
                                 Transform trafo = new Transform();
                                 float randomFloat = random.nextFloat() - 0.5f;
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
-                                Material material = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial();//MaterialFactory.getInstance().getMaterialsAsList().get((x + y + z + 3 * count) % 10);
-                                cluster.add(new Instance(trafo, material, new AnimationController(120,24 + randomFloat*7), new SimpleSpatial(){
+
+                                ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                                List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
+                                cluster.add(new Instance(trafo, materials, new AnimationController(120,24 + randomFloat*7), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {
                                         return current.getMinMax();

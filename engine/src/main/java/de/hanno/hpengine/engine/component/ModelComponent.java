@@ -307,4 +307,8 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public boolean isInvertTexCoordY() {
         return model.isInvertTexCoordY();
     }
+
+    public List<Material> getMaterials() {
+        return getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
+    }
 }

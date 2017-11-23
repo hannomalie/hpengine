@@ -671,14 +671,14 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind();
 //        probeFirstpassProgram.setUniform("showContent", Config.getInstance().DEBUGDRAW_PROBES_WITH_CONTENT);
 //
-//        Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse());
+//        Vector3f oldMaterialColor = new Vector3f(probeBoxEntity.getComponent(ModelComponent.class).getMaterials().getDiffuse());
 //
 //        for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
 //            Transform transform = new Transform();
 //            transform.setPosition(probe.getCenter());
 //            transform.setScale(probe.getSize());
 //            Vector3f colorHelper = probe.getDebugColor();
-//            probeBoxEntity.getComponent(ModelComponent.class).getMaterial().setDiffuse(colorHelper);
+//            probeBoxEntity.getComponent(ModelComponent.class).getMaterials().setDiffuse(colorHelper);
 //            probeBoxEntity.setTransform(transform);
 //            probeBoxEntity.update(0);
 //            probeFirstpassProgram.setUniform("probeCenter", probe.getCenter());
@@ -686,9 +686,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //            probeBoxEntity.getComponent(ModelComponent.class).draw(extract, de.hanno.hpengine.camera, probeBoxEntity.getModelMatrixAsBuffer(), -1);
 //        }
 //
-//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().x = oldMaterialColor.x;
-//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().y = oldMaterialColor.y;
-//        probeBoxEntity.getComponent(ModelComponent.class).getMaterial().getDiffuse().z = oldMaterialColor.z;
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterials().getDiffuse().x = oldMaterialColor.x;
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterials().getDiffuse().y = oldMaterialColor.y;
+//        probeBoxEntity.getComponent(ModelComponent.class).getMaterials().getDiffuse().z = oldMaterialColor.z;
 //
 //    }
 

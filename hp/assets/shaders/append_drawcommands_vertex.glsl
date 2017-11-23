@@ -22,8 +22,9 @@ layout(std430, binding=7) buffer _drawCommandsTarget {
 layout(std430, binding=8) buffer _offsetsTarget {
 	int offsetsTarget[1000];
 };
-layout(std430, binding=9) buffer _drawCountAfterPhase1 {
-	uint drawCountAfterPhase1;
+
+layout(std430, binding=9) buffer _visibility {
+	int visibility[1000];
 };
 
 uniform int maxDrawCommands;
@@ -35,14 +36,9 @@ void main()
     if(indexBefore < maxDrawCommands) {
         int offset = offsetsSource[indexBefore];
         DrawCommand sourceCommand = drawCommandsSource[indexBefore];
-        Entity entity;
-        if(sourceCommand.instanceCount > 1){
-            entity = entities[offset]; // TODO: Question this
-        } else {
-            entity = entities[offset];
-        }
+        bool visible = visibility[offset] == 1;
 
-        if(entity.visible > 0) {
+        if(visible) {
             uint indexAfter = atomicAdd(drawCount, 1);
             drawCommandsTarget[indexAfter] = sourceCommand;
             offsetsTarget[indexAfter] = offset;
