@@ -55,7 +55,7 @@ public class InitCubeClusters implements LifeCycle {
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
 
                                 ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-                                List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
+                                List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
                                 cluster.add(new Instance(trafo, materials, new AnimationController(0,0), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {

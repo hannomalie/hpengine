@@ -36,9 +36,10 @@ void main()
     if(indexBefore < maxDrawCommands) {
         int offset = offsetsSource[indexBefore];
         DrawCommand sourceCommand = drawCommandsSource[indexBefore];
-        bool visible = visibility[offset] == 1;
+        bool visible = visibility[indexBefore] == 1;
 
-        if(visible) {
+        if(visible)
+        {
             uint indexAfter = atomicAdd(drawCount, 1);
             drawCommandsTarget[indexAfter] = sourceCommand;
             offsetsTarget[indexAfter] = offset;

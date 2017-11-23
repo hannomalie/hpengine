@@ -85,6 +85,13 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
             }
 
             cullAndRender("Cull&Render Phase1", ONE)
+            if(Config.getInstance().isPrintPipelineDebugOutput) {
+                glFinish()
+                print("Visibilities Static Phase 1")
+                printIntBuffer(commandOrganizationStatic.visibilityBuffer.buffer.asIntBuffer(), commandOrganizationStatic.commands.size, 1)
+                print("Visibilities Animated Phase 1")
+                printIntBuffer(commandOrganizationAnimated.visibilityBuffer.buffer.asIntBuffer(), commandOrganizationAnimated.commands.size, 1)
+            }
             cullAndRender("Cull&Render Phase2", TWO)
 
             printDebugOutput(drawDescriptionStatic.commandOrganization, drawDescriptionAnimated.commandOrganization)
@@ -133,6 +140,9 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
         val appendProgram = ProgramFactory.getInstance().appendDrawCommandProgram
         with(commandOrganization) {
             with(appendProgram) {
+                commandBufferCulledPhase1.sizeInBytes = commandBuffer.sizeInBytes
+                commandBufferCulledPhase2.sizeInBytes = commandBuffer.sizeInBytes
+                visibilityBuffer.sizeInBytes = commands.map { it.primCount }.reduce({a, b -> a+b}) * java.lang.Integer.BYTES
                 use()
                 bindShaderStorageBuffer(2, drawCountBuffer)
                 bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
@@ -140,9 +150,8 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
                 bindShaderStorageBuffer(5, commandBuffer)
                 bindShaderStorageBuffer(7, targetCommandBuffer)
                 bindShaderStorageBuffer(8, entityOffsetBufferCulled)
+                bindShaderStorageBuffer(9, visibilityBuffer)
                 setUniform("maxDrawCommands", commands.size)
-                commandBufferCulledPhase1.sizeInBytes = commandBuffer.sizeInBytes
-                commandBufferCulledPhase2.sizeInBytes = commandBuffer.sizeInBytes
                 GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (commands.size + 2) / 3 * 3, 1)
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT or GL_TEXTURE_FETCH_BARRIER_BIT or GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL_COMMAND_BARRIER_BIT)
             }
@@ -281,6 +290,8 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
                         printIntBuffer(entityOffsetBuffer.buffer.asIntBuffer(), commands.size, 1)
                         print("Offsets culled ")
                         printIntBuffer(entityOffsetBufferCulled.buffer.asIntBuffer(), commands.size, 1)
+                        print("Visibilities ")
+                        printIntBuffer(visibilityBuffer.buffer.asIntBuffer(), commands.size, 1)
                     }
                 }
             }

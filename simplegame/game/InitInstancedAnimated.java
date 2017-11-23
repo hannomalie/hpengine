@@ -10,6 +10,7 @@ import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,8 +22,8 @@ public class InitInstancedAnimated implements LifeCycle {
 
     private boolean initialized;
 
-    int maxDistance = 175;
-    int clusterDistance = 4*maxDistance;
+    int maxDistance = 475;
+    int clusterDistance = 3*maxDistance;
     Vector3f[] clusterLocations = {new Vector3f(clusterDistance, 0, clusterDistance),
             new Vector3f(clusterDistance, 0, -clusterDistance),
             new Vector3f(-clusterDistance, 0, -clusterDistance),
@@ -41,13 +42,15 @@ public class InitInstancedAnimated implements LifeCycle {
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 2;
+                    int count = 6;
                     for(int x = -count; x < count; x++) {
                         for(int y = -count; y < count; y++) {
                             for(int z = -count; z < count; z++) {
                                 Transform trafo = new Transform();
                                 float randomFloat = random.nextFloat() - 0.5f;
-                                trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,randomFloat* maxDistance *y,randomFloat* maxDistance *z)));
+                                trafo.rotate(new Vector3f(1,0,0), -90);
+                                trafo.rotate(new Vector3f(0,0,1), (int)(random.nextFloat()*360f));
+                                trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,0,randomFloat* maxDistance *z)));
 
                                 ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
