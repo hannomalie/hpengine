@@ -5,13 +5,14 @@ import de.hanno.hpengine.util.Util
 import org.joml.Matrix4f
 import org.joml.Vector3f
 import java.io.Serializable
+import java.lang.Float.MAX_VALUE
 
-val min = Vector3f(java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE, java.lang.Float.MAX_VALUE)
-val max = Vector3f(-java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE, -java.lang.Float.MAX_VALUE)
+val min = Vector3f(MAX_VALUE, MAX_VALUE, MAX_VALUE)
+val max = Vector3f(-MAX_VALUE, -MAX_VALUE, -MAX_VALUE)
 
 abstract class AbstractSpatial : Serializable, Spatial {
-    val centerWorld = Vector3f()
-    protected val centerProperty = Vector3f()
+    protected val centerWorldProperty = Vector3f()
+
     abstract protected val minMaxProperty : Array<Vector3f>
     open val minMaxWorldProperty = arrayOf(Vector3f(min),Vector3f(max))
 
@@ -19,22 +20,19 @@ abstract class AbstractSpatial : Serializable, Spatial {
     @Transient private var lastUsedTransformationMatrix: Matrix4f? = null
 
     override fun getCenterWorld(transform: Transform<*>): Vector3f {
-        if (!isClean(transform)) {
-            recalculate(transform)
-        }
+        recalculateIfNotClean(transform)
         return centerWorld
     }
-    override fun getCenter() = centerProperty
+    override fun getCenterWorld() = centerWorldProperty
 
     override fun getMinMaxWorld(): Array<Vector3f> = minMaxWorldProperty
 
-    protected fun isClean(transform: Transform<*>): Boolean {
+    protected open fun isClean(transform: Transform<*>): Boolean {
         return /*transform == null || */(lastUsedTransformationMatrix != null && Util.equals(transform, lastUsedTransformationMatrix))
     }
 
     private fun calculateCenters() {
         calculateCenter(centerWorld, minMaxWorldProperty)
-        calculateCenter(center, minMax)
     }
 
     fun calculateCenter(target: Vector3f, minMax: Array<Vector3f>) {
@@ -44,9 +42,7 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
 
     override fun getMinMaxWorld(transform: Transform<*>): Array<Vector3f> {
-        if (!isClean(transform)) {
-            recalculate(transform)
-        }
+        recalculateIfNotClean(transform)
         return minMaxWorldProperty
     }
 
@@ -64,10 +60,14 @@ abstract class AbstractSpatial : Serializable, Spatial {
     }
 
     override fun getBoundingSphereRadius(transform: Transform<*>): Float {
+        recalculateIfNotClean(transform)
+        return boundingSphereRadiusProperty
+    }
+
+    protected fun recalculateIfNotClean(transform: Transform<*>) {
         if (!isClean(transform)) {
             recalculate(transform)
         }
-        return boundingSphereRadiusProperty
     }
 
     fun setLastUsedTransformationMatrix(lastUsedTransformationMatrix: Matrix4f) {

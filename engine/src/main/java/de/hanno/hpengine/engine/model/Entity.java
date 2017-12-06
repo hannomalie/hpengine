@@ -37,7 +37,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		public Vector3f[] getMinMax() {
 			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
 				ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-				return modelComponent.getMinMax();
+				return modelComponent.getMinMax(modelComponent.getAnimationController());
 			} else {
 				return super.getMinMax();
 			}
@@ -332,7 +332,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
                     int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterials().get(meshIndex));
-                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), cluster.getMinMaxWorld());
+                    putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
                 }
             }
 
@@ -474,7 +474,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		}
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
-		Instance instance = new Instance(instanceTransform, materials, new AnimationController(0, 0), new SimpleSpatial() {
+		Instance instance = new Instance(this, instanceTransform, materials, new AnimationController(0, 0), new SimpleSpatial() {
 			@Override
 			public Vector3f[] getMinMax() {
 				return spatial.getMinMax();
@@ -499,7 +499,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		Cluster firstCluster = getOrCreateFirstCluster();
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
-		List<Instance> collect = instances.stream().map(trafo -> new Instance(trafo, materials, new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList());
+		List<Instance> collect = instances.stream().map(trafo -> new Instance(this, trafo, materials, new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList());
 		firstCluster.addAll(collect);
 		recalculateInstances();
 		Engine.getEventBus().post(new EntityAddedEvent());
@@ -528,4 +528,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return firstCluster;
 	}
 
+	public List<Vector3f[]> getInstanceMinMaxWorlds() {
+		return getInstances().stream().map(Instance::getMinMaxWorld).collect(Collectors.toList());
+	}
 }

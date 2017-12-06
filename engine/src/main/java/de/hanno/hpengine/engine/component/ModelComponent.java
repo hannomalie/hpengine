@@ -230,7 +230,18 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model.getMinMax(transform);
     }
     public Vector3f[] getMinMax() {
+        if(!isStatic()) {
+            AnimationController animationController = getAnimationController();
+            return getMinMax(animationController);
+        }
         return model.getMinMax();
+    }
+
+    public Vector3f[] getMinMax(AnimationController animationController) {
+        if(isStatic() || animationController == null) {
+            return getModel().getMinMax();
+        }
+        return getModel().getMinMax(null, animationController);
     }
 
     public Model getModel() {

@@ -169,14 +169,14 @@ public class EntityView extends WebPanel {
                 List<Material> materials = componentOption.get().getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
                 if(componentOption.get().isStatic()) {
 
-                    instance = new Instance(new SimpleTransform(), materials, new AnimationController(0,0), new SimpleSpatial() {
+                    instance = new Instance(entity, new SimpleTransform(), materials, new AnimationController(0,0), new SimpleSpatial() {
                         @Override
                         public Vector3f[] getMinMax() {
                             return componentOption.get().getMinMax();
                         }
                     });
                 } else {
-                    instance = new Instance(new SimpleTransform(), materials, componentOption.get().getAnimationController(), new SimpleSpatial() {
+                    instance = new Instance(entity, new SimpleTransform(), materials, componentOption.get().getAnimationController(), new SimpleSpatial() {
                         float radius = componentOption.get().getBoundingSphereRadius();
                         public Vector3f[] minMax = { new Vector3f(-radius /2f,-radius /2f,-radius /2f), new Vector3f(radius /2f,radius /2f,radius /2f)};
                         @Override

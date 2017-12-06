@@ -17,7 +17,6 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
     protected final List<Mesh<T>> meshes;
     protected int triangleCount;
     protected IntArrayList[] meshIndices;
-    private Vector3f[] minMax = {new Vector3f(), new Vector3f()};
 
     public AbstractModel(List<Mesh<T>> meshes) {
         this.meshes = meshes;
@@ -27,8 +26,17 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
         for (int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
             Vector3f[] meshMinMax = mesh.getMinMax();
-            StaticMesh.calculateMinMax(minMax[0], minMax[1], meshMinMax);
+            StaticMesh.calculateMinMax(getMinMax()[0], getMinMax()[1], meshMinMax);
+            StaticMesh.calculateMinMax(meshMinMax[0], meshMinMax[1], getMinMaxProperty());
         }
+    }
+
+    @Override
+    public Vector3f[] getMinMax() {
+        Vector3f[] temp = super.getMinMax();
+        super.getCenterWorld().add(new Vector3f(-getBoundingSphereRadius()), temp[0]);
+        super.getCenterWorld().add(new Vector3f(getBoundingSphereRadius()), temp[1]);
+        return temp;
     }
 
     public void setMaterial(Material material) {
@@ -63,11 +71,6 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
             intList.add(mesh.getIndexBufferValuesArray());
         }
         return intList.toArray();
-    }
-
-    @Override
-    public Vector3f[] getMinMax() {
-        return minMax;
     }
 
     @Override

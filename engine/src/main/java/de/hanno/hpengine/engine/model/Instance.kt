@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.lifecycle.LifeCycle
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController
 import de.hanno.hpengine.engine.model.material.Material
@@ -7,13 +8,19 @@ import de.hanno.hpengine.engine.model.material.MaterialFactory
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import de.hanno.hpengine.engine.transform.Spatial
 import de.hanno.hpengine.engine.transform.Transform
+import org.joml.Vector3f
 import java.util.*
 
 open class Instance
-    @JvmOverloads constructor(transform: Transform<out Transform<*>> = Transform(),
+    @JvmOverloads constructor(val entity: Entity, transform: Transform<out Transform<*>> = Transform(),
                               var materials: List<Material> = listOf(),
                               val animationController: AnimationController = AnimationController(0, 0f),
-                              open val spatial: Spatial = SimpleSpatial())
+                              open val spatial: Spatial = object : SimpleSpatial(){
+                                  override fun getMinMaxWorld(): Array<Vector3f> {
+                                      recalculate(transform)
+                                      return super.getMinMaxWorld()
+                                  }
+                              })
     : Transform<Transform<*>>(), LifeCycle, Spatial by spatial {
 
 
@@ -38,6 +45,17 @@ open class Instance
 
     override fun update(seconds: Float) {
         animationController.update(seconds)
+    }
+
+    override fun getMinMax(): Array<Vector3f> {
+        return if (animationController.fps > 0)
+            entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).model.getMinMax(null, animationController)
+        else
+            spatial.minMax
+    }
+
+    override fun getMinMaxWorld(): Array<Vector3f> {
+        return spatial.minMaxWorld
     }
 
 }

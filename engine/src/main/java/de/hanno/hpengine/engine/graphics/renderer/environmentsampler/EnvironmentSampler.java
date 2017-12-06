@@ -278,7 +278,7 @@ public class EnvironmentSampler extends Camera {
 
 		GPUProfiler.start("Cubemapside draw entities");
 		for (RenderBatch e : renderState.getRenderBatchesStatic()) {
-			if (!Spatial.isInFrustum(this, e.getCenterWorld(), e.getMinWorldVec3(), e.getMaxWorldVec3())) {
+			if (!Spatial.isInFrustum(this, e.getCenterWorld(), e.getMinWorld(), e.getMaxWorld())) {
 				continue;
 			}
 			DrawStrategy.draw(renderState, e);

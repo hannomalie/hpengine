@@ -16,7 +16,6 @@ import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.event.*;
@@ -404,19 +403,19 @@ public class Scene implements LifeCycle, Serializable {
 				Vector3f[] meshMinMax = modelComponent.getMinMax(entity, mesh);
 				int meshBufferIndex = entityIndexOf + i * entity.getInstanceCount();
 
-				RenderBatch nonInstanceBatch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, -1), k -> new RenderBatch());
-				nonInstanceBatch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, 1, visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
-				addToRenderStateRunnable.accept(nonInstanceBatch);
+				RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, -1), k -> new RenderBatch());
+				batch.init(firstpassDefaultProgram, meshBufferIndex, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, entity.getInstanceCount(), visibleForCamera, entity.getUpdate(), meshMinMax[0], meshMinMax[1], meshCenter, boundingSphereRadius, modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic(), entity.getInstanceMinMaxWorlds());
+				addToRenderStateRunnable.accept(batch);
 
-				for(int clusterIndex = 0; clusterIndex < entity.getClusters().size(); clusterIndex++) {
-					RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, clusterIndex), k -> new RenderBatch());
-					Cluster cluster = entity.getClusters().get(clusterIndex);
-					Vector3f[] clusterMinMax = cluster.getMinMax();
-					boolean clusterIsInFrustum = camera.getFrustum().sphereInFrustum(cluster.getCenter().x, cluster.getCenter().y, cluster.getCenter().z, cluster.getBoundingSphereRadius());
-					batch.init(firstpassDefaultProgram, meshBufferIndex+1, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, cluster.size(), clusterIsInFrustum, entity.getUpdate(), clusterMinMax[0], clusterMinMax[1], clusterMinMax[0], clusterMinMax[1], cluster.getCenter(), cluster.getBoundingSphereRadius(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
-					addToRenderStateRunnable.accept(batch);
-					meshBufferIndex += cluster.size();
-				}
+//				for(int clusterIndex = 0; clusterIndex < entity.getClusters().size(); clusterIndex++) {
+//					RenderBatch batch = currentWriteState.entitiesState.cash.computeIfAbsent(new BatchKey(mesh, clusterIndex), k -> new RenderBatch());
+//					Cluster cluster = entity.getClusters().get(clusterIndex);
+//					Vector3f[] clusterMinMax = cluster.getMinMax();
+//					boolean clusterIsInFrustum = camera.getFrustum().sphereInFrustum(cluster.getCenter().x, cluster.getCenter().y, cluster.getCenter().z, cluster.getBoundingSphereRadius());
+//					batch.init(firstpassDefaultProgram, meshBufferIndex+1, entity.isVisible(), entity.isSelected(), Config.getInstance().isDrawLines(), cameraWorldPosition, isInReachForTextureLoading, cluster.size(), clusterIsInFrustum, entity.getUpdate(), clusterMinMax[0], clusterMinMax[1], clusterMinMax[0], clusterMinMax[1], cluster.getCenter(), cluster.getBoundingSphereRadius(), modelComponent.getIndexCount(i), modelComponent.getIndexOffset(i), modelComponent.getBaseVertex(i), !modelComponent.getModel().isStatic());
+//					addToRenderStateRunnable.accept(batch);
+//					meshBufferIndex += cluster.size();
+//				}
 			}
 		}
 	}

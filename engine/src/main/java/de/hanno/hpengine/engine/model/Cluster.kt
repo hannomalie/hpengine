@@ -40,6 +40,7 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
         }
         return minMaxProperty
     }
+    public fun getMinMaxWorld(i: Int) : Array<Vector3f> = get(i).getMinMaxWorld(get(i))
 
     public fun recalculate() {
         minMaxProperty[0].set(min)
@@ -62,9 +63,9 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-        spatial.minMaxWorldProperty[0].set(minMaxProperty[0])
-        spatial.minMaxWorldProperty[1].set(minMaxProperty[1])
-        spatial.calculateCenter(spatial.center, minMaxProperty)
+        spatial.minMaxWorldProperty[0].set(minMax[0])
+        spatial.minMaxWorldProperty[1].set(minMax[1])
+        spatial.calculateCenter(spatial.centerWorld, minMaxWorld)
         spatial.calculateBoundSphereRadius()
     }
 }

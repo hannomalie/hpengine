@@ -30,7 +30,7 @@ public class DrawLinesExtension implements RenderExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(Config.getInstance().isDrawLines()) {
+        if(Config.getInstance().isDrawBoundingVolumes()) {
             GraphicsContext context = GraphicsContext.getInstance();
             context.disable(CULL_FACE);
             context.depthMask(false);
@@ -84,6 +84,9 @@ public class DrawLinesExtension implements RenderExtension {
                 boolean renderAABBs = true;
                 if(renderAABBs) {
                     batchAABBLines(batch.getMinWorld(), batch.getMaxWorld());
+                    for(Vector3f[] minMax : batch.getInstanceMinMaxWorlds()) {
+                        batchAABBLines(minMax[0], minMax[1]);
+                    }
                 } else {
                     float radius = batch.getBoundingSphereRadius();
                     Renderer renderer = Renderer.getInstance();

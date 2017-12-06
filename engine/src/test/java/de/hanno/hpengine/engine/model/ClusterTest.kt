@@ -8,12 +8,12 @@ import org.junit.Test
 class ClusterTest {
     @Test fun testClusterBound() {
         var cluster = Cluster()
-        val instance: Instance = Instance(materials = listOf(), spatial = object : SimpleSpatial() {
+        val instance: Instance = Instance(entity = Entity(), materials = listOf(), spatial = object : SimpleSpatial() {
             override val minMaxProperty = arrayOf(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f))
         })
         assertArrayEquals(arrayOf(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f)), instance.getMinMaxWorld(instance))
         cluster.add(instance)
-        cluster.add(Instance(materials = listOf(), spatial = object : SimpleSpatial() {
+        cluster.add(Instance(entity = Entity(), materials = listOf(), spatial = object : SimpleSpatial() {
             override val minMaxProperty = arrayOf(Vector3f(5f, 0f, 5f), Vector3f(5f, 0f, 5f))
         }))
         cluster.recalculate()

@@ -87,10 +87,14 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
             cullAndRender("Cull&Render Phase1", ONE)
             if(Config.getInstance().isPrintPipelineDebugOutput) {
                 glFinish()
-                print("Visibilities Static Phase 1")
+                print("Visibilities Static Phase 1 ")
                 printIntBuffer(commandOrganizationStatic.visibilityBuffer.buffer.asIntBuffer(), commandOrganizationStatic.commands.size, 1)
-                print("Visibilities Animated Phase 1")
+                print("Visibilities Animated Phase 1 ")
                 printIntBuffer(commandOrganizationAnimated.visibilityBuffer.buffer.asIntBuffer(), commandOrganizationAnimated.commands.size, 1)
+                print("Entity instance counts Static ")
+                printIntBuffer(commandOrganizationStatic.entityCounters.buffer.asIntBuffer(), commandOrganizationStatic.commands.size, 1)
+                print("Entity instance counts Animated ")
+                printIntBuffer(commandOrganizationAnimated.entityCounters.buffer.asIntBuffer(), commandOrganizationAnimated.commands.size, 1)
             }
             cullAndRender("Cull&Render Phase2", TWO)
 
@@ -134,7 +138,10 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
 
     private fun cullPhase(renderState: RenderState, commandOrganization: CommandOrganization, drawCountBuffer: AtomicCounterBuffer, targetCommandBuffer: CommandBuffer, phase: CullingPhase) {
         GPUProfiler.start("Culling Phase")
-        cull(renderState, commandOrganization, targetCommandBuffer, phase)
+        commandOrganization.commands.forEachIndexed({i, _ ->
+            commandOrganization.entityCounters.put(i, 0)
+        })
+        cull(renderState, commandOrganization, phase, targetCommandBuffer)
 
         drawCountBuffer.put(0, 0)
         val appendProgram = ProgramFactory.getInstance().appendDrawCommandProgram
@@ -142,8 +149,11 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
             with(appendProgram) {
                 commandBufferCulledPhase1.sizeInBytes = commandBuffer.sizeInBytes
                 commandBufferCulledPhase2.sizeInBytes = commandBuffer.sizeInBytes
-                visibilityBuffer.sizeInBytes = commands.map { it.primCount }.reduce({a, b -> a+b}) * java.lang.Integer.BYTES
+                val instanceCount = commands.map { it.primCount }.reduce({ a, b -> a + b })
+                visibilityBuffer.sizeInBytes = instanceCount * java.lang.Integer.BYTES
+                entityCounters.sizeInBytes = commands.size * java.lang.Integer.BYTES
                 use()
+                bindShaderStorageBuffer(1, entityCounters)
                 bindShaderStorageBuffer(2, drawCountBuffer)
                 bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
                 bindShaderStorageBuffer(4, entityOffsetBuffer)
@@ -151,6 +161,8 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
                 bindShaderStorageBuffer(7, targetCommandBuffer)
                 bindShaderStorageBuffer(8, entityOffsetBufferCulled)
                 bindShaderStorageBuffer(9, visibilityBuffer)
+                bindShaderStorageBuffer(10, entitiesBufferCompacted)
+                bindShaderStorageBuffer(11, entitiesCompactedCounter)
                 setUniform("maxDrawCommands", commands.size)
                 GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (commands.size + 2) / 3 * 3, 1)
                 glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT or GL_TEXTURE_FETCH_BARRIER_BIT or GL_SHADER_IMAGE_ACCESS_BARRIER_BIT or GL_COMMAND_BARRIER_BIT)
@@ -183,16 +195,15 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
         GPUProfiler.end()
     }
 
-    private fun cull(renderState: RenderState, commandOrganization: CommandOrganization, targetCommandBuffer: CommandBuffer, phase: CullingPhase) {
+    private fun cull(renderState: RenderState, commandOrganization: CommandOrganization, phase: CullingPhase, targetCommandBuffer: CommandBuffer) {
         val occlusionCullingPhase = if (phase == ONE) occlusionCullingPhase1Vertex else occlusionCullingPhase2Vertex
         with(occlusionCullingPhase) {
+            val instanceCount = commandOrganization.commands.map { it.primCount }.reduce({ a, b -> a + b })
             use()
+            bindShaderStorageBuffer(1, commandOrganization.entityCounters)
             bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
             bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffer)
             bindShaderStorageBuffer(5, commandOrganization.commandBuffer)
-            bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-            bindShaderStorageBuffer(7, targetCommandBuffer)
-            bindShaderStorageBuffer(8, commandOrganization.entityOffsetBufferCulled)
             bindShaderStorageBuffer(9, commandOrganization.visibilityBuffer)
             setUniform("maxDrawCommands", commandOrganization.commands.size)
             setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.viewProjectionMatrixAsBuffer)
@@ -200,8 +211,9 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
             setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
             GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZBuffer.renderedTexture)
             GraphicsContext.getInstance().bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
-            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (commandOrganization.commands.size + 2) / 3 * 3, 1)
+            GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (instanceCount + 2) / 3 * 3, 1)
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT)
+            glMemoryBarrier(GL_ALL_BARRIER_BITS)
         }
     }
 
@@ -292,6 +304,8 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
                         printIntBuffer(entityOffsetBufferCulled.buffer.asIntBuffer(), commands.size, 1)
                         print("Visibilities ")
                         printIntBuffer(visibilityBuffer.buffer.asIntBuffer(), commands.size, 1)
+                        print("Entity counters ")
+                        printIntBuffer(entityCounters.buffer.asIntBuffer(), 10, 1)
                     }
                 }
             }

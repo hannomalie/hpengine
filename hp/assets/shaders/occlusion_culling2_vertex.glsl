@@ -2,30 +2,15 @@
 layout(binding = 0) uniform sampler2D highZ;
 layout(binding = 1, r32f) uniform image2D targetImage;
 
-layout(std430, binding=2) buffer _drawCount {
-	uint drawCount;
+layout(std430, binding=1) buffer _entityCounters {
+	int entityCounters[];
 };
-
 layout(std430, binding=3) buffer _entities {
-	Entity entities[2000];
+	Entity entities[10000];
 };
-
-layout(std430, binding=4) buffer _offsetsSource {
-	int offsetsSource[1000];
+layout(std430, binding=4) buffer _offsets {
+	int offsets[];
 };
-
-layout(std430, binding=5) buffer _drawCommandsSource {
-	DrawCommand drawCommandsSource[1000];
-};
-
-layout(std430, binding=7) buffer _drawCommandsTarget {
-	DrawCommand drawCommandsTarget[1000];
-};
-
-layout(std430, binding=8) buffer _offsetsTarget {
-	int offsetsTarget[1000];
-};
-
 layout(std430, binding=9) buffer _visibility {
 	int visibility[1000];
 };
@@ -40,20 +25,13 @@ void main(){
 	if(invocationId < maxDrawCommands)
 	{
         uint indexBefore = invocationId;
-        uint indexAfter = indexBefore;
-        int offset = offsetsSource[indexBefore];
 
         bool culledInPhase1 = visibility[indexBefore] == 0;
 
-
         if(culledInPhase1) {
-            DrawCommand sourceCommand = drawCommandsTarget[indexBefore];
-            Entity entity;
-            if(sourceCommand.instanceCount > 1){
-                entity = entities[offset];
-            } else {
-                entity = entities[offset];
-            }
+            int offset = offsets[indexBefore];
+            Entity entity = entities[offset];
+
             vec4[2] boundingRect;
             boundingRect[0] = (projectionMatrix*viewMatrix*entity.min);
             boundingRect[0].xyz /= boundingRect[0].w;
@@ -83,8 +61,10 @@ void main(){
             if(!allOccluded){
 //                imageStore(targetImage, ivec2(vec2(1280/2, 720/2)*boundingRect[0].xy), color);
 //                imageStore(targetImage, ivec2(vec2(1280/2, 720/2)*boundingRect[1].xy), color);
-
                 visibility[indexBefore] = 1;
+//                uint indexAfter = atomicAdd(entitiesTargetCounter, 1);
+//                entitiesTarget[indexAfter] = entity;
+                atomicAdd(entityCounters[indexBefore], 1);
             }
         } else {
             // sets entities culled in phase 1 to invisible for phase 2

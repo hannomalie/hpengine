@@ -6,6 +6,7 @@ import de.hanno.hpengine.engine.model.Update;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class RenderBatch {
     private Program program;
@@ -20,19 +21,14 @@ public class RenderBatch {
     private Update update;
     private DrawElementsIndirectCommand drawElementsIndirectCommand = new DrawElementsIndirectCommand();
     private Vector3f centerWorld;
-    private Vector3f minWorldVec3;
-    private Vector3f maxWorldVec3;
     private boolean animated;
     private float boundingSphereRadius;
-
-    public RenderBatch(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
-        init(program, entityBaseIndex, isVisible, isSelected, drawLines, cameraWorldPosition, isInReachForTextureStreaming, instanceCount, visibleForCamera, update, minWorld, maxWorld, getMinWorldVec3(), getMaxWorldVec3(), centerWorld, boundingSphereRadius, indexCount, indexOffset, baseVertex, this.animated);
-    }
+    private List<Vector3f[]> instanceMinMaxWorlds = new ArrayList();
 
     public RenderBatch() {
     }
 
-    public void init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f minWorldVec3, Vector3f maxWorldVec3, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated) {
+    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<Vector3f[]> instanceMinMaxWorlds) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -43,12 +39,13 @@ public class RenderBatch {
         this.update = update;
         this.minWorld = minWorld;
         this.maxWorld = maxWorld;
-        this.minWorldVec3 = minWorldVec3;
-        this.maxWorldVec3 = maxWorldVec3;
+        this.instanceMinMaxWorlds.clear();
+        this.instanceMinMaxWorlds.addAll(instanceMinMaxWorlds);
         this.boundingSphereRadius = boundingSphereRadius;
         this.centerWorld = centerWorld;
         this.drawElementsIndirectCommand.init(indexCount, instanceCount, indexOffset, baseVertex, 0, entityBaseIndex);
         this.animated = animated;
+        return this;
     }
 
     public Program getProgram() {
@@ -127,20 +124,16 @@ public class RenderBatch {
         return centerWorld;
     }
 
-    public Vector3f getMinWorldVec3() {
-        return minWorldVec3;
-    }
-
-    public Vector3f getMaxWorldVec3() {
-        return maxWorldVec3;
-    }
-
     public boolean isStatic() {
         return !animated;
     }
 
     public float getBoundingSphereRadius() {
         return boundingSphereRadius;
+    }
+
+    public List<Vector3f[]> getInstanceMinMaxWorlds() {
+        return instanceMinMaxWorlds;
     }
 
     public static class RenderBatches extends ArrayList<RenderBatch> {

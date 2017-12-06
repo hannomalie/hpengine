@@ -16,7 +16,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 public class InitInstancedAnimated implements LifeCycle {
 
@@ -42,22 +41,27 @@ public class InitInstancedAnimated implements LifeCycle {
                 for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 6;
+                    int count = 1;
                     for(int x = -count; x < count; x++) {
                         for(int y = -count; y < count; y++) {
                             for(int z = -count; z < count; z++) {
-                                Transform trafo = new Transform();
+                                final Transform trafo = new Transform();
                                 float randomFloat = random.nextFloat() - 0.5f;
                                 trafo.rotate(new Vector3f(1,0,0), -90);
                                 trafo.rotate(new Vector3f(0,0,1), (int)(random.nextFloat()*360f));
                                 trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,0,randomFloat* maxDistance *z)));
 
-                                ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+                                final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-                                cluster.add(new Instance(trafo, materials, new AnimationController(120,24 + randomFloat*7), new SimpleSpatial(){
+                                cluster.add(new Instance(current, trafo, materials, new AnimationController(120,24 + randomFloat*7), new SimpleSpatial(){
                                     @Override
                                     public Vector3f[] getMinMax() {
                                         return current.getMinMax();
+                                    }
+                                    @Override
+                                    public Vector3f[] getMinMaxWorld() {
+                                        recalculate(trafo);
+                                        return super.getMinMaxWorld();
                                     }
                                 }));
                             }

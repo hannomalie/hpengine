@@ -121,6 +121,10 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     public Vector3f[] getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
         return getCurrentBoundInfo(animationController.getCurrentFrameIndex()).getMinMaxWorld(transform);
     }
+    @Override
+    public Vector3f[] getMinMax(Mesh mesh, AnimationController animationController) {
+        return getCurrentBoundInfo(animationController.getCurrentFrameIndex()).getMinMax();
+    }
 
     public MD5BoundInfo.MD5Bound getCurrentBoundInfo(int frame) {
         return boundInfo.getBounds().get(frame);

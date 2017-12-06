@@ -27,7 +27,7 @@ public interface Spatial {
 
     float getBoundingSphereRadius(Transform transform);
 
-    Vector3f getCenter();
+    Vector3f getCenterWorld();
 
     float getBoundingSphereRadius();
 
