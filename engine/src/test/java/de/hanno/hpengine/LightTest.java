@@ -3,6 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
+import de.hanno.hpengine.engine.transform.AABB;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.joml.Vector3f;
@@ -22,9 +23,9 @@ public class LightTest extends TestWithRenderer {
 		Assert.assertEquals(new Vector3f(50,0,0), tubeLight.getEnd());
 		Assert.assertEquals(new Vector3f(200,100,100), tubeLight.getScale());
 		
-		Vector3f[] minMaxWorld = tubeLight.getMinMaxWorld();
-		Assert.assertEquals(new Vector4f(-100,-50,-50,0), minMaxWorld[0]);
-		Assert.assertEquals(new Vector4f(100,50,50,0), minMaxWorld[1]);
+		AABB minMaxWorld = tubeLight.getMinMaxWorld();
+		Assert.assertEquals(new Vector3f(-100,-50,-50), minMaxWorld.getMin());
+		Assert.assertEquals(new Vector3f(100,50,50), minMaxWorld.getMax());
 	}
 	
 	@Test

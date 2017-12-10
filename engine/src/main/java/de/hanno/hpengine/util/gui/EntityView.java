@@ -13,8 +13,7 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import de.hanno.hpengine.engine.transform.SimpleSpatial;
-import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.engine.transform.*;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
@@ -167,24 +166,10 @@ public class EntityView extends WebPanel {
             if(componentOption.isPresent()) {
                 Instance instance;
                 List<Material> materials = componentOption.get().getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
-                if(componentOption.get().isStatic()) {
-
-                    instance = new Instance(entity, new SimpleTransform(), materials, new AnimationController(0,0), new SimpleSpatial() {
-                        @Override
-                        public Vector3f[] getMinMax() {
-                            return componentOption.get().getMinMax();
-                        }
-                    });
-                } else {
-                    instance = new Instance(entity, new SimpleTransform(), materials, componentOption.get().getAnimationController(), new SimpleSpatial() {
-                        float radius = componentOption.get().getBoundingSphereRadius();
-                        public Vector3f[] minMax = { new Vector3f(-radius /2f,-radius /2f,-radius /2f), new Vector3f(radius /2f,radius /2f,radius /2f)};
-                        @Override
-                        public Vector3f[] getMinMax() {
-                            return minMax;
-                        }
-                    });
-                }
+                InstanceSpatial spatial = componentOption.get().isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
+                AnimationController animationController = componentOption.get().isStatic() ? new AnimationController(0, 0) : new AnimationController(120, 24);
+                instance = new Instance(entity, new SimpleTransform(), materials, animationController, spatial);
+                spatial.setInstance(instance);
                 entity.addExistingInstance(instance);
             } else {
                 entity.addInstance(new SimpleTransform());

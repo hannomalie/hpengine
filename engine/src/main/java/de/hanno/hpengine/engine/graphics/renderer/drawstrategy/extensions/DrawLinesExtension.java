@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
@@ -84,8 +85,8 @@ public class DrawLinesExtension implements RenderExtension {
                 boolean renderAABBs = true;
                 if(renderAABBs) {
                     batchAABBLines(batch.getMinWorld(), batch.getMaxWorld());
-                    for(Vector3f[] minMax : batch.getInstanceMinMaxWorlds()) {
-                        batchAABBLines(minMax[0], minMax[1]);
+                    for(AABB minMax : batch.getInstanceMinMaxWorlds()) {
+                        batchAABBLines(minMax.getMin(), minMax.getMax());
                     }
                 } else {
                     float radius = batch.getBoundingSphereRadius();

@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -280,7 +281,7 @@ public class MD5Mesh implements Mesh {
     }
 
     @Override
-    public Vector3f[] getMinMax(Transform transform) {
+    public AABB getMinMax(Transform transform) {
         return model.getMinMax(transform);
     }
 

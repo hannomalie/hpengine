@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -226,10 +227,10 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return vertexIndexOffsets.vertexOffset;
     }
 
-    public Vector3f[] getMinMax(Transform transform) {
+    public AABB getMinMax(Transform transform) {
         return model.getMinMax(transform);
     }
-    public Vector3f[] getMinMax() {
+    public AABB getMinMax() {
         if(!isStatic()) {
             AnimationController animationController = getAnimationController();
             return getMinMax(animationController);
@@ -237,7 +238,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model.getMinMax();
     }
 
-    public Vector3f[] getMinMax(AnimationController animationController) {
+    public AABB getMinMax(AnimationController animationController) {
         if(isStatic() || animationController == null) {
             return getModel().getMinMax();
         }
@@ -311,7 +312,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
         return model.getBoundingSphereRadius(mesh, animationController);
     }
 
-    public Vector3f[] getMinMax(Transform transform, Mesh mesh) {
+    public AABB getMinMax(Transform transform, Mesh mesh) {
         return model.getMinMax(transform, mesh, animationController);
     }
 

@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model.loader.md5;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.model.AbstractModel;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -118,11 +119,11 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     }
 
     @Override
-    public Vector3f[] getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
+    public AABB getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
         return getCurrentBoundInfo(animationController.getCurrentFrameIndex()).getMinMaxWorld(transform);
     }
     @Override
-    public Vector3f[] getMinMax(Mesh mesh, AnimationController animationController) {
+    public AABB getMinMax(Mesh mesh, AnimationController animationController) {
         return getCurrentBoundInfo(animationController.getCurrentFrameIndex()).getMinMax();
     }
 
@@ -140,7 +141,7 @@ public class AnimatedModel extends AbstractModel<AnimatedVertex> {
     }
 
     @Override
-    public Vector3f[] getMinMaxWorld(Transform transform) {
+    public AABB getMinMaxWorld(Transform transform) {
         return super.getMinMaxWorld(transform);
     }
 

@@ -32,39 +32,40 @@ class Cluster(val spatial: SimpleSpatial = SimpleSpatial()) : ArrayList<Instance
             }
         }
 
-    var minMaxProperty: Array<Vector3f> = arrayOf(Vector3f(min), Vector3f(max))
+    var minMaxProperty: AABB = AABB(Vector3f(Spatial.MIN), Vector3f(Spatial.MAX))
 
-    override fun getMinMax() : Array<Vector3f> {
-        if(isHasMoved || minMaxProperty[0] == min) {
+    override fun getMinMax() : AABB {
+        if(isHasMoved || minMaxProperty.min == Spatial.MIN) {
             recalculate()
         }
         return minMaxProperty
     }
-    public fun getMinMaxWorld(i: Int) : Array<Vector3f> = get(i).getMinMaxWorld(get(i))
 
-    public fun recalculate() {
-        minMaxProperty[0].set(min)
-        minMaxProperty[1].set(max)
+    fun getMinMaxWorld(i: Int) : AABB = get(i).getMinMaxWorld(get(i))
+
+    fun recalculate() {
+        minMaxProperty.min.set(Spatial.MIN)
+        minMaxProperty.max.set(Spatial.MAX)
 
         for (i in 0..size - 1) {
             val currentMinMax = get(i).getMinMaxWorld(get(i))
-            val currentMin = currentMinMax[0]
-            val currentMax = currentMinMax[1]
+            val currentMin = currentMinMax.min
+            val currentMax = currentMinMax.max
 
-            with(minMaxProperty[0]) {
+            with(minMaxProperty.min) {
                 x = Math.min(x, currentMin.x)
                 y = Math.min(y, currentMin.y)
                 z = Math.min(z, currentMin.z)
             }
-            with(minMaxProperty[1]) {
+            with(minMaxProperty.max) {
                 x = Math.max(x, currentMax.x)
                 y = Math.max(y, currentMax.y)
                 z = Math.max(z, currentMax.z)
             }
         }
 
-        spatial.minMaxWorldProperty[0].set(minMax[0])
-        spatial.minMaxWorldProperty[1].set(minMax[1])
+        spatial.minMaxWorldProperty.min.set(minMax.min)
+        spatial.minMaxWorldProperty.max.set(minMax.max)
         spatial.calculateCenter(spatial.centerWorld, minMaxWorld)
         spatial.calculateBoundSphereRadius()
     }

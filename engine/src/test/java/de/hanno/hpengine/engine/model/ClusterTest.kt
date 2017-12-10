@@ -1,22 +1,23 @@
 package de.hanno.hpengine.engine.model
 
+import de.hanno.hpengine.engine.transform.AABB
 import de.hanno.hpengine.engine.transform.SimpleSpatial
 import org.joml.Vector3f
-import org.junit.Assert.assertArrayEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ClusterTest {
     @Test fun testClusterBound() {
         var cluster = Cluster()
         val instance: Instance = Instance(entity = Entity(), materials = listOf(), spatial = object : SimpleSpatial() {
-            override val minMaxProperty = arrayOf(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f))
+            override val minMaxProperty = AABB(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f))
         })
-        assertArrayEquals(arrayOf(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f)), instance.getMinMaxWorld(instance))
+        assertEquals(AABB(Vector3f(-10f, 0f, -10f), Vector3f(0f, 0f, 0f)), instance.getMinMaxWorld(instance))
         cluster.add(instance)
         cluster.add(Instance(entity = Entity(), materials = listOf(), spatial = object : SimpleSpatial() {
-            override val minMaxProperty = arrayOf(Vector3f(5f, 0f, 5f), Vector3f(5f, 0f, 5f))
+            override val minMaxProperty = AABB(Vector3f(5f, 0f, 5f), Vector3f(5f, 0f, 5f))
         }))
         cluster.recalculate()
-        assertArrayEquals(arrayOf(Vector3f(-10f, 0f, -10f), Vector3f(5f, 0f, 5f)), cluster.minMax)
+        assertEquals(AABB(Vector3f(-10f, 0f, -10f), Vector3f(5f, 0f, 5f)), cluster.minMax)
     }
 }

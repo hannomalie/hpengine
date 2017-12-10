@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.renderer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.model.Update;
+import de.hanno.hpengine.engine.transform.AABB;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -23,12 +24,12 @@ public class RenderBatch {
     private Vector3f centerWorld;
     private boolean animated;
     private float boundingSphereRadius;
-    private List<Vector3f[]> instanceMinMaxWorlds = new ArrayList();
+    private List<AABB> instanceMinMaxWorlds = new ArrayList();
 
     public RenderBatch() {
     }
 
-    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<Vector3f[]> instanceMinMaxWorlds) {
+    public RenderBatch init(Program program, int entityBaseIndex, boolean isVisible, boolean isSelected, boolean drawLines, Vector3f cameraWorldPosition, boolean isInReachForTextureStreaming, int instanceCount, boolean visibleForCamera, Update update, Vector3f minWorld, Vector3f maxWorld, Vector3f centerWorld, float boundingSphereRadius, int indexCount, int indexOffset, int baseVertex, boolean animated, List<AABB> instanceMinMaxWorlds) {
         this.program = program;
         this.isVisible = isVisible;
         this.isSelected = isSelected;
@@ -132,7 +133,7 @@ public class RenderBatch {
         return boundingSphereRadius;
     }
 
-    public List<Vector3f[]> getInstanceMinMaxWorlds() {
+    public List<AABB> getInstanceMinMaxWorlds() {
         return instanceMinMaxWorlds;
     }
 

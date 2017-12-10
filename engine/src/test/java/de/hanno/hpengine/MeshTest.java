@@ -3,6 +3,7 @@ package de.hanno.hpengine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.transform.AABB;
 import jme3tools.optimize.LodGenerator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,29 +45,29 @@ public class MeshTest extends TestWithEngine {
 
         entity.setTranslation(new Vector3f(0, 0, 0));
 
-        Vector3f[] minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector3f(-1f, -1f, -1f), minMaxWorld[0]);
-		Assert.assertEquals(new Vector3f(1f, 1f, 1f), minMaxWorld[1]);
+        AABB minMaxWorld = entity.getMinMaxWorld();
+		Assert.assertEquals(new Vector3f(-1f, -1f, -1f), minMaxWorld.getMin());
+		Assert.assertEquals(new Vector3f(1f, 1f, 1f), minMaxWorld.getMax());
 
 
         entity.setTranslation(new Vector3f(1, 0, 0));
         minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector3f(0, -1f, -1f), minMaxWorld[0]);
-		Assert.assertEquals(new Vector3f(2f, 1f, 1f), minMaxWorld[1]);
+		Assert.assertEquals(new Vector3f(0, -1f, -1f), minMaxWorld.getMin());
+		Assert.assertEquals(new Vector3f(2f, 1f, 1f), minMaxWorld.getMax());
 
 		entity.scale(2);
 		minMaxWorld = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorld[0]);
-		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorld[1]);
+		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorld.getMin());
+		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorld.getMax());
 
-		Vector3f[] minMaxWorldVec3 = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3[0]);
-		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorldVec3[1]);
+		AABB minMaxWorldVec3 = entity.getMinMaxWorld();
+		Assert.assertEquals(new Vector3f(-1f, -2f, -2f), minMaxWorldVec3.getMin());
+		Assert.assertEquals(new Vector3f(3f, 2f, 2f), minMaxWorldVec3.getMax());
 
         entity.translateLocal(new Vector3f(0, 5, 0));
         minMaxWorldVec3 = entity.getMinMaxWorld();
-		Assert.assertEquals(new Vector3f(-1f, 3f, -2f), minMaxWorldVec3[0]);
-		Assert.assertEquals(new Vector3f(3f, 7f, 2f), minMaxWorldVec3[1]);
+		Assert.assertEquals(new Vector3f(-1f, 3f, -2f), minMaxWorldVec3.getMin());
+		Assert.assertEquals(new Vector3f(3f, 7f, 2f), minMaxWorldVec3.getMax());
 	}
 	
 	

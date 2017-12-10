@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -25,17 +26,17 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
     protected void init() {
         for (int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
-            Vector3f[] meshMinMax = mesh.getMinMax();
-            StaticMesh.calculateMinMax(getMinMax()[0], getMinMax()[1], meshMinMax);
-            StaticMesh.calculateMinMax(meshMinMax[0], meshMinMax[1], getMinMaxProperty());
+            AABB meshMinMax = mesh.getMinMax();
+            StaticMesh.calculateMinMax(getMinMax().getMin(), getMinMax().getMax(), meshMinMax);
+            StaticMesh.calculateMinMax(meshMinMax.getMin(), meshMinMax.getMax(), getMinMaxProperty());
         }
     }
 
     @Override
-    public Vector3f[] getMinMax() {
-        Vector3f[] temp = super.getMinMax();
-        super.getCenterWorld().add(new Vector3f(-getBoundingSphereRadius()), temp[0]);
-        super.getCenterWorld().add(new Vector3f(getBoundingSphereRadius()), temp[1]);
+    public AABB getMinMax() {
+        AABB temp = super.getMinMax();
+        super.getCenterWorld().add(new Vector3f(-getBoundingSphereRadius()), temp.getMin());
+        super.getCenterWorld().add(new Vector3f(getBoundingSphereRadius()), temp.getMax());
         return temp;
     }
 
@@ -74,7 +75,7 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
     }
 
     @Override
-    public Vector3f[] getMinMax(Transform transform) {
+    public AABB getMinMax(Transform transform) {
         return super.getMinMaxWorld(transform);
     }
 

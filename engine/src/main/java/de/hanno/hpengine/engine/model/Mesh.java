@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.material.Material;
@@ -27,7 +28,7 @@ public interface Mesh<T extends Bufferable> {
 
     void putToValueArrays();
 
-    Vector3f[] getMinMax(Transform transform);
+    AABB getMinMax(Transform transform);
 
     Vector3f getCenter(Entity transform);
 
@@ -43,5 +44,5 @@ public interface Mesh<T extends Bufferable> {
 
     List<T> getCompiledVertices();
 
-    default Vector3f[] getMinMax() { return getMinMax(IDENTITY); }
+    default AABB getMinMax() { return getMinMax(IDENTITY); }
 }

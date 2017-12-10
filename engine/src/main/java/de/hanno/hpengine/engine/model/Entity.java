@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
@@ -34,7 +35,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	public static int count = 0;
 	private final SimpleSpatial spatial = new SimpleSpatial() {
 		@Override
-		public Vector3f[] getMinMax() {
+		public AABB getMinMax() {
 			if (hasComponent(ModelComponent.COMPONENT_KEY)) {
 				ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 				return modelComponent.getMinMax(modelComponent.getAnimationController());
@@ -186,7 +187,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	public boolean isInFrustum(Camera camera) {
-		return Spatial.isInFrustum(camera, spatial.getCenterWorld(this), spatial.getMinMaxWorld(this)[0], spatial.getMinMaxWorld(this)[1]);
+		return Spatial.isInFrustum(camera, spatial.getCenterWorld(this), spatial.getMinMaxWorld(this).getMin(), spatial.getMinMaxWorld(this).getMax());
 	}
 
 	public Vector3f getCenterWorld() {
@@ -200,10 +201,10 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		this.visible = visible;
 	}
 
-	public Vector3f[] getMinMaxWorld() {
+	public AABB getMinMaxWorld() {
 		return spatial.getMinMaxWorld(this);
 	}
-	public Vector3f[] getMinMax() {
+	public AABB getMinMax() {
 		return spatial.getMinMax();
 	}
 
@@ -352,7 +353,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return (16 * Float.BYTES + 16 * Integer.BYTES + 8 * Float.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
 	}
 
-	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0, Vector3f[] minMaxWorld) {
+	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0, AABB minMaxWorld) {
 		buffer.putFloat(mm.m00());
 		buffer.putFloat(mm.m01());
 		buffer.putFloat(mm.m02());
@@ -392,14 +393,14 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(0);
 		buffer.putInt(0);
 
-		buffer.putFloat(minMaxWorld[0].x);
-		buffer.putFloat(minMaxWorld[0].y);
-		buffer.putFloat(minMaxWorld[0].z);
+		buffer.putFloat(minMaxWorld.getMin().x);
+		buffer.putFloat(minMaxWorld.getMin().y);
+		buffer.putFloat(minMaxWorld.getMin().z);
 		buffer.putFloat(1);
 
-		buffer.putFloat(minMaxWorld[1].x);
-		buffer.putFloat(minMaxWorld[1].y);
-		buffer.putFloat(minMaxWorld[1].z);
+		buffer.putFloat(minMaxWorld.getMax().x);
+		buffer.putFloat(minMaxWorld.getMax().y);
+		buffer.putFloat(minMaxWorld.getMax().z);
 		buffer.putFloat(1);
 	}
 
@@ -476,7 +477,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
 		Instance instance = new Instance(this, instanceTransform, materials, new AnimationController(0, 0), new SimpleSpatial() {
 			@Override
-			public Vector3f[] getMinMax() {
+			public AABB getMinMax() {
 				return spatial.getMinMax();
 			}
 		});
@@ -528,7 +529,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		return firstCluster;
 	}
 
-	public List<Vector3f[]> getInstanceMinMaxWorlds() {
+	public List<AABB> getInstanceMinMaxWorlds() {
 		return getInstances().stream().map(Instance::getMinMaxWorld).collect(Collectors.toList());
 	}
 }

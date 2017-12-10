@@ -2,8 +2,14 @@ package de.hanno.hpengine.engine.transform;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
+
+import static java.lang.Float.MAX_VALUE;
 
 public interface Spatial {
+    Vector3fc MIN = new Vector3f(MAX_VALUE, MAX_VALUE, MAX_VALUE);
+    Vector3fc MAX = new Vector3f(-MAX_VALUE, -MAX_VALUE, -MAX_VALUE);
+
     static boolean isInFrustum(Camera camera, Vector3f centerWorld, Vector3f minWorld, Vector3f maxWorld) {
         Vector3f tempDistVector = new Vector3f();
         new Vector3f(minWorld).sub(maxWorld, tempDistVector);
@@ -21,9 +27,9 @@ public interface Spatial {
 
     Vector3f getCenterWorld(Transform transform);
 
-    Vector3f[] getMinMaxWorld(Transform transform);
+    AABB getMinMaxWorld(Transform transform);
 
-    Vector3f[] getMinMax();
+    AABB getMinMax();
 
     float getBoundingSphereRadius(Transform transform);
 
@@ -31,5 +37,5 @@ public interface Spatial {
 
     float getBoundingSphereRadius();
 
-    Vector3f[] getMinMaxWorld();
+    AABB getMinMaxWorld();
 }

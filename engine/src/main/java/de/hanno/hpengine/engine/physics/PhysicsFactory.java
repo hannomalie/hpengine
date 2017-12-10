@@ -21,6 +21,7 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
@@ -76,8 +77,8 @@ public class PhysicsFactory {
 		return addBallPhysicsComponent(entity, 10);
 	}
 	public PhysicsComponent addBoxPhysicsComponent(Entity owner, float mass) {
-		org.joml.Vector3f[] minMax = owner.getMinMaxWorld();
-		Vector3f halfExtends = new Vector3f(minMax[1].x - minMax[0].x, minMax[1].y - minMax[0].y, minMax[1].z - minMax[0].z);
+		AABB minMax = owner.getMinMaxWorld();
+		Vector3f halfExtends = new Vector3f(minMax.getMax().x - minMax.getMin().x, minMax.getMax().y - minMax.getMin().y, minMax.getMax().z - minMax.getMin().z);
 		halfExtends.scale(0.5f);
 		return addBoxPhysicsComponent(owner, halfExtends, mass);
 	}

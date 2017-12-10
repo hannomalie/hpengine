@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import org.joml.Vector2f;
@@ -70,7 +71,7 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
     }
 
     @Override
-    public Vector3f[] getMinMaxWorld(Transform transform) {
+    public AABB getMinMaxWorld(Transform transform) {
         return super.getMinMaxWorld(transform);
     }
 

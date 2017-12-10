@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
@@ -22,11 +23,11 @@ public interface Model<T extends Bufferable> {
 
     int[] getIndices();
 
-    Vector3f[] getMinMax();
+    AABB getMinMax();
 
     IntArrayList[] getMeshIndices();
 
-    Vector3f[] getMinMax(Transform transform);
+    AABB getMinMax(Transform transform);
 
     List<T> getCompiledVertices();
 
@@ -34,10 +35,10 @@ public interface Model<T extends Bufferable> {
 
     default float getBoundingSphereRadius(Mesh mesh, AnimationController controller) { return mesh.getBoundingSphereRadius(); }
 
-    default Vector3f[] getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
+    default AABB getMinMax(Transform transform, Mesh mesh, AnimationController animationController) {
         return mesh.getMinMax(transform);
     }
-    default Vector3f[] getMinMax(Mesh mesh, AnimationController animationController) {
+    default AABB getMinMax(Mesh mesh, AnimationController animationController) {
         return mesh.getMinMax();
     }
 

@@ -3,19 +3,16 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Instance;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.SimpleSpatial;
-import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.hpengine.engine.transform.*;
 import org.joml.Vector3f;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class FewInitInstancedAnimated implements LifeCycle {
@@ -42,20 +39,9 @@ public class FewInitInstancedAnimated implements LifeCycle {
 
                 final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-                final AtomicReference<Instance> outerRef = new AtomicReference<Instance>();
-                Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24), new SimpleSpatial() {
-
-                    @Override
-                    public Vector3f[] getMinMax() {
-                        return modelComponent.getMinMax();
-                    }
-                    @Override
-                    public Vector3f[] getMinMaxWorld() {
-                        recalculate(outerRef.get());
-                        return super.getMinMaxWorld();
-                    }
-                });
-                outerRef.set(instance);
+                InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
+                Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24), spatial);
+                spatial.setInstance(instance);
                 current.addExistingInstance(instance);
             }
 

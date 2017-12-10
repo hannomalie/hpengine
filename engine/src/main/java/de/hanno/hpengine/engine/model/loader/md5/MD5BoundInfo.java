@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.loader.md5;
 
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import org.joml.Vector3f;
 
@@ -52,16 +53,16 @@ public class MD5BoundInfo {
 
         private static final Pattern PATTERN_BOUND = Pattern.compile("\\s*" + MD5Utils.VECTOR3_REGEXP + "\\s*" + MD5Utils.VECTOR3_REGEXP + ".*");
 
-        private Vector3f[] minMax = new Vector3f[2];
+        private AABB minMax = new AABB();
 
         public MD5Bound(Vector3f min, Vector3f max) {
-            this.minMax[0] = min;
-            this.minMax[1] = max;
+            this.minMax.setMin(min);
+            this.minMax.setMax(max);
         }
 
         @Override
         public String toString() {
-            return "[minBound: " + minMax[0] + ", maxBound: " + minMax[1] + "]";
+            return "[minBound: " + minMax.getMin() + ", maxBound: " + minMax.getMax() + "]";
         }
 
         public static MD5Bound parseLine(String line) {
@@ -83,7 +84,7 @@ public class MD5BoundInfo {
         }
 
         @Override
-        public Vector3f[] getMinMax() {
+        public AABB getMinMax() {
             return minMax;
         }
 

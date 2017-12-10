@@ -7,8 +7,7 @@ import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
-import de.hanno.hpengine.engine.transform.SimpleSpatial;
-import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.hpengine.engine.transform.*;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -53,17 +52,11 @@ public class InitInstancedAnimated implements LifeCycle {
 
                                 final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-                                cluster.add(new Instance(current, trafo, materials, new AnimationController(120,24 + randomFloat*7), new SimpleSpatial(){
-                                    @Override
-                                    public Vector3f[] getMinMax() {
-                                        return current.getMinMax();
-                                    }
-                                    @Override
-                                    public Vector3f[] getMinMaxWorld() {
-                                        recalculate(trafo);
-                                        return super.getMinMaxWorld();
-                                    }
-                                }));
+                                InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
+                                Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24), spatial);
+                                spatial.setInstance(instance);
+
+                                cluster.add(instance);
                             }
                         }
                     }

@@ -101,8 +101,8 @@ public class EnvironmentProbe extends Entity {
 		return box.contains(min) && box.contains(max);
 	}
 
-	public boolean contains(Vector3f[] minMaxWorld) {
-		return contains(minMaxWorld[0], minMaxWorld[1]);
+	public boolean contains(de.hanno.hpengine.engine.transform.AABB minMaxWorld) {
+		return contains(minMaxWorld.getMin(), minMaxWorld.getMax());
 	}
 
 	public AABB getBox() {

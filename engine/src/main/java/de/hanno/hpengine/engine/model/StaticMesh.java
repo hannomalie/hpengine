@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -43,7 +44,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     private int[] indexBufferValuesArray;
     private final int valuesPerVertex = DataChannels.totalElementsPerVertex(ModelComponent.DEFAULTCHANNELS);
     private final List<Vertex> compiledVertices = new ArrayList<>();
-    private Vector3f[] minMax = {new Vector3f(), new Vector3f()};
+    private AABB minMax = new AABB(new Vector3f(), new Vector3f());
 
     @Override
     public float[] getVertexBufferValuesArray() {
@@ -168,7 +169,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         }
 
         putToValueArrays();
-        calculateMinMax(null, minMax[0], minMax[1], compiledFaces);
+        calculateMinMax(null, minMax.getMin(), minMax.getMax(), compiledFaces);
     }
 
     public void putToValueArrays() {
@@ -188,9 +189,9 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     }
 
     @Override
-    public Vector3f[] getMinMax(Transform transform) {
+    public AABB getMinMax(Transform transform) {
         if(!isClean(transform)) {
-            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+            calculateMinMax(transform, minMax.getMin(), minMax.getMax(), compiledFaces);
         }
         return super.getMinMaxWorld(IDENTITY);
     }
@@ -276,27 +277,37 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         }
 
     }
+//TODO: Move this away from here
+    public static void calculateMinMax(Vector3f min, Vector3f max, AABB current) {
+        min.x = current.getMin().x < min.x ? current.getMin().x : min.x;
+        min.y = current.getMin().y < min.y ? current.getMin().y : min.y;
+        min.z = current.getMin().z < min.z ? current.getMin().z : min.z;
 
-    public static void calculateMinMax(Vector3f min, Vector3f max, Vector3f[] current) {
-        min.x = current[0].x < min.x ? current[0].x : min.x;
-        min.y = current[0].y < min.y ? current[0].y : min.y;
-        min.z = current[0].z < min.z ? current[0].z : min.z;
-
-        max.x = current[1].x > max.x ? current[1].x : max.x;
-        max.y = current[1].y > max.y ? current[1].y : max.y;
-        max.z = current[1].z > max.z ? current[1].z : max.z;
+        max.x = current.getMax().x > max.x ? current.getMax().x : max.x;
+        max.y = current.getMax().y > max.y ? current.getMax().y : max.y;
+        max.z = current.getMax().z > max.z ? current.getMax().z : max.z;
+    }
+    public static void calculateMin(Vector3f old, Vector3f candidate) {
+        old.x = candidate.x < old.x ? candidate.x : old.x;
+        old.y = candidate.y < old.y ? candidate.y : old.y;
+        old.z = candidate.z < old.z ? candidate.z : old.z;
+    }
+    public static void calculateMax(Vector3f old, Vector3f candidate) {
+        old.x = candidate.x > old.x ? candidate.x : old.x;
+        old.y = candidate.y > old.y ? candidate.y : old.y;
+        old.z = candidate.z > old.z ? candidate.z : old.z;
     }
 
-    public static void calculateMinMax(Matrix4f transform, Vector3f min, Vector3f max, Vector3f[] current) {
-        current[0] = transform.transformPosition(current[0]);
-        current[1] = transform.transformPosition(current[1]);
-        min.x = current[0].x < min.x ? current[0].x : min.x;
-        min.y = current[0].y < min.y ? current[0].y : min.y;
-        min.z = current[0].z < min.z ? current[0].z : min.z;
+    public static void calculateMinMax(Matrix4f transform, Vector3f min, Vector3f max, AABB current) {
+        current.setMin(transform.transformPosition(current.getMin()));
+        current.setMax(transform.transformPosition(current.getMax()));
+        min.x = current.getMin().x < min.x ? current.getMin().x : min.x;
+        min.y = current.getMin().y < min.y ? current.getMin().y : min.y;
+        min.z = current.getMin().z < min.z ? current.getMin().z : min.z;
 
-        max.x = current[1].x > max.x ? current[1].x : max.x;
-        max.y = current[1].y > max.y ? current[1].y : max.y;
-        max.z = current[1].z > max.z ? current[1].z : max.z;
+        max.x = current.getMax().x > max.x ? current.getMax().x : max.x;
+        max.y = current.getMax().y > max.y ? current.getMax().y : max.y;
+        max.z = current.getMax().z > max.z ? current.getMax().z : max.z;
     }
 
     public static float getBoundingSphereRadius(Vector3f target, Vector3f min, Vector3f max) {
@@ -318,20 +329,20 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     @Override
     public Vector3f getCenterWorld(Transform transform) {
         if(!isClean(transform)) {
-            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+            calculateMinMax(transform, minMax.getMin(), minMax.getMax(), compiledFaces);
         }
         return super.getCenterWorld(transform);
     }
 
     @Override
-    public Vector3f[] getMinMaxWorld(Transform transform) {
+    public AABB getMinMaxWorld(Transform transform) {
         return getMinMax(transform);
     }
 
     @Override
     public float getBoundingSphereRadius(Transform transform) {
         if(!isClean(transform)) {
-            calculateMinMax(transform, minMax[0], minMax[1], compiledFaces);
+            calculateMinMax(transform, minMax.getMin(), minMax.getMax(), compiledFaces);
         }
         return super.getBoundingSphereRadius(transform);
     }
@@ -424,7 +435,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
     }
 
     @Override
-    public Vector3f[] getMinMax() {
+    public AABB getMinMax() {
         return minMax;
     }
 }

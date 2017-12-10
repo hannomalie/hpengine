@@ -1,6 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.model.Entity;
+import de.hanno.hpengine.engine.transform.AABB;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.joml.Vector3f;
@@ -21,10 +22,10 @@ public class ProbeTest extends TestWithRenderer {
 			@Override public String getName() { return null; }
 			
 			@Override
-			public Vector3f[] getMinMaxWorld() {
-				return new Vector3f[] {
+			public AABB getMinMaxWorld() {
+				return new AABB(
 						new Vector3f(-1, -1, -1),
-						new Vector3f(1, 1, 1)};
+						new Vector3f(1, 1, 1));
 			}
 		};
 
