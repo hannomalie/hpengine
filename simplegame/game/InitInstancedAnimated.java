@@ -21,7 +21,7 @@ public class InitInstancedAnimated implements LifeCycle {
     private boolean initialized;
 
     int maxDistance = 475;
-    int clusterDistance = 3*maxDistance;
+    int clusterDistance = 3 * maxDistance;
     Vector3f[] clusterLocations = {new Vector3f(clusterDistance, 0, clusterDistance),
             new Vector3f(clusterDistance, 0, -clusterDistance),
             new Vector3f(-clusterDistance, 0, -clusterDistance),
@@ -33,27 +33,27 @@ public class InitInstancedAnimated implements LifeCycle {
         try {
             LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doom3monster/monster.md5mesh"), "cube").execute(Engine.getInstance());
             System.out.println("loaded entities : " + loaded.entities.size());
-            for(final Entity current : loaded.entities) {
+            for (final Entity current : loaded.entities) {
 //                File componentScriptFile = new File(Engine.getInstance().getDirectoryManager().getGameDir() + "/scripts/SimpleMoveComponent.java");
 //                current.addComponent(new JavaComponent(new CodeSource(componentScriptFile)));
 
-                for(int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
+                for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 1;
-                    for(int x = -count; x < count; x++) {
-                        for(int y = -count; y < count; y++) {
-                            for(int z = -count; z < count; z++) {
+                    int count = 4;
+                    for (int x = -count; x < count; x++) {
+                        for (int y = -count; y < count; y++) {
+                            for (int z = -count; z < count; z++) {
                                 final Transform trafo = new Transform();
                                 float randomFloat = random.nextFloat() - 0.5f;
-                                trafo.rotate(new Vector3f(1,0,0), -90);
-                                trafo.rotate(new Vector3f(0,0,1), (int)(random.nextFloat()*360f));
-                                trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex%clusterLocations.length])).add(new Vector3f(randomFloat* maxDistance *x,0,randomFloat* maxDistance *z)));
+                                trafo.rotate(new Vector3f(1, 0, 0), -90);
+                                trafo.rotate(new Vector3f(0, 0, 1), (int) (random.nextFloat() * 360f));
+                                trafo.setTranslation(new Vector3f().add(new Vector3f(clusterLocations[clusterIndex % clusterLocations.length])).add(new Vector3f(randomFloat * maxDistance * x, 0, randomFloat * maxDistance * z)));
 
                                 final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
                                 List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
                                 InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
-                                Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24), spatial);
+                                Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24 + 10 * randomFloat), spatial);
                                 spatial.setInstance(instance);
 
                                 cluster.add(instance);

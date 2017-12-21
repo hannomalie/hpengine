@@ -42,28 +42,40 @@ void main()
 
 //TODO: This doesnt work
     if(indexBefore < maxDrawCommands) {
-        int offset = offsetsSource[indexBefore];
-        int baseOffset = 0;
+        DrawCommand sourceCommand = drawCommandsSource[indexBefore];
+        int entityBufferOffset = offsetsSource[indexBefore];
+
+        int baseInstanceOffset = 0;
+
         for(int i = 0; i < indexBefore; i++) {
-            baseOffset += entityCounts[i];
+            baseInstanceOffset += entityCounts[i];
         }
         int noOfInstances = entityCounts[indexBefore];
-        for(int i = 0; i < noOfInstances; i++) {
-            int instanceIndex = baseOffset + i;
+        int[2000] entityBufferIndices;
+        int entityBufferIndicesIndex = 0;
 
-            bool visible = visibility[instanceIndex] == 1;
+        for(int i = 0; i < sourceCommand.instanceCount; i++) {
+            int instanceIndex = entityBufferOffset + i;
+
+            bool visible = visibility[i] == 1;
 
             if(visible)
             {
-                uint indexAfter = atomicAdd(drawCount, 1);
-
-                int compatedIndex = atomicAdd(entitiesCompactedCounter, 1);
-                entitiesCompacted[compatedIndex] = entities[instanceIndex];
-                DrawCommand sourceCommand = drawCommandsSource[indexBefore];
-                sourceCommand.instanceCount = noOfInstances;
-                drawCommandsTarget[indexAfter] = sourceCommand;
-                offsetsTarget[indexAfter] = offset;
+                entityBufferIndices[entityBufferIndicesIndex] = instanceIndex;
+                entityBufferIndicesIndex++;
             }
+        }
+
+        if(noOfInstances > 0) {
+            int drawCommandIndex = atomicAdd(drawCount, 1);
+            atomicAdd(entitiesCompactedCounter, noOfInstances);
+            for(int i = 0; i < noOfInstances; i++) {
+                entitiesCompacted[baseInstanceOffset+i] = entities[entityBufferIndices[i]];
+//                entitiesCompacted[0] = entities[16];
+            }
+            sourceCommand.instanceCount = noOfInstances;
+            drawCommandsTarget[drawCommandIndex] = sourceCommand;
+            offsetsTarget[drawCommandIndex] = baseInstanceOffset;
         }
     }
 }

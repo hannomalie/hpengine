@@ -30,15 +30,25 @@ void main(){
         uint indexBefore = invocationId;
         int offset = offsets[indexBefore];
         DrawCommand command = drawCommandsSource[indexBefore];
+
+        int instancesBaseOffset = 0;
+        for(int i = 0; i < indexBefore; i++) {
+            instancesBaseOffset += drawCommandsSource[i].instanceCount;
+        }
+
         for(int i = 0; i < command.instanceCount; i++) {
 
             Entity entity = entities[offset+i];
 
             vec4[2] boundingRect;
-            boundingRect[0] = (projectionMatrix*viewMatrix*entity.min);
+            vec4[2] minMaxView;
+            minMaxView[0] = viewMatrix*entity.min;
+            minMaxView[1] = viewMatrix*entity.max;
+
+            boundingRect[0] = (projectionMatrix*minMaxView[0]);
             boundingRect[0].xyz /= max(boundingRect[0].w, 0.00001);
             boundingRect[0].xy = boundingRect[0].xy * 0.5 + 0.5;
-            boundingRect[1] = (projectionMatrix*viewMatrix*entity.max);
+            boundingRect[1] = (projectionMatrix*minMaxView[1]);
             boundingRect[1].xyz /= max(boundingRect[1].w, 0.00001);
             boundingRect[1].xy = boundingRect[1].xy * 0.5 + 0.5;
 
@@ -64,7 +74,7 @@ void main(){
     //	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
     //	    imageStore(targetImage, texCoordsMax, color);
 
-            visibility[indexBefore] = allOccluded ? 0 : 1;
+            visibility[instancesBaseOffset+i] = allOccluded ? 0 : 1;
             if(!allOccluded) {
                 atomicAdd(entityCounters[indexBefore], 1);
             }
