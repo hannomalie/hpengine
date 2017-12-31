@@ -88,8 +88,8 @@ void main(void) {
     vec4 initPos = vec4(0, 0, 0, 0);
     int count = 0;
     const int MAX_WEIGHTS = 4;
-    int frameIndex = entity.animationFrame0;//(int(time/24) % 120); // TODO use proper values here
-    int currentJoint = 150 * frameIndex;
+    int frameIndex = entity.animationFrame0;
+    int currentJoint = 150 * frameIndex; // MAX_JOINTS per animation frame is 150
     for(int i = 0; i < MAX_WEIGHTS; i++)
     {
         float weight = in_Weights[i];

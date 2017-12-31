@@ -173,7 +173,7 @@ public class DrawLightMapExtension implements RenderExtension {
 
         lightMapProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
         lightMapProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-        lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBufferStatic());
+//        lightMapProgram.bindShaderStorageBuffer(4, pipeline.getEntityOffsetBufferStatic()); //TODO: Check if this is needed
 
         lightMapProgram.setUniformAsMatrix4("shadowMatrix", renderState.getDirectionalLightViewProjectionMatrixAsBuffer());
         lightMapProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);

@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.transform.AABB;
-import de.hanno.hpengine.engine.transform.SimpleSpatial;
-import de.hanno.hpengine.engine.transform.Transform;
+import de.hanno.hpengine.engine.transform.*;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.Component;
 import de.hanno.hpengine.engine.component.ModelComponent;
@@ -16,7 +14,6 @@ import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.transform.Spatial;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -46,6 +43,27 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	};
 
 	private List<Instance> instancesTemp = new ArrayList();
+
+	public Instance addInstance(Entity entity) {
+		return addInstance(entity, new SimpleTransform());
+	}
+	public static Instance addInstance(Entity entity, Transform transform) {
+        Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+        Instance instance;
+        if(componentOption.isPresent()) {
+            List<Material> materials = componentOption.get().getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
+            InstanceSpatial spatial = componentOption.get().isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
+            AnimationController animationController = componentOption.get().isStatic() ? new AnimationController(0, 0) : new AnimationController(120, 24);
+            instance = new Instance(entity, transform, materials, animationController, spatial);
+            spatial.setInstance(instance);
+            entity.addExistingInstance(instance);
+        } else {
+            instance = entity.addInstance(new SimpleTransform());
+        }
+        Engine.getEventBus().post(new EntityAddedEvent());
+        return instance;
+    }
+
 	public List<Instance> getInstances() {
         return instancesTemp;
     }
@@ -350,7 +368,11 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 
 	@Override
 	public int getBytesPerObject() {
-		return (16 * Float.BYTES + 16 * Integer.BYTES + 8 * Float.BYTES) * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+		return getBytesPerInstance() * getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMeshes().size() * getInstanceCount();
+	}
+
+	public static int getBytesPerInstance() {
+		return 16 * Float.BYTES + 16 * Integer.BYTES + 8 * Float.BYTES;
 	}
 
 	private void putValues(ByteBuffer buffer, Matrix4f mm, int meshIndex, int materialIndex, int animationFrame0, AABB minMaxWorld) {
@@ -389,7 +411,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		buffer.putInt(0);
 
 		buffer.putInt(modelComponent.isInvertTexCoordY() ? 1 : 0);
-		buffer.putInt(0); // reserved for visiblity
+		buffer.putInt(0);
 		buffer.putInt(0);
 		buffer.putInt(0);
 
@@ -424,7 +446,9 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		m33(buffer.getFloat());
 
 		setSelected(buffer.getInt() == 1);
-		MaterialFactory.getInstance().getMaterialsAsList().get(buffer.getInt());
+		Material material = MaterialFactory.getInstance().getMaterialsAsList().get(buffer.getInt());
+		System.out.println(material.getName());
+		System.out.println(material);
 		setUpdate(Update.values()[buffer.getInt()]);
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		int entityBufferIndex = Engine.getInstance().getScene().getEntityBufferIndex(modelComponent);
@@ -469,20 +493,26 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
         return instancesCount;
     }
 
-	public void addInstance(Transform instanceTransform) {
+	public Instance addInstance(Transform instanceTransform) {
 		if(getParent() != null) {
 			instanceTransform.setParent(getParent());
 		}
+		addInstance(this, instanceTransform);
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
-		Instance instance = new Instance(this, instanceTransform, materials, new AnimationController(0, 0), new SimpleSpatial() {
+
+		InstanceSpatial spatial = new InstanceSpatial() {
 			@Override
 			public AABB getMinMax() {
-				return spatial.getMinMax();
+				return Entity.this.spatial.getMinMax();
 			}
-		});
+		};
+		Instance instance = new Instance(this, instanceTransform, materials, new AnimationController(0, 0), spatial);
+		spatial.setInstance(instance);
 		addExistingInstance(instance);
+		return instance;
 	}
+
 
 	public void addExistingInstance(Instance instance) {
 		Cluster firstCluster = getOrCreateFirstCluster();
@@ -500,7 +530,12 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		Cluster firstCluster = getOrCreateFirstCluster();
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Material> materials = modelComponent == null ? new ArrayList<>() : modelComponent.getMaterials();
-		List<Instance> collect = instances.stream().map(trafo -> new Instance(this, trafo, materials, new AnimationController(0, 0), new SimpleSpatial())).collect(Collectors.toList());
+		List<Instance> collect = instances.stream().map(trafo -> {
+			InstanceSpatial spatial = new InstanceSpatial();
+			Instance instance = new Instance(this, trafo, materials, new AnimationController(0, 0), spatial);
+			spatial.setInstance(instance);
+			return instance;
+		}).collect(Collectors.toList());
 		firstCluster.addAll(collect);
 		recalculateInstances();
 		Engine.getEventBus().post(new EntityAddedEvent());
@@ -530,6 +565,6 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 	}
 
 	public List<AABB> getInstanceMinMaxWorlds() {
-		return getInstances().stream().map(Instance::getMinMaxWorld).collect(Collectors.toList());
+		return getInstances().stream().map(it -> it.getMinMaxWorld()).collect(Collectors.toList());
 	}
 }

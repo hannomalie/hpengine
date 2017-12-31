@@ -34,48 +34,58 @@ layout(std430, binding=10) buffer _entitiesCompacted {
 layout(std430, binding=11) buffer _entitiesCompactedCounter {
 	int entitiesCompactedCounter;
 };
+layout(std430, binding=12) buffer _commandEntityOffsets {
+	int commandEntityOffsets[2000];
+};
+layout(std430, binding=13) buffer _currentCompactedPointers {
+	coherent int currentCompactedPointers[2000];
+};
 uniform int maxDrawCommands;
 
 void main()
 {
-    uint indexBefore = gl_VertexID;
+    uint commandIndex = gl_InstanceID;
+    DrawCommand sourceCommand = drawCommandsSource[commandIndex];
+    uint instanceIndex = gl_VertexID;
 
-//TODO: This doesnt work
-    if(indexBefore < maxDrawCommands) {
-        DrawCommand sourceCommand = drawCommandsSource[indexBefore];
-        int entityBufferOffset = offsetsSource[indexBefore];
-
-        int baseInstanceOffset = 0;
-
-        for(int i = 0; i < indexBefore; i++) {
-            baseInstanceOffset += entityCounts[i];
+//    int visibilityBufferOffset = commandEntityOffsets[commandIndex];
+    int targetCommandIndex = 0;
+    int visibilityBufferOffset = 0;
+    for(int i = 0; i < commandIndex; i++) {
+        visibilityBufferOffset += drawCommandsSource[i].instanceCount;
+        if(entityCounts[i] > 0) {
+            targetCommandIndex++;
         }
-        int noOfInstances = entityCounts[indexBefore];
-        int[2000] entityBufferIndices;
-        int entityBufferIndicesIndex = 0;
+    }
 
-        for(int i = 0; i < sourceCommand.instanceCount; i++) {
-            int instanceIndex = entityBufferOffset + i;
+    if(instanceIndex == 0) {
+        int noOfVisibleInstances = entityCounts[commandIndex];
+        if(noOfVisibleInstances > 0) {
+            atomicAdd(entitiesCompactedCounter, entityCounts[commandIndex]);
+            atomicAdd(drawCount, 1);
+            sourceCommand.instanceCount = noOfVisibleInstances;
+            drawCommandsTarget[targetCommandIndex] = sourceCommand;
+        }
+    }
 
-            bool visible = visibility[i] == 1;
-
-            if(visible)
-            {
-                entityBufferIndices[entityBufferIndicesIndex] = instanceIndex;
-                entityBufferIndicesIndex++;
-            }
+    bool visible = visibility[visibilityBufferOffset + instanceIndex] == 1;
+    if(instanceIndex < sourceCommand.instanceCount && visible)
+    {
+        int compactedBufferOffset = 0;
+        for(int i = 0; i < commandIndex; i++) {
+            compactedBufferOffset += entityCounts[i];
         }
 
-        if(noOfInstances > 0) {
-            int drawCommandIndex = atomicAdd(drawCount, 1);
-            atomicAdd(entitiesCompactedCounter, noOfInstances);
-            for(int i = 0; i < noOfInstances; i++) {
-                entitiesCompacted[baseInstanceOffset+i] = entities[entityBufferIndices[i]];
-//                entitiesCompacted[0] = entities[16];
-            }
-            sourceCommand.instanceCount = noOfInstances;
-            drawCommandsTarget[drawCommandIndex] = sourceCommand;
-            offsetsTarget[drawCommandIndex] = baseInstanceOffset;
+        uint entityBufferSource = offsetsSource[commandIndex] + instanceIndex;
+        uint compactedPointer = atomicAdd(currentCompactedPointers[commandIndex], 1);
+        uint compactedEntityBufferIndex = compactedBufferOffset + compactedPointer;
+
+        entitiesCompacted[compactedEntityBufferIndex] = entities[entityBufferSource];
+
+        if(instanceIndex == 0) {
+            offsetsTarget[targetCommandIndex] = compactedBufferOffset;
         }
+//        DEBUG
+//        commandEntityOffsets[commandIndex] = compactedBufferOffset;
     }
 }

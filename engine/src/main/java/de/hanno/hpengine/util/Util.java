@@ -367,22 +367,26 @@ public class Util {
 	}
 
 	public static void printFloatBuffer(FloatBuffer values) {
-		printFloatBuffer(values, 4);
+		printFloatBuffer(values, 4, 1000);
 	}
 
-    public static String printFloatBuffer(FloatBuffer buffer, int columns) {
+	public static String printFloatBuffer(FloatBuffer buffer, int columns) {
+		return printFloatBuffer(buffer, columns, 1000);
+	}
+    public static String printFloatBuffer(FloatBuffer buffer, int columns, int rows) {
         buffer.rewind();
         StringBuilder builder = new StringBuilder();
         int columnCounter = 1;
-        while (buffer.hasRemaining()) {
+		int rowCounter = 0;
+        while (buffer.hasRemaining() && rowCounter < rows) {
             builder.append(buffer.get());
             builder.append(" ");
-            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); }
+            if(columnCounter%columns==0) { builder.append(System.lineSeparator()); rowCounter++; }
             columnCounter++;
         }
         buffer.rewind();
 		String result = builder.toString();
-		LOGGER.info(result);
+		System.out.println(result);
 		return result;
     }
 	public static String printIntBuffer(IntBuffer buffer, int columns) {

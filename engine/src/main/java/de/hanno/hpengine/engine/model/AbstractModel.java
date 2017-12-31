@@ -27,17 +27,9 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
         for (int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
             AABB meshMinMax = mesh.getMinMax();
-            StaticMesh.calculateMinMax(getMinMax().getMin(), getMinMax().getMax(), meshMinMax);
-            StaticMesh.calculateMinMax(meshMinMax.getMin(), meshMinMax.getMax(), getMinMaxProperty());
+//            StaticMesh.calculateMinMax(getMinMax().getMin(), getMinMax().getMax(), meshMinMax);
+            StaticMesh.calculateMinMax(getMinMaxProperty().getMin(), getMinMaxProperty().getMax(), meshMinMax);
         }
-    }
-
-    @Override
-    public AABB getMinMax() {
-        AABB temp = super.getMinMax();
-        super.getCenterWorld().add(new Vector3f(-getBoundingSphereRadius()), temp.getMin());
-        super.getCenterWorld().add(new Vector3f(getBoundingSphereRadius()), temp.getMax());
-        return temp;
     }
 
     public void setMaterial(Material material) {

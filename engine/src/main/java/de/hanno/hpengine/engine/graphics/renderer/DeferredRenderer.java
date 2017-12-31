@@ -64,6 +64,7 @@ public class DeferredRenderer implements Renderer {
 
 	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
 	private static Program renderToQuadProgram;
+	private static Program debugFrameProgram;
 	private static Program blurProgram;
 	private static Program bilateralBlurProgram;
 	private static Program linesProgram;
@@ -181,7 +182,8 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")));
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
+		debugFrameProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")));
 		blurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")));
 		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(false, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")));
 		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
@@ -201,7 +203,8 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-            drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
+			drawToQuad(155, QuadVertexBuffer.getDebugBuffer(), debugFrameProgram);
+//			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));

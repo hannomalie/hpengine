@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.graphics.renderer.CommandOrganization;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -27,6 +28,9 @@ public class RenderState {
 
     public final DirectionalLightState directionalLightState = new DirectionalLightState();
     public final EntitiesState entitiesState = new EntitiesState();
+
+    public final CommandOrganization commandOrganizationStatic = new CommandOrganization();
+    public final CommandOrganization commandOrganizationAnimated = new CommandOrganization();
 
     public Camera camera = new Camera();
     public long pointlightMovedInCycle;

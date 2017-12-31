@@ -49,7 +49,7 @@ public class ProgramFactory {
             FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
             FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
 
-            APPEND_DRAWCOMMANDS_PROGRAM = getProgram("append_drawcommands_vertex.glsl", null);// "append_drawcommands_fragment.glsl");
+            APPEND_DRAWCOMMANDS_PROGRAM = getProgram("append_drawcommands_vertex.glsl", null);
             HIGHZ_PROGRAM = getComputeProgram("highZ_compute.glsl");
 
         } catch (Exception e) {

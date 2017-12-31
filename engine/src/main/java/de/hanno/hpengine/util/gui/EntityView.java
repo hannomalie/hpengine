@@ -13,7 +13,6 @@ import com.alee.laf.text.WebFormattedTextField;
 import com.alee.managers.notification.NotificationIcon;
 import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
-import de.hanno.hpengine.engine.transform.*;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.Engine;
@@ -24,9 +23,9 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
-import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.LimitedWebFormattedTextField;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class EntityView extends WebPanel {
 
@@ -162,19 +160,7 @@ public class EntityView extends WebPanel {
         buttonPanel.setElementMargin(4);
         WebButton addInstanceButton = new WebButton("Add Instance");
         addInstanceButton.addActionListener(e -> {
-            Optional<ModelComponent> componentOption = entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-            if(componentOption.isPresent()) {
-                Instance instance;
-                List<Material> materials = componentOption.get().getMeshes().stream().map(Mesh::getMaterial).collect(Collectors.toList());
-                InstanceSpatial spatial = componentOption.get().isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
-                AnimationController animationController = componentOption.get().isStatic() ? new AnimationController(0, 0) : new AnimationController(120, 24);
-                instance = new Instance(entity, new SimpleTransform(), materials, animationController, spatial);
-                spatial.setInstance(instance);
-                entity.addExistingInstance(instance);
-            } else {
-                entity.addInstance(new SimpleTransform());
-            }
-            Engine.getEventBus().post(new EntityAddedEvent());
+            Entity.addInstance(entity, new SimpleTransform());
 //            TODO: Make this possible
 //            init(entity);
         });
@@ -184,6 +170,7 @@ public class EntityView extends WebPanel {
         JScrollPane instancesScrollPane = new JScrollPane(instancesGridPanel);
         tabbedPane.addTab("Instances", instancesScrollPane);
     }
+
     private void addMeshesPanel(Entity entity, WebTabbedPane tabbedPane) {
 	    if(!entity.hasComponent(ModelComponent.class)) { return; }
 

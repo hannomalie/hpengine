@@ -2,20 +2,46 @@
 layout(binding = 0) uniform sampler2D highZ;
 layout(binding = 1, r32f) uniform image2D targetImage;
 
-layout(std430, binding=1) buffer _entityCounters {
-	int entityCounters[1000];
+layout(std430, binding=1) buffer _entityCounts {
+	int entityCounts[2000];
+};
+layout(std430, binding=2) buffer _drawCount{
+	int drawCount;
 };
 layout(std430, binding=3) buffer _entities {
-	Entity entities[10000];
+	Entity entities[2000];
 };
-layout(std430, binding=4) buffer _offsets {
-	int offsets[2000];
+
+layout(std430, binding=4) buffer _offsetsSource {
+	int offsetsSource[1000];
 };
+
 layout(std430, binding=5) buffer _drawCommandsSource {
 	DrawCommand drawCommandsSource[1000];
 };
+
+layout(std430, binding=7) buffer _drawCommandsTarget {
+	DrawCommand drawCommandsTarget[1000];
+};
+
+layout(std430, binding=8) buffer _offsetsTarget {
+	int offsetsTarget[1000];
+};
+
 layout(std430, binding=9) buffer _visibility {
 	int visibility[1000];
+};
+layout(std430, binding=10) buffer _entitiesCompacted {
+	Entity entitiesCompacted[2000];
+};
+layout(std430, binding=11) buffer _entitiesCompactedCounter {
+	int entitiesCompactedCounter;
+};
+layout(std430, binding=12) buffer _bufferOffsets {
+	int bufferOffsets[2000];
+};
+layout(std430, binding=13) buffer _currentCompactedPointers {
+	int currentCompactedPointers[2000];
 };
 
 uniform int maxDrawCommands = 0;
@@ -27,8 +53,17 @@ void main(){
 	uint invocationId = gl_VertexID;
 	if(invocationId < maxDrawCommands)
 	{
+        //////// RESET BUFFER STATE
+        if(invocationId == 0) {
+            entitiesCompactedCounter = 0;
+        }
+        entityCounts[invocationId] = 0;
+        currentCompactedPointers[invocationId] = 0;
+        bufferOffsets[invocationId] = 0;
+
+
         uint indexBefore = invocationId;
-        int offset = offsets[indexBefore];
+        int offset = offsetsSource[indexBefore];
         DrawCommand command = drawCommandsSource[indexBefore];
 
         int instancesBaseOffset = 0;
@@ -75,7 +110,7 @@ void main(){
     //                imageStore(targetImage, ivec2(vec2(1280/2, 720/2)*boundingRect[1].xy), color);
     //                uint indexAfter = atomicAdd(entitiesTargetCounter, 1);
     //                entitiesTarget[indexAfter] = entity;
-                    atomicAdd(entityCounters[indexBefore], 1);
+                    atomicAdd(entityCounts[indexBefore], 1);
                 }
             } else {
                 // sets entities culled in phase 1 to invisible for phase 2

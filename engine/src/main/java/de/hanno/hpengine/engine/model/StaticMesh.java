@@ -278,14 +278,14 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
 
     }
 //TODO: Move this away from here
-    public static void calculateMinMax(Vector3f min, Vector3f max, AABB current) {
-        min.x = current.getMin().x < min.x ? current.getMin().x : min.x;
-        min.y = current.getMin().y < min.y ? current.getMin().y : min.y;
-        min.z = current.getMin().z < min.z ? current.getMin().z : min.z;
+    public static void calculateMinMax(Vector3f targetMin, Vector3f targetMax, AABB candidate) {
+        targetMin.x = candidate.getMin().x < targetMin.x ? candidate.getMin().x : targetMin.x;
+        targetMin.y = candidate.getMin().y < targetMin.y ? candidate.getMin().y : targetMin.y;
+        targetMin.z = candidate.getMin().z < targetMin.z ? candidate.getMin().z : targetMin.z;
 
-        max.x = current.getMax().x > max.x ? current.getMax().x : max.x;
-        max.y = current.getMax().y > max.y ? current.getMax().y : max.y;
-        max.z = current.getMax().z > max.z ? current.getMax().z : max.z;
+        targetMax.x = candidate.getMax().x > targetMax.x ? candidate.getMax().x : targetMax.x;
+        targetMax.y = candidate.getMax().y > targetMax.y ? candidate.getMax().y : targetMax.y;
+        targetMax.z = candidate.getMax().z > targetMax.z ? candidate.getMax().z : targetMax.z;
     }
     public static void calculateMin(Vector3f old, Vector3f candidate) {
         old.x = candidate.x < old.x ? candidate.x : old.x;

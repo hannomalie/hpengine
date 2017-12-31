@@ -31,7 +31,10 @@ vec4 getMaxG(sampler2D sampler, ivec2 baseCoords, int mipLevelToSampleFrom) {
 void main(){
 
 	ivec2 pixelPos = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 samplePos = 2*pixelPos;//+1; // TODO: Fix this
+	if(pixelPos.x > width || pixelPos.y > height) {
+	    return;
+	}
+	ivec2 samplePos = 2*pixelPos;
 	int mipmapSource = mipmapTarget-1;
 
     vec4 total;

@@ -89,7 +89,9 @@ open class InstanceSpatial : SimpleSpatial() {
 
     lateinit var instance: Instance
 
-    override fun getMinMax(): AABB = instance.entity.minMax
+    override fun getMinMax(): AABB {
+        return instance.entity.getComponent(ModelComponent::class.java, ModelComponent.COMPONENT_KEY).minMax
+    }
 
     override fun getMinMaxWorld(): AABB = super.getMinMaxWorld(instance)
 }

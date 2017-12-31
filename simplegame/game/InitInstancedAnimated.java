@@ -40,7 +40,7 @@ public class InitInstancedAnimated implements LifeCycle {
                 for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 4;
+                    int count = 3;
                     for (int x = -count; x < count; x++) {
                         for (int y = -count; y < count; y++) {
                             for (int z = -count; z < count; z++) {

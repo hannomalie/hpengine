@@ -34,17 +34,11 @@ public class FewInitInstancedAnimated implements LifeCycle {
             System.out.println("loaded entities : " + loaded.entities.size());
             for (final Entity current : loaded.entities) {
 
-                final ModelComponent modelComponent = current.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
-                List<Material> materials = modelComponent == null ? new ArrayList<Material>() : modelComponent.getMaterials();
-
-                for(int i = 0; i < 3; i++) {
-                    InstanceSpatial spatial = modelComponent.isStatic() ? new InstanceSpatial() : new AnimatedInstanceSpatial();
+                for(int i = 0; i < 300; i++) {
                     final Transform trafo = new Transform();
                     trafo.rotate(new Vector3f(1, 0, 0), -90);
                     trafo.setTranslation(new Vector3f(100*i, 0, 0));
-                    Instance instance = new Instance(current, trafo, materials, new AnimationController(120, 24), spatial);
-                    spatial.setInstance(instance);
-                    current.addExistingInstance(instance);
+                    Entity.addInstance(current, trafo);
                 }
             }
 

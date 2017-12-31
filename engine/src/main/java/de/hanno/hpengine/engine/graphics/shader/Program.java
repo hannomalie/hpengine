@@ -94,7 +94,8 @@ public class Program extends AbstractProgram implements Reloadable {
 
             attachShader(vertexShader);
 			if(printError("Attach shader")) {
-				throw new RuntimeException("Attach shader failed for " + vertexShader.getName());
+//				throw new RuntimeException("Attach shader failed for " + vertexShader.getName());
+				LOGGER.severe("Attach shader failed for " + vertexShader.getName());
 			}
             if(fragmentShader != null) attachShader(fragmentShader);
             if(geometryShader != null) attachShader(geometryShader);
