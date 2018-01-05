@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
@@ -31,7 +33,8 @@ public class DrawLinesExtension implements RenderExtension {
     @Override
     public void renderFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        if(Config.getInstance().isDrawBoundingVolumes()) {
+        if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
+
             GraphicsContext context = GraphicsContext.getInstance();
             context.disable(CULL_FACE);
             context.depthMask(false);
@@ -41,6 +44,9 @@ public class DrawLinesExtension implements RenderExtension {
             linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
             linesProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
             linesProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
+        }
+
+        if(Config.getInstance().isDrawBoundingVolumes()) {
 
             renderBatches(renderState.getRenderBatchesStatic());
             renderBatches(renderState.getRenderBatchesAnimated());
@@ -75,6 +81,27 @@ public class DrawLinesExtension implements RenderExtension {
 
 
             Engine.getInstance().getPhysicsFactory().debugDrawWorld();
+            firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
+        }
+        if(Config.getInstance().isDrawCameras()) {
+//            TODO: Use renderstate somehow?
+            Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).forEach(camera -> {
+                Vector3f[] corners = camera.getFrustumCorners();
+                Renderer.getInstance().batchLine(corners[0], corners[1]);
+                Renderer.getInstance().batchLine(corners[1], corners[2]);
+                Renderer.getInstance().batchLine(corners[2], corners[3]);
+                Renderer.getInstance().batchLine(corners[3], corners[0]);
+
+                Renderer.getInstance().batchLine(corners[4], corners[5]);
+                Renderer.getInstance().batchLine(corners[5], corners[6]);
+                Renderer.getInstance().batchLine(corners[6], corners[7]);
+                Renderer.getInstance().batchLine(corners[7], corners[4]);
+
+                Renderer.getInstance().batchLine(corners[0], corners[6]);
+                Renderer.getInstance().batchLine(corners[1], corners[7]);
+                Renderer.getInstance().batchLine(corners[2], corners[4]);
+                Renderer.getInstance().batchLine(corners[3], corners[5]);
+            });
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }

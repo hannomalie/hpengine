@@ -5,6 +5,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.util.Util;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -22,12 +23,11 @@ public class Camera extends Entity {
 	transient FloatBuffer lastViewMatrixBuffer = BufferUtils.createFloatBuffer(16);
 
 	protected Matrix4f projectionMatrix = new Matrix4f();
-	protected Matrix4f viewProjectionMatrix = null;
 
 	protected Frustum frustum = new Frustum();
 
-	private float near = 0.1f;
-	private float far = -2000f;
+	private float near = 1f;
+	private float far = 3000f;
 	private float fov = 30f;
 	private float ratio = (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight();
 	private float width = 1600f;
@@ -229,5 +229,29 @@ public class Camera extends Entity {
 
 	private void writeObject(ObjectOutputStream oos) throws IOException {
 		oos.defaultWriteObject();
+	}
+
+	public Vector3f[] getFrustumCorners() {
+		Vector4f[] result = new Vector4f[8];
+		Vector3f[] resultVec3 = new Vector3f[8];
+		Matrix4f inverseProjection = getProjectionMatrix().invert(new Matrix4f());
+		result[0] = inverseProjection.transform(new Vector4f(-1, 1, 1, 1));
+		result[1] = inverseProjection.transform(new Vector4f(1, 1, 1, 1));
+		result[2] = inverseProjection.transform(new Vector4f(1, -1, 1, 1));
+		result[3] = inverseProjection.transform(new Vector4f(-1, -1, 1, 1));
+
+		result[4] = inverseProjection.transform(new Vector4f(-1, 1, -1, 1));
+		result[5] = inverseProjection.transform(new Vector4f(1, 1, -1, 1));
+		result[6] = inverseProjection.transform(new Vector4f(1, -1, -1, 1));
+		result[7] = inverseProjection.transform(new Vector4f(-1, -1, -1, 1));
+
+		Matrix4f inverseView = getViewMatrix().invert(new Matrix4f());
+		for(int i = 0; i < 8; i++) {
+			result[i] = result[i].div(result[i].w);
+			result[i] = inverseView.transform(result[i]);
+			resultVec3[i] = new Vector3f(result[i].x, result[i].y, result[i].z);
+		}
+
+		return resultVec3;
 	}
 }

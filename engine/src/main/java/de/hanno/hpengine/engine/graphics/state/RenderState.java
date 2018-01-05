@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.CommandOrganization;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.Entity;
@@ -22,6 +23,7 @@ import org.joml.Vector4f;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RenderState {
     public final DrawResult latestDrawResult = new DrawResult(new FirstPassResult(), new SecondPassResult());
@@ -105,7 +107,7 @@ public class RenderState {
     }
 
     public void bufferEntities(List<Entity> entities) {
-        entitiesState.entitiesBuffer.put(Util.toArray(entities, Entity.class));
+        entitiesState.entitiesBuffer.put(Util.toArray(entities.stream().filter(entity -> entity.hasComponent(ModelComponent.COMPONENT_KEY)).collect(Collectors.toList()), Entity.class));
     }
     public void bufferJoints(List<BufferableMatrix4f> joints) {
         entitiesState.jointsBuffer.put(Util.toArray(joints, BufferableMatrix4f.class));

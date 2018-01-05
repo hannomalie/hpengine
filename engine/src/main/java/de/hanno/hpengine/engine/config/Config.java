@@ -105,6 +105,8 @@ public final class Config {
 	@Toggable(group = "Debug")
 	private boolean drawBoundingVolumes = false;
 	@Toggable(group = "Debug")
+	private boolean drawCameras = false;
+	@Toggable(group = "Debug")
 	private volatile boolean drawScene = true;
 	@Toggable(group = "Debug")
 	private volatile boolean useDirectTextureOutput = false;
@@ -557,7 +559,15 @@ public final class Config {
         this.drawBoundingVolumes = drawBoundingVolumes;
     }
 
-    public boolean isLoadDefaultMaterials() {
+	public boolean isDrawCameras() {
+		return drawCameras;
+	}
+
+	public void setDrawCameras(boolean drawCameras) {
+		this.drawCameras = drawCameras;
+	}
+
+	public boolean isLoadDefaultMaterials() {
         return loadDefaultMaterials;
     }
 

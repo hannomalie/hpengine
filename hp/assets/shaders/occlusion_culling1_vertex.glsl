@@ -125,7 +125,7 @@ void main(){
         float bias = 0.f;
         bool minOccluded = boundingRect[0].z > maxDepthSample + bias;
         bool maxOccluded = boundingRect[1].z > maxDepthSample + bias;
-        bool allOccluded = minOccluded && maxOccluded;//clamp(min(boundingRect[0].z, boundingRect[1].z), 0, 1) > maxDepthSample;
+        bool allOccluded = false;//minOccluded && maxOccluded;
 
 //                vec4 color = allOccluded ? vec4(0,1,0,0) : vec4(1,0,0,0);
 //                ivec2 texCoordsMin = ivec2(vec2(1280/2, 720/2)*boundingRect[0].xy);

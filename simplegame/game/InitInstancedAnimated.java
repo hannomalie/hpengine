@@ -1,5 +1,6 @@
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
@@ -40,7 +41,7 @@ public class InitInstancedAnimated implements LifeCycle {
                 for (int clusterIndex = 0; clusterIndex < 5; clusterIndex++) {
                     Cluster cluster = new Cluster();
                     Random random = new Random();
-                    int count = 3;
+                    int count = 8;
                     for (int x = -count; x < count; x++) {
                         for (int y = -count; y < count; y++) {
                             for (int z = -count; z < count; z++) {
@@ -66,6 +67,7 @@ public class InitInstancedAnimated implements LifeCycle {
             }
 
             Engine.getInstance().getScene().addAll(loaded.entities);
+            Engine.getInstance().getScene().add(new Camera());
             Thread.sleep(500);
             initialized = true;
         } catch (Exception e) {

@@ -20,7 +20,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 
 	public static final Vector3f WORLD_RIGHT = new Vector3f(1,0,0);
 	public static final Vector3f WORLD_UP = new Vector3f(0,1,0);
-	public static final Vector3f WORLD_VIEW = new Vector3f(0,0,-1);
+	public static final Vector3f WORLD_VIEW = new Vector3f(0,0,1);
 
 	private T parent;
 	private List<T> children = new ArrayList<>();
@@ -40,8 +40,8 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
 		viewMatrixBuffer.rewind();
 	}
 
-	public Transform(Transform downFacing) {
-		this.set(downFacing);
+	public Transform(Transform source) {
+		this.set(source);
 	}
 
 	public Transform initialize(Transform<T> other) {
@@ -204,7 +204,7 @@ public class Transform<T extends Transform> extends Matrix4f implements Parentab
     }
 
     public Vector3f getViewDirection() {
-        return this.transformDirection(new Vector3f(0,0,-1)).normalize();
+        return this.transformDirection(new Vector3f(0,0,1)).normalize();
     }
 
     public Quaternionf getRotation() {

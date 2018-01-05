@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
@@ -39,6 +40,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
@@ -497,8 +499,20 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void registerPipelines(TripleBuffer<RenderState> renderstate) {
-		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline() {
+		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline(true,true,true,null,null) {
 
+//			@Override
+//			public Camera getCullCam() {
+//				Optional<Camera> optionalCam = Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).findFirst();
+//				return optionalCam.get();
+//				return null;
+//			}
+//			@Override
+//			public Camera getRenderCam() {
+//				Optional<Camera> optionalCam = Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).findFirst();
+//				return optionalCam.get();
+//				return null;
+//			}
 			@Override
 			public void drawStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
 				super.drawStaticAndAnimated(drawDescriptionStatic, drawDescriptionAnimated);
@@ -514,7 +528,12 @@ public class DeferredRenderer implements Renderer {
 			}
 
 			protected void beforeDraw(RenderState renderState, Program program) {
-				Camera camera = renderState.camera;
+
+				Camera camera = getRenderCam();
+				if (camera == null) {
+					camera = renderState.camera;
+				}
+
 				FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
 				FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
 				FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();

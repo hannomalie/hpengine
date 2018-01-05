@@ -1,5 +1,6 @@
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
@@ -43,6 +44,8 @@ public class FewInitInstancedAnimated implements LifeCycle {
             }
 
             Engine.getInstance().getScene().addAll(loaded.entities);
+
+            Engine.getInstance().getScene().add(new Camera());
             Thread.sleep(500);
             initialized = true;
         } catch(Exception e){

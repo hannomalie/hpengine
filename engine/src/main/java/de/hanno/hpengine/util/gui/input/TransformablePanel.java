@@ -92,7 +92,7 @@ public class TransformablePanel<T extends Matrix4f> extends WebComponentPanel {
 				transformable.scaling(current);
 			}
 		});
-        this.addElement(new WebFormattedVec3Field("View Direction", transformable.transformDirection(new Vector3f(0,0,-1))) {
+        this.addElement(new WebFormattedVec3Field("View Direction", transformable.transformDirection(new Vector3f(0,0,1))) {
 			@Override
 			public void onValueChange(Vector3f current) {
 				Quaternionf temp = new Quaternionf();

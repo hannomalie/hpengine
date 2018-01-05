@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import com.carrotsearch.hppc.IntArrayList
+import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline.CoarseCullingPhase.*
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline.CullingPhase.*
@@ -28,7 +29,13 @@ import org.lwjgl.opengl.GL11.glFinish
 import org.lwjgl.opengl.GL42.*
 import org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT
 
-open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boolean = true, private val useBackfaceCulling: Boolean = true, private val useLineDrawingIfActivated: Boolean = true) {
+open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boolean = true,
+                                              private val useBackfaceCulling: Boolean = true,
+                                              private val useLineDrawingIfActivated: Boolean = true,
+                                              protected open val renderCam: Camera?,
+                                              protected open val cullCam: Camera?) {
+
+
 
     private val highZBuffer: RenderTarget by lazy {
         RenderTargetBuilder()
@@ -254,9 +261,10 @@ open class Pipeline @JvmOverloads constructor(private val useFrustumCulling: Boo
                 bindShaderStorageBuffer(13, currentCompactedPointers[phase]!!)
             }
             setUniform("maxDrawCommands", commandOrganization.commands.size)
-            setUniformAsMatrix4("viewProjectionMatrix", renderState.camera.viewProjectionMatrixAsBuffer)
-            setUniformAsMatrix4("viewMatrix", renderState.camera.viewMatrixAsBuffer)
-            setUniformAsMatrix4("projectionMatrix", renderState.camera.projectionMatrixAsBuffer)
+            val camera = cullCam ?: renderState.camera
+            setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
+            setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+            setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZBuffer.renderedTexture)
             GraphicsContext.getInstance().bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, HIGHZ_FORMAT)
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, (commandOrganization.commands.size + 2) / 3 * 3, invocationsPerCommand)

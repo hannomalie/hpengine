@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
@@ -92,7 +93,7 @@ public class DrawLightMapExtension implements RenderExtension {
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
 
-        pipeline = new Pipeline(false, false, false);
+        pipeline = new Pipeline(false, false, false, null, null);
     }
 
     private long firstPassRenderedInCycle;
