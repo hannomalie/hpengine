@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -42,16 +44,13 @@ public class Program extends AbstractProgram implements Reloadable {
     private GeometryShader geometryShader;
     private FragmentShader fragmentShader;
 
-	private String fragmentDefines;
-
 	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
 
 	private FileAlterationObserver observerFragmentShader;
 
 	protected Program(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource,
-					  boolean needsTextures, String fragmentDefines) {
-		this.needsTextures = needsTextures;
-		this.fragmentDefines = fragmentDefines;
+					  Defines defines) {
+		this.defines = defines;
 		
 		this.geometryShaderSource = geometryShaderSource;
 		this.vertexShaderSource = vertexShaderSource;
@@ -78,7 +77,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			}
 			try {
 				if(fragmentShaderSource != null) {
-					fragmentShader = loadShader(FragmentShader.class, fragmentShaderSource, fragmentDefines);
+					fragmentShader = loadShader(FragmentShader.class, fragmentShaderSource, defines);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -210,8 +209,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		
 		Program otherProgram = (Program) other;
 		
-		if (this.needsTextures == otherProgram.needsTextures &&
-				((this.geometryShaderSource == null && otherProgram.geometryShaderSource == null) ||
+		if (((this.geometryShaderSource == null && otherProgram.geometryShaderSource == null) ||
 				(this.geometryShaderSource.equals(otherProgram.geometryShaderSource))) &&
 			this.vertexShaderSource.equals(otherProgram.vertexShaderSource) &&
 			this.fragmentShaderSource.equals(otherProgram.fragmentShaderSource) &&
@@ -227,7 +225,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		hash += (geometryShaderSource != null? geometryShaderSource.hashCode() : 0);
 		hash += (vertexShaderSource != null? vertexShaderSource.hashCode() : 0);
 		hash += (fragmentShaderSource != null? fragmentShaderSource.hashCode() : 0);
-        hash += defines.hashCode();
+        hash += defines != null ? defines.hashCode() : 0;
 		return hash;
 	};
 	
@@ -249,11 +247,7 @@ public class Program extends AbstractProgram implements Reloadable {
 		return id;
 	}
 
-    public boolean needsTextures() {
-		return needsTextures;
-	}
-
-    public void addDefine(String name, Object define) {
+	public void addDefine(String name, Object define) {
 		localDefines.put(name, define);
 	}
 	public void removeDefine(String name) {

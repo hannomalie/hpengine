@@ -35,13 +35,4 @@ public abstract class Define<T> {
         };
     }
 
-    public static String getStringForDefines(List<Define> defines) {
-        StringBuilder builder = new StringBuilder("");
-        for(Define define : defines) {
-            builder.append(define.getDefineString());
-        }
-
-        return builder.toString();
-    }
-
 }

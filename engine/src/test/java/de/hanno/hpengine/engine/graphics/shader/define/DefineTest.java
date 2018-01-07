@@ -46,12 +46,12 @@ public class DefineTest {
 
     @Test
     public void testGetStringForDefinesReturnsCorrectString() {
-        ArrayList<Define> defines = new ArrayList<>();
+        Defines defines = new Defines();
         defines.add(Define.getDefine("a", true));
         defines.add(Define.getDefine("b", 5));
         Assert.assertThat("Defines should be compiled into a correct string!",
                 "#define a true\n#define b 5\n",
-                is(Define.getStringForDefines(defines)));
+                is(defines.toString()));
     }
 
 }

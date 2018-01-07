@@ -166,7 +166,7 @@ public class RenderState {
         if(pipelines.add(pipeline)) {
             return pipelines.indexOf(pipeline);
         } else {
-            throw new IllegalArgumentException("GPUCulledPipeline could somehow not be added to state");
+            throw new IllegalArgumentException("GPUFrustumCulledPipeline could somehow not be added to state");
         }
     }
 

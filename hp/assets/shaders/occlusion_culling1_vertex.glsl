@@ -85,8 +85,7 @@ void main(){
 
         Entity entity = entities[offset+invocationIndex];
 
-        const bool skipFrustumCulling = false;
-        bool inFrustum = skipFrustumCulling || (
+        bool inFrustum = (
                         in_frustum(viewProjectionMatrix, entity.max.xyz)
                         || in_frustum(viewProjectionMatrix, entity.min.xyz)
                         || in_frustum(viewProjectionMatrix, vec3(entity.min.xy, entity.max.z))
@@ -133,7 +132,16 @@ void main(){
 //	    imageStore(targetImage, texCoordsMin, color);//vec4(0,0,0,(textureLod(highZ, vec2(boundingRect[0].xy), LOD).r)));
 //	    imageStore(targetImage, texCoordsMax, color);
 
-        bool isVisible = !allOccluded && inFrustum;
+        bool isVisible = true;
+
+#ifdef FRUSTUM_CULLING
+        isVisible = isVisible && inFrustum;
+#endif
+
+#ifdef OCCLUSION_CULLING
+        isVisible = isVisible && !allOccluded;
+#endif
+
         visibility[instancesBaseOffset+invocationIndex] = isVisible ? 1 : 0;
         if(isVisible) {
             atomicAdd(entityCounts[commandIndex], 1);

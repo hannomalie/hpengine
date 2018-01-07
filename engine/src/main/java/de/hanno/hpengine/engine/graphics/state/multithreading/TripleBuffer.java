@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
-import de.hanno.hpengine.engine.graphics.renderer.GPUCulledPipeline;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;

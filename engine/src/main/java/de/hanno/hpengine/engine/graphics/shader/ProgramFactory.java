@@ -1,16 +1,12 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
-import org.apache.commons.io.FileUtils;
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
-import org.lwjgl.Sys;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -69,26 +65,17 @@ public class ProgramFactory {
 
         return getProgram(vertexShaderSource, fragmentShaderSource);
     }
-    public Program getProgram(CodeSource vertexShaderSource, CodeSource fragmentShaderSource) throws IOException {
-
-        Program program = new Program(vertexShaderSource, null, fragmentShaderSource, true, "");
-
-		LOADED_PROGRAMS.add(program);
-		Engine.getEventBus().register(program);
-		return program;
-	}
-	
-	public Program getProgram(String defines) {
-		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, true, defines);
+	public Program getProgram(Defines defines) {
+		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, defines);
 		LOADED_PROGRAMS.add(program);
 		Engine.getEventBus().register(program);
 		return program;
 	}
 
     public ComputeShaderProgram getComputeProgram(String computeShaderLocation) {
-        return getComputeProgram(computeShaderLocation, Collections.EMPTY_LIST);
+        return getComputeProgram(computeShaderLocation, new Defines());
     }
-	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, List<Define> defines) {
+	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
         return GraphicsContext.getInstance().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
@@ -97,12 +84,12 @@ public class ProgramFactory {
         });
 	}
 
-	public Program getProgram(boolean needsTextures, CodeSource vertexShaderSource, CodeSource fragmentShaderSource) {
-		return getProgram(needsTextures, vertexShaderSource, null, fragmentShaderSource);
+	public Program getProgram(CodeSource vertexShaderSource, CodeSource fragmentShaderSource) {
+		return getProgram(vertexShaderSource, null, fragmentShaderSource, new Defines());
 	}
-	public Program getProgram(boolean needsTextures, CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource) {
+	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
 		return GraphicsContext.getInstance().calculate(() -> {
-            Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, needsTextures, "");
+            Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
             return program;

@@ -1,20 +1,21 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
+import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.lwjgl.opengl.*;
 import org.joml.Vector2f;
-import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
+import org.lwjgl.opengl.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -31,9 +32,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_2D;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP;
-import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY;
+import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -133,10 +132,10 @@ public class TextureFactory {
 
 //    	loadAllAvailableTextures();
 
-        ArrayList horizontalDefines = new ArrayList() {{
+        Defines horizontalDefines = new Defines() {{
             add(Define.getDefine("HORIZONTAL", true));
         }};
-        ArrayList verticalDefines = new ArrayList() {{
+        Defines verticalDefines = new Defines() {{
             add(Define.getDefine("VERTICAL", true));
         }};
         blur2dProgramSeperableHorizontal = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);

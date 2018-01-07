@@ -18,6 +18,9 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
+import de.hanno.hpengine.engine.graphics.shader.Shader
+import de.hanno.hpengine.engine.graphics.shader.define.Define
+import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
 import de.hanno.hpengine.engine.model.CommandBuffer
 import de.hanno.hpengine.engine.model.Entity
@@ -25,12 +28,14 @@ import de.hanno.hpengine.engine.model.IndexBuffer
 import de.hanno.hpengine.engine.model.VertexBuffer.*
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.util.Util.*
+import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
 import org.lwjgl.opengl.GL11.GL_RGBA
 import org.lwjgl.opengl.GL11.glFinish
 import org.lwjgl.opengl.GL42.*
 import org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT
+import java.io.File
 
 interface Pipeline {
     fun prepareAndDraw(renderState: RenderState, programStatic: Program, programAnimated: Program, firstPassResult: FirstPassResult)
@@ -50,13 +55,9 @@ interface Pipeline {
     }
 
     val CoarseCullingPhase.staticPhase: CullingPhase
-        get() {
-            return if(this == ONE) STATIC_ONE else STATIC_TWO
-        }
+        get() = if(this == ONE) STATIC_ONE else STATIC_TWO
     val CoarseCullingPhase.animatedPhase: CullingPhase
-        get() {
-            return if(this == ONE) ANIMATED_ONE else ANIMATED_TWO
-        }
+        get() = if(this == ONE) ANIMATED_ONE else ANIMATED_TWO
 
     companion object {
         val HIGHZ_FORMAT = GL30.GL_R32F
@@ -67,7 +68,8 @@ interface Pipeline {
                                       renderCam: Camera? = null,
                                       cullCam: Camera? = renderCam): Pipeline {
             return when(T::class) {
-                is GPUCulledPipeline -> GPUCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                is GPUFrustumCulledPipeline -> GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
+                is GPUOcclusionCulledPipeline -> GPUOcclusionCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated, renderCam, cullCam)
                 else -> SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawingIfActivated)
             }
         }
@@ -116,7 +118,7 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
         GPUProfiler.end()
     }
 
-    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer<*>, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit, phase: CullingPhase) {
+    private fun render(renderState: RenderState, program: Program, commandOrganization: CommandOrganization, vertexIndexBuffer: VertexIndexBuffer<*>, drawCountBuffer: AtomicCounterBuffer, commandBuffer: CommandBuffer, offsetBuffer: IndexBuffer, beforeRender: () -> Unit) {
         GPUProfiler.start("Actually render")
         program.use()
         beforeRender()
@@ -124,17 +126,10 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
             program.setUniform("entityIndex", 0)
             program.setUniform("entityBaseIndex", 0)
             program.setUniform("indirect", true)
-            var drawCountBufferToUse = if(Config.getInstance().isUseOcclusionCulling) {
-                program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted[phase]!!)
-                program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled[phase]!!)
-                drawCountBuffer
-            } else {
-                program.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
-                program.bindShaderStorageBuffer(4, offsetBuffer)
-                drawCountBuffer
-            }
+            program.bindShaderStorageBuffer(3, renderState.entitiesState.entitiesBuffer)
+            program.bindShaderStorageBuffer(4, offsetBuffer)
             program.bindShaderStorageBuffer(6, renderState.entitiesState.jointsBuffer)
-            drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size, drawCountBufferToUse)
+            drawIndirect(vertexIndexBuffer, commandBuffer, commandOrganization.commands.size, drawCountBuffer)
         } else {
             for (i in commandOrganization.commands.indices) {
                 val command = commandOrganization.commands[i]
@@ -152,17 +147,17 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
         with(drawDescriptionStatic) {
             with(drawDescriptionStatic.commandOrganization) {
                 drawCountBuffer.put(0, commands.size)
-                render(renderState, program, this@with, vertexIndexBuffer, drawCountBuffer, commandBuffer, entityOffsetBuffer, {
+                render(renderState, program, this@with, vertexIndexBuffer, drawCountBuffer, commandBuffer, entityOffsetBuffer) {
                     beforeDrawStatic(renderState, program)
-                }, STATIC_ONE)
+                }
             }
         }
         with(drawDescriptionAnimated) {
             with(drawDescriptionAnimated.commandOrganization) {
                 drawCountBuffer.put(0, commands.size)
-                render(renderState, program, this@with, vertexIndexBuffer, drawCountBuffer, commandBuffer, entityOffsetBuffer, {
+                render(renderState, program, this@with, vertexIndexBuffer, drawCountBuffer, commandBuffer, entityOffsetBuffer) {
                     beforeDrawAnimated(renderState, program)
-                }, ANIMATED_ONE)
+                }
             }
         }
     }
@@ -204,15 +199,21 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
     }
 }
 
-open class GPUCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
-                                                       useBackfaceCulling: Boolean = true,
-                                                       useLineDrawing: Boolean = true,
-                                                       protected val renderCam: Camera?,
-                                                       protected val cullCam: Camera?) : SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
+                                                              useBackfaceCulling: Boolean = true,
+                                                              useLineDrawing: Boolean = true,
+                                                              protected val renderCam: Camera? = null,
+                                                              protected val cullCam: Camera? = renderCam) : SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing) {
 
 
     private lateinit var occlusionCullingPhase1Vertex: Program
     private lateinit var occlusionCullingPhase2Vertex: Program
+
+    protected open val defines = object : Defines() {
+        init {
+            add(Define.getDefine("FRUSTUM_CULLING", true))
+        }
+    }
 
     private val highZBuffer: RenderTarget by lazy {
         RenderTargetBuilder()
@@ -223,13 +224,12 @@ open class GPUCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolea
     }
     init {
         try {
-            this.occlusionCullingPhase1Vertex = ProgramFactory.getInstance().getProgram("occlusion_culling1_vertex.glsl", null)
-            this.occlusionCullingPhase2Vertex = ProgramFactory.getInstance().getProgram("occlusion_culling2_vertex.glsl", null)
+            this.occlusionCullingPhase1Vertex = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, defines)
+            this.occlusionCullingPhase2Vertex = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, defines)
         } catch (e: Exception) {
             e.printStackTrace()
             System.exit(-1)
         }
-
     }
 
     override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
@@ -393,5 +393,17 @@ open class GPUCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolea
         }
         GPUProfiler.end()
     }
+}
 
+open class GPUOcclusionCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
+                                                          useBackfaceCulling: Boolean = true,
+                                                          useLineDrawing: Boolean = true,
+                                                          renderCam: Camera? = null,
+                                                          cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
+    override val defines = object : Defines() {
+        init {
+            add(Define.getDefine("FRUSTUM_CULLING", true))
+            add(Define.getDefine("OCCLUSION_CULLING", true))
+        }
+    }
 }

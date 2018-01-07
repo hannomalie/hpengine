@@ -1,26 +1,20 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
-import java.nio.FloatBuffer;
-import java.nio.LongBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
+import com.google.common.eventbus.Subscribe;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
-
+import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import net.engio.mbassy.listener.Handler;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
-import org.joml.Vector3f;
 
-import com.google.common.eventbus.Subscribe;
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
-
-import javax.swing.*;
+import java.nio.FloatBuffer;
+import java.nio.LongBuffer;
+import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL42.GL_ATOMIC_COUNTER_BUFFER;
 
@@ -28,7 +22,7 @@ import static org.lwjgl.opengl.GL42.GL_ATOMIC_COUNTER_BUFFER;
 public abstract class AbstractProgram {
 
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
-    protected List<Define> defines = new ArrayList<>();
+    protected Defines defines = new Defines();
 	protected final int id = GraphicsContext.getInstance().createProgramId();
 
 	public AbstractProgram() { }

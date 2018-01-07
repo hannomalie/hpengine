@@ -89,13 +89,6 @@ public class Material implements Serializable, Bufferable {
 
 	protected Material() { }
 
-	private Program logAndFallBackIfNull(Program firstPassProgram, String definesString) {
-		if(firstPassProgram == null) {
-			firstPassProgram = ProgramFactory.getInstance().getProgram(definesString);
-		}
-		return firstPassProgram;
-	}
-
 	void addTexture(MAP map, Texture texture) {
 		materialInfo.put(map, texture);
 	}
@@ -114,10 +107,6 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesActive(Program program) {
 		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
 
-		if (!program.needsTextures()) {
-			return;
-		}
-
 //		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 //			MAP map = entry.getKey();
 //			Texture de.hanno.hpengine.texture = entry.getValue();
@@ -127,10 +116,6 @@ public class Material implements Serializable, Bufferable {
 //        OpenGLContext.getInstance().bindTextures(0, materialInfo.maps.getTextures().entrySet().size(), materialInfo.getTextureIds());
 	}
 	public void setTexturesActive(Program program, boolean withoutSetUsed) {
-		if (!program.needsTextures()) {
-			return;
-		}
-
 //		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 //			MAP map = entry.getKey();
 //            if(map.equals(MAP.OCCLUSION)) { continue; }

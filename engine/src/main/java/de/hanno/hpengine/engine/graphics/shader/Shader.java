@@ -2,6 +2,8 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
 import org.lwjgl.opengl.*;
@@ -11,6 +13,8 @@ import de.hanno.hpengine.util.ressources.Reloadable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,22 +24,22 @@ public interface Shader extends Reloadable {
     Logger LOGGER = Logger.getLogger(Shader.class.getName());
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, String filename) throws Exception {
-        return loadShader(type, new File(getDirectory() + filename), "");
+        return loadShader(type, new File(getDirectory() + filename), new Defines());
     }
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file) throws Exception {
-        return loadShader(type, file, "");
+        return loadShader(type, file, new Defines());
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, String mapDefinesString) throws Exception {
-        return loadShader(type, new CodeSource(file), mapDefinesString);
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, File file, Defines defines) throws Exception {
+        return loadShader(type, new CodeSource(file), defines);
     }
 
     static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource) {
-        return loadShader(type, shaderSource, "");
+        return loadShader(type, shaderSource, new Defines());
     }
 
-    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource, String mapDefinesString) {
+    static <SHADERTYPE extends Shader> SHADERTYPE loadShader(Class<SHADERTYPE> type, CodeSource shaderSource, Defines defines) {
 
         if (shaderSource == null) {
             LOGGER.severe("Shadersource null, returning null de.hanno.hpengine.shader");
@@ -43,7 +47,7 @@ public interface Shader extends Reloadable {
         }
 
         String resultingShaderSource = "#version 430 core \n"
-                + mapDefinesString + "\n"
+                + (defines.isEmpty() ? "" : defines) + "\n"
                 + ShaderDefine.getGlobalDefinesString() + "\n";
 
         String findStr = "\n";

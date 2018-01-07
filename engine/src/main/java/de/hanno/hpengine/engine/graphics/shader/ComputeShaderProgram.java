@@ -3,6 +3,7 @@ package de.hanno.hpengine.engine.graphics.shader;
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import de.hanno.hpengine.util.ressources.FileMonitor;
@@ -35,9 +36,9 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	private FileAlterationObserver observerShader;
 
     public ComputeShaderProgram(CodeSource computeShaderSource) {
-        this(computeShaderSource, Collections.EMPTY_LIST);
+        this(computeShaderSource, new Defines());
     }
-	public ComputeShaderProgram(CodeSource computeShaderSource, List<Define> defines) {
+	public ComputeShaderProgram(CodeSource computeShaderSource, Defines defines) {
 		this.computeShaderSource = computeShaderSource;
         this.defines = defines;
 
@@ -50,7 +51,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void load() {
 		clearUniforms();
 		try {
-            computeShader = ComputeShader.load(computeShaderSource, Define.getStringForDefines(defines));
+            computeShader = ComputeShader.load(computeShaderSource, defines);
             LOGGER.info("Loaded computeshader " + computeShaderSource.getFilename());
 		} catch (Exception e) {
 			e.printStackTrace();

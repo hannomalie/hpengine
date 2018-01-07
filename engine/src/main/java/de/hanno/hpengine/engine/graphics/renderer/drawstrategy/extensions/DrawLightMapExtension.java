@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.graphics.renderer.*;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
@@ -28,7 +29,6 @@ import org.lwjgl.opengl.GL30;
 
 import java.io.File;
 import java.nio.FloatBuffer;
-import java.nio.channels.Pipe;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
@@ -85,7 +85,7 @@ public class DrawLightMapExtension implements RenderExtension {
         lightmapDilationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_dilation_compute.glsl");
         lightmapBoundingSphereProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_bounding_sphere_compute.glsl");
 
-        Program cubeMapProgram = ProgramFactory.getInstance().getProgram(true, Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_fragment.glsl")));
+        Program cubeMapProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_fragment.glsl")), new Defines());
 
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
