@@ -112,7 +112,7 @@ public class TripleBuffer<T extends RenderState> {
         System.out.println("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)) + " with cycle " + currentWriteState.state.getCycle());
     }
 
-    public int registerPipeline(Supplier<Pipeline> factory) {
+    public PipelineRef registerPipeline(Supplier<Pipeline> factory) {
         Pipeline a = factory.get();
         Pipeline b = factory.get();
         Pipeline c = factory.get();
@@ -125,7 +125,7 @@ public class TripleBuffer<T extends RenderState> {
         if(aInt != bInt || aInt != cInt || bInt != cInt) {
             throw new IllegalStateException("Should get the same index for all three states for a single pipeline!");
         }
-        return aInt;
+        return new PipelineRef(aInt);
     }
 
     public void preparePipelines() {
@@ -162,4 +162,15 @@ public class TripleBuffer<T extends RenderState> {
 
     }
 
+    public static class PipelineRef<T extends Pipeline> {
+        private final int index;
+
+        public PipelineRef(int index) {
+            this.index = index;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+    }
 }

@@ -499,7 +499,7 @@ public class DeferredRenderer implements Renderer {
 
     @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-		simpleDrawStrategy.setPipelineIndex(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
+		simpleDrawStrategy.setPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
 	}
 
 }

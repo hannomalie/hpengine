@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -73,7 +74,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     GraphicsContext graphicsContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-    private int pipelineIndex;
+    private TripleBuffer.PipelineRef<GPUOcclusionCulledPipeline> pipelineRef;
 
     private final RenderBatch skyBoxRenderBatch;
 
@@ -186,6 +187,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     public FirstPassResult drawFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
+        GPUOcclusionCulledPipeline pipeline = renderState.get(pipelineRef);
+
         Camera camera = renderState.camera;
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
         FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
@@ -206,7 +209,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("Draw entities");
 
-        Pipeline pipeline = renderState.get(pipelineIndex);
         if (Config.getInstance().isDrawScene()) {
             Program firstpassProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
             Program firstpassProgramAnimated = ProgramFactory.getInstance().getFirstpassAnimatedDefaultProgram();
@@ -696,11 +698,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
-    public void setPipelineIndex(int pipelineIndex) {
-        this.pipelineIndex = pipelineIndex;
+    public void setPipelineRef(TripleBuffer.PipelineRef pipelineRef) {
+        this.pipelineRef = pipelineRef;
     }
 
-    public int getPipelineIndex() {
-        return pipelineIndex;
+    public TripleBuffer.PipelineRef getPipelineRef() {
+        return pipelineRef;
     }
 }

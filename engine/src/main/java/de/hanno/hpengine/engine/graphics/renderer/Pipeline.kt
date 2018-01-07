@@ -31,8 +31,7 @@ import de.hanno.hpengine.util.Util.*
 import de.hanno.hpengine.util.ressources.CodeSource
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import org.lwjgl.opengl.*
-import org.lwjgl.opengl.GL11.GL_RGBA
-import org.lwjgl.opengl.GL11.glFinish
+import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL42.*
 import org.lwjgl.opengl.GL43.GL_SHADER_STORAGE_BARRIER_BIT
 import java.io.File
@@ -239,13 +238,15 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
             GPUProfiler.start(profilerString)
             cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program) }, phase.staticPhase)
             cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program) }, phase.animatedPhase)
-            renderHighZMap(Renderer.getInstance().gBuffer.visibilityMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, ProgramFactory.getInstance().highZProgram)
+            renderHighZMap(getDepthMap(), Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, ProgramFactory.getInstance().highZProgram)
             GPUProfiler.end()
         }
         cullAndRender("Cull&Render Phase1", ONE)
         debugPrintPhase1(drawDescriptionStatic, STATIC_ONE)
         debugPrintPhase1(drawDescriptionAnimated, ANIMATED_ONE)
     }
+
+    open fun getDepthMap() = Renderer.getInstance().gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: CullingPhase) {
         if (Config.getInstance().isPrintPipelineDebugOutput) {
@@ -396,14 +397,30 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
 }
 
 open class GPUOcclusionCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
-                                                          useBackfaceCulling: Boolean = true,
-                                                          useLineDrawing: Boolean = true,
-                                                          renderCam: Camera? = null,
-                                                          cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
+                                                                useBackfaceCulling: Boolean = true,
+                                                                useLineDrawing: Boolean = true,
+                                                                renderCam: Camera? = null,
+                                                                cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
     override val defines = object : Defines() {
         init {
             add(Define.getDefine("FRUSTUM_CULLING", true))
             add(Define.getDefine("OCCLUSION_CULLING", true))
         }
+    }
+}
+
+open class GPUOcclusionCulledDepthPrepassPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
+                                                                useBackfaceCulling: Boolean = true,
+                                                                useLineDrawing: Boolean = true,
+                                                                renderCam: Camera? = null,
+                                                                cullCam: Camera? = renderCam) : GPUOcclusionCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
+    private val depthTarget = RenderTargetBuilder().add(ColorAttachmentDefinition().setInternalFormat(HIGHZ_FORMAT)).build()
+    private val depthPrepassProgramStatic = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "simple_depth.glsl")
+    private val depthPrepassProgramAnimated = ProgramFactory.getInstance().getProgram("first_pass_animated_vertex.glsl", "simple_depth.glsl")
+    override fun getDepthMap() = depthTarget.renderedTexture
+
+    fun depthPrepass(renderState: RenderState, firstPassResult: FirstPassResult) {
+        depthTarget.use(true)
+        super.draw(renderState, depthPrepassProgramStatic, depthPrepassProgramAnimated, firstPassResult)
     }
 }

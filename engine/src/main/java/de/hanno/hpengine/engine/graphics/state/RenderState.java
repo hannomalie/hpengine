@@ -4,6 +4,7 @@ import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.*;
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -170,8 +171,8 @@ public class RenderState {
         }
     }
 
-    public Pipeline get(int index) {
-        return pipelines.get(index);
+    public <T extends Pipeline> T get(TripleBuffer.PipelineRef<T> index) {
+        return (T) pipelines.get(index.getIndex());
     }
 
     public List<Pipeline> getPipelines() {
