@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline.CullingPhase;
@@ -9,14 +8,13 @@ import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
-import org.lwjgl.BufferUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.lwjgl.BufferUtils.*;
+import static org.lwjgl.BufferUtils.createIntBuffer;
 
 public class CommandOrganization {
     protected final List<DrawElementsIndirectCommand> commands = new ArrayList<>();

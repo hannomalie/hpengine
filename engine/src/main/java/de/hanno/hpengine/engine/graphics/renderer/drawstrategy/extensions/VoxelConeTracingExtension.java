@@ -1,17 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import com.carrotsearch.hppc.ObjectLongHashMap;
+import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
@@ -84,7 +81,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
     private final int gridTwo;
     private int lightInjectedCounter;
 
-    private Pipeline pipeline;
+    private SimplePipeline pipeline;
     private FirstPassResult firstPassResult = new FirstPassResult();
     private boolean useIndirectDrawing = false;
 
@@ -122,7 +119,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
         currentVoxelSource = gridTwo;
         voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
         Config.getInstance().setUseAmbientOcclusion(false);
-        pipeline = new Pipeline(false, false, false, null, null);
+        pipeline = new SimplePipeline(false, false, false);
     }
 
     private long entityMovedLastInCycle;

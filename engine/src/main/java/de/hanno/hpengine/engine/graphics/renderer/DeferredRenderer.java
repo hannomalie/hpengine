@@ -1,37 +1,38 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.scene.Scene;
-import de.hanno.hpengine.engine.transform.SimpleTransform;
-import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.*;
-import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.StateChangedEvent;
+import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
-import de.hanno.hpengine.util.fps.FPSCounter;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
+import de.hanno.hpengine.engine.model.*;
+import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
+import de.hanno.hpengine.engine.transform.SimpleTransform;
+import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL43;
-import org.joml.Vector3f;
 
 import javax.vecmath.Vector2f;
 import java.io.File;
@@ -40,7 +41,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
@@ -497,65 +497,9 @@ public class DeferredRenderer implements Renderer {
         GPUProfiler.startFrame();
 	}
 
-	@Override
-	public void registerPipelines(TripleBuffer<RenderState> renderstate) {
-		simpleDrawStrategy.setPipelineIndex(renderstate.registerPipeline(() -> new Pipeline(true,true,true,null,null) {
-
-//			@Override
-//			public Camera getCullCam() {
-//				Optional<Camera> optionalCam = Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).findFirst();
-//				return optionalCam.get();
-//				return null;
-//			}
-//			@Override
-//			public Camera getRenderCam() {
-//				Optional<Camera> optionalCam = Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).findFirst();
-//				return optionalCam.get();
-//				return null;
-//			}
-			@Override
-			public void drawStaticAndAnimated(DrawDescription drawDescriptionStatic, DrawDescription drawDescriptionAnimated) {
-				super.drawStaticAndAnimated(drawDescriptionStatic, drawDescriptionAnimated);
-			}
-
-			@Override
-			public void beforeDrawStatic(RenderState renderState, Program program) {
-				beforeDraw(renderState, program);
-			}
-			@Override
-			public void beforeDrawAnimated(RenderState renderState, Program program) {
-				beforeDraw(renderState, program);
-			}
-
-			protected void beforeDraw(RenderState renderState, Program program) {
-
-				Camera camera = getRenderCam();
-				if (camera == null) {
-					camera = renderState.camera;
-				}
-
-				FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
-				FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
-				FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
-
-				program.use();
-				program.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
-				program.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
-				program.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
-				program.setUniform("rainEffect", Config.getInstance().getRainEffect());
-				program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-				program.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer);
-				program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-				program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer);
-				program.setUniform("eyePosition", camera.getPosition());
-				program.setUniform("lightDirection", renderState.directionalLightState.directionalLightDirection);
-				program.setUniform("near", camera.getNear());
-				program.setUniform("far", camera.getFar());
-				program.setUniform("time", (int) System.currentTimeMillis());
-				program.setUniform("useParallax", Config.getInstance().isUseParallax());
-				program.setUniform("useSteepParallax", Config.getInstance().isUseSteepParallax());
-			}
-		}));
+    @Override
+	public void registerPipelines(TripleBuffer<RenderState> renderState) {
+		simpleDrawStrategy.setPipelineIndex(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
 	}
 
 }

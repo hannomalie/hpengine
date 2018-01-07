@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.state.multithreading;
 
+import de.hanno.hpengine.engine.graphics.renderer.GPUCulledPipeline;
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
@@ -112,10 +113,10 @@ public class TripleBuffer<T extends RenderState> {
         System.out.println("Write " + (currentWriteState == instanceA ? 0 : (currentWriteState == instanceB ? 1 : 2)) + " with cycle " + currentWriteState.state.getCycle());
     }
 
-    public int registerPipeline(Supplier<Pipeline> supplier) {
-        Pipeline a = supplier.get();
-        Pipeline b = supplier.get();
-        Pipeline c = supplier.get();
+    public int registerPipeline(Supplier<Pipeline> factory) {
+        Pipeline a = factory.get();
+        Pipeline b = factory.get();
+        Pipeline c = factory.get();
         if(a == b || a == c || b == c) {
             throw new IllegalArgumentException("Supplier has to provide new instances each time it is called!");
         }

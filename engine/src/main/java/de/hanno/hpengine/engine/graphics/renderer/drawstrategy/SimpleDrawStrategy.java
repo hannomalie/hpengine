@@ -5,12 +5,9 @@ import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
@@ -40,7 +37,6 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static de.hanno.hpengine.engine.graphics.renderer.Pipeline.HIGHZ_FORMAT;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
@@ -174,7 +170,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             } else {
                 GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, highZTexture);
             }
-            GraphicsContext.getInstance().bindImageTexture(1, highZTexture, mipmapTarget, false, 0, GL15.GL_READ_WRITE, HIGHZ_FORMAT);
+            GraphicsContext.getInstance().bindImageTexture(1, highZTexture, mipmapTarget, false, 0, GL15.GL_READ_WRITE, Pipeline.Companion.getHIGHZ_FORMAT());
             int num_groups_x = Math.max(1, (currentWidth + 7) / 8);
             int num_groups_y = Math.max(1, (currentHeight + 7) / 8);
             highZProgram.dispatchCompute(num_groups_x, num_groups_y, 1);

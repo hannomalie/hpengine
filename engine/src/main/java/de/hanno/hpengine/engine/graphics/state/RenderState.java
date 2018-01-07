@@ -3,11 +3,8 @@ package de.hanno.hpengine.engine.graphics.state;
 import de.hanno.hpengine.engine.BufferableMatrix4f;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.graphics.renderer.CommandOrganization;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
+import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
@@ -40,7 +37,7 @@ public class RenderState {
     public boolean sceneInitiallyDrawn;
     public Vector4f sceneMin = new Vector4f();
     public Vector4f sceneMax = new Vector4f();
-    public List<Pipeline> pipelines = new ArrayList<>();
+    public List<Pipeline> pipelines = new ArrayList<Pipeline>();
 
     private long cycle = 0;
     private volatile long gpuCommandSync;
@@ -169,7 +166,7 @@ public class RenderState {
         if(pipelines.add(pipeline)) {
             return pipelines.indexOf(pipeline);
         } else {
-            throw new IllegalArgumentException("Pipeline could somehow not be added to state");
+            throw new IllegalArgumentException("GPUCulledPipeline could somehow not be added to state");
         }
     }
 

@@ -1,14 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
-import de.hanno.hpengine.engine.camera.Camera;
+import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.NewLightmapManager;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Pipeline;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
@@ -32,6 +28,7 @@ import org.lwjgl.opengl.GL30;
 
 import java.io.File;
 import java.nio.FloatBuffer;
+import java.nio.channels.Pipe;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
@@ -58,7 +55,7 @@ public class DrawLightMapExtension implements RenderExtension {
     private Program lightmapEvaluationProgram;
     private final FloatBuffer identityMatrix44Buffer;
 
-    Pipeline pipeline;
+    SimplePipeline pipeline;
 
     public static int WIDTH = 256;
     public static int HEIGHT = WIDTH;
@@ -93,7 +90,7 @@ public class DrawLightMapExtension implements RenderExtension {
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
 
-        pipeline = new Pipeline(false, false, false, null, null);
+        pipeline = new SimplePipeline(false, false, false);
     }
 
     private long firstPassRenderedInCycle;
