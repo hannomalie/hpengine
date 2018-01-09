@@ -118,7 +118,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
 
         currentVoxelTarget = grid;
         currentVoxelSource = gridTwo;
-        voxelConeTraceProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl");
+        voxelConeTraceProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
         Config.getInstance().setUseAmbientOcclusion(false);
         pipeline = new SimplePipeline(false, false, false);
     }

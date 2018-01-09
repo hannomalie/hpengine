@@ -27,7 +27,7 @@ public class Camera extends Entity {
 	protected Frustum frustum = new Frustum();
 
 	private float near = 1f;
-	private float far = 3000f;
+	private float far = 7000f;
 	private float fov = 30f;
 	private float ratio = (float) Config.getInstance().getWidth() / (float) Config.getInstance().getHeight();
 	private float width = 1600f;

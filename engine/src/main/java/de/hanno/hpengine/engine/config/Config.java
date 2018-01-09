@@ -105,7 +105,7 @@ public final class Config {
 	@Toggable(group = "Debug")
 	private boolean drawBoundingVolumes = false;
 	@Toggable(group = "Debug")
-	private boolean drawCameras = false;
+	private boolean drawCameras = true;
 	@Toggable(group = "Debug")
 	private volatile boolean drawScene = true;
 	@Toggable(group = "Debug")

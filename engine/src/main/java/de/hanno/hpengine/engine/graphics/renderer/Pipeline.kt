@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer
 
 import com.carrotsearch.hppc.IntArrayList
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.Pipeline.CoarseCullingPhase
@@ -201,35 +202,20 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
 open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
                                                               useBackfaceCulling: Boolean = true,
                                                               useLineDrawing: Boolean = true,
-                                                              protected val renderCam: Camera? = null,
-                                                              protected val cullCam: Camera? = renderCam) : SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+                                                              open val renderCam: Camera? = null,
+                                                              open val cullCam: Camera? = renderCam) : SimplePipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing) {
+
+    protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
+
+    private var occlusionCullingPhase1Vertex: Program = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase2Vertex: Program = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
 
 
-    private lateinit var occlusionCullingPhase1Vertex: Program
-    private lateinit var occlusionCullingPhase2Vertex: Program
-
-    protected open val defines = object : Defines() {
-        init {
-            add(Define.getDefine("FRUSTUM_CULLING", true))
-        }
-    }
-
-    private val highZBuffer: RenderTarget by lazy {
-        RenderTargetBuilder()
+    var highZBuffer: RenderTarget = RenderTargetBuilder()
                 .setWidth(Config.getInstance().width / 2).setHeight(Config.getInstance().height / 2)
                 .add(ColorAttachmentDefinition().setInternalFormat(HIGHZ_FORMAT)
                         .setTextureFilter(GL11.GL_NEAREST_MIPMAP_NEAREST))
                 .build()
-    }
-    init {
-        try {
-            this.occlusionCullingPhase1Vertex = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, defines)
-            this.occlusionCullingPhase2Vertex = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, defines)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            System.exit(-1)
-        }
-    }
 
     override fun drawStaticAndAnimated(drawDescriptionStatic: DrawDescription, drawDescriptionAnimated: DrawDescription) {
         ARBClearTexture.glClearTexImage(highZBuffer.renderedTexture, 0, GL_RGBA, GL11.GL_UNSIGNED_BYTE, ZERO_BUFFER)
@@ -238,7 +224,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
             GPUProfiler.start(profilerString)
             cullAndRender(drawDescriptionStatic, { beforeDrawStatic(drawDescriptionStatic.renderState, drawDescriptionStatic.program) }, phase.staticPhase)
             cullAndRender(drawDescriptionAnimated, { beforeDrawAnimated(drawDescriptionAnimated.renderState, drawDescriptionAnimated.program) }, phase.animatedPhase)
-            renderHighZMap(getDepthMap(), Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, ProgramFactory.getInstance().highZProgram)
+            renderHighZMap()
             GPUProfiler.end()
         }
         cullAndRender("Cull&Render Phase1", ONE)
@@ -246,7 +232,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         debugPrintPhase1(drawDescriptionAnimated, ANIMATED_ONE)
     }
 
-    open fun getDepthMap() = Renderer.getInstance().gBuffer.visibilityMap
+    private val highZProgram = ProgramFactory.getInstance().getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+
+    open fun renderHighZMap() {
+        renderHighZMap(depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
+    }
+
+    open var depthMap = Renderer.getInstance().gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: CullingPhase) {
         if (Config.getInstance().isPrintPipelineDebugOutput) {
@@ -401,26 +393,55 @@ open class GPUOcclusionCulledPipeline @JvmOverloads constructor(useFrustumCullin
                                                                 useLineDrawing: Boolean = true,
                                                                 renderCam: Camera? = null,
                                                                 cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
-    override val defines = object : Defines() {
-        init {
-            add(Define.getDefine("FRUSTUM_CULLING", true))
-            add(Define.getDefine("OCCLUSION_CULLING", true))
-        }
-    }
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", true))
 }
 
-open class GPUOcclusionCulledDepthPrepassPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
-                                                                useBackfaceCulling: Boolean = true,
-                                                                useLineDrawing: Boolean = true,
-                                                                renderCam: Camera? = null,
-                                                                cullCam: Camera? = renderCam) : GPUOcclusionCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
-    private val depthTarget = RenderTargetBuilder().add(ColorAttachmentDefinition().setInternalFormat(HIGHZ_FORMAT)).build()
-    private val depthPrepassProgramStatic = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "simple_depth.glsl")
-    private val depthPrepassProgramAnimated = ProgramFactory.getInstance().getProgram("first_pass_animated_vertex.glsl", "simple_depth.glsl")
-    override fun getDepthMap() = depthTarget.renderedTexture
+open class DepthPrepassPipeline @JvmOverloads constructor(useFrustumCulling: Boolean = true,
+                                                          useBackfaceCulling: Boolean = true,
+                                                          useLineDrawing: Boolean = true,
+                                                          renderCam: Camera? = null,
+                                                          cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
+    override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", true))
+    val depthTarget = RenderTargetBuilder().add(ColorAttachmentDefinition().setInternalFormat(HIGHZ_FORMAT)).build()
+    private val depthPrepassProgramStatic = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
+    private val depthPrepassProgramAnimated = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())
+    override var depthMap = depthTarget.renderedTexture
 
-    fun depthPrepass(renderState: RenderState, firstPassResult: FirstPassResult) {
-        depthTarget.use(true)
+    fun draw(renderState:RenderState, firstPassResult: FirstPassResult) {
         super.draw(renderState, depthPrepassProgramStatic, depthPrepassProgramAnimated, firstPassResult)
+        renderHighZMap()
+    }
+
+    override fun beforeDrawStatic(renderState: RenderState, program: Program) {
+        setUniforms(renderState, program)
+    }
+
+    override fun beforeDrawAnimated(renderState: RenderState, program: Program) {
+        setUniforms(renderState, program)
+    }
+
+    override val cullCam: Camera?
+        get() = getDebugCam()
+
+    private fun getDebugCam(): Camera? {
+        val option = Engine.getInstance().scene.entities.stream().filter { it -> it is Camera }.map { it -> it as Camera }.findFirst()
+        return if (option.isPresent) option.get() else null
+    }
+    fun setUniforms(renderState: RenderState, program: Program) {
+
+        val camera = cullCam ?: renderCam ?: renderState.camera
+        val viewMatrixAsBuffer = camera.getViewMatrixAsBuffer()
+        val projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer()
+        val viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer()
+
+        program.use()
+        program.bindShaderStorageBuffer(1, renderState.materialBuffer)
+        program.bindShaderStorageBuffer(3, renderState.entitiesBuffer)
+        program.setUniform("useRainEffect", if (Config.getInstance().rainEffect.toDouble() == 0.0) false else true)
+        program.setUniform("rainEffect", Config.getInstance().rainEffect)
+        program.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer)
+        program.setUniformAsMatrix4("lastViewMatrix", viewMatrixAsBuffer)
+        program.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer)
+        program.setUniformAsMatrix4("viewProjectionMatrix", viewProjectionMatrixAsBuffer)
     }
 }

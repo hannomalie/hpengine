@@ -18,6 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuild
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.*;
@@ -184,11 +185,11 @@ public class DeferredRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
-		debugFrameProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")));
-		blurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")));
-		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")));
-		linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+		debugFrameProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")), new Defines());
+		blurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")), new Defines());
+		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")), new Defines());
+		linesProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
 
 	}
 
@@ -205,7 +206,7 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-			drawToQuad(155, QuadVertexBuffer.getDebugBuffer(), debugFrameProgram);
+			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), debugFrameProgram);
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
@@ -499,7 +500,7 @@ public class DeferredRenderer implements Renderer {
 
     @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-		simpleDrawStrategy.setPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
+        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
 	}
 
 }

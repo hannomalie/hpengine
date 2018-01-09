@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 
@@ -13,6 +13,20 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
     GPUCulledMainPipeline() {
         super(true, true, true, null, null);
     }
+
+//    This can be used for debug drawing
+//    @Override
+//    public Camera getCullCam() {
+//        return getDebugCam();
+//    }
+//
+//    private Camera getDebugCam() {
+//        return Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> ((Camera) it)).findFirst().get();
+//    }
+//    @Override
+//    public void renderHighZMap() {
+//
+//    }
 
     @Override
     public void beforeDrawStatic(RenderState renderState, Program program) {

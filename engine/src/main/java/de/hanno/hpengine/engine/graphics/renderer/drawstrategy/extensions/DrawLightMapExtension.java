@@ -79,8 +79,8 @@ public class DrawLightMapExtension implements RenderExtension {
             TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(4));
         });
         identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-        lightMapProgram = ProgramFactory.getInstance().getProgram("lightmap_vertex.glsl", "lightmap_fragment.glsl");
-        lightmapEvaluationProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl");
+        lightMapProgram = ProgramFactory.getInstance().getProgramFromFileNames("lightmap_vertex.glsl", "lightmap_fragment.glsl", new Defines());
+        lightmapEvaluationProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl", new Defines());
         lightmapPropagationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_propagation_compute.glsl");
         lightmapDilationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_dilation_compute.glsl");
         lightmapBoundingSphereProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_bounding_sphere_compute.glsl");

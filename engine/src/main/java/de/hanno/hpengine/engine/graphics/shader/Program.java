@@ -67,7 +67,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			clearUniforms();
 
 			try {
-                vertexShader = VertexShader.load(vertexShaderSource);
+                vertexShader = VertexShader.load(vertexShaderSource, defines);
 			} catch (Exception e) {
 				try {
                     vertexShader = ProgramFactory.getInstance().getDefaultFirstpassVertexShader();
@@ -84,7 +84,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			}
 			if (geometryShaderSource != null) {
 				try {
-                    geometryShader = loadShader(GeometryShader.class, geometryShaderSource);
+                    geometryShader = loadShader(GeometryShader.class, geometryShaderSource, defines);
 					printError("Attach geometryshader ");
 				} catch (Exception e) {
 					LOGGER.severe("Not able to load geometry de.hanno.hpengine.shader, so what else could be done...");

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.camera.Camera;
-import de.hanno.hpengine.engine.scene.Scene;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
@@ -27,7 +27,7 @@ public class DrawLinesExtension implements RenderExtension {
 
     public DrawLinesExtension() throws Exception {
         identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-        linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl");
+        linesProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
     }
 
     @Override

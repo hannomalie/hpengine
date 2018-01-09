@@ -1,5 +1,6 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.junit.Assert;
 import org.junit.Test;
@@ -17,7 +18,7 @@ public class ShaderTest extends TestWithRenderer {
         CodeSource shaderSource = ShaderSourceFactory.getShaderSource("void main() {}");
 
         {
-            VertexShader vertexShader = VertexShader.load(shaderSource);
+            VertexShader vertexShader = VertexShader.load(shaderSource, new Defines());
             Assert.assertTrue("", vertexShader.getShaderType().equals(OpenGLShader.VertexShader));
             Assert.assertTrue(vertexShader.getId() > 0);
         }

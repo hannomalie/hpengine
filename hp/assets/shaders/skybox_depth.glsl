@@ -74,16 +74,18 @@ layout(location=5)out vec4 out_lightmap; // visibility
 
 void main(void) {
 
-	float depth = (position_clip.z / position_clip.w);
-
-    out_position = pass_WorldPosition;
-    out_position.w = 0;
-    out_normal = vec4(normal_view, depth);
-    out_normal.a = 1;
-    vec3 sampleVector = -normalize(pass_WorldPosition.xyz-eyePos_world.xyz);
-    out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
-    out_motion = vec4(0,0,depth,0);
-    out_visibility = vec4(1, 1, materialIndex, 0);
-    out_lightmap = vec4(0);
+//	float depth = (position_clip.z / position_clip.w);
+//
+//    out_position = pass_WorldPosition;
+//    out_position.w = 0;
+//    out_normal = vec4(normal_view, depth);
+//    out_normal.a = 1;
+//    vec3 sampleVector = -normalize(pass_WorldPosition.xyz-eyePos_world.xyz);
+//    out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
+//    out_motion = vec4(0,0,depth,0);
+//    out_visibility = vec4(1, 1, materialIndex, 0);
+//    out_lightmap = vec4(0);
 //    gl_FragDepth = 1;
+
+    out_position.r = 1;
 }

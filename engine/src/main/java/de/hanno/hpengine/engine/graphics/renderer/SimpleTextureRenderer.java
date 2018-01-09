@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
@@ -109,7 +110,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		DeferredRenderer.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")));
+		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 
 	}
 

@@ -7,6 +7,7 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
@@ -66,6 +67,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     private Program reflectionProgram;
     private Program linesProgram;
     private Program skyBoxProgram;
+    private Program skyBoxDepthProgram;
     private Program probeFirstpassProgram;
     private ComputeShaderProgram secondPassPointComputeProgram;
     private ComputeShaderProgram tiledProbeLightingProgram;
@@ -74,30 +76,31 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     GraphicsContext graphicsContext;
     private final List<RenderExtension> renderExtensions = new ArrayList<>();
     private final DirectionalLightShadowMapExtension directionalLightShadowMapExtension;
-    private TripleBuffer.PipelineRef<GPUOcclusionCulledPipeline> pipelineRef;
+    private TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef;
 
     private final RenderBatch skyBoxRenderBatch;
 
     public SimpleDrawStrategy() throws Exception {
         super();
         ProgramFactory programFactory = ProgramFactory.getInstance();
-        secondPassPointProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")));
-        secondPassTubeProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")));
-        secondPassAreaProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")));
-        secondPassDirectionalProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")));
-        instantRadiosityProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")));
+        secondPassPointProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
+        secondPassTubeProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
+        secondPassAreaProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
+        secondPassDirectionalProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")), new Defines());
+        instantRadiosityProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")), new Defines());
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
-        combineProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")));
-        postProcessProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")));
+        combineProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
+        postProcessProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
 
-        aoScatteringProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "scattering_ao_fragment.glsl");
-        reflectionProgram = ProgramFactory.getInstance().getProgram("passthrough_vertex.glsl", "reflections_fragment.glsl");
-        linesProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "simple_color_fragment.glsl");
-        skyBoxProgram = ProgramFactory.getInstance().getProgram("mvp_vertex.glsl", "skybox.glsl");
-        probeFirstpassProgram = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl");
-        depthPrePassProgram = ProgramFactory.getInstance().getProgram("first_pass_vertex.glsl", "depth_prepass_fragment.glsl");
+        aoScatteringProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
+        reflectionProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
+        linesProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
+        skyBoxProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", new Defines());
+        skyBoxDepthProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl", new Defines());
+        probeFirstpassProgram = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl", new Defines());
+        depthPrePassProgram = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl", new Defines());
         tiledDirectLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_direct_lighting_compute.glsl");
         tiledProbeLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
@@ -187,17 +190,23 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     public FirstPassResult drawFirstPass(FirstPassResult firstPassResult, RenderState renderState) {
 
-        GPUOcclusionCulledPipeline pipeline = renderState.get(pipelineRef);
+        GPUCulledMainPipeline pipeline = renderState.get(mainPipelineRef);
 
         Camera camera = renderState.camera;
         FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
         FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
         FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
 
+
+        graphicsContext.enable(CULL_FACE);
+        graphicsContext.depthFunc(LESS);
+        graphicsContext.disable(GlCap.BLEND);
+        graphicsContext.disable(DEPTH_TEST);
+        graphicsContext.depthMask(true);
+
         graphicsContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
-
-        renderSkyBox(renderState, camera, viewMatrixAsBuffer, projectionMatrixAsBuffer);
+        renderSkyBox(renderState, camera, false, skyBoxProgram);
 
         GPUProfiler.start("Set GPU state");
         graphicsContext.enable(CULL_FACE);
@@ -232,27 +241,25 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         TextureFactory.getInstance().generateMipMaps(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         GPUProfiler.end();
 
-
         return firstPassResult;
     }
 
-    public void renderSkyBox(RenderState renderState, Camera camera, FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
+    public void renderSkyBox(RenderState renderState, Camera camera, boolean depthMask, Program program) {
         graphicsContext.disable(CULL_FACE);
-        graphicsContext.depthMask(false);
+        graphicsContext.depthMask(depthMask);
         graphicsContext.disable(GlCap.BLEND);
-        skyBoxRenderBatch.getProgram().use();
         skyBoxEntity.identity().scale(10);
         skyBoxEntity.setTranslation(camera.getPosition());
-        skyBoxProgram.use();
-        skyBoxProgram.setUniform("eyeVec", camera.getViewDirection());
-        skyBoxProgram.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
+        program.use();
+        program.setUniform("eyeVec", camera.getViewDirection());
+        program.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
         Vector3f translation = new Vector3f();
-        skyBoxProgram.setUniform("eyePos_world", camera.getTranslation(translation));
-        skyBoxProgram.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().getSkyboxMaterial()));
-        skyBoxProgram.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
-        skyBoxProgram.setUniformAsMatrix4("viewMatrix", viewMatrixAsBuffer);
-        skyBoxProgram.setUniformAsMatrix4("projectionMatrix", projectionMatrixAsBuffer);
-        DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, skyBoxProgram, false);
+        program.setUniform("eyePos_world", camera.getTranslation(translation));
+        program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().getSkyboxMaterial()));
+        program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
+        program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
+        program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
+        DrawStrategy.draw(skyboxVertexIndexBuffer.getVertexBuffer(), skyboxVertexIndexBuffer.getIndexBuffer(), skyBoxRenderBatch, program, false);
     }
 
     public SecondPassResult drawSecondPass(SecondPassResult secondPassResult, Camera camera, List<TubeLight> tubeLights, List<AreaLight> areaLights, RenderState renderState) {
@@ -698,11 +705,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
-    public void setPipelineRef(TripleBuffer.PipelineRef pipelineRef) {
-        this.pipelineRef = pipelineRef;
+    public void setMainPipelineRef(TripleBuffer.PipelineRef mainPipelineRef) {
+        this.mainPipelineRef = mainPipelineRef;
     }
 
-    public TripleBuffer.PipelineRef getPipelineRef() {
-        return pipelineRef;
+    public TripleBuffer.PipelineRef getMainPipelineRef() {
+        return mainPipelineRef;
     }
+
 }

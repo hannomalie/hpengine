@@ -39,7 +39,11 @@ void main(){
 
     vec4 total;
     if(mipmapTarget == 0) {
+#ifdef SOURCE_CHANNEL_R
+        total = getMaxR(sourceTexture, samplePos, 0);
+#else
         total = getMaxG(sourceTexture, samplePos, 0);
+#endif
     } else {
         total = getMaxR(sourceTexture, samplePos, mipmapSource);
     }

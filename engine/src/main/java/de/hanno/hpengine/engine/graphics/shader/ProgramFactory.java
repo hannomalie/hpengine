@@ -42,10 +42,10 @@ public class ProgramFactory {
             FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
             FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
 
-            FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
-            FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE);
+            FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, new Defines());
+            FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, new Defines());
 
-            APPEND_DRAWCOMMANDS_PROGRAM = getProgram("append_drawcommands_vertex.glsl", null);
+            APPEND_DRAWCOMMANDS_PROGRAM = getProgramFromFileNames("append_drawcommands_vertex.glsl", null, new Defines());
             HIGHZ_PROGRAM = getComputeProgram("highZ_compute.glsl");
 
         } catch (Exception e) {
@@ -59,11 +59,11 @@ public class ProgramFactory {
         instance = new ProgramFactory();
     }
 
-    public Program getProgram(String vertexShaderFilename, String fragmentShaderFileName) throws Exception {
+    public Program getProgramFromFileNames(String vertexShaderFilename, String fragmentShaderFileName, Defines defines) throws Exception {
         CodeSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + vertexShaderFilename));
         CodeSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + fragmentShaderFileName));
 
-        return getProgram(vertexShaderSource, fragmentShaderSource);
+        return getProgram(vertexShaderSource, fragmentShaderSource, defines);
     }
 	public Program getProgram(Defines defines) {
 		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, defines);
@@ -84,8 +84,8 @@ public class ProgramFactory {
         });
 	}
 
-	public Program getProgram(CodeSource vertexShaderSource, CodeSource fragmentShaderSource) {
-		return getProgram(vertexShaderSource, null, fragmentShaderSource, new Defines());
+	public Program getProgram(CodeSource vertexShaderSource, CodeSource fragmentShaderSource, Defines defines) {
+		return getProgram(vertexShaderSource, null, fragmentShaderSource, defines);
 	}
 	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
 		return GraphicsContext.getInstance().calculate(() -> {
@@ -106,7 +106,7 @@ public class ProgramFactory {
 
     public VertexShader getDefaultFirstpassVertexShader() {
         try {
-            return VertexShader.load(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE);
+            return VertexShader.load(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, new Defines());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Default vertex de.hanno.hpengine.shader cannot be loaded...");
