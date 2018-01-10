@@ -62,7 +62,7 @@ public class SimpleTextureRenderer implements Renderer {
             setupBuffers();
             ProgramFactory.init();
             TextureFactory.init();
-            DeferredRenderer.exitOnGLError("After TextureFactory");
+            GraphicsContext.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -94,21 +94,21 @@ public class SimpleTextureRenderer implements Renderer {
 		}};
 		glWatch = new OpenGLStopWatch();
 
-        DeferredRenderer.exitOnGLError("setupBuffers");
+        GraphicsContext.exitOnGLError("setupBuffers");
 	}
 
     private void setUpGBuffer() {
-        DeferredRenderer.exitOnGLError("Before setupGBuffer");
+        GraphicsContext.exitOnGLError("Before setupGBuffer");
 
         GraphicsContext.getInstance().execute(() -> {
             GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
-			DeferredRenderer.exitOnGLError("setupGBuffer");
+			GraphicsContext.exitOnGLError("setupGBuffer");
 		});
 	}
 	
 	private void setupShaders() throws Exception {
-		DeferredRenderer.exitOnGLError("Before setupShaders");
+		GraphicsContext.exitOnGLError("Before setupShaders");
 
 		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 

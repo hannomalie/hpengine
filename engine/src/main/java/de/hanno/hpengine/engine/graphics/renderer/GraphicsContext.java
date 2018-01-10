@@ -80,6 +80,7 @@ public interface GraphicsContext {
             String errorString = GLU.gluErrorString(errorValue);
             System.err.println("ERROR - " + errorMessage + ": " + errorString);
 
+            new RuntimeException("").printStackTrace();
             System.exit(-1);
         }
     }

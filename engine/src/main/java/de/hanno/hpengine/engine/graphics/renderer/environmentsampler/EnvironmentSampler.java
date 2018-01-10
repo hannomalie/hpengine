@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
 import de.hanno.hpengine.engine.graphics.light.*;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -118,7 +117,7 @@ public class EnvironmentSampler extends Camera {
 		cubeMapView = GL11.glGenTextures();
 		cubeMapView1 = GL11.glGenTextures();
 		cubeMapView2 = GL11.glGenTextures();
-		DeferredRenderer.exitOnGLError("EnvironmentSampler before view creation");
+		GraphicsContext.exitOnGLError("EnvironmentSampler before view creation");
 		for (int z = 0; z < 6; z++) {
 			cubeMapFaceViews[0][z] = GL11.glGenTextures();
 			cubeMapFaceViews[1][z] = GL11.glGenTextures();
@@ -144,7 +143,7 @@ public class EnvironmentSampler extends Camera {
 		fullscreenBuffer = new QuadVertexBuffer(true);
 		fullscreenBuffer.upload();
 		Engine.getEventBus().register(this);
-		DeferredRenderer.exitOnGLError("EnvironmentSampler constructor");
+		GraphicsContext.exitOnGLError("EnvironmentSampler constructor");
 	}
 
 	public void drawCubeMap(boolean urgent, RenderState extract) {

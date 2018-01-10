@@ -11,18 +11,25 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
+import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
 
 public class ProgramFactory {
 
-    public CodeSource FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE;
-    public CodeSource FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE;
-    public CodeSource FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE;
+    private CodeSource firstpassDefaultVertexshaderSource;
+    private CodeSource firstpassAnimatedDefaultVertexshaderSource;
+    private CodeSource firstpassDefaultFragmentshaderSource;
 
-    public Program FIRSTPASS_DEFAULT_PROGRAM;
-    public Program FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
+    private Program firstpassDefaultProgram;
+    private Program firstpassAnimatedDefaultProgram;
 
-    public ComputeShaderProgram HIGHZ_PROGRAM;
-    public Program APPEND_DRAWCOMMANDS_PROGRAM;
+    private ComputeShaderProgram highZProgram;
+    private Program appendDrawcommandsProgram;
+
+    private Program renderToQuadProgram;
+    private Program debugFrameProgram;
+    private Program blurProgram;
+    private Program bilateralBlurProgram;
+    private Program linesProgram;
 
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
@@ -38,15 +45,22 @@ public class ProgramFactory {
 
 	private ProgramFactory() {
         try {
-            FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
-            FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
-            FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE = ShaderSourceFactory.getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
+            firstpassAnimatedDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
+            firstpassDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
+            firstpassDefaultFragmentshaderSource = getShaderSource(new File(getDirectory() + "first_pass_fragment.glsl"));
 
-            FIRSTPASS_DEFAULT_PROGRAM = getProgram(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, new Defines());
-            FIRSTPASS_ANIMATED_DEFAULT_PROGRAM = getProgram(FIRSTPASS_ANIMATED_DEFAULT_VERTEXSHADER_SOURCE, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, new Defines());
+            firstpassDefaultProgram = getProgram(firstpassDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, new Defines());
+            firstpassAnimatedDefaultProgram = getProgram(firstpassAnimatedDefaultVertexshaderSource, firstpassDefaultFragmentshaderSource, new Defines());
 
-            APPEND_DRAWCOMMANDS_PROGRAM = getProgramFromFileNames("append_drawcommands_vertex.glsl", null, new Defines());
-            HIGHZ_PROGRAM = getComputeProgram("highZ_compute.glsl");
+            appendDrawcommandsProgram = getProgramFromFileNames("append_drawcommands_vertex.glsl", null, new Defines());
+            highZProgram = getComputeProgram("highZ_compute.glsl");
+
+            renderToQuadProgram = getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+            debugFrameProgram = getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")), new Defines());
+            blurProgram = getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")), new Defines());
+            bilateralBlurProgram = getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")), new Defines());
+            linesProgram = getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -60,13 +74,13 @@ public class ProgramFactory {
     }
 
     public Program getProgramFromFileNames(String vertexShaderFilename, String fragmentShaderFileName, Defines defines) throws Exception {
-        CodeSource vertexShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + vertexShaderFilename));
-        CodeSource fragmentShaderSource = ShaderSourceFactory.getShaderSource(new File(getDirectory() + fragmentShaderFileName));
+        CodeSource vertexShaderSource = getShaderSource(new File(getDirectory() + vertexShaderFilename));
+        CodeSource fragmentShaderSource = getShaderSource(new File(getDirectory() + fragmentShaderFileName));
 
         return getProgram(vertexShaderSource, fragmentShaderSource, defines);
     }
 	public Program getProgram(Defines defines) {
-		Program program = new Program(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, null, FIRSTPASS_DEFAULT_FRAGMENTSHADER_SOURCE, defines);
+		Program program = new Program(firstpassDefaultVertexshaderSource, null, firstpassDefaultFragmentshaderSource, defines);
 		LOADED_PROGRAMS.add(program);
 		Engine.getEventBus().register(program);
 		return program;
@@ -77,7 +91,7 @@ public class ProgramFactory {
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
         return GraphicsContext.getInstance().calculate(() -> {
-            ComputeShaderProgram program = new ComputeShaderProgram(ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
+            ComputeShaderProgram program = new ComputeShaderProgram(getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
             return program;
@@ -97,16 +111,16 @@ public class ProgramFactory {
 	}
 
     public Program getFirstpassDefaultProgram() {
-        return FIRSTPASS_DEFAULT_PROGRAM;
+        return firstpassDefaultProgram;
     }
 
     public Program getFirstpassAnimatedDefaultProgram() {
-        return FIRSTPASS_ANIMATED_DEFAULT_PROGRAM;
+        return firstpassAnimatedDefaultProgram;
     }
 
     public VertexShader getDefaultFirstpassVertexShader() {
         try {
-            return VertexShader.load(FIRSTPASS_DEFAULT_VERTEXSHADER_SOURCE, new Defines());
+            return VertexShader.load(firstpassDefaultVertexshaderSource, new Defines());
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Default vertex de.hanno.hpengine.shader cannot be loaded...");
@@ -116,10 +130,46 @@ public class ProgramFactory {
     }
 
     public ComputeShaderProgram getHighZProgram() {
-        return HIGHZ_PROGRAM;
+        return highZProgram;
+    }
+
+    public CodeSource getFirstpassDefaultVertexshaderSource() {
+        return firstpassDefaultVertexshaderSource;
+    }
+
+    public CodeSource getFirstpassAnimatedDefaultVertexshaderSource() {
+        return firstpassAnimatedDefaultVertexshaderSource;
+    }
+
+    public CodeSource getFirstpassDefaultFragmentshaderSource() {
+        return firstpassDefaultFragmentshaderSource;
+    }
+
+    public Program getAppendDrawcommandsProgram() {
+        return appendDrawcommandsProgram;
+    }
+
+    public Program getRenderToQuadProgram() {
+        return renderToQuadProgram;
+    }
+
+    public Program getDebugFrameProgram() {
+        return debugFrameProgram;
+    }
+
+    public Program getBlurProgram() {
+        return blurProgram;
+    }
+
+    public Program getBilateralBlurProgram() {
+        return bilateralBlurProgram;
+    }
+
+    public Program getLinesProgram() {
+        return linesProgram;
     }
 
     public Program getAppendDrawCommandProgram() {
-        return APPEND_DRAWCOMMANDS_PROGRAM;
+        return appendDrawcommandsProgram;
     }
 }

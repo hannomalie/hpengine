@@ -2,8 +2,8 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -97,7 +97,7 @@ public class GBuffer {
          storageBuffer = new PersistentMappedBuffer(4*8);//new StorageBuffer(16);
          storageBuffer.putValues(1f,-1f,0f,1f);
 
-        DeferredRenderer.exitOnGLError("grid de.hanno.hpengine.texture creation");
+        GraphicsContext.exitOnGLError("grid de.hanno.hpengine.texture creation");
 	}
 	
 	public void init() {

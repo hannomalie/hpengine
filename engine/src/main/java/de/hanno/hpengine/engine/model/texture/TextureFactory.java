@@ -1,16 +1,19 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
+import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
+import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -26,6 +29,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.List;
@@ -84,12 +88,12 @@ public class TextureFactory {
     public static void init() {
         instance = new TextureFactory();
         instance.loadDefaultTexture();
-        DeferredRenderer.exitOnGLError("After loadDefaultTexture");
+        GraphicsContext.exitOnGLError("After loadDefaultTexture");
         lensFlareTexture = instance.getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
-        DeferredRenderer.exitOnGLError("After load lensFlareTexture");
+        GraphicsContext.exitOnGLError("After load lensFlareTexture");
         try {
             cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
-            DeferredRenderer.exitOnGLError("After load cubemap");
+            GraphicsContext.exitOnGLError("After load cubemap");
             GraphicsContext.getInstance().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
@@ -115,7 +119,7 @@ public class TextureFactory {
     Texture defaultTexture = null;
 
     public TextureFactory() {
-        DeferredRenderer.exitOnGLError("Begin TextureFactory constructor");
+        GraphicsContext.exitOnGLError("Begin TextureFactory constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,
@@ -141,7 +145,7 @@ public class TextureFactory {
         blur2dProgramSeperableHorizontal = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
         blur2dProgramSeperableVertical = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
-        DeferredRenderer.exitOnGLError("After TextureFactory constructor");
+        GraphicsContext.exitOnGLError("After TextureFactory constructor");
 
         if(USE_TEXTURE_STREAMING) {
             new TimeStepThread("TextureWatcher", 0.5f) {
@@ -188,7 +192,7 @@ public class TextureFactory {
     private void loadAllAvailableTextures() {
     	File textureDir = new File(Texture.getDirectory());
     	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-		DeferredRenderer.exitOnGLError("Before loadAllAvailableTextures");
+		GraphicsContext.exitOnGLError("Before loadAllAvailableTextures");
 		for (File file : files) {
 			try {
 				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {
@@ -715,5 +719,49 @@ public class TextureFactory {
             int num_groups_y = Math.max(1, finalHeight / 8);
             blur2dProgramSeperableHorizontal.dispatchCompute(num_groups_x, num_groups_y, 1);
         });
+    }
+
+    public static void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes, RenderTarget target) {
+        GPUProfiler.start("BLURRRRRRR");
+        int copyTextureId = GL11.glGenTextures();
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+
+        GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
+//		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+
+        GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+                copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+                width, height, 1);
+
+        float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
+        float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
+        // TODO: Reset texture sizes after upscaling!!!
+        if(upscaleToFullscreen) {
+            GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
+            scaleForShaderX = 1;
+            scaleForShaderY = 1;
+        }
+
+        target.use(false);
+        target.setTargetTexture(sourceTextureId, 0);
+
+        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
+
+        ProgramFactory.getInstance().getBlurProgram().use();
+        ProgramFactory.getInstance().getBlurProgram().setUniform("mipmap", mipmap);
+        ProgramFactory.getInstance().getBlurProgram().setUniform("scaleX", scaleForShaderX);
+        ProgramFactory.getInstance().getBlurProgram().setUniform("scaleY", scaleForShaderY);
+        QuadVertexBuffer.getFullscreenBuffer().draw();
+        target.unuse();
+        GL11.glDeleteTextures(copyTextureId);
+        GPUProfiler.end();
     }
 }

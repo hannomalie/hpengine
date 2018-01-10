@@ -1,45 +1,28 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.DirectoryManager;
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.event.StateChangedEvent;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
-import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import de.hanno.hpengine.engine.model.*;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.DataChannels;
+import de.hanno.hpengine.engine.model.QuadVertexBuffer;
+import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
-import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
-import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import org.joml.Vector3f;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL42;
-import org.lwjgl.opengl.GL43;
 
 import javax.vecmath.Vector2f;
-import java.io.File;
-import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -52,50 +35,22 @@ import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.glFinish;
 
 public class DeferredRenderer implements Renderer {
-	private static boolean IGNORE_GL_ERRORS = false;
-
 	private static Logger LOGGER = getLogger();
 
 	private volatile boolean initialized = false;
 
 	private RenderProbeCommandQueue renderProbeCommandQueue = new RenderProbeCommandQueue();
 
-	public static EnumSet<DataChannels> RENDERTOQUAD = EnumSet.of(
-			DataChannels.POSITION3,
-			DataChannels.TEXCOORD);
-	
-	private OpenGLStopWatch glWatch;
-
-	private FloatBuffer matrix44Buffer = BufferUtils.createFloatBuffer(16);
-	private static Program renderToQuadProgram;
-	private static Program debugFrameProgram;
-	private static Program blurProgram;
-	private static Program bilateralBlurProgram;
-	private static Program linesProgram;
-
 	private ArrayList<VertexBuffer> sixDebugBuffers;
-
-	private OBJLoader objLoader;
-
-	private StaticModel sphereMesh;
-
-	private FloatBuffer identityMatrix44Buffer;
 
 	private GBuffer gBuffer;
 	private SimpleDrawStrategy simpleDrawStrategy;
-	private DrawStrategy currentDrawStrategy;
-
-	private RenderTarget fullScreenTarget;
-	private RenderTarget halfScreenTarget;
-
-	private int maxTextureUnits;
-	private String currentState = "";
 
     VertexBuffer buffer;
 
     private FPSCounter fpsCounter = new FPSCounter();
 
-    public DeferredRenderer() {
+	public DeferredRenderer() {
     }
 
 	@Override
@@ -107,10 +62,8 @@ public class DeferredRenderer implements Renderer {
 		Renderer.super.init();
 
         if (!initialized) {
-            setCurrentState("INITIALIZING");
             setupBuffers();
-            objLoader = new OBJLoader();
-            DeferredRenderer.exitOnGLError("After TextureFactory");
+            GraphicsContext.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -120,25 +73,9 @@ public class DeferredRenderer implements Renderer {
                 System.err.println("Cannot init DeferredRenderer");
                 System.exit(-1);
             }
-            currentDrawStrategy = simpleDrawStrategy;
-
-            fullScreenTarget = new RenderTargetBuilder().setWidth(Config.getInstance().getWidth())
-                                        .setHeight(Config.getInstance().getHeight())
-                                        .add(new ColorAttachmentDefinition().setInternalFormat(GL11.GL_RGBA8))
-                                        .build();
             LightFactory.init();
             EnvironmentProbeFactory.init();
             gBuffer.init();
-
-            sphereMesh = null;
-            try {
-                sphereMesh = objLoader.loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
-                sphereMesh.setMaterial(MaterialFactory.getInstance().getDefaultMaterial());
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
             float[] points = {0f, 0f, 0f, 0f};
             buffer = new VertexBuffer(points, EnumSet.of(DataChannels.POSITION3));
@@ -148,8 +85,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private void setupBuffers() {
-
-        initIdentityMatrixBuffer();
 
 		sixDebugBuffers = new ArrayList<VertexBuffer>() {{
 			float height = -2f/3f;
@@ -161,37 +96,24 @@ public class DeferredRenderer implements Renderer {
 				quadVertexBuffer.upload();
 			}
 		}};
-		glWatch = new OpenGLStopWatch();
 
-		DeferredRenderer.exitOnGLError("setupBuffers");
-//		CLUtil.initialize();
+		GraphicsContext.exitOnGLError("setupBuffers");
 	}
 
     private void setUpGBuffer() {
-		DeferredRenderer.exitOnGLError("Before setupGBuffer");
+		GraphicsContext.exitOnGLError("Before setupGBuffer");
 
 		gBuffer = GraphicsContext.getInstance().calculate(() -> new GBuffer());
 
         GraphicsContext.getInstance().execute(() -> {
             GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
-			DeferredRenderer.exitOnGLError("setupGBuffer");
+			GraphicsContext.exitOnGLError("setupGBuffer");
 		});
 	}
 	
-	private void initIdentityMatrixBuffer() {
-		identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-	}
-	
 	private void setupShaders() throws Exception {
-		DeferredRenderer.exitOnGLError("Before setupShaders");
-
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
-		debugFrameProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "debugframe_fragment.glsl")), new Defines());
-		blurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_fragment.glsl")), new Defines());
-		bilateralBlurProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "blur_bilateral_fragment.glsl")), new Defines());
-		linesProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
-
+		GraphicsContext.exitOnGLError("Before setupShaders");
 	}
 
 	public void update(float seconds) {
@@ -207,7 +129,7 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), debugFrameProgram);
+			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramFactory.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 //			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 //			for(int i = 0; i < 6; i++) {
@@ -237,15 +159,6 @@ public class DeferredRenderer implements Renderer {
 //            }
 		}
 
-//		if(counter < 20) {
-//            Engine.getInstance().getScene().getDirectionalLight().rotate(new Vector4f(0, 1, 0, 0.001f));
-//			Config.getInstance().CONTINUOUS_DRAW_PROBES = true;
-//			counter++;
-//		} else if(counter == 20) {
-//			Config.getInstance().CONTINUOUS_DRAW_PROBES = false;
-//			counter++;
-//		}
-
 		GPUProfiler.start("Create new fence");
 		GraphicsContext.getInstance().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
@@ -262,11 +175,11 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-		drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), renderToQuadProgram);
+		drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), ProgramFactory.getInstance().getRenderToQuadProgram());
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
-		drawToQuad(texture, buffer, renderToQuadProgram);
+		drawToQuad(texture, buffer, ProgramFactory.getInstance().getRenderToQuadProgram());
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
@@ -277,84 +190,6 @@ public class DeferredRenderer implements Renderer {
         GraphicsContext.getInstance().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
-	}
-
-	public void blur2DTexture(int sourceTextureId, int mipmap, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes, RenderTarget target) {
-		GPUProfiler.start("BLURRRRRRR");
-		int copyTextureId = GL11.glGenTextures();
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-
-		GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)), internalFormat, width, height);
-//		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-//		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-//		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL12.GL_TEXTURE_MAX_LEVEL, util.Util.calculateMipMapCount(Math.max(width,height)));
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-
-		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-				width, height, 1);
-
-		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
-		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
-		// TODO: Reset texture sizes after upscaling!!!
-		if(upscaleToFullscreen) {
-            GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-			scaleForShaderX = 1;
-			scaleForShaderY = 1;
-		}
-
-		target.use(false);
-        target.setTargetTexture(sourceTextureId, 0);
-
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-
-		blurProgram.use();
-		blurProgram.setUniform("mipmap", mipmap);
-		blurProgram.setUniform("scaleX", scaleForShaderX);
-		blurProgram.setUniform("scaleY", scaleForShaderY);
-        QuadVertexBuffer.getFullscreenBuffer().draw();
-        target.unuse();
-		GL11.glDeleteTextures(copyTextureId);
-		GPUProfiler.end();
-	}
-
-	public void blur2DTextureBilateral(int sourceTextureId, int edgeTexture, int width, int height, int internalFormat, boolean upscaleToFullscreen, int blurTimes) {
-		int copyTextureId = GL11.glGenTextures();
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-		
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		
-		GL43.glCopyImageSubData(sourceTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-				copyTextureId, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
-				width, height, 1);
-		
-		float scaleForShaderX = (float) (Config.getInstance().getWidth() / width);
-		float scaleForShaderY = (float) (Config.getInstance().getHeight() / height);
-		if(upscaleToFullscreen) {
-            GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, sourceTextureId);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFormat, Config.getInstance().getWidth(), Config.getInstance().getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (FloatBuffer) null);
-			scaleForShaderX = 1;
-			scaleForShaderY = 1;
-		}
-
-		fullScreenTarget.use(false);
-		fullScreenTarget.setTargetTexture(sourceTextureId, 0);
-
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
-
-		bilateralBlurProgram.use();
-		bilateralBlurProgram.setUniform("scaleX", scaleForShaderX);
-		bilateralBlurProgram.setUniform("scaleY", scaleForShaderY);
-        QuadVertexBuffer.getFullscreenBuffer().draw();
-		fullScreenTarget.unuse();
-		GL11.glDeleteTextures(copyTextureId);
 	}
 
 	private static long lastFrameTime = 0l;
@@ -376,29 +211,12 @@ public class DeferredRenderer implements Renderer {
 		return (getDeltaInMS() / 1000d);
 	}
 
-	public static void exitOnGLError(String errorMessage) {
-        Exception exception = new Exception();
-        GraphicsContext.getInstance().execute(() -> {
-            if(IGNORE_GL_ERRORS) { return; }
-            int errorValue = GL11.glGetError();
-
-            if (errorValue != GL11.GL_NO_ERROR) {
-                String errorString = GLU.gluErrorString(errorValue);
-                exception.printStackTrace(System.err);
-                System.err.println("ERROR - " + errorMessage + ": " + errorString);
-
-                System.exit(-1);
-            }
-        });
-	}
-
 	@Override
 	public boolean isInitialized() {
 		return initialized;
 	}
 
 	public int drawLines(Program program) {
-
 		float[] points = new float[linePoints.size() * 3];
 		for (int i = 0; i < linePoints.size(); i++) {
 			Vector3f point = linePoints.get(i);
@@ -421,11 +239,6 @@ public class DeferredRenderer implements Renderer {
 	}
 
 	private List<Vector3f> linePoints = new CopyOnWriteArrayList<>();
-
-	public Model getSphere() {
-		return sphereMesh;
-	}
-
 
 	@Override
 	public void executeRenderProbeCommands(RenderState extract) {
@@ -458,25 +271,8 @@ public class DeferredRenderer implements Renderer {
         return fpsCounter;
     }
 
-    public int getMaxTextureUnits() {
-		return maxTextureUnits;
-	}
-
-	private void setMaxTextureUnits(int maxTextureUnits) {
-		this.maxTextureUnits = maxTextureUnits;
-	}
-
-	public RenderTarget getHalfScreenTarget() {
-		return halfScreenTarget;
-	}
-	
 	public float getCurrentFPS() {
         return fpsCounter.getFPS();
-	}
-
-	private void setCurrentState(String newState) {
-		currentState = newState;
-		Engine.getEventBus().post(new StateChangedEvent(newState));
 	}
 
 	protected void finalize() throws Throwable {

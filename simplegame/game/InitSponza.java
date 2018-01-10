@@ -7,7 +7,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import java.io.File;
 import java.util.List;
 
-public class InitA implements LifeCycle {
+public class InitSponza implements LifeCycle {
 
     private boolean initialized;
 
@@ -15,7 +15,7 @@ public class InitA implements LifeCycle {
 
         try {
             {
-                LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doom3monster/monster.md5mesh"), "cornell").execute(Engine.getInstance());
+                LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"), "sponza").execute(Engine.getInstance());
                 System.out.println("loaded entities : " + loaded.entities.size());
                 Engine.getInstance().getScene().addAll(loaded.entities);
             }

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -106,7 +107,7 @@ public class OBJLoader {
         return face;
     }
 
-    public StaticModel loadTexturedModel(File f) throws Exception {
+    public StaticModel<Bufferable> loadTexturedModel(File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
         StaticModel resultModel = new StaticModel();
 
