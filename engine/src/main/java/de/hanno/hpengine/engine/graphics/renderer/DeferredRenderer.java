@@ -12,6 +12,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
@@ -500,7 +501,7 @@ public class DeferredRenderer implements Renderer {
 
     @Override
 	public void registerPipelines(TripleBuffer<RenderState> renderState) {
-        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(() -> new GPUCulledMainPipeline()));
+        simpleDrawStrategy.setMainPipelineRef(renderState.registerPipeline(GPUCulledMainPipeline::new));
 	}
 
 }

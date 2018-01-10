@@ -1,9 +1,10 @@
-package de.hanno.hpengine.engine.graphics.renderer;
+package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 
 import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.Pipeline.CullingPhase;
+import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline.CullingPhase;
 import de.hanno.hpengine.engine.model.CommandBuffer;
 import de.hanno.hpengine.engine.model.CommandBuffer.DrawElementsIndirectCommand;
 import de.hanno.hpengine.engine.model.Entity;

@@ -1,6 +1,5 @@
-package de.hanno.hpengine.engine.graphics.renderer;
+package de.hanno.hpengine.engine.graphics.renderer.pipelines;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -10,7 +9,7 @@ import java.nio.FloatBuffer;
 
 public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 
-    GPUCulledMainPipeline() {
+    public GPUCulledMainPipeline() {
         super(true, true, true, null, null);
     }
 

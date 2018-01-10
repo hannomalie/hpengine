@@ -7,6 +7,8 @@ import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
+import de.hanno.hpengine.engine.graphics.renderer.pipelines.Pipeline;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.*;
@@ -705,7 +707,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         return directionalLightShadowMapExtension;
     }
 
-    public void setMainPipelineRef(TripleBuffer.PipelineRef mainPipelineRef) {
+    public void setMainPipelineRef(TripleBuffer.PipelineRef<GPUCulledMainPipeline> mainPipelineRef) {
         this.mainPipelineRef = mainPipelineRef;
     }
 
