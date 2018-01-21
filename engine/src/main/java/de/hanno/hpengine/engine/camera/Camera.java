@@ -60,7 +60,9 @@ public class Camera extends Entity {
 		set(camera);
         init(camera.getProjectionMatrix(), camera.getNear(), camera.getFar(), camera.getFov(), camera.getRatio());
         if(camera.hasParent()) {
-            setParent(camera.getParent());
+			Entity formerParent = camera.getParent();
+        	removeParent();
+			setParent(formerParent);
         }
     }
 

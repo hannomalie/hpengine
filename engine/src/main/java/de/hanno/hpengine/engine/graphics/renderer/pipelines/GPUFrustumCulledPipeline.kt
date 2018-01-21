@@ -203,6 +203,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
             val camera = cullCam ?: renderState.camera
             setUniformAsMatrix4("viewProjectionMatrix", camera.viewProjectionMatrixAsBuffer)
             setUniformAsMatrix4("viewMatrix", camera.viewMatrixAsBuffer)
+            setUniform("camPosition", camera.position)
             setUniformAsMatrix4("projectionMatrix", camera.projectionMatrixAsBuffer)
             GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, highZBuffer.renderedTexture)
             GraphicsContext.getInstance().bindImageTexture(1, highZBuffer.renderedTexture, 0, false, 0, GL15.GL_WRITE_ONLY, Pipeline.HIGHZ_FORMAT)

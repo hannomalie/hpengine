@@ -14,11 +14,9 @@ public class InitSponza implements LifeCycle {
     public void init() {
 
         try {
-            {
-                LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"), "sponza").execute(Engine.getInstance());
-                System.out.println("loaded entities : " + loaded.entities.size());
-                Engine.getInstance().getScene().addAll(loaded.entities);
-            }
+            LoadModelCommand.EntityListResult loaded = new LoadModelCommand(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"), "sponza").execute(Engine.getInstance());
+            System.out.println("loaded entities : " + loaded.entities.size());
+            Engine.getInstance().getScene().addAll(loaded.entities);
 
             Thread.sleep(500);
             initialized = true;

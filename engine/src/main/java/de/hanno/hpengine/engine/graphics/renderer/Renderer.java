@@ -326,9 +326,7 @@ public interface Renderer extends LifeCycle {
         try {
             SingletonHelper.instance = rendererClass.newInstance();
             SingletonHelper.instance.init();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
         }
     }

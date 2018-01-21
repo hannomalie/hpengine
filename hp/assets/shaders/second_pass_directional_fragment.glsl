@@ -177,7 +177,7 @@ void main(void) {
 	vec3 specularColor = mix(vec3(0.2, 0.2, 0.2), maxSpecular, roughness);
   	vec3 diffuseColor = mix(color, vec3(0,0,0), clamp(metallic, 0, 1));
 
-	vec3 lightDirectionView = (viewMatrix * vec4(lightDirection, 0)).xyz;
+	vec3 lightDirectionView = (viewMatrix * vec4(-lightDirection, 0)).xyz;
 	vec3 finalColor;
 	
 	/////////////////// SHADOWMAP

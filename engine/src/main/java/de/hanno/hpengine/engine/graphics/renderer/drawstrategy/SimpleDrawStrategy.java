@@ -41,6 +41,7 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
 import static de.hanno.hpengine.engine.model.Update.DYNAMIC;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.FUNC_ADD;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.BlendMode.Factor.ONE;
@@ -85,16 +86,16 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     public SimpleDrawStrategy() throws Exception {
         super();
         ProgramFactory programFactory = ProgramFactory.getInstance();
-        secondPassPointProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
-        secondPassTubeProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
-        secondPassAreaProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
-        secondPassDirectionalProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")), new Defines());
-        instantRadiosityProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")), new Defines());
+        secondPassPointProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
+        secondPassTubeProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
+        secondPassAreaProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
+        secondPassDirectionalProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_directional_fragment.glsl")), new Defines());
+        instantRadiosityProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_instant_radiosity_fragment.glsl")), new Defines());
 
         secondPassPointComputeProgram = programFactory.getComputeProgram("second_pass_point_compute.glsl");
 
-        combineProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
-        postProcessProgram = programFactory.getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
+        combineProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
+        postProcessProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
 
         aoScatteringProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
         reflectionProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
@@ -118,7 +119,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         directionalLightShadowMapExtension = new DirectionalLightShadowMapExtension();
 
         registerRenderExtension(new DrawLinesExtension());
-        registerRenderExtension(new VoxelConeTracingExtension());
+//        registerRenderExtension(new VoxelConeTracingExtension());
         registerRenderExtension(new PixelPerfectPickingExtension());
     }
 
@@ -195,19 +196,10 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUCulledMainPipeline pipeline = renderState.get(mainPipelineRef);
 
         Camera camera = renderState.camera;
-        FloatBuffer viewMatrixAsBuffer = camera.getViewMatrixAsBuffer();
-        FloatBuffer projectionMatrixAsBuffer = camera.getProjectionMatrixAsBuffer();
-        FloatBuffer viewProjectionMatrixAsBuffer = camera.getViewProjectionMatrixAsBuffer();
-
-
-        graphicsContext.enable(CULL_FACE);
-        graphicsContext.depthFunc(LESS);
-        graphicsContext.disable(GlCap.BLEND);
-        graphicsContext.disable(DEPTH_TEST);
-        graphicsContext.depthMask(true);
 
         graphicsContext.depthMask(true);
         Renderer.getInstance().getGBuffer().use(true);
+
         renderSkyBox(renderState, camera, false, skyBoxProgram);
 
         GPUProfiler.start("Set GPU state");
@@ -239,7 +231,6 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.enable(CULL_FACE);
 
         GPUProfiler.start("Generate Mipmaps of colormap");
-        graphicsContext.activeTexture(0);
         TextureFactory.getInstance().generateMipMaps(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
         GPUProfiler.end();
 

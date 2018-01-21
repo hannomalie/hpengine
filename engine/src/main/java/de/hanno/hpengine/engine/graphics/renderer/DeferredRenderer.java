@@ -129,13 +129,13 @@ public class DeferredRenderer implements Renderer {
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramFactory.getInstance().getDebugFrameProgram());
+//			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramFactory.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
-//			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
-//			for(int i = 0; i < 6; i++) {
+			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
+			for(int i = 0; i < 6; i++) {
 //                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
-////                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
-//			}
+//                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+			}
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
 //			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
@@ -257,10 +257,6 @@ public class DeferredRenderer implements Renderer {
 		}
 	}
 
-	@Override
-	public void addRenderProbeCommand(EnvironmentProbe probe) {
-		addRenderProbeCommand(probe, false);
-	}
 	@Override
 	public void addRenderProbeCommand(EnvironmentProbe probe, boolean urgent) {
 		renderProbeCommandQueue.addProbeRenderCommand(probe, urgent);

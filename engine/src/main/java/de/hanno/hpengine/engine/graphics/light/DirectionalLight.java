@@ -23,7 +23,7 @@ public class DirectionalLight extends Camera {
 	transient private Entity box;
 
 	public DirectionalLight() {
-		super(Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f), 0.1f, 500f, 60, 16 / 9);
+		super(Util.createOrthogonal(-1000f, 1000f, 1000f, -1000f, -2500f, 2500f), -2500f, 2500f, 60, 16 / 9);
 		setPerspective(false);
 		setColor(new Vector3f(1f, 0.76f, 0.49f));
 		setScatterFactor(1f);
@@ -31,7 +31,7 @@ public class DirectionalLight extends Camera {
 		setHeight(1500);
 		setFar(-5000);
 		translation(new Vector3f(12f, 300f, 2f));
-		rotate(new AxisAngle4f(1,0,0, (float) Math.toRadians(90)));
+//		rotate(new AxisAngle4f(1,0,0, (float) Math.toRadians(90)));
 
 //		try {
 //			StaticMesh model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);

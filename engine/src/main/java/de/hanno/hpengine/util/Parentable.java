@@ -19,6 +19,7 @@ public interface Parentable <T extends Parentable> {
 
     void setParent(T parent);
     default void removeParent() {
+        if(!hasParent()) { return; }
         getParent().getChildren().remove(this);
         setParent(null);
     }

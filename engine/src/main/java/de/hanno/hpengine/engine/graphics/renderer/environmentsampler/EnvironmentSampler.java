@@ -163,7 +163,7 @@ public class EnvironmentSampler extends Camera {
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(8);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(0).bind(10);
 
-		GraphicsContext.getInstance().enable(DEPTH_TEST);
+		GraphicsContext.getInstance().disable(DEPTH_TEST);
 		GraphicsContext.getInstance().depthFunc(LEQUAL);
 
         renderTarget.use(false);
@@ -316,9 +316,12 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
 
-        for (RenderBatch entity : extract.getRenderBatchesStatic()) {
+		for (RenderBatch entity : extract.getRenderBatchesStatic()) {
 			DrawStrategy.draw(extract, entity);
-        }
+		}
+		for (RenderBatch entity : extract.getRenderBatchesAnimated()) {
+			DrawStrategy.draw(extract, entity);
+		}
 		GPUProfiler.end();
 		GraphicsContext.getInstance().enable(CULL_FACE);
 	}
