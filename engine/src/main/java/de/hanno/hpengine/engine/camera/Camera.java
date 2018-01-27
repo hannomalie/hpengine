@@ -132,7 +132,7 @@ public class Camera extends Entity {
 	}
 
 	public FloatBuffer getProjectionMatrixAsBuffer() {
-		return projectionMatrixBuffer.asReadOnlyBuffer();
+		return projectionMatrixBuffer;
 	}
 
 	public Frustum getFrustum() {

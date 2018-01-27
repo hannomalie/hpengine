@@ -69,9 +69,9 @@ public final class Config {
 	@Toggable(group = "Quality settings")
 	private volatile boolean useAmbientOcclusion = true;
 	@Toggable(group = "Debug")
-	private volatile boolean useFrustumCulling = false;
+	private volatile boolean useCpuFrustumCulling = false;
 	@Toggable(group = "Debug")
-	private volatile boolean useOcclusionCulling = true;
+	private volatile boolean useGpuOcclusionCulling = true;
 	private volatile boolean useInstantRadiosity = false;
 	private volatile boolean forceRevoxelization = false;
 	@Toggable(group = "Quality settings")
@@ -219,20 +219,20 @@ public final class Config {
 		this.useAmbientOcclusion = useAmbientOcclusion;
 	}
 
-	public boolean isUseFrustumCulling() {
-		return useFrustumCulling;
+	public boolean isUseCpuFrustumCulling() {
+		return useCpuFrustumCulling;
 	}
 
-	public void setUseFrustumCulling(boolean useFrustumCulling) {
-		this.useFrustumCulling = useFrustumCulling;
+	public void setUseCpuFrustumCulling(boolean useFrustumCulling) {
+		this.useCpuFrustumCulling = useFrustumCulling;
 	}
 
-	public boolean isUseOcclusionCulling() {
-		return useOcclusionCulling;
+	public boolean isUseGpuOcclusionCulling() {
+		return useGpuOcclusionCulling;
 	}
 
-	public void setUseOcclusionCulling(boolean useOcclusionCulling) {
-		this.useOcclusionCulling = useOcclusionCulling;
+	public void setUseGpuOcclusionCulling(boolean useGpuOcclusionCulling) {
+		this.useGpuOcclusionCulling = useGpuOcclusionCulling;
 	}
 
 	public boolean isUseInstantRadiosity() {

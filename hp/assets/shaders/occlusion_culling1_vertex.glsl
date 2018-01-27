@@ -56,19 +56,20 @@ bool in_frustum(mat4 M, vec3 min, vec3 max) {
         if(pointInBox(camPosition, min, max)) {
             return true;
         }
-        vec3[8] frustumPoints;
-        frustumPoints[0] = max.xyz;
-        frustumPoints[1] = min.xyz;
-        frustumPoints[2] = vec3(min.xy, max.z);
-        frustumPoints[3] = vec3(min.x, max.y, max.z);
-        frustumPoints[4] = vec3(max.x, min.y, max.z);
-        frustumPoints[5] = vec3(max.x, max.yz);
-        frustumPoints[6] = vec3(max.xy, min.z);
-        frustumPoints[7] = vec3(max.x, min.y, max.z);
+        vec3[8] aabb;
+        aabb[0] = max.xyz;
+        aabb[1] = min.xyz;
+        aabb[2] = vec3(min.xy, max.z);
+        aabb[3] = vec3(min.x, max.y, min.z);
+        aabb[4] = vec3(max.x, min.yz);
+
+        aabb[5] = vec3(max.xy, min.z);
+        aabb[6] = vec3(max.x, min.y, max.z);
+        aabb[7] = vec3(min.x, max.yz);
 
         int counter = 0;
         for(int i = 0; i < 8; i++) {
-            vec4 pClip = M * vec4(frustumPoints[i], 1.);
+            vec4 pClip = M * vec4(aabb[i], 1.);
 
             bool xInFrustum = abs(pClip.x) < pClip.w;
             bool yInFrustum = abs(pClip.y) < pClip.w;
@@ -80,20 +81,20 @@ bool in_frustum(mat4 M, vec3 min, vec3 max) {
                   counter++;
             }
         }
-        if(counter > 0) {
-            return true;
-        }
-
-        vec4 minClip = M * vec4(frustumPoints[0], 1.);
-        vec4 maxClip = M * vec4(frustumPoints[1], 1.);
-        if(minClip.y < -minClip.w && maxClip.y > maxClip.w ||
-           minClip.y > minClip.w && maxClip.y < -maxClip.w ) {
-            counter++;
-        }
-        if(minClip.x < -minClip.w && maxClip.x > maxClip.w ||
-           minClip.x > minClip.w && maxClip.x < -maxClip.w) {
-            counter++;
-        }
+//        if(counter > 0) {
+//            return true;
+//        }
+//
+//        vec4 minClip = M * vec4(aabb[0], 1.);
+//        vec4 maxClip = M * vec4(aabb[1], 1.);
+//        if(minClip.y < -minClip.w && maxClip.y > maxClip.w ||
+//           minClip.y > minClip.w && maxClip.y < -maxClip.w ) {
+//            counter++;
+//        }
+//        if(minClip.x < -minClip.w && maxClip.x > maxClip.w ||
+//           minClip.x > minClip.w && maxClip.x < -maxClip.w) {
+//            counter++;
+//        }
         return counter > 0;
     }
 //bool in_frustum(mat4 M, vec3 p) {
@@ -248,7 +249,7 @@ void main(){
         bool inFrustum = in_frustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 
         vec3 span = (entity.max.xyz - entity.min.xyz);
-//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, span.x));
+//        bool inFrustum = sphereVisible(viewProjectionMatrix, vec4(entity.min.xyz + 0.5 * span, 0.5 * span.x));
 //        bool inFrustum = boxInFrustum(viewProjectionMatrix, entity.min.xyz, entity.max.xyz);
 //        bool inFrustum = (testPoint(viewProjectionMatrix, entity.min.xyz) && testPoint(viewProjectionMatrix, entity.max.xyz));
 

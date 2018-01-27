@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
+import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
@@ -85,23 +86,28 @@ public class DrawLinesExtension implements RenderExtension {
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> (Camera) it).forEach(camera -> {
-                Vector3f[] corners = camera.getFrustumCorners();
-                Renderer.getInstance().batchLine(corners[0], corners[1]);
-                Renderer.getInstance().batchLine(corners[1], corners[2]);
-                Renderer.getInstance().batchLine(corners[2], corners[3]);
-                Renderer.getInstance().batchLine(corners[3], corners[0]);
+            List<Entity> entities = Engine.getInstance().getScene().getEntities();
+            for(int i = 0; i < entities.size(); i++) {
+                Entity entity = entities.get(i);
+                if(entity instanceof Camera) {
+                    Camera camera = (Camera) entity;
+                    Vector3f[] corners = camera.getFrustumCorners();
+                    Renderer.getInstance().batchLine(corners[0], corners[1]);
+                    Renderer.getInstance().batchLine(corners[1], corners[2]);
+                    Renderer.getInstance().batchLine(corners[2], corners[3]);
+                    Renderer.getInstance().batchLine(corners[3], corners[0]);
 
-                Renderer.getInstance().batchLine(corners[4], corners[5]);
-                Renderer.getInstance().batchLine(corners[5], corners[6]);
-                Renderer.getInstance().batchLine(corners[6], corners[7]);
-                Renderer.getInstance().batchLine(corners[7], corners[4]);
+                    Renderer.getInstance().batchLine(corners[4], corners[5]);
+                    Renderer.getInstance().batchLine(corners[5], corners[6]);
+                    Renderer.getInstance().batchLine(corners[6], corners[7]);
+                    Renderer.getInstance().batchLine(corners[7], corners[4]);
 
-                Renderer.getInstance().batchLine(corners[0], corners[6]);
-                Renderer.getInstance().batchLine(corners[1], corners[7]);
-                Renderer.getInstance().batchLine(corners[2], corners[4]);
-                Renderer.getInstance().batchLine(corners[3], corners[5]);
-            });
+                    Renderer.getInstance().batchLine(corners[0], corners[6]);
+                    Renderer.getInstance().batchLine(corners[1], corners[7]);
+                    Renderer.getInstance().batchLine(corners[2], corners[4]);
+                    Renderer.getInstance().batchLine(corners[3], corners[5]);
+                }
+            }
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
         }
     }

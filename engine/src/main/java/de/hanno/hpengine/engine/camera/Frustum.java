@@ -202,6 +202,7 @@ public class Frustum implements Serializable {
     public boolean sphereInFrustum( float x, float y, float z, float radius ) {
             // Go through all the sides of the frustum
             for(int i = 0; i < 6; i++ ) {
+
                     // If the center of the sphere is farther away from the plane than the radius
                     if( values[i][A] * x + values[i][B] * y + values[i][C] * z + values[i][D] <= -radius ) {
                             // The distance was greater than the radius so the sphere is outside of the frustum

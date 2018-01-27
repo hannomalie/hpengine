@@ -162,8 +162,8 @@ public class DebugFrame implements HostComponent {
 	private WebToggleButton toggleParallax = new WebToggleButton("Parallax", Config.getInstance().isUseParallax());
 	private WebToggleButton toggleSteepParallax = new WebToggleButton("Steep Parallax", Config.getInstance().isUseSteepParallax());
 	private WebToggleButton toggleAmbientOcclusion = new WebToggleButton("Ambient Occlusion", Config.getInstance().isUseAmbientOcclusion());
-    private WebToggleButton toggleFrustumCulling = new WebToggleButton("Frustum Culling", Config.getInstance().isUseFrustumCulling());
-    private WebToggleButton toggleOcclusionCulling = new WebToggleButton("Occlusion Culling", Config.getInstance().isUseOcclusionCulling());
+    private WebToggleButton toggleFrustumCulling = new WebToggleButton("CPU Frustum Culling", Config.getInstance().isUseCpuFrustumCulling());
+    private WebToggleButton toggleOcclusionCulling = new WebToggleButton("Occlusion Culling", Config.getInstance().isUseGpuOcclusionCulling());
 	private WebToggleButton toggleInstantRadiosity = new WebToggleButton("Instant Radiosity", Config.getInstance().isUseInstantRadiosity());
 	private WebToggleButton toggleForceRevoxelization = new WebToggleButton("Force Revoxelization", Config.getInstance().isForceRevoxelization());
 	private WebToggleButton toggleDrawLines = new WebToggleButton("Draw Lines", Config.getInstance().isDrawLines());
@@ -841,10 +841,10 @@ public class DebugFrame implements HostComponent {
 		});
 
         toggleFrustumCulling.addActionListener(e -> {
-            Config.getInstance().setUseFrustumCulling(!Config.getInstance().isUseFrustumCulling());
+            Config.getInstance().setUseCpuFrustumCulling(!Config.getInstance().isUseCpuFrustumCulling());
         });
         toggleOcclusionCulling.addActionListener(e -> {
-            Config.getInstance().setUseOcclusionCulling(!Config.getInstance().isUseOcclusionCulling());
+            Config.getInstance().setUseGpuOcclusionCulling(!Config.getInstance().isUseGpuOcclusionCulling());
         });
 		toggleInstantRadiosity.addActionListener(e -> {
 			Config.getInstance().setUseInstantRadiosity(!Config.getInstance().isUseInstantRadiosity());

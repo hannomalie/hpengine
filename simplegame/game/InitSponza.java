@@ -1,5 +1,6 @@
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.graphics.renderer.command.LoadModelCommand;
 import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
@@ -18,6 +19,7 @@ public class InitSponza implements LifeCycle {
             System.out.println("loaded entities : " + loaded.entities.size());
             Engine.getInstance().getScene().addAll(loaded.entities);
 
+            Engine.getInstance().getScene().add(new Camera());
             Thread.sleep(500);
             initialized = true;
         } catch (Exception e) {

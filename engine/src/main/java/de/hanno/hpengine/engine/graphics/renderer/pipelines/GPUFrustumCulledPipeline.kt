@@ -165,7 +165,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         program.setUniform("entityIndex", 0)
         program.setUniform("entityBaseIndex", 0)
         program.setUniform("indirect", true)
-        var drawCountBufferToUse = if(Config.getInstance().isUseOcclusionCulling) {
+        var drawCountBufferToUse = if(Config.getInstance().isUseGpuOcclusionCulling) {
             program.bindShaderStorageBuffer(3, commandOrganization.entitiesBuffersCompacted[phase]!!)
             program.bindShaderStorageBuffer(4, commandOrganization.entityOffsetBuffersCulled[phase]!!)
             drawCountBuffer

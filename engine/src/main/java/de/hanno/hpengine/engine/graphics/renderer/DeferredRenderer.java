@@ -238,7 +238,7 @@ public class DeferredRenderer implements Renderer {
 		linePoints.add(to);
 	}
 
-	private List<Vector3f> linePoints = new CopyOnWriteArrayList<>();
+	private List<Vector3f> linePoints = new ArrayList<>();
 
 	@Override
 	public void executeRenderProbeCommands(RenderState extract) {

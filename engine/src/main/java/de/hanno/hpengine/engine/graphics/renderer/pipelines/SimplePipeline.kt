@@ -117,7 +117,8 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
     private fun addCommands(renderBatches: List<RenderBatch>, commands: MutableList<CommandBuffer.DrawElementsIndirectCommand>, commandBuffer: CommandBuffer, entityOffsetBuffer: IndexBuffer, offsets: IntArrayList) {
         for (i in renderBatches.indices) {
             val info = renderBatches[i]
-            if (!info.isVisible || (Config.getInstance().isUseFrustumCulling && useFrustumCulling && !info.isVisibleForCamera)) {
+            val culled = Config.getInstance().isUseCpuFrustumCulling && useFrustumCulling && !info.isVisibleForCamera
+            if (!info.isVisible || culled) {
                 continue
             }
             commands.add(info.drawElementsIndirectCommand)
