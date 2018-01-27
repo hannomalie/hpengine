@@ -105,8 +105,8 @@ public class EntityTest extends TestWithEngine {
 //        }
 
 
-        engine.getRenderState().getCurrentReadState().bufferEntities(Engine.getInstance().getScene().getEntities());
-        FloatBuffer floatValues = engine.getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
+        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(Engine.getInstance().getScene().getEntities());
+        FloatBuffer floatValues = engine.getRenderSystem().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);
 

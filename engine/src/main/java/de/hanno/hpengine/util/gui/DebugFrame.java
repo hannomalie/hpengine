@@ -213,7 +213,7 @@ public class DebugFrame implements HostComponent {
     private Runnable setTitleRunnable = () -> {
         try {
 			String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-					getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFPSCounter().getFPS(), Engine.getInstance().getFPSCounter().getMsPerFrame());
+					getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFpsCounter().getFPS(), Engine.getInstance().getFpsCounter().getMsPerFrame());
             frame.setTitle(titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
             frame.setTitle("HPEngine Renderer initializing...");
