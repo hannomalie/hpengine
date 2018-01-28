@@ -58,13 +58,15 @@ class Engine private constructor() : HighFrequencyCommandProvider {
             field = value
             GraphicsContext.getInstance().execute({
                 StopWatch.getInstance().start("Scene init")
+                Engine.getInstance().renderSystem.vertexIndexBufferStatic.resetAllocations()
+                Engine.getInstance().renderSystem.vertexIndexBufferAnimated.resetAllocations()
                 value.init()
                 StopWatch.getInstance().stopAndPrintMS()
             }, true)
             restoreWorldCamera()
             renderSystem.renderState.addCommand { renderState1 ->
-                renderState1.setVertexIndexBufferStatic(value.vertexIndexBufferStatic)
-                renderState1.setVertexIndexBufferAnimated(value.vertexIndexBufferAnimated)
+                renderState1.setVertexIndexBufferStatic(Engine.getInstance().renderSystem.vertexIndexBufferStatic)
+                renderState1.setVertexIndexBufferAnimated(Engine.getInstance().renderSystem.vertexIndexBufferAnimated)
             }
         }
     private val camera = MovableCamera()
@@ -134,7 +136,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
 
         if (GraphicsContext.getInstance().isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
-            renderSystem.renderState.currentWriteState.init(scene.vertexIndexBufferStatic, scene.vertexIndexBufferAnimated, scene.joints, activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
+            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
             scene.addRenderBatches(this.activeCamera, renderSystem.renderState.currentWriteState)
             renderSystem.renderState.update()
             renderSystem.renderState.currentWriteState.cycle = renderSystem.drawCycle.get()

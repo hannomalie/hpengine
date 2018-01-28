@@ -11,6 +11,7 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.material.Material;
+import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.BatchKey;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
@@ -29,7 +30,7 @@ public class EntitiesState {
     public RenderBatches renderBatchesStatic = new RenderBatches();
     public RenderBatches renderBatchesAnimated = new RenderBatches();
     public VertexIndexBuffer<Vertex> vertexIndexBufferStatic = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTCHANNELS);
-    public VertexIndexBuffer<Vertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
+    public VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated = new VertexIndexBuffer<>(10,10, ModelComponent.DEFAULTANIMATEDCHANNELS);
     public GPUBuffer<Entity> entitiesBuffer = new PersistentMappedBuffer(8000);
     public GPUBuffer<BufferableMatrix4f> jointsBuffer = new PersistentMappedBuffer(8000);
     public GPUBuffer<Material> materialBuffer = new PersistentMappedBuffer(8000);

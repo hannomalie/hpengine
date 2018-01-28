@@ -44,8 +44,6 @@ public class Scene implements LifeCycle, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOGGER = Logger.getLogger(Scene.class.getName());
-	private VertexIndexBuffer vertexIndexBufferStatic = new VertexIndexBuffer<Vertex>(10, 10, ModelComponent.DEFAULTCHANNELS);
-	private VertexIndexBuffer vertexIndexBufferAnimated = new VertexIndexBuffer<AnimatedVertex>(10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS);
 
 	private String name = "";
 	private List<ProbeData> probes = new CopyOnWriteArrayList<>();
@@ -441,14 +439,6 @@ public class Scene implements LifeCycle, Serializable {
 
 	public long getEntityAddedInCycle() {
 		return entityAddedInCycle;
-	}
-
-	public VertexIndexBuffer<Vertex> getVertexIndexBufferStatic() {
-		return vertexIndexBufferStatic;
-	}
-
-	public VertexIndexBuffer<Vertex> getVertexIndexBufferAnimated() {
-		return vertexIndexBufferAnimated;
 	}
 
 	public List<BufferableMatrix4f> getJoints() {

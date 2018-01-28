@@ -1,5 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
+import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -15,7 +17,6 @@ import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer.VertexIndexOffsets;
-import org.joml.Vector3f;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
@@ -104,12 +105,11 @@ public class ModelComponent extends BaseComponent implements Serializable {
 
     @Override
     public void registerInScene(Scene scene) {
-        VertexIndexBuffer<Vertex> vertexIndexBuffer;
         if(model.isStatic()) {
-            vertexIndexBuffer = scene.getVertexIndexBufferStatic();
+            VertexIndexBuffer<Vertex> vertexIndexBuffer = Engine.getInstance().getRenderSystem().getVertexIndexBufferStatic();
             putToBuffer(vertexIndexBuffer, DEFAULTCHANNELS);
         } else {
-            vertexIndexBuffer = scene.getVertexIndexBufferAnimated();
+            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = Engine.getInstance().getRenderSystem().getVertexIndexBufferAnimated();
             putToBuffer(vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
 
             jointsOffset = scene.getJoints().size(); // TODO: Proper allocation

@@ -13,6 +13,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
@@ -194,7 +195,7 @@ public class RenderState {
         this.entitiesState.vertexIndexBufferStatic = vertexIndexBuffer;
     }
 
-    public void setVertexIndexBufferAnimated(VertexIndexBuffer<Vertex> vertexIndexBufferAnimated) {
+    public void setVertexIndexBufferAnimated(VertexIndexBuffer<AnimatedVertex> vertexIndexBufferAnimated) {
         this.entitiesState.vertexIndexBufferAnimated = vertexIndexBufferAnimated;
     }
 

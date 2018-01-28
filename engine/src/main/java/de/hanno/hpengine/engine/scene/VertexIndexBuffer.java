@@ -60,6 +60,11 @@ public class VertexIndexBuffer<T extends Bufferable> implements Serializable {
         return vertexIndexOffsets;
     }
 
+    public void resetAllocations() {
+        currentBaseVertex.getAndSet(0);
+        currentIndexOffset.getAndSet(0);
+    }
+
     public static class VertexIndexOffsets<T extends Bufferable> {
         public final int vertexOffset;
         public final int indexOffset;
