@@ -283,10 +283,10 @@ public class DebugFrame implements HostComponent {
         {
 	        WebMenuItem sceneSaveMenuItem = new WebMenuItem ( "Save" );
 	        sceneSaveMenuItem.addActionListener(e -> {
-	        	String initialSelectionValue = Engine.getInstance().getScene().getName() != "" ? Engine.getInstance().getScene().getName() : "default";
+	        	String initialSelectionValue = Engine.getInstance().getSceneManager().getScene().getName() != "" ? Engine.getInstance().getSceneManager().getScene().getName() : "default";
 				Object selection = WebOptionPane.showInputDialog( mainFrame, "Save scene as", "Save scene", WebOptionPane.QUESTION_MESSAGE, null, null, initialSelectionValue );
 	        	if(selection != null) {
-	        		boolean success = Engine.getInstance().getScene().write(selection.toString());
+	        		boolean success = Engine.getInstance().getSceneManager().getScene().write(selection.toString());
 	        		final WebNotificationPopup notificationPopup = new WebNotificationPopup();
 	                notificationPopup.setIcon(NotificationIcon.clock);
 	                notificationPopup.setDisplayTime( 2000 );
@@ -310,7 +310,7 @@ public class DebugFrame implements HostComponent {
                         @Override
                         public Result<Scene> doInBackground() throws Exception {
                             Scene newScene = Scene.read(sceneName);
-                            Engine.getInstance().setScene(newScene);
+                            Engine.getInstance().getSceneManager().setScene(newScene);
                             return new Result(newScene);
                         }
                     }.execute();
@@ -327,10 +327,10 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        Engine.getInstance().getScene().addAll(TestSceneUtil.loadTestScene(Engine.getInstance().getPhysicsFactory(), Engine.getInstance().getScene()));
+                        Engine.getInstance().getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(Engine.getInstance().getPhysicsFactory(), Engine.getInstance().getSceneManager().getScene()));
                         Engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
-                        return new Result(Engine.getInstance().getScene());
+                        return new Result(Engine.getInstance().getSceneManager().getScene());
                     }
 
                     @Override
@@ -346,7 +346,7 @@ public class DebugFrame implements HostComponent {
         	WebMenuItem sceneNewMenuItem = new WebMenuItem ( "New" );
         	sceneNewMenuItem.addActionListener(e -> {
 	    			Scene newScene = new Scene();
-	    			Engine.getInstance().setScene(newScene);
+	    			Engine.getInstance().getSceneManager().setScene(newScene);
 	    			init(new EngineInitializedEvent());
         	});
 
@@ -371,7 +371,7 @@ public class DebugFrame implements HostComponent {
         	WebMenuItem entityLoadMenuItem = new WebMenuItem ( "Load existing" );
         	entityLoadMenuItem.addActionListener(e -> {
 
-				Engine.getInstance().getScene().addAll(LoadEntitiyView.showDialog(Engine.getInstance()));
+				Engine.getInstance().getSceneManager().getScene().addAll(LoadEntitiyView.showDialog(Engine.getInstance()));
 				scenePane.reload();
 			});
 
@@ -416,7 +416,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        Engine.getInstance().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
+                        Engine.getInstance().getSceneManager().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
                         return new Result(true);
                     }
                 });
@@ -445,7 +445,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = GraphicsContext.getInstance().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        Engine.getInstance().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
+                        Engine.getInstance().getSceneManager().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
                         return new Result(true);
                     }
                 });
@@ -474,7 +474,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        Engine.getInstance().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
+                        Engine.getInstance().getSceneManager().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
                         return new Result(true);
                     }
                 });
@@ -985,7 +985,7 @@ public class DebugFrame implements HostComponent {
 			}},
 			new SliderInput("Scattering", WebSlider.HORIZONTAL, 0, 8, 1) {
 				@Override public void onValueChange(int value, int delta) {
-                    Engine.getInstance().getScene().getDirectionalLight().setScatterFactor((float)value);
+                    Engine.getInstance().getSceneManager().getScene().getDirectionalLight().setScatterFactor((float)value);
 				}
 			},
 			new SliderInput("Rainy", WebSlider.HORIZONTAL, 0, 100, (int) (100* Config.getInstance().getRainEffect())) {
@@ -1220,7 +1220,7 @@ public class DebugFrame implements HostComponent {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        PointLight selectedLight = Engine.getInstance().getScene().getPointLights().get(selectedRow[i]);
+                        PointLight selectedLight = Engine.getInstance().getSceneManager().getScene().getPointLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
@@ -1246,7 +1246,7 @@ public class DebugFrame implements HostComponent {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        TubeLight selectedLight = Engine.getInstance().getScene().getTubeLights().get(selectedRow[i]);
+                        TubeLight selectedLight = Engine.getInstance().getSceneManager().getScene().getTubeLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();
@@ -1273,7 +1273,7 @@ public class DebugFrame implements HostComponent {
 
                 for (int i = 0; i < selectedRow.length; i++) {
                     for (int j = 0; j < selectedColumns.length; j++) {
-                        AreaLight selectedLight = Engine.getInstance().getScene().getAreaLights().get(selectedRow[i]);
+                        AreaLight selectedLight = Engine.getInstance().getSceneManager().getScene().getAreaLights().get(selectedRow[i]);
                         entityViewFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
                         entityViewFrame.getContentPane().removeAll();
                         entityViewFrame.pack();

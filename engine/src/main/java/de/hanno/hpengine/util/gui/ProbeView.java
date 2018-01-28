@@ -89,10 +89,10 @@ public class ProbeView extends WebPanel {
 
         webComponentPanel.addElement(removeProbeButton);
         webComponentPanel.addElement(new WebButton("Use Probe Cam"){{ addActionListener(e -> {
-        	engine.setActiveCamera(probe.getSampler());
+        	engine.getSceneManager().setActiveCamera(probe.getSampler());
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
-        	engine.restoreWorldCamera();
+        	engine.getSceneManager().restoreWorldCamera();
         });}});
 
         webComponentPanel.addElement(new MovablePanel<Entity>(probe));

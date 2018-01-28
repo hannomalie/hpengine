@@ -13,22 +13,22 @@ public class AreaLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        if(Engine.getInstance().getScene() != null) {
-            return Engine.getInstance().getScene().getAreaLights().size();
+        if(Engine.getInstance().getSceneManager().getScene() != null) {
+            return Engine.getInstance().getSceneManager().getScene().getAreaLights().size();
         }
         return 0;
     }
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            AreaLight light = Engine.getInstance().getScene().getAreaLights().get(row);
+            AreaLight light = Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().z);
 
         } else if (col == 1) {
-            return Util.vectorToString(Engine.getInstance().getScene().getAreaLights().get(row).getPosition());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(Engine.getInstance().getScene().getAreaLights().get(row).getColor());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getAreaLights().get(row).getColor());
 
         }
         return "";

@@ -37,6 +37,6 @@ public class JavaComponentTest extends TestWithEngine {
         entity.addComponent(new JavaComponent("public class Bla implements de.hanno.hpengine.engine.lifecycle.LifeCycle {" +
                 "public void update(float seconds) { System.out.println(\"blubb\"); }" +
                 "}"));
-        engine.getScene().add(entity);
+        engine.getSceneManager().getScene().add(entity);
     }
 }

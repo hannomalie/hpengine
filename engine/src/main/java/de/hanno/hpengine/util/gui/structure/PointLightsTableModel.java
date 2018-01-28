@@ -14,7 +14,7 @@ public class PointLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        Scene scene = Engine.getInstance().getScene();
+        Scene scene = Engine.getInstance().getSceneManager().getScene();
         if(scene != null) {
             return scene.getPointLights().size();
         }
@@ -23,14 +23,14 @@ public class PointLightsTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            PointLight light = Engine.getInstance().getScene().getPointLights().get(row);
+            PointLight light = Engine.getInstance().getSceneManager().getScene().getPointLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 
         } else if (col == 1) {
-            return Util.vectorToString(Engine.getInstance().getScene().getPointLights().get(row).getPosition());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getPointLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(Engine.getInstance().getScene().getPointLights().get(row).getColor());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getPointLights().get(row).getColor());
 
         }
         return "";

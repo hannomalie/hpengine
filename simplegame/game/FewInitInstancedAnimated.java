@@ -36,9 +36,9 @@ public class FewInitInstancedAnimated implements LifeCycle {
                 }
             }
 
-            Engine.getInstance().getScene().addAll(loaded.entities);
+            Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
 
-            Engine.getInstance().getScene().add(new Camera());
+            Engine.getInstance().getSceneManager().getScene().add(new Camera());
             Thread.sleep(500);
             initialized = true;
         } catch(Exception e){

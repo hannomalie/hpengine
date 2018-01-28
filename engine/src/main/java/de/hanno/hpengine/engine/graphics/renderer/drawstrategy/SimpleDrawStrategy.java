@@ -125,7 +125,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     @Override
     public void draw(DrawResult result, RenderTarget target, RenderState renderState) {
-        EntitiesContainer entitiesContainer = Engine.getInstance().getScene().getEntitiesContainer();
+        EntitiesContainer entitiesContainer = Engine.getInstance().getSceneManager().getScene().getEntitiesContainer();
 
         GPUProfiler.start("First pass");
         drawFirstPass(result.getFirstPassResult(), renderState);
@@ -146,7 +146,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             GPUProfiler.end();
 
             GPUProfiler.start("Second pass");
-            drawSecondPass(result.getSecondPassResult(), renderState.camera, Engine.getInstance().getScene().getTubeLights(), Engine.getInstance().getScene().getAreaLights(), renderState);
+            drawSecondPass(result.getSecondPassResult(), renderState.camera, Engine.getInstance().getSceneManager().getScene().getTubeLights(), Engine.getInstance().getSceneManager().getScene().getAreaLights(), renderState);
             GPUProfiler.end();
             GPUProfiler.start("Combine pass");
             combinePass(target, renderState);
@@ -373,7 +373,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
     }
 
     private void doPointLights(RenderState renderState, FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
-        if (Engine.getInstance().getScene().getPointLights().isEmpty()) {
+        if (Engine.getInstance().getSceneManager().getScene().getPointLights().isEmpty()) {
             return;
         }
         GPUProfiler.start("Seconds pass PointLights");
@@ -392,7 +392,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         // TODO: Add glbindimagetexture to openglcontext class
         GL42.glBindImageTexture(4, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
-        secondPassPointComputeProgram.setUniform("pointLightCount", Engine.getInstance().getScene().getPointLights().size());
+        secondPassPointComputeProgram.setUniform("pointLightCount", Engine.getInstance().getSceneManager().getScene().getPointLights().size());
         secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
         secondPassPointComputeProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         secondPassPointComputeProgram.setUniformAsMatrix4("viewMatrix", viewMatrix);

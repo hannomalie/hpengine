@@ -14,7 +14,7 @@ ModelComponent = Java.type('de.hanno.hpengine.engine.component.ModelComponent');
 //print(world.getRenderer().getLightFactory().getDirectionalLight().getCamera().getPosition())
 
 //(world.getScene().getDirectionalLight().setOrientation(new Quaternion(0, 0, 0, 1)))
-//print(Engine.getInstance().getScene().getDirectionalLight().getOrientation())
+//print(Engine.getInstance().getSceneManager().getScene().getDirectionalLight().getOrientation())
 
 
 //var trafo = new Transform();
@@ -31,13 +31,13 @@ for(var x = -count; x < count; x++) {
 			var randomFloat = random.nextFloat() - 0.5;
 			var randomFloat2 = random.nextFloat() - 0.5;
 			var randomFloat3 = random.nextFloat() - 0.5;
-			trafo.translateLocal(Engine.getInstance().getScene().getEntities().get(0).getPosition());
+			trafo.translateLocal(Engine.getInstance().getSceneManager().getScene().getEntities().get(0).getPosition());
 			var translationDistanceX = 150
 			var translationDistanceY = 0
 			var translationDistanceZ = 150
 			trafo.translateLocal(new Vector3f(randomFloat*translationDistanceX*x,randomFloat2*translationDistanceY*y,randomFloat3*translationDistanceZ*z));
 			trafo.rotateY(randomFloat2*10.0);
-			var modelComponent = Engine.getInstance().getScene().getEntities().get(0).getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
+			var modelComponent = Engine.getInstance().getSceneManager().getScene().getEntities().get(0).getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 			var instance;
 			if(modelComponent != null) {
 			    var sourceController = modelComponent.getAnimationController();
@@ -57,7 +57,7 @@ for(var x = -count; x < count; x++) {
 print("adding...." + instances.size());
 GraphicsContext.getInstance().execute(new java.lang.Runnable() {
 	run: function() {
-		Engine.getInstance().getScene().getEntities().get(0).addInstances(instances);
+		Engine.getInstance().getSceneManager().getScene().getEntities().get(0).addInstances(instances);
 	}
 });
-print("Has instances now: " + Engine.getInstance().getScene().getEntities().get(0).getInstances().size())
+print("Has instances now: " + Engine.getInstance().getSceneManager().getScene().getEntities().get(0).getInstances().size())

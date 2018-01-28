@@ -32,9 +32,9 @@ public class EntityTest extends TestWithEngine {
     public void loadParented() throws Exception {
         StaticModel model = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
         Entity entity = EntityFactory.getInstance().getEntity("xxx", model);
-        engine.getScene().add(entity);
+        engine.getSceneManager().getScene().add(entity);
 
-        Assert.assertTrue(engine.getScene().getEntities().contains(entity));
+        Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(entity));
         Assert.assertTrue(entity.hasChildren());
         Assert.assertTrue(entity.getName().equals("xxx"));
         List<Mesh> meshes = model.getMeshes();
@@ -42,7 +42,7 @@ public class EntityTest extends TestWithEngine {
             boolean containsEntity = false;
             for (Entity child : entity.getChildren()) {
                 if(child.getName().equals(mesh.getName())) { containsEntity = true; }
-                Assert.assertTrue(engine.getScene().getEntities().contains(child));
+                Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(child));
             }
             Assert.assertTrue(containsEntity);
         }
@@ -54,18 +54,18 @@ public class EntityTest extends TestWithEngine {
         Entity parentEntity = EntityFactory.getInstance().getEntity("parent", model);
         parentEntity.setSelected(true);
         parentEntity.setTranslation(new Vector3f(2,2,2));
-        engine.getScene().add(parentEntity);
+        engine.getSceneManager().getScene().add(parentEntity);
 
-        Assert.assertTrue(engine.getScene().getEntities().contains(parentEntity));
+        Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(parentEntity));
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
         Entity childEntity = EntityFactory.getInstance().getEntity("child", model);
         childEntity.setTranslation(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
-        engine.getScene().add(childEntity);
+        engine.getSceneManager().getScene().add(childEntity);
 
-        Assert.assertTrue(engine.getScene().getEntities().contains(childEntity));
+        Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(childEntity));
         Assert.assertTrue(parentEntity.hasChildren());
         Assert.assertTrue(childEntity.getName().equals("child"));
 
@@ -78,9 +78,9 @@ public class EntityTest extends TestWithEngine {
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 
         Entity secondEntity = EntityFactory.getInstance().getEntity("second", model);
-        engine.getScene().add(secondEntity);
-        Assert.assertEquals(0, Engine.getInstance().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
-        Assert.assertEquals(4, Engine.getInstance().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
+        engine.getSceneManager().getScene().add(secondEntity);
+        Assert.assertEquals(0, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
+        Assert.assertEquals(4, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
 
 //        TODO: Reimplement this
 //        {
@@ -105,7 +105,7 @@ public class EntityTest extends TestWithEngine {
 //        }
 
 
-        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(Engine.getInstance().getScene().getEntities());
+        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(Engine.getInstance().getSceneManager().getScene().getEntities());
         FloatBuffer floatValues = engine.getRenderSystem().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);

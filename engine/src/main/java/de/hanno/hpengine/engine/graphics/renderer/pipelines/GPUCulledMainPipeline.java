@@ -21,7 +21,7 @@ public class GPUCulledMainPipeline extends GPUOcclusionCulledPipeline {
 //    }
 //
 //    private Camera getDebugCam() {
-//        return Engine.getInstance().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> ((Camera) it)).findFirst().get();
+//        return Engine.getInstance().getSceneManager().getScene().getEntities().stream().filter(it -> it instanceof Camera).map(it -> ((Camera) it)).findFirst().get();
 //    }
 //    @Override
 //    public void renderHighZMap() {

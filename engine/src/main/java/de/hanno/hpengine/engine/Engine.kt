@@ -4,8 +4,6 @@ import com.alee.laf.WebLookAndFeel
 import com.alee.utils.SwingUtils
 import com.google.common.eventbus.Subscribe
 import de.hanno.hpengine.engine.DirectoryManager.GAMEDIR_NAME
-import de.hanno.hpengine.engine.camera.Camera
-import de.hanno.hpengine.engine.camera.MovableCamera
 import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
@@ -14,18 +12,17 @@ import de.hanno.hpengine.engine.graphics.RenderSystem
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
-import de.hanno.hpengine.engine.input.Input
 import de.hanno.hpengine.engine.model.EntityFactory
 import de.hanno.hpengine.engine.model.material.MaterialFactory
 import de.hanno.hpengine.engine.model.texture.TextureFactory
 import de.hanno.hpengine.engine.physics.PhysicsFactory
 import de.hanno.hpengine.engine.scene.Scene
+import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
 import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
 import de.hanno.hpengine.util.script.ScriptManager
-import de.hanno.hpengine.util.stopwatch.GPUProfiler
 import de.hanno.hpengine.util.stopwatch.StopWatch
 import net.engio.mbassy.listener.Handler
 import org.joml.Vector3f
@@ -44,33 +41,16 @@ class Engine private constructor() : HighFrequencyCommandProvider {
 
     val renderSystem by lazy { RenderSystem() }
 
-    var updateThread: UpdateThread? = null
-        private set
+    val updateThread: UpdateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
 
     private val drawCounter = AtomicInteger(-1)
+
+    val sceneManager = SceneManager()
 
     val commandQueue = CommandQueue()
     val scriptManager: ScriptManager by lazy { ScriptManager.getInstance() }
     val physicsFactory: PhysicsFactory by lazy { PhysicsFactory() }
-    var scene: Scene = Scene()
-        set(value) {
-            physicsFactory.clearWorld()
-            field = value
-            GraphicsContext.getInstance().execute({
-                StopWatch.getInstance().start("Scene init")
-                Engine.getInstance().renderSystem.vertexIndexBufferStatic.resetAllocations()
-                Engine.getInstance().renderSystem.vertexIndexBufferAnimated.resetAllocations()
-                value.init()
-                StopWatch.getInstance().stopAndPrintMS()
-            }, true)
-            restoreWorldCamera()
-            renderSystem.renderState.addCommand { renderState1 ->
-                renderState1.setVertexIndexBufferStatic(Engine.getInstance().renderSystem.vertexIndexBufferStatic)
-                renderState1.setVertexIndexBufferAnimated(Engine.getInstance().renderSystem.vertexIndexBufferAnimated)
-            }
-        }
-    private val camera = MovableCamera()
-    var activeCamera: Camera? = null
+
     @Volatile
     var isInitialized: Boolean = false
 
@@ -94,11 +74,6 @@ class Engine private constructor() : HighFrequencyCommandProvider {
         ScriptManager.getInstance().defineGlobals()
 
         Renderer.getInstance().registerPipelines(renderSystem.renderState)
-        camera.initialize()
-        camera.setTranslation(Vector3f(0f, 20f, 0f))
-        activeCamera = camera
-        scene = Scene()
-        scene.init()
         _instance.startSimulation()
         isInitialized = true
         drawCounter.set(0)
@@ -106,8 +81,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     }
 
     fun startSimulation() {
-        updateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
-        updateThread!!.start()
+        updateThread.start()
 
         renderSystem.renderThread.start()
     }
@@ -115,9 +89,9 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     fun update(seconds: Float) {
         try {
             commandQueue.executeCommands()
-            activeCamera!!.update(seconds)
-            scene!!.setCurrentCycle(renderSystem.drawCycle.get())
-            scene!!.update(seconds)
+            sceneManager.activeCamera.update(seconds)
+            sceneManager.scene.setCurrentCycle(renderSystem.drawCycle.get())
+            sceneManager.scene.update(seconds)
             updateRenderState()
             renderSystem.drawCycle.getAndIncrement()
             if (!Config.getInstance().isMultithreadedRendering) {
@@ -130,40 +104,35 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     }
 
     private fun updateRenderState() {
+        val scene = sceneManager.scene
         if (scene.entityMovedInCycle() == renderSystem.drawCycle.get()) {
             renderSystem.renderState.requestSingletonAction(0)
         }
 
         if (GraphicsContext.getInstance().isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
-            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
-            scene.addRenderBatches(this.activeCamera, renderSystem.renderState.currentWriteState)
+            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
+            scene.addRenderBatches(sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
             renderSystem.renderState.update()
             renderSystem.renderState.currentWriteState.cycle = renderSystem.drawCycle.get()
         }
     }
 
     fun actuallyDraw() {
-        while (drawCounter.get() != 1) {
-        }
-        drawCounter.getAndDecrement()
-    }
-
-    fun restoreWorldCamera() {
-        this.activeCamera = camera
+        drawCounter.compareAndSet(1,0)
     }
 
     @Subscribe
     @Handler
     fun handle(e: EntityAddedEvent) {
-        scene.setUpdateCache(true)
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(scene.entities) }
+        sceneManager.scene.setUpdateCache(true)
+        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
     @Handler
     fun handle(e: SceneInitEvent) {
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(scene.entities) }
+        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
@@ -171,7 +140,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     fun handle(event: EntityChangedMaterialEvent) {
         val entity = event.entity
         //            buffer(entity);
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(scene.entities) }
+        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
@@ -265,7 +234,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
             if (sceneName != null) {
                 Renderer.getInstance()
                 val scene = Scene.read(sceneName)
-                Engine.getInstance().scene = scene
+                Engine.getInstance().sceneManager.scene = scene
             }
 
             try {

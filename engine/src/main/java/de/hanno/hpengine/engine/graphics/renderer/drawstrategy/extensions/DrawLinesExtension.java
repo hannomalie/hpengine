@@ -54,7 +54,7 @@ public class DrawLinesExtension implements RenderExtension {
             firstPassResult.linesDrawn += Renderer.getInstance().drawLines(linesProgram);
 
 //            linesProgram.setUniform("diffuseColor", new Vector3f(1,0,0));
-//            Engine.getInstance().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
+//            Engine.getInstance().getSceneManager().getScene().getEntitiesContainer().drawDebug(Renderer.getInstance(), renderState.camera, linesProgram);
 
 //            linesProgram.setUniformAsMatrix4("modelMatrix", identityMatrix44Buffer);
 //            int max = 500;
@@ -86,7 +86,7 @@ public class DrawLinesExtension implements RenderExtension {
         }
         if(Config.getInstance().isDrawCameras()) {
 //            TODO: Use renderstate somehow?
-            List<Entity> entities = Engine.getInstance().getScene().getEntities();
+            List<Entity> entities = Engine.getInstance().getSceneManager().getScene().getEntities();
             for(int i = 0; i < entities.size(); i++) {
                 Entity entity = entities.get(i);
                 if(entity instanceof Camera) {

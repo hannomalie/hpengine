@@ -13,22 +13,22 @@ public class TubeLightsTableModel extends AbstractTableModel {
     }
 
     public int getRowCount() {
-        if(Engine.getInstance().getScene() != null) {
-            return Engine.getInstance().getScene().getTubeLights().size();
+        if(Engine.getInstance().getSceneManager().getScene() != null) {
+            return Engine.getInstance().getSceneManager().getScene().getTubeLights().size();
         }
         return 0;
     }
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            TubeLight light = Engine.getInstance().getScene().getTubeLights().get(row);
+            TubeLight light = Engine.getInstance().getSceneManager().getScene().getTubeLights().get(row);
             return String.format("%s (Range %f)", light.getName(), light.getScale().x);
 
         } else if (col == 1) {
-            return Util.vectorToString(Engine.getInstance().getScene().getTubeLights().get(row).getPosition());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getTubeLights().get(row).getPosition());
 
         } else if (col == 2) {
-            return Util.vectorToString(Engine.getInstance().getScene().getTubeLights().get(row).getColor());
+            return Util.vectorToString(Engine.getInstance().getSceneManager().getScene().getTubeLights().get(row).getColor());
 
         }
         return "";

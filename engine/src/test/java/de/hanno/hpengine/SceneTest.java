@@ -25,17 +25,17 @@ public class SceneTest extends TestWithEngine {
     public void loadScene() throws Exception {
         Scene scene = new Scene();
         scene.init();
-        engine.setScene(scene);
+        engine.getSceneManager().setScene(scene);
         Entity entity = EntityFactory.getInstance().getEntity();
         scene.add(entity);
-        Assert.assertEquals(1, engine.getScene().getEntities().size());
+        Assert.assertEquals(1, engine.getSceneManager().getScene().getEntities().size());
         Assert.assertTrue(scene.write(SCENENAME));
 
         Scene loadedScene = Scene.read(SCENENAME);
         loadedScene.init();
-        engine.setScene(loadedScene);
+        engine.getSceneManager().setScene(loadedScene);
 
-        Assert.assertEquals(1, engine.getScene().getEntities().size());
+        Assert.assertEquals(1, engine.getSceneManager().getScene().getEntities().size());
     }
 
 }

@@ -151,7 +151,7 @@ public class EnvironmentSampler extends Camera {
 	}
 	
 	private void drawCubeMapSides(boolean urgent, RenderState extract) {
-        Scene scene = Engine.getInstance().getScene();
+        Scene scene = Engine.getInstance().getSceneManager().getScene();
         if(scene == null) { return; }
 
         EntitiesContainer octree = scene.getEntitiesContainer();
@@ -250,12 +250,12 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniform("firstBounceForProbe", GBuffer.RENDER_PROBES_WITH_FIRST_BOUNCE);
 		cubeMapProgram.setUniform("probePosition", probe.getCenter());
 		cubeMapProgram.setUniform("probeSize", probe.getSize());
-		cubeMapProgram.setUniform("activePointLightCount", engine.getScene().getPointLights().size());
+		cubeMapProgram.setUniform("activePointLightCount", engine.getSceneManager().getScene().getPointLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightPositions", LightFactory.getInstance().getPointLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("pointLightColors", LightFactory.getInstance().getPointLightColors());
 		cubeMapProgram.setUniformFloatArrayAsFloatBuffer("pointLightRadiuses", LightFactory.getInstance().getPointLightRadiuses());
 		
-		cubeMapProgram.setUniform("activeAreaLightCount", engine.getScene().getAreaLights().size());
+		cubeMapProgram.setUniform("activeAreaLightCount", engine.getSceneManager().getScene().getAreaLights().size());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightPositions", LightFactory.getInstance().getAreaLightPositions());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightColors", LightFactory.getInstance().getAreaLightColors());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightWidthHeightRanges", LightFactory.getInstance().getAreaLightWidthHeightRanges());
@@ -263,8 +263,8 @@ public class EnvironmentSampler extends Camera {
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightUpDirections", LightFactory.getInstance().getAreaLightUpDirections());
 		cubeMapProgram.setUniformVector3ArrayAsFloatBuffer("areaLightRightDirections", LightFactory.getInstance().getAreaLightRightDirections());
 		
-		for(int i = 0; i < Math.min(engine.getScene().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
-			AreaLight areaLight = engine.getScene().getAreaLights().get(i);
+		for(int i = 0; i < Math.min(engine.getSceneManager().getScene().getAreaLights().size(), LightFactory.MAX_AREALIGHT_SHADOWMAPS); i++) {
+			AreaLight areaLight = engine.getSceneManager().getScene().getAreaLights().get(i);
 			GraphicsContext.getInstance().bindTexture(9 + i, TEXTURE_2D, LightFactory.getInstance().getDepthMapForAreaLight(areaLight));
 			cubeMapProgram.setUniformAsMatrix4("areaLightShadowMatrices[" + i + "]", LightFactory.getInstance().getShadowMatrixForAreaLight(areaLight));
 		}
@@ -311,7 +311,7 @@ public class EnvironmentSampler extends Camera {
         firstpassDefaultProgram.setUniformAsMatrix4("lastViewMatrix", camera.getLastViewMatrixAsBuffer());
         firstpassDefaultProgram.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
         firstpassDefaultProgram.setUniform("eyePosition", camera.getPosition());
-        firstpassDefaultProgram.setUniform("lightDirection", engine.getScene().getDirectionalLight().getViewDirection());
+        firstpassDefaultProgram.setUniform("lightDirection", engine.getSceneManager().getScene().getDirectionalLight().getViewDirection());
         firstpassDefaultProgram.setUniform("near", camera.getNear());
         firstpassDefaultProgram.setUniform("far", camera.getFar());
         firstpassDefaultProgram.setUniform("time", (int)System.currentTimeMillis());
@@ -421,7 +421,7 @@ public class EnvironmentSampler extends Camera {
 	
 	private void bindShaderSpecificsPerCubeMapSide(FloatBuffer viewMatrixAsBuffer, FloatBuffer projectionMatrixAsBuffer) {
 		GPUProfiler.start("Matrix uniforms");
-		DirectionalLight light = engine.getScene().getDirectionalLight();
+		DirectionalLight light = engine.getSceneManager().getScene().getDirectionalLight();
 		cubeMapProgram.setUniform("lightDirection", light.getViewDirection());
 		cubeMapProgram.setUniform("lightDiffuse", light.getColor());
 		cubeMapProgram.setUniform("lightAmbient", Config.getInstance().getAmbientLight());

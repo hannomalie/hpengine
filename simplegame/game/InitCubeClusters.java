@@ -1,5 +1,4 @@
 import de.hanno.hpengine.engine.component.ModelComponent;
-import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
@@ -12,7 +11,6 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Cluster;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Instance;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.joml.Vector3f;
 
@@ -20,7 +18,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 public class InitCubeClusters implements LifeCycle {
 
@@ -70,7 +67,7 @@ public class InitCubeClusters implements LifeCycle {
                 }
             }
 
-            Engine.getInstance().getScene().addAll(loaded.entities);
+            Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
             Thread.sleep(500);
             initialized = true;
         } catch (Exception e) {

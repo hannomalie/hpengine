@@ -2,11 +2,9 @@ package de.hanno.hpengine.util.gui.structure;
 
 import com.alee.extended.tree.WebCheckBoxTree;
 import com.alee.extended.tree.WebCheckBoxTreeCellRenderer;
-import com.alee.utils.swing.StateProvider;
 import de.hanno.hpengine.engine.container.EntitiesContainer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.util.Parentable;
 import de.hanno.hpengine.util.gui.SetVisibilityCheckStateListener;
 import de.hanno.hpengine.util.gui.DebugFrame;
@@ -47,9 +45,9 @@ public class SceneTree extends WebCheckBoxTree {
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
 
-        if(engine.getScene() != null) {
-            spanTree(top, engine.getScene().getEntitiesContainer());
-            LOGGER.info("Added " + engine.getScene().getEntities().size());
+        if(engine.getSceneManager().getScene() != null) {
+            spanTree(top, engine.getSceneManager().getScene().getEntitiesContainer());
+            LOGGER.info("Added " + engine.getSceneManager().getScene().getEntities().size());
         } else {
             LOGGER.info("Scene is currently null");
         }
@@ -66,7 +64,7 @@ public class SceneTree extends WebCheckBoxTree {
                 Component c = super.getTreeCellRendererComponent(tree, value, arg2, arg3, arg4, arg5, arg6);
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
-                Optional<Entity> entityOption = Engine.getInstance().getScene().getEntity(node.toString());
+                Optional<Entity> entityOption = Engine.getInstance().getSceneManager().getScene().getEntity(node.toString());
                 if(entityOption.isPresent()) {
                     if(entityOption.get().isVisible()) {
                         checkBox.setChecked();

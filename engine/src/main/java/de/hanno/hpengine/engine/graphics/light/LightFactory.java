@@ -204,8 +204,8 @@ public class LightFactory {
 		float[] colors = new float[pointLightsForwardMaxCount*3];
 		float[] radiuses = new float[pointLightsForwardMaxCount];
 		
-		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, Engine.getInstance().getScene().getPointLights().size()); i++) {
-			PointLight light =  Engine.getInstance().getScene().getPointLights().get(i);
+		for(int i = 0; i < Math.min(pointLightsForwardMaxCount, Engine.getInstance().getSceneManager().getScene().getPointLights().size()); i++) {
+			PointLight light =  Engine.getInstance().getSceneManager().getScene().getPointLights().get(i);
 			positions[3*i] = light.getPosition().x;
 			positions[3*i+1] = light.getPosition().y;
 			positions[3*i+2] = light.getPosition().z;
@@ -291,7 +291,7 @@ public class LightFactory {
 	}
 	
 	private void updateAreaLightArrays() {
-		List<AreaLight> areaLights = Engine.getInstance().getScene().getAreaLights();
+		List<AreaLight> areaLights = Engine.getInstance().getSceneManager().getScene().getAreaLights();
 
 		float[] positions = new float[areaLightsForwardMaxCount*3];
 		float[] colors = new float[areaLightsForwardMaxCount*3];
@@ -348,7 +348,7 @@ public class LightFactory {
 	}
 
 	public void renderAreaLightShadowMaps(RenderState renderState, EntitiesContainer octree) {
-        Scene scene = Engine.getInstance().getScene();
+        Scene scene = Engine.getInstance().getSceneManager().getScene();
         if(scene == null) { return; }
 
         List<AreaLight> areaLights = scene.getAreaLights();
@@ -389,7 +389,7 @@ public class LightFactory {
 
 	private long pointlightShadowMapsRenderedInCycle;
 	public void renderPointLightShadowMaps(RenderState renderState) {
-        Scene scene = Engine.getInstance().getScene();
+        Scene scene = Engine.getInstance().getSceneManager().getScene();
         if(scene == null) { return; }
 
         boolean needToRedraw = pointlightShadowMapsRenderedInCycle < renderState.entitiesState.entityMovedInCycle || pointlightShadowMapsRenderedInCycle < renderState.pointlightMovedInCycle;
@@ -406,7 +406,7 @@ public class LightFactory {
 
 		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, scene.getPointLights().size()); i++) {
 
-			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
+			PointLight light = Engine.getInstance().getSceneManager().getScene().getPointLights().get(i);
 			pointCubeShadowPassProgram.use();
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(1, renderState.getMaterialBuffer());
 			pointCubeShadowPassProgram.bindShaderStorageBuffer(3, renderState.getEntitiesBuffer());
@@ -452,11 +452,11 @@ public class LightFactory {
 		renderTarget.use(false);
 
 		pointShadowPassProgram.use();
-		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, Engine.getInstance().getScene().getPointLights().size()); i++) {
+		for(int i = 0; i < Math.min(MAX_POINTLIGHT_SHADOWMAPS, Engine.getInstance().getSceneManager().getScene().getPointLights().size()); i++) {
 			renderTarget.setTargetTextureArrayIndex(pointLightDepthMapsArrayFront, i);
 
 			GraphicsContext.getInstance().clearDepthAndColorBuffer();
-			PointLight light = Engine.getInstance().getScene().getPointLights().get(i);
+			PointLight light = Engine.getInstance().getSceneManager().getScene().getPointLights().get(i);
 			List<Entity> visibles = octree.getEntities();
 			pointShadowPassProgram.setUniform("pointLightPositionWorld", light.getPosition());
 			pointShadowPassProgram.setUniform("pointLightRadius", light.getRadius());
@@ -469,7 +469,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(renderState, batch);
 				});
 			}
@@ -484,7 +484,7 @@ public class LightFactory {
 					pointShadowPassProgram.setUniform("hasDiffuseMap", modelComponent.getMaterial().hasDiffuseMap());
 					pointShadowPassProgram.setUniform("color", modelComponent.getMaterial().getDiffuse());
 
-                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, Engine.getInstance().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
+                    RenderBatch batch = new RenderBatch().init(pointShadowPassProgram, Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(e.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)), e.isVisible(), e.isSelected(), Config.getInstance().isDrawLines(), camera.getPosition(), true, e.getInstanceCount(), true, e.getUpdate(), e.getMinMaxWorld().getMin(), e.getMinMaxWorld().getMax(), e.getCenterWorld(), e.getBoundingSphereRadius(), modelComponent.getIndexCount(), modelComponent.getIndexOffset(), modelComponent.getBaseVertex(), false, e.getInstanceMinMaxWorlds());
                     DrawStrategy.draw(renderState, batch);
 				});
 			}
@@ -493,7 +493,7 @@ public class LightFactory {
 	}
 
 	public int getDepthMapForAreaLight(AreaLight light) {
-		int index = Engine.getInstance().getScene().getAreaLights().indexOf(light);
+		int index = Engine.getInstance().getSceneManager().getScene().getAreaLights().indexOf(light);
 		if(index >= MAX_AREALIGHT_SHADOWMAPS) {return -1;}
 
 		return areaLightDepthMaps.get(index);
@@ -526,7 +526,7 @@ public class LightFactory {
 	}
 
 	private void bufferLights() {
-		List<PointLight> pointLights = Engine.getInstance().getScene().getPointLights();
+		List<PointLight> pointLights = Engine.getInstance().getSceneManager().getScene().getPointLights();
 		GraphicsContext.getInstance().execute(() -> {
 //			lightBuffer.putValues(0, pointLights.size());
 			if(pointLights.size() > 0) {

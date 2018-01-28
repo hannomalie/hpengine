@@ -366,7 +366,7 @@ public class Scene implements LifeCycle, Serializable {
 
 		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
 
-		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getScene().getModelComponents();
+		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getSceneManager().getScene().getModelComponents();
 
 		addBatches(camera, currentWriteState, cameraWorldPosition, firstpassDefaultProgram, modelComponentsStatic);
 
@@ -388,7 +388,7 @@ public class Scene implements LifeCycle, Serializable {
 			float distanceToCamera = tempDistVector.length();
 			boolean isInReachForTextureLoading = distanceToCamera < 50 || distanceToCamera < 2.5f * modelComponent.getBoundingSphereRadius();
 
-			int entityIndexOf = Engine.getInstance().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
+			int entityIndexOf = Engine.getInstance().getSceneManager().getScene().getEntityBufferIndex(entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY));
 
 			List<Mesh> meshes = modelComponent.getMeshes();
 			for(int i = 0; i < meshes.size(); i++) {

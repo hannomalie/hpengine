@@ -310,10 +310,10 @@ public class EntityView extends WebPanel {
             webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Remove Parent"), parentRemove));
 
         } else {
-            WebComboBox parentSelect = new WebComboBox(new Vector<>(engine.getScene().getEntities()));
+            WebComboBox parentSelect = new WebComboBox(new Vector<>(engine.getSceneManager().getScene().getEntities()));
             parentSelect.addActionListener(e ->{
                 int index = parentSelect.getSelectedIndex();
-                Entity newParent = engine.getScene().getEntities().get(index);
+                Entity newParent = engine.getSceneManager().getScene().getEntities().get(index);
                 entity.setParent(newParent);
             });
             webComponentPanel.addElement(new GroupPanel(4, new WebLabel("Select Parent"), parentSelect));

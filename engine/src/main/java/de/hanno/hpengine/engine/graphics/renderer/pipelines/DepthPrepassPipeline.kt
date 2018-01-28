@@ -40,7 +40,7 @@ open class DepthPrepassPipeline @JvmOverloads constructor(useFrustumCulling: Boo
         get() = getDebugCam()
 
     private fun getDebugCam(): Camera? {
-        val option = Engine.getInstance().scene.entities.stream().filter { it -> it is Camera }.map { it -> it as Camera }.findFirst()
+        val option = Engine.getInstance().sceneManager.scene.entities.stream().filter { it -> it is Camera }.map { it -> it as Camera }.findFirst()
         return if (option.isPresent) option.get() else null
     }
     fun setUniforms(renderState: RenderState, program: Program) {

@@ -13,7 +13,7 @@ public class RemoveEntityCommand implements Command {
 	
 	@Override
 	public Result execute(Engine engine) {
-		boolean result = engine.getScene().removeEntity(entity);
+		boolean result = engine.getSceneManager().getScene().removeEntity(entity);
 		if (result) {
 			return new Result() {
 				@Override

@@ -30,7 +30,7 @@ public class InitInstancedAnimated implements LifeCycle {
     public void init() {
 
         try {
-            Engine.getInstance().getScene().add(new Camera());
+            Engine.getInstance().getSceneManager().getScene().add(new Camera());
             loadLotsOfInstances("/assets/models/doom3monster/monster.md5mesh", 1, "hellknight");
             Thread.sleep(500);
 //            loadLotsOfInstances("/assets/models/cube.obj", 100, "cube");
@@ -78,7 +78,7 @@ public class InitInstancedAnimated implements LifeCycle {
             }
         }
 
-        Engine.getInstance().getScene().addAll(loaded.entities);
+        Engine.getInstance().getSceneManager().getScene().addAll(loaded.entities);
     }
 
     public boolean isInitialized() {

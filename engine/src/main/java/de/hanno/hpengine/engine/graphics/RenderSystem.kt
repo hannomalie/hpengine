@@ -26,7 +26,7 @@ class RenderSystem : HighFrequencyCommandProvider {
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder()
     var renderThread: RenderThread = RenderThread("Render")
 
-    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(), RenderState(), RenderState(), Consumer { renderState -> renderState.bufferEntities(Engine.getInstance().scene.entities) })
+    val renderState: TripleBuffer<RenderState> = TripleBuffer(RenderState(), RenderState(), RenderState(), Consumer { renderState -> renderState.bufferEntities(Engine.getInstance().sceneManager.scene.entities) })
 
     val vertexIndexBufferStatic = VertexIndexBuffer<Vertex>(10, 10, ModelComponent.DEFAULTCHANNELS)
     val vertexIndexBufferAnimated = VertexIndexBuffer<AnimatedVertex>(10, 10, ModelComponent.DEFAULTANIMATEDCHANNELS)
@@ -53,7 +53,7 @@ class RenderSystem : HighFrequencyCommandProvider {
                 Renderer.getInstance().draw(latestDrawResult, renderState.currentReadState)
                 latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings()
                 Renderer.getInstance().endFrame()
-                Engine.getInstance().scene.isInitiallyDrawn = true
+                Engine.getInstance().sceneManager.scene.isInitiallyDrawn = true
 
                 Engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
             }
