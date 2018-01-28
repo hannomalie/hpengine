@@ -1,11 +1,11 @@
 package de.hanno.hpengine.util;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
@@ -53,7 +53,7 @@ public class TestSceneUtil {
 
                         try {
                             Vector3f position = new Vector3f(i * 20, k * 10, -j * 20);
-                            Entity entity = EntityFactory.getInstance().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
+                            Entity entity = Engine.getInstance().getEntityFactory().getEntity(position, "Entity_" + System.currentTimeMillis(), sphere);
                             PointLight pointLight = LightFactory.getInstance().getPointLight(10);
                             pointLight.setTranslation(new Vector3f(i * 19, k * 15, -j * 19));
                             scene.addPointLight(pointLight);

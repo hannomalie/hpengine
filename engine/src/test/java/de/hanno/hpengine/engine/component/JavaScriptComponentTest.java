@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.TestWithEngine;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -18,7 +18,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
     @Test
     public void localDefines() {
         JavaScriptComponent component = new JavaScriptComponent();
-        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        Entity entity = Engine.getInstance().getEntityFactory().getEntity().addComponent(component);
         entity.initialize();
         component.setInt("myInt", 5);
 
@@ -33,7 +33,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
 
         String script = "var myInt = myInt;";
         JavaScriptComponent component = new JavaScriptComponent(script);
-        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        Entity entity = Engine.getInstance().getEntityFactory().getEntity().addComponent(component);
         entity.initialize();
 
         Assert.assertEquals(242, component.getContext().getAttribute("myInt"));
@@ -50,7 +50,7 @@ public class JavaScriptComponentTest extends TestWithEngine {
         String script = "var init = function(world) { initCalled = true; };" +
                 "var update = function(seconds) { updateCalled = true; };";
         JavaScriptComponent component = new JavaScriptComponent(script);
-        Entity entity = EntityFactory.getInstance().getEntity().addComponent(component);
+        Entity entity = Engine.getInstance().getEntityFactory().getEntity().addComponent(component);
         entity.initialize();
 
         entity.update(0.1f);

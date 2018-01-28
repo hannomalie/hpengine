@@ -26,7 +26,7 @@ public class SceneTest extends TestWithEngine {
         Scene scene = new Scene();
         scene.init();
         engine.getSceneManager().setScene(scene);
-        Entity entity = EntityFactory.getInstance().getEntity();
+        Entity entity = engine.getEntityFactory().getEntity();
         scene.add(entity);
         Assert.assertEquals(1, engine.getSceneManager().getScene().getEntities().size());
         Assert.assertTrue(scene.write(SCENENAME));

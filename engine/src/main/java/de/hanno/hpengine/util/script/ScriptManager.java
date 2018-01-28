@@ -2,7 +2,6 @@ package de.hanno.hpengine.util.script;
 
 import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.model.material.MaterialFactory;
@@ -43,7 +42,7 @@ public class ScriptManager {
 	public void defineGlobals() {
 		define("world", scriptEngine);
         define("renderer", Renderer.getInstance());
-        define("entityFactory", EntityFactory.getInstance());
+        define("entityFactory", Engine.getInstance().getEntityFactory());
 		define("materialFactory", MaterialFactory.getInstance());
 		define("textureFactory", TextureFactory.getInstance());
 		define("objLoader", new OBJLoader());

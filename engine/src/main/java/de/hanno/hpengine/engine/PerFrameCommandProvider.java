@@ -6,4 +6,5 @@ public interface PerFrameCommandProvider {
     void postRun();
 
     boolean isReadyForExecution();
+
 }

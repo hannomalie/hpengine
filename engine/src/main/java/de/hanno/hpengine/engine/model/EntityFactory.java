@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 public class EntityFactory {
-    private static EntityFactory instance;
-
-    private EntityFactory() {
+    public EntityFactory() {
         Engine.getEventBus().register(this);
 	}
 	public Entity getEntity() {
@@ -75,17 +73,6 @@ public class EntityFactory {
 		if(entity.getUpdate() == null) {
 			entity.setUpdate(Update.DYNAMIC);
 		}
-    }
-
-    public static EntityFactory getInstance() {
-        if(instance == null) {
-            throw new IllegalStateException("EntityFactory not initialized. Init a renderer first.");
-        }
-        return instance;
-    }
-
-    public static void create() {
-        instance = new EntityFactory();
     }
 
 }

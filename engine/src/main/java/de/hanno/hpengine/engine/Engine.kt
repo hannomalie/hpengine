@@ -31,42 +31,33 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 
-class Engine private constructor() : PerFrameCommandProvider {
-    override fun isReadyForExecution() = drawCounter.get() == 0
-
-    override fun postRun() {
-        drawCounter.getAndIncrement()
-    }
+class Engine private constructor(val gameDirName: String) : PerFrameCommandProvider {
 
     init {
         GraphicsContext.initGpuContext()
     }
 
-    val renderSystem by lazy { RenderSystem() }
-
     val updateThread: UpdateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
-
     private val drawCounter = AtomicInteger(-1)
+    private val commandQueue = CommandQueue()
 
+    val entityFactory = EntityFactory()
+    val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
+    val renderSystem by lazy { RenderSystem() }
     val sceneManager = SceneManager()
-
-    val commandQueue = CommandQueue()
     val scriptManager: ScriptManager by lazy { ScriptManager.getInstance() }
     val physicsFactory: PhysicsFactory by lazy { PhysicsFactory() }
 
-    @Volatile
-    var isInitialized: Boolean = false
+    @Volatile var isInitialized: Boolean = false
 
     val fpsCounter: FPSCounter
-        get() = updateThread!!.fpsCounter
+        get() = updateThread.fpsCounter
 
-    private fun initialize(gamedirName: String) {
+    private fun initialize() {
         eventBus.register(this)
-        directoryManager = DirectoryManager(gamedirName)
-        directoryManager.initWorkDir()
         GraphicsContext.getInstance().registerPerFrameCommand(this)
 
-        EntityFactory.create()
+//        TODO: Clean this up, no globals anymore please
         ProgramFactory.init()
         TextureFactory.init()
         MaterialFactory.init()
@@ -167,11 +158,6 @@ class Engine private constructor() : PerFrameCommandProvider {
 
     private fun destroyOpenGL() {
         GraphicsContext.getInstance().drawThread.stopRequested = true
-        //        try {
-        //            Display.destroy();
-        //        } catch (IllegalStateException e) {
-        //            e.printStackTrace();
-        //        }
     }
 
     fun destroy() {
@@ -180,17 +166,20 @@ class Engine private constructor() : PerFrameCommandProvider {
         System.exit(0)
     }
 
-    fun getDirectoryManager(): DirectoryManager? {
-        return directoryManager
-    }
-
     override fun getDrawCommand(): Runnable {
         return renderSystem.drawRunnable
     }
 
+    override fun isReadyForExecution() = drawCounter.get() == 0
+    override fun postRun() { drawCounter.getAndIncrement() }
+
+
+
+
+
+
     companion object {
         @Volatile private lateinit var _instance: Engine
-        private lateinit var directoryManager: DirectoryManager
 
         @JvmStatic fun getInstance(): Engine {
             return _instance
@@ -217,7 +206,6 @@ class Engine private constructor() : PerFrameCommandProvider {
                     break
                 }
             }
-            directoryManager = DirectoryManager(gameDir)
             try {
                 SwingUtils.invokeAndWait { WebLookAndFeel.install() }
             } catch (e: InterruptedException) {
@@ -237,7 +225,7 @@ class Engine private constructor() : PerFrameCommandProvider {
             }
 
             try {
-                val initScript = JavaComponent(String(Files.readAllBytes(directoryManager.gameInitScript.toPath())))
+                val initScript = JavaComponent(String(Files.readAllBytes(Engine.getInstance().directoryManager.gameInitScript.toPath())))
                 initScript.init()
                 println("initScript = " + initScript.isInitialized)
             } catch (e: IOException) {
@@ -248,8 +236,8 @@ class Engine private constructor() : PerFrameCommandProvider {
 
         @JvmOverloads
         @JvmStatic fun init(gameDirName: String = GAMEDIR_NAME) {
-            _instance = Engine()
-            _instance!!.initialize(gameDirName)
+            _instance = Engine(gameDirName)
+            _instance!!.initialize()
         }
 
         @JvmStatic val eventBus: EventBus

@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
@@ -107,7 +108,7 @@ public class GBuffer {
 			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);
-            probeBoxEntity = EntityFactory.getInstance().getEntity("ProbeBox", probeBox);
+            probeBoxEntity = Engine.getInstance().getEntityFactory().getEntity("ProbeBox", probeBox);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

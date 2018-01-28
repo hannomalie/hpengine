@@ -9,7 +9,6 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.model.EntityFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
@@ -38,7 +37,7 @@ public class LoadEntitiyView extends WebPanel {
 		if(chosenFiles == null) { return entitiesToAdd; }
 		for (File chosenFile : chosenFiles) {
 			if(chosenFile != null) {
-                Entity entity = EntityFactory.getInstance().readWithoutInit(chosenFile.getName());
+                Entity entity = Engine.getInstance().getEntityFactory().readWithoutInit(chosenFile.getName());
 				if(entity == null) {
 					showError(chosenFile);
 					continue;
