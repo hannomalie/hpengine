@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
+import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -55,7 +55,7 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public void registerHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider) {
+    public void registerPerFrameCommand(PerFrameCommandProvider perFrameCommandProvider) {
 
     }
 

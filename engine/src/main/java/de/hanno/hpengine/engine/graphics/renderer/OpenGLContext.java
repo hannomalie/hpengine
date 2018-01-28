@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
+import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
@@ -13,7 +13,6 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWWindowCloseCallbackI;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.SharedLibrary;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
@@ -46,7 +45,7 @@ public final class OpenGLContext implements GraphicsContext {
     private volatile boolean initialized = false;
     public volatile boolean errorOccured = false;
     private int maxTextureUnits;
-    private List<HighFrequencyCommandProvider> highFrequencyCommandProviders = new CopyOnWriteArrayList<>();
+    private List<PerFrameCommandProvider> perFrameCommandProviders = new CopyOnWriteArrayList<>();
     private GLFWErrorCallback errorCallback;
     private long window;
     // Don't remove these strong references
@@ -114,8 +113,8 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public void registerHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider) {
-        this.highFrequencyCommandProviders.add(highFrequencyCommandProvider);
+    public void registerPerFrameCommand(PerFrameCommandProvider perFrameCommandProvider) {
+        this.perFrameCommandProviders.add(perFrameCommandProvider);
     }
 
     @Override
@@ -171,24 +170,24 @@ public final class OpenGLContext implements GraphicsContext {
     @Override
     public void update(float seconds) {
         try {
-            executeHighFrequencyCommands();
+            executePerFrameCommands();
             commandQueue.executeCommands();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void executeHighFrequencyCommands() {
-        for(int i = 0; i < highFrequencyCommandProviders.size(); i++) {
-            HighFrequencyCommandProvider provider = highFrequencyCommandProviders.get(i);
-            executeHighFrequencyCommand(provider);
+    private void executePerFrameCommands() {
+        for(int i = 0; i < perFrameCommandProviders.size(); i++) {
+            PerFrameCommandProvider provider = perFrameCommandProviders.get(i);
+            executePerFrameCommand(provider);
         }
     }
 
-    private void executeHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider) {
-        if(highFrequencyCommandProvider != null && highFrequencyCommandProvider.getAtomicCounter().get() == 0) {
-            highFrequencyCommandProvider.getDrawCommand().run();
-            highFrequencyCommandProvider.getAtomicCounter().getAndIncrement();
+    private void executePerFrameCommand(PerFrameCommandProvider perFrameCommandProvider) {
+        if(perFrameCommandProvider.isReadyForExecution()) {
+            perFrameCommandProvider.getDrawCommand().run();
+            perFrameCommandProvider.postRun();
         }
     }
 

@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.graphics
 
 import de.hanno.hpengine.engine.Engine
-import de.hanno.hpengine.engine.HighFrequencyCommandProvider
+import de.hanno.hpengine.engine.PerFrameCommandProvider
 import de.hanno.hpengine.engine.component.ModelComponent
 import de.hanno.hpengine.engine.event.FrameFinishedEvent
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
@@ -19,9 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
-class RenderSystem : HighFrequencyCommandProvider {
-    override fun getAtomicCounter() = _atomicCounter
-    val _atomicCounter = AtomicInteger(-1)
+class RenderSystem {
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder()
     var renderThread: RenderThread = RenderThread("Render")
@@ -59,9 +57,5 @@ class RenderSystem : HighFrequencyCommandProvider {
             }
             lastTimeSwapped = renderState.stopRead()
         }
-    }
-
-    override fun getDrawCommand(): Runnable {
-        return drawRunnable
     }
 }

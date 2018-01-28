@@ -23,9 +23,7 @@ import de.hanno.hpengine.util.commandqueue.CommandQueue
 import de.hanno.hpengine.util.fps.FPSCounter
 import de.hanno.hpengine.util.gui.DebugFrame
 import de.hanno.hpengine.util.script.ScriptManager
-import de.hanno.hpengine.util.stopwatch.StopWatch
 import net.engio.mbassy.listener.Handler
-import org.joml.Vector3f
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
@@ -33,7 +31,12 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 
-class Engine private constructor() : HighFrequencyCommandProvider {
+class Engine private constructor() : PerFrameCommandProvider {
+    override fun isReadyForExecution() = drawCounter.get() == 0
+
+    override fun postRun() {
+        drawCounter.getAndIncrement()
+    }
 
     init {
         GraphicsContext.initGpuContext()
@@ -61,7 +64,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
         eventBus.register(this)
         directoryManager = DirectoryManager(gamedirName)
         directoryManager.initWorkDir()
-        GraphicsContext.getInstance().registerHighFrequencyCommand(this)
+        GraphicsContext.getInstance().registerPerFrameCommand(this)
 
         EntityFactory.create()
         ProgramFactory.init()
@@ -183,10 +186,6 @@ class Engine private constructor() : HighFrequencyCommandProvider {
 
     override fun getDrawCommand(): Runnable {
         return renderSystem.drawRunnable
-    }
-
-    override fun getAtomicCounter(): AtomicInteger {
-        return drawCounter
     }
 
     companion object {

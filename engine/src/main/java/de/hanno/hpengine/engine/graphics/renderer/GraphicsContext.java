@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.HighFrequencyCommandProvider;
+import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -8,7 +8,6 @@ import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.lwjgl.opengl.GL11;
-import de.hanno.hpengine.engine.graphics.renderer.GLU;
 
 import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
@@ -38,7 +37,7 @@ public interface GraphicsContext {
 
     void createNewGPUFenceForReadState(RenderState currentReadState);
 
-    void registerHighFrequencyCommand(HighFrequencyCommandProvider highFrequencyCommandProvider);
+    void registerPerFrameCommand(PerFrameCommandProvider perFrameCommandProvider);
 
     class GPUContextHelper {
         static volatile GraphicsContext instance;
