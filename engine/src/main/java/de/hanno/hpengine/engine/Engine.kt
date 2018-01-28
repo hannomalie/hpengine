@@ -34,7 +34,6 @@ import java.lang.reflect.InvocationTargetException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import java.util.logging.Logger
 
 class Engine private constructor() : HighFrequencyCommandProvider {
@@ -72,31 +71,6 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     var activeCamera: Camera? = null
     @Volatile
     var isInitialized: Boolean = false
-
-    private val drawRunnable: Runnable = object : Runnable {
-        internal var lastTimeSwapped = true
-        override fun run() {
-            renderSystem.renderState.startRead()
-
-            if (lastTimeSwapped) {
-                Input.update()
-                Renderer.getInstance().startFrame()
-                GPUProfiler.start("Prepare state")
-                renderSystem.recorder!!.add(renderSystem.renderState.currentReadState)
-                val latestDrawResult = renderSystem.renderState.currentReadState.latestDrawResult
-                latestDrawResult.reset()
-                GPUProfiler.end()
-                Renderer.getInstance().draw(latestDrawResult, renderSystem.renderState.currentReadState)
-                latestDrawResult.GPUProfilingResult = GPUProfiler.dumpTimings()
-                Renderer.getInstance().endFrame()
-                val scene1: Scene = scene!!
-                scene1.isInitiallyDrawn = true
-
-                Engine.eventBus.post(FrameFinishedEvent(latestDrawResult))
-            }
-            lastTimeSwapped = renderSystem.renderState.stopRead()
-        }
-    }
 
     val fpsCounter: FPSCounter
         get() = updateThread!!.fpsCounter
@@ -201,18 +175,12 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        if (renderSystem.renderState == null) {
-            return
-        }
         renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials() }
     }
 
     @Subscribe
     @Handler
     fun handle(event: MaterialChangedEvent) {
-        if (renderSystem.renderState == null) {
-            return
-        }
         renderSystem.renderState.addCommand { renderStateX ->
             if (event.material.isPresent) {
                 //                renderStateX.bufferMaterial(event.getMaterials().get());
@@ -243,7 +211,7 @@ class Engine private constructor() : HighFrequencyCommandProvider {
     }
 
     override fun getDrawCommand(): Runnable {
-        return drawRunnable
+        return renderSystem.drawRunnable
     }
 
     override fun getAtomicCounter(): AtomicInteger {
