@@ -10,7 +10,7 @@ import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.RenderSystem
 import de.hanno.hpengine.engine.graphics.light.LightFactory
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
 import de.hanno.hpengine.engine.model.EntityFactory
@@ -35,7 +35,7 @@ import java.util.logging.Logger
 
 class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
-    val gpuContext = GraphicsContext.initGpuContext()
+    val gpuContext: GpuContext = GpuContext.create()
     val updateThread: UpdateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
     private val drawCounter = AtomicInteger(-1)
     private val commandQueue = CommandQueue()
@@ -51,7 +51,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     val programFactory by lazy { ProgramFactory() }
     val textureFactory by lazy { TextureFactory(this@Engine) }
     val materialFactory by lazy { MaterialFactory() }
-    val renderer: Renderer by lazy { Renderer.create(Config.getInstance().rendererClass) }
+    val renderer: Renderer by lazy { Renderer.create() }
 
     @Volatile var isInitialized: Boolean = false
 
@@ -100,7 +100,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
         if (gpuContext.isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
-            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
+            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
             scene.addRenderBatches(sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
             renderSystem.renderState.update()
             renderSystem.renderState.currentWriteState.cycle = renderSystem.drawCycle.get()
@@ -152,7 +152,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     }
 
     private fun destroyOpenGL() {
-        gpuContext.drawThread.stopRequested = true
+        gpuContext.gpuThread.stopRequested = true
     }
 
     fun destroy() {

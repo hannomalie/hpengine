@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -17,7 +16,6 @@ import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.joml.Vector3f;
@@ -62,7 +60,7 @@ public class DeferredRenderer implements Renderer {
 
         if (!initialized) {
             setupBuffers();
-            GraphicsContext.exitOnGLError("After TextureFactory");
+            GpuContext.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -94,23 +92,23 @@ public class DeferredRenderer implements Renderer {
 			}
 		}};
 
-		GraphicsContext.exitOnGLError("setupBuffers");
+		GpuContext.exitOnGLError("setupBuffers");
 	}
 
     private void setUpGBuffer() {
-		GraphicsContext.exitOnGLError("Before setupGBuffer");
+		GpuContext.exitOnGLError("Before setupGBuffer");
 
         gBuffer = Engine.getInstance().getGpuContext().calculate(() -> new GBuffer());
 
         Engine.getInstance().getGpuContext().execute(() -> {
             Engine.getInstance().getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
-			GraphicsContext.exitOnGLError("setupGBuffer");
+			GpuContext.exitOnGLError("setupGBuffer");
 		});
 	}
 	
 	private void setupShaders() throws Exception {
-		GraphicsContext.exitOnGLError("Before setupShaders");
+		GpuContext.exitOnGLError("Before setupShaders");
 	}
 
 	public void update(float seconds) {

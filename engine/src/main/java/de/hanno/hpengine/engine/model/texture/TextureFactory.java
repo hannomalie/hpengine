@@ -3,7 +3,7 @@ package de.hanno.hpengine.engine.model.texture;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
@@ -31,7 +31,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -100,7 +99,7 @@ public class TextureFactory {
 
     public TextureFactory(Engine engine) {
         System.out.println("TextureFactory constructor");
-        GraphicsContext.exitOnGLError("Begin TextureFactory constructor");
+        GpuContext.exitOnGLError("Begin TextureFactory constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,
@@ -126,7 +125,7 @@ public class TextureFactory {
         blur2dProgramSeperableHorizontal = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
         blur2dProgramSeperableVertical = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
-        GraphicsContext.exitOnGLError("After TextureFactory constructor");
+        GpuContext.exitOnGLError("After TextureFactory constructor");
 
         if(USE_TEXTURE_STREAMING) {
             new TimeStepThread("TextureWatcher", 0.5f) {
@@ -155,12 +154,12 @@ public class TextureFactory {
         }
 
         loadDefaultTexture();
-        GraphicsContext.exitOnGLError("After loadDefaultTexture");
+        GpuContext.exitOnGLError("After loadDefaultTexture");
         lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
-        GraphicsContext.exitOnGLError("After load lensFlareTexture");
+        GpuContext.exitOnGLError("After load lensFlareTexture");
         try {
             cubeMap = getCubeMap("hp/assets/textures/skybox.png");
-            GraphicsContext.exitOnGLError("After load cubemap");
+            GpuContext.exitOnGLError("After load cubemap");
             Engine.getInstance().getGpuContext().activeTexture(0);
 //            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
         } catch (IOException e) {
@@ -186,7 +185,7 @@ public class TextureFactory {
     private void loadAllAvailableTextures() {
     	File textureDir = new File(Texture.getDirectory());
     	List<File> files = (List<File>) FileUtils.listFiles(textureDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-		GraphicsContext.exitOnGLError("Before loadAllAvailableTextures");
+		GpuContext.exitOnGLError("Before loadAllAvailableTextures");
 		for (File file : files) {
 			try {
 				if(FilenameUtils.isExtension(file.getAbsolutePath(), "hptexture")) {

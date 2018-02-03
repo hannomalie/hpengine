@@ -116,7 +116,7 @@ public class RenderState {
 
 //    TODO: Reimplement this
 //    public void bufferMaterial(Material materials) {
-//        GraphicsContext.getInstance().execute(() -> {
+//        GpuContext.getInstance().execute(() -> {
 //            ArrayList<Material> materials = new ArrayList<>(MaterialFactory.getInstance().getMaterials());
 //
 //            int offset = materials.getElementsPerObject() * materials.indexOf(materials);

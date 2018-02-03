@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.config.Config;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class GraphicsContextTest {
+public class GpuContextTest {
 
     @Test
     public void testInitialization() {

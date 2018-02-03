@@ -26,10 +26,9 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL32.*;
 
-public final class OpenGLContext implements GraphicsContext {
+public final class OpenGLContext implements GpuContext {
     private static final Logger LOGGER = Logger.getLogger(OpenGLContext.class.getName());
 
-    private static final int MAX_WORKITEMS = 1000;
     private static long OPENGL_THREAD_ID = -1;
 
     public static String OPENGL_THREAD_NAME = "OpenGLContext";
@@ -444,7 +443,7 @@ public final class OpenGLContext implements GraphicsContext {
     }
 
     @Override
-    public TimeStepThread getDrawThread() {
+    public TimeStepThread getGpuThread() {
         return openGLThread;
     }
 
@@ -520,7 +519,7 @@ public final class OpenGLContext implements GraphicsContext {
         waitForInitialization(this);
     }
 
-    static void waitForInitialization(GraphicsContext context) {
+    static void waitForInitialization(GpuContext context) {
         OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization");
         while(!context.isInitialized()) {
             OpenGLContext.LOGGER.info("Waiting for OpenGLContext initialization...");

@@ -1,9 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
-import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -16,12 +14,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
-public interface GraphicsContext {
-    Logger LOGGER = Logger.getLogger(GraphicsContext.class.getName());
-
-    static void setInstance(GraphicsContext context) {
-        GPUContextHelper.instance = context;
-    }
+public interface GpuContext {
+    Logger LOGGER = Logger.getLogger(GpuContext.class.getName());
 
     long getWindowHandle();
 
@@ -41,27 +35,19 @@ public interface GraphicsContext {
 
     void registerPerFrameCommand(PerFrameCommandProvider perFrameCommandProvider);
 
-    class GPUContextHelper {
-        static volatile GraphicsContext instance;
-    }
-
-    static GraphicsContext initGpuContext() {
-        Class<? extends GraphicsContext> gpuContextClass = Config.getInstance().getGpuContextClass();
-        synchronized(gpuContextClass) {
-            if(GPUContextHelper.instance == null) {
-                try {
-                    LOGGER.info("GraphicsContext is being initialized");
-                    GraphicsContext context = gpuContextClass.newInstance();
-                    context.init();
-                    GraphicsContext.setInstance(context);
-                    LOGGER.info("GraphicsContext is initialized");
-                } catch (IllegalAccessException | InstantiationException e) {
-                    LOGGER.severe("GraphicsContext class " + gpuContextClass.getCanonicalName() + " probably doesn't feature a public no args constructor");
-                    e.printStackTrace();
-                }
-            }
+    static GpuContext create() {
+        Class<? extends GpuContext> gpuContextClass = Config.getInstance().getGpuContextClass();
+        try {
+            LOGGER.info("GpuContext is being initialized");
+            GpuContext context = gpuContextClass.newInstance();
+            context.init();
+            LOGGER.info("GpuContext is initialized");
+            return context;
+        } catch (IllegalAccessException | InstantiationException e) {
+            LOGGER.severe("GpuContext class " + gpuContextClass.getCanonicalName() + " probably doesn't feature a public no args constructor");
+            e.printStackTrace();
         }
-        return GPUContextHelper.instance;
+        return null;
     }
 
     static void exitOnGLError(String errorMessage) {
@@ -152,7 +138,7 @@ public interface GraphicsContext {
 
     long blockUntilEmpty();
 
-    TimeStepThread getDrawThread();
+    TimeStepThread getGpuThread();
 
     int createProgramId();
 

@@ -11,7 +11,7 @@ import java.nio.IntBuffer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
-public class MockContext implements GraphicsContext {
+public class MockContext implements GpuContext {
 
     @Override
     public long getWindowHandle() {
@@ -240,7 +240,7 @@ public class MockContext implements GraphicsContext {
     }
 
     @Override
-    public TimeStepThread getDrawThread() {
+    public TimeStepThread getGpuThread() {
         return null;
     }
 

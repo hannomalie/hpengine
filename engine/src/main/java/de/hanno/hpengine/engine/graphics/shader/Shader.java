@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
@@ -100,7 +100,7 @@ public interface Shader extends Reloadable {
         }
 
 		LOGGER.finer(resultingShaderSource);
-        GraphicsContext.exitOnGLError("loadShader");
+        GpuContext.exitOnGLError("loadShader");
 
         return shader;
     }

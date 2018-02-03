@@ -4,11 +4,11 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.StaticModel;
 import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.scene.Scene;
@@ -23,7 +23,7 @@ public class TestSceneUtil {
         List<Entity> entities = new ArrayList<>();
         int entityCount = 3;
 
-        GraphicsContext.exitOnGLError("loadTestScene");
+        GpuContext.exitOnGLError("loadTestScene");
 
         try {
 //            StaticMesh skyBox = new OBJLoader().loadTexturedModel(new File(Engine.WORKDIR_NAME + "/assets/models/skybox.obj")).get(0);

@@ -1,7 +1,7 @@
 package de.hanno.hpengine;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.lwjgl.LWJGLException;
@@ -23,7 +23,7 @@ public class TestWithOpenGLContext {
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
-        GraphicsContext.initGpuContext();
+        GpuContext.create();
         Engine.getInstance().getGpuContext();
     }
 

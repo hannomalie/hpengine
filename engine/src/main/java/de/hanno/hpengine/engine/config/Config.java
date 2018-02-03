@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.config;
 
 import de.hanno.hpengine.engine.graphics.renderer.DeferredRenderer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.OpenGLContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.util.gui.Adjustable;
@@ -56,7 +56,7 @@ public final class Config {
 
 	private Class<? extends Renderer> rendererClass = DeferredRenderer.class;
 	private String initFileName = "Init.java";
-	private Class<? extends GraphicsContext> gpuContextClass = OpenGLContext.class;
+	private Class<? extends GpuContext> gpuContextClass = OpenGLContext.class;
     private boolean useFileReloading = true;
 	private int width = 1280;
 	private int height = 720;
@@ -534,11 +534,11 @@ public final class Config {
 		this.lockUpdaterate = lockUpdaterate;
 	}
 
-	public void setGpuContextClass(Class<? extends GraphicsContext> gpuContextClass) {
+	public void setGpuContextClass(Class<? extends GpuContext> gpuContextClass) {
 		this.gpuContextClass = gpuContextClass;
 	}
 
-	public Class<? extends GraphicsContext> getGpuContextClass() {
+	public Class<? extends GpuContext> getGpuContextClass() {
 		return gpuContextClass;
 
 	}

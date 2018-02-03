@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
@@ -13,7 +12,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.util.fps.FPSCounter;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
@@ -58,7 +56,7 @@ public class SimpleTextureRenderer implements Renderer {
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupBuffers();
-            GraphicsContext.exitOnGLError("After TextureFactory");
+            GpuContext.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -86,21 +84,21 @@ public class SimpleTextureRenderer implements Renderer {
 		}};
 		glWatch = new OpenGLStopWatch();
 
-        GraphicsContext.exitOnGLError("setupBuffers");
+        GpuContext.exitOnGLError("setupBuffers");
 	}
 
     private void setUpGBuffer() {
-        GraphicsContext.exitOnGLError("Before setupGBuffer");
+        GpuContext.exitOnGLError("Before setupGBuffer");
 
         Engine.getInstance().getGpuContext().execute(() -> {
             Engine.getInstance().getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
-			GraphicsContext.exitOnGLError("setupGBuffer");
+			GpuContext.exitOnGLError("setupGBuffer");
 		});
 	}
 	
 	private void setupShaders() throws Exception {
-		GraphicsContext.exitOnGLError("Before setupShaders");
+		GpuContext.exitOnGLError("Before setupShaders");
 
         renderToQuadProgram = Engine.getInstance().getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 

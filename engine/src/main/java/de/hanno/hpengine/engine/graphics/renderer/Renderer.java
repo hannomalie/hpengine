@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.shader.Program;
@@ -314,8 +315,9 @@ public interface Renderer extends LifeCycle {
         }
     }
 
-    static Renderer create(Class<? extends Renderer> rendererClass) {
+    static Renderer create() {
         try {
+            Class<? extends Renderer> rendererClass = Config.getInstance().getRendererClass();
             Renderer instance = rendererClass.newInstance();
             instance.init();
             return instance;

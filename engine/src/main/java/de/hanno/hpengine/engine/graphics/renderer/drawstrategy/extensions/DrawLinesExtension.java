@@ -8,7 +8,7 @@ import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.graphics.renderer.GpuContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
@@ -35,7 +35,7 @@ public class DrawLinesExtension implements RenderExtension {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            GraphicsContext context = Engine.getInstance().getGpuContext();
+            GpuContext context = Engine.getInstance().getGpuContext();
             context.disable(CULL_FACE);
             context.depthMask(false);
 
