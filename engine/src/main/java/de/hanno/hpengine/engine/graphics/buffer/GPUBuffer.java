@@ -2,6 +2,7 @@ package de.hanno.hpengine.engine.graphics.buffer;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.List;
 
 public interface GPUBuffer<T extends Bufferable> {
@@ -10,6 +11,10 @@ public interface GPUBuffer<T extends Bufferable> {
     void unbind();
 
     ByteBuffer getBuffer();
+
+    default IntBuffer getIntBufferView() {
+        return getBuffer().asIntBuffer();
+    }
 
     void putValues(ByteBuffer values);
 

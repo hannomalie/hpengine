@@ -62,7 +62,7 @@ public class CommandBuffer extends AbstractPersistentMappedBuffer<CommandBuffer.
             int currentOffset = i * getSizeInInts();
             int[] currentBufferablesValues = command.getAsInts();
             for (int z = 0; z < currentBufferablesValues.length; z++) {
-                buffer.asIntBuffer().put(offset+currentOffset + z, currentBufferablesValues[z]);
+                getIntBufferView().put(offset+currentOffset + z, currentBufferablesValues[z]);
             }
         }
     }

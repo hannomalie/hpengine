@@ -63,8 +63,6 @@ public class LightFactory {
 	private RenderTarget renderTarget;
 	private CubeMapArrayRenderTarget cubemapArrayRenderTarget;
 	private List<Integer> areaLightDepthMaps = new ArrayList<>();
-	FloatBuffer entityBuffer = BufferUtils.createFloatBuffer(16);
-	FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 	private Program areaShadowPassProgram;
 	private Program pointShadowPassProgram;
 	private Program pointCubeShadowPassProgram;

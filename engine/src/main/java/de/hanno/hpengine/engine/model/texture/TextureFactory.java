@@ -648,20 +648,6 @@ public class TextureFactory {
         return bufferedImage;
     }
     
-    /**
-     * Creates an integer buffer to hold specified ints
-     * - strictly a utility method
-     *
-     * @param size how many int to contain
-     * @return created IntBuffer
-     */
-    protected IntBuffer createIntBuffer(int size) {
-      ByteBuffer temp = ByteBuffer.allocateDirect(4 * size);
-      temp.order(ByteOrder.nativeOrder());
-
-      return temp.asIntBuffer();
-    }
-
     private void generateMipMaps(Texture texture, boolean mipmap) {
         Engine.getInstance().getGpuContext().execute(() -> {
             texture.bind(15);

@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL44;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_COHERENT_BIT;
 import static org.lwjgl.opengl.ARBBufferStorage.GL_MAP_PERSISTENT_BIT;
@@ -15,6 +16,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
     protected int target = 0;
     private int id;
     protected volatile ByteBuffer buffer;
+    private IntBuffer intBuffer;
     private boolean bound = false;
 
     public AbstractPersistentMappedBuffer(int target) {
@@ -60,6 +62,7 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
                 int flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
                 GL44.glBufferStorage(target, finalCapacityInBytes, flags);
                 buffer = mapBuffer(finalCapacityInBytes, flags);
+                intBuffer = buffer.asIntBuffer();
                 unbind();
             });
         }
@@ -110,6 +113,11 @@ public abstract class AbstractPersistentMappedBuffer<T extends Bufferable> imple
     @Override
     public ByteBuffer getBuffer() {
         return buffer;
+    }
+
+    @Override
+    public IntBuffer getIntBufferView() {
+        return intBuffer;
     }
 
     public void dispose() {
