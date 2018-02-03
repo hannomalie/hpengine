@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.transform.SimpleTransform;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -51,7 +50,7 @@ public class EntityView extends WebPanel {
 
 	public EntityView(Engine engine, Entity entity) {
 		this.engine = engine;
-        this.renderer = Renderer.getInstance();
+        this.renderer = Engine.getInstance().getRenderer();
 		setUndecorated(true);
 		this.setSize(600, 700);
 		setMargin(20);
@@ -145,7 +144,7 @@ public class EntityView extends WebPanel {
                     int finalI = i;
                     addMaterialSelect(materialSelectionPanel, e -> {
                         WebComboBox cb = (WebComboBox) e.getSource();
-                        Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+                        Material selectedMaterial = Engine.getInstance().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
                         materials.remove(materials.get(finalI));
                         materials.add(finalI, selectedMaterial);
                         currentInstance.setMaterials(materials);
@@ -183,7 +182,7 @@ public class EntityView extends WebPanel {
             materialSelectionPanel.addElement(meshName);
             addMaterialSelect(materialSelectionPanel, e -> {
                 WebComboBox cb = (WebComboBox) e.getSource();
-                Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+                Material selectedMaterial = Engine.getInstance().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
                 mesh.setMaterial(selectedMaterial);
                 Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
             }, mesh.getMaterial());
@@ -265,14 +264,14 @@ public class EntityView extends WebPanel {
         });
         webComponentPanel.addElement(removeEntityButton);
 
-        Material material = MaterialFactory.getInstance().getDefaultMaterial();
+        Material material = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
         if(entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).isPresent()) {
             material = entity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY).getMaterial();
         }
 
         addMaterialSelect(webComponentPanel, e -> {
             WebComboBox cb = (WebComboBox) e.getSource();
-            Material selectedMaterial = MaterialFactory.getInstance().getMaterialsAsList().get(cb.getSelectedIndex());
+            Material selectedMaterial = Engine.getInstance().getMaterialFactory().getMaterialsAsList().get(cb.getSelectedIndex());
             entity.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(selectedMaterial.getName()));
             Engine.getEventBus().post(new EntityChangedMaterialEvent(entity));
         }, material);
@@ -325,9 +324,9 @@ public class EntityView extends WebPanel {
 
     private void addMaterialSelect(WebComponentPanel webComponentPanel, ActionListener actionListener, Material initialSelection) {
         try {
-            WebComboBox materialSelect = new WebComboBox(new Vector<>(MaterialFactory.getInstance().getMaterialsAsList()));
+            WebComboBox materialSelect = new WebComboBox(new Vector<>(Engine.getInstance().getMaterialFactory().getMaterialsAsList()));
 
-            materialSelect.setSelectedIndex(MaterialFactory.getInstance().getMaterialsAsList().indexOf(initialSelection));
+            materialSelect.setSelectedIndex(Engine.getInstance().getMaterialFactory().getMaterialsAsList().indexOf(initialSelection));
             materialSelect.addActionListener(actionListener);
             webComponentPanel.addElement(materialSelect);
 

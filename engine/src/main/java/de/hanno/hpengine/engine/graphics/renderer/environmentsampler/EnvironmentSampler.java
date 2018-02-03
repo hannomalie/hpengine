@@ -24,7 +24,6 @@ import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.model.texture.CubeMapArray;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.*;
 import de.hanno.hpengine.engine.transform.Spatial;
 import de.hanno.hpengine.util.Util;
@@ -84,7 +83,7 @@ public class EnvironmentSampler extends Camera {
         translate(position);
 		initialize();
 		this.engine = engine;
-        this.renderer = Renderer.getInstance();
+        this.renderer = Engine.getInstance().getRenderer();
 		this.probe = probe;
 		float far = 5000f;
 		float near = 0.1f;
@@ -101,7 +100,7 @@ public class EnvironmentSampler extends Camera {
 //		rotate(new Vector4f(0, 1, 0, 90));
 //		setPosition(position);
 
-		ProgramFactory programFactory = ProgramFactory.getInstance();
+        ProgramFactory programFactory = Engine.getInstance().getProgramFactory();
 		cubeMapProgram = programFactory.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl", new Defines());
 		depthPrePassProgram = programFactory.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_fragment.glsl", new Defines());
 		cubeMapLightingProgram = programFactory.getProgramFromFileNames("first_pass_vertex.glsl", "cubemap_lighting_fragment.glsl", new Defines());
@@ -302,7 +301,7 @@ public class EnvironmentSampler extends Camera {
 		GraphicsContext.getInstance().disable(BLEND);
 
 		GPUProfiler.start("Draw entities");
-        Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+        Program firstpassDefaultProgram = Engine.getInstance().getProgramFactory().getFirstpassDefaultProgram();
         firstpassDefaultProgram.use();
         firstpassDefaultProgram.bindShaderStorageBuffer(1, extract.getMaterialBuffer());
         firstpassDefaultProgram.setUniform("useRainEffect", Config.getInstance().getRainEffect() == 0.0 ? false : true);
@@ -344,7 +343,7 @@ public class EnvironmentSampler extends Camera {
 		GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, cubeMapFaceViews[0][sideIndex]);
 		GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, cubeMapFaceViews[1][sideIndex]);
 		GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, cubeMapFaceViews[2][sideIndex]);
-		TextureFactory.getInstance().getCubeMap().bind(4);
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(4);
 		GPUProfiler.end();
 
 		secondPassDirectionalProgram.use();
@@ -402,7 +401,7 @@ public class EnvironmentSampler extends Camera {
 		GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, colorMap);
 		GraphicsContext.getInstance().bindTexture(8, TEXTURE_2D, colorMap);
 		EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
-		TextureFactory.getInstance().getCubeMap().bind(9);
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(9);
 
 		GraphicsContext.getInstance().bindImageTexture(6, EnvironmentProbeFactory.getInstance().getCubeMapArrayRenderTarget().getCubeMapArray(3).getTextureID(), 0, false, 6 * probe.getIndex() + sideIndex, GL15.GL_WRITE_ONLY, GL30.GL_RGBA16F);
 		tiledProbeLightingProgram.use();
@@ -537,14 +536,14 @@ public class EnvironmentSampler extends Camera {
 			for (int i = 0; i < 6; i++) {
 				int cubeMapFaceView = GL11.glGenTextures();
 				GL43.glTextureView(cubeMapFaceView, GL11.GL_TEXTURE_2D, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, EnvironmentProbeFactory.getInstance().CUBEMAPMIPMAPCOUNT, 6 * probe.getIndex() + i, 1);
-				TextureFactory.getInstance().generateMipMaps(cubeMapFaceView, GL11.GL_NEAREST, GL11.GL_NEAREST);
+                Engine.getInstance().getTextureFactory().generateMipMaps(cubeMapFaceView, GL11.GL_NEAREST, GL11.GL_NEAREST);
 				GL11.glDeleteTextures(cubeMapFaceView);
 			}
 			
 		} else {
 			int cubeMapView = GL11.glGenTextures();
 			GL43.glTextureView(cubeMapView, GL13.GL_TEXTURE_CUBE_MAP, cubeMapArray.getTextureID(), cubeMapArray.getInternalFormat(), 0, EnvironmentProbeFactory.getInstance().CUBEMAPMIPMAPCOUNT, 6*probe.getIndex(), 6);
-			TextureFactory.getInstance().generateMipMapsCubeMap(cubeMapView);
+            Engine.getInstance().getTextureFactory().generateMipMapsCubeMap(cubeMapView);
 			GL11.glDeleteTextures(cubeMapView);
 		}
 		GPUProfiler.end();

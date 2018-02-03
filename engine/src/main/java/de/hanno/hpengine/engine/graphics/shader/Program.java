@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
@@ -70,7 +70,7 @@ public class Program extends AbstractProgram implements Reloadable {
                 vertexShader = VertexShader.load(vertexShaderSource, defines);
 			} catch (Exception e) {
 				try {
-                    vertexShader = ProgramFactory.getInstance().getDefaultFirstpassVertexShader();
+                    vertexShader = Engine.getInstance().getProgramFactory().getDefaultFirstpassVertexShader();
 				} catch (Exception e1) {
 					System.err.println("Not able to load default vertex de.hanno.hpengine.shader, so what else could be done...");
 				}

@@ -19,7 +19,7 @@ public class TestWithEngine {
         // TODO: Make this work headless
 		Engine.init();
         engine = Engine.getInstance();
-        renderer = Renderer.getInstance();
+        renderer = Engine.getInstance().getRenderer();
 	}
 	
 	@AfterClass

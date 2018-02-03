@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.*;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.SimplePipeline;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
@@ -17,9 +18,7 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuild
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.BufferUtils;
@@ -75,18 +74,18 @@ public class DrawLightMapExtension implements RenderExtension {
     public DrawLightMapExtension() throws Exception {
         staticLightmapTarget = lightMapTarget;
         GraphicsContext.getInstance().execute(() -> {
-            TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture());
-            TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(3));
-            TextureFactory.getInstance().generateMipMaps(lightMapTarget.getRenderedTexture(4));
+            Engine.getInstance().getTextureFactory().generateMipMaps(lightMapTarget.getRenderedTexture());
+            Engine.getInstance().getTextureFactory().generateMipMaps(lightMapTarget.getRenderedTexture(3));
+            Engine.getInstance().getTextureFactory().generateMipMaps(lightMapTarget.getRenderedTexture(4));
         });
         identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-        lightMapProgram = ProgramFactory.getInstance().getProgramFromFileNames("lightmap_vertex.glsl", "lightmap_fragment.glsl", new Defines());
-        lightmapEvaluationProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl", new Defines());
-        lightmapPropagationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_propagation_compute.glsl");
-        lightmapDilationProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_dilation_compute.glsl");
-        lightmapBoundingSphereProgram = ProgramFactory.getInstance().getComputeProgram("lightmap_bounding_sphere_compute.glsl");
+        lightMapProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("lightmap_vertex.glsl", "lightmap_fragment.glsl", new Defines());
+        lightmapEvaluationProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("passthrough_vertex.glsl", "lightmap_evaluation_fragment.glsl", new Defines());
+        lightmapPropagationProgram = Engine.getInstance().getProgramFactory().getComputeProgram("lightmap_propagation_compute.glsl");
+        lightmapDilationProgram = Engine.getInstance().getProgramFactory().getComputeProgram("lightmap_dilation_compute.glsl");
+        lightmapBoundingSphereProgram = Engine.getInstance().getProgramFactory().getComputeProgram("lightmap_bounding_sphere_compute.glsl");
 
-        Program cubeMapProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_fragment.glsl")), new Defines());
+        Program cubeMapProgram = Engine.getInstance().getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "lightmap_cubemap_fragment.glsl")), new Defines());
 
         //TODO: Remove this crap
         lightmapId = lightMapTarget.getRenderedTexture();
@@ -226,22 +225,22 @@ public class DrawLightMapExtension implements RenderExtension {
     @Override
     public void renderSecondPassFullScreen(RenderState renderState, SecondPassResult secondPassResult) {
         GPUProfiler.start("Evaluate lightmap");
-        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
-        GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
-        GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
-        GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
-        GraphicsContext.getInstance().bindTexture(7, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getPositionMap());
+        GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getNormalMap());
+        GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getColorReflectivenessMap());
+        GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getMotionMap());
+        GraphicsContext.getInstance().bindTexture(7, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getVisibilityMap());
         GraphicsContext.getInstance().bindTexture(9, TEXTURE_2D, getFinalLightmapTexture());
-        TextureFactory.getInstance().getCubeMap().bind(10);
-        GraphicsContext.getInstance().bindTexture(12, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightmapUVMap());
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(10);
+        GraphicsContext.getInstance().bindTexture(12, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getLightmapUVMap());
 
         lightmapEvaluationProgram.use();
         lightmapEvaluationProgram.setUniform("eyePosition", renderState.camera.getPosition());
         lightmapEvaluationProgram.setUniformAsMatrix4("viewMatrix", renderState.camera.getViewMatrixAsBuffer());
         lightmapEvaluationProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
-        lightmapEvaluationProgram.bindShaderStorageBuffer(0, Renderer.getInstance().getGBuffer().getStorageBuffer());
+        lightmapEvaluationProgram.bindShaderStorageBuffer(0, Engine.getInstance().getRenderer().getGBuffer().getStorageBuffer());
 
-        lightmapEvaluationProgram.setUniform("handle", TextureFactory.getInstance().getCubeMap().getHandle());
+        lightmapEvaluationProgram.setUniform("handle", Engine.getInstance().getTextureFactory().getCubeMap().getHandle());
         lightmapEvaluationProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
         lightmapEvaluationProgram.setUniform("screenHeight", (float) Config.getInstance().getHeight());
         QuadVertexBuffer.getFullscreenBuffer().draw();

@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.util.script.ScriptManager;
+import de.hanno.hpengine.engine.Engine;
 
 import javax.script.ScriptContext;
 import java.util.HashMap;
@@ -28,13 +28,13 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     @Override
     public void init() {
         super.init();
-        context = ScriptManager.getInstance().createContext();
-        ScriptManager.getInstance().evalInit(this);
+        context = Engine.getInstance().getScriptManager().createContext();
+        Engine.getInstance().getScriptManager().evalInit(this);
     }
 
     @Override
     public void update(float seconds) {
-        ScriptManager.getInstance().evalUpdate(this, seconds);
+        Engine.getInstance().getScriptManager().evalUpdate(this, seconds);
     }
 
     public void setInt(String name, int value) {
@@ -50,7 +50,7 @@ public class JavaScriptComponent extends BaseComponent implements ScriptComponen
     }
 
     public void eval(String script) {
-        ScriptManager.getInstance().eval(getContext(), script);
+        Engine.getInstance().getScriptManager().eval(getContext(), script);
     }
 
     @Override

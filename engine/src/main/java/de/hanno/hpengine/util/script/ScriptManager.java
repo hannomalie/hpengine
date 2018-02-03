@@ -3,12 +3,9 @@ package de.hanno.hpengine.util.script;
 import de.hanno.hpengine.engine.component.JavaScriptComponent;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.OBJLoader;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 import javax.script.*;
 import java.util.logging.Logger;
@@ -19,13 +16,11 @@ public class ScriptManager {
 
     private static volatile ScriptManager instance;
     private final ScriptContext globalContext;
-	private Engine engine;
 	private ScriptEngine scriptEngine;
 	private DefaultCompletionProvider provider;
 	private Bindings globalBindings;
 
-	private ScriptManager(Engine engine) {
-		this.engine = engine;
+	public ScriptManager() {
 		NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
 		this.scriptEngine = factory.getScriptEngine(new String[] { "--global-per-engine" });
 		globalContext = this.scriptEngine.getContext();
@@ -39,12 +34,12 @@ public class ScriptManager {
 		LOGGER.info("Script executed...");
 	}
 
-	public void defineGlobals() {
+	public void defineGlobals(Engine engine) {
 		define("world", scriptEngine);
-        define("renderer", Renderer.getInstance());
+        define("renderer", engine.getRenderer());
         define("entityFactory", Engine.getInstance().getEntityFactory());
-		define("materialFactory", MaterialFactory.getInstance());
-		define("textureFactory", TextureFactory.getInstance());
+		define("materialFactory", Engine.getInstance().getMaterialFactory());
+        define("textureFactory", Engine.getInstance().getTextureFactory());
 		define("objLoader", new OBJLoader());
 	}
 	
@@ -75,7 +70,7 @@ public class ScriptManager {
 
 	public ScriptContext createContext() {
 		ScriptContext context = new SimpleScriptContext();
-		context.setBindings(engine.getScriptManager().getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
+		context.setBindings(getGlobalContext(), ScriptContext.GLOBAL_SCOPE);
 		context.setBindings(new SimpleBindings(), ScriptContext.ENGINE_SCOPE);
 		return context;
 	}
@@ -108,10 +103,4 @@ public class ScriptManager {
 		}
 	}
 
-    public static ScriptManager getInstance() {
-        if(instance == null) {
-            instance = new ScriptManager(Engine.getInstance());
-        }
-        return instance;
-    }
 }

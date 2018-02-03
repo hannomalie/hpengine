@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.graphics.renderer.PixelBufferObject;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
@@ -105,7 +104,7 @@ public class GBuffer {
 		probeBox = null;
 		try {
 			probeBox = new OBJLoader().loadTexturedModel(new File(DirectoryManager.WORKDIR_NAME + "/assets/models/probebox.obj"));
-			Material probeBoxMaterial = MaterialFactory.getInstance().getDefaultMaterial();
+            Material probeBoxMaterial = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
 			probeBoxMaterial.setDiffuse(new Vector3f(0, 1, 0));
 			probeBox.setMaterial(probeBoxMaterial);
             probeBoxEntity = Engine.getInstance().getEntityFactory().getEntity("ProbeBox", probeBox);

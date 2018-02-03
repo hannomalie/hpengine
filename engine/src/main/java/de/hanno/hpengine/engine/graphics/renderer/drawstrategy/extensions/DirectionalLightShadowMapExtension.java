@@ -14,8 +14,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDe
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 
 import java.io.File;
@@ -33,7 +31,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
 
     public DirectionalLightShadowMapExtension() {
 
-        directionalShadowPassProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
+        directionalShadowPassProgram = Engine.getInstance().getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
         renderTarget = new RenderTargetBuilder()
                 .setWidth(SHADOWMAP_RESOLUTION)
@@ -81,7 +79,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             DrawStrategy.draw(renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
         }
-        TextureFactory.getInstance().generateMipMaps(getShadowMapId());
+        Engine.getInstance().getTextureFactory().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
         renderedInCycle = renderState.getCycle();

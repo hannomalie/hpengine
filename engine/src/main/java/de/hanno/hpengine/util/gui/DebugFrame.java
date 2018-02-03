@@ -35,7 +35,6 @@ import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
@@ -45,7 +44,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
@@ -58,7 +56,6 @@ import de.hanno.hpengine.util.gui.container.ReloadableTabbedPane;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.TitledPanel;
 import de.hanno.hpengine.util.gui.structure.*;
-import de.hanno.hpengine.util.script.ScriptManager;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import net.engio.mbassy.listener.Handler;
 import org.apache.commons.io.FileUtils;
@@ -95,7 +92,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static de.hanno.hpengine.engine.graphics.renderer.Renderer.getInstance;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
 
@@ -187,9 +183,9 @@ public class DebugFrame implements HostComponent {
 	
 	private WebToggleButton toggleUseDeferredRenderingForProbes = new WebToggleButton("Deferred Rendering Probes", EnvironmentSampler.deferredRenderingForProbes);
 	private WebToggleButton toggleDirectTextureOutput = new WebToggleButton("Direct Texture Output", Config.getInstance().isUseDirectTextureOutput());
-    private WebComboBox directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
-    private WebComboBox directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(Renderer.getInstance().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
-	private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
+    private WebComboBox directTextureOutputTextureIndexBoxGBuffer = new WebComboBox(Arrays.stream(Engine.getInstance().getRenderer().getGBuffer().getgBuffer().getRenderedTextures()).mapToObj(integer -> "GBuffer " + integer).collect(Collectors.toList()).toArray());
+    private WebComboBox directTextureOutputTextureIndexBoxLABuffer = new WebComboBox(Arrays.stream(Engine.getInstance().getRenderer().getGBuffer().getlaBuffer().getRenderedTextures()).mapToObj(integer -> "LABuffer " + integer).collect(Collectors.toList()).toArray());
+    private WebToggleButton toggleDebugFrame = new WebToggleButton("Debug Frame", Config.getInstance().isDebugframeEnabled());
 	private WebToggleButton toggleDrawLights = new WebToggleButton("Draw Lights", Config.getInstance().isDrawlightsEnabled());
 	private WebToggleButton toggleVSync = new WebToggleButton("VSync", Config.getInstance().isVsync());
 	private WebToggleButton toggleAutoExposure = new WebToggleButton("Auto Exposure", Config.getInstance().isAutoExposureEnabled());
@@ -212,8 +208,8 @@ public class DebugFrame implements HostComponent {
 	private JFrame frame = mainFrame;
     private Runnable setTitleRunnable = () -> {
         try {
-			String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
-					getInstance().getCurrentFPS(), getInstance().getMsPerFrame(), Engine.getInstance().getFpsCounter().getFPS(), Engine.getInstance().getFpsCounter().getMsPerFrame());
+            String titleString = String.format("Render %03.0f fps | %03.0f ms - Update %03.0f fps | %03.0f ms",
+					Engine.getInstance().getRenderer().getCurrentFPS(), Engine.getInstance().getRenderer().getMsPerFrame(), Engine.getInstance().getFpsCounter().getFPS(), Engine.getInstance().getFpsCounter().getMsPerFrame());
             frame.setTitle(titleString);
         } catch (ArrayIndexOutOfBoundsException e) { /*yea, i know...*/} catch (IllegalStateException | NullPointerException e) {
             frame.setTitle("HPEngine Renderer initializing...");
@@ -391,7 +387,7 @@ public class DebugFrame implements HostComponent {
                                 Engine engine = Engine.getInstance();
                                 // TODO: Remove this f***
                                 EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
-                                Renderer.getInstance().addRenderProbeCommand(probe, true);
+                                Engine.getInstance().getRenderer().addRenderProbeCommand(probe, true);
                                 return new Result(true);
                             }
                         });
@@ -563,7 +559,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        MaterialFactory.getInstance().getMaterial(chosenFile.getName());
+                        Engine.getInstance().getMaterialFactory().getMaterial(chosenFile.getName());
                         return new Result(true);
                     }
                 });
@@ -742,7 +738,7 @@ public class DebugFrame implements HostComponent {
                 }
             }
         });
-        AutoCompletion ac = new AutoCompletion(ScriptManager.getInstance().getProvider());
+        AutoCompletion ac = new AutoCompletion(Engine.getInstance().getScriptManager().getProvider());
         ac.install(console);
     }
 
@@ -896,12 +892,12 @@ public class DebugFrame implements HostComponent {
 		});
         directTextureOutputTextureIndexBoxGBuffer.addActionListener(e -> {
             int selectedIndex = directTextureOutputTextureIndexBoxGBuffer.getSelectedIndex();
-            RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getgBuffer();
+            RenderTarget renderTarget = Engine.getInstance().getRenderer().getGBuffer().getgBuffer();
             Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
         });
         directTextureOutputTextureIndexBoxLABuffer.addActionListener(e -> {
             int selectedIndex = directTextureOutputTextureIndexBoxLABuffer.getSelectedIndex();
-            RenderTarget renderTarget = Renderer.getInstance().getGBuffer().getlaBuffer();
+            RenderTarget renderTarget = Engine.getInstance().getRenderer().getGBuffer().getlaBuffer();
             Config.getInstance().setDirectTextureOutputTextureIndex(renderTarget.getRenderedTexture(Math.min(selectedIndex, renderTarget.getRenderedTextures().length)));
         });
 
@@ -1099,7 +1095,7 @@ public class DebugFrame implements HostComponent {
 
 	private void initPerformanceChart() {
 		if(performanceMonitor == null) {
-            performanceMonitor = new PerformanceMonitor(Renderer.getInstance());
+            performanceMonitor = new PerformanceMonitor(Engine.getInstance().getRenderer());
 		}
 		performanceMonitor.init();
 	}

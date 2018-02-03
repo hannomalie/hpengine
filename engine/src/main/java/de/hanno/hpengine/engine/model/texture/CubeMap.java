@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
@@ -15,43 +16,12 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarg
 public class CubeMap extends Texture implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private List<byte[]> dataList;
+	public List<byte[]> dataList;
 
 	protected CubeMap() {}
 	
 	public CubeMap(String path, GlTextureTarget target) {
 		super(path, target, false);
-	}
-	
-	public void upload() {
-
-        GraphicsContext.getInstance().execute(() -> {
-			bind();
-//        if (target == GL13.GL_TEXTURE_CUBE_MAP)
-			{
-				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, minFilter);
-				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, magFilter);
-				GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
-				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-				GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
-                GL11.glTexParameteri(target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(width, height)));
-			}
-
-
-			ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(dataList.get(0).length);
-
-			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, buffer(perFaceBuffer, dataList.get(1))); //1
-			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, buffer(perFaceBuffer, dataList.get(0))); //0
-			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, buffer(perFaceBuffer, dataList.get(2)));
-			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, buffer(perFaceBuffer, dataList.get(3)));
-			load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, buffer(perFaceBuffer, dataList.get(4)));
-			load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, buffer(perFaceBuffer, dataList.get(5)));
-
-            TextureFactory.getInstance().generateMipMapsCubeMap(getTextureID());
-            handle = ARBBindlessTexture.glGetTextureHandleARB(textureID);
-            ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
-		});
 	}
 	
 	public ByteBuffer buffer(ByteBuffer buffer, byte[] values) {
@@ -61,7 +31,7 @@ public class CubeMap extends Texture implements Serializable {
 		return buffer;
 	}
 	
-	private void load(int cubemapFace, ByteBuffer buffer) {
+	public void load(int cubemapFace, ByteBuffer buffer) {
         GL11.glTexImage2D(cubemapFace,
                 0, 
 				EXTTextureSRGB.GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT,

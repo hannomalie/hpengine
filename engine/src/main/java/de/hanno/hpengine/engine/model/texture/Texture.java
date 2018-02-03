@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -41,7 +40,7 @@ public class Texture implements Serializable, Reloadable {
 
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = false;
-    private transient boolean srgba;
+    public transient boolean srgba;
 
     private String path = "";
 
@@ -73,6 +72,26 @@ public class Texture implements Serializable, Reloadable {
 
     public void setPreventUnload(boolean preventUnload) {
         this.preventUnload = preventUnload;
+    }
+
+    public void setData(byte[][] bytes) {
+        data = bytes;
+    }
+
+    public void setDdsConversionState(DDSConversionState ddsConversionState) {
+        this.ddsConversionState = ddsConversionState;
+    }
+
+    public void setMipmapCount(int mipmapCount) {
+        this.mipmapCount = mipmapCount;
+    }
+
+    public void setMipmapsGenerated(boolean mipmapsGenerated) {
+        this.mipmapsGenerated = mipmapsGenerated;
+    }
+
+    public void setSourceDataCompressed(boolean sourceDataCompressed) {
+        this.sourceDataCompressed = sourceDataCompressed;
     }
 
 
@@ -186,7 +205,7 @@ public class Texture implements Serializable, Reloadable {
     private void setData(byte[] data) {
         setData(0, data);
     }
-    private void setData(int i, byte[] data) {
+    public void setData(int i, byte[] data) {
         this.data[i] = data;
     }
 
@@ -270,7 +289,7 @@ public class Texture implements Serializable, Reloadable {
             Engine.getEventBus().post(new TexturesChangedEvent());
         };
 
-        TextureFactory.getInstance().getCommandQueue().addCommand(uploadRunnable);
+        Engine.getInstance().getTextureFactory().getCommandQueue().addCommand(uploadRunnable);
     }
 
     private void setUploaded() {
@@ -544,107 +563,7 @@ public class Texture implements Serializable, Reloadable {
     }
 
     private static ReentrantLock DDSUtilWriteLock = new ReentrantLock();
-    private static final boolean autoConvertToDDS = true;
-
-    public void convertAndUpload() {
-        CompletableFuture<Object> future = TextureFactory.getInstance().getCommandQueue().addCommand(() -> {
-            try {
-                LOGGER.severe(path);
-                data = new byte[1][];
-
-                boolean imageExists = new File(path).exists();
-                boolean ddsRequested = FilenameUtils.isExtension(path, "dds");
-                BufferedImage bufferedImage;
-
-                long start = System.currentTimeMillis();
-                if (imageExists) {
-                    LOGGER.info(path + " available as dds: " + textureAvailableAsDDS(path));
-                    if (!textureAvailableAsDDS(path)) {
-                        bufferedImage = TextureFactory.getInstance().loadImage(path);
-                        if (bufferedImage != null) {
-                            data = new byte[Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][];
-                        }
-                        if (autoConvertToDDS) {
-                            new Thread(() -> {
-                                try {
-                                    saveAsDDS(bufferedImage);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }).start();
-                        }
-
-                    } else { // de.hanno.hpengine.texture available as dds
-                        ddsConversionState = CONVERTED;
-                        DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(path)));
-                        int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
-                        mipmapCount = mipMapCountPlusOne - 1;
-                        data = new byte[mipMapCountPlusOne][];
-                        for (int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
-                            DDSImage.ImageInfo info = ddsImage.getMipMap(i);
-
-//                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
-//                        showAsTextureInFrame(mipmapImage);
-//                        data[i] = TextureFactory.getInstance().convertImageData(mipmapImage);
-                            data[i] = new byte[info.getData().capacity()];
-                            info.getData().get(data[i]);
-                        }
-                        setWidth(ddsImage.getWidth());
-                        setHeight(ddsImage.getHeight());
-                        if (ddsImage.getNumMipMaps() > 1) {
-                            mipmapsGenerated = true;
-                        }
-                        sourceDataCompressed = true;
-                        upload(buffer(), this.srgba);
-                        LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + path);
-                        return;
-                    }
-
-                } else {
-                    bufferedImage = TextureFactory.getInstance().getDefaultTextureAsBufferedImage();
-                    LOGGER.severe("Texture " + path + " cannot be read, default de.hanno.hpengine.texture data inserted instead...");
-                }
-
-                if(bufferedImage != null) {
-                    setWidth(bufferedImage.getWidth());
-                    setHeight(bufferedImage.getHeight());
-                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(getWidth(), getHeight());
-                    mipmapCount = mipMapCountPlusOne - 1;
-                    setMinFilter(minFilter);
-                    setMagFilter(magFilter);
-
-                    if (bufferedImage.getColorModel().hasAlpha()) {
-                        srcPixelFormat = GL11.GL_RGBA;
-                    } else {
-                        srcPixelFormat = GL11.GL_RGB;
-                    }
-
-                    setDstPixelFormat(dstPixelFormat);
-                    setSrcPixelFormat(srcPixelFormat);
-
-                    byte[] bytes = TextureFactory.getInstance().convertImageData(bufferedImage);
-                    setData(bytes);
-                    ByteBuffer textureBuffer = buffer();
-                    upload(textureBuffer, srgba);
-                    LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + path);
-                } else {
-                    LOGGER.warning("BufferedImage couldn't be loaded!");
-                }
-            } catch (IOException | NullPointerException e) {
-                e.printStackTrace();
-                LOGGER.severe("Texture not found: " + path + ". Default de.hanno.hpengine.texture returned...");
-            }
-            Engine.getEventBus().post(new TexturesChangedEvent());
-        });
-        try {
-            // TODO: Check out why this is necessary
-            future.get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    public static final boolean autoConvertToDDS = true;
 
     private static int counter = 14;
     private static void showAsTextureInFrame(BufferedImage bufferedImage) {
@@ -655,7 +574,7 @@ public class Texture implements Serializable, Reloadable {
         frame.pack();
     }
 
-    private BufferedImage saveAsDDS(BufferedImage bufferedImage) throws IOException {
+    public BufferedImage saveAsDDS(BufferedImage bufferedImage) throws IOException {
         long start = System.currentTimeMillis();
         ddsConversionState = CONVERTING;
 

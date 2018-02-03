@@ -7,13 +7,14 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
+import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
+import jogl.DDSImage;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -33,10 +34,13 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget.*;
+import static de.hanno.hpengine.engine.model.texture.Texture.DDSConversionState.CONVERTED;
+import static de.hanno.hpengine.engine.model.texture.Texture.*;
 
 /**
  * A utility class to load textures for JOGL. This source is based
@@ -54,11 +58,10 @@ import static de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarg
 public class TextureFactory {
     private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
     private static final int TEXTURE_FACTORY_THREAD_COUNT = 1;
-    private static volatile TextureFactory instance = null;
-    private static volatile BufferedImage defaultTextureAsBufferedImage = null;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
     private static volatile boolean USE_TEXTURE_STREAMING = false;
 
+    private volatile BufferedImage defaultTextureAsBufferedImage = null;
     public CubeMap getCubeMap() {
         return cubeMap;
     }
@@ -69,37 +72,14 @@ public class TextureFactory {
 
     private CommandQueue commandQueue = new CommandQueue();
 
-    public static Texture getLensFlareTexture() {
+    public Texture getLensFlareTexture() {
         return lensFlareTexture;
     }
 
-    private static Texture lensFlareTexture;
-    public static CubeMap cubeMap;
+    private Texture lensFlareTexture;
+    public CubeMap cubeMap;
     private final ComputeShaderProgram blur2dProgramSeperableHorizontal;
     private final ComputeShaderProgram blur2dProgramSeperableVertical;
-
-    public static TextureFactory getInstance() {
-        if(instance == null) {
-            throw new IllegalStateException("Call Engine.init() before using it");
-        }
-        return instance;
-    }
-
-    public static void init() {
-        instance = new TextureFactory();
-        instance.loadDefaultTexture();
-        GraphicsContext.exitOnGLError("After loadDefaultTexture");
-        lensFlareTexture = instance.getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
-        GraphicsContext.exitOnGLError("After load lensFlareTexture");
-        try {
-            cubeMap = instance.getCubeMap("hp/assets/textures/skybox.png");
-            GraphicsContext.exitOnGLError("After load cubemap");
-            GraphicsContext.getInstance().activeTexture(0);
-//            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
-    }
 
     /** The table of textures that have been loaded in this loader */
     public Map<String, Texture> TEXTURES = new ConcurrentHashMap<>();
@@ -118,7 +98,8 @@ public class TextureFactory {
      */
     Texture defaultTexture = null;
 
-    public TextureFactory() {
+    public TextureFactory(Engine engine) {
+        System.out.println("TextureFactory constructor");
         GraphicsContext.exitOnGLError("Begin TextureFactory constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
@@ -142,8 +123,8 @@ public class TextureFactory {
         Defines verticalDefines = new Defines() {{
             add(Define.getDefine("VERTICAL", true));
         }};
-        blur2dProgramSeperableHorizontal = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
-        blur2dProgramSeperableVertical = ProgramFactory.getInstance().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
+        blur2dProgramSeperableHorizontal = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
+        blur2dProgramSeperableVertical = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
         GraphicsContext.exitOnGLError("After TextureFactory constructor");
 
@@ -171,6 +152,19 @@ public class TextureFactory {
                     commandQueue.executeCommands();
                 }
             }.start();
+        }
+
+        loadDefaultTexture();
+        GraphicsContext.exitOnGLError("After loadDefaultTexture");
+        lensFlareTexture = getTexture("hp/assets/textures/lens_flare_tex.jpg", true);
+        GraphicsContext.exitOnGLError("After load lensFlareTexture");
+        try {
+            cubeMap = getCubeMap("hp/assets/textures/skybox.png");
+            GraphicsContext.exitOnGLError("After load cubemap");
+            GraphicsContext.getInstance().activeTexture(0);
+//            instance.generateMipMapsCubeMap(cubeMap.getTextureID());
+        } catch (IOException e) {
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -267,10 +261,109 @@ public class TextureFactory {
         Texture texture = new Texture(resourceName, srgba);
         TEXTURES.put(resourceName, texture);
         LOGGER.severe("Adding " + resourceName);
-        texture.convertAndUpload();
+        convertAndUpload(texture, this);
         return texture;
     }
 
+    public void convertAndUpload(Texture texture, TextureFactory textureFactory) {
+        CompletableFuture<Object> future = textureFactory.getCommandQueue().addCommand(() -> {
+            try {
+                LOGGER.severe(texture.getPath());
+                texture.setData(new byte[1][]);
+
+                boolean imageExists = new File(texture.getPath()).exists();
+                boolean ddsRequested = FilenameUtils.isExtension(texture.getPath(), "dds");
+                BufferedImage bufferedImage;
+
+                long start = System.currentTimeMillis();
+                if (imageExists) {
+                    LOGGER.info(texture.getPath() + " available as dds: " + textureAvailableAsDDS(texture.getPath()));
+                    if (!textureAvailableAsDDS(texture.getPath())) {
+                        bufferedImage = Engine.getInstance().getTextureFactory().loadImage(texture.getPath());
+                        if (bufferedImage != null) {
+                            texture.setData(new byte[de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][]);
+                        }
+                        if (autoConvertToDDS) {
+                            new Thread(() -> {
+                                try {
+                                    texture.saveAsDDS(bufferedImage);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }).start();
+                        }
+
+                    } else { // de.hanno.hpengine.texture available as dds
+                        texture.setDdsConversionState(CONVERTED);
+                        DDSImage ddsImage = DDSImage.read(new File(getFullPathAsDDS(texture.getPath())));
+                        int mipMapCountPlusOne = de.hanno.hpengine.util.Util.calculateMipMapCountPlusOne(ddsImage.getWidth(), ddsImage.getHeight());
+                        texture.setMipmapCount(mipMapCountPlusOne - 1);
+                        texture.setData(new byte[mipMapCountPlusOne][]);
+                        for (int i = 0; i < ddsImage.getAllMipMaps().length; i++) {
+                            DDSImage.ImageInfo info = ddsImage.getMipMap(i);
+
+//                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
+//                        showAsTextureInFrame(mipmapImage);
+//                        data[i] = TextureFactory.getInstance().convertImageData(mipmapImage);
+                            texture.setData(i, new byte[info.getData().capacity()]);
+                            info.getData().get(texture.data[i]);
+                        }
+                        texture.setWidth(ddsImage.getWidth());
+                        texture.setHeight(ddsImage.getHeight());
+                        if (ddsImage.getNumMipMaps() > 1) {
+                            texture.setMipmapsGenerated(true);
+                        }
+                        texture.setSourceDataCompressed(true);
+                        texture.upload(texture.buffer(), texture.srgba);
+                        LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading as dds with mipmaps: " + texture.getPath());
+                        return;
+                    }
+
+                } else {
+                    bufferedImage = Engine.getInstance().getTextureFactory().getDefaultTextureAsBufferedImage();
+                    LOGGER.severe("Texture " + texture.getPath() + " cannot be read, default de.hanno.hpengine.texture data inserted instead...");
+                }
+
+                if(bufferedImage != null) {
+                    texture.setWidth(bufferedImage.getWidth());
+                    texture.setHeight(bufferedImage.getHeight());
+                    int mipMapCountPlusOne = Util.calculateMipMapCountPlusOne(texture.getWidth(), texture.getHeight());
+                    texture.setMipmapCount(mipMapCountPlusOne - 1);
+//                    texture.setMinFilter(minFilter);
+//                    texture.setMagFilter(magFilter);
+
+                    if (bufferedImage.getColorModel().hasAlpha()) {
+                        texture.srcPixelFormat = GL11.GL_RGBA;
+                    } else {
+                        texture.srcPixelFormat = GL11.GL_RGB;
+                    }
+
+                    texture.setDstPixelFormat(texture.dstPixelFormat);
+                    texture.setSrcPixelFormat(texture.srcPixelFormat);
+
+                    byte[] bytes = Engine.getInstance().getTextureFactory().convertImageData(bufferedImage);
+                    texture.setData(0, bytes);
+                    ByteBuffer textureBuffer = texture.buffer();
+                    texture.upload(textureBuffer, texture.srgba);
+                    LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + texture.getPath());
+                } else {
+                    LOGGER.warning("BufferedImage couldn't be loaded!");
+                }
+            } catch (IOException | NullPointerException e) {
+                e.printStackTrace();
+                LOGGER.severe("Texture not found: " + texture.getPath() + ". Default de.hanno.hpengine.texture returned...");
+            }
+            Engine.getEventBus().post(new TexturesChangedEvent());
+        });
+//        try {
+//            // TODO: Check out why this is necessary
+//            future.get();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+    }
 
     public static int getTextureId() {
         return GraphicsContext.getInstance().genTextures();
@@ -359,11 +452,41 @@ public class TextureFactory {
          // convert that image into a byte buffer of de.hanno.de.hanno.hpengine.texture data
          ByteBuffer[] textureBuffers = convertCubeMapData(bufferedImage,cubeMap);
          
-         cubeMap.upload();
+         upload(cubeMap);
          
          return cubeMap; 
 	}
-    
+
+    public void upload(CubeMap cubeMap) {
+
+        GraphicsContext.getInstance().execute(() -> {
+            cubeMap.bind();
+//        if (target == GL13.GL_TEXTURE_CUBE_MAP)
+            {
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, cubeMap.minFilter);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_MAG_FILTER, cubeMap.magFilter);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_WRAP_R, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_BASE_LEVEL, 0);
+                GL11.glTexParameteri(cubeMap.target.glTarget, GL12.GL_TEXTURE_MAX_LEVEL, de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(cubeMap.width, cubeMap.height)));
+            }
+
+
+            ByteBuffer perFaceBuffer = ByteBuffer.allocateDirect(cubeMap.dataList.get(0).length);
+
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(1))); //1
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(0))); //0
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(2)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(3)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(4)));
+            cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(5)));
+
+            TextureFactory.this.generateMipMapsCubeMap(cubeMap.getTextureID());
+            cubeMap.handle = ARBBindlessTexture.glGetTextureHandleARB(cubeMap.textureID);
+            ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMap.handle);
+        });
+    }
     /**
      * Convert the buffered image to a de.hanno.de.hanno.hpengine.texture
      *
@@ -756,10 +879,10 @@ public class TextureFactory {
 
         GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 
-        ProgramFactory.getInstance().getBlurProgram().use();
-        ProgramFactory.getInstance().getBlurProgram().setUniform("mipmap", mipmap);
-        ProgramFactory.getInstance().getBlurProgram().setUniform("scaleX", scaleForShaderX);
-        ProgramFactory.getInstance().getBlurProgram().setUniform("scaleY", scaleForShaderY);
+        Engine.getInstance().getProgramFactory().getBlurProgram().use();
+        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("mipmap", mipmap);
+        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleX", scaleForShaderX);
+        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleY", scaleForShaderY);
         QuadVertexBuffer.getFullscreenBuffer().draw();
         target.unuse();
         GL11.glDeleteTextures(copyTextureId);

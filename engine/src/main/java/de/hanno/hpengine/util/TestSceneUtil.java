@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.model.OBJLoader;
 import de.hanno.hpengine.engine.physics.PhysicsFactory;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.scene.Scene;
 import org.joml.Vector3f;
@@ -46,7 +45,7 @@ public class TestSceneUtil {
                                 .setDiffuse(new Vector3f((float) k / entityCount, 0, 0))
                                 .setAmbient(1);
                         materialInfo.setName("Default_" + i + "_" + j);
-                        Material mat = MaterialFactory.getInstance().getMaterial(materialInfo);
+                        Material mat = Engine.getInstance().getMaterialFactory().getMaterial(materialInfo);
                         mat.setDiffuse(new Vector3f((float)i/entityCount, 0,0));
                         mat.setMetallic((float)j/entityCount);
                         mat.setRoughness((float)k/entityCount);

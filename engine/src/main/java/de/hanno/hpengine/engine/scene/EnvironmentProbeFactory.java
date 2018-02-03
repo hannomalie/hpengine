@@ -11,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.joml.Vector3f;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.CubeMapArrayRenderTarget;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
 import de.hanno.hpengine.engine.graphics.shader.AbstractProgram;
@@ -147,7 +146,7 @@ public class EnvironmentProbeFactory {
 		
 		for (int i = 1; i <= dynamicProbes.size(); i++) {
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
-			Renderer.getInstance().addRenderProbeCommand(environmentProbe, urgent);
+            Engine.getInstance().getRenderer().addRenderProbeCommand(environmentProbe, urgent);
 		}
 	}
 	
@@ -177,7 +176,7 @@ public class EnvironmentProbeFactory {
 //			if (counter >= MAX_PROBES_PER_FRAME_DRAW_COUNT) { return; } else { counter++; }
 			EnvironmentProbe environmentProbe = dynamicProbes.get(i-1);
 //			environmentProbe.draw(octree, lights);
-            Renderer.getInstance().addRenderProbeCommand(environmentProbe);
+            Engine.getInstance().getRenderer().addRenderProbeCommand(environmentProbe);
 		}
 	}
 
@@ -200,7 +199,7 @@ public class EnvironmentProbeFactory {
 //			renderer.batchLine(clipStart, clipEnd);
 
 			program.setUniform("diffuseColor", new Vector3f(0,1,1));
-            Renderer.getInstance().drawLines(program);
+            Engine.getInstance().getRenderer().drawLines(program);
 		}
 		
 		// 72 floats per array
@@ -218,7 +217,7 @@ public class EnvironmentProbeFactory {
 		octree.getEntities().stream().forEach(e -> {
 			Optional<EnvironmentProbe> option = getProbeForEntity(e);
 			option.ifPresent(probe -> {
-                Renderer.getInstance().batchLine(probe.getCenter(), e.getPosition());
+                Engine.getInstance().getRenderer().batchLine(probe.getCenter(), e.getPosition());
 			});
 		});
 		buffer.delete();

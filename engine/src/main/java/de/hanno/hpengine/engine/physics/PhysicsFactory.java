@@ -16,11 +16,11 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.ConstraintSolver;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.*;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.PhysicsComponent;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.util.commandqueue.CommandQueue;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
@@ -221,7 +221,7 @@ public class PhysicsFactory {
 			
 			@Override
 			public void drawLine(Vector3f start, Vector3f end, Vector3f color) {
-                Renderer.getInstance().batchLine(
+                Engine.getInstance().getRenderer().batchLine(
 						new org.joml.Vector3f(start.x, start.y, start.z),
 						new org.joml.Vector3f(end.x, end.y, end.z));
 			}

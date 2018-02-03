@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.camera.Camera
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.*
@@ -10,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDe
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
 import de.hanno.hpengine.engine.graphics.shader.Shader
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
@@ -33,8 +33,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
-    private var occlusionCullingPhase2Vertex: Program = ProgramFactory.getInstance().getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase1Vertex: Program = Engine.getInstance().programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase2Vertex: Program = Engine.getInstance().programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
 
 
     var highZBuffer: RenderTarget = RenderTargetBuilder()
@@ -58,13 +58,13 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
     }
 
-    private val highZProgram = ProgramFactory.getInstance().getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+    private val highZProgram = Engine.getInstance().programFactory.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
     open fun renderHighZMap() {
         SimpleDrawStrategy.renderHighZMap(depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
     }
 
-    open var depthMap = Renderer.getInstance().gBuffer.visibilityMap
+    open var depthMap = Engine.getInstance().renderer.gBuffer.visibilityMap
 
     private fun debugPrintPhase1(drawDescription: DrawDescription, phase: Pipeline.CullingPhase) {
         if (Config.getInstance().isPrintPipelineDebugOutput) {
@@ -123,7 +123,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(useFrustumCulling:
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram = ProgramFactory.getInstance().appendDrawCommandProgram
+        val appendProgram = Engine.getInstance().programFactory.appendDrawCommandProgram
 
         GPUProfiler.start("Buffer compaction")
         with(commandOrganization) {

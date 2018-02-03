@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.state;
 
 import de.hanno.hpengine.engine.BufferableMatrix4f;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.renderer.*;
@@ -12,7 +13,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
@@ -126,7 +126,7 @@ public class RenderState {
 
     public void bufferMaterials() {
         GraphicsContext.getInstance().execute(() -> {
-            ArrayList<Material> materials = new ArrayList<Material>(MaterialFactory.getInstance().getMaterials());
+            ArrayList<Material> materials = new ArrayList<Material>(Engine.getInstance().getMaterialFactory().getMaterials());
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });
     }

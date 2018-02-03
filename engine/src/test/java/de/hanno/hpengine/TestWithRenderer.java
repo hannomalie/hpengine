@@ -17,6 +17,6 @@ public class TestWithRenderer {
 	public static void init() {
 		Engine.init();
 		engine = Engine.getInstance();
-        renderer = Renderer.getInstance();
+        renderer = Engine.getInstance().getRenderer();
 	}
 }

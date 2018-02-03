@@ -1,10 +1,9 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
@@ -126,13 +125,13 @@ public class OBJLoader {
                 firstToken = tokens[0];
             }
             if ("mtllib".equals(firstToken)) {
-                MaterialFactory.getInstance().putAll(parseMaterialLib(line, f));
+                Engine.getInstance().getMaterialFactory().putAll(parseMaterialLib(line, f));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
-                currentMaterial = MaterialFactory.getInstance().getMaterial(materialName);
+                currentMaterial = Engine.getInstance().getMaterialFactory().getMaterial(materialName);
                 if (currentMaterial == null) {
                     LOGGER.log(Level.INFO, "No material found!!!");
-                    currentMaterial = MaterialFactory.getInstance().getDefaultMaterial();
+                    currentMaterial = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
                 }
                 usemtlCounter++;
             } else if ("o".equals(firstToken) || "g".equals(firstToken) || line.startsWith("# object ")) {
@@ -265,7 +264,7 @@ public class OBJLoader {
     }
 
     private void addHelper(MaterialInfo currentMaterialInfo, String path, String name, Material.MAP map) {
-        currentMaterialInfo.maps.put(map, TextureFactory.getInstance().getTexture(path + name, map == Material.MAP.DIFFUSE));
+        currentMaterialInfo.maps.put(map, Engine.getInstance().getTextureFactory().getTexture(path + name, map == Material.MAP.DIFFUSE));
     }
 
     private void parseName(String line, StaticMesh mesh) {

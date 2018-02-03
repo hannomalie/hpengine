@@ -19,8 +19,8 @@ open class DepthPrepassPipeline @JvmOverloads constructor(useFrustumCulling: Boo
                                                           cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
     override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", true))
     val depthTarget = RenderTargetBuilder().add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)).build()
-    private val depthPrepassProgramStatic = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
-    private val depthPrepassProgramAnimated = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())
+    private val depthPrepassProgramStatic = Engine.getInstance().programFactory.getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
+    private val depthPrepassProgramAnimated = Engine.getInstance().programFactory.getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())
     override var depthMap = depthTarget.renderedTexture
 
     fun draw(renderState: RenderState, firstPassResult: FirstPassResult) {

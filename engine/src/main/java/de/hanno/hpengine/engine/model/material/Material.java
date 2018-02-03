@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.model.material;
 
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.texture.Texture;
@@ -9,8 +10,6 @@ import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -69,12 +68,12 @@ public class Material implements Serializable, Bufferable {
 			try {
 				Texture tex;
 				if(map.equals(MAP.ENVIRONMENT)) {
-					tex = TextureFactory.getInstance().getCubeMap(name);
+                    tex = Engine.getInstance().getTextureFactory().getCubeMap(name);
 					if(tex == null) {
-						tex = TextureFactory.getInstance().getCubeMap();
+                        tex = Engine.getInstance().getTextureFactory().getCubeMap();
 					}
 				} else {
-					tex = TextureFactory.getInstance().getTexture(name);
+                    tex = Engine.getInstance().getTextureFactory().getTexture(name);
 				}
 				materialInfo.maps.getTextures().put(map, tex);
 			} catch (IOException e) {
@@ -82,7 +81,7 @@ public class Material implements Serializable, Bufferable {
 			}
 		}
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-			materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, TextureFactory.getInstance().getCubeMap());
+            materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, Engine.getInstance().getTextureFactory().getCubeMap());
 		}
 		initialized = true;
 	}
@@ -105,7 +104,7 @@ public class Material implements Serializable, Bufferable {
     public boolean hasRoughnessMap() { return materialInfo.maps.getTextures().containsKey(MAP.ROUGHNESS); }
 
 	public void setTexturesActive(Program program) {
-		program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(this));
+		program.setUniform("materialIndex", Engine.getInstance().getMaterialFactory().indexOf(this));
 
 //		for (Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 //			MAP map = entry.getKey();

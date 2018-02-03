@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.model.Model;
 import de.hanno.hpengine.engine.model.loader.md5.AnimatedModel;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.scene.Vertex;
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer;
@@ -81,17 +80,17 @@ public class ModelComponent extends BaseComponent implements Serializable {
         if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
             return materialCache.get();
         }
-        Material material = MaterialFactory.getInstance().getMaterial(materialName);
+        Material material = Engine.getInstance().getMaterialFactory().getMaterial(materialName);
         materialCache = new WeakReference<>(material);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
-            return MaterialFactory.getInstance().getDefaultMaterial();
+            return Engine.getInstance().getMaterialFactory().getDefaultMaterial();
         }
         return material;
     }
     public void setMaterial(String materialName) {
         this.materialName = materialName;
-        model.setMaterial(MaterialFactory.getInstance().getMaterial(materialName));
+        model.setMaterial(Engine.getInstance().getMaterialFactory().getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
             child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialName));
         }

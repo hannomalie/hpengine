@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.renderer.command.RenderProbeCommandQueue;
@@ -10,7 +11,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SimpleDrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.pipelines.GPUCulledMainPipeline;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -26,7 +26,6 @@ import javax.vecmath.Vector2f;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import static de.hanno.hpengine.log.ConsoleLogger.getLogger;
@@ -175,11 +174,11 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-		drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), ProgramFactory.getInstance().getRenderToQuadProgram());
+        drawToQuad(texture, QuadVertexBuffer.getFullscreenBuffer(), Engine.getInstance().getProgramFactory().getRenderToQuadProgram());
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
-		drawToQuad(texture, buffer, ProgramFactory.getInstance().getRenderToQuadProgram());
+        drawToQuad(texture, buffer, Engine.getInstance().getProgramFactory().getRenderToQuadProgram());
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {

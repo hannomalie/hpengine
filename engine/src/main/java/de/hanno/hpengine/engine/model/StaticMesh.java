@@ -2,12 +2,12 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.model.material.Material;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.scene.Vertex;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -84,7 +84,7 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
 
         if (material == null) {
             LOGGER.log(Level.INFO, "No material found!!!");
-            material = MaterialFactory.getInstance().getDefaultMaterial();
+            material = Engine.getInstance().getMaterialFactory().getDefaultMaterial();
         }
         compiledVertices.clear();
 

@@ -23,7 +23,6 @@ import de.hanno.hpengine.engine.model.material.Material;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
 import de.hanno.hpengine.engine.model.material.MaterialInfo;
 import de.hanno.hpengine.engine.model.texture.Texture;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.gui.input.*;
 import org.apache.commons.io.FileUtils;
@@ -418,7 +417,7 @@ public class MaterialView extends WebPanel {
 	}
 
 	private List<Texture> getAllTexturesSorted() {
-        List<Texture> temp = (List<Texture>) TextureFactory.getInstance().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+        List<Texture> temp = (List<Texture>) Engine.getInstance().getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
 			@Override
 			public int compare(Texture o1, Texture o2) {
 				return (o1.getPath().compareTo(o2.getPath()));

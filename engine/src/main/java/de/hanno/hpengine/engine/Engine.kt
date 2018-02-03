@@ -45,8 +45,12 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
     val renderSystem by lazy { RenderSystem() }
     val sceneManager = SceneManager()
-    val scriptManager: ScriptManager by lazy { ScriptManager.getInstance() }
-    val physicsFactory: PhysicsFactory by lazy { PhysicsFactory() }
+    val scriptManager by lazy { ScriptManager().apply { defineGlobals(this@Engine) } }
+    val physicsFactory by lazy { PhysicsFactory() }
+    val programFactory by lazy { ProgramFactory() }
+    val textureFactory by lazy { TextureFactory(this@Engine) }
+    val materialFactory by lazy { MaterialFactory() }
+    val renderer: Renderer by lazy { Renderer.create(Config.getInstance().rendererClass) }
 
     @Volatile var isInitialized: Boolean = false
 
@@ -57,17 +61,7 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
         eventBus.register(this)
         GraphicsContext.getInstance().registerPerFrameCommand(this)
 
-//        TODO: Clean this up, no globals anymore please
-        ProgramFactory.init()
-        TextureFactory.init()
-        MaterialFactory.init()
-        Renderer.init(Config.getInstance().rendererClass)
-        //        Renderer.init(SimpleTextureRenderer.class);
-        //        MaterialFactory.getInstance().initDefaultMaterials();
-
-        ScriptManager.getInstance().defineGlobals()
-
-        Renderer.getInstance().registerPipelines(renderSystem.renderState)
+        renderer.registerPipelines(renderSystem.renderState)
         _instance.startSimulation()
         isInitialized = true
         drawCounter.set(0)
@@ -166,16 +160,9 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
         System.exit(0)
     }
 
-    override fun getDrawCommand(): Runnable {
-        return renderSystem.drawRunnable
-    }
-
+    override fun getDrawCommand() = renderSystem.drawRunnable
     override fun isReadyForExecution() = drawCounter.get() == 0
     override fun postRun() { drawCounter.getAndIncrement() }
-
-
-
-
 
 
     companion object {
@@ -219,7 +206,6 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
                 DebugFrame()
             }
             if (sceneName != null) {
-                Renderer.getInstance()
                 val scene = Scene.read(sceneName)
                 Engine.getInstance().sceneManager.scene = scene
             }

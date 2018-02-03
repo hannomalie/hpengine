@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.graphics.renderer.command;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
 import de.hanno.hpengine.engine.model.texture.Texture;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 public class AddTextureCommand implements Command<TextureResult> {
 
@@ -23,7 +22,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	public TextureResult execute(Engine engine) {
 		Texture texture = null;
 		try {
-			texture = TextureFactory.getInstance().getTexture(path, srgba);
+            texture = Engine.getInstance().getTextureFactory().getTexture(path, srgba);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

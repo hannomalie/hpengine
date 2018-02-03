@@ -33,17 +33,7 @@ public class ProgramFactory {
 
 	public static List<AbstractProgram> LOADED_PROGRAMS = new CopyOnWriteArrayList<>();
 
-    private static ProgramFactory instance = null;
-
-
-    public static ProgramFactory getInstance() {
-        if(instance == null) {
-            throw new IllegalStateException("Call ProgramFactory.init() before using it");
-        }
-        return instance;
-    }
-
-	private ProgramFactory() {
+    public ProgramFactory() {
         try {
             firstpassAnimatedDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_animated_vertex.glsl"));
             firstpassDefaultVertexshaderSource = getShaderSource(new File(getDirectory() + "first_pass_vertex.glsl"));
@@ -67,10 +57,6 @@ public class ProgramFactory {
             System.err.println("Not able to load default vertex and fragment shader sources...");
             System.exit(-1);
         }
-    }
-
-    public static void init() {
-        instance = new ProgramFactory();
     }
 
     public Program getProgramFromFileNames(String vertexShaderFilename, String fragmentShaderFileName, Defines defines) throws Exception {

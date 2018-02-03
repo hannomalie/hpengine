@@ -12,7 +12,6 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.UpdateChangedEvent;
 import de.hanno.hpengine.engine.model.loader.md5.AnimationController;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Matrix4f;
@@ -341,7 +340,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Mesh> meshes = modelComponent.getMeshes();
 		for(Mesh mesh : meshes) {
-			int materialIndex = MaterialFactory.getInstance().indexOf(mesh.getMaterial());
+            int materialIndex = Engine.getInstance().getMaterialFactory().indexOf(mesh.getMaterial());
 			{
 				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0(), modelComponent.getMinMax(this, mesh));
 			}
@@ -350,7 +349,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = MaterialFactory.getInstance().indexOf(instance.getMaterials().get(meshIndex));
+                    int instanceMaterialIndex = Engine.getInstance().getMaterialFactory().indexOf(instance.getMaterials().get(meshIndex));
                     putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
                 }
             }
@@ -446,7 +445,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		m33(buffer.getFloat());
 
 		setSelected(buffer.getInt() == 1);
-		Material material = MaterialFactory.getInstance().getMaterialsAsList().get(buffer.getInt());
+        Material material = Engine.getInstance().getMaterialFactory().getMaterialsAsList().get(buffer.getInt());
 		System.out.println(material.getName());
 		System.out.println(material);
 		setUpdate(Update.values()[buffer.getInt()]);

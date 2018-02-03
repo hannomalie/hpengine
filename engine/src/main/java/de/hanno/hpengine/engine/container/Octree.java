@@ -179,7 +179,7 @@ public class Octree implements LifeCycle, Serializable, EntitiesContainer {
 //		buffer.delete();
 
         batchLines(rootNode);
-        Renderer.getInstance().drawLines(program);
+        Engine.getInstance().getRenderer().drawLines(program);
 	}
 
 	private void batchLines(Node node) {

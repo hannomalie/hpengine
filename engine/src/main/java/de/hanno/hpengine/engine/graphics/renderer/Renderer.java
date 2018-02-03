@@ -1,15 +1,14 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
-import de.hanno.hpengine.engine.lifecycle.LifeCycle;
-import de.hanno.hpengine.engine.graphics.state.RenderState;
-import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
-import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
-import de.hanno.hpengine.util.fps.FPSCounter;
-import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import org.lwjgl.opengl.GL11;
+import de.hanno.hpengine.engine.graphics.state.RenderState;
+import de.hanno.hpengine.engine.graphics.state.multithreading.TripleBuffer;
+import de.hanno.hpengine.engine.lifecycle.LifeCycle;
+import de.hanno.hpengine.engine.scene.EnvironmentProbe;
+import de.hanno.hpengine.util.fps.FPSCounter;
+import org.joml.Vector3f;
 
 public interface Renderer extends LifeCycle {
     boolean CHECKERRORS = false;
@@ -315,26 +314,18 @@ public interface Renderer extends LifeCycle {
         }
     }
 
-    static Renderer getInstance() {
-        if (SingletonHelper.instance == null) {
-            throw new IllegalStateException("Call Renderer.init() before using it");
-        }
-        return SingletonHelper.instance;
-    }
-
-    static void init(Class<? extends Renderer> rendererClass) {
+    static Renderer create(Class<? extends Renderer> rendererClass) {
         try {
-            SingletonHelper.instance = rendererClass.newInstance();
-            SingletonHelper.instance.init();
+            Renderer instance = rendererClass.newInstance();
+            instance.init();
+            return instance;
         } catch (InstantiationException | IllegalAccessException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     default void registerPipelines(TripleBuffer<RenderState> renderState) {
     }
 
-    class SingletonHelper {
-        protected static volatile Renderer instance;
-    }
 }

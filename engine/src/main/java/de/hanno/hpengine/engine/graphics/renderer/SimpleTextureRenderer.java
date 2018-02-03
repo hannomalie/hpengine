@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
@@ -60,8 +61,6 @@ public class SimpleTextureRenderer implements Renderer {
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupBuffers();
-            ProgramFactory.init();
-            TextureFactory.init();
             GraphicsContext.exitOnGLError("After TextureFactory");
             try {
                 setupShaders();
@@ -72,7 +71,6 @@ public class SimpleTextureRenderer implements Renderer {
                 System.exit(-1);
             }
 
-            MaterialFactory.init();
             LightFactory.init();
             EnvironmentProbeFactory.init();
 
@@ -110,7 +108,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		GraphicsContext.exitOnGLError("Before setupShaders");
 
-		renderToQuadProgram = ProgramFactory.getInstance().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+        renderToQuadProgram = Engine.getInstance().getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 
 	}
 
@@ -121,7 +119,7 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-        drawToQuad(TextureFactory.getInstance().getDefaultTexture().getTextureID(), QuadVertexBuffer.getFullscreenBuffer());
+		drawToQuad(Engine.getInstance().getTextureFactory().getDefaultTexture().getTextureID(), QuadVertexBuffer.getFullscreenBuffer());
 		GPUProfiler.end();
 
         GPUProfiler.start("Waiting for driver");

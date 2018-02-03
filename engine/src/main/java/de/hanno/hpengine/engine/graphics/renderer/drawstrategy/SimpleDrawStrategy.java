@@ -18,7 +18,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions.*;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
 import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.scene.AABB;
@@ -29,7 +28,6 @@ import de.hanno.hpengine.engine.graphics.shader.ComputeShaderProgram;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import org.lwjgl.opengl.*;
@@ -85,7 +83,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
     public SimpleDrawStrategy() throws Exception {
         super();
-        ProgramFactory programFactory = ProgramFactory.getInstance();
+        ProgramFactory programFactory = Engine.getInstance().getProgramFactory();
         secondPassPointProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
         secondPassTubeProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_tube_fragment.glsl")), new Defines());
         secondPassAreaProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "second_pass_area_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "second_pass_area_fragment.glsl")), new Defines());
@@ -97,15 +95,15 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         combineProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "combine_pass_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "combine_pass_fragment.glsl")), new Defines());
         postProcessProgram = programFactory.getProgram(getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), getShaderSource(new File(Shader.getDirectory() + "postprocess_fragment.glsl")), new Defines());
 
-        aoScatteringProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
-        reflectionProgram = ProgramFactory.getInstance().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
-        linesProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
-        skyBoxProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", new Defines());
-        skyBoxDepthProgram = ProgramFactory.getInstance().getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl", new Defines());
-        probeFirstpassProgram = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl", new Defines());
-        depthPrePassProgram = ProgramFactory.getInstance().getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl", new Defines());
-        tiledDirectLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_direct_lighting_compute.glsl");
-        tiledProbeLightingProgram = ProgramFactory.getInstance().getComputeProgram("tiled_probe_lighting_compute.glsl");
+        aoScatteringProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("passthrough_vertex.glsl", "scattering_ao_fragment.glsl", new Defines());
+        reflectionProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("passthrough_vertex.glsl", "reflections_fragment.glsl", new Defines());
+        linesProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "simple_color_fragment.glsl", new Defines());
+        skyBoxProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "skybox.glsl", new Defines());
+        skyBoxDepthProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "skybox_depth.glsl", new Defines());
+        probeFirstpassProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("first_pass_vertex.glsl", "probe_first_pass_fragment.glsl", new Defines());
+        depthPrePassProgram = Engine.getInstance().getProgramFactory().getProgramFromFileNames("first_pass_vertex.glsl", "depth_prepass_fragment.glsl", new Defines());
+        tiledDirectLightingProgram = Engine.getInstance().getProgramFactory().getComputeProgram("tiled_direct_lighting_compute.glsl");
+        tiledProbeLightingProgram = Engine.getInstance().getProgramFactory().getComputeProgram("tiled_probe_lighting_compute.glsl");
 
         graphicsContext = GraphicsContext.getInstance();
 
@@ -132,7 +130,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.end();
 
         EnvironmentProbeFactory.getInstance().drawAlternating(renderState.camera);
-        Renderer.getInstance().executeRenderProbeCommands(renderState);
+        Engine.getInstance().getRenderer().executeRenderProbeCommands(renderState);
 
         if (!Config.getInstance().isUseDirectTextureOutput()) {
             GPUProfiler.start("Shadowmap pass");
@@ -154,7 +152,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         } else {
             GraphicsContext.getInstance().disable(DEPTH_TEST);
             RenderTarget.getFrontBuffer().use(true);
-            Renderer.getInstance().drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
+            Engine.getInstance().getRenderer().drawToQuad(Config.getInstance().getDirectTextureOutputTextureIndex());
         }
     }
 
@@ -198,7 +196,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         Camera camera = renderState.camera;
 
         graphicsContext.depthMask(true);
-        Renderer.getInstance().getGBuffer().use(true);
+        Engine.getInstance().getRenderer().getGBuffer().use(true);
 
         renderSkyBox(renderState, camera, false, skyBoxProgram);
 
@@ -213,8 +211,8 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GPUProfiler.start("Draw entities");
 
         if (Config.getInstance().isDrawScene()) {
-            Program firstpassProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
-            Program firstpassProgramAnimated = ProgramFactory.getInstance().getFirstpassAnimatedDefaultProgram();
+            Program firstpassProgram = Engine.getInstance().getProgramFactory().getFirstpassDefaultProgram();
+            Program firstpassProgramAnimated = Engine.getInstance().getProgramFactory().getFirstpassAnimatedDefaultProgram();
             pipeline.draw(renderState, firstpassProgram, firstpassProgramAnimated, firstPassResult);
         }
         GPUProfiler.end();
@@ -231,7 +229,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.enable(CULL_FACE);
 
         GPUProfiler.start("Generate Mipmaps of colormap");
-        TextureFactory.getInstance().generateMipMaps(Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
+        Engine.getInstance().getTextureFactory().generateMipMaps(Engine.getInstance().getRenderer().getGBuffer().getColorReflectivenessMap());
         GPUProfiler.end();
 
         return firstPassResult;
@@ -248,7 +246,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         program.setUniform("directionalLightColor", renderState.directionalLightState.directionalLightColor);
         Vector3f translation = new Vector3f();
         program.setUniform("eyePos_world", camera.getTranslation(translation));
-        program.setUniform("materialIndex", MaterialFactory.getInstance().indexOf(MaterialFactory.getInstance().getSkyboxMaterial()));
+        program.setUniform("materialIndex", Engine.getInstance().getMaterialFactory().indexOf(Engine.getInstance().getMaterialFactory().getSkyboxMaterial()));
         program.setUniformAsMatrix4("modelMatrix", skyBoxEntity.getTransformationBuffer());
         program.setUniformAsMatrix4("viewMatrix", camera.getViewMatrixAsBuffer());
         program.setUniformAsMatrix4("projectionMatrix", camera.getProjectionMatrixAsBuffer());
@@ -270,7 +268,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.blendEquation(FUNC_ADD);
         graphicsContext.blendFunc(ONE, ONE);
 
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        GBuffer gBuffer = Engine.getInstance().getRenderer().getGBuffer();
         gBuffer.getLightAccumulationBuffer().use(true);
         GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, gBuffer.getDepthBufferTexture());
         GraphicsContext.getInstance().clearColor(0, 0, 0, 0);
@@ -281,7 +279,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         graphicsContext.bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         graphicsContext.bindTexture(2, TEXTURE_2D, gBuffer.getColorReflectivenessMap());
         graphicsContext.bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
-        graphicsContext.bindTexture(4, TEXTURE_CUBE_MAP, TextureFactory.getInstance().getCubeMap().getTextureID());
+        graphicsContext.bindTexture(4, TEXTURE_CUBE_MAP, Engine.getInstance().getTextureFactory().getCubeMap().getTextureID());
         graphicsContext.bindTexture(6, TEXTURE_2D, directionalLightShadowMapExtension.getShadowMapId());
         graphicsContext.bindTexture(7, TEXTURE_2D, gBuffer.getVisibilityMap());
         graphicsContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).getTextureID());
@@ -328,7 +326,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
         GPUProfiler.start("MipMap generation AO and light buffer");
         GraphicsContext.getInstance().activeTexture(0);
-        TextureFactory.getInstance().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
+        Engine.getInstance().getTextureFactory().generateMipMaps(gBuffer.getLightAccumulationMapOneId());
         GPUProfiler.end();
 
         if (Config.getInstance().isUseGi()) {
@@ -352,7 +350,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 //        GPUProfiler.end();
         GPUProfiler.start("Scattering texture");
         if(Config.getInstance().isScattering() || Config.getInstance().isUseAmbientOcclusion()) {
-            TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().getWidth() / 2, Config.getInstance().getHeight() / 2, 0, 0);
+            Engine.getInstance().getTextureFactory().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().getWidth() / 2, Config.getInstance().getHeight() / 2, 0, 0);
         }
         GPUProfiler.end();
 //        TextureFactory.getInstance().blur2DTextureRGBA16F(gBuffer.getHalfScreenBuffer().getRenderedTexture(), Config.getInstance().WIDTH / 2, Config.getInstance().HEIGHT / 2, 0, 0);
@@ -377,12 +375,12 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             return;
         }
         GPUProfiler.start("Seconds pass PointLights");
-        graphicsContext.bindTexture(0, TEXTURE_2D, Renderer.getInstance().getGBuffer().getPositionMap());
-        graphicsContext.bindTexture(1, TEXTURE_2D, Renderer.getInstance().getGBuffer().getNormalMap());
-        graphicsContext.bindTexture(2, TEXTURE_2D, Renderer.getInstance().getGBuffer().getColorReflectivenessMap());
-        graphicsContext.bindTexture(3, TEXTURE_2D, Renderer.getInstance().getGBuffer().getMotionMap());
-        graphicsContext.bindTexture(4, TEXTURE_2D, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId());
-        graphicsContext.bindTexture(5, TEXTURE_2D, Renderer.getInstance().getGBuffer().getVisibilityMap());
+        graphicsContext.bindTexture(0, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getPositionMap());
+        graphicsContext.bindTexture(1, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getNormalMap());
+        graphicsContext.bindTexture(2, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getColorReflectivenessMap());
+        graphicsContext.bindTexture(3, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getMotionMap());
+        graphicsContext.bindTexture(4, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getLightAccumulationMapOneId());
+        graphicsContext.bindTexture(5, TEXTURE_2D, Engine.getInstance().getRenderer().getGBuffer().getVisibilityMap());
         if (Config.getInstance().isUseDpsm()) {
             graphicsContext.bindTexture(6, TEXTURE_2D_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayFront());
             graphicsContext.bindTexture(7, TEXTURE_2D_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayBack());
@@ -390,7 +388,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             graphicsContext.bindTexture(8, TEXTURE_CUBE_MAP_ARRAY, LightFactory.getInstance().getPointLightDepthMapsArrayCube());
         }
         // TODO: Add glbindimagetexture to openglcontext class
-        GL42.glBindImageTexture(4, Renderer.getInstance().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
+        GL42.glBindImageTexture(4, Engine.getInstance().getRenderer().getGBuffer().getLightAccumulationMapOneId(), 0, false, 0, GL15.GL_READ_WRITE, GL30.GL_RGBA16F);
         secondPassPointComputeProgram.use();
         secondPassPointComputeProgram.setUniform("pointLightCount", Engine.getInstance().getSceneManager().getScene().getPointLights().size());
         secondPassPointComputeProgram.setUniform("screenWidth", (float) Config.getInstance().getWidth());
@@ -494,7 +492,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
             return;
         }
         GPUProfiler.start("Scattering and AO");
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        GBuffer gBuffer = Engine.getInstance().getRenderer().getGBuffer();
         gBuffer.getHalfScreenBuffer().use(true);
         GraphicsContext.getInstance().disable(DEPTH_TEST);
         GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -522,13 +520,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         EnvironmentProbeFactory.getInstance().bindEnvironmentProbePositions(aoScatteringProgram);
         QuadVertexBuffer.getFullscreenBuffer().draw();
         GraphicsContext.getInstance().enable(DEPTH_TEST);
-        TextureFactory.getInstance().generateMipMaps(gBuffer.getHalfScreenBuffer().getRenderedTexture());
+        Engine.getInstance().getTextureFactory().generateMipMaps(gBuffer.getHalfScreenBuffer().getRenderedTexture());
         GPUProfiler.end();
     }
 
     private void renderReflections(FloatBuffer viewMatrix, FloatBuffer projectionMatrix) {
         GPUProfiler.start("Reflections and AO");
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        GBuffer gBuffer = Engine.getInstance().getRenderer().getGBuffer();
         RenderTarget reflectionBuffer = gBuffer.getReflectionBuffer();
 
         GraphicsContext.getInstance().bindTexture(0, TEXTURE_2D, gBuffer.getPositionMap());
@@ -537,11 +535,11 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         GraphicsContext.getInstance().bindTexture(4, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
         GraphicsContext.getInstance().bindTexture(5, TEXTURE_2D, gBuffer.getFinalMap());
-        TextureFactory.getInstance().getCubeMap().bind(6);
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(6);
 //        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 7);
 //        reflectionBuffer.getRenderedTexture(0);
         EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(3).bind(8);
-        TextureFactory.getInstance().getCubeMap().bind(9);
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(9);
         EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray(0).bind(10);
         GraphicsContext.getInstance().bindTexture(11, TEXTURE_2D, reflectionBuffer.getRenderedTexture());
 
@@ -592,9 +590,9 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
 
 
     public void combinePass(RenderTarget target, RenderState renderState) {
-        GBuffer gBuffer = Renderer.getInstance().getGBuffer();
+        GBuffer gBuffer = Engine.getInstance().getRenderer().getGBuffer();
         RenderTarget finalBuffer = gBuffer.getFinalBuffer();
-        TextureFactory.getInstance().generateMipMaps(finalBuffer.getRenderedTexture(0));
+        Engine.getInstance().getTextureFactory().generateMipMaps(finalBuffer.getRenderedTexture(0));
 
         combineProgram.use();
         combineProgram.setUniformAsMatrix4("projectionMatrix", renderState.camera.getProjectionMatrixAsBuffer());
@@ -619,7 +617,7 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getMotionMap());
         GraphicsContext.getInstance().bindTexture(4, TEXTURE_2D, gBuffer.getPositionMap());
         GraphicsContext.getInstance().bindTexture(5, TEXTURE_2D, gBuffer.getNormalMap());
-        TextureFactory.getInstance().getCubeMap().bind(6);
+        Engine.getInstance().getTextureFactory().getCubeMap().bind(6);
         EnvironmentProbeFactory.getInstance().getEnvironmentMapsArray().bind(7);
         GraphicsContext.getInstance().bindTexture(8, TEXTURE_2D, gBuffer.getReflectionMap());
         GraphicsContext.getInstance().bindTexture(9, TEXTURE_2D, gBuffer.getRefractedMap());
@@ -647,13 +645,13 @@ public class SimpleDrawStrategy extends BaseDrawStrategy {
         } catch (IllegalStateException e) {
             // Normalizing zero length vector
         }
-        postProcessProgram.setUniform("seconds", (float)Renderer.getInstance().getDeltaInS());
+        postProcessProgram.setUniform("seconds", (float) Engine.getInstance().getRenderer().getDeltaInS());
         postProcessProgram.bindShaderStorageBuffer(0, gBuffer.getStorageBuffer());
 //        postProcessProgram.bindShaderStorageBuffer(1, Engine.getInstance().getRenderer().getMaterialFactory().getMaterialBuffer());
         GraphicsContext.getInstance().bindTexture(1, TEXTURE_2D, gBuffer.getNormalMap());
         GraphicsContext.getInstance().bindTexture(2, TEXTURE_2D, gBuffer.getMotionMap());
         GraphicsContext.getInstance().bindTexture(3, TEXTURE_2D, gBuffer.getLightAccumulationMapOneId());
-        GraphicsContext.getInstance().bindTexture(4, TEXTURE_2D, TextureFactory.getInstance().getLensFlareTexture().getTextureID());
+        GraphicsContext.getInstance().bindTexture(4, TEXTURE_2D, Engine.getInstance().getTextureFactory().getLensFlareTexture().getTextureID());
         QuadVertexBuffer.getFullscreenBuffer().draw();
 
         GPUProfiler.end();

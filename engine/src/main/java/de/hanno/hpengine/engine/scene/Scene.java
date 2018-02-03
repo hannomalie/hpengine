@@ -20,10 +20,8 @@ import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.transform.AABB;
 import org.apache.commons.io.FilenameUtils;
 import org.joml.Vector3f;
@@ -87,7 +85,7 @@ public class Scene implements LifeCycle, Serializable {
                 try {
 					// TODO: Remove this f***
                     EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
-                    Renderer.getInstance().addRenderProbeCommand(probe);
+					Engine.getInstance().getRenderer().addRenderProbeCommand(probe);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -364,7 +362,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void addRenderBatches(Camera camera, RenderState currentWriteState) {
 		Vector3f cameraWorldPosition = camera.getPosition();
 
-		Program firstpassDefaultProgram = ProgramFactory.getInstance().getFirstpassDefaultProgram();
+		Program firstpassDefaultProgram = Engine.getInstance().getProgramFactory().getFirstpassDefaultProgram();
 
 		List<ModelComponent> modelComponentsStatic = Engine.getInstance().getSceneManager().getScene().getModelComponents();
 

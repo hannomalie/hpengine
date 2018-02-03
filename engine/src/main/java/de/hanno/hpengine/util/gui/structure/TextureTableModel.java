@@ -1,7 +1,7 @@
 package de.hanno.hpengine.util.gui.structure;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.texture.Texture;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 
 import javax.swing.table.AbstractTableModel;
 import java.util.Arrays;
@@ -15,7 +15,7 @@ public class TextureTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         try {
-            return TextureFactory.getInstance().TEXTURES.size();
+            return Engine.getInstance().getTextureFactory().TEXTURES.size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -23,7 +23,7 @@ public class TextureTableModel extends AbstractTableModel {
 
     public Object getValueAt(int row, int col) {
         if (col == 0) {
-            List<Object> paths = Arrays.asList(TextureFactory.getInstance().TEXTURES.keySet()
+            List<Object> paths = Arrays.asList(Engine.getInstance().getTextureFactory().TEXTURES.keySet()
                     .toArray());
             return paths.get(row);
         } else if(col == 1) {
@@ -40,7 +40,7 @@ public class TextureTableModel extends AbstractTableModel {
     }
 
     private Texture getTexture(int row) {
-        List<Object> textures = Arrays.asList(TextureFactory.getInstance().TEXTURES.values()
+        List<Object> textures = Arrays.asList(Engine.getInstance().getTextureFactory().TEXTURES.values()
                 .toArray());
         return (Texture) textures.get(row);
     }
