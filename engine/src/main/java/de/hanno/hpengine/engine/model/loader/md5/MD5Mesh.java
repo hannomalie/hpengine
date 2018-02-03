@@ -119,7 +119,7 @@ public class MD5Mesh implements Mesh {
             jointIndices1[i] = in.jointIndices[i];
         }
         Vector4i jointIndices = new Vector4i(jointIndices1[0], jointIndices1[1], jointIndices1[2], jointIndices1[3]);
-        return new AnimatedVertex("Vertex", in.position, in.textCoords, in.normal, new Vector3f(), weights, jointIndices);
+        return new AnimatedVertex("Vertex", in.position, in.textCoords, in.normal, weights, jointIndices);
     }
 
     public List<AnimatedVertex> getCompiledVertices() {

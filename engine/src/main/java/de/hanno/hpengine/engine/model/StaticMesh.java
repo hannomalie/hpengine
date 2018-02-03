@@ -34,7 +34,6 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
 	private List<Vector3f> positions = new ArrayList<>();
     private List<Vector2f> texCoords = new ArrayList<>();
     private List<Vector3f> normals = new ArrayList<>();
-    private List<Vector3f> lightmapTexCoords = new ArrayList<>();
     private List<Face> indexFaces = new ArrayList<>();
     private List<CompiledFace> compiledFaces = new ArrayList<>();
 	private String name = "";
@@ -89,25 +88,6 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         compiledVertices.clear();
 
         FloatArrayList values = new FloatArrayList(indexFaces.size() * valuesPerVertex);
-        List<Vector3f[]> allLightMapCoords = new ArrayList<>(indexFaces.size());
-
-        for(Face face : indexFaces) {
-            int[] referencedVertices = face.getVertices();
-            Vector3f[] referencedVerticesAsVec3 = new Vector3f[3];
-            referencedVerticesAsVec3[0] = positions.get(referencedVertices[0]-1);
-            referencedVerticesAsVec3[1] = positions.get(referencedVertices[1]-1);
-            referencedVerticesAsVec3[2] = positions.get(referencedVertices[2]-1);
-            Vector3f[] lightmapCoords = getLightMapCoords(referencedVerticesAsVec3);
-
-            allLightMapCoords.add(lightmapCoords);
-        }
-
-        List<Vector3f[]> finalLightmapCoords = allLightMapCoords;
-        for (Vector3f[] face : finalLightmapCoords) {
-            lightmapTexCoords.add(face[0]);
-            lightmapTexCoords.add(face[1]);
-            lightmapTexCoords.add(face[2]);
-        }
 
         for (int i = 0; i < indexFaces.size(); i++) {
             Face face = indexFaces.get(i);
@@ -118,7 +98,6 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
             Vector3f[] compiledPositions = new Vector3f[3];
             Vector2f[] compiledTexCoords = new Vector2f[3];
             Vector3f[] compiledNormals = new Vector3f[3];
-            Vector3f[] compiledLightmapCoords = new Vector3f[3];
 
             for (int j = 0; j < 3; j++) {
                 Vector3f referencedVertex = positions.get(referencedVertices[j] - 1);
@@ -141,16 +120,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
                 values.add(referencedNormal.y);
                 values.add(referencedNormal.z);
 
-                Vector3f lightmapCoords = finalLightmapCoords.get(i)[j];
-                compiledLightmapCoords[j] = lightmapCoords;
-                values.add(lightmapCoords.x());
-                values.add(lightmapCoords.y());
-                values.add(lightmapCoords.z());
 
-                compiledVertices.add(new Vertex("Vertex", referencedVertex, referencedTexcoord, referencedNormal, lightmapCoords));
+                compiledVertices.add(new Vertex("Vertex", referencedVertex, referencedTexcoord, referencedNormal));
 
             }
-            compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals, allLightMapCoords.get(i), compiledLightmapCoords));
+            compiledFaces.add(new CompiledFace(compiledPositions, compiledTexCoords, compiledNormals));
         }
 
         List<CompiledVertex> uniqueVertices = new ArrayList<>();
@@ -162,7 +136,6 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
                     positions.add(currentVertex.position);
                     texCoords.add(currentVertex.texCoords);
                     normals.add(currentVertex.normal);
-                    lightmapTexCoords.add(currentVertex.lightmapCoords);
                     indexBufferValues.add(uniqueVertices.size() - 1);
                 }
             }
@@ -201,49 +174,6 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         return super.getCenterWorld(transform);
     }
 
-    private Vector3f[] getLightMapCoords(Vector3f[] referencedVerticesAsVec3) {
-        Vector3f[] result = new Vector3f[3];
-        result[0] = new Vector3f();
-        result[1] = new Vector3f();
-        result[2] = new Vector3f();
-        Vector3f poly_normal = Face.calculateFaceNormal(referencedVerticesAsVec3[0], referencedVerticesAsVec3[1], referencedVerticesAsVec3[2]);
-        if (Math.abs(poly_normal.x) > Math.abs(poly_normal.y) && Math.abs(poly_normal.x) > Math.abs(poly_normal.z)) {
-            int negativePlane = poly_normal.x < 0 ? 1 : 0;
-            result[0].x = referencedVerticesAsVec3[0].y;
-            result[0].y = referencedVerticesAsVec3[0].z;
-            result[0].z = negativePlane;
-            result[1].x = referencedVerticesAsVec3[1].y;
-            result[1].y = referencedVerticesAsVec3[1].z;
-            result[1].z = negativePlane;
-            result[2].x = referencedVerticesAsVec3[2].y;
-            result[2].y = referencedVerticesAsVec3[2].z;
-            result[2].z = negativePlane;
-        } else if (Math.abs(poly_normal.y) > Math.abs(poly_normal.x) && Math.abs(poly_normal.y) > Math.abs(poly_normal.z)) {
-            int negativePlane = poly_normal.y < 0 ? 3 : 2;
-            result[0].x = referencedVerticesAsVec3[0].x;
-            result[0].y = referencedVerticesAsVec3[0].z;
-            result[0].z = negativePlane;
-            result[1].x = referencedVerticesAsVec3[1].x;
-            result[1].y = referencedVerticesAsVec3[1].z;
-            result[1].z = negativePlane;
-            result[2].x = referencedVerticesAsVec3[2].x;
-            result[2].y = referencedVerticesAsVec3[2].z;
-            result[2].z = negativePlane;
-        } else {
-            int negativePlane = poly_normal.z < 0 ? 5 : 4;
-            result[0].x = referencedVerticesAsVec3[0].x;
-            result[0].y = referencedVerticesAsVec3[0].y;
-            result[0].z = negativePlane;
-            result[1].x = referencedVerticesAsVec3[1].x;
-            result[1].y = referencedVerticesAsVec3[1].y;
-            result[1].z = negativePlane;
-            result[2].x = referencedVerticesAsVec3[2].x;
-            result[2].y = referencedVerticesAsVec3[2].y;
-            result[2].z = negativePlane;
-        }
-
-        return result;
-    }
 
     @Override
     public int[] getIndexBufferValuesArray() {
@@ -355,15 +285,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         public final Vector3f position;
         public final Vector2f texCoords;
         public final Vector3f normal;
-        public final Vector3f initialLightmapCoords;
-        public Vector3f lightmapCoords;
 
-        public CompiledVertex(Vector3f position, Vector2f texCoords, Vector3f normal, Vector3f initialLightmapCoords, Vector3f lightmapCoords) {
+        public CompiledVertex(Vector3f position, Vector2f texCoords, Vector3f normal) {
             this.position = position;
             this.texCoords = texCoords;
             this.normal = normal;
-            this.initialLightmapCoords = initialLightmapCoords;
-            this.lightmapCoords = lightmapCoords;
         }
 
         @Override
@@ -375,12 +301,11 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
             CompiledVertex otherVertex = (CompiledVertex) other;
             return this.position.equals(otherVertex.position) &&
                 this.texCoords.equals(otherVertex.texCoords) &&
-                this.normal.equals(otherVertex.normal) &&
-                this.lightmapCoords.equals(otherVertex.lightmapCoords);
+                this.normal.equals(otherVertex.normal);
         }
 
         public float[] asFloats() {
-            return new float[] {position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z, lightmapCoords.x, lightmapCoords.y, lightmapCoords.z};
+            return new float[] {position.x, position.y, position.z, texCoords.x, texCoords.y, normal.x, normal.y, normal.z};
         }
     }
     public static class CompiledFace {
@@ -388,9 +313,9 @@ public class StaticMesh extends SimpleSpatial implements Serializable, Mesh {
         public final CompiledVertex[] vertices = new CompiledVertex[3];
         private final Vector3f[] positions;
 
-        public CompiledFace(Vector3f[] position, Vector2f[] texCoords, Vector3f[] normal, Vector3f[] allLightMapCoords, Vector3f[] lightmapCoords) {
+        public CompiledFace(Vector3f[] position, Vector2f[] texCoords, Vector3f[] normal) {
             for(int i = 0; i < 3; i++) {
-                vertices[i] = new CompiledVertex(position[i], texCoords[i], normal[i], allLightMapCoords[i], lightmapCoords[i]);
+                vertices[i] = new CompiledVertex(position[i], texCoords[i], normal[i]);
             }
             positions = position;
         }

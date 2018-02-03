@@ -2,7 +2,6 @@
 #extension GL_ARB_bindless_texture : enable
 
 layout(binding=6) uniform samplerCube environmentMap;
-layout(binding=7) uniform sampler2D lightMap;
 
 uniform bool isSelected = false;
 
@@ -17,9 +16,6 @@ uniform bool useSteepParallax;
 layout(std430, binding=1) buffer _materials {
 	Material materials[100];
 };
-
-uniform float lightmapWidth;
-uniform float lightmapHeight;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -39,7 +35,6 @@ uniform vec3 directionalLightColor = vec3(1);
 
 in vec4 color;
 in vec2 texCoord;
-in vec3 lightmapTextureCoord;
 in vec3 normalVec;
 in vec3 normal_model;
 in vec3 normal_world;
@@ -68,7 +63,6 @@ layout(location=1)out vec4 out_normal; // normal, depth
 layout(location=2)out vec4 out_color; // color, metallic
 layout(location=3)out vec4 out_motion; // motion, probeIndices
 layout(location=4)out vec4 out_visibility; // visibility
-layout(location=5)out vec4 out_lightmap; // visibility
 
 //include(globals.glsl)
 
@@ -84,7 +78,6 @@ void main(void) {
 //    out_color.rgb = textureLod(environmentMap, -sampleVector, 0).rgb;
 //    out_motion = vec4(0,0,depth,0);
 //    out_visibility = vec4(1, 1, materialIndex, 0);
-//    out_lightmap = vec4(0);
 //    gl_FragDepth = 1;
 
     out_position.r = 1;

@@ -193,10 +193,6 @@ public class GBuffer {
 		return reflectionBuffer.getRenderedTexture(1);
 	}
 
-    public int getLightmapUVMap() {
-        return gBuffer.getRenderedTexture(5);
-    }
-
 	public RenderTarget getlaBuffer() {
 		return laBuffer;
 	}

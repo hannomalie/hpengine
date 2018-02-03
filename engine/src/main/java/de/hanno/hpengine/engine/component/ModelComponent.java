@@ -43,13 +43,11 @@ public class ModelComponent extends BaseComponent implements Serializable {
     public static EnumSet<DataChannels> DEFAULTCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
-            DataChannels.NORMAL,
-            DataChannels.LIGHTMAP_TEXCOORD);
+            DataChannels.NORMAL);
     public static EnumSet<DataChannels> DEFAULTANIMATEDCHANNELS = EnumSet.of(
             DataChannels.POSITION3,
             DataChannels.TEXCOORD,
             DataChannels.NORMAL,
-            DataChannels.LIGHTMAP_TEXCOORD,
             DataChannels.WEIGHTS,
             DataChannels.JOINT_INDICES);
     public static EnumSet<DataChannels> DEPTHCHANNELS = EnumSet.of(

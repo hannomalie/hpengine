@@ -12,8 +12,7 @@ import java.nio.ByteBuffer
 data class Vertex (override val name: String = "Vertex",
                   val position: Vector3f = Vector3f(),
                   val texCoord: Vector2f = Vector2f(),
-                  val normal: Vector3f = Vector3f(),
-                  val lightmapCoords: Vector3f = Vector3f()) : Bufferable, DataChannelProvider {
+                  val normal: Vector3f = Vector3f()) : Bufferable, DataChannelProvider {
 
     override fun getBytesPerObject(): Int {
         return byteSize
@@ -30,9 +29,6 @@ data class Vertex (override val name: String = "Vertex",
                 putFloat(normal.x)
                 putFloat(normal.y)
                 putFloat(normal.z)
-                putFloat(lightmapCoords.x)
-                putFloat(lightmapCoords.y)
-                putFloat(lightmapCoords.z)
             }
         }
     }
@@ -47,14 +43,11 @@ data class Vertex (override val name: String = "Vertex",
             normal.x = it.float
             normal.y = it.float
             normal.z = it.float
-            lightmapCoords.x = it.float
-            lightmapCoords.y = it.float
-            lightmapCoords.z = it.float
         }
     }
 
     override val channels by lazy {
-        ImmutableSet.of(FloatThree("position", "vec3"), FloatTwo("texCoord", "vec2"), FloatThree("normal", "vec3"), FloatThree("lightmapTexCoord", "vec3"))
+        ImmutableSet.of(FloatThree("position", "vec3"), FloatTwo("texCoord", "vec2"), FloatThree("normal", "vec3"))
     }
 
     private val byteSize by lazy {

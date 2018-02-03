@@ -7,9 +7,8 @@ public enum DataChannels {
 	COLOR("in_Color", 3, 1, POSITION3.siB()),
 	TEXCOORD("in_TextureCoord", 2, 2, POSITION3.siB() + COLOR.siB()),
 	NORMAL("in_Normal", 3, 3, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB()),
-    LIGHTMAP_TEXCOORD("in_LightmapTextureCoord", 3, 4, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB()),
-	WEIGHTS("in_Weights", 4, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB()),
-	JOINT_INDICES("in_JointIndices", 4, 6, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + LIGHTMAP_TEXCOORD.siB() + WEIGHTS.siB());
+	WEIGHTS("in_Weights", 4, 5, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB()),
+	JOINT_INDICES("in_JointIndices", 4, 6, POSITION3.siB() + COLOR.siB() + TEXCOORD.siB() + NORMAL.siB() + WEIGHTS.siB());
 //TODO Use not only float byte size
 
 	private String binding;

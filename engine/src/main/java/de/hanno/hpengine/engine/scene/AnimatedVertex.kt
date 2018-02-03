@@ -16,7 +16,6 @@ data class AnimatedVertex (override val name: String = "Vertex",
                   val position: Vector3f = Vector3f(),
                   val texCoord: Vector2f = Vector2f(),
                   val normal: Vector3f = Vector3f(),
-                  val lightmapCoords: Vector3f = Vector3f(),
                   val weights: Vector4f,
                   val jointIndices: Vector4i) : Bufferable, DataChannelProvider {
 
@@ -35,9 +34,6 @@ data class AnimatedVertex (override val name: String = "Vertex",
                 putFloat(normal.x)
                 putFloat(normal.y)
                 putFloat(normal.z)
-                putFloat(lightmapCoords.x)
-                putFloat(lightmapCoords.y)
-                putFloat(lightmapCoords.z)
                 putFloat(weights.x)
                 putFloat(weights.y)
                 putFloat(weights.z)
@@ -60,9 +56,6 @@ data class AnimatedVertex (override val name: String = "Vertex",
             normal.x = it.float
             normal.y = it.float
             normal.z = it.float
-            lightmapCoords.x = it.float
-            lightmapCoords.y = it.float
-            lightmapCoords.z = it.float
             weights.x = it.float
             weights.y = it.float
             weights.z = it.float
@@ -79,7 +72,6 @@ data class AnimatedVertex (override val name: String = "Vertex",
             FloatThree("position", "vec3"),
             FloatTwo("texCoord", "vec2"),
             FloatThree("normal", "vec3"),
-            FloatThree("lightmapTexCoord", "vec3"),
             FloatFour("weights", "vec4"),
             IntFour("jointIndices", "ivec4"))
     }

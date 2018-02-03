@@ -130,7 +130,6 @@ public class DeferredRenderer implements Renderer {
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), QuadVertexBuffer.getDebugBuffer());
 			for(int i = 0; i < 6; i++) {
-//                drawToQuad(simpleDrawStrategy.getLightMapExtension().getSamplers().get(32).getCubeMapFaceViews()[i], sixDebugBuffers.get(i));
 //                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 			}
 

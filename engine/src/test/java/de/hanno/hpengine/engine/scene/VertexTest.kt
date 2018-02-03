@@ -8,14 +8,13 @@ import org.junit.Test
 class VertexTest {
     @Test
     fun testStructOutput() {
-        val vertex = Vertex("Vertex", Vector3f(), Vector2f(), Vector3f(), Vector3f())
+        val vertex = Vertex("Vertex", Vector3f(), Vector2f(), Vector3f())
 
         val structCode = vertex.structCode()
         Assert.assertEquals("struct Vertex {\n" +
                 "vec3 position;\n" +
                 "vec2 texCoord;\n" +
                 "vec3 normal;\n" +
-                "vec3 lightmapTexCoord;\n" +
                 "}", structCode)
     }
 }

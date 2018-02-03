@@ -672,8 +672,3 @@ vec3 Decode( vec2 encN )
 //    n.z = g-1;
 //    return normalize(-n);
 //}
-
-vec2 scaleLightmapCoords(vec3 in_LightmapTextureCoord, float lightmapWidth, float lightmapHeight) {
-    vec2 textureSpaceCoords = in_LightmapTextureCoord.xy / vec2(lightmapWidth, lightmapHeight); // between 0 and 1
-    return textureSpaceCoords;
-}
