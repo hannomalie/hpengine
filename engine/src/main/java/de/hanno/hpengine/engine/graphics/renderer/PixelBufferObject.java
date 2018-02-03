@@ -6,6 +6,7 @@ import static org.lwjgl.opengl.GL21.*;
 
 import java.nio.ByteBuffer;
 
+import de.hanno.hpengine.engine.Engine;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -41,7 +42,7 @@ public class PixelBufferObject {
 
 	public void readPixelsFromTexture(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type) {
 		bind();
-        GraphicsContext.getInstance().bindTexture(target, textureId);
+        Engine.getInstance().getGpuContext().bindTexture(target, textureId);
 		glGetTexImage(target.glTarget, mipmapLevel, format, type, buffer);
 		unbind();
 	}
@@ -50,17 +51,17 @@ public class PixelBufferObject {
 	}
 	public void glTexSubImage2D(int textureId, int mipmapLevel, GlTextureTarget target, int format, int type, int offsetX, int offsetY, int width, int height, ByteBuffer buffer) {
 		mapAndUnmap(offsetX, offsetY, width, height, buffer);
-        GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().bindTexture(target, textureId);
+        Engine.getInstance().getGpuContext().execute(() -> {
+            Engine.getInstance().getGpuContext().bindTexture(target, textureId);
 			GL11.glTexSubImage2D(target.glTarget, mipmapLevel, offsetX, offsetY, width, height, GL_RGBA, GL_FLOAT, 0);
 		});
 		unbind();
 	}
 
 	public void glCompressedTexImage2D(int textureId, GlTextureTarget target, int level, int internalformat, int width, int height, int border, ByteBuffer textureBuffer) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
 			mapAndUnmap(0, 0, width, height, buffer);
-            GraphicsContext.getInstance().bindTexture(target, textureId);
+            Engine.getInstance().getGpuContext().bindTexture(target, textureId);
 			GL13.glCompressedTexImage2D(target.glTarget, level, internalformat, width, height, border, null);
 		});
 		unbind();

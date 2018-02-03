@@ -13,7 +13,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import net.engio.mbassy.listener.Handler;
@@ -63,7 +62,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	}
 	
 	public void load() {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
 			clearUniforms();
 
 			try {
@@ -166,7 +165,7 @@ public class Program extends AbstractProgram implements Reloadable {
 	public void reload() {
 		final Program self = this;
 
-		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+        CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
             @Override
             public Boolean execute() throws Exception {
 				detachShader(vertexShader);

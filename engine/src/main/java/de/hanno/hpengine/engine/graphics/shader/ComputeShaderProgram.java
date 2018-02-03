@@ -1,8 +1,7 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GLU;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import de.hanno.hpengine.util.ressources.CodeSource;
@@ -16,8 +15,6 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL43;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -138,7 +135,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 				return true;
 			}
 		};
-		CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(reloadShaderCallable);
+        CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(reloadShaderCallable);
 
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);

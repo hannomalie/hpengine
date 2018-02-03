@@ -9,7 +9,6 @@ import com.alee.managers.notification.WebNotificationPopup;
 import com.alee.utils.swing.Customizer;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -42,7 +41,7 @@ public class LoadEntitiyView extends WebPanel {
 					showError(chosenFile);
 					continue;
 				}
-				CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Boolean execute() throws Exception {
 						entity.initialize();

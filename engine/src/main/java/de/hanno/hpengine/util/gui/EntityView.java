@@ -19,7 +19,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.*;
 import de.hanno.hpengine.engine.event.EntityAddedEvent;
 import de.hanno.hpengine.engine.event.EntityChangedMaterialEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
 import de.hanno.hpengine.engine.graphics.renderer.command.RemoveEntityCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.Result;
@@ -240,7 +239,7 @@ public class EntityView extends WebPanel {
 
         WebButton removeEntityButton = new WebButton("Remove Entity");
         removeEntityButton.addActionListener(e -> {
-            CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Result execute() throws Exception {
                     return new RemoveEntityCommand(entity).execute(engine);

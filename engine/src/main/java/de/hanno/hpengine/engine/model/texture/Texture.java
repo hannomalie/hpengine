@@ -5,7 +5,6 @@ import ddsutil.ImageRescaler;
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.TexturesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import jogl.DDSImage;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.BufferUtils;
@@ -21,7 +20,6 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
@@ -127,7 +125,7 @@ public class Texture implements Serializable, Reloadable {
     }
 
     private void genHandle() {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             if(handle <= 0) {
                 bind(15);
                 handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
@@ -163,12 +161,12 @@ public class Texture implements Serializable, Reloadable {
     public void bind(boolean setUsed) {
         if(textureID <= 0) {
 //            LOGGER.info("de.hanno.hpengine.texture id is <= 0");
-            textureID = GraphicsContext.getInstance().genTextures();
+            textureID = Engine.getInstance().getGpuContext().genTextures();
         }
         if(setUsed) {
             setUsedNow();
         }
-        GraphicsContext.getInstance().bindTexture(target, textureID);
+        Engine.getInstance().getGpuContext().bindTexture(target, textureID);
     }
 
     public void bind(int unit) {
@@ -176,15 +174,15 @@ public class Texture implements Serializable, Reloadable {
     }
     public void bind(int unit, boolean setUsed) {
         if(textureID <= 0) {
-            textureID = GraphicsContext.getInstance().genTextures();
+            textureID = Engine.getInstance().getGpuContext().genTextures();
         }
         if(setUsed) {
             setUsedNow();
         }
-        GraphicsContext.getInstance().bindTexture(unit, target, textureID);
+        Engine.getInstance().getGpuContext().bindTexture(unit, target, textureID);
     }
     public void  unbind(int unit) {
-        GraphicsContext.getInstance().bindTexture(unit, target, 0);
+        Engine.getInstance().getGpuContext().bindTexture(unit, target, 0);
     }
 
     public void setHeight(int height) {
@@ -255,7 +253,7 @@ public class Texture implements Serializable, Reloadable {
             }
             int finalInternalformat = internalformat;
 
-            GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
                 bind(15);
                 if (target == TEXTURE_2D) {
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
@@ -273,7 +271,7 @@ public class Texture implements Serializable, Reloadable {
                 uploadMipMaps(finalInternalformat);
             }
             uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed, false);
-            GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
                 if(!mipmapsGenerated) {
                     bind(15);
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
@@ -282,7 +280,7 @@ public class Texture implements Serializable, Reloadable {
                 }
             });
             genHandle();
-            GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
             setUploaded();
@@ -295,13 +293,13 @@ public class Texture implements Serializable, Reloadable {
     private void setUploaded() {
         uploadState = UPLOADED;
         LOGGER.info("Upload finished");
-        LOGGER.fine("Free VRAM: " + GraphicsContext.getInstance().getAvailableVRAM());
+        LOGGER.fine("Free VRAM: " + Engine.getInstance().getGpuContext().getAvailableVRAM());
     }
 
     private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed, boolean setMaxLevel) {
         textureBuffer.rewind();
         final AtomicInteger pbo = new AtomicInteger(-1);
-        ByteBuffer temp = GraphicsContext.getInstance().calculate(() -> {
+        ByteBuffer temp = Engine.getInstance().getGpuContext().calculate(() -> {
             bind(15);
             pbo.set(GL15.glGenBuffers());
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
@@ -312,7 +310,7 @@ public class Texture implements Serializable, Reloadable {
             return xxx;
         });
         temp.put(textureBuffer);
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             bind(15);
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
@@ -654,9 +652,9 @@ public class Texture implements Serializable, Reloadable {
         LOGGER.info("Unloading " + path);
         uploadState = NOT_UPLOADED;
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle);
-            LOGGER.info("Free VRAM: " + GraphicsContext.getInstance().getAvailableVRAM());
+            LOGGER.info("Free VRAM: " + Engine.getInstance().getGpuContext().getAvailableVRAM());
         });
     }
     public long getHandle() {
@@ -664,6 +662,6 @@ public class Texture implements Serializable, Reloadable {
     }
 
     private void bindWithoutReupload() {
-        GraphicsContext.getInstance().bindTexture(target, textureID);
+        Engine.getInstance().getGpuContext().bindTexture(target, textureID);
     }
 }

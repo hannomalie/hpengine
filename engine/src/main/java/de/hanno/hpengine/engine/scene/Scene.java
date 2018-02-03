@@ -19,7 +19,6 @@ import de.hanno.hpengine.engine.lifecycle.LifeCycle;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
 import de.hanno.hpengine.engine.event.*;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Program;
 import de.hanno.hpengine.engine.transform.AABB;
@@ -74,17 +73,16 @@ public class Scene implements LifeCycle, Serializable {
 	public void init() {
 		LifeCycle.super.init();
 		getEventBus().register(this);
-		EnvironmentProbeFactory.getInstance().clearProbes();
         entityContainer = new SimpleContainer();
 		entityContainer.init();
         entities.forEach(Entity::initialize);
         entities.forEach(entity -> entity.getComponents().values().forEach(c -> c.registerInScene(Scene.this)));
 		addAll(entities);
 		for (ProbeData data : probes) {
-            GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
                 try {
 					// TODO: Remove this f***
-                    EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
+					EnvironmentProbe probe = Engine.getInstance().getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
 					Engine.getInstance().getRenderer().addRenderProbeCommand(probe);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -122,7 +120,7 @@ public class Scene implements LifeCycle, Serializable {
 			entities.clear();
 			entities.addAll(entityContainer.getEntities());
 			probes.clear();
-			for (EnvironmentProbe probe : EnvironmentProbeFactory.getInstance().getProbes()) {
+			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeFactory().getProbes()) {
 				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
 				if(probes.contains(probeData)) { continue; }
 				probes.add(probeData);

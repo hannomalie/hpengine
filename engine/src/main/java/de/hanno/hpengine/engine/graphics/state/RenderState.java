@@ -125,7 +125,7 @@ public class RenderState {
 //    }
 
     public void bufferMaterials() {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             ArrayList<Material> materials = new ArrayList<Material>(Engine.getInstance().getMaterialFactory().getMaterials());
             entitiesState.materialBuffer.put(Util.toArray(materials, Material.class));
         });

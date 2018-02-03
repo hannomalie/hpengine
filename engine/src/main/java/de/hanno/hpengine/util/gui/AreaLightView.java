@@ -9,8 +9,6 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector4f;
 
@@ -50,7 +48,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-        	engine.getSceneManager().setActiveCamera(LightFactory.getInstance().getCameraForAreaLight(light));
+            engine.getSceneManager().setActiveCamera(Engine.getInstance().getLightFactory().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			engine.getSceneManager().restoreWorldCamera();
@@ -65,7 +63,7 @@ public class AreaLightView extends EntityView {
 	private void addRemoveButton(WebComponentPanel webComponentPanel) {
 		WebButton removeProbeButton = new WebButton("Remove Light");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
                     return Engine.getInstance().getSceneManager().getScene().getAreaLights().remove(light);

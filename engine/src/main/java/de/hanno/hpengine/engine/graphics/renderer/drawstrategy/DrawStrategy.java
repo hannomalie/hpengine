@@ -1,10 +1,10 @@
 package de.hanno.hpengine.engine.graphics.renderer.drawstrategy;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
 import de.hanno.hpengine.engine.model.IndexBuffer;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
@@ -30,7 +30,7 @@ public interface DrawStrategy {
 
 //        if(material.getMaterialType().equals(Material.MaterialType.FOLIAGE))
         {
-            GraphicsContext.getInstance().disable(GlCap.CULL_FACE);
+            Engine.getInstance().getGpuContext().disable(GlCap.CULL_FACE);
         }
 
         if (Config.getInstance().isDrawLines()) {

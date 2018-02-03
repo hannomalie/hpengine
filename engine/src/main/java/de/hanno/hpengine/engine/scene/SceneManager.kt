@@ -13,21 +13,21 @@ class SceneManager {
 
     var scene: Scene = Scene()
         set(value) {
-            Engine.getInstance().physicsFactory.clearWorld()
+            onSetScene(value)
             field = value
-            GraphicsContext.getInstance().execute({
-                StopWatch.getInstance().start("Scene init")
-                Engine.getInstance().renderSystem.vertexIndexBufferStatic.resetAllocations()
-                Engine.getInstance().renderSystem.vertexIndexBufferAnimated.resetAllocations()
-                value.init()
-                StopWatch.getInstance().stopAndPrintMS()
-            }, true)
-            restoreWorldCamera()
-            Engine.getInstance().renderSystem.renderState.addCommand { renderState1 ->
-                renderState1.setVertexIndexBufferStatic(Engine.getInstance().renderSystem.vertexIndexBufferStatic)
-                renderState1.setVertexIndexBufferAnimated(Engine.getInstance().renderSystem.vertexIndexBufferAnimated)
-            }
         }
+
+    private fun onSetScene(value: Scene) {
+        Engine.getInstance().environmentProbeFactory.clearProbes()
+        Engine.getInstance().physicsFactory.clearWorld()
+        Engine.getInstance().renderSystem.resetAllocations()
+        value.init()
+        restoreWorldCamera()
+        Engine.getInstance().renderSystem.renderState.addCommand { renderState1 ->
+            renderState1.setVertexIndexBufferStatic(Engine.getInstance().renderSystem.vertexIndexBufferStatic)
+            renderState1.setVertexIndexBufferAnimated(Engine.getInstance().renderSystem.vertexIndexBufferAnimated)
+        }
+    }
 
 
     init {

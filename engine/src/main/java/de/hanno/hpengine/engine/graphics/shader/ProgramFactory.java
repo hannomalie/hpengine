@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 
@@ -76,7 +75,7 @@ public class ProgramFactory {
         return getComputeProgram(computeShaderLocation, new Defines());
     }
 	public ComputeShaderProgram getComputeProgram(String computeShaderLocation, Defines defines) {
-        return GraphicsContext.getInstance().calculate(() -> {
+        return Engine.getInstance().getGpuContext().calculate(() -> {
             ComputeShaderProgram program = new ComputeShaderProgram(getShaderSource(new File(Shader.getDirectory() + computeShaderLocation)), defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);
@@ -88,7 +87,7 @@ public class ProgramFactory {
 		return getProgram(vertexShaderSource, null, fragmentShaderSource, defines);
 	}
 	public Program getProgram(CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource, Defines defines) {
-		return GraphicsContext.getInstance().calculate(() -> {
+        return Engine.getInstance().getGpuContext().calculate(() -> {
             Program program = new Program(vertexShaderSource, geometryShaderSource, fragmentShaderSource, defines);
             LOADED_PROGRAMS.add(program);
             Engine.getEventBus().register(program);

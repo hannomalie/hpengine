@@ -15,7 +15,6 @@ import com.alee.managers.notification.NotificationManager;
 import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.MaterialChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.command.GetMaterialCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.InitMaterialCommand.MaterialResult;
@@ -63,7 +62,7 @@ public class MaterialView extends WebPanel {
         	Material toSave = null;
         	if(!nameField.getText().equals(material.getMaterialInfo().name)) {
         		MaterialInfo newInfo = new MaterialInfo(material.getMaterialInfo()).setName(nameField.getText());
-                CompletableFuture<MaterialResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<MaterialResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public MaterialResult execute() throws Exception {
 						return new GetMaterialCommand(newInfo).execute(Engine.getInstance());
@@ -392,7 +391,7 @@ public class MaterialView extends WebPanel {
 	}
 	
 	private void addMaterialInitCommand(Material material) {
-        CompletableFuture<MaterialResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+        CompletableFuture<MaterialResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
             @Override
             public MaterialResult execute() throws Exception {
 				return new InitMaterialCommand(material).execute(Engine.getInstance());

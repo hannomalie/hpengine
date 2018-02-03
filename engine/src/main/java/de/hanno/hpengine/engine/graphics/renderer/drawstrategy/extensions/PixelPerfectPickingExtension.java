@@ -6,7 +6,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.input.Input;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.EntitySelectedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import org.lwjgl.BufferUtils;
@@ -30,11 +29,11 @@ public class PixelPerfectPickingExtension implements RenderExtension {
 
         Engine engine = Engine.getInstance();
         if (Input.PICKING_CLICK == 1) {
-            GraphicsContext.getInstance().readBuffer(4);
+            Engine.getInstance().getGpuContext().readBuffer(4);
 
             floatBuffer.rewind();
-            Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) GraphicsContext.getInstance().getCanvasWidth(),
-                    (float) Config.getInstance().getHeight() / (float) GraphicsContext.getInstance().getCanvasHeight());
+            Vector2f ratio = new Vector2f((float) Config.getInstance().getWidth() / (float) Engine.getInstance().getGpuContext().getCanvasWidth(),
+                    (float) Config.getInstance().getHeight() / (float) Engine.getInstance().getGpuContext().getCanvasHeight());
             int adjustedX = (int) (Input.getMouseX() * ratio.x);
             int adjustedY = (int) (Input.getMouseY() * ratio.y);
             GL11.glReadPixels(adjustedX, adjustedY, 1, 1, GL11.GL_RGBA, GL11.GL_FLOAT, floatBuffer);

@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.model.material;
 
 import de.hanno.hpengine.engine.DirectoryManager;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.texture.Texture;
 import org.apache.commons.io.FilenameUtils;
@@ -142,7 +141,7 @@ public class Material implements Serializable, Bufferable {
 	public void setTexturesInactive() {
 		for (Map.Entry<MAP, Texture> entry : materialInfo.maps.getTextures().entrySet()) {
 			MAP map = entry.getKey();
-            GraphicsContext.getInstance().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
+            Engine.getInstance().getGpuContext().bindTexture(map.textureSlot, GlTextureTarget.TEXTURE_2D, 0);
 		}
 		
 	}

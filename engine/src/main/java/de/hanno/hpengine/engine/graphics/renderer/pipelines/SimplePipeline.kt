@@ -1,6 +1,7 @@
 package de.hanno.hpengine.engine.graphics.renderer.pipelines
 
 import com.carrotsearch.hppc.IntArrayList
+import de.hanno.hpengine.engine.Engine
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.graphics.renderer.*
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlCap
@@ -104,11 +105,11 @@ open class SimplePipeline(private val useFrustumCulling: Boolean = true,
         val indexBuffer = vertexIndexBuffer.indexBuffer
         val vertexBuffer = vertexIndexBuffer.vertexBuffer
         if (Config.getInstance().isDrawLines && useLineDrawingIfActivated) {
-            GraphicsContext.getInstance().disable(GlCap.CULL_FACE)
+            Engine.getInstance().gpuContext.disable(GlCap.CULL_FACE)
             VertexBuffer.drawLinesInstancedIndirectBaseVertex(vertexBuffer, indexBuffer, commandBuffer, commandCount)
         } else {
             if (useBackfaceCulling) {
-                GraphicsContext.getInstance().enable(GlCap.CULL_FACE)
+                Engine.getInstance().gpuContext.enable(GlCap.CULL_FACE)
             }
             VertexBuffer.multiDrawElementsIndirect(vertexBuffer, indexBuffer, commandBuffer, commandCount)
         }

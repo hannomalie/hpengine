@@ -1,5 +1,6 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,11 +24,11 @@ public class TestWithOpenGLContext {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(false);
         GraphicsContext.initGpuContext();
-        GraphicsContext.getInstance();
+        Engine.getInstance().getGpuContext();
     }
 
     @AfterClass
     public static void destroy() {
-        GraphicsContext.getInstance().destroy();
+        Engine.getInstance().getGpuContext().destroy();
     }
 }

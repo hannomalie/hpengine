@@ -4,7 +4,6 @@ import com.carrotsearch.hppc.IntArrayList;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.event.ClickEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -129,14 +128,14 @@ public class Input {
         dyLast = dy;
         mouseXLast[0] = mouseX[0];
         mouseYLast[0] = mouseY[0];
-        glfwGetCursorPos(GraphicsContext.getInstance().getWindowHandle(), mouseX, mouseY);
+        glfwGetCursorPos(Engine.getInstance().getGpuContext().getWindowHandle(), mouseX, mouseY);
         dx = (int) -(mouseXLast[0] - mouseX[0]);
         dy = (int) (mouseYLast[0] - mouseY[0]);
     }
 
 
     private static boolean isKeyDown(int keyCode) {
-        return glfwGetKey(GraphicsContext.getInstance().getWindowHandle(), keyCode) == GLFW_PRESS;
+        return glfwGetKey(Engine.getInstance().getGpuContext().getWindowHandle(), keyCode) == GLFW_PRESS;
     }
 
     public static boolean isKeyPressed(int keyCode) {
@@ -149,7 +148,7 @@ public class Input {
 
 
     private static boolean isMouseDown(int buttonCode) {
-        return glfwGetMouseButton(GraphicsContext.getInstance().getWindowHandle(), buttonCode) == GLFW_PRESS;
+        return glfwGetMouseButton(Engine.getInstance().getGpuContext().getWindowHandle(), buttonCode) == GLFW_PRESS;
     }
 
     public static boolean isMouseClicked(int buttonCode) {

@@ -9,6 +9,7 @@ import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
 import de.hanno.hpengine.engine.graphics.RenderSystem
+import de.hanno.hpengine.engine.graphics.light.LightFactory
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
 import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
@@ -16,6 +17,7 @@ import de.hanno.hpengine.engine.model.EntityFactory
 import de.hanno.hpengine.engine.model.material.MaterialFactory
 import de.hanno.hpengine.engine.model.texture.TextureFactory
 import de.hanno.hpengine.engine.physics.PhysicsFactory
+import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -31,12 +33,9 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
 
-class Engine private constructor(val gameDirName: String) : PerFrameCommandProvider {
+class Engine private constructor(gameDirName: String) : PerFrameCommandProvider {
 
-    init {
-        GraphicsContext.initGpuContext()
-    }
-
+    val gpuContext = GraphicsContext.initGpuContext()
     val updateThread: UpdateThread = UpdateThread("Update", MILLISECONDS.toSeconds(8).toFloat())
     private val drawCounter = AtomicInteger(-1)
     private val commandQueue = CommandQueue()
@@ -44,6 +43,8 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
     val entityFactory = EntityFactory()
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
     val renderSystem by lazy { RenderSystem() }
+    val environmentProbeFactory by lazy { EnvironmentProbeFactory()}
+    val lightFactory by lazy { LightFactory() }
     val sceneManager = SceneManager()
     val scriptManager by lazy { ScriptManager().apply { defineGlobals(this@Engine) } }
     val physicsFactory by lazy { PhysicsFactory() }
@@ -59,7 +60,7 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
 
     private fun initialize() {
         eventBus.register(this)
-        GraphicsContext.getInstance().registerPerFrameCommand(this)
+        gpuContext.registerPerFrameCommand(this)
 
         renderer.registerPipelines(renderSystem.renderState)
         _instance.startSimulation()
@@ -97,7 +98,7 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
             renderSystem.renderState.requestSingletonAction(0)
         }
 
-        if (GraphicsContext.getInstance().isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
+        if (gpuContext.isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
             renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene!!.directionalLightMovedInCycle(), scene!!.pointLightMovedInCycle(), scene!!.isInitiallyDrawn, scene!!.minMax[0], scene!!.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
             scene.addRenderBatches(sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
@@ -151,7 +152,7 @@ class Engine private constructor(val gameDirName: String) : PerFrameCommandProvi
     }
 
     private fun destroyOpenGL() {
-        GraphicsContext.getInstance().drawThread.stopRequested = true
+        gpuContext.drawThread.stopRequested = true
     }
 
     fun destroy() {

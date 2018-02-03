@@ -2,7 +2,6 @@ package de.hanno.hpengine.engine.graphics.renderer.drawstrategy.extensions;
 
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.RenderBatch;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
@@ -59,9 +58,9 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     }
 
     private void drawShadowMap(RenderState renderState, FirstPassResult firstPassResult) {
-        GraphicsContext.getInstance().depthMask(true);
-        GraphicsContext.getInstance().enable(DEPTH_TEST);
-        GraphicsContext.getInstance().disable(CULL_FACE);
+        Engine.getInstance().getGpuContext().depthMask(true);
+        Engine.getInstance().getGpuContext().enable(DEPTH_TEST);
+        Engine.getInstance().getGpuContext().disable(CULL_FACE);
 
         // TODO: Better instance culling
         List<RenderBatch> visibles = renderState.getRenderBatchesStatic();

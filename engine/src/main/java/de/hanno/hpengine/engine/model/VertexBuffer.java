@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.buffer.PersistentMappedBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.AtomicCounterBuffer;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.apache.commons.lang.NotImplementedException;
@@ -66,7 +66,7 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
 
     private void setInternals(float[] values, EnumSet<DataChannels> channels) {
         this.channels = channels;
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             bind();
             setVertexArrayObject(VertexArrayObject.getForChannels(channels));
         });
@@ -151,7 +151,7 @@ public class VertexBuffer<T extends Bufferable> extends PersistentMappedBuffer<T
     public CompletableFuture<VertexBuffer> upload() {
         VertexBuffer self = this;
         buffer.rewind();
-        return GraphicsContext.getInstance().execute(new FutureCallable<VertexBuffer>() {
+        return Engine.getInstance().getGpuContext().execute(new FutureCallable<VertexBuffer>() {
             @Override
             public VertexBuffer execute() throws Exception {
                 bind();

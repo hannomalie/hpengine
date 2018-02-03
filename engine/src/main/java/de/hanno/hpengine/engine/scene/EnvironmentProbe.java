@@ -3,7 +3,6 @@ package de.hanno.hpengine.engine.scene;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.graphics.renderer.Renderer;
@@ -73,12 +72,12 @@ public class EnvironmentProbe extends Entity {
 	public void move(Vector3f amount) {
 		super.translate(amount);
 		resetAllProbes();
-		EnvironmentProbeFactory.getInstance().updateBuffers();
+        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
 		box.move(amount);
 	}
 	
 	private void resetAllProbes() {
-        EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
+        Engine.getInstance().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}
@@ -120,12 +119,12 @@ public class EnvironmentProbe extends Entity {
 	public void setSize(float size) {
 		resetAllProbes();
 		box.setSize(size);
-		EnvironmentProbeFactory.getInstance().updateBuffers();
+        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
 		resetAllProbes();
 		box.setSize(sizeX, sizeY, sizeZ);
-		EnvironmentProbeFactory.getInstance().updateBuffers();
+        Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
 	}
 
 	public Vector3f getSize() {
@@ -138,15 +137,15 @@ public class EnvironmentProbe extends Entity {
 
 	public int getTextureUnitIndex() {
 		int index = getIndex();
-		return GraphicsContext.getInstance().getMaxTextureUnits() - index - 1;
+        return Engine.getInstance().getGpuContext().getMaxTextureUnits() - index - 1;
 	}
 
 	public int getIndex() {
-		return EnvironmentProbeFactory.getInstance().getProbes().indexOf(this);
+        return Engine.getInstance().getEnvironmentProbeFactory().getProbes().indexOf(this);
 	}
 
 	public Vector3f getDebugColor() {
-		float colorHelper = (float)getIndex()/(float)EnvironmentProbeFactory.getInstance().getProbes().size();
+        float colorHelper = (float)getIndex()/(float) Engine.getInstance().getEnvironmentProbeFactory().getProbes().size();
 		Random randomGenerator = new Random();
 		randomGenerator.setSeed((long)colorHelper);
 		float random = randomGenerator.nextFloat();

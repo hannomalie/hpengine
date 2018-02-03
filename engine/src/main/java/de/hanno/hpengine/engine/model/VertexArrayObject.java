@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model;
 
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.Engine;
 import org.lwjgl.opengl.*;
 
 import java.util.*;
@@ -18,17 +18,17 @@ public class VertexArrayObject {
 
     private VertexArrayObject(EnumSet<DataChannels> channels) {
         this.channels = channels.clone();
-        GraphicsContext.getInstance().execute(() -> setId(GL30.glGenVertexArrays()));
+        Engine.getInstance().getGpuContext().execute(() -> setId(GL30.glGenVertexArrays()));
         setUpAttributes();
     }
 
     private void unbind() {
-        GraphicsContext.getInstance().execute(() -> GL30.glBindVertexArray(0));
+        Engine.getInstance().getGpuContext().execute(() -> GL30.glBindVertexArray(0));
     }
 
     public void bind() {
 //        if(CURRENTLY_BOUND_VAO == id) { return; }
-        GraphicsContext.getInstance().execute(bindRunnable);
+        Engine.getInstance().getGpuContext().execute(bindRunnable);
     }
 
     private Runnable bindRunnable = () -> {
@@ -40,7 +40,7 @@ public class VertexArrayObject {
 
     private void setUpAttributes() {
         if(attributesSetUp) { return; }
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             bind();
             int currentOffset = 0;
             for (DataChannels channel : channels) {

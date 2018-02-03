@@ -35,7 +35,7 @@ public class DrawLinesExtension implements RenderExtension {
 
         if(Config.getInstance().isDrawBoundingVolumes() || Config.getInstance().isDrawCameras()) {
 
-            GraphicsContext context = GraphicsContext.getInstance();
+            GraphicsContext context = Engine.getInstance().getGpuContext();
             context.disable(CULL_FACE);
             context.depthMask(false);
 

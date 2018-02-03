@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import de.hanno.hpengine.engine.DirectoryManager;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
-import de.hanno.hpengine.engine.graphics.shader.define.Define;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import de.hanno.hpengine.util.ressources.CodeSource;
 import org.apache.commons.io.FileUtils;
@@ -13,8 +13,6 @@ import de.hanno.hpengine.util.ressources.Reloadable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,7 +74,7 @@ public interface Shader extends Reloadable {
         final int[] shaderID = new int[1];
         final SHADERTYPE finalShader1 = shader;
         final String finalResultingShaderSource = resultingShaderSource;
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             shaderID[0] = GL20.glCreateShader(finalShader.getShaderType().glShaderType);
             finalShader1.setId(shaderID[0]);
             GL20.glShaderSource(shaderID[0], finalResultingShaderSource);
@@ -87,7 +85,7 @@ public interface Shader extends Reloadable {
 
         final boolean[] shaderLoadFailed = new boolean[1];
         final int finalNewlineCount = newlineCount;
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             if (GL20.glGetShaderi(shaderID[0], GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 System.err.println("Could not compile " + type.getSimpleName() + ": " + shaderSource.getFilename());
                 String shaderInfoLog = GL20.glGetShaderInfoLog(shaderID[0], 10000);

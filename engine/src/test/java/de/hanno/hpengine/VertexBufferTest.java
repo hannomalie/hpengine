@@ -1,11 +1,11 @@
 package de.hanno.hpengine;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.component.ModelComponent;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.VertexBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.junit.Assert;
@@ -17,7 +17,6 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import javax.xml.bind.util.ValidationEventCollector;
 import java.nio.ByteBuffer;
 import java.util.EnumSet;
 
@@ -188,7 +187,7 @@ public class VertexBufferTest extends TestWithEngine {
     public void benchmarkVAOAndVBB() {
         int count = 100000000;
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             int vbo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, BufferUtils.createFloatBuffer(30), VertexBuffer.Usage.STATIC.getValue());
@@ -209,7 +208,7 @@ public class VertexBufferTest extends TestWithEngine {
             System.out.println(GLTimerQuery.getInstance().getResult());
         });
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
             buffer.upload();
 
@@ -221,7 +220,7 @@ public class VertexBufferTest extends TestWithEngine {
             System.out.println("VB bind" + GLTimerQuery.getInstance().getResult());
         });
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             VertexBuffer buffer = new VertexBuffer(BufferUtils.createFloatBuffer(30), ModelComponent.POSITIONCHANNEL);
             buffer.upload();
 

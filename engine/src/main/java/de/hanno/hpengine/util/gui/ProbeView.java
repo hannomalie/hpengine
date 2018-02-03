@@ -15,12 +15,10 @@ import com.alee.managers.notification.WebNotificationPopup;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.event.ProbesChangedEvent;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 import org.joml.Vector3f;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe.Update;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.util.gui.input.MovablePanel;
 import de.hanno.hpengine.util.gui.input.SliderInput;
 import de.hanno.hpengine.util.gui.input.WebFormattedVec3Field;
@@ -65,10 +63,10 @@ public class ProbeView extends WebPanel {
 
         WebButton removeProbeButton = new WebButton("Remove Probe");
 		removeProbeButton.addActionListener(e -> {
-			CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
-                    return EnvironmentProbeFactory.getInstance().remove(probe);
+                    return Engine.getInstance().getEnvironmentProbeFactory().remove(probe);
                 }
             });
     		
@@ -107,8 +105,8 @@ public class ProbeView extends WebPanel {
         webComponentPanel.addElement(new SliderInput("Weight", WebSlider.HORIZONTAL, 0, 100, (int) (100*probe.getWeight())) {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
-                GraphicsContext.getInstance().execute(() -> {
-					EnvironmentProbeFactory.getInstance().updateBuffers();
+                Engine.getInstance().getGpuContext().execute(() -> {
+                    Engine.getInstance().getEnvironmentProbeFactory().updateBuffers();
 				});
 			}
 		});

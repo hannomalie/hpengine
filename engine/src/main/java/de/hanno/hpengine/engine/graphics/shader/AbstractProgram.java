@@ -1,9 +1,9 @@
 package de.hanno.hpengine.engine.graphics.shader;
 
 import com.google.common.eventbus.Subscribe;
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.GlobalDefineChangedEvent;
 import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.shader.define.Defines;
 import net.engio.mbassy.listener.Handler;
 import org.joml.Vector3f;
@@ -23,9 +23,9 @@ public abstract class AbstractProgram {
 
     protected HashMap<String, Uniform> uniforms = new HashMap<>();
     protected Defines defines = new Defines();
-	protected final int id = GraphicsContext.getInstance().createProgramId();
+	protected final int id = Engine.getInstance().getGpuContext().createProgramId();
 
-	public AbstractProgram() { }
+    public AbstractProgram() { }
 	
 	public void use() {
 		GL20.glUseProgram(getId());

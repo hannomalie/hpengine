@@ -31,10 +31,8 @@ import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.container.Octree;
 import de.hanno.hpengine.engine.event.*;
 import de.hanno.hpengine.engine.graphics.light.AreaLight;
-import de.hanno.hpengine.engine.graphics.light.LightFactory;
 import de.hanno.hpengine.engine.graphics.light.PointLight;
 import de.hanno.hpengine.engine.graphics.light.TubeLight;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddCubeMapCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand;
 import de.hanno.hpengine.engine.graphics.renderer.command.AddTextureCommand.TextureResult;
@@ -46,7 +44,6 @@ import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.Environment
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
 import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
 import de.hanno.hpengine.util.TestSceneUtil;
@@ -381,12 +378,12 @@ public class DebugFrame implements HostComponent {
                 new SwingWorkerWithProgress<Result>(this, "Adding Probe...", "Failed to add probe") {
 					@Override
 					public Result doInBackground() throws Exception {
-                        CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                        CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                             @Override
                             public Result execute() throws Exception {
                                 Engine engine = Engine.getInstance();
                                 // TODO: Remove this f***
-                                EnvironmentProbe probe = EnvironmentProbeFactory.getInstance().getProbe(new Vector3f(), 50);
+                                EnvironmentProbe probe = Engine.getInstance().getEnvironmentProbeFactory().getProbe(new Vector3f(), 50);
                                 Engine.getInstance().getRenderer().addRenderProbeCommand(probe, true);
                                 return new Result(true);
                             }
@@ -409,10 +406,10 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add PointLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        Engine.getInstance().getSceneManager().getScene().addPointLight(LightFactory.getInstance().getPointLight(50));
+                        Engine.getInstance().getSceneManager().getScene().addPointLight(Engine.getInstance().getLightFactory().getPointLight(50));
                         return new Result(true);
                     }
                 });
@@ -438,10 +435,10 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add TubeLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result<Boolean>> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<Result<Boolean>> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        Engine.getInstance().getSceneManager().getScene().addTubeLight(LightFactory.getInstance().getTubeLight());
+                        Engine.getInstance().getSceneManager().getScene().addTubeLight(Engine.getInstance().getLightFactory().getTubeLight());
                         return new Result(true);
                     }
                 });
@@ -467,10 +464,10 @@ public class DebugFrame implements HostComponent {
         {
         	WebMenuItem lightAddMenuItem = new WebMenuItem ( "Add AreaLight" );
         	lightAddMenuItem.addActionListener(e -> {
-                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        Engine.getInstance().getSceneManager().getScene().getAreaLights().add(LightFactory.getInstance().getAreaLight(50, 50, 20));
+                        Engine.getInstance().getSceneManager().getScene().getAreaLights().add(Engine.getInstance().getLightFactory().getAreaLight(50, 50, 20));
                         return new Result(true);
                     }
                 });
@@ -516,7 +513,7 @@ public class DebugFrame implements HostComponent {
 
         WebMenuItem resetProfiling = new WebMenuItem("Reset Profiling");
         resetProfiling.addActionListener(e -> {
-            CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Result execute() throws Exception {
                     GPUProfiler.reset();
@@ -556,7 +553,7 @@ public class DebugFrame implements HostComponent {
     			choser.setFileFilter(new FileNameExtensionFilter("Materials", "hpmaterial"));
     		});
     		if(chosenFile != null) {
-                CompletableFuture<Result> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                CompletableFuture<Result> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
                         Engine.getInstance().getMaterialFactory().getMaterial(chosenFile.getName());
@@ -587,7 +584,7 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    CompletableFuture<TextureResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                         @Override
                         public TextureResult execute() throws Exception {
                             return new AddTextureCommand(chosenFile.getPath()).execute(Engine.getInstance());
@@ -617,7 +614,7 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    CompletableFuture<TextureResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                         @Override
                         public TextureResult execute() throws Exception {
                             return new AddTextureCommand(chosenFile.getPath(), true).execute(Engine.getInstance());
@@ -649,7 +646,7 @@ public class DebugFrame implements HostComponent {
 				Customizer<WebFileChooser> customizer = arg0 -> {};
 				File chosenFile = WebFileChooser.showOpenDialog("./hp/assets/models/textures", customizer);
 	    		if(chosenFile != null) {
-                    CompletableFuture<TextureResult> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+                    CompletableFuture<TextureResult> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                         @Override
                         public TextureResult execute() throws Exception {
                             return new AddCubeMapCommand(chosenFile.getPath()).execute(Engine.getInstance());
@@ -759,7 +756,7 @@ public class DebugFrame implements HostComponent {
 
 		toggleProfiler.addActionListener( e -> {
 
-			Boolean result = GraphicsContext.getInstance().calculate(() -> {
+            Boolean result = Engine.getInstance().getGpuContext().calculate(() -> {
 				GPUProfiler.PROFILING_ENABLED = !GPUProfiler.PROFILING_ENABLED;
 				return true;
 			});
@@ -776,7 +773,7 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleProfilerPrint.addActionListener( e -> {
 
-            CompletableFuture<Boolean> future = GraphicsContext.getInstance().execute(new FutureCallable() {
+            CompletableFuture<Boolean> future = Engine.getInstance().getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
                     GPUProfiler.PRINTING_ENABLED = !GPUProfiler.PRINTING_ENABLED;
@@ -816,7 +813,7 @@ public class DebugFrame implements HostComponent {
 		/////////////////////
 		
 		dumpAverages.addActionListener(e -> {
-            GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
                 GPUProfiler.DUMP_AVERAGES = ! GPUProfiler.DUMP_AVERAGES;
 			});
 		});
@@ -860,7 +857,7 @@ public class DebugFrame implements HostComponent {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-			EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
+            Engine.getInstance().getEnvironmentProbeFactory().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});
@@ -910,7 +907,7 @@ public class DebugFrame implements HostComponent {
 		});
 		toggleVSync.addActionListener(e -> {
 			Config.getInstance().setVsync(!Config.getInstance().isVsync());
-			GraphicsContext.getInstance().execute(() -> {
+            Engine.getInstance().getGpuContext().execute(() -> {
 				if(Config.getInstance().isVsync()) {
 					glfwSwapInterval(1);
 				} else {

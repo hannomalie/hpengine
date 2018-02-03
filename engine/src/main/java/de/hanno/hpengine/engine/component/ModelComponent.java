@@ -4,7 +4,6 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import de.hanno.hpengine.engine.model.DataChannels;
 import de.hanno.hpengine.engine.model.Entity;
 import de.hanno.hpengine.engine.model.Mesh;
@@ -135,7 +134,7 @@ public class ModelComponent extends BaseComponent implements Serializable {
             currentVertexOffset += mesh.getVertexBufferValuesArray().length/elementsPerVertex;
         }
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             vertexIndexBuffer.getVertexBuffer().put(vertexIndexOffsets.vertexOffset, compiledVertices);
             vertexIndexBuffer.getIndexBuffer().appendIndices(vertexIndexOffsets.indexOffset, getIndices());
 

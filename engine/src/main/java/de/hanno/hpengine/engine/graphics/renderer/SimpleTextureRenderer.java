@@ -11,14 +11,11 @@ import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.util.fps.FPSCounter;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory;
 import de.hanno.hpengine.engine.graphics.shader.Program;
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory;
 import de.hanno.hpengine.engine.graphics.shader.Shader;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
 import de.hanno.hpengine.util.stopwatch.GPUProfiler;
 import de.hanno.hpengine.util.stopwatch.OpenGLStopWatch;
 import de.hanno.hpengine.util.stopwatch.ProfilingTask;
@@ -71,9 +68,6 @@ public class SimpleTextureRenderer implements Renderer {
                 System.exit(-1);
             }
 
-            LightFactory.init();
-            EnvironmentProbeFactory.init();
-
             initialized = true;
         }
 	}
@@ -98,8 +92,8 @@ public class SimpleTextureRenderer implements Renderer {
     private void setUpGBuffer() {
         GraphicsContext.exitOnGLError("Before setupGBuffer");
 
-        GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        Engine.getInstance().getGpuContext().execute(() -> {
+            Engine.getInstance().getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			GraphicsContext.exitOnGLError("setupGBuffer");
 		});
@@ -124,7 +118,7 @@ public class SimpleTextureRenderer implements Renderer {
 
         GPUProfiler.start("Waiting for driver");
 		glfwPollEvents();
-		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
+        glfwSwapBuffers(Engine.getInstance().getGpuContext().getWindowHandle());
         GPUProfiler.end();
 	}
 
@@ -150,11 +144,11 @@ public class SimpleTextureRenderer implements Renderer {
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
 
-        GraphicsContext.getInstance().bindFrameBuffer(0);
-        GraphicsContext.getInstance().viewPort(0,0, GraphicsContext.getInstance().getCanvasWidth(), GraphicsContext.getInstance().getCanvasHeight());
-        GraphicsContext.getInstance().disable(GlCap.DEPTH_TEST);
+        Engine.getInstance().getGpuContext().bindFrameBuffer(0);
+        Engine.getInstance().getGpuContext().viewPort(0,0, Engine.getInstance().getGpuContext().getCanvasWidth(), Engine.getInstance().getGpuContext().getCanvasHeight());
+        Engine.getInstance().getGpuContext().disable(GlCap.DEPTH_TEST);
 
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
 
 		buffer.draw();
 	}

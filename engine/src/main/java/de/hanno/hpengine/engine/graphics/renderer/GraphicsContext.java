@@ -1,7 +1,9 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
+import de.hanno.hpengine.engine.graphics.buffer.GPUBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.constants.*;
 import de.hanno.hpengine.engine.graphics.state.RenderState;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -43,14 +45,7 @@ public interface GraphicsContext {
         static volatile GraphicsContext instance;
     }
 
-    static GraphicsContext getInstance() {
-        if(GPUContextHelper.instance == null || !GPUContextHelper.instance.isInitialized()) {
-            throw new IllegalStateException("GraphicsContext context not initialized. Init an GraphicsContext first.");
-        }
-        return GPUContextHelper.instance;
-    }
-
-    static void initGpuContext() {
+    static GraphicsContext initGpuContext() {
         Class<? extends GraphicsContext> gpuContextClass = Config.getInstance().getGpuContextClass();
         synchronized(gpuContextClass) {
             if(GPUContextHelper.instance == null) {
@@ -66,6 +61,7 @@ public interface GraphicsContext {
                 }
             }
         }
+        return GPUContextHelper.instance;
     }
 
     static void exitOnGLError(String errorMessage) {

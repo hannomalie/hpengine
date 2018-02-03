@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.Engine;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
 
@@ -25,7 +25,7 @@ public class CubeMapArray {
 	 */
 	public CubeMapArray(int textureCount, int magTextureFilter, int internalFormat, int resolution) {
         this.resolution = resolution;
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
 			textureId = GL11.glGenTextures();
 			bind();
 
@@ -61,17 +61,17 @@ public class CubeMapArray {
 	}
 
 	public void bind() {
-        GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+        Engine.getInstance().getGpuContext().bindTexture(GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 
 	public void bind(int unit) {
-        GraphicsContext.getInstance().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
+        Engine.getInstance().getGpuContext().bindTexture(unit, GlTextureTarget.TEXTURE_CUBE_MAP_ARRAY, textureId);
 	}
 	public void bind(int layer, int unit) {
 		bind(layer, unit, 0);
 	}
 	public void bind(int layer, int unit, int level) {
-        GraphicsContext.getInstance().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
+        Engine.getInstance().getGpuContext().bindImageTexture(unit, textureId, level, false, layer, GL15.GL_READ_WRITE, internalFormat);
 	}
 
 	public int getTextureID() {

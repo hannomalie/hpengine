@@ -1,7 +1,6 @@
 package de.hanno.hpengine.engine.model.texture;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -119,6 +118,6 @@ public class CubeMap extends Texture implements Serializable {
 	}
 
 	public void bind(int unit) {
-        GraphicsContext.getInstance().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
+		Engine.getInstance().getGpuContext().bindTexture(unit, TEXTURE_CUBE_MAP, textureID);
 	}
 }

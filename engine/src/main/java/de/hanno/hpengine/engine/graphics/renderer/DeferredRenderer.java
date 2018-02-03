@@ -54,7 +54,7 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void init() {
-    	if(!(GraphicsContext.getInstance() instanceof OpenGLContext)) {
+        if(!(Engine.getInstance().getGpuContext() instanceof OpenGLContext)) {
     		throw new IllegalStateException("Cannot use this DeferredRenderer with a non-OpenGlContext!");
 		}
 
@@ -72,8 +72,6 @@ public class DeferredRenderer implements Renderer {
                 System.err.println("Cannot init DeferredRenderer");
                 System.exit(-1);
             }
-            LightFactory.init();
-            EnvironmentProbeFactory.init();
             gBuffer.init();
 
             float[] points = {0f, 0f, 0f, 0f};
@@ -102,10 +100,10 @@ public class DeferredRenderer implements Renderer {
     private void setUpGBuffer() {
 		GraphicsContext.exitOnGLError("Before setupGBuffer");
 
-		gBuffer = GraphicsContext.getInstance().calculate(() -> new GBuffer());
+        gBuffer = Engine.getInstance().getGpuContext().calculate(() -> new GBuffer());
 
-        GraphicsContext.getInstance().execute(() -> {
-            GraphicsContext.getInstance().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
+        Engine.getInstance().getGpuContext().execute(() -> {
+            Engine.getInstance().getGpuContext().enable(GlCap.TEXTURE_CUBE_MAP_SEAMLESS);
 
 			GraphicsContext.exitOnGLError("setupGBuffer");
 		});
@@ -159,14 +157,14 @@ public class DeferredRenderer implements Renderer {
 		}
 
 		GPUProfiler.start("Create new fence");
-		GraphicsContext.getInstance().createNewGPUFenceForReadState(renderState);
+        Engine.getInstance().getGpuContext().createNewGPUFenceForReadState(renderState);
 		GPUProfiler.end();
 		GPUProfiler.start("Waiting for driver");
 		GPUProfiler.start("Poll events");
 		glfwPollEvents();
 		GPUProfiler.end();
 		GPUProfiler.start("Swap buffers");
-		glfwSwapBuffers(GraphicsContext.getInstance().getWindowHandle());
+        glfwSwapBuffers(Engine.getInstance().getGpuContext().getWindowHandle());
 		GPUProfiler.end();
 		GPUProfiler.end();
 		GPUProfiler.end();
@@ -183,10 +181,10 @@ public class DeferredRenderer implements Renderer {
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {
 		program.use();
-        GraphicsContext.getInstance().disable(GlCap.DEPTH_TEST);
+        Engine.getInstance().getGpuContext().disable(GlCap.DEPTH_TEST);
 
-        GraphicsContext.getInstance().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
-        GraphicsContext.getInstance().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
+        Engine.getInstance().getGpuContext().bindTexture(0, GlTextureTarget.TEXTURE_2D, texture);
+        Engine.getInstance().getGpuContext().bindTexture(1, GlTextureTarget.TEXTURE_2D, gBuffer.getNormalMap());
 
 		buffer.draw();
 	}

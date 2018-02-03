@@ -1,5 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer;
 
+import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.PerFrameCommandProvider;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.graphics.query.GLTimerQuery;
@@ -91,7 +92,7 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public boolean isSignaled(long gpuCommandSync) {
-        return GraphicsContext.getInstance().calculate(() -> {
+        return Engine.getInstance().getGpuContext().calculate(() -> {
             if(gpuCommandSync > 0) {
                 int signaled = glClientWaitSync(gpuCommandSync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
                 if(signaled == GL_ALREADY_SIGNALED || signaled == GL_CONDITION_SATISFIED ) {
@@ -119,7 +120,7 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public boolean isError() {
-        return GraphicsContext.getInstance().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
+        return Engine.getInstance().getGpuContext().calculate(() -> GL11.glGetError() != GL11.GL_NO_ERROR);
     }
 
     private final void privateInit() throws LWJGLException {
@@ -220,7 +221,7 @@ public final class OpenGLContext implements GraphicsContext {
     private HashMap<Integer, Integer> textureBindings = new HashMap<>();
     @Override
     public void bindTexture(GlTextureTarget target, int textureId) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             GL11.glBindTexture(target.glTarget, textureId);
             textureBindings.put(getCleanedTextureUnitValue(activeTexture), textureId);
         });
@@ -234,7 +235,7 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public void bindTexture(int textureUnitIndex, GlTextureTarget target, int textureId) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
         // TODO: Use when no bypassing calls to bindtexture any more
 //        if(!textureBindings.containsKey(textureUnitIndex) ||
 //           (textureBindings.containsKey(textureUnitIndex) && textureId != textureBindings.get(textureUnitIndex))) {
@@ -246,19 +247,19 @@ public final class OpenGLContext implements GraphicsContext {
 
     @Override
     public void bindTextures(IntBuffer textureIds) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int count, IntBuffer textureIds) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             GL44.glBindTextures(0, textureIds);
         });
     }
     @Override
     public void bindTextures(int firstUnit, int count, IntBuffer textureIds) {
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             GL44.glBindTextures(firstUnit, textureIds);
         });
     }

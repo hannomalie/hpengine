@@ -1,6 +1,6 @@
 package de.hanno.hpengine.engine.graphics.renderer.rendertarget;
 
-import de.hanno.hpengine.engine.graphics.renderer.GraphicsContext;
+import de.hanno.hpengine.engine.Engine;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.*;
 import de.hanno.hpengine.engine.graphics.renderer.constants.GlTextureTarget;
@@ -13,7 +13,6 @@ import java.nio.IntBuffer;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static org.lwjgl.opengl.GL11.GL_RGBA16;
 import static org.lwjgl.opengl.GL11.GL_RGBA8;
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL14.GL_DEPTH_COMPONENT24;
@@ -28,11 +27,11 @@ public class RenderTarget {
     private static final RenderTarget frontBuffer = new RenderTarget() {
         @Override
         public int getWidth() {
-            return GraphicsContext.getInstance().getCanvasWidth();
+            return Engine.getInstance().getGpuContext().getCanvasWidth();
         }
         @Override
         public int getHeight() {
-            return GraphicsContext.getInstance().getCanvasHeight();
+            return Engine.getInstance().getGpuContext().getCanvasHeight();
         }
         @Override
         public void use(boolean clear) {
@@ -64,7 +63,7 @@ public class RenderTarget {
 
     public RenderTarget(RenderTargetBuilder renderTargetBuilder) {
 
-        GraphicsContext.getInstance().execute(() -> {
+        Engine.getInstance().getGpuContext().execute(() -> {
             width = renderTargetBuilder.width;
             height = renderTargetBuilder.height;
             colorAttachments = renderTargetBuilder.colorAttachments;
@@ -73,7 +72,7 @@ public class RenderTarget {
             renderedTextures = new int[colorAttachments.size()];
             framebufferLocation = GL30.glGenFramebuffers();
 
-            GraphicsContext.getInstance().bindFrameBuffer(framebufferLocation);
+            Engine.getInstance().getGpuContext().bindFrameBuffer(framebufferLocation);
 
             scratchBuffer = BufferUtils.createIntBuffer(colorAttachments.size());
 
@@ -82,7 +81,7 @@ public class RenderTarget {
 
                 int renderedTextureTemp = GL11.glGenTextures();
 
-                GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+                Engine.getInstance().getGpuContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
                 GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, getComponentsForFormat(currentAttachment.internalFormat), GL11.GL_FLOAT, (FloatBuffer) null);
 
                 GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -124,7 +123,7 @@ public class RenderTarget {
             }
         });
 
-        GraphicsContext.getInstance().clearColor(clearR, clearG, clearB, clearA);
+        Engine.getInstance().getGpuContext().clearColor(clearR, clearG, clearB, clearA);
     }
 
     private int getComponentsForFormat(int internalFormat) {
@@ -145,7 +144,7 @@ public class RenderTarget {
 
             int renderedTextureTemp = renderedTextures[i];
 
-            GraphicsContext.getInstance().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
+            Engine.getInstance().getGpuContext().bindTexture(GlTextureTarget.TEXTURE_2D, renderedTextureTemp);
             GL11.glTexImage2D(GL_TEXTURE_2D, 0, currentAttachment.internalFormat, width, height, 0, GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) null);
 
             GL11.glTexParameteri(GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
@@ -170,10 +169,10 @@ public class RenderTarget {
     }
 
     public void use(boolean clear) {
-        GraphicsContext.getInstance().bindFrameBuffer(framebufferLocation);
-        GraphicsContext.getInstance().viewPort(0, 0, getWidth(), getHeight());
+        Engine.getInstance().getGpuContext().bindFrameBuffer(framebufferLocation);
+        Engine.getInstance().getGpuContext().viewPort(0, 0, getWidth(), getHeight());
         if (clear) {
-            GraphicsContext.getInstance().clearDepthAndColorBuffer();
+            Engine.getInstance().getGpuContext().clearDepthAndColorBuffer();
         }
     }
 
@@ -196,7 +195,7 @@ public class RenderTarget {
     }
 
     public void unuse() {
-        GraphicsContext.getInstance().bindFrameBuffer(0);
+        Engine.getInstance().getGpuContext().bindFrameBuffer(0);
     }
 
     public int getRenderedTexture(int index) {

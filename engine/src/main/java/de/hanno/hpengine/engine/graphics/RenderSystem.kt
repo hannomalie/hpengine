@@ -14,6 +14,7 @@ import de.hanno.hpengine.engine.scene.Vertex
 import de.hanno.hpengine.engine.scene.VertexIndexBuffer
 import de.hanno.hpengine.engine.threads.RenderThread
 import de.hanno.hpengine.util.stopwatch.GPUProfiler
+import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
@@ -55,5 +56,15 @@ class RenderSystem {
             }
             lastTimeSwapped = renderState.stopRead()
         }
+    }
+
+    fun resetAllocations() {
+        Engine.getInstance().gpuContext.execute({
+            StopWatch.getInstance().start("Scene init")
+            Engine.getInstance().renderSystem.vertexIndexBufferStatic.resetAllocations()
+            Engine.getInstance().renderSystem.vertexIndexBufferAnimated.resetAllocations()
+            StopWatch.getInstance().stopAndPrintMS()
+        }, true)
+
     }
 }
