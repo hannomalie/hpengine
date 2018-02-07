@@ -17,7 +17,7 @@ import de.hanno.hpengine.util.stopwatch.StopWatch
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
-class RenderSystem(override val engine: Engine) : Manager {
+class RenderManager(override val engine: Engine) : Manager {
 
     var recorder: RenderStateRecorder = SimpleRenderStateRecorder(engine)
     var renderThread: RenderThread = RenderThread(engine, "Render")
@@ -60,8 +60,8 @@ class RenderSystem(override val engine: Engine) : Manager {
     fun resetAllocations() {
         engine.gpuContext.execute({
             StopWatch.getInstance().start("Scene init")
-            engine.renderSystem.vertexIndexBufferStatic.resetAllocations()
-            engine.renderSystem.vertexIndexBufferAnimated.resetAllocations()
+            engine.renderManager.vertexIndexBufferStatic.resetAllocations()
+            engine.renderManager.vertexIndexBufferAnimated.resetAllocations()
             StopWatch.getInstance().stopAndPrintMS()
         }, true)
 

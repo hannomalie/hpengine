@@ -42,7 +42,7 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.GBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.environmentsampler.EnvironmentSampler;
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTarget;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.engine.scene.EnvironmentProbe;
 import de.hanno.hpengine.engine.scene.Scene;
 import de.hanno.hpengine.engine.threads.TimeStepThread;
@@ -127,7 +127,7 @@ public class DebugFrame implements HostComponent {
 	private WebScrollPane mainPane;
 	private RSyntaxTextArea console = new RSyntaxTextArea(
 	"temp = Java.type('org.joml.Vector3f');" +
-	"for each(var probe in renderer.getEnvironmentProbeFactory().getProbes()) {" +
+	"for each(var probe in renderer.getEnvironmentProbeManager().getProbes()) {" +
 	"	probe.move(new temp(0,-10,0));" +
 	"}");
 	private RTextScrollPane consolePane = new RTextScrollPane(console);
@@ -360,7 +360,7 @@ public class DebugFrame implements HostComponent {
                     @Override
                     public Result<Scene> doInBackground() throws Exception {
 						startProgress("Loading test de.hanno.hpengine.scene");
-                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialFactory(), engine.getPhysicsFactory(), engine.getEntityFactory(), engine.getLightFactory(), engine.getSceneManager().getScene()));
+                        engine.getSceneManager().getScene().addAll(TestSceneUtil.loadTestScene(engine.getMaterialManager(), engine.getPhysicsManager(), engine.getEntityManager(), engine.getLightManager(), engine.getSceneManager().getScene()));
                         Engine.getEventBus().post(new EntityAddedEvent());
 						stopProgress();
                         return new Result(engine.getSceneManager().getScene());
@@ -422,7 +422,7 @@ public class DebugFrame implements HostComponent {
                             @Override
                             public Result execute() throws Exception {
                                 // TODO: Remove this f***
-                                EnvironmentProbe probe = engine.getEnvironmentProbeFactory().getProbe(new Vector3f(), 50);
+                                EnvironmentProbe probe = engine.getEnvironmentProbeManager().getProbe(new Vector3f(), 50);
                                 engine.getRenderer().addRenderProbeCommand(probe, true);
                                 return new Result(true);
                             }
@@ -448,7 +448,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().addPointLight(engine.getLightFactory().getPointLight(50));
+                        engine.getSceneManager().getScene().addPointLight(engine.getLightManager().getPointLight(50));
                         return new Result(true);
                     }
                 });
@@ -477,7 +477,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result<Boolean>> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result<Boolean> execute() throws Exception {
-                        engine.getSceneManager().getScene().addTubeLight(engine.getLightFactory().getTubeLight());
+                        engine.getSceneManager().getScene().addTubeLight(engine.getLightManager().getTubeLight());
                         return new Result(true);
                     }
                 });
@@ -506,7 +506,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getSceneManager().getScene().getAreaLights().add(engine.getLightFactory().getAreaLight(50, 50, 20));
+                        engine.getSceneManager().getScene().getAreaLights().add(engine.getLightManager().getAreaLight(50, 50, 20));
                         return new Result(true);
                     }
                 });
@@ -595,7 +595,7 @@ public class DebugFrame implements HostComponent {
                 CompletableFuture<Result> future = engine.getGpuContext().execute(new FutureCallable() {
                     @Override
                     public Result execute() throws Exception {
-                        engine.getMaterialFactory().getMaterial(chosenFile.getName());
+                        engine.getMaterialManager().getMaterial(chosenFile.getName());
                         return new Result(true);
                     }
                 });
@@ -896,7 +896,7 @@ public class DebugFrame implements HostComponent {
 			Octree.DRAW_LINES = !Octree.DRAW_LINES;
 		});
 		forceProbeGBufferRedraw.addActionListener(e -> {
-            engine.getEnvironmentProbeFactory().getProbes().forEach(probe -> {
+            engine.getEnvironmentProbeManager().getProbes().forEach(probe -> {
 				probe.getSampler().resetDrawing();
 			});
 		});
@@ -1031,9 +1031,9 @@ public class DebugFrame implements HostComponent {
 					Config.getInstance().setCameraSpeed((float) value/100);
 				}
 			},
-			new SliderInput("Texture Streaming Threshold (MS)", WebSlider.HORIZONTAL, 0, 10000, (int) (TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS)) {
+			new SliderInput("Texture Streaming Threshold (MS)", WebSlider.HORIZONTAL, 0, 10000, (int) (TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS)) {
 				@Override public void onValueChange(int value, int delta) {
-					TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS = value;
+					TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS = value;
 				}
 			}
 		));

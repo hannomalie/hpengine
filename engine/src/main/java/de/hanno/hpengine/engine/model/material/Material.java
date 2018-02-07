@@ -61,19 +61,19 @@ public class Material implements Serializable, Bufferable {
 
 	private MaterialInfo materialInfo = new MaterialInfo();
 
-	public void init(MaterialFactory materialFactory) {
-		materialIndex = materialFactory.indexOf(this);
+	public void init(MaterialManager materialManager) {
+		materialIndex = materialManager.indexOf(this);
 		for(MAP map : materialInfo.maps.getTextureNames().keySet()) {
 			String name = materialInfo.maps.getTextureNames().get(map);
 			try {
 				Texture tex;
 				if(map.equals(MAP.ENVIRONMENT)) {
-                    tex = materialFactory.getTextureFactory().getCubeMap(materialFactory.getTextureFactory(), name);
+                    tex = materialManager.getTextureManager().getCubeMap(materialManager.getTextureManager(), name);
 					if(tex == null) {
-                        tex = materialFactory.getTextureFactory().getCubeMap();
+                        tex = materialManager.getTextureManager().getCubeMap();
 					}
 				} else {
-                    tex = materialFactory.getTextureFactory().getTexture(name);
+                    tex = materialManager.getTextureManager().getTexture(name);
 				}
 				materialInfo.maps.getTextures().put(map, tex);
 			} catch (IOException e) {
@@ -81,7 +81,7 @@ public class Material implements Serializable, Bufferable {
 			}
 		}
 		if (!materialInfo.maps.getTextures().containsKey(MAP.ENVIRONMENT)) {
-            materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, materialFactory.getTextureFactory().getCubeMap());
+            materialInfo.maps.getTextures().put(MAP.ENVIRONMENT, materialManager.getTextureManager().getCubeMap());
 		}
 		initialized = true;
 	}

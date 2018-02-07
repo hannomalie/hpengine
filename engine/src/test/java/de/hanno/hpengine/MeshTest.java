@@ -16,7 +16,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void loadsPlaneCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/plane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(4, planeMesh.getFaces().size());
 
@@ -29,7 +29,7 @@ public class MeshTest extends TestWithEngine {
 
     @Test
     public void calculatesLodsCorrectly() throws Exception {
-        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
+        StaticModel plane = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/doublePlane.obj"));
         Mesh planeMesh = plane.getMesh(0);
         Assert.assertEquals(6, planeMesh.getFaces().size());
 
@@ -41,8 +41,8 @@ public class MeshTest extends TestWithEngine {
 	@Test
 	public void loadsSphereAndTransformsCorrectly() throws Exception {
 
-        StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
-        Entity entity = engine.getEntityFactory().getEntity("sphere", sphere);
+        StaticModel sphere = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj"));
+        Entity entity = engine.getEntityManager().getEntity("sphere", sphere);
 
         entity.setTranslation(new Vector3f(0, 0, 0));
 

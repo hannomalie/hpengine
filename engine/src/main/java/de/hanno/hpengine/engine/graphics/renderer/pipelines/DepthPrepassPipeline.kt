@@ -7,7 +7,6 @@ import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.ColorAttachmentDefinition
 import de.hanno.hpengine.engine.graphics.renderer.rendertarget.RenderTargetBuilder
 import de.hanno.hpengine.engine.graphics.shader.Program
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
 import de.hanno.hpengine.engine.graphics.shader.define.Define
 import de.hanno.hpengine.engine.graphics.shader.define.Defines
 import de.hanno.hpengine.engine.graphics.state.RenderState
@@ -20,8 +19,8 @@ open class DepthPrepassPipeline @JvmOverloads constructor(private val engine: En
                                                           cullCam: Camera? = renderCam) : GPUFrustumCulledPipeline(engine, useFrustumCulling, useBackfaceCulling, useLineDrawing, renderCam, cullCam) {
     override fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true), Define.getDefine("OCCLUSION_CULLING", true))
     val depthTarget = RenderTargetBuilder(engine.gpuContext).add(ColorAttachmentDefinition().setInternalFormat(Pipeline.HIGHZ_FORMAT)).build()
-    private val depthPrepassProgramStatic = engine.programFactory.getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
-    private val depthPrepassProgramAnimated = engine.programFactory.getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())
+    private val depthPrepassProgramStatic = engine.programManager.getProgramFromFileNames("first_pass_vertex.glsl", "simple_depth.glsl", Defines())
+    private val depthPrepassProgramAnimated = engine.programManager.getProgramFromFileNames("first_pass_animated_vertex.glsl", "simple_depth.glsl", Defines())
     override var depthMap = depthTarget.renderedTexture
 
     fun draw(renderState: RenderState, firstPassResult: FirstPassResult) {

@@ -34,7 +34,7 @@ public class DirectionalLight extends Camera {
 
 //		try {
 //			StaticMesh model = renderer.getOBJLoader().loadTexturedModel(new File(World.WORKDIR_NAME + "/assets/models/cube.obj")).get(0);
-//			box = getWorld().getEntityFactory().getEntity(getPosition(), "DefaultCube", model, white);
+//			box = getWorld().getEntityManager().getEntity(getPosition(), "DefaultCube", model, white);
 //			box.setScale(0.4f);
 //			ModelComponent modelComponent = new ModelComponent(model);
 //			modelComponent.init(world);

@@ -1,8 +1,8 @@
 package de.hanno.hpengine.engine.model;
 
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.log.ConsoleLogger;
 import de.hanno.hpengine.engine.model.material.Material;
 import org.joml.Vector2f;
@@ -107,7 +107,7 @@ public class OBJLoader {
         return face;
     }
 
-    public StaticModel<Bufferable> loadTexturedModel(MaterialFactory materialFactory, File f) throws Exception {
+    public StaticModel<Bufferable> loadTexturedModel(MaterialManager materialManager, File f) throws Exception {
         BufferedReader reader = new BufferedReader(new FileReader(f));
         StaticModel resultModel = new StaticModel();
 
@@ -126,13 +126,13 @@ public class OBJLoader {
                 firstToken = tokens[0];
             }
             if ("mtllib".equals(firstToken)) {
-                materialFactory.putAll(parseMaterialLib(materialFactory.getTextureFactory(), line, f));
+                materialManager.putAll(parseMaterialLib(materialManager.getTextureManager(), line, f));
             } else if ("usemtl".equals(firstToken)) {
                 String materialName = line.replaceAll("usemtl ", "");
-                currentMaterial = materialFactory.getMaterial(materialName);
+                currentMaterial = materialManager.getMaterial(materialName);
                 if (currentMaterial == null) {
                     LOGGER.log(Level.INFO, "No material found!!!");
-                    currentMaterial = materialFactory.getDefaultMaterial();
+                    currentMaterial = materialManager.getDefaultMaterial();
                 }
                 usemtlCounter++;
             } else if ("o".equals(firstToken) || "g".equals(firstToken) || line.startsWith("# object ")) {
@@ -162,7 +162,7 @@ public class OBJLoader {
         }
         reader.close();
 
-        resultModel.init(materialFactory);
+        resultModel.init(materialManager);
         return resultModel;
     }
 
@@ -174,7 +174,7 @@ public class OBJLoader {
     }
 
 
-    private Map<String, MaterialInfo> parseMaterialLib(TextureFactory textureFactory, String line, File f) {
+    private Map<String, MaterialInfo> parseMaterialLib(TextureManager textureManager, String line, File f) {
         Map<String, MaterialInfo> materials = new HashMap<>();
         String[] twoStrings = line.split(" ");
 
@@ -208,37 +208,37 @@ public class OBJLoader {
 
                 } else if ("map_Kd".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Kd ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.DIFFUSE);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.DIFFUSE);
 
                 } else if ("map_Ka".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ka ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.OCCLUSION);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.OCCLUSION);
 
                 } else if ("map_Disp".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Disp ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.SPECULAR);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.SPECULAR);
 //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 
                 } else if ("map_Ks".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ks ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.SPECULAR);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.SPECULAR);
 //			    	  addHelper(currentMaterialInfo, path, map, MAP.ROUGHNESS );
 
                 } else if ("map_Ns".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_Ns ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.ROUGHNESS);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.ROUGHNESS);
 
                 } else if ("map_bump".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_bump ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.NORMAL);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.NORMAL);
 
                 } else if ("bump".equals(firstToken)) {
                     String map = materialLine.replaceAll("bump ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.NORMAL);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.NORMAL);
 
                 } else if ("map_d".equals(firstToken)) {
                     String map = materialLine.replaceAll("map_d ", "");
-                    addHelper(textureFactory, currentMaterialInfo, path, map, Material.MAP.NORMAL);
+                    addHelper(textureManager, currentMaterialInfo, path, map, Material.MAP.NORMAL);
 
                 } else if ("Kd".equals(firstToken)) {
                     String diffuse = materialLine;
@@ -264,8 +264,8 @@ public class OBJLoader {
         return materials;
     }
 
-    private void addHelper(TextureFactory textureFactory, MaterialInfo currentMaterialInfo, String path, String name, Material.MAP map) {
-        currentMaterialInfo.maps.put(map, textureFactory.getTexture(path + name, map == Material.MAP.DIFFUSE));
+    private void addHelper(TextureManager textureManager, MaterialInfo currentMaterialInfo, String path, String name, Material.MAP map) {
+        currentMaterialInfo.maps.put(map, textureManager.getTexture(path + name, map == Material.MAP.DIFFUSE));
     }
 
     private void parseName(String line, StaticMesh mesh) {

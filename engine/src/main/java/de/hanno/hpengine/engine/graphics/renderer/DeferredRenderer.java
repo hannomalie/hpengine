@@ -62,7 +62,7 @@ public class DeferredRenderer implements Renderer {
 
         if (!initialized) {
             setupBuffers();
-            GpuContext.exitOnGLError("After TextureFactory");
+            GpuContext.exitOnGLError("After TextureManager");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -121,23 +121,23 @@ public class DeferredRenderer implements Renderer {
 		GPUProfiler.start("Frame");
 //		TODO: Reimplement this with a custom field for probes
 //		if(renderState.directionalLightNeedsShadowMapRender) {
-//			EnvironmentProbeFactory.getInstance().draw(true);
+//			EnvironmentProbeManager.getInstance().draw(true);
 //		}
         simpleDrawStrategy.draw(result, renderState);
 		if (Config.getInstance().isDebugframeEnabled()) {
-//			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramFactory.getInstance().getDebugFrameProgram());
+//			drawToQuad(162, QuadVertexBuffer.getDebugBuffer(), ProgramManager.getInstance().getDebugFrameProgram());
 //			drawToQuad(gBuffer.getVisibilityMap(), QuadVertexBuffer.getDebugBuffer());
 			drawToQuad(simpleDrawStrategy.getDirectionalLightExtension().getShadowMapId(), engine.getGpuContext().getDebugBuffer());
 			for(int i = 0; i < 6; i++) {
-//                drawToQuad(EnvironmentProbeFactory.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
+//                drawToQuad(EnvironmentProbeManager.getInstance().getProbes().get(0).getSampler().getCubeMapFaceViews()[3][i], sixDebugBuffers.get(i));
 			}
 
 //			int faceView = OpenGLContext.getInstance().genTextures();
-//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayBack(),
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getPointLightDepthMapsArrayBack(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(0));
 //			faceView = OpenGLContext.getInstance().genTextures();
-//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getPointLightDepthMapsArrayFront(),
+//			GL43.glTextureView(faceView, GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getPointLightDepthMapsArrayFront(),
 //					GL30.GL_RGBA16F, 0, 1, 0, 1);
 //			drawToQuad(faceView, sixDebugBuffers.get(1));
 //			GL11.glDeleteTextures(faceView);
@@ -145,7 +145,7 @@ public class DeferredRenderer implements Renderer {
 //            int[] faceViews = new int[6];
 //            for(int i = 0; i < 6; i++) {
 //                faceViews[i] = OpenGLContext.getInstance().genTextures();
-//                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightFactory.getCubemapArrayRenderTarget().getDepthBufferTexture(),
+//                GL43.glTextureView(faceViews[i], GlTextureTarget.TEXTURE_2D.glTarget, lightManager.getCubemapArrayRenderTarget().getDepthBufferTexture(),
 //						GL14.GL_DEPTH_COMPONENT24, 0, 1, 6+i, 1);
 //				drawToQuad(faceViews[i], sixDebugBuffers.get(i));
 //			}
@@ -170,11 +170,11 @@ public class DeferredRenderer implements Renderer {
 
 	@Override
 	public void drawToQuad(int texture) {
-        drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), engine.getProgramFactory().getRenderToQuadProgram());
+        drawToQuad(texture, engine.getGpuContext().getFullscreenBuffer(), engine.getProgramManager().getRenderToQuadProgram());
 	}
 
 	public void drawToQuad(int texture, VertexBuffer buffer) {
-        drawToQuad(texture, buffer, engine.getProgramFactory().getRenderToQuadProgram());
+        drawToQuad(texture, buffer, engine.getProgramManager().getRenderToQuadProgram());
 	}
 	
 	private void drawToQuad(int texture, VertexBuffer buffer, Program program) {

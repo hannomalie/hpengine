@@ -24,7 +24,7 @@ import static de.hanno.hpengine.engine.graphics.shader.Shader.getDirectory;
 
 public class ComputeShaderProgram extends AbstractProgram implements Reloadable {
     private static final Logger LOGGER = Logger.getLogger(ComputeShaderProgram.class.getName());
-	private final ProgramFactory programFactory;
+	private final ProgramManager programManager;
 
 	private CodeSource computeShaderSource;
     private ComputeShader computeShader;
@@ -32,12 +32,12 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	private ReloadOnFileChangeListener<ComputeShaderProgram> reloadOnFileChangeListener;
 	private FileAlterationObserver observerShader;
 
-	public ComputeShaderProgram(ProgramFactory programFactory, CodeSource computeShaderSource) {
-        this(programFactory, computeShaderSource, new Defines());
+	public ComputeShaderProgram(ProgramManager programManager, CodeSource computeShaderSource) {
+        this(programManager, computeShaderSource, new Defines());
     }
-	public ComputeShaderProgram(ProgramFactory programFactory, CodeSource computeShaderSource, Defines defines) {
-        super(programFactory.getGpuContext().createProgramId());
-        this.programFactory = programFactory;
+	public ComputeShaderProgram(ProgramManager programManager, CodeSource computeShaderSource, Defines defines) {
+        super(programManager.getGpuContext().createProgramId());
+        this.programManager = programManager;
         this.computeShaderSource = computeShaderSource;
         this.defines = defines;
 
@@ -50,7 +50,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 	public void load() {
 		clearUniforms();
 		try {
-            computeShader = ComputeShader.load(programFactory.getGpuContext(), computeShaderSource, defines);
+            computeShader = ComputeShader.load(programManager.getGpuContext(), computeShaderSource, defines);
             LOGGER.info("Loaded computeshader " + computeShaderSource.getFilename());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -137,7 +137,7 @@ public class ComputeShaderProgram extends AbstractProgram implements Reloadable 
 				return true;
 			}
 		};
-        CompletableFuture<Boolean> future = programFactory.getGpuContext().execute(reloadShaderCallable);
+        CompletableFuture<Boolean> future = programManager.getGpuContext().execute(reloadShaderCallable);
 
 		try {
 			Boolean result = future.get(5, TimeUnit.MINUTES);

@@ -12,8 +12,8 @@ public class ProbeTest extends TestWithEngine {
 	
 	@Test
 	public void assignsProbesProperly() throws Exception {
-        EnvironmentProbe probeNear = engine.getEnvironmentProbeFactory().getProbe(new Vector3f(), 20, Update.STATIC, 1);
-        EnvironmentProbe probeFar = engine.getEnvironmentProbeFactory().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
+        EnvironmentProbe probeNear = engine.getEnvironmentProbeManager().getProbe(new Vector3f(), 20, Update.STATIC, 1);
+        EnvironmentProbe probeFar = engine.getEnvironmentProbeManager().getProbe(new Vector3f(10,0,0), 100, Update.STATIC, 1);
 		
 		Entity centeredEntity = new Entity() {
 			@Override public void setSelected(boolean selected) { }
@@ -30,9 +30,9 @@ public class ProbeTest extends TestWithEngine {
 
 		Assert.assertTrue(probeNear.contains(centeredEntity.getMinMaxWorld()));
 		Assert.assertTrue(probeFar.contains(centeredEntity.getMinMaxWorld()));
-        Assert.assertEquals(probeNear, engine.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeNear, engine.getEnvironmentProbeManager().getProbeForEntity(centeredEntity).get());
 
         centeredEntity.translateLocal(new Vector3f(10,0,0));
-        Assert.assertEquals(probeFar, engine.getEnvironmentProbeFactory().getProbeForEntity(centeredEntity).get());
+        Assert.assertEquals(probeFar, engine.getEnvironmentProbeManager().getProbeForEntity(centeredEntity).get());
 	}
 }

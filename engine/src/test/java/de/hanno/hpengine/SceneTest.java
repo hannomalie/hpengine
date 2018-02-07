@@ -1,6 +1,5 @@
 package de.hanno.hpengine;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +25,7 @@ public class SceneTest extends TestWithEngine {
         Scene scene = new Scene();
         scene.init(engine);
         engine.getSceneManager().setScene(scene);
-        Entity entity = engine.getEntityFactory().getEntity();
+        Entity entity = engine.getEntityManager().getEntity();
         scene.add(entity);
         Assert.assertEquals(1, engine.getSceneManager().getScene().getEntities().size());
         Assert.assertTrue(scene.write(SCENENAME));

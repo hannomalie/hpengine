@@ -17,21 +17,21 @@ public class EntityTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws Exception {
-        EntityFactory entityFactory = engine.getEntityFactory();
-        Entity entity = entityFactory.getEntity("default", new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
+        EntityManager entityManager = engine.getEntityManager();
+        Entity entity = entityManager.getEntity("default", new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sphere.obj")));
 
 		String filename = "default.hpentity";
 
 		Assert.assertTrue(Entity.write(entity, filename));
 
-        Entity loadedEntity = entityFactory.read(filename);
+        Entity loadedEntity = entityManager.read(filename);
 		Assert.assertTrue(entity.equals(loadedEntity));
 
 	}
     @Test
     public void loadParented() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
-        Entity entity = engine.getEntityFactory().getEntity("xxx", model);
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/cornellbox.obj"));
+        Entity entity = engine.getEntityManager().getEntity("xxx", model);
         engine.getSceneManager().getScene().add(entity);
 
         Assert.assertTrue(engine.getSceneManager().getScene().getEntities().contains(entity));
@@ -50,8 +50,8 @@ public class EntityTest extends TestWithEngine {
 
     @Test
     public void testInstanceBuffering() throws Exception {
-        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
-        Entity parentEntity = engine.getEntityFactory().getEntity("parent", model);
+        StaticModel model = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/meshes/sphere.obj"));
+        Entity parentEntity = engine.getEntityManager().getEntity("parent", model);
         parentEntity.setSelected(true);
         parentEntity.setTranslation(new Vector3f(2,2,2));
         engine.getSceneManager().getScene().add(parentEntity);
@@ -60,7 +60,7 @@ public class EntityTest extends TestWithEngine {
         Assert.assertFalse(parentEntity.hasChildren());
         Assert.assertTrue(parentEntity.getName().equals("parent"));
 
-        Entity childEntity = engine.getEntityFactory().getEntity("child", model);
+        Entity childEntity = engine.getEntityManager().getEntity("child", model);
         childEntity.setTranslation(new Vector3f(2,2,2));
         childEntity.setParent(parentEntity);
         engine.getSceneManager().getScene().add(childEntity);
@@ -77,7 +77,7 @@ public class EntityTest extends TestWithEngine {
 
         Assert.assertTrue(instanceTransform.getPosition().equals(new Vector3f(15,15,15)));
 
-        Entity secondEntity = engine.getEntityFactory().getEntity("second", model);
+        Entity secondEntity = engine.getEntityManager().getEntity("second", model);
         engine.getSceneManager().getScene().add(secondEntity);
         Assert.assertEquals(0, engine.getSceneManager().getScene().getEntityBufferIndex(parentEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
         Assert.assertEquals(4, engine.getSceneManager().getScene().getEntityBufferIndex(secondEntity.getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY)));
@@ -105,8 +105,8 @@ public class EntityTest extends TestWithEngine {
 //        }
 
 
-        engine.getRenderSystem().getRenderState().getCurrentReadState().bufferEntities(engine.getSceneManager().getScene().getEntities());
-        FloatBuffer floatValues = engine.getRenderSystem().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
+        engine.getRenderManager().getRenderState().getCurrentReadState().bufferEntities(engine.getSceneManager().getScene().getEntities());
+        FloatBuffer floatValues = engine.getRenderManager().getRenderState().getCurrentReadState().getEntitiesBuffer().getBuffer().asFloatBuffer();
         float[] floatValuesArray = new float[floatValues.capacity()];
         floatValues.get(floatValuesArray);
 

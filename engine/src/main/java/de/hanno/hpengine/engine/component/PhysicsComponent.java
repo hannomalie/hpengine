@@ -7,7 +7,7 @@ import com.bulletphysics.linearmath.MotionState;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
-import de.hanno.hpengine.engine.physics.PhysicsFactory;
+import de.hanno.hpengine.engine.physics.PhysicsManager;
 import de.hanno.hpengine.util.Util;
 import de.hanno.hpengine.util.commandqueue.FutureCallable;
 
@@ -21,9 +21,9 @@ public class PhysicsComponent extends BaseComponent {
     RigidBodyConstructionInfo rigidBodyConstructionInfo;
 	private Entity owner;
     private transient RigidBody rigidBody;
-    private transient PhysicsFactory.MeshShapeInfo info;
+    private transient PhysicsManager.MeshShapeInfo info;
 
-	public PhysicsComponent(Entity owner, PhysicsFactory.MeshShapeInfo meshShapeInfo) {
+	public PhysicsComponent(Entity owner, PhysicsManager.MeshShapeInfo meshShapeInfo) {
 		this.owner = owner;
 		this.info = meshShapeInfo;
 		owner.addComponent(this);
@@ -48,10 +48,10 @@ public class PhysicsComponent extends BaseComponent {
 
     private void registerRigidBody(Engine engine) {
         try {
-            engine.getPhysicsFactory().getCommandQueue().addCommand(new FutureCallable<Object>() {
+            engine.getPhysicsManager().getCommandQueue().addCommand(new FutureCallable<Object>() {
                 @Override
                 public Object execute() throws Exception {
-                    engine.getPhysicsFactory().registerRigidBody(rigidBody);
+                    engine.getPhysicsManager().registerRigidBody(rigidBody);
                     return null;
                 }
             }).get();
@@ -73,7 +73,7 @@ public class PhysicsComponent extends BaseComponent {
 
     public void reset(Engine engine) {
         if(isInitialized()) {
-            engine.getPhysicsFactory().unregisterRigidBody(rigidBody);
+            engine.getPhysicsManager().unregisterRigidBody(rigidBody);
             actuallyCreatePhysicsObject(engine);
         }
     }

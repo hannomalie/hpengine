@@ -22,7 +22,7 @@ public class MaterialTableModel extends AbstractTableModel {
 
     public int getRowCount() {
         try {
-            return engine.getMaterialFactory().MATERIALS.size();
+            return engine.getMaterialManager().MATERIALS.size();
         } catch (IllegalStateException e) {
             return 0;
         }
@@ -36,7 +36,7 @@ public class MaterialTableModel extends AbstractTableModel {
     }
 
     private Material getMaterial(int row) {
-        return engine.getMaterialFactory().MATERIALS
+        return engine.getMaterialManager().MATERIALS
                 .stream()
                 .sorted(Comparator.comparing(Material::getName))
                 .collect(Collectors.toList())

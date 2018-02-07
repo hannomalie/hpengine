@@ -19,19 +19,19 @@ class SceneManager(override val engine: Engine): Manager {
     override fun update(deltaSeconds: Float) {
         super.update(deltaSeconds)
         activeCamera.update(engine, deltaSeconds)
-        scene.setCurrentCycle(engine.renderSystem.drawCycle.get())
+        scene.setCurrentCycle(engine.renderManager.drawCycle.get())
         scene.update(engine, deltaSeconds)
     }
 
     private fun onSetScene(value: Scene) {
-        engine.environmentProbeFactory.clearProbes()
-        engine.physicsFactory.clearWorld()
-        engine.renderSystem.resetAllocations()
+        engine.environmentProbeManager.clearProbes()
+        engine.physicsManager.clearWorld()
+        engine.renderManager.resetAllocations()
         value.init(engine)
         restoreWorldCamera()
-        engine.renderSystem.renderState.addCommand { renderState1 ->
-            renderState1.setVertexIndexBufferStatic(engine.renderSystem.vertexIndexBufferStatic)
-            renderState1.setVertexIndexBufferAnimated(engine.renderSystem.vertexIndexBufferAnimated)
+        engine.renderManager.renderState.addCommand { renderState1 ->
+            renderState1.setVertexIndexBufferStatic(engine.renderManager.vertexIndexBufferStatic)
+            renderState1.setVertexIndexBufferAnimated(engine.renderManager.vertexIndexBufferAnimated)
         }
     }
 

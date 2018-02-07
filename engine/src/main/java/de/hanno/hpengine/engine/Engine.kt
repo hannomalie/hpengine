@@ -8,17 +8,17 @@ import de.hanno.hpengine.engine.component.JavaComponent
 import de.hanno.hpengine.engine.config.Config
 import de.hanno.hpengine.engine.event.*
 import de.hanno.hpengine.engine.event.bus.EventBus
-import de.hanno.hpengine.engine.graphics.RenderSystem
-import de.hanno.hpengine.engine.graphics.light.LightFactory
+import de.hanno.hpengine.engine.graphics.RenderManager
+import de.hanno.hpengine.engine.graphics.light.LightManager
 import de.hanno.hpengine.engine.graphics.renderer.GpuContext
 import de.hanno.hpengine.engine.graphics.renderer.Renderer
-import de.hanno.hpengine.engine.graphics.shader.ProgramFactory
+import de.hanno.hpengine.engine.graphics.shader.ProgramManager
 import de.hanno.hpengine.engine.input.Input
-import de.hanno.hpengine.engine.model.EntityFactory
-import de.hanno.hpengine.engine.model.material.MaterialFactory
-import de.hanno.hpengine.engine.model.texture.TextureFactory
-import de.hanno.hpengine.engine.physics.PhysicsFactory
-import de.hanno.hpengine.engine.scene.EnvironmentProbeFactory
+import de.hanno.hpengine.engine.model.EntityManager
+import de.hanno.hpengine.engine.model.material.MaterialManager
+import de.hanno.hpengine.engine.model.texture.TextureManager
+import de.hanno.hpengine.engine.physics.PhysicsManager
+import de.hanno.hpengine.engine.scene.EnvironmentProbeManager
 import de.hanno.hpengine.engine.scene.Scene
 import de.hanno.hpengine.engine.scene.SceneManager
 import de.hanno.hpengine.engine.threads.UpdateThread
@@ -41,18 +41,18 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     private val drawCounter = AtomicInteger(-1)
     private val commandQueue = CommandQueue()
 
-    val entityFactory = EntityFactory()
+    val entityManager = EntityManager()
     val directoryManager = DirectoryManager(gameDirName).apply { initWorkDir() }
-    val renderSystem by lazy { RenderSystem(this@Engine) }
+    val renderManager by lazy { RenderManager(this@Engine) }
     val input by lazy { Input(gpuContext) }
-    val environmentProbeFactory by lazy { EnvironmentProbeFactory(this@Engine)}
-    val lightFactory by lazy { LightFactory(this@Engine) }
+    val environmentProbeManager by lazy { EnvironmentProbeManager(this@Engine) }
+    val lightManager by lazy { LightManager(this@Engine) }
     val sceneManager = SceneManager(this@Engine)
     val scriptManager by lazy { ScriptManager().apply { defineGlobals(this@Engine) } }
-    val physicsFactory by lazy { PhysicsFactory(renderer) }
-    val programFactory by lazy { ProgramFactory(this@Engine) }
-    val textureFactory by lazy { TextureFactory(this@Engine, gpuContext) }
-    val materialFactory by lazy { MaterialFactory(textureFactory) }
+    val physicsManager by lazy { PhysicsManager(renderer) }
+    val programManager by lazy { ProgramManager(this@Engine) }
+    val textureManager by lazy { TextureManager(this@Engine) }
+    val materialManager by lazy { MaterialManager(textureManager) }
     val renderer: Renderer by lazy { Renderer.create(this@Engine) }
 
     @Volatile var isInitialized: Boolean = false
@@ -64,7 +64,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         eventBus.register(this)
         gpuContext.registerPerFrameCommand(this)
 
-        renderer.registerPipelines(renderSystem.renderState)
+        renderer.registerPipelines(renderManager.renderState)
         startSimulation()
         isInitialized = true
         drawCounter.set(0)
@@ -74,7 +74,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun startSimulation() {
         updateThread.start()
 
-        renderSystem.renderThread.start()
+        renderManager.renderThread.start()
     }
 
     fun update(deltaSeconds: Float) {
@@ -82,7 +82,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
             commandQueue.executeCommands()
             sceneManager.update(deltaSeconds)
             updateRenderState()
-            renderSystem.drawCycle.getAndIncrement()
+            renderManager.drawCycle.getAndIncrement()
             if (!Config.getInstance().isMultithreadedRendering) {
                 actuallyDraw()
             }
@@ -94,16 +94,16 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
 
     private fun updateRenderState() {
         val scene = sceneManager.scene
-        if (scene.entityMovedInCycle() == renderSystem.drawCycle.get()) {
-            renderSystem.renderState.requestSingletonAction(0)
+        if (scene.entityMovedInCycle() == renderManager.drawCycle.get()) {
+            renderManager.renderState.requestSingletonAction(0)
         }
 
-        if (gpuContext.isSignaled(renderSystem.renderState.currentWriteState.gpuCommandSync)) {
+        if (gpuContext.isSignaled(renderManager.renderState.currentWriteState.gpuCommandSync)) {
             val directionalLightCamera = scene.directionalLight
-            renderSystem.renderState.currentWriteState.init(renderSystem.vertexIndexBufferStatic, renderSystem.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderSystem.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
-            scene.addRenderBatches(this, sceneManager.activeCamera, renderSystem.renderState.currentWriteState)
-            renderSystem.renderState.update()
-            renderSystem.renderState.currentWriteState.cycle = renderSystem.drawCycle.get()
+            renderManager.renderState.currentWriteState.init(renderManager.vertexIndexBufferStatic, renderManager.vertexIndexBufferAnimated, scene.joints, sceneManager.activeCamera, scene.entityMovedInCycle(), scene.directionalLightMovedInCycle(), scene.pointLightMovedInCycle(), scene.isInitiallyDrawn, scene.minMax[0], scene.minMax[1], renderManager.drawCycle.get(), directionalLightCamera.viewMatrixAsBuffer, directionalLightCamera.projectionMatrixAsBuffer, directionalLightCamera.viewProjectionMatrixAsBuffer, scene.directionalLight.scatterFactor, scene.directionalLight.direction, scene.directionalLight.color, scene.entityAddedInCycle)
+            scene.addRenderBatches(this, sceneManager.activeCamera, renderManager.renderState.currentWriteState)
+            renderManager.renderState.update()
+            renderManager.renderState.currentWriteState.cycle = renderManager.drawCycle.get()
         }
     }
 
@@ -115,13 +115,13 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     @Handler
     fun handle(e: EntityAddedEvent) {
         sceneManager.scene.setUpdateCache(true)
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
     @Handler
     fun handle(e: SceneInitEvent) {
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
@@ -129,19 +129,19 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
     fun handle(event: EntityChangedMaterialEvent) {
         val entity = event.entity
         //            buffer(entity);
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferEntities(sceneManager.scene.entities) }
     }
 
     @Subscribe
     @Handler
     fun handle(event: MaterialAddedEvent) {
-        renderSystem.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials(this@Engine) }
+        renderManager.renderState.addCommand { renderStateX -> renderStateX.bufferMaterials(this@Engine) }
     }
 
     @Subscribe
     @Handler
     fun handle(event: MaterialChangedEvent) {
-        renderSystem.renderState.addCommand { renderStateX ->
+        renderManager.renderState.addCommand { renderStateX ->
             if (event.material.isPresent) {
                 //                renderStateX.bufferMaterial(event.getMaterials().get());
                 renderStateX.bufferMaterials(this@Engine)
@@ -161,7 +161,7 @@ class Engine private constructor(gameDirName: String) : PerFrameCommandProvider 
         System.exit(0)
     }
 
-    override fun getDrawCommand() = renderSystem.drawRunnable
+    override fun getDrawCommand() = renderManager.drawRunnable
     override fun isReadyForExecution() = drawCounter.get() == 0
     override fun postRun() { drawCounter.getAndIncrement() }
 

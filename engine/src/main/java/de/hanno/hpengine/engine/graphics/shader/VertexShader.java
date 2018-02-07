@@ -7,8 +7,8 @@ import java.io.IOException;
 
 public class VertexShader extends AbstractShader {
 
-    public static VertexShader load(ProgramFactory programFactory, CodeSource sourceCode, Defines defines) throws IOException {
-        return Shader.loadShader(programFactory.getGpuContext(), VertexShader.class, sourceCode, defines);
+    public static VertexShader load(ProgramManager programManager, CodeSource sourceCode, Defines defines) throws IOException {
+        return Shader.loadShader(programManager.getGpuContext(), VertexShader.class, sourceCode, defines);
     }
 
     @Override

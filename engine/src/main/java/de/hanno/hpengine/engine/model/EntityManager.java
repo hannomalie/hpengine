@@ -8,8 +8,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-public class EntityFactory {
-    public EntityFactory() {
+public class EntityManager {
+    public EntityManager() {
         Engine.getEventBus().register(this);
 	}
 	public Entity getEntity() {

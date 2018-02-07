@@ -15,7 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.*;
 import static de.hanno.hpengine.engine.graphics.shader.Shader.ShaderSourceFactory.getShaderSource;
 
-public class ProgramFactory implements Manager {
+public class ProgramManager implements Manager {
 
     private CodeSource firstpassDefaultVertexshaderSource;
     private CodeSource firstpassAnimatedDefaultVertexshaderSource;
@@ -37,7 +37,7 @@ public class ProgramFactory implements Manager {
     private Engine engine;
     private GpuContext gpuContext;
 
-    public ProgramFactory(Engine engine) {
+    public ProgramManager(Engine engine) {
         this.engine = engine;
         gpuContext = engine.getGpuContext();
         try {

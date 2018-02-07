@@ -18,12 +18,12 @@ public class CubeMap extends Texture implements Serializable {
 	
 	public List<byte[]> dataList;
 
-	protected CubeMap(TextureFactory textureFactory) {
-		super(textureFactory);
+	protected CubeMap(TextureManager textureManager) {
+		super(textureManager);
 	}
 	
-	public CubeMap(TextureFactory textureFactory, String path, GlTextureTarget target) {
-		super(textureFactory, path, target, false);
+	public CubeMap(TextureManager textureManager, String path, GlTextureTarget target) {
+		super(textureManager, path, target, false);
 	}
 	
 	public ByteBuffer buffer(ByteBuffer buffer, byte[] values) {
@@ -49,7 +49,7 @@ public class CubeMap extends Texture implements Serializable {
 		dataList = byteArrays;
 	}
 	
-	public static CubeMap read(TextureFactory textureFactory, String resourceName, int textureId) {
+	public static CubeMap read(TextureManager textureManager, String resourceName, int textureId) {
 		String fileName = FilenameUtils.getBaseName(resourceName);
 		FileInputStream fis = null;
 		ObjectInputStream in = null;
@@ -59,7 +59,7 @@ public class CubeMap extends Texture implements Serializable {
 			CubeMap texture = (CubeMap) in.readObject();
 			in.close();
 			texture.textureID = textureId;
-			texture.upload(textureFactory, texture.buffer(), texture.srgba);
+			texture.upload(textureManager, texture.buffer(), texture.srgba);
 			return texture;
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();

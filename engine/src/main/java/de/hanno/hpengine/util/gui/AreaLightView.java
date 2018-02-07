@@ -48,7 +48,7 @@ public class AreaLightView extends EntityView {
 		WebComponentPanel webComponentPanel = new WebComponentPanel ( true );
         webComponentPanel.setElementMargin ( 4 );
         webComponentPanel.addElement(new WebButton("Use Light Cam"){{ addActionListener(e -> {
-            engine.getSceneManager().setActiveCamera(engine.getLightFactory().getCameraForAreaLight(light));
+            engine.getSceneManager().setActiveCamera(engine.getLightManager().getCameraForAreaLight(light));
         });}});
         webComponentPanel.addElement(new WebButton("Use World Cam"){{ addActionListener(e -> {
 			engine.getSceneManager().restoreWorldCamera();

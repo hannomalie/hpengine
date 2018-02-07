@@ -34,8 +34,8 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
 
     protected open fun getDefines() = Defines(Define.getDefine("FRUSTUM_CULLING", true))
 
-    private var occlusionCullingPhase1Vertex: Program = engine.programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
-    private var occlusionCullingPhase2Vertex: Program = engine.programFactory.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase1Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling1_vertex.glsl")), null, null, getDefines())
+    private var occlusionCullingPhase2Vertex: Program = engine.programManager.getProgram(CodeSource(File(Shader.getDirectory() + "occlusion_culling2_vertex.glsl")), null, null, getDefines())
 
 
     var highZBuffer: RenderTarget = RenderTargetBuilder(engine.gpuContext)
@@ -59,7 +59,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         debugPrintPhase1(drawDescriptionAnimated, Pipeline.CullingPhase.ANIMATED_ONE)
     }
 
-    private val highZProgram = engine.programFactory.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
+    private val highZProgram = engine.programManager.getComputeProgram("highZ_compute.glsl", Defines(Define.getDefine("SOURCE_CHANNEL_R", true)))
 
     open fun renderHighZMap() {
         SimpleDrawStrategy.renderHighZMap(engine.gpuContext, depthMap, Config.getInstance().width, Config.getInstance().height, highZBuffer.renderedTexture, highZProgram)
@@ -124,7 +124,7 @@ open class GPUFrustumCulledPipeline @JvmOverloads constructor(private val engine
         cull(renderState, commandOrganization, phase)
 
         drawCountBuffer.put(0, 0)
-        val appendProgram = engine.programFactory.appendDrawCommandProgram
+        val appendProgram = engine.programManager.appendDrawCommandProgram
 
         GPUProfiler.start("Buffer compaction")
         with(commandOrganization) {

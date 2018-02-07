@@ -17,19 +17,19 @@ public class ShaderTest extends TestWithEngine {
 
         CodeSource shaderSource = ShaderSourceFactory.getShaderSource("void main() {}");
 
-        ProgramFactory programFactory = engine.getProgramFactory();
+        ProgramManager programManager = engine.getProgramManager();
         {
-            VertexShader vertexShader = VertexShader.load(programFactory, shaderSource, new Defines());
+            VertexShader vertexShader = VertexShader.load(programManager, shaderSource, new Defines());
             Assert.assertTrue("", vertexShader.getShaderType().equals(OpenGLShader.VertexShader));
             Assert.assertTrue(vertexShader.getId() > 0);
         }
         {
-            GeometryShader geometryShader = GeometryShader.load(programFactory, shaderSource);
+            GeometryShader geometryShader = GeometryShader.load(programManager, shaderSource);
             Assert.assertTrue("", geometryShader.getShaderType().equals(OpenGLShader.GeometryShader));
             Assert.assertTrue(geometryShader.getId() > 0);
         }
         {
-            FragmentShader fragmentShader = FragmentShader.load(programFactory, shaderSource);
+            FragmentShader fragmentShader = FragmentShader.load(programManager, shaderSource);
             Assert.assertTrue("", fragmentShader.getShaderType().equals(OpenGLShader.FragmentShader));
             Assert.assertTrue(fragmentShader.getId() > 0);
         }

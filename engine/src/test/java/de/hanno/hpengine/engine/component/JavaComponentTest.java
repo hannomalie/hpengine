@@ -1,6 +1,5 @@
 package de.hanno.hpengine.engine.component;
 
-import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.model.Entity;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,7 +32,7 @@ public class JavaComponentTest extends TestWithEngine {
 
     @Test
     public void testJavaComponent() throws IOException, ClassNotFoundException {
-        Entity entity = engine.getEntityFactory().getEntity();
+        Entity entity = engine.getEntityManager().getEntity();
         entity.addComponent(new JavaComponent("public class Bla implements de.hanno.hpengine.engine.lifecycle.LifeCycle {" +
                 "public void update(float seconds) { System.out.println(\"blubb\"); }" +
                 "}"));

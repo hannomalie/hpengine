@@ -9,7 +9,6 @@ import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.camera.Camera;
 import de.hanno.hpengine.engine.config.Config;
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.QuadVertexBuffer;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.DrawStrategy;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.FirstPassResult;
 import de.hanno.hpengine.engine.graphics.renderer.drawstrategy.SecondPassResult;
@@ -92,33 +91,33 @@ public class VoxelConeTracingExtension implements RenderExtension {
         initViewYBuffer();
         initViewZBuffer();
 
-        voxelizer = this.engine.getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_fragment.glsl")), new Defines());
-        texture3DMipMapAlphaBlendComputeProgram = this.engine.getProgramFactory().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
-        texture3DMipMapComputeProgram = this.engine.getProgramFactory().getComputeProgram("texture3D_mipmap_compute.glsl");
-        clearDynamicVoxelsComputeProgram = this.engine.getProgramFactory().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");
-        injectLightComputeProgram = this.engine.getProgramFactory().getComputeProgram("texture3D_inject_light_compute.glsl");
-        injectMultipleBounceLightComputeProgram = this.engine.getProgramFactory().getComputeProgram("texture3D_inject_bounce_light_compute.glsl");
+        voxelizer = this.engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_geometry.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "voxelize_fragment.glsl")), new Defines());
+        texture3DMipMapAlphaBlendComputeProgram = this.engine.getProgramManager().getComputeProgram("texture3D_mipmap_alphablend_compute.glsl");
+        texture3DMipMapComputeProgram = this.engine.getProgramManager().getComputeProgram("texture3D_mipmap_compute.glsl");
+        clearDynamicVoxelsComputeProgram = this.engine.getProgramManager().getComputeProgram("texture3D_clear_dynamic_voxels_compute.glsl");
+        injectLightComputeProgram = this.engine.getProgramManager().getComputeProgram("texture3D_inject_light_compute.glsl");
+        injectMultipleBounceLightComputeProgram = this.engine.getProgramManager().getComputeProgram("texture3D_inject_bounce_light_compute.glsl");
 
-        grid = this.engine.getTextureFactory().getTexture3D(gridSize, gridTextureFormatSized,
+        grid = this.engine.getTextureManager().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
-        gridTwo = this.engine.getTextureFactory().getTexture3D(gridSize, gridTextureFormatSized,
+        gridTwo = this.engine.getTextureManager().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
-        albedoGrid = this.engine.getTextureFactory().getTexture3D(gridSize, gridTextureFormatSized,
+        albedoGrid = this.engine.getTextureManager().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_LINEAR_MIPMAP_LINEAR,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
-        normalGrid = this.engine.getTextureFactory().getTexture3D(gridSize, gridTextureFormatSized,
+        normalGrid = this.engine.getTextureManager().getTexture3D(gridSize, gridTextureFormatSized,
                 GL11.GL_NEAREST,
                 GL11.GL_LINEAR,
                 GL12.GL_CLAMP_TO_EDGE);
 
         currentVoxelTarget = grid;
         currentVoxelSource = gridTwo;
-        voxelConeTraceProgram = this.engine.getProgramFactory().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
+        voxelConeTraceProgram = this.engine.getProgramManager().getProgramFromFileNames("passthrough_vertex.glsl", "voxel_cone_trace_fragment.glsl", new Defines());
         Config.getInstance().setUseAmbientOcclusion(false);
         pipeline = new SimplePipeline(engine, false, false, false);
     }
@@ -173,7 +172,7 @@ public class VoxelConeTracingExtension implements RenderExtension {
                 injectLightComputeProgram.use();
 
                 injectLightComputeProgram.setUniform("pointLightCount", engine.getSceneManager().getScene().getPointLights().size());
-                injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getLightFactory().getLightBuffer());
+                injectLightComputeProgram.bindShaderStorageBuffer(2, engine.getLightManager().getLightBuffer());
                 injectLightComputeProgram.setUniform("bounces", bounces);
                 injectLightComputeProgram.setUniform("sceneScale", getSceneScale(renderState));
                 injectLightComputeProgram.setUniform("inverseSceneScale", 1f / getSceneScale(renderState));

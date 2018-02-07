@@ -3,7 +3,7 @@ package de.hanno.hpengine;
 import ddsutil.DDSUtil;
 import de.hanno.hpengine.engine.model.texture.CubeMap;
 import de.hanno.hpengine.engine.model.texture.Texture;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import de.hanno.hpengine.util.Util;
 import jogl.DDSImage;
 import org.junit.Assert;
@@ -26,7 +26,7 @@ public class TextureTest extends TestWithEngine {
 
 	@Test
 	public void writeAndRead() throws IOException, ClassNotFoundException {
-        Texture texture = engine.getTextureFactory().getTexture("hp/assets/textures/wood_diffuse.png");
+        Texture texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
 		
 		byte[] data = texture.getData();
 		
@@ -34,9 +34,9 @@ public class TextureTest extends TestWithEngine {
 
 		assertTrue(Texture.write(texture, filename));
 
-        assertTrue(engine.getTextureFactory().removeTexture("hp/assets/textures/wood_diffuse.png"));
+        assertTrue(engine.getTextureManager().removeTexture("hp/assets/textures/wood_diffuse.png"));
 
-        texture = engine.getTextureFactory().getTexture("hp/assets/textures/wood_diffuse.png");
+        texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
 	    
 	    assertArrayEquals(data, texture.getData());
 	    
@@ -45,7 +45,7 @@ public class TextureTest extends TestWithEngine {
     @Test
     public void testDDSLoad() throws IOException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
-        BufferedImage readTexture = engine.getTextureFactory().loadImage(pathToSourceTexture);
+        BufferedImage readTexture = engine.getTextureManager().loadImage(pathToSourceTexture);
         File targetFile = new File("hp/assets/textures/test_output_texture.dds");
 
         readTexture = Texture.rescaleToNextPowerOfTwo(readTexture);
@@ -74,12 +74,12 @@ public class TextureTest extends TestWithEngine {
     public void testEqualityDdsAndRegularTexture() throws IOException {
         String pathToSourceTexture = "hp/assets/textures/stone_reflection.png";
         File fileAsDds = new File(Texture.getFullPathAsDDS(pathToSourceTexture));
-        Texture regularLoaded = engine.getTextureFactory().getTexture(pathToSourceTexture);
+        Texture regularLoaded = engine.getTextureManager().getTexture(pathToSourceTexture);
         byte[] regularLoadedData = regularLoaded.getData();
         while(!regularLoaded.getDdsConversionState().equals(Texture.DDSConversionState.CONVERTED) || !fileAsDds.exists()) {}
         DDSImage.ImageInfo[] allMipMaps = DDSImage.read(fileAsDds).getAllMipMaps();
         DDSImage.ImageInfo highestMipMapOfDDSImage = allMipMaps[0];
-        byte[] ddsDecompressedData = engine.getTextureFactory().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
+        byte[] ddsDecompressedData = engine.getTextureManager().convertImageData(ddsutil.DDSUtil.decompressTexture(highestMipMapOfDDSImage.getData(), highestMipMapOfDDSImage.getWidth(), highestMipMapOfDDSImage.getHeight(), highestMipMapOfDDSImage.getCompressionFormat()));
         float expectedFailurePercentage = 5f;
         float actualFailurePercentage = getFailurePercentageWithTolerance(regularLoadedData, ddsDecompressedData, 2f);
         boolean qualityAchieved = actualFailurePercentage < expectedFailurePercentage;
@@ -122,9 +122,9 @@ public class TextureTest extends TestWithEngine {
     @Test(timeout = 30000L)
     public void testEqualityDifferentTextures() throws IOException {
         String pathToFirstSourceTexture = "hp/assets/textures/stone_reflection.png";
-        Texture regularLoadedFirst = engine.getTextureFactory().getTexture(pathToFirstSourceTexture);
+        Texture regularLoadedFirst = engine.getTextureManager().getTexture(pathToFirstSourceTexture);
         String pathToSecondSourceTexture = "hp/assets/textures/wood_diffuse.png";
-        Texture regularLoadedSecond = engine.getTextureFactory().getTexture(pathToSecondSourceTexture);
+        Texture regularLoadedSecond = engine.getTextureManager().getTexture(pathToSecondSourceTexture);
         byte[] regularLoadedFirstData = regularLoadedFirst.getData();
         byte[] regularLoadedSecondData = regularLoadedSecond.getData();
 
@@ -136,19 +136,19 @@ public class TextureTest extends TestWithEngine {
 
 	@Test
 	public void loadsTexture() throws IOException {
-        Texture texture = engine.getTextureFactory().getTexture("hp/assets/textures/test_test_test.png");
+        Texture texture = engine.getTextureManager().getTexture("hp/assets/textures/test_test_test.png");
 	}
 
     @Test
     public void loadsTextureFromDDS() throws IOException {
-        Texture xxx = engine.getTextureFactory().getTexture("hp/assets/textures/wood_diffuse.png");
+        Texture xxx = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.png");
         Assert.assertTrue(new File("hp/assets/textures/wood_diffuse.dds").exists());
-        Texture texture = engine.getTextureFactory().getTexture("hp/assets/textures/wood_diffuse.dds");
+        Texture texture = engine.getTextureManager().getTexture("hp/assets/textures/wood_diffuse.dds");
     }
 
 	@Test
 	public void loadsCubeMap() throws IOException {
-        CubeMap cubeMap = engine.getTextureFactory().getCubeMap(engine.getTextureFactory(), "hp/assets/textures/wood_diffuse.png");
+        CubeMap cubeMap = engine.getTextureManager().getCubeMap(engine.getTextureManager(), "hp/assets/textures/wood_diffuse.png");
 	}
 
     @Test
@@ -209,8 +209,8 @@ public class TextureTest extends TestWithEngine {
     public void testUnloadAndReloadTexture() throws Exception {
         String fileName = "testfolder/stone_normal_streaming_test.dds";
         Assert.assertTrue(new File(fileName).exists());
-        Assert.assertFalse(engine.getTextureFactory().TEXTURES.containsKey(fileName));
-        Texture texture = engine.getTextureFactory().getTexture(fileName);
+        Assert.assertFalse(engine.getTextureManager().TEXTURES.containsKey(fileName));
+        Texture texture = engine.getTextureManager().getTexture(fileName);
         while(texture.getUploadState() != UPLOADING) {
             Thread.sleep(20);
         }
@@ -221,7 +221,7 @@ public class TextureTest extends TestWithEngine {
         LOGGER.info("Texture uploaded");
 
 //        de.hanno.hpengine.texture.unload();
-        Thread.sleep(TextureFactory.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
+        Thread.sleep(TextureManager.TEXTURE_UNLOAD_THRESHOLD_IN_MS + 5);
         texture.setPreventUnload(true);
         Assert.assertEquals(NOT_UPLOADED, (texture.getUploadState()));
         texture.setUsedNow();

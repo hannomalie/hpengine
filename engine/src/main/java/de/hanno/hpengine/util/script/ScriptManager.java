@@ -37,9 +37,9 @@ public class ScriptManager {
 	public void defineGlobals(Engine engine) {
 		define("world", scriptEngine);
         define("renderer", engine.getRenderer());
-        define("entityFactory", engine.getEntityFactory());
-		define("materialFactory", engine.getMaterialFactory());
-        define("textureFactory", engine.getTextureFactory());
+        define("entityManager", engine.getEntityManager());
+		define("materialManager", engine.getMaterialManager());
+        define("textureManager", engine.getTextureManager());
 		define("objLoader", new OBJLoader());
 	}
 	

@@ -55,13 +55,13 @@ public class OBJLoaderTest extends TestWithEngine {
     @Ignore
 	@Test
 	public void loadTextureFromDirecotry() throws IOException {
-        de.hanno.hpengine.engine.model.texture.Texture texture = engine.getTextureFactory().getTexture("C://default.png");
+        de.hanno.hpengine.engine.model.texture.Texture texture = engine.getTextureManager().getTexture("C://default.png");
 		Assert.assertEquals(1, texture.getHeight());
 	}
 
     @Test
     public void loadsMaterial() throws Exception {
-        StaticModel sibenik = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
+        StaticModel sibenik = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sibenik.obj"));
         Material material = sibenik.getMesh(0).getMaterial();
 
         Assert.assertEquals("rozeta", material.getName());
@@ -73,14 +73,14 @@ public class OBJLoaderTest extends TestWithEngine {
 	public void loadSponzaTest() throws Exception {
 		StopWatch.ACTIVE = true;
 		StopWatch.getInstance().start("Sponza loading");
-		Model sponza = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"));
+		Model sponza = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/sponza.obj"));
 		StopWatch.getInstance().stopAndPrintMS();
 		StopWatch.ACTIVE = false;
 	}
 
 	@Test
 	public void loadCornellBoxTest() throws Exception {
-		StaticModel cornellBox = new OBJLoader().loadTexturedModel(engine.getMaterialFactory(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
+		StaticModel cornellBox = new OBJLoader().loadTexturedModel(engine.getMaterialManager(), new File(DirectoryManager.WORKDIR_NAME + "/assets/models/cornellbox.obj"));
 		Assert.assertEquals(9, cornellBox.getMeshes().size());
 	}
 

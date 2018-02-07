@@ -11,7 +11,7 @@ public class LightTest extends TestWithEngine {
 
 	@Test
 	public void tubeLightHasCorrectProportions() {
-        TubeLight tubeLight = engine.getLightFactory().getTubeLight();
+        TubeLight tubeLight = engine.getLightManager().getTubeLight();
 		
 		Assert.assertEquals(new Vector3f(), tubeLight.getPosition());
 		Assert.assertEquals(200, tubeLight.getLength(), 1.0f);
@@ -28,7 +28,7 @@ public class LightTest extends TestWithEngine {
 	
 	@Test
 	public void areaLightHasCorrectProportions() {
-        AreaLight areaLight = engine.getLightFactory().getAreaLight(100,100,200);
+        AreaLight areaLight = engine.getLightManager().getAreaLight(100,100,200);
 		
 		Assert.assertEquals(new Vector3f(), areaLight.getPosition());
 		Assert.assertEquals(100, areaLight.getWidth(), 1.0f);

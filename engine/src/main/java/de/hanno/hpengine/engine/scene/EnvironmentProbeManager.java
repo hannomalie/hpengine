@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.CULL_FACE;
 import static de.hanno.hpengine.engine.graphics.renderer.constants.GlCap.DEPTH_TEST;
 
-public class EnvironmentProbeFactory {
+public class EnvironmentProbeManager {
 	public static final int MAX_PROBES = 25;
 	public static final int RESOLUTION = 256;
 	public static final int CUBEMAPMIPMAPCOUNT = Util.calculateMipMapCount(RESOLUTION);
@@ -44,15 +44,15 @@ public class EnvironmentProbeFactory {
 	private FloatBuffer maxPositions = BufferUtils.createFloatBuffer(0);
 	private FloatBuffer weights = BufferUtils.createFloatBuffer(0);
 
-    public EnvironmentProbeFactory(Engine engine) {
+    public EnvironmentProbeManager(Engine engine) {
     	this.engine = engine;
 		this.environmentMapsArray = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, RESOLUTION);
 		this.environmentMapsArray1 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
 		this.environmentMapsArray2 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR, GL11.GL_RGBA8, RESOLUTION);
 		this.environmentMapsArray3 = new CubeMapArray(engine.getGpuContext(), MAX_PROBES, GL11.GL_LINEAR_MIPMAP_LINEAR, RESOLUTION);
-        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine, EnvironmentProbeFactory.RESOLUTION, EnvironmentProbeFactory.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
+        this.cubeMapArrayRenderTarget = new CubeMapArrayRenderTarget(engine, EnvironmentProbeManager.RESOLUTION, EnvironmentProbeManager.RESOLUTION, 1, environmentMapsArray, environmentMapsArray1, environmentMapsArray2, environmentMapsArray3);
 
-//		DeferredRenderer.exitOnGLError("EnvironmentProbeFactory constructor");
+//		DeferredRenderer.exitOnGLError("EnvironmentProbeManager constructor");
 	}
 
 	public EnvironmentProbe getProbe(Vector3f center, float size) throws Exception {
@@ -175,7 +175,7 @@ public class EnvironmentProbeFactory {
 	public void drawDebug(Program program, Octree octree) {
 		List<float[]> arrays = new ArrayList<>();
 
-		for (EnvironmentProbe probe : engine.getEnvironmentProbeFactory().getProbes()) {
+		for (EnvironmentProbe probe : engine.getEnvironmentProbeManager().getProbes()) {
 			probe.drawDebug(program);
 //			arrays.add(probe.getBox().getPointsAsArray());
 
@@ -266,12 +266,12 @@ public class EnvironmentProbeFactory {
 	}
 
 	public void bindEnvironmentProbePositions(AbstractProgram program) {
-		program.setUniform("activeProbeCount", engine.getEnvironmentProbeFactory().getProbes().size());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getEnvironmentProbeFactory().getMinPositions());
-		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getEnvironmentProbeFactory().getMaxPositions());
-		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getEnvironmentProbeFactory().getWeights());
+		program.setUniform("activeProbeCount", engine.getEnvironmentProbeManager().getProbes().size());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMin", engine.getEnvironmentProbeManager().getMinPositions());
+		program.setUniformVector3ArrayAsFloatBuffer("environmentMapMax", engine.getEnvironmentProbeManager().getMaxPositions());
+		program.setUniformFloatArrayAsFloatBuffer("environmentMapWeights", engine.getEnvironmentProbeManager().getWeights());
 
-//		EnvironmentProbeFactory.getInstance().getProbes().forEach(probe -> {
+//		EnvironmentProbeManager.getInstance().getProbes().forEach(probe -> {
 //			int probeIndex = probe.getIndex();
 //			program.setUniform(String.format("environmentMapMin[%d]", probeIndex), probe.getBox().getBottomLeftBackCorner());
 //			program.setUniform(String.format("environmentMapMax[%d]", probeIndex), probe.getBox().getTopRightForeCorner());

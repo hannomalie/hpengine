@@ -418,7 +418,7 @@ public class MaterialView extends WebPanel {
 	}
 
 	private List<Texture> getAllTexturesSorted() {
-        List<Texture> temp = (List<Texture>) engine.getTextureFactory().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
+        List<Texture> temp = (List<Texture>) engine.getTextureManager().TEXTURES.values().stream().sorted(new Comparator<Texture>() {
 			@Override
 			public int compare(Texture o1, Texture o2) {
 				return (o1.getPath().compareTo(o2.getPath()));

@@ -6,8 +6,8 @@ import java.io.IOException;
 
 public class GeometryShader extends AbstractShader {
 
-    public static GeometryShader load(ProgramFactory programFactory, CodeSource sourceCode) throws IOException {
-        return Shader.loadShader(programFactory.getGpuContext(), GeometryShader.class, sourceCode);
+    public static GeometryShader load(ProgramManager programManager, CodeSource sourceCode) throws IOException {
+        return Shader.loadShader(programManager.getGpuContext(), GeometryShader.class, sourceCode);
     }
 
     @Override

@@ -83,7 +83,7 @@ public class Scene implements LifeCycle, Serializable {
             engine.getGpuContext().execute(() -> {
                 try {
 					// TODO: Remove this f***
-					EnvironmentProbe probe = engine.getEnvironmentProbeFactory().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
+					EnvironmentProbe probe = engine.getEnvironmentProbeManager().getProbe(data.getCenter(), data.getSize(), data.getUpdate(), data.getWeight());
 					engine.getRenderer().addRenderProbeCommand(probe);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -121,7 +121,7 @@ public class Scene implements LifeCycle, Serializable {
 			entities.clear();
 			entities.addAll(entityContainer.getEntities());
 			probes.clear();
-//			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeFactory().getProbes()) {
+//			for (EnvironmentProbe probe : Engine.getInstance().getEnvironmentProbeManager().getProbes()) {
 //				ProbeData probeData = new ProbeData(probe.getCenter(), probe.getSize(), probe.getProbeUpdate());
 //				if(probes.contains(probeData)) { continue; }
 //				probes.add(probeData);
@@ -361,7 +361,7 @@ public class Scene implements LifeCycle, Serializable {
 	public void addRenderBatches(Engine engine, Camera camera, RenderState currentWriteState) {
 		Vector3f cameraWorldPosition = camera.getPosition();
 
-		Program firstpassDefaultProgram = engine.getProgramFactory().getFirstpassDefaultProgram();
+		Program firstpassDefaultProgram = engine.getProgramManager().getFirstpassDefaultProgram();
 
 		List<ModelComponent> modelComponentsStatic = engine.getSceneManager().getScene().getModelComponents();
 

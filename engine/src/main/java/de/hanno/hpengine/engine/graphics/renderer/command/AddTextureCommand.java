@@ -22,7 +22,7 @@ public class AddTextureCommand implements Command<TextureResult> {
 	public TextureResult execute(Engine engine) {
 		Texture texture = null;
 		try {
-            texture = engine.getTextureFactory().getTexture(path, srgba);
+            texture = engine.getTextureManager().getTexture(path, srgba);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

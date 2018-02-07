@@ -29,7 +29,7 @@ public class DrawLinesExtension implements RenderExtension {
     public DrawLinesExtension(Engine engine) throws Exception {
         this.engine = engine;
         identityMatrix44Buffer = new SimpleTransform().getTransformationBuffer();
-        linesProgram = this.engine.getProgramFactory().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
+        linesProgram = this.engine.getProgramManager().getProgramFromFileNames("mvp_vertex.glsl", "firstpass_ambient_color_fragment.glsl", new Defines());
     }
 
     @Override
@@ -82,7 +82,7 @@ public class DrawLinesExtension implements RenderExtension {
 //            firstPassResult.linesDrawn += linesDrawn;
 
 
-            engine.getPhysicsFactory().debugDrawWorld();
+            engine.getPhysicsManager().debugDrawWorld();
             firstPassResult.linesDrawn += engine.getRenderer().drawLines(linesProgram);
         }
         if(Config.getInstance().isDrawCameras()) {

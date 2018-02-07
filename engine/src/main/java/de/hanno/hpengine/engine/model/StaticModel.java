@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
 import de.hanno.hpengine.engine.graphics.buffer.Bufferable;
@@ -44,17 +44,17 @@ public class StaticModel<T extends Bufferable> extends AbstractModel<T> {
         return normals;
     }
 
-    public void init(MaterialFactory materialFactory) {
+    public void init(MaterialManager materialManager) {
         meshIndices = new IntArrayList[meshes.size()];
         triangleCount = 0;
         for(int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
-            mesh.init(materialFactory);
+            mesh.init(materialManager);
             meshIndices[i] = new IntArrayList();
             meshIndices[i].add(mesh.getIndexBufferValuesArray());
             triangleCount += mesh.getTriangleCount();
         }
-        super.init(materialFactory);
+        super.init(materialManager);
     }
 
     public Mesh getMesh(int i) {

@@ -66,7 +66,7 @@ public class ProbeView extends WebPanel {
             CompletableFuture<Boolean> future = engine.getGpuContext().execute(new FutureCallable() {
                 @Override
                 public Boolean execute() throws Exception {
-                    return engine.getEnvironmentProbeFactory().remove(probe);
+                    return engine.getEnvironmentProbeManager().remove(probe);
                 }
             });
     		
@@ -106,7 +106,7 @@ public class ProbeView extends WebPanel {
 			@Override public void onValueChange(int value, int delta) {
 				probe.setWeight((float) value/100.0f);
                 engine.getGpuContext().execute(() -> {
-                    engine.getEnvironmentProbeFactory().updateBuffers();
+                    engine.getEnvironmentProbeManager().updateBuffers();
 				});
 			}
 		});

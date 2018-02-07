@@ -205,7 +205,7 @@ public class PerformanceMonitor {
 		public void actionPerformed(ActionEvent event) {
 			long actualFpsValue = (long) renderer.getCurrentFPS();
 			long actualCpsValue = (long) engine.getUpdateThread().getFpsCounter().getFPS();
-			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(engine.getRenderSystem().getCpuGpuSyncTimeNs());
+			long syncTimeMS = TimeUnit.NANOSECONDS.toMillis(engine.getRenderManager().getCpuGpuSyncTimeNs());
 			double actualSyncTimeFps = syncTimeMS == 0 ? 0 : 1000d/syncTimeMS;
 			thirtyFPS(30);
 			sixtyFPS(60);

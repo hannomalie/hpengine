@@ -1,7 +1,7 @@
 package de.hanno.hpengine.engine.component;
 
 import de.hanno.hpengine.engine.Engine;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.scene.AnimatedVertex;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -75,23 +75,23 @@ public class ModelComponent extends BaseComponent implements Serializable {
     }
 
     private transient WeakReference<Material> materialCache = null;
-    public Material getMaterial(MaterialFactory materialFactory) {
+    public Material getMaterial(MaterialManager materialManager) {
         if(materialCache != null && materialCache.get() != null && materialCache.get().getName().equals(materialName)) {
             return materialCache.get();
         }
-        Material material = materialFactory.getMaterial(materialName);
+        Material material = materialManager.getMaterial(materialName);
         materialCache = new WeakReference<>(material);
         if(material == null) {
             Logger.getGlobal().info("Material null, default is applied");
-            return materialFactory.getDefaultMaterial();
+            return materialManager.getDefaultMaterial();
         }
         return material;
     }
-    public void setMaterial(MaterialFactory materialFactory, String materialName) {
+    public void setMaterial(MaterialManager materialManager, String materialName) {
         this.materialName = materialName;
-        model.setMaterial(materialFactory.getMaterial(materialName));
+        model.setMaterial(materialManager.getMaterial(materialName));
         for(Entity child : entity.getChildren()) {
-            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialFactory, materialName));
+            child.getComponentOption(ModelComponent.class, ModelComponent.COMPONENT_KEY).ifPresent(c -> c.setMaterial(materialManager, materialName));
         }
     }
 
@@ -105,10 +105,10 @@ public class ModelComponent extends BaseComponent implements Serializable {
     @Override
     public void registerInScene(Scene scene, Engine engine) {
         if(model.isStatic()) {
-            VertexIndexBuffer<Vertex> vertexIndexBuffer = engine.getRenderSystem().getVertexIndexBufferStatic();
+            VertexIndexBuffer<Vertex> vertexIndexBuffer = engine.getRenderManager().getVertexIndexBufferStatic();
             putToBuffer(vertexIndexBuffer, DEFAULTCHANNELS);
         } else {
-            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = this.engine.getRenderSystem().getVertexIndexBufferAnimated();
+            VertexIndexBuffer<AnimatedVertex> vertexIndexBuffer = this.engine.getRenderManager().getVertexIndexBufferAnimated();
             putToBuffer(vertexIndexBuffer, DEFAULTANIMATEDCHANNELS);
 
             jointsOffset = scene.getJoints().size(); // TODO: Proper allocation

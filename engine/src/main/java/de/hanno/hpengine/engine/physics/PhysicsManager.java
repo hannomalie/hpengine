@@ -34,17 +34,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class PhysicsFactory {
+public class PhysicsManager {
 
     private DynamicsWorld dynamicsWorld;
 	private RigidBody ground;
     private final CommandQueue commandQueue = new CommandQueue();
     private Renderer renderer;
 
-    public PhysicsFactory(Renderer renderer) {
+    public PhysicsManager(Renderer renderer) {
 		this(new Vector3f(0,-20,0), renderer);
 	}
-	public PhysicsFactory(Vector3f gravity, Renderer renderer) {
+	public PhysicsManager(Vector3f gravity, Renderer renderer) {
         this.renderer = renderer;
         setupBullet(gravity);
         new TimeStepThread("Physics", 0.001f) {

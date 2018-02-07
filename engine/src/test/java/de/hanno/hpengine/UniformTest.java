@@ -13,7 +13,7 @@ public class UniformTest extends TestWithEngine {
 
 	@Test
 	public void uniforms() {
-        Program program = engine.getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
+        Program program = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "second_pass_point_fragment.glsl")), new Defines());
 		
 		Uniform uniform = new Uniform(program, "de/hanno/hpengine/test");
 		Assert.assertTrue(program.getUniform("de/hanno/hpengine/test").equals(uniform));

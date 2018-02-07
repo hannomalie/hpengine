@@ -15,7 +15,7 @@ import java.util.Random;
 
 public class EnvironmentProbe extends Entity {
 
-	private final EnvironmentProbeFactory environmentProbeFactory;
+	private final EnvironmentProbeManager environmentProbeManager;
 
 	public enum Update {
 		STATIC,
@@ -32,7 +32,7 @@ public class EnvironmentProbe extends Entity {
 
 	protected EnvironmentProbe(Engine engine, Vector3f center, Vector3f size, int resolution, Update update, int probeIndex, float weight) throws Exception {
         this.renderer = engine.getRenderer();
-        this.environmentProbeFactory = engine.getEnvironmentProbeFactory();
+        this.environmentProbeManager = engine.getEnvironmentProbeManager();
 		this.update = update;
 		box = new AABB(center, size.x, size.y, size.z);
 		sampler = new EnvironmentSampler(engine, this, center, resolution, resolution, probeIndex);
@@ -76,12 +76,12 @@ public class EnvironmentProbe extends Entity {
 	public void move(Vector3f amount) {
 		super.translate(amount);
 		resetAllProbes();
-        environmentProbeFactory.updateBuffers();
+        environmentProbeManager.updateBuffers();
 		box.move(amount);
 	}
 	
 	private void resetAllProbes() {
-        environmentProbeFactory.getProbes().forEach(probe -> {
+        environmentProbeManager.getProbes().forEach(probe -> {
 			probe.getSampler().resetDrawing();
 		});
 	}
@@ -123,12 +123,12 @@ public class EnvironmentProbe extends Entity {
 	public void setSize(float size) {
 		resetAllProbes();
 		box.setSize(size);
-        environmentProbeFactory.updateBuffers();
+        environmentProbeManager.updateBuffers();
 	}
 	public void setSize(float sizeX, float sizeY, float sizeZ) {
 		resetAllProbes();
 		box.setSize(sizeX, sizeY, sizeZ);
-        environmentProbeFactory.updateBuffers();
+        environmentProbeManager.updateBuffers();
 	}
 
 	public Vector3f getSize() {
@@ -145,11 +145,11 @@ public class EnvironmentProbe extends Entity {
 	}
 
 	public int getIndex() {
-        return environmentProbeFactory.getProbes().indexOf(this);
+        return environmentProbeManager.getProbes().indexOf(this);
 	}
 
 	public Vector3f getDebugColor() {
-        float colorHelper = (float)getIndex()/(float) environmentProbeFactory.getProbes().size();
+        float colorHelper = (float)getIndex()/(float) environmentProbeManager.getProbes().size();
 		Random randomGenerator = new Random();
 		randomGenerator.setSeed((long)colorHelper);
 		float random = randomGenerator.nextFloat();

@@ -31,7 +31,7 @@ public class CubeMapArray {
 			bind(gpuContext);
 
             if(Texture.filterRequiresMipmaps(magTextureFilter)) {
-//                mipMapCount = EnvironmentProbeFactory.CUBEMAPMIPMAPCOUNT;
+//                mipMapCount = EnvironmentProbeManager.CUBEMAPMIPMAPCOUNT;
                 mipMapCount = de.hanno.hpengine.util.Util.calculateMipMapCount(resolution);
             }
 			this.internalFormat = internalFormat;

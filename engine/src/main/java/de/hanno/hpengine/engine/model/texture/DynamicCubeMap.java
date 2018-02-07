@@ -13,7 +13,7 @@ public class DynamicCubeMap extends CubeMap {
     private Engine engine;
 
     public DynamicCubeMap(Engine engine, int width, int height) {
-        super(engine.getTextureFactory());
+        super(engine.getTextureManager());
         this.engine = engine;
 		this.width = width;
 		this.height = height;

@@ -37,7 +37,7 @@ public class ProbesTree extends WebCheckBoxTree {
         DefaultMutableTreeNode top = getRootNode();
         top.removeAllChildren();
 
-        List<EnvironmentProbe> probes = engine.getEnvironmentProbeFactory().getProbes();
+        List<EnvironmentProbe> probes = engine.getEnvironmentProbeManager().getProbes();
         for (EnvironmentProbe environmentProbe : probes) {
             top.add(new DefaultMutableTreeNode(environmentProbe));
         }

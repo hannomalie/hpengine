@@ -49,13 +49,13 @@ public class Program extends AbstractProgram implements Reloadable {
 	private ReloadOnFileChangeListener<Program> reloadOnFileChangeListener;
 
 	private FileAlterationObserver observerFragmentShader;
-	private ProgramFactory programFactory;
+	private ProgramManager programManager;
 
-	protected Program(ProgramFactory programFactory, CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource,
-					  Defines defines) {
-        super(programFactory.getGpuContext().createProgramId());
-        this.programFactory = programFactory;
-        this.gpuContext = programFactory.getGpuContext();
+	protected Program(ProgramManager programManager, CodeSource vertexShaderSource, CodeSource geometryShaderSource, CodeSource fragmentShaderSource,
+                      Defines defines) {
+        super(programManager.getGpuContext().createProgramId());
+        this.programManager = programManager;
+        this.gpuContext = programManager.getGpuContext();
         this.defines = defines;
 		
 		this.geometryShaderSource = geometryShaderSource;
@@ -73,7 +73,7 @@ public class Program extends AbstractProgram implements Reloadable {
 			clearUniforms();
 
 			try {
-                vertexShader = VertexShader.load(programFactory, vertexShaderSource, defines);
+                vertexShader = VertexShader.load(programManager, vertexShaderSource, defines);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -5,7 +5,7 @@ import de.hanno.hpengine.engine.Engine;
 import de.hanno.hpengine.engine.event.MaterialAddedEvent;
 import de.hanno.hpengine.engine.event.bus.EventBus;
 import de.hanno.hpengine.engine.model.material.Material.MAP;
-import de.hanno.hpengine.engine.model.texture.TextureFactory;
+import de.hanno.hpengine.engine.model.texture.TextureManager;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
@@ -18,20 +18,20 @@ import java.util.logging.Logger;
 import static de.hanno.hpengine.engine.model.material.Material.getDirectory;
 import static de.hanno.hpengine.engine.model.material.Material.write;
 
-public class MaterialFactory {
-    private static final Logger LOGGER = Logger.getLogger(MaterialFactory.class.getName());
+public class MaterialManager {
+    private static final Logger LOGGER = Logger.getLogger(MaterialManager.class.getName());
 	public static final String TEXTUREASSETSPATH = "assets/textures/";
 	public static int count = 0;
-    private static MaterialFactory instance;
+    private static MaterialManager instance;
 	private final Material skyboxMaterial;
 
     public ListWithSyncedAdder<Material> MATERIALS = new ListWithSyncedAdder();
 
 	private Material defaultMaterial;
-	private TextureFactory textureFactory;
+	private TextureManager textureManager;
 
-	public MaterialFactory(TextureFactory textureFactory) {
-		this.textureFactory = textureFactory;
+	public MaterialManager(TextureManager textureManager) {
+		this.textureManager = textureManager;
 		MaterialInfo defaultTemp = new MaterialInfo();
 		defaultTemp.diffuse.x = (1.0f);
         defaultMaterial = getMaterial(defaultTemp, false);
@@ -116,7 +116,7 @@ public class MaterialFactory {
 			if(map.equals(MAP.DIFFUSE)) {
 				srgba = true;
 			}
-            textures.put(map, getTextureFactory().getTexture(hashMap.get(map), srgba));
+            textures.put(map, getTextureManager().getTexture(hashMap.get(map), srgba));
 		}
 		MaterialInfo info = new MaterialInfo(textures);
 		info.name = name;
@@ -200,7 +200,7 @@ public class MaterialFactory {
 		return skyboxMaterial;
 	}
 
-	public TextureFactory getTextureFactory() {
-		return textureFactory;
+	public TextureManager getTextureManager() {
+		return textureManager;
 	}
 }

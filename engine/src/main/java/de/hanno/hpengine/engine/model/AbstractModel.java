@@ -2,7 +2,7 @@ package de.hanno.hpengine.engine.model;
 
 import com.carrotsearch.hppc.FloatArrayList;
 import com.carrotsearch.hppc.IntArrayList;
-import de.hanno.hpengine.engine.model.material.MaterialFactory;
+import de.hanno.hpengine.engine.model.material.MaterialManager;
 import de.hanno.hpengine.engine.transform.AABB;
 import de.hanno.hpengine.engine.transform.SimpleSpatial;
 import de.hanno.hpengine.engine.transform.Transform;
@@ -23,7 +23,7 @@ public abstract class AbstractModel<T extends Bufferable> extends SimpleSpatial 
         this.meshes = meshes;
     }
 
-    protected void init(MaterialFactory materialFactory) {
+    protected void init(MaterialManager materialManager) {
         for (int i = 0; i < meshes.size(); i++) {
             Mesh mesh = meshes.get(i);
             AABB meshMinMax = mesh.getMinMax();

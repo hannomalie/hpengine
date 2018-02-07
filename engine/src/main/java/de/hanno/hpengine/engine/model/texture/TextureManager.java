@@ -49,8 +49,8 @@ import static de.hanno.hpengine.engine.model.texture.Texture.*;
  * @author Kevin Glass
  * @author Brian Matzon
  */
-public class TextureFactory {
-    private static final Logger LOGGER = Logger.getLogger(TextureFactory.class.getName());
+public class TextureManager {
+    private static final Logger LOGGER = Logger.getLogger(TextureManager.class.getName());
     private static final int TEXTURE_FACTORY_THREAD_COUNT = 1;
     public static volatile long TEXTURE_UNLOAD_THRESHOLD_IN_MS = 10000;
     private static volatile boolean USE_TEXTURE_STREAMING = false;
@@ -94,10 +94,10 @@ public class TextureFactory {
      */
     Texture defaultTexture = null;
 
-    public TextureFactory(Engine engine, GpuContext gpuContext) {
-        this.gpuContext = gpuContext;
-        System.out.println("TextureFactory constructor");
-        GpuContext.exitOnGLError("Begin TextureFactory constructor");
+    public TextureManager(Engine engine) {
+        this.gpuContext = engine.getGpuContext();
+        System.out.println("TextureManager constructor");
+        GpuContext.exitOnGLError("Begin TextureManager constructor");
         glAlphaColorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
                                             new int[] {8,8,8,8},
                                             true,
@@ -120,10 +120,10 @@ public class TextureFactory {
         Defines verticalDefines = new Defines() {{
             add(Define.getDefine("VERTICAL", true));
         }};
-        blur2dProgramSeperableHorizontal = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
-        blur2dProgramSeperableVertical = engine.getProgramFactory().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
+        blur2dProgramSeperableHorizontal = engine.getProgramManager().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", horizontalDefines);
+        blur2dProgramSeperableVertical = engine.getProgramManager().getComputeProgram("blur2D_seperable_vertical_or_horizontal_compute.glsl", verticalDefines);
 
-        GpuContext.exitOnGLError("After TextureFactory constructor");
+        GpuContext.exitOnGLError("After TextureManager constructor");
 
         if(USE_TEXTURE_STREAMING) {
             new TimeStepThread("TextureWatcher", 0.5f) {
@@ -143,7 +143,7 @@ public class TextureFactory {
         }
 
         for(int i = 0; i < 1+TEXTURE_FACTORY_THREAD_COUNT; i++) {
-            new TimeStepThread("TextureFactory" + i, 0.01f) {
+            new TimeStepThread("TextureManager" + i, 0.01f) {
                 @Override
                 public void update(float seconds) {
                     commandQueue.executeCommands();
@@ -262,8 +262,8 @@ public class TextureFactory {
         return texture;
     }
 
-    public void convertAndUpload(Texture texture, TextureFactory textureFactory) {
-        CompletableFuture<Object> future = textureFactory.getCommandQueue().addCommand(() -> {
+    public void convertAndUpload(Texture texture, TextureManager textureManager) {
+        CompletableFuture<Object> future = textureManager.getCommandQueue().addCommand(() -> {
             try {
                 LOGGER.severe(texture.getPath());
                 texture.setData(new byte[1][]);
@@ -276,7 +276,7 @@ public class TextureFactory {
                 if (imageExists) {
                     LOGGER.info(texture.getPath() + " available as dds: " + textureAvailableAsDDS(texture.getPath()));
                     if (!textureAvailableAsDDS(texture.getPath())) {
-                        bufferedImage = TextureFactory.this.loadImage(texture.getPath());
+                        bufferedImage = TextureManager.this.loadImage(texture.getPath());
                         if (bufferedImage != null) {
                             texture.setData(new byte[de.hanno.hpengine.util.Util.calculateMipMapCount(Math.max(bufferedImage.getWidth(), bufferedImage.getHeight())) + 1][]);
                         }
@@ -301,7 +301,7 @@ public class TextureFactory {
 
 //                        BufferedImage mipmapimage = DDSUtil.decompressTexture(info.getData(), info.getWidth(), info.getHeight(), info.getCompressionFormat());
 //                        showAsTextureInFrame(mipmapImage);
-//                        data[i] = TextureFactory.getInstance().convertImageData(mipmapImage);
+//                        data[i] = TextureManager.getInstance().convertImageData(mipmapImage);
                             texture.setData(i, new byte[info.getData().capacity()]);
                             info.getData().get(texture.data[i]);
                         }
@@ -338,10 +338,10 @@ public class TextureFactory {
                     texture.setDstPixelFormat(texture.dstPixelFormat);
                     texture.setSrcPixelFormat(texture.srcPixelFormat);
 
-                    byte[] bytes = TextureFactory.this.convertImageData(bufferedImage);
+                    byte[] bytes = TextureManager.this.convertImageData(bufferedImage);
                     texture.setData(0, bytes);
                     ByteBuffer textureBuffer = texture.buffer();
-                    texture.upload(textureFactory, textureBuffer, texture.srgba);
+                    texture.upload(textureManager, textureBuffer, texture.srgba);
                     LOGGER.info("" + (System.currentTimeMillis() - start) + "ms for loading and uploading without mipmaps: " + texture.getPath());
                 } else {
                     LOGGER.warning("BufferedImage couldn't be loaded!");
@@ -379,7 +379,7 @@ public class TextureFactory {
     	return f.exists();
 	}
 
-	public CubeMap getCubeMap(TextureFactory textureFactory, String resourceName) throws IOException {
+	public CubeMap getCubeMap(TextureManager textureManager, String resourceName) throws IOException {
 		CubeMap tex = (CubeMap) TEXTURES.get(resourceName+ "_cube");
         
         if (tex != null && tex instanceof CubeMap) {
@@ -387,7 +387,7 @@ public class TextureFactory {
         }
 
         if (Texture.COMPILED_TEXTURES && cubeMapPreCompiled(resourceName)) {
-        	tex = CubeMap.read(textureFactory, resourceName, createTextureID());
+        	tex = CubeMap.read(textureManager, resourceName, createTextureID());
         	if (tex != null) {
                 TEXTURES.put(resourceName+ "_cube",tex);
                 return tex;
@@ -475,7 +475,7 @@ public class TextureFactory {
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(4)));
             cubeMap.load(GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, cubeMap.buffer(perFaceBuffer, cubeMap.dataList.get(5)));
 
-            TextureFactory.this.generateMipMapsCubeMap(cubeMap.getTextureID());
+            TextureManager.this.generateMipMapsCubeMap(cubeMap.getTextureID());
             cubeMap.handle = ARBBindlessTexture.glGetTextureHandleARB(cubeMap.textureID);
             ARBBindlessTexture.glMakeTextureHandleResidentARB(cubeMap.handle);
         });
@@ -618,7 +618,7 @@ public class TextureFactory {
      */
     public BufferedImage loadImage(String ref) throws IOException
     {
-        URL url = TextureFactory.class.getClassLoader().getResource(ref);
+        URL url = TextureManager.class.getClassLoader().getResource(ref);
         
         if (url == null) {
             return loadImageAsStream(ref);
@@ -858,10 +858,10 @@ public class TextureFactory {
 //
 //        gpuContext.bindTexture(0, GlTextureTarget.TEXTURE_2D, copyTextureId);
 //
-//        Engine.getInstance().getProgramFactory().getBlurProgram().use();
-//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("mipmap", mipmap);
-//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleX", scaleForShaderX);
-//        Engine.getInstance().getProgramFactory().getBlurProgram().setUniform("scaleY", scaleForShaderY);
+//        Engine.getInstance().getProgramManager().getBlurProgram().use();
+//        Engine.getInstance().getProgramManager().getBlurProgram().setUniform("mipmap", mipmap);
+//        Engine.getInstance().getProgramManager().getBlurProgram().setUniform("scaleX", scaleForShaderX);
+//        Engine.getInstance().getProgramManager().getBlurProgram().setUniform("scaleY", scaleForShaderY);
 //        QuadVertexBuffer.getFullscreenBuffer().draw();
 //        target.unuse();
 //        GL11.glDeleteTextures(copyTextureId);

@@ -38,7 +38,7 @@ public class Texture implements Serializable, Reloadable {
 
 	private static final long serialVersionUID = 1L;
     public static final boolean COMPILED_TEXTURES = false;
-    private final TextureFactory textureFactory;
+    private final TextureManager textureManager;
     public transient boolean srgba;
 
     private String path = "";
@@ -121,13 +121,13 @@ public class Texture implements Serializable, Reloadable {
     protected long handle =-1L;
 
 
-    protected Texture(TextureFactory textureFactory) {
-        this.textureFactory = textureFactory;
-        genHandle(textureFactory);
+    protected Texture(TextureManager textureManager) {
+        this.textureManager = textureManager;
+        genHandle(textureManager);
     }
 
-    private void genHandle(TextureFactory textureFactory) {
-        textureFactory.getGpuContext().execute(() -> {
+    private void genHandle(TextureManager textureManager) {
+        textureManager.getGpuContext().execute(() -> {
             if(handle <= 0) {
                 bind(15);
                 handle =  ARBBindlessTexture.glGetTextureHandleARB(textureID);
@@ -139,19 +139,19 @@ public class Texture implements Serializable, Reloadable {
     /**
      * Create a new de.hanno.hpengine.texture
      */
-    Texture(TextureFactory textureFactory, String path) {
-        this(textureFactory, path, false);
+    Texture(TextureManager textureManager, String path) {
+        this(textureManager, path, false);
     }
 
-    Texture(TextureFactory textureFactory, String path, boolean srgba) {
-        this(textureFactory, path, TEXTURE_2D, srgba);
+    Texture(TextureManager textureManager, String path, boolean srgba) {
+        this(textureManager, path, TEXTURE_2D, srgba);
     }
 
-    Texture(TextureFactory textureFactory, String path, GlTextureTarget target, boolean srgba) {
+    Texture(TextureManager textureManager, String path, GlTextureTarget target, boolean srgba) {
         this.target = target;
         this.path = path;
         this.srgba = srgba;
-        this.textureFactory = textureFactory;
+        this.textureManager = textureManager;
     }
 
     /**
@@ -164,12 +164,12 @@ public class Texture implements Serializable, Reloadable {
     public void bind(boolean setUsed) {
         if(textureID <= 0) {
 //            LOGGER.info("de.hanno.hpengine.texture id is <= 0");
-            textureID = textureFactory.getGpuContext().genTextures();
+            textureID = textureManager.getGpuContext().genTextures();
         }
         if(setUsed) {
             setUsedNow();
         }
-        textureFactory.getGpuContext().bindTexture(target, textureID);
+        textureManager.getGpuContext().bindTexture(target, textureID);
     }
 
     public void bind(int unit) {
@@ -177,15 +177,15 @@ public class Texture implements Serializable, Reloadable {
     }
     public void bind(int unit, boolean setUsed) {
         if(textureID <= 0) {
-            textureID = textureFactory.getGpuContext().genTextures();
+            textureID = textureManager.getGpuContext().genTextures();
         }
         if(setUsed) {
             setUsedNow();
         }
-        textureFactory.getGpuContext().bindTexture(unit, target, textureID);
+        textureManager.getGpuContext().bindTexture(unit, target, textureID);
     }
     public void  unbind(int unit) {
-        textureFactory.getGpuContext().bindTexture(unit, target, 0);
+        textureManager.getGpuContext().bindTexture(unit, target, 0);
     }
 
     public void setHeight(int height) {
@@ -225,10 +225,10 @@ public class Texture implements Serializable, Reloadable {
 		return imageBuffer;
 	}
 
-	public void upload(TextureFactory textureFactory, boolean srgba) {
+	public void upload(TextureManager textureManager, boolean srgba) {
         this.srgba = srgba;
         if(data == null || data[0] == null) { return; }
-        upload(textureFactory, buffer(), srgba);
+        upload(textureManager, buffer(), srgba);
 	}
     Thread.UncaughtExceptionHandler uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler() {
         public void uncaughtException(Thread th, Throwable ex) {
@@ -237,11 +237,11 @@ public class Texture implements Serializable, Reloadable {
         }
     };
 
-	public void upload(TextureFactory textureFactory, ByteBuffer textureBuffer) {
-		upload(textureFactory, textureBuffer, false);
+	public void upload(TextureManager textureManager, ByteBuffer textureBuffer) {
+		upload(textureManager, textureBuffer, false);
 	}
 	
-	public void upload(TextureFactory textureFactory, ByteBuffer textureBuffer, boolean srgba) {
+	public void upload(TextureManager textureManager, ByteBuffer textureBuffer, boolean srgba) {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
         uploadState = UPLOADING;
 
@@ -253,7 +253,7 @@ public class Texture implements Serializable, Reloadable {
             }
             int finalInternalformat = internalformat;
 
-            textureFactory.getGpuContext().execute(() -> {
+            textureManager.getGpuContext().execute(() -> {
                 bind(15);
                 if (target == TEXTURE_2D) {
                     GL11.glTexParameteri(target.glTarget, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
@@ -271,7 +271,7 @@ public class Texture implements Serializable, Reloadable {
                 uploadMipMaps(finalInternalformat);
             }
             uploadWithPixelBuffer(textureBuffer, finalInternalformat, getWidth(), getHeight(), 0, sourceDataCompressed, false);
-            textureFactory.getGpuContext().execute(() -> {
+            textureManager.getGpuContext().execute(() -> {
                 if(!mipmapsGenerated) {
                     bind(15);
                     GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
@@ -279,27 +279,27 @@ public class Texture implements Serializable, Reloadable {
 
                 }
             });
-            genHandle(textureFactory);
-            textureFactory.getGpuContext().execute(() -> {
+            genHandle(textureManager);
+            textureManager.getGpuContext().execute(() -> {
                 ARBBindlessTexture.glMakeTextureHandleResidentARB(handle);
             });
             setUploaded();
             Engine.getEventBus().post(new TexturesChangedEvent());
         };
 
-        textureFactory.getCommandQueue().addCommand(uploadRunnable);
+        textureManager.getCommandQueue().addCommand(uploadRunnable);
     }
 
     private void setUploaded() {
         uploadState = UPLOADED;
         LOGGER.info("Upload finished");
-        LOGGER.fine("Free VRAM: " + textureFactory.getGpuContext().getAvailableVRAM());
+        LOGGER.fine("Free VRAM: " + textureManager.getGpuContext().getAvailableVRAM());
     }
 
     private void uploadWithPixelBuffer(ByteBuffer textureBuffer, int internalformat, int width, int height, int mipLevel, boolean sourceDataCompressed, boolean setMaxLevel) {
         textureBuffer.rewind();
         final AtomicInteger pbo = new AtomicInteger(-1);
-        ByteBuffer temp = textureFactory.getGpuContext().calculate(() -> {
+        ByteBuffer temp = textureManager.getGpuContext().calculate(() -> {
             bind(15);
             pbo.set(GL15.glGenBuffers());
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
@@ -310,7 +310,7 @@ public class Texture implements Serializable, Reloadable {
             return xxx;
         });
         temp.put(textureBuffer);
-        textureFactory.getGpuContext().execute(() -> {
+        textureManager.getGpuContext().execute(() -> {
             bind(15);
             GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pbo.get());
             GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
@@ -471,7 +471,7 @@ public class Texture implements Serializable, Reloadable {
 				magTextureFilter == GL11.GL_NEAREST_MIPMAP_NEAREST);
 	}
 
-    public void readAndUpload(TextureFactory textureFactory) {
+    public void readAndUpload(TextureManager textureManager) {
         new Thread(() -> {
             try {
                 LOGGER.info("Thread started ...");
@@ -481,7 +481,7 @@ public class Texture implements Serializable, Reloadable {
                 in.close();
                 init(texture);
                 LOGGER.fine("Data: " + getData().length);
-                upload(textureFactory, texture.buffer(), texture.srgba);
+                upload(textureManager, texture.buffer(), texture.srgba);
             } catch (IOException | ClassNotFoundException | IllegalArgumentException e) {
                 e.printStackTrace();
             }
@@ -605,7 +605,7 @@ public class Texture implements Serializable, Reloadable {
         if(UPLOADING.equals(uploadState) || UPLOADED.equals(uploadState)) { return; }
 //        LOGGER.info("Loading " + path);
 
-        upload(textureFactory, srgba);
+        upload(textureManager, srgba);
     }
 
     @Override
@@ -615,9 +615,9 @@ public class Texture implements Serializable, Reloadable {
         LOGGER.info("Unloading " + path);
         uploadState = NOT_UPLOADED;
 
-        textureFactory.getGpuContext().execute(() -> {
+        textureManager.getGpuContext().execute(() -> {
             ARBBindlessTexture.glMakeTextureHandleNonResidentARB(handle);
-            LOGGER.info("Free VRAM: " + textureFactory.getGpuContext().getAvailableVRAM());
+            LOGGER.info("Free VRAM: " + textureManager.getGpuContext().getAvailableVRAM());
         });
     }
     public long getHandle() {
@@ -625,6 +625,6 @@ public class Texture implements Serializable, Reloadable {
     }
 
     private void bindWithoutReupload() {
-        textureFactory.getGpuContext().bindTexture(target, textureID);
+        textureManager.getGpuContext().bindTexture(target, textureID);
     }
 }

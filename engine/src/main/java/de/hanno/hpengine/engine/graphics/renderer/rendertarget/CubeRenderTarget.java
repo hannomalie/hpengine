@@ -29,14 +29,14 @@ public class CubeRenderTarget extends RenderTarget {
 
 		for (int i = 0; i < colorBufferCount; i++) {
 			int internalFormat = builder.colorAttachments.get(i).internalFormat;
-            int cubeMap = engine.getTextureFactory().getCubeMap(width, height, internalFormat);
+            int cubeMap = engine.getTextureManager().getCubeMap(width, height, internalFormat);
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0+i, cubeMap, 0);
 			renderedTextures[i] = cubeMap;
 			scratchBuffer.put(i, GL30.GL_COLOR_ATTACHMENT0+i);
 		}
 
 		if(builder.useDepthBuffer) {
-            int depthCubeMap = engine.getTextureFactory().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
+            int depthCubeMap = engine.getTextureManager().getCubeMap(width, height, GL14.GL_DEPTH_COMPONENT24);
 			GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, depthCubeMap, 0);
 		}
 		GL20.glDrawBuffers(scratchBuffer);

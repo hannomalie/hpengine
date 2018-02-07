@@ -34,7 +34,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
     public DirectionalLightShadowMapExtension(Engine engine) {
         gpuContext = engine.getGpuContext();
         this.engine = engine;
-        directionalShadowPassProgram = engine.getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
+        directionalShadowPassProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "mvp_ssbo_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "shadowmap_fragment.glsl")), new Defines());
 
         renderTarget = new RenderTargetBuilder(engine.getGpuContext())
                 .setWidth(SHADOWMAP_RESOLUTION)
@@ -82,7 +82,7 @@ public class DirectionalLightShadowMapExtension implements ShadowMapExtension {
             directionalShadowPassProgram.setUniform("entityBaseIndex", e.getEntityBufferIndex());
             DrawStrategy.draw(gpuContext, renderState.getVertexIndexBufferStatic().getVertexBuffer(), renderState.getVertexIndexBufferStatic().getIndexBuffer(), e, directionalShadowPassProgram, !e.isVisible());
         }
-        engine.getTextureFactory().generateMipMaps(getShadowMapId());
+        engine.getTextureManager().generateMipMaps(getShadowMapId());
         firstPassResult.directionalLightShadowMapWasRendered = true;
 
         renderedInCycle = renderState.getCycle();

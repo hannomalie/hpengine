@@ -58,7 +58,7 @@ public class SimpleTextureRenderer implements Renderer {
         if (!initialized) {
             setCurrentState("INITIALIZING");
             setupBuffers(engine.getGpuContext());
-            GpuContext.exitOnGLError("After TextureFactory");
+            GpuContext.exitOnGLError("After TextureManager");
             try {
                 setupShaders();
                 setUpGBuffer();
@@ -102,7 +102,7 @@ public class SimpleTextureRenderer implements Renderer {
 	private void setupShaders() throws Exception {
 		GpuContext.exitOnGLError("Before setupShaders");
 
-        renderToQuadProgram = engine.getProgramFactory().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
+        renderToQuadProgram = engine.getProgramManager().getProgram(Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "passthrough_vertex.glsl")), Shader.ShaderSourceFactory.getShaderSource(new File(Shader.getDirectory() + "simpletexture_fragment.glsl")), new Defines());
 
 	}
 
@@ -113,7 +113,7 @@ public class SimpleTextureRenderer implements Renderer {
 	@Override
 	public void draw(DrawResult result, RenderState renderState) {
 		GPUProfiler.start("Frame");
-		drawToQuad(engine.getTextureFactory().getDefaultTexture().getTextureID(), engine.getGpuContext().getFullscreenBuffer());
+		drawToQuad(engine.getTextureManager().getDefaultTexture().getTextureID(), engine.getGpuContext().getFullscreenBuffer());
 		GPUProfiler.end();
 
         GPUProfiler.start("Waiting for driver");

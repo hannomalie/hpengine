@@ -340,7 +340,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		ModelComponent modelComponent = getComponent(ModelComponent.class, ModelComponent.COMPONENT_KEY);
 		List<Mesh> meshes = modelComponent.getMeshes();
 		for(Mesh mesh : meshes) {
-            int materialIndex = engine.getMaterialFactory().indexOf(mesh.getMaterial());
+            int materialIndex = engine.getMaterialManager().indexOf(mesh.getMaterial());
 			{
 				putValues(buffer, getTransformation(), meshIndex, materialIndex, modelComponent.getAnimationFrame0(), modelComponent.getMinMax(this, mesh));
 			}
@@ -349,7 +349,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
                 for(int i = 0; i < cluster.size(); i++) {
                     Instance instance = cluster.get(i);
                     Matrix4f instanceMatrix = instance.getTransformation();
-                    int instanceMaterialIndex = engine.getMaterialFactory().indexOf(instance.getMaterials().get(meshIndex));
+                    int instanceMaterialIndex = engine.getMaterialManager().indexOf(instance.getMaterials().get(meshIndex));
                     putValues(buffer, instanceMatrix, meshIndex, instanceMaterialIndex, instance.getAnimationController().getCurrentFrameIndex(), instance.getMinMaxWorld());
                 }
             }
@@ -445,7 +445,7 @@ public class Entity extends Transform<Entity> implements LifeCycle, Serializable
 		m33(buffer.getFloat());
 
 		setSelected(buffer.getInt() == 1);
-        Material material = engine.getMaterialFactory().getMaterialsAsList().get(buffer.getInt());
+        Material material = engine.getMaterialManager().getMaterialsAsList().get(buffer.getInt());
 		System.out.println(material.getName());
 		System.out.println(material);
 		setUpdate(Update.values()[buffer.getInt()]);
